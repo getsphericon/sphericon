@@ -16,8 +16,8 @@ the automated abuse detector, the Operator console, impersonation — is closed 
 ## Considered options
 
 - **SaaS-layer gate** (rejected): no choke point in the binary; bypassable.
-- **Billing/quota state** (rejected): suspension is an abuse fact, not an entitlement; conflating
-  them couples abuse control to a billing system that doesn't exist yet.
+- **An entitlement state** (rejected): suspension is an abuse fact, not an entitlement; conflating
+  them couples abuse control to whatever decides entitlements.
 
 ## Consequences
 
@@ -34,7 +34,7 @@ The send-path refusal is the **`Held`** outcome of the single Outbound send modu
 ([[0015-outbound-send-single-chokepoint]]), checked for every message on all three surfaces. It is
 a reversible, source-level hold, not a per-recipient skip: a Broadcast in flight pauses with its
 remaining recipients still pending and resumes on unsuspend, Automation Enrollments are held, and
-Transactional requests get a 4xx. Billing hold (ADR 0009) is a second freeze reason answered by
+Transactional requests get a 4xx. An Operator hold (ADR 0009) is a second freeze reason answered by
 the same question, never merged with this one.
 
 See [[0026-operator-console-and-abuse-detector]] for the Operator console and the detector.

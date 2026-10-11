@@ -33,15 +33,6 @@ Legend: 🔴 launch-blocker / "can't send otherwise" · 🟡 parity with drip.co
 
 ## Queue
 
-### 🔴 Billing / plans / metering / quota enforcement (SaaS)
-
-Distinct from suspension: suspension = abuse, quota = commerce. Absent entirely. Open forks:
-
-- Metered units (contacts, emails/month) and where enforcement sits (send path? like
-  suspension) vs. suspension (reuse the choke point or a separate gate?).
-- Plan/entitlement model; is it core, EE, or SaaS-only.
-- Over-quota behavior: block vs. degrade vs. dun.
-
 ### 🟡 AI/MCP plane — agent-operable platform (no built-in chat)
 
 The strategic AI-first bet: sphericon is **operated by an agent through an MCP tool-surface**,
@@ -68,11 +59,11 @@ native editor under the existing `draft`/`inactive` approval gate. Open forks:
   to be reachable over MCP at all (ADR 0016, "Send is a second lock"). Pulling the trigger is
   otherwise a human action. The `draft`/`inactive` states are the _boundary of what the AI can touch_, not just a review
   gate. The core choke points (Send-eligibility, Suppression, verified domain,
-  Workspace/Billing freeze) still guard the human's eventual send.
+  Workspace/Operator freeze) still guard the human's eventual send.
 - **AI-authorship attribution** — reuse the actor-attribution pattern (actor `system` /
   Operator): entities an agent creates carry "who authored — AI vs User".
-- **AI as a metered unit** — token/AI-call usage extends the Usage snapshot (metering in
-  core, money outside, ADR 0009) — a new metric, not a new billing plane.
+- **AI as a metered unit** — token/AI-call usage extends the Usage snapshot (ADR 0009)
+  — a new metric, not a new mechanism.
 - **Skills (operating playbooks) as a distinct layer** — tools are _capability_
   (`create_segment`), skills are _competence_ ("how to run a win-back well"): a skill is
   domain know-how + the sequence of tool calls. Delivered over the same MCP connection via
@@ -86,7 +77,7 @@ native editor under the existing `draft`/`inactive` approval gate. Open forks:
   without drowning the agent, so **grill skills together with tool granularity**. Liveness
   tension: a skill references tool names generated from the contract → needs a
   validity-against-current-surface check (same principle as goverter's completeness check).
-  Ties to: External `/api` breadth, Billing/metering, Audit log. **Rejected here:** a built-in
+  Ties to: External `/api` breadth, Usage metering, Audit log. **Rejected here:** a built-in
   **chat** as a primary UI — AI-first ≠ chat-first; a conversation is a poor home for outputs
   that are governed domain objects. Chat is _deferred and narrow_ — at most a later,
   optional **analytical panel** for open-ended "why/what-if" Q&A, never the main surface.
@@ -139,7 +130,7 @@ thresholds, not always-on** (runaway/token-cost is real → a new metered line).
   unattended, never more sending.
   Depends on: ✅ Complaint/bounce-rate metrics (ADR 0011 — the analyzer reads the same rate the
   ADR 0007 auto-suspension detector does). Ties to: AI/MCP plane,
-  Billing/metering, Lead scoring, Audit log.
+  Usage metering, Lead scoring, Audit log.
 
 ### 🟡 Automation action steps (beyond send/wait)
 
@@ -213,8 +204,7 @@ path already feeding Suppression.
 Ready, popular, actively-maintained solutions per item, so the dependency surface is known
 up front. **Confirm liveness at `go get` / `pnpm add` time** (roadmap principle). ⚠️ flags a
 tension to resolve _before_ adopting: the **Postgres-only, single-binary self-host** constraint
-(needs a Postgres-native path, not Redis/an extra service). Billing/metering is SaaS-only by
-nature and therefore has no such tension: self-host simply has no billing.
+(needs a Postgres-native path, not Redis/an extra service).
 
 | Item                                                     | Candidate                                                                                                 | Kind    | Status / note                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -223,8 +213,6 @@ nature and therefore has no such tension: self-host simply has no billing.
 | " — DNS record lookups (verify TXT/CNAME)                | **miekg/dns**                                                                                             | Go lib  | De-facto Go DNS lib, very active.                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Bulk-sender: one-click List-Unsubscribe (RFC 8058)       | _no lib_ — set `List-Unsubscribe(-Post)` headers in the raw MIME + reuse the existing **JWT** unsub token | build   | ⚠️ Rides on the ADR 0010 send-path rework: today's `nikoksr/notify` stack can set **no** custom headers and go-mail is **not** yet a dep. The header + endpoint design (ADR 0012) is settled; it lands when the raw-MIME/DKIM send stack does.                                                                                                                                                                                                                  |
 | Complaint/bounce-rate metrics                            | _no lib_ — aggregate from `Event` rows in **Postgres**                                                    | build   | Source of truth already exists (`email.bounced`/complaint Events); no ClickHouse needed.                                                                                                                                                                                                                                                                                                                                                                        |
-| Billing / subscriptions / payments                       | **stripe/stripe-go**                                                                                      | Go SDK  | Official, active. SaaS-only.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Usage metering + entitlements/quota                      | **openmeterio/openmeter** (Go SDK, Stripe sync) or **getlago/lago**                                       | service | SaaS-only, and cleanly so: billing/quotas don't exist in self-host, so these separate services never touch the single-binary path — no tension.                                                                                                                                                                                                                                                                                                                 |
 | Double opt-in                                            | _no lib_ — confirmation email + signed token (JWT, with `exp`), existing send path                        | build   | ✅ Grilled (ADR 0013): positive Confirmation row + `marketing.confirmed` event, no subscribed flag. Ties to Contact import (provenance dedup) + GDPR tooling (purge unconfirmed).                                                                                                                                                                                                                                                                               |
 | AI/MCP surface — server                                  | **modelcontextprotocol/go-sdk** (official)                                                                | Go SDK  | Chosen. Official SDK, semver-stable 1.x (v1.6.x, Anthropic + Google), streamable-HTTP transport, JSON schema generated from Go structs via `jsonschema:` tags (fits the codegen ethos). Preferred over the community **mark3labs/mcp-go** (still 0.x, concentrated maintenance) for a long-lived open-core repo. Mount as a 4th surface next to the ogen servers; auth rides the existing scoped API-token model. Grill generated-vs-projected before adopting. |
 | AI/MCP — LLM provider (for inline intents / later panel) | **anthropics/anthropic-sdk-go**                                                                           | Go SDK  | Provider-agnostic behind an `Integration`-style abstraction; default to Claude (Opus/Sonnet 4.x). Not needed for the BYO-agent path (client hosts the model).                                                                                                                                                                                                                                                                                                   |

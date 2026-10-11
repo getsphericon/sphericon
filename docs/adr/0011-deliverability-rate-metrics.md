@@ -15,9 +15,8 @@ not the detector policy on top of it.
 
 A deliverability _number_ is useful to everyone — a self-hoster on their own domain needs it to
 avoid torching their own reputation — so the **rate computation lives in the AGPL core** and is
-shown on the workspace dashboard. It is a _deliverability_ signal, **not** a billing metric, so
-it does **not** enter the EE metering plane (which per ADR 0009 _billing-boundary_ carries only
-billing-grade Usage snapshots). What is EE is the **auto-suspension policy** — the numeric thresholds and the
+shown on the workspace dashboard. It is a _deliverability_ signal, **not** a usage metric, so
+it does **not** enter the Usage snapshot (ADR 0009 materializes only usage figures). What is EE is the **auto-suspension policy** — the numeric thresholds and the
 minimum-volume floor that turn a rate into a freeze decision (ADR 0007's detector). A
 self-hosted workspace with one tenant does not police itself, so that policy is SaaS-only.
 
@@ -97,7 +96,7 @@ policy, but it is only possible because core exposes the denominator, not just t
 
 ### Live query now; materialized rollup later
 
-Unlike ADR 0009 _billing-boundary_'s Usage snapshot (immutable, reproducible, tamper-evident),
+Unlike ADR 0009's Usage snapshot (immutable, reproducible, tamper-evident),
 this is a **disposable health monitor** — recent and cheap matters, immutability does not. That
 ADR's "no live re-scan of raw Events" rejection therefore **does not bind** here. v1 computes the rate
 by a **live windowed query over `events`** (plus an index like
@@ -122,8 +121,8 @@ semantic change. Deferred until product scale demands it.
 - **Per-event incremental rollup** (rejected for the eventual rollup): a hot counter row per
   (workspace, domain, day) contends under exactly the high-volume senders that matter — a
   periodic batch job avoids it.
-- **The metric in the EE metering plane** (rejected): it is a deliverability signal, not a
-  billing figure; self-hosters need it, so it is core.
+- **The metric in the Usage snapshot** (rejected): it is a deliverability signal, not a usage
+  figure; self-hosters need it, so it is core.
 
 ## Consequences
 

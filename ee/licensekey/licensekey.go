@@ -1,6 +1,6 @@
 // Package licensekey is the runtime EE license gate (ADR 0014, mechanism a): one binary
 // ships to everyone, and an Enterprise feature runs only when a valid offline license
-// key is present. It is unrelated to SaaS subscription billing (ADR 0009).
+// key is present. It is unrelated to the hosted offering (ADR 0014).
 //
 // A key is `<payload>.<signature>`, both base64url: the payload is JSON naming the
 // licensed features and an optional expiry, the signature is Ed25519 over the payload

@@ -67,4 +67,4 @@ adds the per-person path that ADR 0019's "evidentiary Events are never deleted" 
 - **Blocking re-creation** (Customer.io, Mailchimp): rejected, see above.
 - **Async regulations with status** (Segment): rejected until a real contact's volume demands it.
 - **Mutating Events only by hard delete** (no `email.*` anonymization): rejected, it would move
-  deliverability and billing numbers after every request.
+  deliverability and usage numbers after every request.

@@ -135,7 +135,7 @@ type Senders interface {
 }
 
 // Freezer is an extra reason a Workspace may not send right now, consulted after the
-// core suspension check (ADR 0007, 0009): the EE Billing hold plugs in here. It
+// core suspension check (ADR 0007, 0009): the Operator hold plugs in here. It
 // returns "" when the Workspace may send, otherwise a Hold* style reason.
 type Freezer interface {
 	Frozen(ctx context.Context, ws *ent.Workspace) (reason string, err error)
