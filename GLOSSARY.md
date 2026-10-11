@@ -210,7 +210,7 @@ _Avoid_: Send log, delivery row, email record
 **Outcome** (of an Outbound send):
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (Suppression,
 Unsubscribe, or missing Confirmation), or a permanent failure of that one message — or
-**per-source** and reversible: a **Hold** (Workspace suspension, Billing hold, an unverified
+**per-source** and reversible: a **Hold** (Workspace suspension, Operator hold, an unverified
 Sending domain, or no Integration) or a **Deferral** (the Integration's Send rate limit is spent),
 after which the same messages may still be sent.
 _Avoid_: Status, result (unqualified)
@@ -222,7 +222,7 @@ The provider reports its own ceiling where it can (SES) and an operator may set 
 the two applies (the operator's on a tie), and with neither the Integration is unlimited. Applies
 to Broadcast and Automation sends; Transactional sends are never delayed or deferred by it but
 still count against the 24-hour total.
-_Avoid_: Throttle (as a noun for the limit), quota (quota is enforcement of billing, not this)
+_Avoid_: Throttle (as a noun for the limit), quota
 
 **Deferral**:
 The reversible, per-source Outcome of an Outbound send that found its Integration's Send rate
@@ -406,9 +406,9 @@ the only reliable choke point). It records **attribution**: the actor that set i
 automated abuse detector — actor `system` — or a platform Operator) and a reason. The
 automated path only fires above a minimum send volume (a rate is noise at low volume),
 notifies the workspace owner, and is one-click reversible by an Operator. Suspension is the
-_reputation_ freeze; a Billing hold is a separate money-driven freeze on the same core send
-chokepoint — the two are independent reasons, never merged.
-_Avoid_: Ban, lockout, disable, quota (suspension is not a billing state — see Billing hold)
+_reputation_ freeze; an Operator hold is a separate freeze set from outside for another reason,
+on the same core send chokepoint — the two are independent reasons, never merged.
+_Avoid_: Ban, lockout, disable, quota (suspension is not an entitlement state — see Operator hold)
 
 **Operator console**:
 The Operator's own web surface (a fourth API surface beside `/site`, `/api`, `/collect`) for
@@ -494,54 +494,48 @@ the data plane, whose facts are already Events and Outbound messages. Readable b
 admin. An Enterprise concept, absent from a plain self-hosted install.
 _Avoid_: Event (that is a Contact/data-plane fact), activity, history, changelog
 
-### Metering & billing
+### Usage & holds
 
-sphericon's core _measures_ billable activity; it does not _price_ it. Metering (what happened,
-how much) is a domain concern; rating, plans, invoices, payment, and dunning are **not** — they
-live in an external billing plane and never enter the core glossary.
+The core _measures_ what each Workspace does and lets an Operator hold sending from outside; it
+keeps no allowance of its own. An external service reaches both through the Operator surface. A
+self-hosted install has no such service and none of this is visible to it.
 
-**Billing period** (metering):
+**Usage period**:
 The calendar month, in UTC, over which usage is measured and a Usage snapshot is closed. The same
-for every Workspace and owned by the core, not by the billing plane: the core closes a period
-before the plane invoices it, so no usage arrives after an invoice is final. Any proration of a
-part-month subscription is the plane's concern.
-_Avoid_: Billing cycle, subscription anniversary
+for every Workspace and owned by the core: the core closes a period before any reader treats its
+figures as final.
+_Avoid_: Cycle, anniversary period
 
-**Usage snapshot** (metering):
-A per-(Workspace, Billing period, metric) materialized aggregate of billable activity, finalized
-(made immutable) at period close — the billing-grade number a biller consumes. Distinct from the
-raw Events it is computed from, which stay the source of truth for audit and dispute. Two
-metrics, aggregated differently: `emails_sent` is a _sum_ of `email.sent` over all three send
-surfaces, one per recipient, in a single total (a suppressed or held message is never sent, so
-never counted); `contacts` is a **high-water-mark** (the peak reached during the period) of
-identified Contacts — those with an email Destination, erased Contacts excluded — never an
-instantaneous value, and never anonymous tracker Contacts. It materializes live Events for money
-the same way a Broadcast recipient's rollup materializes engagement — the Events are truth, the
-snapshot is the closed, reproducible figure. Carries no price.
-_Avoid_: Meter, counter, invoice line, quota (quota is enforcement, not measurement)
+**Usage snapshot**:
+A per-(Workspace, Usage period, metric) materialized aggregate of activity, finalized (made
+immutable) at period close. Distinct from the raw Events it is computed from, which stay the
+source of truth for audit and dispute. Two metrics, aggregated differently: `emails_sent` is a
+_sum_ of `email.sent` over all three send surfaces, one per recipient, in a single total (a
+suppressed or held message is never sent, so never counted); `contacts` is a **high-water-mark**
+(the peak reached during the period) of identified Contacts — those with an email Destination,
+erased Contacts excluded — never an instantaneous value, and never anonymous tracker Contacts. It
+materializes live Events the same way a Broadcast recipient's rollup materializes engagement —
+the Events are truth, the snapshot is the closed, reproducible figure.
+_Avoid_: Meter, counter, quota (quota is an allowance, not a measurement)
 
-**Live usage** (metering):
-The same per-(Workspace, metric) figures for the Billing period still open: not final, with the
+**Live usage**:
+The same per-(Workspace, metric) figures for the Usage period still open: not final, with the
 time it was last computed. Read from a worker or cache, never a recount on read, and counting
-sends still in flight. It is what lets the billing plane notice a limit being approached before
-the period closes; the Usage snapshot remains the only figure it invoices.
+sends still in flight. It is what lets a reader notice a limit being approached before the period
+closes; the Usage snapshot remains the only final figure.
 _Avoid_: Current usage, real-time usage
 
-**Billing hold**:
+**Operator hold**:
 A reversible Workspace state that **freezes all outbound sending** — all three send surfaces
-(Broadcast, Automation, Transactional), exactly like Workspace suspension — but for a _money_
-reason (non-payment, or a free plan's hard cap) rather than reputation. It is a **distinct cause
-on the same core chokepoint**, never a repurposing of suspension: the send path asks one question
-("may this Workspace send now?") answered by several independent freeze reasons, each stored
-separately. Messages are **held, not failed**: they wait and go out when the hold lifts. Two
-properties set it apart from suspension: the billing plane sets it only once dunning has ended
-(the core has no grace period of its own; during dunning nothing is frozen, so a tenant's
-password-reset mail is protected by the grace, not by message type), and it is cleared by
-**payment (self-service)**, whereas suspension is cleared by appeal. A paid plan exceeding its
-included volume is never held: overage is billed. The state and its lifecycle are an EE concept;
-only the freeze check lives in the core send path.
-_Avoid_: Suspension (that is the reputation freeze), quota, lockout, dunning (dunning is the
-grace period, not the hold)
+(Broadcast, Automation, Transactional), exactly like Workspace suspension — set by an Operator
+through the Operator surface for a reason other than reputation. Several can coexist: each is
+stored separately under its own key, with a reason shown to the Workspace Owner and an expiry the
+setter must renew, and each is cleared by its own setter or by its expiry. It is a **distinct
+cause on the same core chokepoint**, never a repurposing of suspension: the send path asks one
+question ("may this Workspace send now?") answered by several independent freeze reasons.
+Messages are **held, not failed**: they wait and go out when the hold lifts. Every change records
+the Operator that made it.
+_Avoid_: Suspension (that is the reputation freeze), ban, lockout
 
 ## Channels & future surfaces
 

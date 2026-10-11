@@ -73,7 +73,7 @@ func TestHoldDetailWordsEveryHold(t *testing.T) {
 	assert.Equal(t, "sending is suspended for this workspace", outbound.HoldDetail(outbound.HoldSuspended))
 	assert.Equal(t, "no default email provider configured", outbound.HoldDetail(outbound.HoldNoIntegration))
 	assert.Equal(t, "sender domain is not a verified sending domain", outbound.HoldDetail(outbound.HoldUnverifiedDomain))
-	assert.Equal(t, "sending is currently on hold for this workspace: billing", outbound.HoldDetail("billing"))
+	assert.Equal(t, "sending is currently on hold for this workspace: custom_reason", outbound.HoldDetail("custom_reason"))
 }
 
 func TestSendRejectsIncompleteRequests(t *testing.T) {
@@ -133,7 +133,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 
 	t.Run("freeze check fails", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		m := newModule(env, outbound.WithFreezers(&freezer{err: errors.New("billing api down")}))
+		m := newModule(env, outbound.WithFreezers(&freezer{err: errors.New("hold source down")}))
 		_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:freezeerr", "a@example.com"))
 		assert.ErrorContains(t, err, "freeze check")
 		assert.Empty(t, env.CustomerMail.Messages())
@@ -144,22 +144,22 @@ func TestFreezersHoldAfterTheCoreSuspensionCheck(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	open := &freezer{}
-	billing := &freezer{reason: "billing_overdue"}
-	m := newModule(env, outbound.WithFreezers(open), outbound.WithFreezers(billing))
+	held := &freezer{reason: "operator_hold"}
+	m := newModule(env, outbound.WithFreezers(open), outbound.WithFreezers(held))
 
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:frozen", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
-	assert.Equal(t, "billing_overdue", res.Reason)
+	assert.Equal(t, "operator_hold", res.Reason)
 	assert.Zero(t, res.MessageID, "a freeze hold records nothing")
 	assert.Empty(t, env.CustomerMail.Messages())
 	assert.Equal(t, 1, open.calls, "freezers run in registration order, across WithFreezers calls")
 
 	hold, err := m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "")
 	require.NoError(t, err)
-	assert.Equal(t, "billing_overdue", hold, "Preflight applies the same gate")
+	assert.Equal(t, "operator_hold", hold, "Preflight applies the same gate")
 
-	billing.reason = ""
+	held.reason = ""
 	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:frozen", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Sent, res.Outcome, "the same Request goes out once the freeze lifts")

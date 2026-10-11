@@ -21,11 +21,12 @@ conflated — conflating them is what produces a boundary that feels weak and ar
 ## Three mechanisms, kept separate
 
 - **(a) License-gated features** — code in `ee/`, unlocked by the runtime EE license key (the
-  offline key mechanism referenced in ADR 0009, distinct from SaaS subscription billing). Only
+  offline key mechanism, distinct from the hosted offering). Only
   org-shape features belong here.
 - **(b) Managed service** — the planned SaaS: managed hosting and deliverability-as-a-service
   (shared/warm sending domains, pooled/dedicated IP). Not a feature; a separate revenue line,
-  priced by usage in the external billing plane (ADR 0009). Never a `license key` gate.
+  run outside this repository and reaching the core only through the Operator surface
+  (ADR 0009). Never a `license key` gate.
 - **(c) Professional services** — done-for-you migration, deliverability setup, compliance
   documentation, support/SLA. Sold by people, bundled with enterprise or cloud contracts.
   **Never code-gated.**
@@ -94,8 +95,8 @@ where new EE features are _created_, not a migration target for core code.
   for a CDP+automation tool (cf. Dittofeed's self-host enterprise, packaged around multi-tenant
   auth, white-labeling, and embedded components). Including embedding in EE from the start is the
   deliberate choice here.
-- **Unify EE license key and SaaS subscription into one "entitlement"** (rejected, consistent
-  with ADR 0009): an offline runtime key and an external money contract have different lifecycles
+- **Unify the EE license key and the hosted offering into one "entitlement"** (rejected,
+  consistent with ADR 0009): an offline runtime key and an external contract have different lifecycles
   and failure modes.
 - **Gate the CDP core (advanced segmentation, identity resolution) behind EE** (rejected): that
   _is_ the product thesis; gating it contradicts "product value is free" and removes the reason to
@@ -112,8 +113,8 @@ where new EE features are _created_, not a migration target for core code.
   gate.
 - EE is scoped from day one beyond the default SSO/RBAC assumption: **white-label / multi-tenant
   / embedding** is a first-class EE surface, not a later add-on.
-- The three mechanisms stay architecturally separate: `ee/` behind the license key (a); the SaaS
-  billing plane (b, ADR 0009); services as contracts (c). No single "entitlement" abstraction
+- The three mechanisms stay architecturally separate: `ee/` behind the license key (a); the hosted
+  offering run outside this repository (b, ADR 0009); services as contracts (c). No single "entitlement" abstraction
   unifies them.
 - This ADR sets the _policy_; it does not enumerate every future EE feature. New candidates are
   tested against one question: **does a single company need this to send to its own audience?**

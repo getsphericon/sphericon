@@ -60,7 +60,7 @@ ingress. The edge may add its own limits on top.
   from `internal/clientip`, never from raw headers.
 - **Config, off at zero.** Every limit is configuration with a default and `0` disables it (tests,
   dev). Limits are not gated by the EE licence: brute-force protection belongs in core.
-- **Abuse protection only.** Plan quotas (events or contacts per month) belong to SaaS billing and
-  have a different data model. Out of scope here.
+- **Abuse protection only.** Per-period allowances (events or contacts per month) are not part of
+  this and have a different data model. Out of scope here.
 - Every rejection increments `ratelimit_rejected_total{policy}` and logs at warn, with no email in
   clear text.
