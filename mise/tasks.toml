@@ -317,6 +317,8 @@ depends = [
   "check:adr",
   "check:env",
   "check:helm",
+  "check:infra",
+  "check:shell",
 ]
 
 ["check:fe"]
@@ -409,6 +411,32 @@ for alert in $(sed -n 's/^ *- alert: *//p' "$chart/files/alerts.yaml"); do
   grep -q "^## $alert\$" docs/operations/runbook.md || { echo "error: no runbook section for $alert"; exit 1; }
 done
 '''
+
+["check:infra"]
+description = "Terraform (infra/): fmt --check and validate (init without the backend, so no credentials or network state are needed)"
+run = [
+  "terraform -chdir=infra fmt -check -diff -recursive",
+  "terraform -chdir=infra init -backend=false -input=false -lockfile=readonly",
+  "terraform -chdir=infra validate",
+]
+
+["check:shell"]
+description = "shellcheck the scripts under mise/scripts/"
+run = "shellcheck -x --source-path=SCRIPTDIR mise/scripts/*.sh"
+
+# --- hosted deployment (infra/, ADR 0028) ----------------------------------------
+
+[infra]
+description = "Terraform for the hosted deployment with credentials from the `aws login` session: mise run infra -- init|plan|apply|destroy|output ..."
+run = "mise/scripts/infra.sh"
+
+["infra:bootstrap"]
+description = "Once, idempotent: the S3 state bucket and the app secret (ENCRYPTION_KEY, JWT_SECRET, BOOTSTRAP_TOKEN; never rotated)"
+run = "mise/scripts/infra-bootstrap.sh"
+
+["infra:license"]
+description = "Store the optional EE LICENSE_KEY (read from stdin) in the app secret"
+run = "mise/scripts/infra-license.sh"
 
 ["check:security"]
 description = "Secrets and workflow linters"

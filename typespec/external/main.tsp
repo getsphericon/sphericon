@@ -32,7 +32,7 @@ using TypeSpec.Versioning;
 
 @service(#{ title: "Sphericon External API" })
 @info(#{ version: "1.0.0" })
-@server("https://api.getsphericon.com", "Production API")
+@server("https://api.getsphericon.app", "Production API")
 @server("http://localhost:3000/api", "Local development API")
 @useAuth(BearerAuth)
 @versioned(Versions)

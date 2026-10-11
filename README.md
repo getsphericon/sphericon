@@ -135,7 +135,7 @@ No Node.js, no Atlas CLI, and no extra runtime dependencies are needed.
 
 ### Docker image
 
-Published to **`ghcr.io/mokevnin/sphericon`** (multi-arch, linux amd64/arm64) on every release,
+Published to **`ghcr.io/getsphericon/sphericon`** (multi-arch, linux amd64/arm64) on every release,
 tagged with the version and `latest`.
 
 ```sh
@@ -145,7 +145,7 @@ docker run -p 3000:3000 \
   -e APP_URL="https://example.com" \
   -e JWT_SECRET="$(openssl rand -hex 32)" \
   -e AUTO_MIGRATE=true \
-  ghcr.io/mokevnin/sphericon:latest
+  ghcr.io/getsphericon/sphericon:latest
 ```
 
 To build from source instead, use the multi-stage `Dockerfile` (node build → Go build →
@@ -154,7 +154,7 @@ Alpine runtime): `docker build -t sphericon .`.
 ### Binary
 
 Release archives (`sphericon_<version>_<os>_<arch>.tar.gz`) are attached to each
-[GitHub Release](https://github.com/mokevnin/sphericon/releases) for linux and darwin
+[GitHub Release](https://github.com/getsphericon/sphericon/releases) for linux and darwin
 (amd64/arm64). To build locally:
 
 ```sh

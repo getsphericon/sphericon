@@ -266,7 +266,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
 **https://api.sphericon.localhost** — Caddy rewrites `/*` → `/api/*` to the same backend, so
 the subdomain root mirrors the binary's `/api` path (RudderStack-style edge; the binary
 stays path-based). In prod the ingress in front of the binary does the same rewrite for
-`api.getsphericon.com`. Daemons: `db`, `mailpit` (SMTP UI at :8025, SMTP :1025),
+`api.getsphericon.app`. Daemons: `db`, `mailpit` (SMTP UI at :8025, SMTP :1025),
 `backend` (real Go server under air on `:3300`, hot reload), `frontend` (Vite on `:5173`),
 `caddy` (:443). Inspect with `mise daemons ls|logs|status`. Migrations run via atlas
 (`mise run db:migrate`); the backend does not self-migrate. Dev defaults (JWT secret, dev

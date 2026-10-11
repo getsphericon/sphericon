@@ -855,6 +855,29 @@ url = "https://release.ariga.io/atlas/atlas-community-darwin-amd64-v1.3.0"
 checksum = "sha256:3e2e040fc1d9998d1b0a070c0482ff1745444b8e88f34e5f6945535d901a72c5"
 url = "https://release.ariga.io/atlas/atlas-community-windows-amd64-v1.3.0.exe"
 
+[[tools.aws-cli]]
+version = "2.37.12"
+backend = "aqua:aws/aws-cli"
+specifiers = ["latest"]
+
+[tools.aws-cli."platforms.linux-arm64"]
+url = "https://awscli.amazonaws.com/awscli-exe-linux-aarch64-2.37.12.zip"
+
+[tools.aws-cli."platforms.linux-arm64-musl"]
+url = "https://awscli.amazonaws.com/awscli-exe-linux-aarch64-2.37.12.zip"
+
+[tools.aws-cli."platforms.linux-x64"]
+url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.37.12.zip"
+
+[tools.aws-cli."platforms.linux-x64-musl"]
+url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.37.12.zip"
+
+[tools.aws-cli."platforms.macos-arm64"]
+url = "https://awscli.amazonaws.com/AWSCLIV2-2.37.12.pkg"
+
+[tools.aws-cli."platforms.macos-x64"]
+url = "https://awscli.amazonaws.com/AWSCLIV2-2.37.12.pkg"
+
 [[tools.caddy]]
 version = "2.11.7"
 backend = "aqua:caddyserver/caddy"
@@ -894,46 +917,6 @@ url_api = "https://api.github.com/repos/caddyserver/caddy/releases/assets/607244
 checksum = "sha256:0a1edc0b799512051c57071ce0e798d3f2cf67dc98171366f1d2b326072e3b06"
 url = "https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_windows_amd64.zip"
 url_api = "https://api.github.com/repos/caddyserver/caddy/releases/assets/607244987"
-
-[[tools.doctl]]
-version = "1.181.0"
-backend = "aqua:digitalocean/doctl"
-specifiers = ["latest"]
-
-[tools.doctl."platforms.linux-arm64"]
-checksum = "sha256:af258f3914f705408e5f46e0ca77f950b878818eb25a855b8fb6c28d61336925"
-url = "https://github.com/digitalocean/doctl/releases/download/v1.181.0/doctl-1.181.0-linux-arm64.tar.gz"
-url_api = "https://api.github.com/repos/digitalocean/doctl/releases/assets/625867685"
-
-[tools.doctl."platforms.linux-arm64-musl"]
-checksum = "sha256:af258f3914f705408e5f46e0ca77f950b878818eb25a855b8fb6c28d61336925"
-url = "https://github.com/digitalocean/doctl/releases/download/v1.181.0/doctl-1.181.0-linux-arm64.tar.gz"
-url_api = "https://api.github.com/repos/digitalocean/doctl/releases/assets/625867685"
-
-[tools.doctl."platforms.linux-x64"]
-checksum = "sha256:a6b25c8fb2e635f24bef1cf69732204a2e4f32b0efcdff03e310fe5ad9cae7c4"
-url = "https://github.com/digitalocean/doctl/releases/download/v1.181.0/doctl-1.181.0-linux-amd64.tar.gz"
-url_api = "https://api.github.com/repos/digitalocean/doctl/releases/assets/625867679"
-
-[tools.doctl."platforms.linux-x64-musl"]
-checksum = "sha256:a6b25c8fb2e635f24bef1cf69732204a2e4f32b0efcdff03e310fe5ad9cae7c4"
-url = "https://github.com/digitalocean/doctl/releases/download/v1.181.0/doctl-1.181.0-linux-amd64.tar.gz"
-url_api = "https://api.github.com/repos/digitalocean/doctl/releases/assets/625867679"
-
-[tools.doctl."platforms.macos-arm64"]
-checksum = "sha256:d6f53a011673fb0082d1adc17e9b0b751e9de5db33c08b08e6d3d172cdbb19d0"
-url = "https://github.com/digitalocean/doctl/releases/download/v1.181.0/doctl-1.181.0-darwin-arm64.tar.gz"
-url_api = "https://api.github.com/repos/digitalocean/doctl/releases/assets/625867690"
-
-[tools.doctl."platforms.macos-x64"]
-checksum = "sha256:6552ff7b544279d7567f12e43c1bd2fdf113f553efa9cbec5487421439eefb4c"
-url = "https://github.com/digitalocean/doctl/releases/download/v1.181.0/doctl-1.181.0-darwin-amd64.tar.gz"
-url_api = "https://api.github.com/repos/digitalocean/doctl/releases/assets/625867523"
-
-[tools.doctl."platforms.windows-x64"]
-checksum = "sha256:32ab215b1fa99846e944d33422233fe6d4b5daec8b5cdf0eae90f67efdfb98b1"
-url = "https://github.com/digitalocean/doctl/releases/download/v1.181.0/doctl-1.181.0-windows-amd64.zip"
-url_api = "https://api.github.com/repos/digitalocean/doctl/releases/assets/625867513"
 
 [[tools.gitleaks]]
 version = "8.30.1"
@@ -1168,6 +1151,53 @@ provenance = "github-attestations"
 checksum = "sha256:fd7be539cd3276d5178f85ef140c1bb52395b1ec1f59b1585050e1be3b0b194b"
 url = "https://github.com/jdx/jactionlint/releases/download/v1.8.2/jactionlint_1.8.2_windows_amd64.zip"
 url_api = "https://api.github.com/repos/jdx/jactionlint/releases/assets/611338616"
+provenance = "github-attestations"
+
+[[tools.jq]]
+version = "1.8.2"
+backend = "aqua:jqlang/jq"
+specifiers = ["latest"]
+
+[tools.jq."platforms.linux-arm64"]
+checksum = "sha256:8b85c817833814ddca00a144c33705546355afccf0cf39b188f3cdb48b852309"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-arm64"
+url_api = "https://api.github.com/repos/jqlang/jq/releases/assets/453012756"
+provenance = "github-attestations"
+
+[tools.jq."platforms.linux-arm64-musl"]
+checksum = "sha256:8b85c817833814ddca00a144c33705546355afccf0cf39b188f3cdb48b852309"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-arm64"
+url_api = "https://api.github.com/repos/jqlang/jq/releases/assets/453012756"
+provenance = "github-attestations"
+
+[tools.jq."platforms.linux-x64"]
+checksum = "sha256:b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-amd64"
+url_api = "https://api.github.com/repos/jqlang/jq/releases/assets/453012752"
+provenance = "github-attestations"
+
+[tools.jq."platforms.linux-x64-musl"]
+checksum = "sha256:b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-amd64"
+url_api = "https://api.github.com/repos/jqlang/jq/releases/assets/453012752"
+provenance = "github-attestations"
+
+[tools.jq."platforms.macos-arm64"]
+checksum = "sha256:2d75340ba57a4b4b4c8708a21c2dc8e958a48aaa8bba13b27f77f6e4c0eca07e"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-macos-arm64"
+url_api = "https://api.github.com/repos/jqlang/jq/releases/assets/453012783"
+provenance = "github-attestations"
+
+[tools.jq."platforms.macos-x64"]
+checksum = "sha256:e94b266e3c26690550006abe63152b782280f4e14374accdf04cbde844f00bc0"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-macos-amd64"
+url_api = "https://api.github.com/repos/jqlang/jq/releases/assets/453012782"
+provenance = "github-attestations"
+
+[tools.jq."platforms.windows-x64"]
+checksum = "sha256:a6fc67fedaf9128a3309a1e2ebb8b986aeccf70122ee46d2cb4849e423f0c627"
+url = "https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-windows-amd64.exe"
+url_api = "https://api.github.com/repos/jqlang/jq/releases/assets/453012788"
 provenance = "github-attestations"
 
 [[tools.kubeconform]]
@@ -1666,6 +1696,79 @@ conda_deps = [
     "liblzma-5.8.3-hfd05255_1",
     "ca-certificates-2026.7.22-h4c7d964_0",
 ]
+
+[[tools.shellcheck]]
+version = "0.11.0"
+backend = "aqua:koalaman/shellcheck"
+specifiers = ["latest"]
+
+[tools.shellcheck."platforms.linux-arm64"]
+checksum = "sha256:12b331c1d2db6b9eb13cfca64306b1b157a86eb69db83023e261eaa7e7c14588"
+url = "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.aarch64.tar.xz"
+url_api = "https://api.github.com/repos/koalaman/shellcheck/releases/assets/279056934"
+
+[tools.shellcheck."platforms.linux-arm64-musl"]
+checksum = "sha256:12b331c1d2db6b9eb13cfca64306b1b157a86eb69db83023e261eaa7e7c14588"
+url = "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.aarch64.tar.xz"
+url_api = "https://api.github.com/repos/koalaman/shellcheck/releases/assets/279056934"
+
+[tools.shellcheck."platforms.linux-x64"]
+checksum = "sha256:8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198"
+url = "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz"
+url_api = "https://api.github.com/repos/koalaman/shellcheck/releases/assets/279056942"
+
+[tools.shellcheck."platforms.linux-x64-musl"]
+checksum = "sha256:8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198"
+url = "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz"
+url_api = "https://api.github.com/repos/koalaman/shellcheck/releases/assets/279056942"
+
+[tools.shellcheck."platforms.macos-arm64"]
+checksum = "sha256:56affdd8de5527894dca6dc3d7e0a99a873b0f004d7aabc30ae407d3f48b0a79"
+url = "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.darwin.aarch64.tar.xz"
+url_api = "https://api.github.com/repos/koalaman/shellcheck/releases/assets/279056932"
+
+[tools.shellcheck."platforms.macos-x64"]
+checksum = "sha256:3c89db4edcab7cf1c27bff178882e0f6f27f7afdf54e859fa041fca10febe4c6"
+url = "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.darwin.x86_64.tar.xz"
+url_api = "https://api.github.com/repos/koalaman/shellcheck/releases/assets/279056930"
+
+[tools.shellcheck."platforms.windows-x64"]
+checksum = "sha256:8a4e35ab0b331c85d73567b12f2a444df187f483e5079ceffa6bda1faa2e740e"
+url = "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.zip"
+url_api = "https://api.github.com/repos/koalaman/shellcheck/releases/assets/279056944"
+
+[[tools.terraform]]
+version = "1.16.5"
+backend = "aqua:hashicorp/terraform"
+specifiers = ["latest"]
+
+[tools.terraform."platforms.linux-arm64"]
+checksum = "sha256:61a50b00485ee4810cf20581ef080fc54d34d666e175c58d9a10501c65c1ccde"
+url = "https://releases.hashicorp.com/terraform/1.16.5/terraform_1.16.5_linux_arm64.zip"
+
+[tools.terraform."platforms.linux-arm64-musl"]
+checksum = "sha256:61a50b00485ee4810cf20581ef080fc54d34d666e175c58d9a10501c65c1ccde"
+url = "https://releases.hashicorp.com/terraform/1.16.5/terraform_1.16.5_linux_arm64.zip"
+
+[tools.terraform."platforms.linux-x64"]
+checksum = "sha256:2bc2fcfff033265c9e02ca0351f01794eb122f62a9b2a49a3294b9e49eaab5e4"
+url = "https://releases.hashicorp.com/terraform/1.16.5/terraform_1.16.5_linux_amd64.zip"
+
+[tools.terraform."platforms.linux-x64-musl"]
+checksum = "sha256:2bc2fcfff033265c9e02ca0351f01794eb122f62a9b2a49a3294b9e49eaab5e4"
+url = "https://releases.hashicorp.com/terraform/1.16.5/terraform_1.16.5_linux_amd64.zip"
+
+[tools.terraform."platforms.macos-arm64"]
+checksum = "sha256:ecdef65e24193d627f27c39baeda31295f08c938d8a3d4764f442fb916d4b7dc"
+url = "https://releases.hashicorp.com/terraform/1.16.5/terraform_1.16.5_darwin_arm64.zip"
+
+[tools.terraform."platforms.macos-x64"]
+checksum = "sha256:9809158e481cf2d3a8433e59179f397b8edb5172397711bd98f6bb32edcaf53b"
+url = "https://releases.hashicorp.com/terraform/1.16.5/terraform_1.16.5_darwin_amd64.zip"
+
+[tools.terraform."platforms.windows-x64"]
+checksum = "sha256:01700102b7291f95c0ab61394b55bfd5f57a12ac65632c2c1958691c8cf438ef"
+url = "https://releases.hashicorp.com/terraform/1.16.5/terraform_1.16.5_windows_amd64.zip"
 
 [[tools.typos]]
 version = "1.51.1"

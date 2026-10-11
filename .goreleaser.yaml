@@ -44,7 +44,7 @@ checksum:
 # reusing the prebuilt binaries (Dockerfile.release just copies them in).
 dockers_v2:
   - images:
-      - ghcr.io/mokevnin/sphericon
+      - ghcr.io/getsphericon/sphericon
     tags:
       - '{{ .Version }}'
       - latest

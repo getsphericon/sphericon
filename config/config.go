@@ -67,7 +67,8 @@ type DBPool struct {
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
-	// PGXMaxConns must cover river's MaxWorkers sum plus LISTEN and runtime services.
+	// PGXMaxConns bounds river's own queries (fetch, completion, LISTEN, leader election); job
+	// workers use the database/sql pool, so it need not match river's MaxWorkers sum.
 	PGXMaxConns int32
 }
 

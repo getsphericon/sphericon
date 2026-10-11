@@ -43,6 +43,12 @@ local linters = new Mapping {
         glob = List("src/**/*.ts", "src/**/*.tsx")
         check = "ast-grep scan {{files}}"
     }
+    // Terraform under infra/: fmt and validate without the backend (mise run check:infra).
+    ["terraform"] {
+        glob = List("infra/**/*.tf")
+        check = "mise run check:infra"
+        exclusive = true
+    }
     // Maintained actionlint fork (replaces the rhysd/actionlint builtin).
     ["jactionlint"] {
         glob = List(".github/workflows/*.yml", ".github/workflows/*.yaml")

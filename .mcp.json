@@ -5,18 +5,6 @@
       "command": "npx",
       "args": ["-y", "@mantine/mcp-server"],
       "env": {}
-    },
-    "digitalocean-apps": {
-      "type": "http",
-      "url": "https://apps.mcp.digitalocean.com/mcp"
-    },
-    "digitalocean-databases": {
-      "type": "http",
-      "url": "https://databases.mcp.digitalocean.com/mcp"
-    },
-    "digitalocean-droplets": {
-      "type": "http",
-      "url": "https://droplets.mcp.digitalocean.com/mcp"
     }
   }
 }
