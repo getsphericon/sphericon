@@ -76,7 +76,11 @@ Decisions taken while building it, so the contract and code are not the only rec
   `POST /oauth/token`; the consent screen is the SPA route `/oauth/consent`, backed by
   `/site/oauth/authorization`. Public clients only, PKCE S256 required, no refresh token. A
   `resource` parameter (RFC 8707), when sent to authorize or token, must equal the `/mcp` resource
-  URL, otherwise `invalid_target`; an absent one is accepted. Unknown scopes are dropped;
+  URL, otherwise `invalid_target`; an absent one is accepted. The resource lives at
+  `${MCP_URL}/mcp` (`MCP_URL`, default `APP_URL`) so a deployment may give MCP its own host while
+  the issuer and consent screen stay on `APP_URL`: protected resource metadata names the MCP
+  resource and the `APP_URL` issuer, and the `WWW-Authenticate` challenge points at the metadata
+  on the MCP host. The binary is host-agnostic and serves discovery on every host. Unknown scopes are dropped;
   `tokens:*` is never grantable, so a connector cannot mint credentials.
 - **Consent role.** Approving consent mints a non-expiring workspace token, so it takes the role
   that may create one: owner or admin. Plain members are refused (403), and `/site` token creation

@@ -65,7 +65,7 @@ image_tag = "0.1.0" # the released version
 
 Optional: `image_repository` (default `ghcr.io/getsphericon/sphericon`), `otel_service_name`,
 `domain` (`getsphericon.app`, also the app host), `api_host_label` (`api`),
-`tracker_host_label` (`t`), `region`, `name`, `task_cpu`, `task_memory`, `db_instance_class`,
+`tracker_host_label` (`t`), `mcp_host_label` (`mcp`), `region`, `name`, `task_cpu`, `task_memory`, `db_instance_class`,
 `db_allocated_storage`, `db_max_open_conns`, `pgx_max_conns`, `mail_from_label` (`mail`),
 `system_email_from` (default `noreply@<domain>`), `dmarc_rua`. There are no secret variables.
 
@@ -121,6 +121,10 @@ https://$(mise run infra -- output -raw alb_dns_name)/readyz`.
 - [ ] Tracker host: `curl -sI https://t.getsphericon.app/t.js` returns `200` with a JavaScript
       content type; `curl -si -X POST https://t.getsphericon.app/collect/<path>` without a key
       returns `401` problem+json; `curl -si https://t.getsphericon.app/` returns `404`.
+- [ ] MCP host: `curl -i https://mcp.getsphericon.app/mcp` without a token returns `401` with a
+      `WWW-Authenticate` header pointing at the protected-resource metadata on the mcp host;
+      `curl -s https://mcp.getsphericon.app/.well-known/oauth-protected-resource/mcp` returns JSON;
+      any other path (`curl -si https://mcp.getsphericon.app/`) returns `404`.
 - [ ] Email: trigger a password reset (in the SES sandbox, to a verified address). The message
       arrives and its original headers show `dkim=pass`, `spf=pass`, `dmarc=pass`. The SES
       console (`us-east-2`) shows identity Verified, DKIM Successful, MAIL FROM Success.
@@ -168,6 +172,7 @@ and a password-reset email passing DKIM and SPF need the operator's account and 
   (`^/(.*)$` to `/api/$1`, `alb.tf`). `200` with HTML means the host fell through to the app rule;
   `404` problem+json means the rewrite did not apply (check the rule's transform in the console).
 - **The tracker host serves the SPA.** It must not: only `/t.js` and `/collect` have a rule.
+- **The MCP host serves the SPA.** It must not: only `/mcp` and `/.well-known/*` have a rule.
 - **Connection budget.** `db.t4g.micro` allows about 85-110 connections (read `SHOW
   max_connections`). Each process opens two pools, 10 + 10; old plus new task during a deploy is 40
   and the migrate task adds about 4 (goose and river's migrator, 1-2 connections each). Before a

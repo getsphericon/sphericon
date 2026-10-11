@@ -32,7 +32,7 @@ variable "otel_service_name" {
 }
 
 variable "domain" {
-  description = "Apex domain. The Route 53 zone is created for it; point the registrar's nameservers at it once (infra/README.md). The apex serves the web app and the site API; api.<domain> and t.<domain> serve the external API and the tracker."
+  description = "Apex domain. The Route 53 zone is created for it; point the registrar's nameservers at it once (infra/README.md). The apex serves the web app and the site API; api.<domain>, t.<domain> and mcp.<domain> serve the external API, the tracker and the MCP endpoint."
   type        = string
   default     = "getsphericon.app"
 }
@@ -47,6 +47,12 @@ variable "tracker_host_label" {
   description = "Label of the tracker host: <label>.<domain> serves /t.js and /collect/* only."
   type        = string
   default     = "t"
+}
+
+variable "mcp_host_label" {
+  description = "Label of the MCP host: <label>.<domain> serves /mcp and /.well-known/* only (the agent connector URL is https://<label>.<domain>/mcp)."
+  type        = string
+  default     = "mcp"
 }
 
 variable "app_port" {
