@@ -9,7 +9,7 @@ const apiItems = useSidebar({ spec, linkPrefix: '/api/' }).generateSidebarGroups
 export default defineConfig({
   title: 'sphericon',
   description: 'Open-core marketing automation you can run yourself',
-  base: '/sphericon/',
+  base: '/',
   cleanUrls: true,
   lastUpdated: true,
   // Internal working notes (agent setup, backlog, ADRs, research) are not part of the public site.

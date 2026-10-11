@@ -13,5 +13,5 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
-  {{- .Files.Get "files/alerts.yaml" | replace "https://mokevnin.github.io/sphericon/operations/runbook" .Values.metrics.prometheusRule.runbookUrl | nindent 2 }}
+  {{- .Files.Get "files/alerts.yaml" | replace "https://docs.getsphericon.app/operations/runbook" .Values.metrics.prometheusRule.runbookUrl | nindent 2 }}
 {{- end }}
