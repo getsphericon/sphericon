@@ -104,7 +104,7 @@
     "/auth/logout": {
       "post": {
         "operationId": "OperatorAuth_logout",
-        "description": "End the session on this browser: clears the session cookie.",
+        "description": "End the session: bumps the Operator's session epoch, so every session token of\nthe Operator (a copied one too) stops verifying, and clears the session cookie.",
         "parameters": [],
         "responses": {
           "204": {
@@ -118,10 +118,19 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
-        "tags": ["Operator Auth"],
-        "security": [{}]
+        "tags": ["Operator Auth"]
       }
     },
     "/auth/second-factor": {

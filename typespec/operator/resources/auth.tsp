@@ -93,16 +93,18 @@ namespace OperatorAuth {
     | UnauthorizedProblem
     | TooManyRequestsProblem;
 
-  /** End the session on this browser: clears the session cookie. */
-  @useAuth(NoAuth)
+  /** End the session: bumps the Operator's session epoch, so every session token of
+   * the Operator (a copied one too) stops verifying, and clears the session cookie. */
   @post
   @route("/logout")
-  op logout(): {
-    @statusCode statusCode: 204;
+  op logout():
+    | {
+        @statusCode statusCode: 204;
 
-    /** The expired session cookie */
-    @header("Set-Cookie") setCookie: string;
-  };
+        /** The expired session cookie */
+        @header("Set-Cookie") setCookie: string;
+      }
+    | UnauthorizedProblem;
 }
 
 @tag("Operator")

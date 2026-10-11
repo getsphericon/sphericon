@@ -5,6 +5,10 @@ type OperatorAuthLoginRes interface {
 	operatorAuthLoginRes()
 }
 
+type OperatorAuthLogoutRes interface {
+	operatorAuthLogoutRes()
+}
+
 type OperatorAuthSecondFactorRes interface {
 	operatorAuthSecondFactorRes()
 }

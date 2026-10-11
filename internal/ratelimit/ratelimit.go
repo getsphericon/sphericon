@@ -27,6 +27,7 @@ import (
 	"github.com/mokevnin/sphericon/config"
 	"github.com/mokevnin/sphericon/internal/clientip"
 	"github.com/mokevnin/sphericon/internal/logging"
+	"github.com/mokevnin/sphericon/internal/paths"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -331,7 +332,7 @@ func (l *Limiter) Middleware(next http.Handler) http.Handler {
 // loginPath is the two steps of a login on either surface, /site and /operator.
 func loginPath(path string) bool {
 	switch path {
-	case "/site/auth/login", "/site/auth/second-factor", "/operator/auth/login", "/operator/auth/second-factor":
+	case "/site/auth/login", "/site/auth/second-factor", paths.Operator + "/auth/login", paths.Operator + "/auth/second-factor":
 		return true
 	}
 	return false

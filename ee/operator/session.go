@@ -14,6 +14,7 @@ import (
 	"github.com/mokevnin/sphericon/ee/licensekey"
 	"github.com/mokevnin/sphericon/ent"
 	operatorapi "github.com/mokevnin/sphericon/gen/operator"
+	"github.com/mokevnin/sphericon/internal/paths"
 )
 
 // SessionCookie is the name of the cookie that carries an Operator session. It differs
@@ -25,7 +26,7 @@ const SessionCookie = "OPERATOR_JWT"
 const sessionIssuer = "sphericon-operator"
 
 // cookiePath confines the cookie to the Operator surface.
-const cookiePath = "/operator"
+const cookiePath = paths.Operator
 
 const (
 	claimOperatorID = "oid"

@@ -17,10 +17,11 @@ type Handler interface {
 	OperatorAuthLogin(ctx context.Context, req *OperatorLoginInput) (OperatorAuthLoginRes, error)
 	// OperatorAuthLogout implements OperatorAuth_logout operation.
 	//
-	// End the session on this browser: clears the session cookie.
+	// End the session: bumps the Operator's session epoch, so every session token of the Operator (a
+	// copied one too) stops verifying, and clears the session cookie.
 	//
 	// POST /auth/logout
-	OperatorAuthLogout(ctx context.Context) (*OperatorAuthLogoutNoContent, error)
+	OperatorAuthLogout(ctx context.Context) (OperatorAuthLogoutRes, error)
 	// OperatorAuthSecondFactor implements OperatorAuth_secondFactor operation.
 	//
 	// The second login step: verify the challenge and a TOTP code, then start the session (the cookie is

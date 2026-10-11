@@ -232,16 +232,60 @@ func TestAFirstLoginEnrolsATOTPAndOnlyTheConfirmingCodeStartsASession(t *testing
 	assert.False(t, next.Enrolment.Set)
 }
 
-func TestLogoutClearsTheCookie(t *testing.T) {
+func TestLogoutClearsTheCookieAndEndsTheSessionServerSide(t *testing.T) {
+	h := newHarness(t)
+	cookie := h.session(t, fixtures.OperatorEnrolledEmail, fixtures.OperatorEnrolledPassword, fixtures.OperatorEnrolledTotpSecret)
+	copied := cookie.Value
+
+	res, err := h.env.OperatorWithToken(t, cookie.Value).OperatorAuthLogout(t.Context())
+	require.NoError(t, err)
+
+	out, ok := res.(*operatorapi.OperatorAuthLogoutNoContent)
+	require.True(t, ok)
+	cleared := parseCookie(t, out.SetCookie)
+	assert.Equal(t, "OPERATOR_JWT", cleared.Name)
+	assert.Empty(t, cleared.Value)
+	assert.Negative(t, cleared.MaxAge)
+	requireProblem(t, h.me(t, copied), http.StatusUnauthorized)
+}
+
+func TestLogoutNeedsASession(t *testing.T) {
 	h := newHarness(t)
 
 	res, err := h.env.OperatorAnonymous(t).OperatorAuthLogout(t.Context())
 	require.NoError(t, err)
 
-	cleared := parseCookie(t, res.SetCookie)
-	assert.Equal(t, "OPERATOR_JWT", cleared.Name)
-	assert.Empty(t, cleared.Value)
-	assert.Negative(t, cleared.MaxAge)
+	requireProblem(t, res, http.StatusUnauthorized)
+}
+
+func TestARepeatedPasswordStepKeepsTheSamePendingSecret(t *testing.T) {
+	h := newHarness(t)
+
+	first := h.challenge(t, fixtures.OperatorFreshEmail, fixtures.OperatorFreshPassword)
+	second := h.challenge(t, fixtures.OperatorFreshEmail, fixtures.OperatorFreshPassword)
+
+	require.True(t, first.Enrolment.Set)
+	require.True(t, second.Enrolment.Set)
+	assert.Equal(t, first.Enrolment.Value.Secret, second.Enrolment.Value.Secret, "a second password login cannot swap the secret")
+	assert.Equal(t, first.Enrolment.Value.URI, second.Enrolment.Value.URI)
+
+	secret := first.Enrolment.Value.Secret
+	_, ok := h.secondStep(t, first.Challenge, h.code(t, secret)).(*operatorapi.OperatorResourceHeaders)
+	assert.True(t, ok, "the first challenge still confirms the secret the Operator enrolled")
+}
+
+func TestARepeatedPasswordStepLeavesAConfirmedOperatorUntouched(t *testing.T) {
+	h := newHarness(t)
+	before := h.env.DB.Operator.GetX(t.Context(), fixtures.OperatorEnrolledID)
+
+	res := h.challenge(t, fixtures.OperatorEnrolledEmail, fixtures.OperatorEnrolledPassword)
+	h.challenge(t, fixtures.OperatorEnrolledEmail, fixtures.OperatorEnrolledPassword)
+
+	assert.False(t, res.Enrolment.Set)
+	after := h.env.DB.Operator.GetX(t.Context(), fixtures.OperatorEnrolledID)
+	assert.Equal(t, before.TotpSecretEncrypted, after.TotpSecretEncrypted)
+	assert.Equal(t, before.TotpConfirmedAt, after.TotpConfirmedAt)
+	assert.Equal(t, before.SessionEpoch, after.SessionEpoch)
 }
 
 func TestAUserSessionNeverOpensTheOperatorSurface(t *testing.T) {

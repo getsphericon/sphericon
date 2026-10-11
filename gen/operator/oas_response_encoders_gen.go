@@ -108,27 +108,45 @@ func encodeOperatorAuthLoginResponse(response OperatorAuthLoginRes, w http.Respo
 	}
 }
 
-func encodeOperatorAuthLogoutResponse(response *OperatorAuthLogoutNoContent, w http.ResponseWriter, span trace.Span) error {
-	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
-	// Encoding response headers.
-	{
-		h := uri.NewHeaderEncoder(w.Header())
-		// Encode "Set-Cookie" header.
+func encodeOperatorAuthLogoutResponse(response OperatorAuthLogoutRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *OperatorAuthLogoutNoContent:
+		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+		// Encoding response headers.
 		{
-			cfg := uri.HeaderParameterEncodingConfig{
-				Name:    "Set-Cookie",
-				Explode: false,
-			}
-			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-				return e.EncodeValue(conv.StringToString(response.SetCookie))
-			}); err != nil {
-				return errors.Wrap(err, "encode Set-Cookie header")
+			h := uri.NewHeaderEncoder(w.Header())
+			// Encode "Set-Cookie" header.
+			{
+				cfg := uri.HeaderParameterEncodingConfig{
+					Name:    "Set-Cookie",
+					Explode: false,
+				}
+				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+					return e.EncodeValue(conv.StringToString(response.SetCookie))
+				}); err != nil {
+					return errors.Wrap(err, "encode Set-Cookie header")
+				}
 			}
 		}
-	}
-	w.WriteHeader(204)
+		w.WriteHeader(204)
 
-	return nil
+		return nil
+
+	case *ProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(401)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
 }
 
 func encodeOperatorAuthSecondFactorResponse(response OperatorAuthSecondFactorRes, w http.ResponseWriter, span trace.Span) error {

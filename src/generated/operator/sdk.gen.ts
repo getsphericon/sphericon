@@ -5,7 +5,7 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { OperatorAuthLoginData, OperatorAuthLoginErrors, OperatorAuthLoginResponses, OperatorAuthLogoutData, OperatorAuthLogoutResponses, OperatorAuthSecondFactorData, OperatorAuthSecondFactorErrors, OperatorAuthSecondFactorResponses, OperatorMeGetData, OperatorMeGetErrors, OperatorMeGetResponses, OperatorWorkspaceAuditListData, OperatorWorkspaceAuditListErrors, OperatorWorkspaceAuditListResponses, OperatorWorkspacesGetData, OperatorWorkspacesGetErrors, OperatorWorkspacesGetResponses, OperatorWorkspacesListData, OperatorWorkspacesListErrors, OperatorWorkspacesListResponses, OperatorWorkspacesSuspendData, OperatorWorkspacesSuspendErrors, OperatorWorkspacesSuspendResponses, OperatorWorkspacesUnsuspendData, OperatorWorkspacesUnsuspendErrors, OperatorWorkspacesUnsuspendResponses } from './types.gen.ts';
+import type { OperatorAuthLoginData, OperatorAuthLoginErrors, OperatorAuthLoginResponses, OperatorAuthLogoutData, OperatorAuthLogoutErrors, OperatorAuthLogoutResponses, OperatorAuthSecondFactorData, OperatorAuthSecondFactorErrors, OperatorAuthSecondFactorResponses, OperatorMeGetData, OperatorMeGetErrors, OperatorMeGetResponses, OperatorWorkspaceAuditListData, OperatorWorkspaceAuditListErrors, OperatorWorkspaceAuditListResponses, OperatorWorkspacesGetData, OperatorWorkspacesGetErrors, OperatorWorkspacesGetResponses, OperatorWorkspacesListData, OperatorWorkspacesListErrors, OperatorWorkspacesListResponses, OperatorWorkspacesSuspendData, OperatorWorkspacesSuspendErrors, OperatorWorkspacesSuspendResponses, OperatorWorkspacesUnsuspendData, OperatorWorkspacesUnsuspendErrors, OperatorWorkspacesUnsuspendResponses } from './types.gen.ts';
 import { zOperatorAuthLoginBody, zOperatorAuthSecondFactorBody, zOperatorWorkspaceAuditListPath, zOperatorWorkspaceAuditListQuery, zOperatorWorkspacesGetPath, zOperatorWorkspacesListQuery, zOperatorWorkspacesSuspendBody, zOperatorWorkspacesSuspendPath, zOperatorWorkspacesUnsuspendPath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
@@ -41,14 +41,20 @@ export const operatorAuthLogin = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
- * End the session on this browser: clears the session cookie.
+ * End the session: bumps the Operator's session epoch, so every session token of
+ * the Operator (a copied one too) stops verifying, and clears the session cookie.
  */
-export const operatorAuthLogout = <ThrowOnError extends boolean = false>(options?: Options<OperatorAuthLogoutData, ThrowOnError>): RequestResult<OperatorAuthLogoutResponses, unknown, ThrowOnError> => (options?.client ?? client).post<OperatorAuthLogoutResponses, unknown, ThrowOnError>({
+export const operatorAuthLogout = <ThrowOnError extends boolean = false>(options?: Options<OperatorAuthLogoutData, ThrowOnError>): RequestResult<OperatorAuthLogoutResponses, OperatorAuthLogoutErrors, ThrowOnError> => (options?.client ?? client).post<OperatorAuthLogoutResponses, OperatorAuthLogoutErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
     body: z.never().optional(),
     path: z.never().optional(),
     query: z.never().optional()
   }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'OPERATOR_JWT',
+      type: 'apiKey'
+    }],
   url: '/auth/logout',
   ...options
 });

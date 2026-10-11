@@ -4,8 +4,13 @@
 // its own session cookie and JWT secret, and the /operator API surface.
 //
 // An Operator belongs to no Workspace, so this package works on the raw *ent.Client
-// (it is in AGENTS.md's closed list). Every entry point checks the `operator` license
-// feature, so an unlicensed instance has no Operator concept at all.
+// (it is in AGENTS.md's closed list): the Operator table, and the Workspace rows, the
+// suspension state and the rates the console shows, which are tenant metadata rather
+// than a Workspace's data. Two reads build a Workspace scope, each over the one
+// Workspace the Operator is looking at, because the module they ride takes one: the
+// Audit log (Module.AuditEntries) and the reputation rates (Module.WorkspaceDeliverability).
+// Every entry point checks the `operator` license feature, so an unlicensed instance
+// has no Operator concept at all.
 //
 // Governed by ee/LICENSE, not the AGPL.
 package operator
@@ -86,8 +91,9 @@ type Config struct {
 	// Clock is the clock of TOTP codes, challenges and session expiry; nil is time.Now.
 	Clock func() time.Time
 	// Attempts counts failed logins per address (ADR 0025), under the Operator's own
-	// kind so a User of the same address never shares a counter. Nil disables the
-	// throttle.
+	// kind so a User of the same address never shares a counter. It is required with
+	// the operator license (Validate): a missing counter would leave the login
+	// unthrottled.
 	Attempts *accounts.Attempts
 	// VolumeFloor is the fewest sends in the rate window (per Sending domain) for a
 	// rate to be defined (ADR 0026); zero is DefaultVolumeFloor.
@@ -105,6 +111,9 @@ func (c Config) Validate(siteSecret string) error {
 	}
 	if c.SessionTTL <= 0 {
 		return errors.New("OPERATOR_SESSION_TTL must be positive")
+	}
+	if c.Attempts == nil {
+		return errors.New("the Operator login needs its failed-attempt counter: a missing one would leave it unthrottled")
 	}
 	return nil
 }
@@ -176,33 +185,25 @@ func (m *Module) Create(ctx context.Context, email string) (password string, err
 	return password, err
 }
 
+// loginKind is the Kind under which an Operator's failed logins are counted.
+const loginKind = accounts.KindOperatorLogin
+
 // throttle refuses with a *ThrottledError while the address's delay runs.
 func (m *Module) throttle(ctx context.Context, email string) error {
-	if m.attempts == nil {
-		return nil
-	}
-	wait, err := m.attempts.Delay(ctx, accounts.KindOperatorLogin, email)
+	wait, err := m.attempts.Delay(ctx, loginKind, email)
 	if err != nil {
 		return err
 	}
 	if wait > 0 {
-		return &ThrottledError{Wait: wait, Limit: m.attempts.Limit(accounts.KindOperatorLogin), Now: m.attempts.Now()}
+		return &ThrottledError{Wait: wait, Limit: m.attempts.Limit(loginKind), Now: m.attempts.Now()}
 	}
 	return nil
 }
 
-func (m *Module) recordFailure(ctx context.Context, email string) error {
-	if m.attempts == nil {
-		return nil
-	}
-	return m.attempts.RecordFailure(ctx, accounts.KindOperatorLogin, email)
-}
-
-func (m *Module) recordSuccess(ctx context.Context, email string) error {
-	if m.attempts == nil {
-		return nil
-	}
-	return m.attempts.RecordSuccess(ctx, accounts.KindOperatorLogin, email)
+// failed counts a failure of the address's login and returns cause with any error of
+// the counting itself.
+func (m *Module) failed(ctx context.Context, email string, cause error) error {
+	return errors.Join(cause, m.attempts.RecordFailure(ctx, loginKind, email))
 }
 
 // CheckPassword is the first login step: it returns the Operator the credentials
@@ -223,13 +224,13 @@ func (m *Module) CheckPassword(ctx context.Context, email, password string) (*en
 	op, err := m.ent.Operator.Query().Where(entoperator.Email(email)).Only(ctx)
 	if ent.IsNotFound(err) {
 		credentials.VerifyPassword(decoyHash(), password)
-		return nil, errors.Join(ErrInvalidCredentials, m.recordFailure(ctx, email))
+		return nil, m.failed(ctx, email, ErrInvalidCredentials)
 	}
 	if err != nil {
 		return nil, err
 	}
 	if !credentials.VerifyPassword(op.PasswordHash, password) {
-		return nil, errors.Join(ErrInvalidCredentials, m.recordFailure(ctx, email))
+		return nil, m.failed(ctx, email, ErrInvalidCredentials)
 	}
 	return op, nil
 }
@@ -252,14 +253,17 @@ func Enrolled(op *ent.Operator) bool {
 // login, the secret to enrol.
 type Step struct {
 	Challenge string
-	// Enrolment is set when the Operator has no confirmed TOTP: a fresh pending
-	// secret, replacing an earlier pending one, which the first correct code confirms.
+	// Enrolment is set when the Operator has no confirmed TOTP: the pending secret,
+	// which the first correct code confirms. It is minted once and shown unchanged by
+	// every password step until confirmed, so a repeated password login can neither
+	// swap it nor invalidate the one being enrolled.
 	Enrolment *otpcode.Key
 }
 
 // StartSecondStep mints the challenge of an Operator that passed the password step.
-// An Operator without a confirmed TOTP gets a new pending secret first, so there is
-// never a path from the password alone to a session.
+// An Operator without a confirmed TOTP gets a pending secret first (the one already
+// pending when there is one), so there is never a path from the password alone to a
+// session.
 func (m *Module) StartSecondStep(ctx context.Context, op *ent.Operator) (*Step, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err
@@ -267,18 +271,7 @@ func (m *Module) StartSecondStep(ctx context.Context, op *ent.Operator) (*Step, 
 	var key *otpcode.Key
 	if !Enrolled(op) {
 		var err error
-		if key, err = otpcode.New(Issuer, op.Email); err != nil {
-			return nil, err
-		}
-		sealed, err := m.cipher.Encrypt([]byte(key.Secret))
-		if err != nil {
-			return nil, err
-		}
-		if op, err = m.ent.Operator.UpdateOneID(op.ID).
-			SetTotpSecretEncrypted(sealed).
-			ClearTotpConfirmedAt().
-			SetTotpLastStep(0).
-			Save(ctx); err != nil {
+		if key, op, err = m.pendingEnrolment(ctx, op); err != nil {
 			return nil, err
 		}
 	}
@@ -289,9 +282,45 @@ func (m *Module) StartSecondStep(ctx context.Context, op *ent.Operator) (*Step, 
 	return &Step{Challenge: challenge, Enrolment: key}, nil
 }
 
+// pendingEnrolment is the Operator's unconfirmed TOTP key, minted on first use. The
+// write is conditional on no secret being stored, so two password steps racing on a
+// fresh Operator agree on the winner's secret; the Operator is returned as stored.
+func (m *Module) pendingEnrolment(ctx context.Context, op *ent.Operator) (*otpcode.Key, *ent.Operator, error) {
+	if op.TotpSecretEncrypted == "" {
+		key, err := otpcode.New(Issuer, op.Email)
+		if err != nil {
+			return nil, nil, err
+		}
+		sealed, err := m.cipher.Encrypt([]byte(key.Secret))
+		if err != nil {
+			return nil, nil, err
+		}
+		n, err := m.ent.Operator.Update().
+			Where(entoperator.ID(op.ID), entoperator.Or(entoperator.TotpSecretEncryptedIsNil(), entoperator.TotpSecretEncrypted(""))).
+			SetTotpSecretEncrypted(sealed).
+			SetTotpLastStep(0).
+			Save(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		if op, err = m.ent.Operator.Get(ctx, op.ID); err != nil {
+			return nil, nil, err
+		}
+		if n == 1 {
+			return key, op, nil
+		}
+	}
+	raw, err := m.cipher.Decrypt(op.TotpSecretEncrypted)
+	if err != nil {
+		return nil, nil, err
+	}
+	key, err := otpcode.FromSecret(Issuer, op.Email, string(raw))
+	return key, op, err
+}
+
 // binding is the value a login challenge is keyed to: it changes on every accepted
-// code, session epoch bump, password change and new pending secret, which makes the
-// challenge single-use with no store of spent ones.
+// code, session epoch bump, password change and TOTP enrolment or reset, which makes
+// the challenge single-use with no store of spent ones.
 func binding(op *ent.Operator) string {
 	return fmt.Sprintf("%d|%d|%t|%s|%s", op.SessionEpoch, op.TotpLastStep, Enrolled(op), op.PasswordHash, op.TotpSecretEncrypted)
 }
@@ -340,14 +369,23 @@ func (m *Module) Complete(ctx context.Context, challenge, code string) (*ent.Ope
 		_ = tx.Rollback()
 		// A wrong code changes nothing, so rolling back loses nothing.
 		if errors.Is(err, ErrInvalidCode) {
-			err = errors.Join(err, m.recordFailure(ctx, email))
+			err = m.failed(ctx, email, err)
 		}
 		return nil, err
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	return op, m.recordSuccess(ctx, email)
+	return op, m.attempts.RecordSuccess(ctx, loginKind, email)
+}
+
+// EndSessions ends every session of the Operator by bumping its session epoch (and
+// kills any live login challenge): a token copied elsewhere stops verifying too.
+func (m *Module) EndSessions(ctx context.Context, id int64) error {
+	if err := m.licensed(); err != nil {
+		return err
+	}
+	return m.ent.Operator.UpdateOneID(id).AddSessionEpoch(1).Exec(ctx)
 }
 
 // ResetTOTP is the only way a lost TOTP is reset (`sphericon operator reset-totp`, no

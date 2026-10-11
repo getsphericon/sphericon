@@ -8,6 +8,7 @@ package otpcode
 import (
 	"bytes"
 	"crypto/subtle"
+	"encoding/base32"
 	"encoding/base64"
 	"image/png"
 	"strings"
@@ -35,8 +36,23 @@ type Key struct {
 
 // New generates a key for account under issuer.
 func New(issuer, account string) (*Key, error) {
+	return generate(issuer, account, nil)
+}
+
+// FromSecret rebuilds the Key of an existing base32 secret, so a pending enrolment can
+// be shown again unchanged.
+func FromSecret(issuer, account, secret string) (*Key, error) {
+	raw, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(strings.ToUpper(secret))
+	if err != nil {
+		return nil, err
+	}
+	return generate(issuer, account, raw)
+}
+
+// generate builds a Key over secret, or over a new random one when secret is nil.
+func generate(issuer, account string, secret []byte) (*Key, error) {
 	key, err := totp.Generate(totp.GenerateOpts{
-		Issuer: issuer, AccountName: account,
+		Issuer: issuer, AccountName: account, Secret: secret,
 		Period: period, Digits: validateOpts.Digits, Algorithm: validateOpts.Algorithm,
 	})
 	if err != nil {

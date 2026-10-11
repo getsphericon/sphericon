@@ -38,10 +38,11 @@ type Invoker interface {
 	OperatorAuthLogin(ctx context.Context, request *OperatorLoginInput) (OperatorAuthLoginRes, error)
 	// OperatorAuthLogout invokes OperatorAuth_logout operation.
 	//
-	// End the session on this browser: clears the session cookie.
+	// End the session: bumps the Operator's session epoch, so every session token of the Operator (a
+	// copied one too) stops verifying, and clears the session cookie.
 	//
 	// POST /auth/logout
-	OperatorAuthLogout(ctx context.Context) (*OperatorAuthLogoutNoContent, error)
+	OperatorAuthLogout(ctx context.Context) (OperatorAuthLogoutRes, error)
 	// OperatorAuthSecondFactor invokes OperatorAuth_secondFactor operation.
 	//
 	// The second login step: verify the challenge and a TOTP code, then start the session (the cookie is
@@ -218,15 +219,16 @@ func (c *Client) sendOperatorAuthLogin(ctx context.Context, request *OperatorLog
 
 // OperatorAuthLogout invokes OperatorAuth_logout operation.
 //
-// End the session on this browser: clears the session cookie.
+// End the session: bumps the Operator's session epoch, so every session token of the Operator (a
+// copied one too) stops verifying, and clears the session cookie.
 //
 // POST /auth/logout
-func (c *Client) OperatorAuthLogout(ctx context.Context) (*OperatorAuthLogoutNoContent, error) {
+func (c *Client) OperatorAuthLogout(ctx context.Context) (OperatorAuthLogoutRes, error) {
 	res, err := c.sendOperatorAuthLogout(ctx)
 	return res, err
 }
 
-func (c *Client) sendOperatorAuthLogout(ctx context.Context) (res *OperatorAuthLogoutNoContent, err error) {
+func (c *Client) sendOperatorAuthLogout(ctx context.Context) (res OperatorAuthLogoutRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("OperatorAuth_logout"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -271,6 +273,39 @@ func (c *Client) sendOperatorAuthLogout(ctx context.Context) (res *OperatorAuthL
 	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, OperatorAuthLogoutOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
 	}
 
 	stage = "SendRequest"

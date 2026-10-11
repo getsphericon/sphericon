@@ -179,7 +179,8 @@ func (s *Server) handleOperatorAuthLoginRequest(args [0]string, argsEscaped bool
 
 // handleOperatorAuthLogoutRequest handles OperatorAuth_logout operation.
 //
-// End the session on this browser: clears the session cookie.
+// End the session: bumps the Operator's session epoch, so every session token of the Operator (a
+// copied one too) stops verifying, and clears the session cookie.
 //
 // POST /auth/logout
 func (s *Server) handleOperatorAuthLogoutRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -247,12 +248,60 @@ func (s *Server) handleOperatorAuthLogoutRequest(args [0]string, argsEscaped boo
 
 			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
 		}
-		err error
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: OperatorAuthLogoutOperation,
+			ID:   "OperatorAuth_logout",
+		}
 	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, OperatorAuthLogoutOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
 
 	var rawBody []byte
 
-	var response *OperatorAuthLogoutNoContent
+	var response OperatorAuthLogoutRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -268,7 +317,7 @@ func (s *Server) handleOperatorAuthLogoutRequest(args [0]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *OperatorAuthLogoutNoContent
+			Response = OperatorAuthLogoutRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,

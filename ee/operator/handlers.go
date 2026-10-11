@@ -15,6 +15,7 @@ import (
 	"github.com/mokevnin/sphericon/internal/i18n"
 	"github.com/mokevnin/sphericon/internal/messaging"
 	"github.com/mokevnin/sphericon/internal/pagination"
+	"github.com/mokevnin/sphericon/internal/paths"
 	"github.com/mokevnin/sphericon/internal/ratelimit"
 )
 
@@ -34,7 +35,7 @@ func NewSurface(m *Module, s *Sessions, bus *events.Bus, sender messaging.EmailS
 // composition root owns (the RFC 7807 error handler).
 func (s *Surface) Server(opts ...operatorapi.ServerOption) (http.Handler, error) {
 	return operatorapi.NewServer(s.handlers, s.security,
-		append([]operatorapi.ServerOption{operatorapi.WithPathPrefix("/operator")}, opts...)...)
+		append([]operatorapi.ServerOption{operatorapi.WithPathPrefix(paths.Operator)}, opts...)...)
 }
 
 // Handlers implements operatorapi.Handler.
@@ -98,9 +99,12 @@ func (h *Handlers) OperatorAuthSecondFactor(ctx context.Context, req *operatorap
 	return &operatorapi.OperatorResourceHeaders{SetCookie: cookie.String(), Response: resource(op)}, nil
 }
 
-// OperatorAuthLogout ends the session on this browser by clearing its cookie. A token
-// copied elsewhere stays valid until it expires or the Operator's epoch is bumped.
-func (h *Handlers) OperatorAuthLogout(context.Context) (*operatorapi.OperatorAuthLogoutNoContent, error) {
+// OperatorAuthLogout ends the Operator's sessions server-side (the session epoch is
+// bumped, so a token copied elsewhere stops verifying too) and clears the cookie.
+func (h *Handlers) OperatorAuthLogout(ctx context.Context) (operatorapi.OperatorAuthLogoutRes, error) {
+	if err := h.module.EndSessions(ctx, Current(ctx).ID); err != nil {
+		return nil, err
+	}
 	return &operatorapi.OperatorAuthLogoutNoContent{SetCookie: h.sessions.Cleared().String()}, nil
 }
 
@@ -159,8 +163,8 @@ func (h *Handlers) OperatorWorkspacesList(ctx context.Context, params operatorap
 
 // OperatorWorkspacesGet is one Workspace's metadata and suspension state.
 func (h *Handlers) OperatorWorkspacesGet(ctx context.Context, params operatorapi.OperatorWorkspacesGetParams) (operatorapi.OperatorWorkspacesGetRes, error) {
-	id, err := strconv.ParseInt(string(params.WorkspaceId), 10, 64)
-	if err != nil {
+	id, ok := workspaceID(params.WorkspaceId)
+	if !ok {
 		return workspaceNotFound(), nil
 	}
 	w, err := h.module.GetWorkspace(ctx, id)
@@ -212,6 +216,13 @@ func rateResource(r Rate) operatorapi.OperatorRate {
 	return out
 }
 
+// workspaceID parses the path's Workspace id; false is a malformed one, which the
+// handlers answer as not found like an unknown id.
+func workspaceID(id operatorapi.EntityId) (int64, bool) {
+	n, err := strconv.ParseInt(string(id), 10, 64)
+	return n, err == nil
+}
+
 func workspaceNotFound() *operatorapi.OperatorWorkspacesGetNotFound {
 	p := operatorapi.OperatorWorkspacesGetNotFound(notFoundProblem())
 	return &p
@@ -232,8 +243,8 @@ func change(w *ent.Workspace, changed bool) *operatorapi.OperatorSuspensionChang
 // OperatorWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Operator, whose id the audit trail keeps while customers see "sphericon staff".
 func (h *Handlers) OperatorWorkspacesSuspend(ctx context.Context, req *operatorapi.OperatorSuspendInput, params operatorapi.OperatorWorkspacesSuspendParams) (operatorapi.OperatorWorkspacesSuspendRes, error) {
-	id, err := strconv.ParseInt(string(params.WorkspaceId), 10, 64)
-	if err != nil {
+	id, ok := workspaceID(params.WorkspaceId)
+	if !ok {
 		p := operatorapi.OperatorWorkspacesSuspendNotFound(notFoundProblem())
 		return &p, nil
 	}
@@ -258,8 +269,8 @@ func (h *Handlers) OperatorWorkspacesSuspend(ctx context.Context, req *operatora
 
 // OperatorWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Operator.
 func (h *Handlers) OperatorWorkspacesUnsuspend(ctx context.Context, params operatorapi.OperatorWorkspacesUnsuspendParams) (operatorapi.OperatorWorkspacesUnsuspendRes, error) {
-	id, err := strconv.ParseInt(string(params.WorkspaceId), 10, 64)
-	if err != nil {
+	id, ok := workspaceID(params.WorkspaceId)
+	if !ok {
 		p := operatorapi.OperatorWorkspacesUnsuspendNotFound(notFoundProblem())
 		return &p, nil
 	}

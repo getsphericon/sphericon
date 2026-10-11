@@ -392,6 +392,8 @@ func (s *OperatorAuthLogoutNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
 
+func (*OperatorAuthLogoutNoContent) operatorAuthLogoutRes() {}
+
 // A Workspace's deliverability over the trailing window: the rates of ADR 0011 per Sending domain, and
 // how much it sent. Counts only, never message content.
 // Ref: #/components/schemas/OperatorDeliverability
@@ -1840,6 +1842,7 @@ func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 }
 
 func (*ProblemDetails) operatorAuthLoginRes()        {}
+func (*ProblemDetails) operatorAuthLogoutRes()       {}
 func (*ProblemDetails) operatorAuthSecondFactorRes() {}
 func (*ProblemDetails) operatorMeGetRes()            {}
 func (*ProblemDetails) operatorWorkspacesListRes()   {}

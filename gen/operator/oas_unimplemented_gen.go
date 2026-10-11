@@ -25,10 +25,11 @@ func (UnimplementedHandler) OperatorAuthLogin(ctx context.Context, req *Operator
 
 // OperatorAuthLogout implements OperatorAuth_logout operation.
 //
-// End the session on this browser: clears the session cookie.
+// End the session: bumps the Operator's session epoch, so every session token of the Operator (a
+// copied one too) stops verifying, and clears the session cookie.
 //
 // POST /auth/logout
-func (UnimplementedHandler) OperatorAuthLogout(ctx context.Context) (r *OperatorAuthLogoutNoContent, _ error) {
+func (UnimplementedHandler) OperatorAuthLogout(ctx context.Context) (r OperatorAuthLogoutRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

@@ -25,6 +25,7 @@ import (
 	"github.com/mokevnin/sphericon/internal/clientip"
 	"github.com/mokevnin/sphericon/internal/logging"
 	"github.com/mokevnin/sphericon/internal/oauthserver"
+	"github.com/mokevnin/sphericon/internal/paths"
 	"github.com/mokevnin/sphericon/internal/ratelimit"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/oklog/ulid/v2"
@@ -134,7 +135,7 @@ func NewExternalAPI(client *ent.Client, deps apiexternal.Deps) (http.Handler, er
 }
 
 // operatorPrefix mounts the Operator surface (ADR 0026).
-const operatorPrefix = "/operator"
+const operatorPrefix = paths.Operator
 
 // OperatorSurface is the Enterprise Operator API (ee/operator), built into an ogen
 // server here so it renders errors like the other surfaces.

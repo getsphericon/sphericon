@@ -508,6 +508,15 @@ export type OperatorAuthLogoutData = {
   url: '/auth/logout';
 };
 
+export type OperatorAuthLogoutErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+};
+
+export type OperatorAuthLogoutError = OperatorAuthLogoutErrors[keyof OperatorAuthLogoutErrors];
+
 export type OperatorAuthLogoutResponses = {
   /**
    * There is no content to send for this request, but the headers may be useful.
