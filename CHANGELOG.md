@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.1](https://github.com/getsphericon/sphericon/compare/v0.1.0...v0.1.1) (2026-10-10)
+
+
+### Features
+
+* **infra:** host on AWS (ECS Fargate, RDS, Route 53, SES), supersede ADR 0028 ([48ad17b](https://github.com/getsphericon/sphericon/commit/48ad17b60977e0fed57459c312bef25c16bd0fe9))
+* **infra:** move the product to getsphericon.app, managed entirely by Terraform ([0c24e2c](https://github.com/getsphericon/sphericon/commit/0c24e2c3ace70242beda98b662d13f8d4d6d7ec4))
+
+
+### Bug Fixes
+
+* **release:** publish the image under the getsphericon organization ([b306731](https://github.com/getsphericon/sphericon/commit/b306731c35581b8427ea601fe4067a7a205234a7))
+
 ## 0.1.0 (2026-10-10)
 
 
