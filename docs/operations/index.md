@@ -14,6 +14,10 @@ after: sizing, backups, upgrades and monitoring.
 | [Security hardening](./security) | You are preparing for production or rotating secrets.              |
 | [Self-hosting](../self-hosting)  | You are installing, configuring or wiring health checks.           |
 
+::: tip
+Not keen on operating it? [Sphericon Cloud](/guide/cloud) runs, upgrades and backs up the same product for you.
+:::
+
 ## What you operate
 
 sphericon is one process (the Go binary or Docker image) plus **one PostgreSQL database**. There is

@@ -6,6 +6,9 @@ embedded. The only external dependency at runtime is **PostgreSQL** (the backgro
 and pub/sub both ride on Postgres — no Redis, no object storage, no separate worker).
 
 - **PostgreSQL:** 14+ recommended.
+
+> Would rather not run it? [Sphericon Cloud](/guide/cloud) is the hosted edition.
+
 - Outbound email via SMTP or any SES-compatible service (Amazon SES, Yandex Cloud Postbox and others).
 
 ## Configuration

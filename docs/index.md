@@ -2,32 +2,35 @@
 layout: home
 hero:
   name: sphericon
-  text: Marketing automation you can run yourself
-  tagline: Know your audience, talk to it at the right moment, and keep the data on your own infrastructure.
+  text: Documentation
+  tagline: Guides, operations and API reference for sphericon, the open-core marketing automation platform. Self-host it or use Sphericon Cloud.
   actions:
     - theme: brand
-      text: Self-host it
-      link: /self-hosting
-    - theme: alt
-      text: Operate it
-      link: /operations/
+      text: Quickstart
+      link: /guide/quickstart
     - theme: alt
       text: API reference
       link: /api/
     - theme: alt
-      text: GitHub
-      link: https://github.com/mokevnin/sphericon
+      text: Self-hosting
+      link: /self-hosting
 features:
-  - title: Know your contacts
-    details: One contact per person, identified by subject id, email or phone. Anonymous visitors are stitched to the contact once they identify themselves, with their earlier events.
-  - title: Segment by behavior
-    details: Group contacts by attributes, custom fields and what they did or did not do, with a live count of who matches.
-  - title: Send what fits the moment
-    details: One-off broadcasts, automated sequences triggered by behavior, and transactional messages, with open, click and unsubscribe tracking.
-  - title: Respect the opt-out
-    details: Unsubscribes, bounces and spam complaints are honored on every send path, so you never write to someone who asked you to stop.
-  - title: Your data, your server
-    details: A single binary or Docker image with PostgreSQL as the only dependency. No Redis, no separate worker, no lock-in.
+  - title: Guide
+    details: Contacts, tracking, segments, sending, consent and webhooks, from first broadcast to automation.
+    link: /guide/introduction
+  - title: API and MCP
+    details: The external REST API with a full reference, and an MCP server so agents can work in a workspace.
+    link: /api/
+  - title: Self-hosting and operations
+    details: One binary or image plus PostgreSQL. Configuration, backups, upgrades, monitoring and a runbook.
+    link: /operations/
+  - title: Sphericon Cloud
+    details: Skip the operations. The hosted edition runs the same product for you.
+    link: /guide/cloud
+  - title: Deliverability and consent
+    details: Unsubscribes, bounces and complaints are honored on every send path.
+    link: /guide/deliverability
   - title: Open core
     details: The core is AGPL-3.0. A small set of enterprise features is commercial and source-available.
+    link: https://github.com/mokevnin/sphericon
 ---

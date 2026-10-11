@@ -21,6 +21,7 @@ export default defineConfig({
       { text: 'API reference', link: '/api/' },
       { text: 'Self-hosting', link: '/self-hosting' },
       { text: 'Roadmap', link: '/ROADMAP' },
+      { text: 'Sphericon Cloud', link: 'https://getsphericon.app' },
     ],
     sidebar: {
       '/api/': [{ text: 'API reference', link: '/api/' }, ...apiItems],
@@ -39,6 +40,7 @@ export default defineConfig({
             { text: 'MCP for agents', link: '/guide/mcp' },
             { text: 'Answering a GDPR request', link: '/guide/gdpr' },
             { text: 'Self-hosting', link: '/self-hosting' },
+            { text: 'Sphericon Cloud', link: '/guide/cloud' },
           ],
         },
         {
