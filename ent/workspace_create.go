@@ -167,16 +167,30 @@ func (_c *WorkspaceCreate) SetNillableSuspendedAt(v *time.Time) *WorkspaceCreate
 	return _c
 }
 
-// SetSuspendedBy sets the "suspended_by" field.
-func (_c *WorkspaceCreate) SetSuspendedBy(v string) *WorkspaceCreate {
-	_c.mutation.SetSuspendedBy(v)
+// SetSuspendedByKind sets the "suspended_by_kind" field.
+func (_c *WorkspaceCreate) SetSuspendedByKind(v workspace.SuspendedByKind) *WorkspaceCreate {
+	_c.mutation.SetSuspendedByKind(v)
 	return _c
 }
 
-// SetNillableSuspendedBy sets the "suspended_by" field if the given value is not nil.
-func (_c *WorkspaceCreate) SetNillableSuspendedBy(v *string) *WorkspaceCreate {
+// SetNillableSuspendedByKind sets the "suspended_by_kind" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableSuspendedByKind(v *workspace.SuspendedByKind) *WorkspaceCreate {
 	if v != nil {
-		_c.SetSuspendedBy(*v)
+		_c.SetSuspendedByKind(*v)
+	}
+	return _c
+}
+
+// SetSuspendedByID sets the "suspended_by_id" field.
+func (_c *WorkspaceCreate) SetSuspendedByID(v string) *WorkspaceCreate {
+	_c.mutation.SetSuspendedByID(v)
+	return _c
+}
+
+// SetNillableSuspendedByID sets the "suspended_by_id" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableSuspendedByID(v *string) *WorkspaceCreate {
+	if v != nil {
+		_c.SetSuspendedByID(*v)
 	}
 	return _c
 }
@@ -647,6 +661,11 @@ func (_c *WorkspaceCreate) check() error {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.SuspendedByKind(); ok {
+		if err := workspace.SuspendedByKindValidator(v); err != nil {
+			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -724,9 +743,13 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
 		_node.SuspendedAt = &value
 	}
-	if value, ok := _c.mutation.SuspendedBy(); ok {
-		_spec.SetField(workspace.FieldSuspendedBy, field.TypeString, value)
-		_node.SuspendedBy = &value
+	if value, ok := _c.mutation.SuspendedByKind(); ok {
+		_spec.SetField(workspace.FieldSuspendedByKind, field.TypeEnum, value)
+		_node.SuspendedByKind = &value
+	}
+	if value, ok := _c.mutation.SuspendedByID(); ok {
+		_spec.SetField(workspace.FieldSuspendedByID, field.TypeString, value)
+		_node.SuspendedByID = &value
 	}
 	if value, ok := _c.mutation.SuspensionReason(); ok {
 		_spec.SetField(workspace.FieldSuspensionReason, field.TypeString, value)
@@ -1302,21 +1325,39 @@ func (u *WorkspaceUpsert) ClearSuspendedAt() *WorkspaceUpsert {
 	return u
 }
 
-// SetSuspendedBy sets the "suspended_by" field.
-func (u *WorkspaceUpsert) SetSuspendedBy(v string) *WorkspaceUpsert {
-	u.Set(workspace.FieldSuspendedBy, v)
+// SetSuspendedByKind sets the "suspended_by_kind" field.
+func (u *WorkspaceUpsert) SetSuspendedByKind(v workspace.SuspendedByKind) *WorkspaceUpsert {
+	u.Set(workspace.FieldSuspendedByKind, v)
 	return u
 }
 
-// UpdateSuspendedBy sets the "suspended_by" field to the value that was provided on create.
-func (u *WorkspaceUpsert) UpdateSuspendedBy() *WorkspaceUpsert {
-	u.SetExcluded(workspace.FieldSuspendedBy)
+// UpdateSuspendedByKind sets the "suspended_by_kind" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateSuspendedByKind() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldSuspendedByKind)
 	return u
 }
 
-// ClearSuspendedBy clears the value of the "suspended_by" field.
-func (u *WorkspaceUpsert) ClearSuspendedBy() *WorkspaceUpsert {
-	u.SetNull(workspace.FieldSuspendedBy)
+// ClearSuspendedByKind clears the value of the "suspended_by_kind" field.
+func (u *WorkspaceUpsert) ClearSuspendedByKind() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldSuspendedByKind)
+	return u
+}
+
+// SetSuspendedByID sets the "suspended_by_id" field.
+func (u *WorkspaceUpsert) SetSuspendedByID(v string) *WorkspaceUpsert {
+	u.Set(workspace.FieldSuspendedByID, v)
+	return u
+}
+
+// UpdateSuspendedByID sets the "suspended_by_id" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateSuspendedByID() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldSuspendedByID)
+	return u
+}
+
+// ClearSuspendedByID clears the value of the "suspended_by_id" field.
+func (u *WorkspaceUpsert) ClearSuspendedByID() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldSuspendedByID)
 	return u
 }
 
@@ -1564,24 +1605,45 @@ func (u *WorkspaceUpsertOne) ClearSuspendedAt() *WorkspaceUpsertOne {
 	})
 }
 
-// SetSuspendedBy sets the "suspended_by" field.
-func (u *WorkspaceUpsertOne) SetSuspendedBy(v string) *WorkspaceUpsertOne {
+// SetSuspendedByKind sets the "suspended_by_kind" field.
+func (u *WorkspaceUpsertOne) SetSuspendedByKind(v workspace.SuspendedByKind) *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSuspendedBy(v)
+		s.SetSuspendedByKind(v)
 	})
 }
 
-// UpdateSuspendedBy sets the "suspended_by" field to the value that was provided on create.
-func (u *WorkspaceUpsertOne) UpdateSuspendedBy() *WorkspaceUpsertOne {
+// UpdateSuspendedByKind sets the "suspended_by_kind" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateSuspendedByKind() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSuspendedBy()
+		s.UpdateSuspendedByKind()
 	})
 }
 
-// ClearSuspendedBy clears the value of the "suspended_by" field.
-func (u *WorkspaceUpsertOne) ClearSuspendedBy() *WorkspaceUpsertOne {
+// ClearSuspendedByKind clears the value of the "suspended_by_kind" field.
+func (u *WorkspaceUpsertOne) ClearSuspendedByKind() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearSuspendedBy()
+		s.ClearSuspendedByKind()
+	})
+}
+
+// SetSuspendedByID sets the "suspended_by_id" field.
+func (u *WorkspaceUpsertOne) SetSuspendedByID(v string) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetSuspendedByID(v)
+	})
+}
+
+// UpdateSuspendedByID sets the "suspended_by_id" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateSuspendedByID() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateSuspendedByID()
+	})
+}
+
+// ClearSuspendedByID clears the value of the "suspended_by_id" field.
+func (u *WorkspaceUpsertOne) ClearSuspendedByID() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearSuspendedByID()
 	})
 }
 
@@ -1998,24 +2060,45 @@ func (u *WorkspaceUpsertBulk) ClearSuspendedAt() *WorkspaceUpsertBulk {
 	})
 }
 
-// SetSuspendedBy sets the "suspended_by" field.
-func (u *WorkspaceUpsertBulk) SetSuspendedBy(v string) *WorkspaceUpsertBulk {
+// SetSuspendedByKind sets the "suspended_by_kind" field.
+func (u *WorkspaceUpsertBulk) SetSuspendedByKind(v workspace.SuspendedByKind) *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSuspendedBy(v)
+		s.SetSuspendedByKind(v)
 	})
 }
 
-// UpdateSuspendedBy sets the "suspended_by" field to the value that was provided on create.
-func (u *WorkspaceUpsertBulk) UpdateSuspendedBy() *WorkspaceUpsertBulk {
+// UpdateSuspendedByKind sets the "suspended_by_kind" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateSuspendedByKind() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSuspendedBy()
+		s.UpdateSuspendedByKind()
 	})
 }
 
-// ClearSuspendedBy clears the value of the "suspended_by" field.
-func (u *WorkspaceUpsertBulk) ClearSuspendedBy() *WorkspaceUpsertBulk {
+// ClearSuspendedByKind clears the value of the "suspended_by_kind" field.
+func (u *WorkspaceUpsertBulk) ClearSuspendedByKind() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearSuspendedBy()
+		s.ClearSuspendedByKind()
+	})
+}
+
+// SetSuspendedByID sets the "suspended_by_id" field.
+func (u *WorkspaceUpsertBulk) SetSuspendedByID(v string) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetSuspendedByID(v)
+	})
+}
+
+// UpdateSuspendedByID sets the "suspended_by_id" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateSuspendedByID() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateSuspendedByID()
+	})
+}
+
+// ClearSuspendedByID clears the value of the "suspended_by_id" field.
+func (u *WorkspaceUpsertBulk) ClearSuspendedByID() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearSuspendedByID()
 	})
 }
 

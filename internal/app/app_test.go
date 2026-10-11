@@ -26,6 +26,7 @@ import (
 	"github.com/mokevnin/sphericon/internal/jobs"
 	"github.com/mokevnin/sphericon/internal/messaging"
 	"github.com/mokevnin/sphericon/internal/messaging/registry"
+	"github.com/mokevnin/sphericon/internal/suspension"
 	"github.com/mokevnin/sphericon/internal/testhelper"
 	"github.com/mokevnin/sphericon/internal/tracking"
 )
@@ -298,28 +299,29 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 		return client.Workspace.Query().Where(workspace.Slug("app-suspend-test")).OnlyX(ctx)
 	}
 
-	changed, err := a.SuspendWorkspace(ctx, "app-suspend-test", "operator", "complaint rate")
+	changed, err := a.SuspendWorkspace(ctx, "app-suspend-test", suspension.Operator("op-42"), "complaint rate")
 	require.NoError(t, err)
 	assert.True(t, changed)
 	ws := state()
 	require.NotNil(t, ws.SuspendedAt)
-	assert.Equal(t, "operator", *ws.SuspendedBy)
+	assert.Equal(t, workspace.SuspendedByKindOperator, *ws.SuspendedByKind)
+	assert.Equal(t, "op-42", *ws.SuspendedByID)
 	assert.Equal(t, "complaint rate", *ws.SuspensionReason)
 	assert.Len(t, sink.recipients(), 1, "the owner is told")
 	assert.Contains(t, sink.recipients()[0], "owner@app-suspend.test")
 
-	changed, err = a.SuspendWorkspace(ctx, "app-suspend-test", "operator", "again")
+	changed, err = a.SuspendWorkspace(ctx, "app-suspend-test", suspension.CLI, "again")
 	require.NoError(t, err)
 	assert.False(t, changed, "already suspended: nothing changes")
 	assert.Len(t, sink.recipients(), 1, "and the owner is not told twice")
 	assert.Equal(t, "complaint rate", *state().SuspensionReason)
 
-	changed, err = a.UnsuspendWorkspace(ctx, "app-suspend-test")
+	changed, err = a.UnsuspendWorkspace(ctx, "app-suspend-test", suspension.CLI)
 	require.NoError(t, err)
 	assert.True(t, changed)
 	assert.Nil(t, state().SuspendedAt)
 
-	changed, err = a.UnsuspendWorkspace(ctx, "app-suspend-test")
+	changed, err = a.UnsuspendWorkspace(ctx, "app-suspend-test", suspension.CLI)
 	require.NoError(t, err)
 	assert.False(t, changed)
 }
@@ -339,7 +341,7 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 	ownedWorkspace(t, a, "app-suspend-fail-test", "owner@app-suspend-fail.test")
 	ctx := context.Background()
 
-	changed, err := a.SuspendWorkspace(ctx, "app-suspend-fail-test", "operator", "abuse")
+	changed, err := a.SuspendWorkspace(ctx, "app-suspend-fail-test", suspension.CLI, "abuse")
 	assert.True(t, changed)
 	assert.ErrorContains(t, err, "workspace suspended, but the owner notice could not be sent")
 
@@ -355,15 +357,15 @@ func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ctx := context.Background()
 
-	_, err = a.SuspendWorkspace(ctx, "no-such-workspace", "operator", "why")
+	_, err = a.SuspendWorkspace(ctx, "no-such-workspace", suspension.CLI, "why")
 	assert.ErrorContains(t, err, `workspace "no-such-workspace"`)
-	_, err = a.UnsuspendWorkspace(ctx, "no-such-workspace")
+	_, err = a.UnsuspendWorkspace(ctx, "no-such-workspace", suspension.CLI)
 	assert.ErrorContains(t, err, `workspace "no-such-workspace"`)
 
 	ownedWorkspace(t, a, "app-suspend-input-test", "owner@app-suspend-input.test")
-	changed, err := a.SuspendWorkspace(ctx, "app-suspend-input-test", "", "reason")
+	changed, err := a.SuspendWorkspace(ctx, "app-suspend-input-test", suspension.Actor{}, "reason")
 	assert.False(t, changed)
-	assert.ErrorContains(t, err, "an actor and a reason are required")
+	assert.ErrorContains(t, err, "an actor is required")
 }
 
 // The operator command resets a fixture User's Second factor for real (this app

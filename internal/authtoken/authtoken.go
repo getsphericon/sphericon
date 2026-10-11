@@ -34,6 +34,10 @@ const (
 	// PurposeLoginChallenge is the challenge between the password step and the
 	// Second factor step of a login (ADR 0020).
 	PurposeLoginChallenge Purpose = "login_challenge"
+	// PurposeOperatorLoginChallenge is the same step for an Operator (ADR 0026). Its
+	// own purpose, and a signer on the Operator secret, keep it from ever verifying
+	// as a User's challenge: Operator and User ids share no space.
+	PurposeOperatorLoginChallenge Purpose = "operator_login_challenge"
 )
 
 // claims are the token's typed payload. The user id travels as a JSON string

@@ -1,4 +1,4 @@
-h1:w8D1eoMFTEBb4JIXI/WaGY1PRvj47OOPmWFphoWi30k=
+h1:7C2mhRSY6fJ/IWXNiQY5zTQ6kwqmAeooYWCLDLw1zsA=
 20260630101109_init.sql h1:Pgj3WXyEdlsbabERn8ue309EON5bAyWNV1X8O9IkKos=
 20260630175449_send_eligibility_model.sql h1:vEOs/vQyOdwj2FK2h5B0795pY2DVs3jbv3IpH5A/njw=
 20260630204007_transactional_email.sql h1:sotbb1MKWbZO2UzTf7TruRuFpMaXirns67+ithjM1Lc=
@@ -30,3 +30,5 @@ h1:w8D1eoMFTEBb4JIXI/WaGY1PRvj47OOPmWFphoWi30k=
 20261010171748_user_second_factor.sql h1:/HXHotxgBJPFCdRORYMwbTG8XrstHYJoHCyxohhkUsQ=
 20261010174942_workspace_second_factor_requirement.sql h1:nxicw/P0n8LOVThNgWoh8tG/o5y8bwuLUSqMoXEfZrk=
 20261010184219_membership_second_factor_reminded_at.sql h1:WCMAyBciqY08X9TCOdtR3mGAlJnmiVSTXnDxhe2AIn4=
+20261010205752_suspension_actor.sql h1:lI3yeDSsR7ydezLvXEGTOUA++rBrHXmNpah98SwDiFo=
+20261010210458_operator.sql h1:10pMdSkqtSyV6mu0E/VSkPRjy92mVWxRnlNuBK9/WHo=

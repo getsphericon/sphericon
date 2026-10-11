@@ -18,6 +18,7 @@ import (
 	"github.com/mokevnin/sphericon/config"
 	"github.com/mokevnin/sphericon/ee"
 	"github.com/mokevnin/sphericon/ee/licensekey"
+	"github.com/mokevnin/sphericon/ee/operator"
 	"github.com/mokevnin/sphericon/ent"
 	"github.com/mokevnin/sphericon/ent/user"
 	"github.com/mokevnin/sphericon/internal/accounts"
@@ -457,7 +458,7 @@ func (a *App) runJobs(ctx context.Context) error {
 // owner(s) through the system sender. It reports whether anything changed; an
 // already-suspended Workspace is left as it was and the owner is not told twice. If
 // the notice cannot be sent the suspension still stands and the error says so.
-func (a *App) SuspendWorkspace(ctx context.Context, slug, by, reason string) (bool, error) {
+func (a *App) SuspendWorkspace(ctx context.Context, slug string, by suspension.Actor, reason string) (bool, error) {
 	client, err := do.Invoke[*entClient](a.injector)
 	if err != nil {
 		return false, err
@@ -485,7 +486,7 @@ func (a *App) SuspendWorkspace(ctx context.Context, slug, by, reason string) (bo
 }
 
 // UnsuspendWorkspace lifts a Workspace's suspension; held sends resume on their own.
-func (a *App) UnsuspendWorkspace(ctx context.Context, slug string) (bool, error) {
+func (a *App) UnsuspendWorkspace(ctx context.Context, slug string, by suspension.Actor) (bool, error) {
 	client, err := do.Invoke[*entClient](a.injector)
 	if err != nil {
 		return false, err
@@ -498,7 +499,7 @@ func (a *App) UnsuspendWorkspace(ctx context.Context, slug string) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	return suspension.UnsuspendWorkspace(ctx, bus.Bus, id, "cli")
+	return suspension.UnsuspendWorkspace(ctx, bus.Bus, id, by)
 }
 
 // ResetSecondFactor clears the Second factor and Recovery codes of the User with
@@ -523,6 +524,28 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 		return false, nil
 	}
 	return err == nil, err
+}
+
+// CreateOperator makes a platform Operator (ADR 0026) and returns its one-time password:
+// the only way an Operator comes to exist (there is no signup). It refuses a duplicate
+// email and an instance without the `operator` license.
+func (a *App) CreateOperator(ctx context.Context, email string) (string, error) {
+	edition, err := do.Invoke[*ee.Edition](a.injector)
+	if err != nil {
+		return "", err
+	}
+	return edition.Operators.Create(ctx, email)
+}
+
+// ResetOperatorTOTP clears the TOTP of the Operator with this email and ends its
+// sessions (ADR 0026): the only way a lost TOTP is reset. The Operator re-enrols at next
+// login. operator.ErrNotFound for an unknown email, ErrNotLicensed without the license.
+func (a *App) ResetOperatorTOTP(ctx context.Context, email string) error {
+	edition, err := do.Invoke[*ee.Edition](a.injector)
+	if err != nil {
+		return err
+	}
+	return edition.Operators.ResetTOTP(ctx, email)
 }
 
 // Accounts is the product's Accounts module from the DI container, for harnesses that
@@ -652,7 +675,17 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return ee.New(client.Client, lic), nil
+		cipher, err := do.Invoke[*secrets.Cipher](i)
+		if err != nil {
+			return nil, err
+		}
+		attempts, err := do.Invoke[*accounts.Attempts](i)
+		if err != nil {
+			return nil, err
+		}
+		return ee.New(client.Client, lic, cipher, cfg.JWTSecret, operator.Config{
+			Secret: cfg.OperatorJWTSecret, SessionTTL: cfg.OperatorSessionTTL, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
+		})
 	})
 
 	do.Provide(injector, func(i do.Injector) (*eventsRuntime, error) {
@@ -1018,7 +1051,24 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 
-		return server.New(cfg, database.DB, client.Client, site, external.Handler, mcp.Handler)
+		edition, err := do.Invoke[*ee.Edition](i)
+		if err != nil {
+			return nil, err
+		}
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		sys, err := do.Invoke[*systemSender](i)
+		if err != nil {
+			return nil, err
+		}
+		operatorAPI, err := server.NewOperatorAPI(edition.Operator(bus.Bus, sys.EmailSender))
+		if err != nil {
+			return nil, err
+		}
+
+		return server.New(cfg, database.DB, client.Client, site, external.Handler, mcp.Handler, operatorAPI)
 	})
 }
 

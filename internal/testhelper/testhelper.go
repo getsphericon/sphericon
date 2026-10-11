@@ -3,6 +3,7 @@ package testhelper
 import (
 	"context"
 	"crypto/ed25519"
+	"crypto/rand"
 	"database/sql"
 	"fmt"
 	"net"
@@ -23,6 +24,7 @@ import (
 	"github.com/mokevnin/sphericon/config"
 	"github.com/mokevnin/sphericon/ee"
 	"github.com/mokevnin/sphericon/ee/licensekey"
+	"github.com/mokevnin/sphericon/ee/operator"
 	"github.com/mokevnin/sphericon/ent"
 	"github.com/mokevnin/sphericon/internal/accounts"
 	"github.com/mokevnin/sphericon/internal/analytics"
@@ -173,6 +175,10 @@ type TestEnv struct {
 	// SecondFactor is the module the server verifies Second factors with, on the
 	// env's clock (ADR 0020).
 	SecondFactor *secondfactor.Module
+
+	// Operators is the Operator module the server logs staff in with (ADR 0026); it
+	// refuses every call on an unlicensed env.
+	Operators *operator.Module
 }
 
 // Option tunes the server a test builds with Setup.
@@ -184,11 +190,17 @@ type setup struct {
 	cfg        *config.Config
 	now        func() time.Time
 	unlicensed bool
+	// volumeFloor is the Operator console's rate floor; zero is the default.
+	volumeFloor int
 }
 
 // WithoutLicense builds the instance with no EE license key, like a plain core
 // self-host. Setup's default is an instance licensed for every EE feature.
 func WithoutLicense() Option { return func(s *setup) { s.unlicensed = true } }
+
+// WithOperatorVolumeFloor sets the fewest sends in the Operator console's window for a
+// rate to be defined, so a test crosses the floor with a handful of fixture Events.
+func WithOperatorVolumeFloor(n int) Option { return func(s *setup) { s.volumeFloor = n } }
 
 // WithConfig edits a private copy of the test config before the server is built.
 func WithConfig(edit func(*config.Config)) Option { return func(s *setup) { edit(s.cfg) } }
@@ -204,6 +216,10 @@ func WithRateLimits(limits config.RateLimits) Option {
 	return func(s *setup) { s.cfg.RateLimits = limits }
 }
 
+// newOperatorSecret is the secret Operator sessions are signed with in a test env: random
+// and its own, never the site's.
+func newOperatorSecret() string { return rand.Text() + rand.Text() }
+
 // testLicense mints, once per process, an EE license key signed by a throwaway key
 // pair and verified through the same Parse the production composition root uses.
 var testLicense = sync.OnceValues(func() (*licensekey.License, error) {
@@ -211,7 +227,7 @@ var testLicense = sync.OnceValues(func() (*licensekey.License, error) {
 	if err != nil {
 		return nil, err
 	}
-	key, err := licensekey.Issue(priv, nil, licensekey.FeatureAudit, licensekey.FeatureRetention)
+	key, err := licensekey.Issue(priv, nil, licensekey.FeatureAudit, licensekey.FeatureRetention, licensekey.FeatureOperator)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +296,14 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		lic, err = testLicense()
 		require.NoError(t, err, "mint test license")
 	}
-	edition := ee.New(client, lic)
+	attempts := accounts.NewAttempts(client,
+		accounts.WithClock(st.now),
+		accounts.WithRateLimits(cfg.RateLimits))
+	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, operator.Config{
+		Secret: newOperatorSecret(), SessionTTL: cfg.OperatorSessionTTL, SecureCookies: cfg.SecureCookies(), Clock: st.now,
+		Attempts: attempts, VolumeFloor: st.volumeFloor,
+	})
+	require.NoError(t, err, "build edition")
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(cipher, edition.Audit)
 	integrationsModule := integrations.New(bus, cipher, catalog, inline)
@@ -288,9 +311,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	automationsModule := automations.New()
 	broadcastsModule := broadcasts.New(inline)
 	acc := accounts.New(client, bus)
-	attempts := accounts.NewAttempts(client,
-		accounts.WithClock(st.now),
-		accounts.WithRateLimits(cfg.RateLimits))
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
@@ -301,6 +321,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
 	require.NoError(t, err, "build MCP handler")
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
+	operatorHandler, err := server.NewOperatorAPI(edition.Operator(bus, systemMail))
+	require.NoError(t, err, "build operator API")
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
@@ -309,12 +331,12 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Tokens: authtoken.New(baseCfg.JWTSecret), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New(),
 		SecondFactor: secondFactor,
 		Clock:        st.now,
-	}, external, mcpHandler)
+	}, external, mcpHandler, operatorHandler)
 	require.NoError(t, err, "build server")
 
 	return &TestEnv{
 		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
-		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor,
+		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor, Operators: edition.Operators,
 	}
 }
 

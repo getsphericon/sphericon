@@ -240,12 +240,20 @@ run = "pnpm exec tsp compile typespec/site"
 ["generate:typespec-collect"]
 run = "pnpm exec tsp compile typespec/collect"
 
+["generate:typespec-operator"]
+run = "pnpm exec tsp compile typespec/operator"
+
 ["generate:typespec"]
 description = "TypeSpec -> OpenAPI"
-depends = ["generate:typespec-external", "generate:typespec-site", "generate:typespec-collect"]
+depends = [
+  "generate:typespec-external",
+  "generate:typespec-site",
+  "generate:typespec-collect",
+  "generate:typespec-operator",
+]
 
 ["generate:openapi"]
-description = "OpenAPI -> TS clients (site client and collect types, one config)"
+description = "OpenAPI -> TS clients (site and operator clients, collect types, one config)"
 run = "pnpm exec openapi-ts -f openapi-ts.config.ts"
 
 ["generate:i18n-types"]
@@ -258,6 +266,7 @@ run = [
   "go tool ogen --target gen/site --package siteapi --clean openapi/site.openapi.json",
   "go tool ogen --target gen/external --package externalapi --clean openapi/external.openapi.json",
   "go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
+  "go tool ogen --target gen/operator --package operatorapi --clean openapi/operator.openapi.json",
   "go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources",
 ]
 
@@ -268,7 +277,7 @@ run = [
   "go tool moq -out internal/messaging/mocks_gen_test.go -pkg messaging_test ./internal/messaging EmailSender",
   "go tool moq -out internal/events/mocks_gen_test.go -pkg events ./internal/events Enroller WebhookDispatcher",
   "go tool moq -out internal/events/mocks_ext_gen_test.go -pkg events_test ./internal/events Enroller WebhookDispatcher",
-  "go tool moq -out cmd/server/mocks_gen_test.go -pkg main ./cmd/server workspaceOps",
+  "go tool moq -out cmd/server/mocks_gen_test.go -pkg main ./cmd/server workspaceOps operatorOps",
 ]
 
 ["generate:fixtures"]

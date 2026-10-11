@@ -29,6 +29,7 @@ import (
 	"github.com/mokevnin/sphericon/ent/membership"
 	"github.com/mokevnin/sphericon/ent/oauthclient"
 	"github.com/mokevnin/sphericon/ent/oauthcode"
+	"github.com/mokevnin/sphericon/ent/operator"
 	"github.com/mokevnin/sphericon/ent/outboundmessage"
 	"github.com/mokevnin/sphericon/ent/recoverycode"
 	"github.com/mokevnin/sphericon/ent/segment"
@@ -118,6 +119,7 @@ func checkColumn(t, c string) error {
 			membership.Table:         membership.ValidColumn,
 			oauthclient.Table:        oauthclient.ValidColumn,
 			oauthcode.Table:          oauthcode.ValidColumn,
+			operator.Table:           operator.ValidColumn,
 			outboundmessage.Table:    outboundmessage.ValidColumn,
 			recoverycode.Table:       recoverycode.ValidColumn,
 			segment.Table:            segment.ValidColumn,

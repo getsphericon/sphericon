@@ -65,7 +65,7 @@ func TestExternalEmailsSendIsHeldWhileTheWorkspaceIsSuspended(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "emails:send")
 	tmpl := seedTemplate(t, env.DB, fixtures.AcmeID)
-	suspended, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "ops@example.com", "abuse report")
+	suspended, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "abuse report")
 	require.NoError(t, err)
 	require.True(t, suspended)
 

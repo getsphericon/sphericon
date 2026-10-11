@@ -11,20 +11,15 @@
 package secondfactor
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"image/png"
 	"strings"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/pquerna/otp"
-	"github.com/pquerna/otp/totp"
 
 	"github.com/mokevnin/sphericon/ent"
 	"github.com/mokevnin/sphericon/ent/recoverycode"
@@ -32,6 +27,7 @@ import (
 	"github.com/mokevnin/sphericon/internal/accounts"
 	"github.com/mokevnin/sphericon/internal/credentials"
 	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/mokevnin/sphericon/internal/otpcode"
 	"github.com/mokevnin/sphericon/internal/secrets"
 )
 
@@ -40,15 +36,6 @@ const Issuer = "sphericon"
 
 // RecoveryCodeCount is the size of a Recovery code set.
 const RecoveryCodeCount = 10
-
-const (
-	period = 30 // seconds per TOTP time step
-	// skew is how many steps either side of now a code is accepted for (clock drift).
-	skew   = 1
-	qrSize = 200
-)
-
-var validateOpts = totp.ValidateOpts{Period: period, Digits: otp.DigitsSix, Algorithm: otp.AlgorithmSHA1}
 
 var (
 	// ErrInvalidCode: the code is not a current, unused TOTP code nor an unused
@@ -138,23 +125,12 @@ func (m *Module) StartEnrollment(ctx context.Context, userID int64) (*Enrollment
 	if Active(u) {
 		return nil, ErrAlreadyActive
 	}
-	key, err := totp.Generate(totp.GenerateOpts{
-		Issuer: Issuer, AccountName: u.Email,
-		Period: period, Digits: validateOpts.Digits, Algorithm: validateOpts.Algorithm,
-	})
+	key, err := otpcode.New(Issuer, u.Email)
 	if err != nil {
 		return nil, err
 	}
-	sealed, err := m.cipher.Encrypt([]byte(key.Secret()))
+	sealed, err := m.cipher.Encrypt([]byte(key.Secret))
 	if err != nil {
-		return nil, err
-	}
-	img, err := key.Image(qrSize, qrSize)
-	if err != nil {
-		return nil, err
-	}
-	var buf bytes.Buffer
-	if err := png.Encode(&buf, img); err != nil {
 		return nil, err
 	}
 	if err := m.ent.User.UpdateOneID(userID).
@@ -164,11 +140,7 @@ func (m *Module) StartEnrollment(ctx context.Context, userID int64) (*Enrollment
 		Exec(ctx); err != nil {
 		return nil, err
 	}
-	return &Enrollment{
-		Secret: key.Secret(),
-		URI:    key.URL(),
-		QRCode: "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes()),
-	}, nil
+	return &Enrollment{Secret: key.Secret, URI: key.URI, QRCode: key.QRCode}, nil
 }
 
 // ConfirmEnrollment activates the pending secret when code is a current code for
@@ -370,7 +342,7 @@ func (m *Module) reset(ctx context.Context, userID int64, record func(events.Pub
 }
 
 func (m *Module) verify(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, code string) (Method, error) {
-	if isTOTP(code) {
+	if otpcode.IsCode(code) {
 		if err := m.useTOTP(ctx, tx, u, code); err != nil {
 			return "", err
 		}
@@ -402,33 +374,24 @@ func (m *Module) useTOTP(ctx context.Context, tx *ent.Client, u *ent.User, code 
 	if err != nil {
 		return err
 	}
-	secret := string(raw)
-	code = strings.TrimSpace(code)
-	now := m.now().Unix() / period
-	for step := now - skew; step <= now+skew; step++ {
-		if step <= u.SecondFactorLastStep {
-			continue
-		}
-		want, err := totp.GenerateCodeCustom(secret, time.Unix(step*period, 0), validateOpts)
-		if err != nil {
-			return err
-		}
-		if subtle.ConstantTimeCompare([]byte(want), []byte(code)) != 1 {
-			continue
-		}
-		n, err := tx.User.Update().
-			Where(user.ID(u.ID), user.SecondFactorLastStepLT(step)).
-			SetSecondFactorLastStep(step).
-			Save(ctx)
-		if err != nil {
-			return err
-		}
-		if n != 1 {
-			return ErrInvalidCode
-		}
-		return nil
+	step, ok, err := otpcode.Match(string(raw), code, m.now(), u.SecondFactorLastStep)
+	if err != nil {
+		return err
 	}
-	return ErrInvalidCode
+	if !ok {
+		return ErrInvalidCode
+	}
+	n, err := tx.User.Update().
+		Where(user.ID(u.ID), user.SecondFactorLastStepLT(step)).
+		SetSecondFactorLastStep(step).
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return ErrInvalidCode
+	}
+	return nil
 }
 
 // remove clears the Second factor and the Recovery codes and bumps the epoch.
@@ -466,18 +429,4 @@ func replaceRecoveryCodes(ctx context.Context, tx *ent.Client, userID int64) ([]
 func newRecoveryCode() string {
 	s := strings.ToLower(rand.Text()[:10])
 	return s[:5] + "-" + s[5:]
-}
-
-// isTOTP reports whether code has the shape of a TOTP code (six digits).
-func isTOTP(code string) bool {
-	code = strings.TrimSpace(code)
-	if len(code) != int(validateOpts.Digits) {
-		return false
-	}
-	for _, r := range code {
-		if r < '0' || r > '9' {
-			return false
-		}
-	}
-	return true
 }

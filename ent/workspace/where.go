@@ -110,9 +110,9 @@ func SuspendedAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSuspendedAt, v))
 }
 
-// SuspendedBy applies equality check predicate on the "suspended_by" field. It's identical to SuspendedByEQ.
-func SuspendedBy(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldSuspendedBy, v))
+// SuspendedByID applies equality check predicate on the "suspended_by_id" field. It's identical to SuspendedByIDEQ.
+func SuspendedByID(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldSuspendedByID, v))
 }
 
 // SuspensionReason applies equality check predicate on the "suspension_reason" field. It's identical to SuspensionReasonEQ.
@@ -695,79 +695,109 @@ func SuspendedAtNotNil() predicate.Workspace {
 	return predicate.Workspace(sql.FieldNotNull(FieldSuspendedAt))
 }
 
-// SuspendedByEQ applies the EQ predicate on the "suspended_by" field.
-func SuspendedByEQ(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldSuspendedBy, v))
+// SuspendedByKindEQ applies the EQ predicate on the "suspended_by_kind" field.
+func SuspendedByKindEQ(v SuspendedByKind) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldSuspendedByKind, v))
 }
 
-// SuspendedByNEQ applies the NEQ predicate on the "suspended_by" field.
-func SuspendedByNEQ(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNEQ(FieldSuspendedBy, v))
+// SuspendedByKindNEQ applies the NEQ predicate on the "suspended_by_kind" field.
+func SuspendedByKindNEQ(v SuspendedByKind) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldSuspendedByKind, v))
 }
 
-// SuspendedByIn applies the In predicate on the "suspended_by" field.
-func SuspendedByIn(vs ...string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldIn(FieldSuspendedBy, vs...))
+// SuspendedByKindIn applies the In predicate on the "suspended_by_kind" field.
+func SuspendedByKindIn(vs ...SuspendedByKind) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldSuspendedByKind, vs...))
 }
 
-// SuspendedByNotIn applies the NotIn predicate on the "suspended_by" field.
-func SuspendedByNotIn(vs ...string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotIn(FieldSuspendedBy, vs...))
+// SuspendedByKindNotIn applies the NotIn predicate on the "suspended_by_kind" field.
+func SuspendedByKindNotIn(vs ...SuspendedByKind) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldSuspendedByKind, vs...))
 }
 
-// SuspendedByGT applies the GT predicate on the "suspended_by" field.
-func SuspendedByGT(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGT(FieldSuspendedBy, v))
+// SuspendedByKindIsNil applies the IsNil predicate on the "suspended_by_kind" field.
+func SuspendedByKindIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldSuspendedByKind))
 }
 
-// SuspendedByGTE applies the GTE predicate on the "suspended_by" field.
-func SuspendedByGTE(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGTE(FieldSuspendedBy, v))
+// SuspendedByKindNotNil applies the NotNil predicate on the "suspended_by_kind" field.
+func SuspendedByKindNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldSuspendedByKind))
 }
 
-// SuspendedByLT applies the LT predicate on the "suspended_by" field.
-func SuspendedByLT(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLT(FieldSuspendedBy, v))
+// SuspendedByIDEQ applies the EQ predicate on the "suspended_by_id" field.
+func SuspendedByIDEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldSuspendedByID, v))
 }
 
-// SuspendedByLTE applies the LTE predicate on the "suspended_by" field.
-func SuspendedByLTE(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLTE(FieldSuspendedBy, v))
+// SuspendedByIDNEQ applies the NEQ predicate on the "suspended_by_id" field.
+func SuspendedByIDNEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldSuspendedByID, v))
 }
 
-// SuspendedByContains applies the Contains predicate on the "suspended_by" field.
-func SuspendedByContains(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldContains(FieldSuspendedBy, v))
+// SuspendedByIDIn applies the In predicate on the "suspended_by_id" field.
+func SuspendedByIDIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldSuspendedByID, vs...))
 }
 
-// SuspendedByHasPrefix applies the HasPrefix predicate on the "suspended_by" field.
-func SuspendedByHasPrefix(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldHasPrefix(FieldSuspendedBy, v))
+// SuspendedByIDNotIn applies the NotIn predicate on the "suspended_by_id" field.
+func SuspendedByIDNotIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldSuspendedByID, vs...))
 }
 
-// SuspendedByHasSuffix applies the HasSuffix predicate on the "suspended_by" field.
-func SuspendedByHasSuffix(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldHasSuffix(FieldSuspendedBy, v))
+// SuspendedByIDGT applies the GT predicate on the "suspended_by_id" field.
+func SuspendedByIDGT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldSuspendedByID, v))
 }
 
-// SuspendedByIsNil applies the IsNil predicate on the "suspended_by" field.
-func SuspendedByIsNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldIsNull(FieldSuspendedBy))
+// SuspendedByIDGTE applies the GTE predicate on the "suspended_by_id" field.
+func SuspendedByIDGTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldSuspendedByID, v))
 }
 
-// SuspendedByNotNil applies the NotNil predicate on the "suspended_by" field.
-func SuspendedByNotNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotNull(FieldSuspendedBy))
+// SuspendedByIDLT applies the LT predicate on the "suspended_by_id" field.
+func SuspendedByIDLT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldSuspendedByID, v))
 }
 
-// SuspendedByEqualFold applies the EqualFold predicate on the "suspended_by" field.
-func SuspendedByEqualFold(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEqualFold(FieldSuspendedBy, v))
+// SuspendedByIDLTE applies the LTE predicate on the "suspended_by_id" field.
+func SuspendedByIDLTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldSuspendedByID, v))
 }
 
-// SuspendedByContainsFold applies the ContainsFold predicate on the "suspended_by" field.
-func SuspendedByContainsFold(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldContainsFold(FieldSuspendedBy, v))
+// SuspendedByIDContains applies the Contains predicate on the "suspended_by_id" field.
+func SuspendedByIDContains(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContains(FieldSuspendedByID, v))
+}
+
+// SuspendedByIDHasPrefix applies the HasPrefix predicate on the "suspended_by_id" field.
+func SuspendedByIDHasPrefix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasPrefix(FieldSuspendedByID, v))
+}
+
+// SuspendedByIDHasSuffix applies the HasSuffix predicate on the "suspended_by_id" field.
+func SuspendedByIDHasSuffix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasSuffix(FieldSuspendedByID, v))
+}
+
+// SuspendedByIDIsNil applies the IsNil predicate on the "suspended_by_id" field.
+func SuspendedByIDIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldSuspendedByID))
+}
+
+// SuspendedByIDNotNil applies the NotNil predicate on the "suspended_by_id" field.
+func SuspendedByIDNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldSuspendedByID))
+}
+
+// SuspendedByIDEqualFold applies the EqualFold predicate on the "suspended_by_id" field.
+func SuspendedByIDEqualFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEqualFold(FieldSuspendedByID, v))
+}
+
+// SuspendedByIDContainsFold applies the ContainsFold predicate on the "suspended_by_id" field.
+func SuspendedByIDContainsFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContainsFold(FieldSuspendedByID, v))
 }
 
 // SuspensionReasonEQ applies the EQ predicate on the "suspension_reason" field.

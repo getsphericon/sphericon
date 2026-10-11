@@ -12,6 +12,7 @@ import (
 	"github.com/mokevnin/sphericon/ent/contact"
 	"github.com/mokevnin/sphericon/ent/suppression"
 	"github.com/mokevnin/sphericon/ent/unsubscribe"
+	"github.com/mokevnin/sphericon/ent/workspace"
 	"github.com/mokevnin/sphericon/internal/eligibility"
 	"github.com/mokevnin/sphericon/internal/fixtures"
 	"github.com/mokevnin/sphericon/internal/jobs"
@@ -173,7 +174,7 @@ func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 	require.GreaterOrEqual(t, len(ids), 2)
 	require.NoError(t, jobs.SendToRecipient(ctx, env.DB, mod, ids[0]))
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).SetSuspendedBy("system").ExecX(ctx)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).SetSuspendedByKind(workspace.SuspendedByKindSystem).ExecX(ctx)
 	err = jobs.SendToRecipient(ctx, env.DB, mod, ids[1])
 	var held *jobs.HeldError
 	require.ErrorAs(t, err, &held)

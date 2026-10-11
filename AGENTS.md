@@ -22,10 +22,11 @@ hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `internal/api/{site,external}/resources` packages and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock — regenerate instead.
 
 ```
-typespec/{site,external,collect}   ──tsp compile──▶  openapi/*.openapi.json
+typespec/{site,external,collect,operator}   ──tsp compile──▶  openapi/*.openapi.json
   openapi/site      ──ogen──▶ gen/site       (Go server)   ──openapi-ts──▶ src/generated/site (TS client + react-query + zod)
   openapi/external  ──ogen──▶ gen/external    (Go server)
   openapi/collect   ──ogen──▶ gen/collect     (Go server)  ──openapi-ts──▶ packages/analytics/src/generated/collect (types only)
+  openapi/operator  ──ogen──▶ gen/operator    (Go server)  ──openapi-ts──▶ src/generated/operator (TS client + react-query + zod)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go
@@ -143,14 +144,16 @@ Frontend tests: `mise run test:watch`.
 - **DI**: `samber/do` container. `internal/app/app.go` `register()` wires every singleton
   (config, sql.DB, ent client, email sender, pubsub, the `http.Handler`). Add new
   dependencies there via `do.Provide`.
-- **HTTP**: `internal/server/server.go` `New()` mounts the three ogen servers and the
+- **HTTP**: `internal/server/server.go` `New()` mounts the four ogen servers and the
   public endpoints onto a stdlib `http.ServeMux`, then wraps it with hand-rolled middleware
   (recoverer, requestID, timeout, CORS). Errors render as RFC 7807 `application/problem+json`.
-- **Three API surfaces**, each with its own TypeSpec spec, ogen server, handler package,
+- **Four API surfaces**, each with its own TypeSpec spec, ogen server, handler package,
   and auth scheme:
   - `/site/*` — frontend SPA API. Auth: **JWT cookie** (issued by the `login` operation through `auth.Sessions`, ADR 0020). Handlers in `internal/api/site`.
   - `/api/*` — external/public API. Auth: **Bearer api-token** (workspace-scoped). Handlers in `internal/api/external`.
   - `/collect/*` — tracking ingestion from customer sites. Auth: **x-collect-key** header. Handlers in `internal/api/collect`.
+  - `/operator/*` — platform staff (the **Operator**, ADR 0026), Enterprise (license feature `operator`; unlicensed = 404).
+    Auth: its own **JWT cookie** (`OPERATOR_JWT`, `OPERATOR_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/operator`.
 - Auth security handlers live in `internal/api/auth/auth.go`. External requests carry a
   `*TokenAuth` (scopes + the Workspace's `*ent.Scoped`) in context — query through
   `auth.TokenScoped(ctx)` (see "Workspace scoping" below).
@@ -184,7 +187,12 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      `accounts.AcceptInvitation`, re-scope a transaction's client to the same Workspace;
   6. the Workspace comes from a secret rather than a login: the SES hook ingest key
      (`internal/server/hooks_ses.go`), signed unsubscribe/confirm tokens
-     (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token).
+     (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token);
+  7. the platform Operator (ADR 0026): `ee/operator` scopes over the one Workspace the console
+     is looking at, in exactly two reads, each after the Workspace row is loaded and each through
+     the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
+     `audit.Log.Entries`) and its deliverability rates (`Module.WorkspaceDeliverability`, via
+     `reputation.Rates`).
 - **The raw `*ent.Client` is allowed only in:** `internal/accounts` (User, Membership,
   Workspace incl. slug resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
@@ -195,7 +203,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition), `ee/audit` (the Audit log bus
   subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/retention` (the
-  periodic prune job: a job entry point that lists Workspaces, then scopes) and the composition roots
+  periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/operator` (the
+  platform Operator, ADR 0026: the Operator table, and the Workspace rows, suspension state and
+  rates the console shows as tenant metadata; Workspace data goes through the two scopes of
+  list item 7) and the composition roots
   (`internal/app`, `internal/db`, `internal/testhelper`). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`.
   `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes

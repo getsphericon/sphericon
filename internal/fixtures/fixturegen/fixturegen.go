@@ -146,6 +146,7 @@ var credentialColumns = []struct{ column, suffix string }{
 	{"password_hash", "Password"},
 	{"secret_hash", "Secret"},
 	{"second_factor_secret_encrypted", "TotpSecret"},
+	{"totp_secret_encrypted", "TotpSecret"},
 	{"code_hash", "Code"},
 }
 

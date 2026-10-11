@@ -82,7 +82,14 @@ func (Workspace) Fields() []ent.Field {
 		field.Time("suspended_at").
 			Optional().
 			Nillable(),
-		field.String("suspended_by").
+		// Who set it: the structured actor of ADR 0026. The kind is system (the automated
+		// abuse detector), cli (the operator command) or operator; only an operator has an
+		// id (the real staff identity, never shown to the customer).
+		field.Enum("suspended_by_kind").
+			Values("system", "cli", "operator").
+			Optional().
+			Nillable(),
+		field.String("suspended_by_id").
 			Optional().
 			Nillable(),
 		field.String("suspension_reason").

@@ -242,6 +242,112 @@ export default interface Resources {
       "deleteDescription": "This action cannot be undone.",
       "deleteTitle": "Are you sure?"
     },
+    "console": {
+      "login": {
+        "codeLabel": "Authentication code",
+        "confirmButton": "Confirm and sign in",
+        "emailLabel": "Email",
+        "enrolmentDescription": "Scan the QR code with an authenticator app, or enter the key by hand, then type the code the app shows.",
+        "enrolmentTitle": "Set up two-step verification",
+        "errorMessage": "Sign in failed. Check your details and try again.",
+        "errorTitle": "Sign in failed",
+        "passwordLabel": "Password",
+        "qrAlt": "QR code for the authenticator app",
+        "rateLimitedMinutes": "Too many sign-in attempts. Try again in {{count}} minutes." | "Too many sign-in attempts. Try again in {{count}} minute." | "Too many sign-in attempts. Try again in {{count}} minutes.",
+        "rateLimitedSeconds": "Too many sign-in attempts. Try again in {{count}} seconds." | "Too many sign-in attempts. Try again in {{count}} second." | "Too many sign-in attempts. Try again in {{count}} seconds.",
+        "secondStepDescription": "Enter the code from your authenticator app.",
+        "secondStepTitle": "Two-step verification",
+        "secretLabel": "Or enter this key",
+        "startOver": "Start over",
+        "submitButton": "Sign in",
+        "title": "Operator sign in",
+        "verifyButton": "Verify"
+      },
+      "menu": {
+        "logout": "Sign out",
+        "logoutErrorMessage": "Could not sign out. Try again.",
+        "logoutErrorTitle": "Sign out failed"
+      },
+      "nav": {
+        "workspaces": "Workspaces"
+      },
+      "workspace": {
+        "actorOperator": "Operator {{id}}",
+        "actors": {
+          "cli": "Command line",
+          "operator": "Operator",
+          "system": "Automated detector"
+        },
+        "auditLog": {
+          "action": "Action",
+          "actor": "By",
+          "actorSystem": "System",
+          "actorToken": "API token #{{id}}",
+          "empty": "No recorded changes",
+          "loadError": "Could not load the audit log",
+          "loadMore": "Load more",
+          "target": "Target",
+          "time": "Time",
+          "title": "Audit log"
+        },
+        "back": "All workspaces",
+        "detailsTitle": "Details",
+        "id": "ID",
+        "loadError": "Could not load the workspace",
+        "noReason": "No reason given",
+        "notSuspended": "Sending is not suspended.",
+        "rates": {
+          "belowFloor": "Not enough data (fewer than {{floor}} sent)",
+          "bounceRate": "Bounce rate",
+          "complaintRate": "Complaint rate",
+          "domain": "Sending domain",
+          "noDomains": "No sending domains.",
+          "sendVolume": "Sent",
+          "title": "Deliverability",
+          "window": "Last {{hours}} hours"
+        },
+        "reason": "Reason",
+        "suspend": {
+          "button": "Suspend sending",
+          "cancel": "Cancel",
+          "confirm": "Suspend sending",
+          "done": "Sending suspended. The workspace owner has been notified.",
+          "error": "Could not suspend the workspace",
+          "reasonDescription": "The workspace owner is told this reason.",
+          "reasonLabel": "Reason",
+          "reasonRequired": "A reason is required",
+          "title": "Suspend sending",
+          "unchanged": "Nothing changed: sending was already suspended.",
+          "warning": "All outbound sending from this workspace stops until you lift the suspension. Sign-in, the dashboard, API reads and tracking keep working."
+        },
+        "suspendedAt": "Suspended at",
+        "suspendedBy": "Suspended by",
+        "suspensionTitle": "Suspension",
+        "unchangedTitle": "No change",
+        "unsuspend": {
+          "button": "Lift suspension",
+          "confirm": "Lift suspension",
+          "description": "Held sends resume. Customers will see this recorded as sphericon staff.",
+          "done": "Suspension lifted. Held sends resume.",
+          "error": "Could not lift the suspension",
+          "title": "Lift the suspension?",
+          "unchanged": "Nothing changed: sending was not suspended."
+        }
+      },
+      "workspaces": {
+        "active": "Active",
+        "createdAt": "Created",
+        "empty": "No workspaces found",
+        "loadError": "Could not load workspaces",
+        "name": "Name",
+        "searchLabel": "Search by slug",
+        "searchPlaceholder": "Search by slug",
+        "slug": "Slug",
+        "status": "Status",
+        "suspended": "Suspended",
+        "title": "Workspaces"
+      }
+    },
     "contacts": {
       "addContact": "Add contact",
       "customFields": "Custom fields",

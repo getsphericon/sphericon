@@ -19,7 +19,7 @@ import (
 func TestNotifyWorkspaceSuspendedEmailsOwners(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "system", "complaint rate above 0.3%")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaint rate above 0.3%")
 	require.NoError(t, err)
 
 	require.NoError(t, jobs.NotifyWorkspaceSuspended(ctx, env.DB, env.SystemMail, fixtures.AcmeID))
@@ -29,7 +29,27 @@ func TestNotifyWorkspaceSuspendedEmailsOwners(t *testing.T) {
 	assert.Equal(t, fixtures.OwnerJohnEmail, msgs[0].To, "the workspace owner")
 	assert.Contains(t, msgs[0].Subject, "Acme")
 	assert.Contains(t, msgs[0].Text, "complaint rate above 0.3%", "the reason is stated")
-	assert.Contains(t, msgs[0].Text, "system", "who set it is stated")
+	assert.Contains(t, msgs[0].Text, "automated abuse detection", "who set it is stated")
+}
+
+// An Operator or the CLI appears to the customer as "sphericon staff"; the Operator's
+// real id never leaves the platform.
+func TestNotifyWorkspaceSuspendedShowsStaffForOperatorAndCLI(t *testing.T) {
+	for name, by := range map[string]suspension.Actor{"operator": suspension.Operator("op-42"), "cli": suspension.CLI} {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := context.Background()
+			_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, by, "abuse report")
+			require.NoError(t, err)
+
+			require.NoError(t, jobs.NotifyWorkspaceSuspended(ctx, env.DB, env.SystemMail, fixtures.AcmeID))
+
+			msgs := env.SystemMail.Messages()
+			require.Len(t, msgs, 1)
+			assert.Contains(t, msgs[0].Text, "Set by: sphericon staff")
+			assert.NotContains(t, msgs[0].Text, "op-42")
+		})
+	}
 }
 
 func TestNotifyWorkspaceSuspendedNilSenderIsNoop(t *testing.T) {

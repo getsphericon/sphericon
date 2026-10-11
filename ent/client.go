@@ -32,6 +32,7 @@ import (
 	"github.com/mokevnin/sphericon/ent/membership"
 	"github.com/mokevnin/sphericon/ent/oauthclient"
 	"github.com/mokevnin/sphericon/ent/oauthcode"
+	"github.com/mokevnin/sphericon/ent/operator"
 	"github.com/mokevnin/sphericon/ent/outboundmessage"
 	"github.com/mokevnin/sphericon/ent/recoverycode"
 	"github.com/mokevnin/sphericon/ent/segment"
@@ -85,6 +86,8 @@ type Client struct {
 	OAuthClient *OAuthClientClient
 	// OAuthCode is the client for interacting with the OAuthCode builders.
 	OAuthCode *OAuthCodeClient
+	// Operator is the client for interacting with the Operator builders.
+	Operator *OperatorClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
@@ -137,6 +140,7 @@ func (c *Client) init() {
 	c.Membership = NewMembershipClient(c.config)
 	c.OAuthClient = NewOAuthClientClient(c.config)
 	c.OAuthCode = NewOAuthCodeClient(c.config)
+	c.Operator = NewOperatorClient(c.config)
 	c.OutboundMessage = NewOutboundMessageClient(c.config)
 	c.RecoveryCode = NewRecoveryCodeClient(c.config)
 	c.Segment = NewSegmentClient(c.config)
@@ -258,6 +262,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Membership:         NewMembershipClient(cfg),
 		OAuthClient:        NewOAuthClientClient(cfg),
 		OAuthCode:          NewOAuthCodeClient(cfg),
+		Operator:           NewOperatorClient(cfg),
 		OutboundMessage:    NewOutboundMessageClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
 		Segment:            NewSegmentClient(cfg),
@@ -306,6 +311,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Membership:         NewMembershipClient(cfg),
 		OAuthClient:        NewOAuthClientClient(cfg),
 		OAuthCode:          NewOAuthCodeClient(cfg),
+		Operator:           NewOperatorClient(cfg),
 		OutboundMessage:    NewOutboundMessageClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
 		Segment:            NewSegmentClient(cfg),
@@ -350,9 +356,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Integration, c.Invitation, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.RecoveryCode, c.Segment,
-		c.SendLimiter, c.SendingDomain, c.Suppression, c.Tag, c.Unsubscribe, c.User,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
+		c.Segment, c.SendLimiter, c.SendingDomain, c.Suppression, c.Tag, c.Unsubscribe,
+		c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -365,9 +371,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Integration, c.Invitation, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.RecoveryCode, c.Segment,
-		c.SendLimiter, c.SendingDomain, c.Suppression, c.Tag, c.Unsubscribe, c.User,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
+		c.Segment, c.SendLimiter, c.SendingDomain, c.Suppression, c.Tag, c.Unsubscribe,
+		c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -410,6 +416,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OAuthClient.mutate(ctx, m)
 	case *OAuthCodeMutation:
 		return c.OAuthCode.mutate(ctx, m)
+	case *OperatorMutation:
+		return c.Operator.mutate(ctx, m)
 	case *OutboundMessageMutation:
 		return c.OutboundMessage.mutate(ctx, m)
 	case *RecoveryCodeMutation:
@@ -3100,6 +3108,139 @@ func (c *OAuthCodeClient) mutate(ctx context.Context, m *OAuthCodeMutation) (Val
 	}
 }
 
+// OperatorClient is a client for the Operator schema.
+type OperatorClient struct {
+	config
+}
+
+// NewOperatorClient returns a client for the Operator from the given config.
+func NewOperatorClient(c config) *OperatorClient {
+	return &OperatorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `operator.Hooks(f(g(h())))`.
+func (c *OperatorClient) Use(hooks ...Hook) {
+	c.hooks.Operator = append(c.hooks.Operator, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `operator.Intercept(f(g(h())))`.
+func (c *OperatorClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Operator = append(c.inters.Operator, interceptors...)
+}
+
+// Create returns a builder for creating a Operator entity.
+func (c *OperatorClient) Create() *OperatorCreate {
+	mutation := newOperatorMutation(c.config, OpCreate)
+	return &OperatorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Operator entities.
+func (c *OperatorClient) CreateBulk(builders ...*OperatorCreate) *OperatorCreateBulk {
+	return &OperatorCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OperatorClient) MapCreateBulk(slice any, setFunc func(*OperatorCreate, int)) *OperatorCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OperatorCreateBulk{err: fmt.Errorf("calling to OperatorClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OperatorCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OperatorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Operator.
+func (c *OperatorClient) Update() *OperatorUpdate {
+	mutation := newOperatorMutation(c.config, OpUpdate)
+	return &OperatorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OperatorClient) UpdateOne(_m *Operator) *OperatorUpdateOne {
+	mutation := newOperatorMutation(c.config, OpUpdateOne, withOperator(_m))
+	return &OperatorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OperatorClient) UpdateOneID(id int64) *OperatorUpdateOne {
+	mutation := newOperatorMutation(c.config, OpUpdateOne, withOperatorID(id))
+	return &OperatorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Operator.
+func (c *OperatorClient) Delete() *OperatorDelete {
+	mutation := newOperatorMutation(c.config, OpDelete)
+	return &OperatorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OperatorClient) DeleteOne(_m *Operator) *OperatorDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OperatorClient) DeleteOneID(id int64) *OperatorDeleteOne {
+	builder := c.Delete().Where(operator.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OperatorDeleteOne{builder}
+}
+
+// Query returns a query builder for Operator.
+func (c *OperatorClient) Query() *OperatorQuery {
+	return &OperatorQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOperator},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Operator entity by its id.
+func (c *OperatorClient) Get(ctx context.Context, id int64) (*Operator, error) {
+	return c.Query().Where(operator.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OperatorClient) GetX(ctx context.Context, id int64) *Operator {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *OperatorClient) Hooks() []Hook {
+	return c.hooks.Operator
+}
+
+// Interceptors returns the client interceptors.
+func (c *OperatorClient) Interceptors() []Interceptor {
+	return c.inters.Operator
+}
+
+func (c *OperatorClient) mutate(ctx context.Context, m *OperatorMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OperatorCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OperatorUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OperatorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OperatorDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Operator mutation op: %q", m.Op())
+	}
+}
+
 // OutboundMessageClient is a client for the OutboundMessage schema.
 type OutboundMessageClient struct {
 	config
@@ -5325,15 +5466,17 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Integration, Invitation, Membership, OAuthClient, OAuthCode, OutboundMessage,
-		RecoveryCode, Segment, SendLimiter, SendingDomain, Suppression, Tag,
-		Unsubscribe, User, Visitor, WebhookEndpoint, Workspace []ent.Hook
+		Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
+		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
+		Suppression, Tag, Unsubscribe, User, Visitor, WebhookEndpoint,
+		Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Integration, Invitation, Membership, OAuthClient, OAuthCode, OutboundMessage,
-		RecoveryCode, Segment, SendLimiter, SendingDomain, Suppression, Tag,
-		Unsubscribe, User, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
+		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
+		Suppression, Tag, Unsubscribe, User, Visitor, WebhookEndpoint,
+		Workspace []ent.Interceptor
 	}
 )

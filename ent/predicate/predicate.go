@@ -57,6 +57,9 @@ type OAuthClient func(*sql.Selector)
 // OAuthCode is the predicate function for oauthcode builders.
 type OAuthCode func(*sql.Selector)
 
+// Operator is the predicate function for operator builders.
+type Operator func(*sql.Selector)
+
 // OutboundMessage is the predicate function for outboundmessage builders.
 type OutboundMessage func(*sql.Selector)
 

@@ -16,6 +16,7 @@ targetRules = ["generic-api-key"]
 paths = [
   '''^migrations/atlas\.sum$''',
   '''^gen/''',
+  '''^internal/fixtures/catalog_gen\.go$''',
   '''^\.env\.test$''',
   '''^\.mise\.toml$''',
   '''^\.env\.docker\.sample$''',

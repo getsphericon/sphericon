@@ -8,20 +8,24 @@ import '@mantine/notifications/styles.css'
 import '../i18n.ts'
 import { afterEach, beforeAll } from 'vitest'
 
+import { client as operatorClient } from '../generated/operator/client.gen.ts'
 import { client } from '../generated/site/client.gen.ts'
 import { worker } from './worker.ts'
 
 // The app pins the generated client's base URL in src/main.tsx; mirror it here.
 client.setConfig({ baseUrl: '/site' })
+operatorClient.setConfig({ baseUrl: '/operator' })
 
 // MSW answers a request without a handler with a 500 and only logs it, which the app may
 // swallow. Record each one and fail the test that made it; handlers are dropped after every test.
 const unhandled: string[] = []
 
-function isSiteApiFrame({ data }: { data: unknown }) {
+function isApiFrame({ data }: { data: unknown }) {
   if (typeof data !== 'object' || data === null || !('request' in data)) return false
   const { request } = data
-  return request instanceof Request && new URL(request.url).pathname.startsWith('/site/')
+  if (!(request instanceof Request)) return false
+  const { pathname } = new URL(request.url)
+  return pathname.startsWith('/site/') || pathname.startsWith('/operator/')
 }
 
 beforeAll(() =>
@@ -29,7 +33,7 @@ beforeAll(() =>
     quiet: true,
     onUnhandledFrame: async ({ frame, defaults }) => {
       // Page assets and the analytics package's own traffic are not the app's API.
-      if (!isSiteApiFrame(frame)) {
+      if (!isApiFrame(frame)) {
         frame.passthrough()
         return
       }

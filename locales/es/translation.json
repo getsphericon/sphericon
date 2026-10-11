@@ -246,6 +246,118 @@
     "expiredTitle": "Enlace caducado",
     "title": "Confirma tu suscripción"
   },
+  "console": {
+    "login": {
+      "codeLabel": "Código de autenticación",
+      "confirmButton": "Confirmar e iniciar sesión",
+      "emailLabel": "Correo electrónico",
+      "enrolmentDescription": "Escanea el código QR con una aplicación de autenticación, o introduce la clave a mano, y escribe el código que muestra la aplicación.",
+      "enrolmentTitle": "Configura la verificación en dos pasos",
+      "errorMessage": "No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.",
+      "errorTitle": "Error al iniciar sesión",
+      "passwordLabel": "Contraseña",
+      "qrAlt": "Código QR para la aplicación de autenticación",
+      "rateLimitedMinutes": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} minutos.",
+      "rateLimitedMinutes_one": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} minuto.",
+      "rateLimitedMinutes_many": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} minutos.",
+      "rateLimitedMinutes_other": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} minutos.",
+      "rateLimitedSeconds": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} segundos.",
+      "rateLimitedSeconds_one": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} segundo.",
+      "rateLimitedSeconds_many": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} segundos.",
+      "rateLimitedSeconds_other": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} segundos.",
+      "secondStepDescription": "Introduce el código de tu aplicación de autenticación.",
+      "secondStepTitle": "Verificación en dos pasos",
+      "secretLabel": "O introduce esta clave",
+      "startOver": "Empezar de nuevo",
+      "submitButton": "Iniciar sesión",
+      "title": "Acceso de operador",
+      "verifyButton": "Verificar"
+    },
+    "menu": {
+      "logout": "Cerrar sesión",
+      "logoutErrorMessage": "No se pudo cerrar la sesión. Inténtalo de nuevo.",
+      "logoutErrorTitle": "Error al cerrar sesión"
+    },
+    "nav": {
+      "workspaces": "Espacios de trabajo"
+    },
+    "workspace": {
+      "actorOperator": "Operador {{id}}",
+      "actors": {
+        "cli": "Línea de comandos",
+        "operator": "Operador",
+        "system": "Detector automático"
+      },
+      "auditLog": {
+        "action": "Acción",
+        "actor": "Por",
+        "actorSystem": "Sistema",
+        "actorToken": "Token de API n.º {{id}}",
+        "empty": "No hay cambios registrados",
+        "loadError": "No se pudo cargar el registro de auditoría",
+        "loadMore": "Cargar más",
+        "target": "Objetivo",
+        "time": "Hora",
+        "title": "Registro de auditoría"
+      },
+      "back": "Todos los espacios de trabajo",
+      "detailsTitle": "Detalles",
+      "id": "ID",
+      "loadError": "No se pudo cargar el espacio de trabajo",
+      "noReason": "Sin motivo indicado",
+      "notSuspended": "El envío no está suspendido.",
+      "rates": {
+        "belowFloor": "Datos insuficientes (menos de {{floor}} enviados)",
+        "bounceRate": "Tasa de rebotes",
+        "complaintRate": "Tasa de quejas",
+        "domain": "Dominio de envío",
+        "noDomains": "Sin dominios de envío.",
+        "sendVolume": "Enviados",
+        "title": "Entregabilidad",
+        "window": "Últimas {{hours}} horas"
+      },
+      "reason": "Motivo",
+      "suspend": {
+        "button": "Suspender el envío",
+        "cancel": "Cancelar",
+        "confirm": "Suspender el envío",
+        "done": "Envío suspendido. Se ha avisado al propietario del espacio de trabajo.",
+        "error": "No se pudo suspender el espacio de trabajo",
+        "reasonDescription": "El propietario del espacio de trabajo verá este motivo.",
+        "reasonLabel": "Motivo",
+        "reasonRequired": "Se requiere un motivo",
+        "title": "Suspender el envío",
+        "unchanged": "Sin cambios: el envío ya estaba suspendido.",
+        "warning": "Todo el envío saliente de este espacio de trabajo se detiene hasta que levantes la suspensión. El inicio de sesión, el panel, las lecturas de la API y el seguimiento siguen funcionando."
+      },
+      "suspendedAt": "Suspendido el",
+      "suspendedBy": "Suspendido por",
+      "suspensionTitle": "Suspensión",
+      "unchangedTitle": "Sin cambios",
+      "unsuspend": {
+        "button": "Levantar la suspensión",
+        "confirm": "Levantar la suspensión",
+        "description": "Los envíos retenidos se reanudan. Los clientes verán esto registrado como personal de sphericon.",
+        "done": "Suspensión levantada. Los envíos retenidos se reanudan.",
+        "error": "No se pudo levantar la suspensión",
+        "title": "¿Levantar la suspensión?",
+        "unchanged": "Sin cambios: el envío no estaba suspendido."
+      }
+    },
+    "workspaces": {
+      "active": "Activo",
+      "createdAt": "Creado",
+      "empty": "No se encontraron espacios de trabajo",
+      "loadError": "No se pudieron cargar los espacios de trabajo",
+      "name": "Nombre",
+      "searchLabel": "Buscar por slug",
+      "searchPlaceholder": "Buscar por slug",
+      "slug": "Slug",
+      "status": "Estado",
+      "suspended": "Suspendido",
+      "title": "Espacios de trabajo"
+    }
+  },
   "contacts": {
     "addContact": "Añadir contacto",
     "customFields": "Campos personalizados",

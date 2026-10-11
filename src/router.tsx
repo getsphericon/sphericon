@@ -1,4 +1,10 @@
-import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router'
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+  redirect,
+} from '@tanstack/react-router'
 import { z } from 'zod'
 
 import App from './App.tsx'
@@ -346,6 +352,49 @@ export const securityRoute = createRoute({
   component: SecurityPage,
 })
 
+// The Operator console (ADR 0026): a lazily loaded subtree. It lives at /console, not
+// /operator, because the Go server owns the /operator/* API prefix. Nothing under it
+// (components, the generated Operator client) is fetched until the first visit.
+export const consoleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/console',
+})
+
+export const consoleLoginRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  path: '/login',
+  component: lazyRouteComponent(() => import('./console/login.tsx'), 'ConsoleLoginPage'),
+})
+
+// Guarded by the Operator session: anything but a signed-in Operator (no cookie, an
+// expired one, or no license, where the whole surface answers 404) goes to the login.
+export const consoleAuthedRoute = createRoute({
+  getParentRoute: () => consoleRoute,
+  id: 'authed',
+  beforeLoad: async () => {
+    const { operatorMeGet } = await import('./generated/operator/sdk.gen.ts')
+    const { data } = await operatorMeGet()
+    if (!data) {
+      throw redirect({ to: consoleLoginRoute.to })
+    }
+    return { operator: data }
+  },
+  component: lazyRouteComponent(() => import('./console/layout.tsx'), 'ConsoleLayout'),
+})
+
+// The console's home is the Workspace list.
+export const consoleHomeRoute = createRoute({
+  getParentRoute: () => consoleAuthedRoute,
+  path: '/',
+  component: lazyRouteComponent(() => import('./console/workspaces.tsx'), 'ConsoleWorkspacesPage'),
+})
+
+export const consoleWorkspaceRoute = createRoute({
+  getParentRoute: () => consoleAuthedRoute,
+  path: 'workspaces/$workspaceId',
+  component: lazyRouteComponent(() => import('./console/workspace.tsx'), 'ConsoleWorkspacePage'),
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -360,6 +409,10 @@ const routeTree = rootRoute.addChildren([
   acceptInvitationRoute,
   oauthConsentRoute,
   accountRoute.addChildren([profileRoute, securityRoute]),
+  consoleRoute.addChildren([
+    consoleLoginRoute,
+    consoleAuthedRoute.addChildren([consoleHomeRoute, consoleWorkspaceRoute]),
+  ]),
   workspaceRoute.addChildren([
     overviewRoute,
     contactsRoute,

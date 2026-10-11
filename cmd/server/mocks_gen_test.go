@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"github.com/mokevnin/sphericon/internal/suspension"
 	"sync"
 )
 
@@ -18,10 +19,10 @@ var _ workspaceOps = &workspaceOpsMock{}
 //
 //		// make and configure a mocked workspaceOps
 //		mockedworkspaceOps := &workspaceOpsMock{
-//			SuspendWorkspaceFunc: func(ctx context.Context, slug string, by string, reason string) (bool, error) {
+//			SuspendWorkspaceFunc: func(ctx context.Context, slug string, by suspension.Actor, reason string) (bool, error) {
 //				panic("mock out the SuspendWorkspace method")
 //			},
-//			UnsuspendWorkspaceFunc: func(ctx context.Context, slug string) (bool, error) {
+//			UnsuspendWorkspaceFunc: func(ctx context.Context, slug string, by suspension.Actor) (bool, error) {
 //				panic("mock out the UnsuspendWorkspace method")
 //			},
 //		}
@@ -32,10 +33,10 @@ var _ workspaceOps = &workspaceOpsMock{}
 //	}
 type workspaceOpsMock struct {
 	// SuspendWorkspaceFunc mocks the SuspendWorkspace method.
-	SuspendWorkspaceFunc func(ctx context.Context, slug string, by string, reason string) (bool, error)
+	SuspendWorkspaceFunc func(ctx context.Context, slug string, by suspension.Actor, reason string) (bool, error)
 
 	// UnsuspendWorkspaceFunc mocks the UnsuspendWorkspace method.
-	UnsuspendWorkspaceFunc func(ctx context.Context, slug string) (bool, error)
+	UnsuspendWorkspaceFunc func(ctx context.Context, slug string, by suspension.Actor) (bool, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -46,7 +47,7 @@ type workspaceOpsMock struct {
 			// Slug is the slug argument value.
 			Slug string
 			// By is the by argument value.
-			By string
+			By suspension.Actor
 			// Reason is the reason argument value.
 			Reason string
 		}
@@ -56,6 +57,8 @@ type workspaceOpsMock struct {
 			Ctx context.Context
 			// Slug is the slug argument value.
 			Slug string
+			// By is the by argument value.
+			By suspension.Actor
 		}
 	}
 	lockSuspendWorkspace   sync.RWMutex
@@ -63,14 +66,14 @@ type workspaceOpsMock struct {
 }
 
 // SuspendWorkspace calls SuspendWorkspaceFunc.
-func (mock *workspaceOpsMock) SuspendWorkspace(ctx context.Context, slug string, by string, reason string) (bool, error) {
+func (mock *workspaceOpsMock) SuspendWorkspace(ctx context.Context, slug string, by suspension.Actor, reason string) (bool, error) {
 	if mock.SuspendWorkspaceFunc == nil {
 		panic("workspaceOpsMock.SuspendWorkspaceFunc: method is nil but workspaceOps.SuspendWorkspace was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
 		Slug   string
-		By     string
+		By     suspension.Actor
 		Reason string
 	}{
 		Ctx:    ctx,
@@ -91,13 +94,13 @@ func (mock *workspaceOpsMock) SuspendWorkspace(ctx context.Context, slug string,
 func (mock *workspaceOpsMock) SuspendWorkspaceCalls() []struct {
 	Ctx    context.Context
 	Slug   string
-	By     string
+	By     suspension.Actor
 	Reason string
 } {
 	var calls []struct {
 		Ctx    context.Context
 		Slug   string
-		By     string
+		By     suspension.Actor
 		Reason string
 	}
 	mock.lockSuspendWorkspace.RLock()
@@ -107,21 +110,23 @@ func (mock *workspaceOpsMock) SuspendWorkspaceCalls() []struct {
 }
 
 // UnsuspendWorkspace calls UnsuspendWorkspaceFunc.
-func (mock *workspaceOpsMock) UnsuspendWorkspace(ctx context.Context, slug string) (bool, error) {
+func (mock *workspaceOpsMock) UnsuspendWorkspace(ctx context.Context, slug string, by suspension.Actor) (bool, error) {
 	if mock.UnsuspendWorkspaceFunc == nil {
 		panic("workspaceOpsMock.UnsuspendWorkspaceFunc: method is nil but workspaceOps.UnsuspendWorkspace was just called")
 	}
 	callInfo := struct {
 		Ctx  context.Context
 		Slug string
+		By   suspension.Actor
 	}{
 		Ctx:  ctx,
 		Slug: slug,
+		By:   by,
 	}
 	mock.lockUnsuspendWorkspace.Lock()
 	mock.calls.UnsuspendWorkspace = append(mock.calls.UnsuspendWorkspace, callInfo)
 	mock.lockUnsuspendWorkspace.Unlock()
-	return mock.UnsuspendWorkspaceFunc(ctx, slug)
+	return mock.UnsuspendWorkspaceFunc(ctx, slug, by)
 }
 
 // UnsuspendWorkspaceCalls gets all the calls that were made to UnsuspendWorkspace.
@@ -131,13 +136,137 @@ func (mock *workspaceOpsMock) UnsuspendWorkspace(ctx context.Context, slug strin
 func (mock *workspaceOpsMock) UnsuspendWorkspaceCalls() []struct {
 	Ctx  context.Context
 	Slug string
+	By   suspension.Actor
 } {
 	var calls []struct {
 		Ctx  context.Context
 		Slug string
+		By   suspension.Actor
 	}
 	mock.lockUnsuspendWorkspace.RLock()
 	calls = mock.calls.UnsuspendWorkspace
 	mock.lockUnsuspendWorkspace.RUnlock()
+	return calls
+}
+
+// Ensure, that operatorOpsMock does implement operatorOps.
+// If this is not the case, regenerate this file with moq.
+var _ operatorOps = &operatorOpsMock{}
+
+// operatorOpsMock is a mock implementation of operatorOps.
+//
+//	func TestSomethingThatUsesoperatorOps(t *testing.T) {
+//
+//		// make and configure a mocked operatorOps
+//		mockedoperatorOps := &operatorOpsMock{
+//			CreateOperatorFunc: func(ctx context.Context, email string) (string, error) {
+//				panic("mock out the CreateOperator method")
+//			},
+//			ResetOperatorTOTPFunc: func(ctx context.Context, email string) error {
+//				panic("mock out the ResetOperatorTOTP method")
+//			},
+//		}
+//
+//		// use mockedoperatorOps in code that requires operatorOps
+//		// and then make assertions.
+//
+//	}
+type operatorOpsMock struct {
+	// CreateOperatorFunc mocks the CreateOperator method.
+	CreateOperatorFunc func(ctx context.Context, email string) (string, error)
+
+	// ResetOperatorTOTPFunc mocks the ResetOperatorTOTP method.
+	ResetOperatorTOTPFunc func(ctx context.Context, email string) error
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// CreateOperator holds details about calls to the CreateOperator method.
+		CreateOperator []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Email is the email argument value.
+			Email string
+		}
+		// ResetOperatorTOTP holds details about calls to the ResetOperatorTOTP method.
+		ResetOperatorTOTP []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Email is the email argument value.
+			Email string
+		}
+	}
+	lockCreateOperator    sync.RWMutex
+	lockResetOperatorTOTP sync.RWMutex
+}
+
+// CreateOperator calls CreateOperatorFunc.
+func (mock *operatorOpsMock) CreateOperator(ctx context.Context, email string) (string, error) {
+	if mock.CreateOperatorFunc == nil {
+		panic("operatorOpsMock.CreateOperatorFunc: method is nil but operatorOps.CreateOperator was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Email string
+	}{
+		Ctx:   ctx,
+		Email: email,
+	}
+	mock.lockCreateOperator.Lock()
+	mock.calls.CreateOperator = append(mock.calls.CreateOperator, callInfo)
+	mock.lockCreateOperator.Unlock()
+	return mock.CreateOperatorFunc(ctx, email)
+}
+
+// CreateOperatorCalls gets all the calls that were made to CreateOperator.
+// Check the length with:
+//
+//	len(mockedoperatorOps.CreateOperatorCalls())
+func (mock *operatorOpsMock) CreateOperatorCalls() []struct {
+	Ctx   context.Context
+	Email string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Email string
+	}
+	mock.lockCreateOperator.RLock()
+	calls = mock.calls.CreateOperator
+	mock.lockCreateOperator.RUnlock()
+	return calls
+}
+
+// ResetOperatorTOTP calls ResetOperatorTOTPFunc.
+func (mock *operatorOpsMock) ResetOperatorTOTP(ctx context.Context, email string) error {
+	if mock.ResetOperatorTOTPFunc == nil {
+		panic("operatorOpsMock.ResetOperatorTOTPFunc: method is nil but operatorOps.ResetOperatorTOTP was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Email string
+	}{
+		Ctx:   ctx,
+		Email: email,
+	}
+	mock.lockResetOperatorTOTP.Lock()
+	mock.calls.ResetOperatorTOTP = append(mock.calls.ResetOperatorTOTP, callInfo)
+	mock.lockResetOperatorTOTP.Unlock()
+	return mock.ResetOperatorTOTPFunc(ctx, email)
+}
+
+// ResetOperatorTOTPCalls gets all the calls that were made to ResetOperatorTOTP.
+// Check the length with:
+//
+//	len(mockedoperatorOps.ResetOperatorTOTPCalls())
+func (mock *operatorOpsMock) ResetOperatorTOTPCalls() []struct {
+	Ctx   context.Context
+	Email string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Email string
+	}
+	mock.lockResetOperatorTOTP.RLock()
+	calls = mock.calls.ResetOperatorTOTP
+	mock.lockResetOperatorTOTP.RUnlock()
 	return calls
 }

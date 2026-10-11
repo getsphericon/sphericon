@@ -215,23 +215,43 @@ func (_u *WorkspaceUpdate) ClearSuspendedAt() *WorkspaceUpdate {
 	return _u
 }
 
-// SetSuspendedBy sets the "suspended_by" field.
-func (_u *WorkspaceUpdate) SetSuspendedBy(v string) *WorkspaceUpdate {
-	_u.mutation.SetSuspendedBy(v)
+// SetSuspendedByKind sets the "suspended_by_kind" field.
+func (_u *WorkspaceUpdate) SetSuspendedByKind(v workspace.SuspendedByKind) *WorkspaceUpdate {
+	_u.mutation.SetSuspendedByKind(v)
 	return _u
 }
 
-// SetNillableSuspendedBy sets the "suspended_by" field if the given value is not nil.
-func (_u *WorkspaceUpdate) SetNillableSuspendedBy(v *string) *WorkspaceUpdate {
+// SetNillableSuspendedByKind sets the "suspended_by_kind" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableSuspendedByKind(v *workspace.SuspendedByKind) *WorkspaceUpdate {
 	if v != nil {
-		_u.SetSuspendedBy(*v)
+		_u.SetSuspendedByKind(*v)
 	}
 	return _u
 }
 
-// ClearSuspendedBy clears the value of the "suspended_by" field.
-func (_u *WorkspaceUpdate) ClearSuspendedBy() *WorkspaceUpdate {
-	_u.mutation.ClearSuspendedBy()
+// ClearSuspendedByKind clears the value of the "suspended_by_kind" field.
+func (_u *WorkspaceUpdate) ClearSuspendedByKind() *WorkspaceUpdate {
+	_u.mutation.ClearSuspendedByKind()
+	return _u
+}
+
+// SetSuspendedByID sets the "suspended_by_id" field.
+func (_u *WorkspaceUpdate) SetSuspendedByID(v string) *WorkspaceUpdate {
+	_u.mutation.SetSuspendedByID(v)
+	return _u
+}
+
+// SetNillableSuspendedByID sets the "suspended_by_id" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableSuspendedByID(v *string) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetSuspendedByID(*v)
+	}
+	return _u
+}
+
+// ClearSuspendedByID clears the value of the "suspended_by_id" field.
+func (_u *WorkspaceUpdate) ClearSuspendedByID() *WorkspaceUpdate {
+	_u.mutation.ClearSuspendedByID()
 	return _u
 }
 
@@ -1151,6 +1171,11 @@ func (_u *WorkspaceUpdate) check() error {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SuspendedByKind(); ok {
+		if err := workspace.SuspendedByKindValidator(v); err != nil {
+			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1217,11 +1242,17 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.SuspendedAtCleared() {
 		_spec.ClearField(workspace.FieldSuspendedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.SuspendedBy(); ok {
-		_spec.SetField(workspace.FieldSuspendedBy, field.TypeString, value)
+	if value, ok := _u.mutation.SuspendedByKind(); ok {
+		_spec.SetField(workspace.FieldSuspendedByKind, field.TypeEnum, value)
 	}
-	if _u.mutation.SuspendedByCleared() {
-		_spec.ClearField(workspace.FieldSuspendedBy, field.TypeString)
+	if _u.mutation.SuspendedByKindCleared() {
+		_spec.ClearField(workspace.FieldSuspendedByKind, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.SuspendedByID(); ok {
+		_spec.SetField(workspace.FieldSuspendedByID, field.TypeString, value)
+	}
+	if _u.mutation.SuspendedByIDCleared() {
+		_spec.ClearField(workspace.FieldSuspendedByID, field.TypeString)
 	}
 	if value, ok := _u.mutation.SuspensionReason(); ok {
 		_spec.SetField(workspace.FieldSuspensionReason, field.TypeString, value)
@@ -2449,23 +2480,43 @@ func (_u *WorkspaceUpdateOne) ClearSuspendedAt() *WorkspaceUpdateOne {
 	return _u
 }
 
-// SetSuspendedBy sets the "suspended_by" field.
-func (_u *WorkspaceUpdateOne) SetSuspendedBy(v string) *WorkspaceUpdateOne {
-	_u.mutation.SetSuspendedBy(v)
+// SetSuspendedByKind sets the "suspended_by_kind" field.
+func (_u *WorkspaceUpdateOne) SetSuspendedByKind(v workspace.SuspendedByKind) *WorkspaceUpdateOne {
+	_u.mutation.SetSuspendedByKind(v)
 	return _u
 }
 
-// SetNillableSuspendedBy sets the "suspended_by" field if the given value is not nil.
-func (_u *WorkspaceUpdateOne) SetNillableSuspendedBy(v *string) *WorkspaceUpdateOne {
+// SetNillableSuspendedByKind sets the "suspended_by_kind" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableSuspendedByKind(v *workspace.SuspendedByKind) *WorkspaceUpdateOne {
 	if v != nil {
-		_u.SetSuspendedBy(*v)
+		_u.SetSuspendedByKind(*v)
 	}
 	return _u
 }
 
-// ClearSuspendedBy clears the value of the "suspended_by" field.
-func (_u *WorkspaceUpdateOne) ClearSuspendedBy() *WorkspaceUpdateOne {
-	_u.mutation.ClearSuspendedBy()
+// ClearSuspendedByKind clears the value of the "suspended_by_kind" field.
+func (_u *WorkspaceUpdateOne) ClearSuspendedByKind() *WorkspaceUpdateOne {
+	_u.mutation.ClearSuspendedByKind()
+	return _u
+}
+
+// SetSuspendedByID sets the "suspended_by_id" field.
+func (_u *WorkspaceUpdateOne) SetSuspendedByID(v string) *WorkspaceUpdateOne {
+	_u.mutation.SetSuspendedByID(v)
+	return _u
+}
+
+// SetNillableSuspendedByID sets the "suspended_by_id" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableSuspendedByID(v *string) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetSuspendedByID(*v)
+	}
+	return _u
+}
+
+// ClearSuspendedByID clears the value of the "suspended_by_id" field.
+func (_u *WorkspaceUpdateOne) ClearSuspendedByID() *WorkspaceUpdateOne {
+	_u.mutation.ClearSuspendedByID()
 	return _u
 }
 
@@ -3398,6 +3449,11 @@ func (_u *WorkspaceUpdateOne) check() error {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SuspendedByKind(); ok {
+		if err := workspace.SuspendedByKindValidator(v); err != nil {
+			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -3481,11 +3537,17 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	if _u.mutation.SuspendedAtCleared() {
 		_spec.ClearField(workspace.FieldSuspendedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.SuspendedBy(); ok {
-		_spec.SetField(workspace.FieldSuspendedBy, field.TypeString, value)
+	if value, ok := _u.mutation.SuspendedByKind(); ok {
+		_spec.SetField(workspace.FieldSuspendedByKind, field.TypeEnum, value)
 	}
-	if _u.mutation.SuspendedByCleared() {
-		_spec.ClearField(workspace.FieldSuspendedBy, field.TypeString)
+	if _u.mutation.SuspendedByKindCleared() {
+		_spec.ClearField(workspace.FieldSuspendedByKind, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.SuspendedByID(); ok {
+		_spec.SetField(workspace.FieldSuspendedByID, field.TypeString, value)
+	}
+	if _u.mutation.SuspendedByIDCleared() {
+		_spec.ClearField(workspace.FieldSuspendedByID, field.TypeString)
 	}
 	if value, ok := _u.mutation.SuspensionReason(); ok {
 		_spec.SetField(workspace.FieldSuspensionReason, field.TypeString, value)

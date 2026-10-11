@@ -85,3 +85,32 @@
   target_name: '+cmd'
   created_at: '2026-05-01 00:00:00'
   updated_at: '2026-05-01 00:00:00'
+
+# Initech's log, for the Operator console: an entry made by a platform Operator (the
+# stored actor id is real, a reader sees only "sphericon staff") and one by its own User.
+- id: 7 # fixture: InitechAuditOperatorSuspend
+  workspace_id: 3
+  entry_key: fixture-initechauditoperatorsuspend
+  occurred_at: '2026-06-01 00:00:00'
+  actor_kind: operator
+  actor_id: op-fixture
+  actor_name: Jane Staff
+  action: workspace.suspend
+  target_type: workspace
+  target_id: '3'
+  target_name: Initech
+  created_at: '2026-06-01 00:00:00'
+  updated_at: '2026-06-01 00:00:00'
+- id: 8 # fixture: InitechAuditUserTag
+  workspace_id: 3
+  entry_key: fixture-initechaudituser-tag
+  occurred_at: '2026-06-02 00:00:00'
+  actor_kind: user
+  actor_id: '9'
+  actor_name: Peter
+  action: tag.create
+  target_type: tag
+  target_id: '12'
+  target_name: vip
+  created_at: '2026-06-02 00:00:00'
+  updated_at: '2026-06-02 00:00:00'

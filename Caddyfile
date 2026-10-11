@@ -13,7 +13,7 @@
 	tls internal
 
 	# API → Go backend
-	@api path /site* /collect* /auth* /avatar* /api* /mcp* /.well-known/* /oauth/authorize /oauth/token /oauth/register
+	@api path /site* /operator* /collect* /auth* /avatar* /api* /mcp* /.well-known/* /oauth/authorize /oauth/token /oauth/register
 	reverse_proxy @api localhost:{$BACKEND_PORT}
 
 	# Everything else → Vite dev server (includes HMR websocket upgrade)

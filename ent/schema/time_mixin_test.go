@@ -24,5 +24,5 @@ func TestEveryEntityTableHasTimestamps(t *testing.T) {
 		require.True(t, names["created_at"], "%s lacks created_at", table.Name)
 		require.True(t, names["updated_at"], "%s lacks updated_at", table.Name)
 	}
-	require.Equal(t, 29, checked)
+	require.Equal(t, 30, checked)
 }

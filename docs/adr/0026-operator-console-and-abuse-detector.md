@@ -24,6 +24,13 @@ The Operator, its console and the detector ship under a single license feature, 
   a separate cookie and JWT secret, a shorter session than a customer's with no "remember me",
   attempts limited by [[0025-rate-limiting-hybrid-store-workspace-key]]. A lost TOTP is reset
   only through the CLI.
+- Login hardening reuses the ADR 0025 machinery: failed password and TOTP attempts feed one
+  `auth_attempt` counter per address under its own kind, `operator_login`, so an Operator and a
+  User of the same address never share a counter. The delay answers the standard 429 even for a
+  correct password or code, a started session resets the counter (the password step does not),
+  and the per-IP login cap covers both `/operator` login steps. `sphericon operator reset-totp
+  <email>` clears the TOTP and ends the Operator's sessions; the Operator re-enrols at next
+  login. No endpoint resets a second factor.
 - A fourth API surface, `/operator/*`: its own TypeSpec spec, ogen server and handler package.
   The console is a lazily loaded route subtree in the same SPA; without the license the surface
   answers 404.

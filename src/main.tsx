@@ -7,11 +7,13 @@ import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { I18nextProvider } from 'react-i18next'
 
+import { client as operatorClient } from './generated/operator/client.gen.ts'
 import { client } from './generated/site/client.gen.ts'
 import { i18n } from './i18n.ts'
 import { router } from './router.tsx'
 
 client.setConfig({ baseUrl: '/site' })
+operatorClient.setConfig({ baseUrl: '/operator' })
 
 import '@mantine/core/styles.css'
 import '@mantine/charts/styles.css'

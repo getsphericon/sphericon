@@ -1,7 +1,16 @@
 import { expect, test } from 'vitest'
 
+import { handleOperatorMeGet } from './generated/operator/msw.gen.ts'
 import { handleSiteWorkspacesList } from './generated/site/msw.gen.ts'
-import { indexRoute, loginRoute, oauthConsentRoute, router, workspaceRoute } from './router.tsx'
+import {
+  consoleHomeRoute,
+  consoleLoginRoute,
+  indexRoute,
+  loginRoute,
+  oauthConsentRoute,
+  router,
+  workspaceRoute,
+} from './router.tsx'
 import { problem } from './test/problem.ts'
 import { worker } from './test/worker.ts'
 
@@ -63,6 +72,30 @@ test('an unknown workspace slug with no workspaces goes to login', async () => {
   await router.navigate({ to: workspaceRoute.to, params: { slug: 'nope' } })
 
   expect(router.state.location.pathname).toBe(loginRoute.to)
+})
+
+test('the console sends a visitor without an Operator session to the console login', async () => {
+  worker.use(handleOperatorMeGet(() => problem(401, { detail: 'unauthorized' })))
+
+  await router.navigate({ to: consoleHomeRoute.to })
+
+  expect(router.state.location.pathname).toBe(consoleLoginRoute.fullPath)
+})
+
+test('the console is inert without the license: its 404 also leads to the login', async () => {
+  worker.use(handleOperatorMeGet(() => problem(404, { detail: 'not found' })))
+
+  await router.navigate({ to: consoleHomeRoute.to })
+
+  expect(router.state.location.pathname).toBe(consoleLoginRoute.fullPath)
+})
+
+test('the console opens for a signed-in Operator', async () => {
+  worker.use(handleOperatorMeGet({ body: { id: '1', email: 'ops@example.com' } }))
+
+  await router.navigate({ to: consoleHomeRoute.to })
+
+  expect(router.state.location.pathname).toBe('/console')
 })
 
 test('the OAuth consent screen sends a signed-out user to login and remembers where to return', async () => {

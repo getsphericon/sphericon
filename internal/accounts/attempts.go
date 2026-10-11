@@ -20,6 +20,7 @@ type Kind = authattempt.Kind
 
 const (
 	KindLogin         = authattempt.KindLogin
+	KindOperatorLogin = authattempt.KindOperatorLogin
 	KindPasswordReset = authattempt.KindPasswordReset
 )
 
@@ -72,6 +73,7 @@ func WithRule(kind Kind, rule Rule) AttemptsOption {
 func WithRateLimits(limits config.RateLimits) AttemptsOption {
 	return func(a *Attempts) {
 		a.rules[KindLogin] = LoginRule(limits.LoginFailures)
+		a.rules[KindOperatorLogin] = LoginRule(limits.LoginFailures)
 		a.rules[KindPasswordReset] = ResetRule(limits.ForgotAddress)
 	}
 }
@@ -82,6 +84,7 @@ func NewAttempts(client *ent.Client, opts ...AttemptsOption) *Attempts {
 	// job's) still knows when a row is stale.
 	a := &Attempts{ent: client, now: time.Now, rules: map[Kind]Rule{
 		KindLogin:         LoginRule(0),
+		KindOperatorLogin: LoginRule(0),
 		KindPasswordReset: ResetRule(0),
 	}}
 	for _, opt := range opts {

@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/mokevnin/sphericon/internal/suspension"
 )
 
 // workspaceOps is what the `workspace` operator commands need from the app. The
 // app implements it (internal/app); tests use a fake.
 type workspaceOps interface {
-	SuspendWorkspace(ctx context.Context, slug, by, reason string) (bool, error)
-	UnsuspendWorkspace(ctx context.Context, slug string) (bool, error)
+	SuspendWorkspace(ctx context.Context, slug string, by suspension.Actor, reason string) (bool, error)
+	UnsuspendWorkspace(ctx context.Context, slug string, by suspension.Actor) (bool, error)
 }
 
 const workspaceUsage = "usage: sphericon workspace suspend <slug> <reason...> | unsuspend <slug>"
@@ -31,7 +33,7 @@ func runWorkspace(ctx context.Context, ops workspaceOps, args []string, out io.W
 		if reason == "" {
 			return fmt.Errorf("a reason is required: the owner is told why\n%s", workspaceUsage)
 		}
-		changed, err := ops.SuspendWorkspace(ctx, slug, "cli", reason)
+		changed, err := ops.SuspendWorkspace(ctx, slug, suspension.CLI, reason)
 		if err != nil {
 			return err
 		}
@@ -41,7 +43,7 @@ func runWorkspace(ctx context.Context, ops workspaceOps, args []string, out io.W
 		}
 		_, _ = fmt.Fprintf(out, "workspace %q suspended: outbound sending is frozen and the owner has been notified\n", slug)
 	case "unsuspend":
-		changed, err := ops.UnsuspendWorkspace(ctx, slug)
+		changed, err := ops.UnsuspendWorkspace(ctx, slug, suspension.CLI)
 		if err != nil {
 			return err
 		}

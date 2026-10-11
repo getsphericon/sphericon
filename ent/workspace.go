@@ -39,8 +39,10 @@ type Workspace struct {
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
 	// SuspendedAt holds the value of the "suspended_at" field.
 	SuspendedAt *time.Time `json:"suspended_at,omitempty"`
-	// SuspendedBy holds the value of the "suspended_by" field.
-	SuspendedBy *string `json:"suspended_by,omitempty"`
+	// SuspendedByKind holds the value of the "suspended_by_kind" field.
+	SuspendedByKind *workspace.SuspendedByKind `json:"suspended_by_kind,omitempty"`
+	// SuspendedByID holds the value of the "suspended_by_id" field.
+	SuspendedByID *string `json:"suspended_by_id,omitempty"`
 	// SuspensionReason holds the value of the "suspension_reason" field.
 	SuspensionReason *string `json:"suspension_reason,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -318,7 +320,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRetentionDays:
 			values[i] = new(sql.NullInt64)
-		case workspace.FieldName, workspace.FieldSlug, workspace.FieldCollectKey, workspace.FieldIngestKey, workspace.FieldPostalAddress, workspace.FieldSuspendedBy, workspace.FieldSuspensionReason:
+		case workspace.FieldName, workspace.FieldSlug, workspace.FieldCollectKey, workspace.FieldIngestKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
 		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldSuspendedAt:
 			values[i] = new(sql.NullTime)
@@ -412,12 +414,19 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				_m.SuspendedAt = new(time.Time)
 				*_m.SuspendedAt = value.Time
 			}
-		case workspace.FieldSuspendedBy:
+		case workspace.FieldSuspendedByKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field suspended_by", values[i])
+				return fmt.Errorf("unexpected type %T for field suspended_by_kind", values[i])
 			} else if value.Valid {
-				_m.SuspendedBy = new(string)
-				*_m.SuspendedBy = value.String
+				_m.SuspendedByKind = new(workspace.SuspendedByKind)
+				*_m.SuspendedByKind = workspace.SuspendedByKind(value.String)
+			}
+		case workspace.FieldSuspendedByID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field suspended_by_id", values[i])
+			} else if value.Valid {
+				_m.SuspendedByID = new(string)
+				*_m.SuspendedByID = value.String
 			}
 		case workspace.FieldSuspensionReason:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -614,8 +623,13 @@ func (_m *Workspace) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
-	if v := _m.SuspendedBy; v != nil {
-		builder.WriteString("suspended_by=")
+	if v := _m.SuspendedByKind; v != nil {
+		builder.WriteString("suspended_by_kind=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.SuspendedByID; v != nil {
+		builder.WriteString("suspended_by_id=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

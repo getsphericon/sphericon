@@ -93,10 +93,17 @@ type Config struct {
 	SMTPFrom      string
 	EncryptionKey string
 	// LicenseKey is the offline EE license key (ADR 0014). Empty runs the plain core.
-	LicenseKey  string
-	AutoMigrate bool
-	BodyLimits  BodyLimits
-	RateLimits  RateLimits
+	LicenseKey string
+	// OperatorJWTSecret signs the Operator session and login challenge (OPERATOR_JWT_SECRET,
+	// ADR 0026). It is required, and must differ from JWT_SECRET, only when the license
+	// has the `operator` feature; ee.New validates it there.
+	OperatorJWTSecret string
+	// OperatorSessionTTL is the lifetime of an Operator session (OPERATOR_SESSION_TTL,
+	// default 4h, no refresh, no remember-me): shorter than a customer's.
+	OperatorSessionTTL time.Duration
+	AutoMigrate        bool
+	BodyLimits         BodyLimits
+	RateLimits         RateLimits
 	// OutboxFloor is the minimum age of a domain-event outbox row before the
 	// prune job may delete it (OUTBOX_RETENTION_FLOOR_DAYS, default 7; ADR 0019).
 	OutboxFloor time.Duration
@@ -149,6 +156,7 @@ func Load(envName string) (*Config, error) {
 	v.SetDefault("PORT", "3000")
 	v.SetDefault("APP_URL", "http://localhost:3000")
 	v.SetDefault("SESSION_TTL", 24*time.Hour)
+	v.SetDefault("OPERATOR_SESSION_TTL", 4*time.Hour)
 	v.SetDefault("SMTP_PORT", 1025)
 	v.SetDefault("SYSTEM_EMAIL_PROVIDER", "smtp")
 	v.SetDefault("SYSTEM_EMAIL_FROM", "noreply@sphericon.localhost")
@@ -226,7 +234,10 @@ func Load(envName string) (*Config, error) {
 		SMTPFrom:       v.GetString("SMTP_FROM"),
 		EncryptionKey:  v.GetString("ENCRYPTION_KEY"),
 		LicenseKey:     v.GetString("LICENSE_KEY"),
-		AutoMigrate:    v.GetBool("AUTO_MIGRATE"),
+
+		OperatorJWTSecret:  v.GetString("OPERATOR_JWT_SECRET"),
+		OperatorSessionTTL: v.GetDuration("OPERATOR_SESSION_TTL"),
+		AutoMigrate:        v.GetBool("AUTO_MIGRATE"),
 
 		BodyLimits: BodyLimits{
 			Default:      v.GetInt64("MAX_BODY_BYTES"),
@@ -281,6 +292,12 @@ func Load(envName string) (*Config, error) {
 	return cfg, nil
 }
 
+// SecureCookies reports whether session cookies carry the Secure attribute: whenever the
+// instance is served over HTTPS (APP_URL reflects the public scheme, even though a proxy
+// terminates TLS and the Go server listens on plain HTTP). Local http dev stays false,
+// where a Secure cookie would never be sent back.
+func (c *Config) SecureCookies() bool { return strings.HasPrefix(c.AppURL, "https://") }
+
 // validate enforces invariants that depend on the deployment environment.
 func (c *Config) validate(envName string) error {
 	// Outside development/test, an empty JWT_SECRET silently signs auth tokens
@@ -292,6 +309,9 @@ func (c *Config) validate(envName string) error {
 	}
 	if c.SessionTTL <= 0 {
 		return fmt.Errorf("SESSION_TTL must be positive")
+	}
+	if c.OperatorSessionTTL <= 0 {
+		return fmt.Errorf("OPERATOR_SESSION_TTL must be positive")
 	}
 	if c.BodyLimits.Default <= 0 {
 		return fmt.Errorf("MAX_BODY_BYTES must be positive")

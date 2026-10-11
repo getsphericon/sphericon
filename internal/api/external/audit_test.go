@@ -113,7 +113,7 @@ func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {
 func TestExternalAuditOperatorIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "ops@example.com", "abuse")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "abuse")
 	require.NoError(t, err)
 	env.DeliverToEE(t)
 	c := env.ExternalScoped(t, "audit:read")
@@ -123,7 +123,7 @@ func TestExternalAuditOperatorIdCannotBeProbed(t *testing.T) {
 		require.NoError(t, err)
 		return len(res.(*externalapi.AuditEntryList).Items)
 	}
-	assert.Zero(t, count(externalapi.AuditEntriesListParams{ActorId: externalapi.NewOptString("ops@example.com")}))
+	assert.Zero(t, count(externalapi.AuditEntriesListParams{ActorId: externalapi.NewOptString("op-42")}))
 	assert.Equal(t, 1, count(externalapi.AuditEntriesListParams{
 		ActorKind: externalapi.NewOptAuditActorKind(externalapi.AuditActorKindOperator), ActorId: externalapi.NewOptString("anything")}))
 }

@@ -3,6 +3,7 @@
 package workspace
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -36,8 +37,10 @@ const (
 	FieldSecondFactorRequiredAt = "second_factor_required_at"
 	// FieldSuspendedAt holds the string denoting the suspended_at field in the database.
 	FieldSuspendedAt = "suspended_at"
-	// FieldSuspendedBy holds the string denoting the suspended_by field in the database.
-	FieldSuspendedBy = "suspended_by"
+	// FieldSuspendedByKind holds the string denoting the suspended_by_kind field in the database.
+	FieldSuspendedByKind = "suspended_by_kind"
+	// FieldSuspendedByID holds the string denoting the suspended_by_id field in the database.
+	FieldSuspendedByID = "suspended_by_id"
 	// FieldSuspensionReason holds the string denoting the suspension_reason field in the database.
 	FieldSuspensionReason = "suspension_reason"
 	// EdgeContacts holds the string denoting the contacts edge name in mutations.
@@ -265,7 +268,8 @@ var Columns = []string{
 	FieldRetentionDays,
 	FieldSecondFactorRequiredAt,
 	FieldSuspendedAt,
-	FieldSuspendedBy,
+	FieldSuspendedByKind,
+	FieldSuspendedByID,
 	FieldSuspensionReason,
 }
 
@@ -301,6 +305,30 @@ var (
 	// RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	RetentionDaysValidator func(int) error
 )
+
+// SuspendedByKind defines the type for the "suspended_by_kind" enum field.
+type SuspendedByKind string
+
+// SuspendedByKind values.
+const (
+	SuspendedByKindSystem   SuspendedByKind = "system"
+	SuspendedByKindCli      SuspendedByKind = "cli"
+	SuspendedByKindOperator SuspendedByKind = "operator"
+)
+
+func (sbk SuspendedByKind) String() string {
+	return string(sbk)
+}
+
+// SuspendedByKindValidator is a validator for the "suspended_by_kind" field enum values. It is called by the builders before save.
+func SuspendedByKindValidator(sbk SuspendedByKind) error {
+	switch sbk {
+	case SuspendedByKindSystem, SuspendedByKindCli, SuspendedByKindOperator:
+		return nil
+	default:
+		return fmt.Errorf("workspace: invalid enum value for suspended_by_kind field: %q", sbk)
+	}
+}
 
 // OrderOption defines the ordering options for the Workspace queries.
 type OrderOption func(*sql.Selector)
@@ -365,9 +393,14 @@ func BySuspendedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSuspendedAt, opts...).ToFunc()
 }
 
-// BySuspendedBy orders the results by the suspended_by field.
-func BySuspendedBy(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSuspendedBy, opts...).ToFunc()
+// BySuspendedByKind orders the results by the suspended_by_kind field.
+func BySuspendedByKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSuspendedByKind, opts...).ToFunc()
+}
+
+// BySuspendedByID orders the results by the suspended_by_id field.
+func BySuspendedByID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSuspendedByID, opts...).ToFunc()
 }
 
 // BySuspensionReason orders the results by the suspension_reason field.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/mokevnin/sphericon/ent"
 	"github.com/mokevnin/sphericon/ent/membership"
+	"github.com/mokevnin/sphericon/ent/workspace"
 	"github.com/mokevnin/sphericon/internal/i18n"
 	"github.com/mokevnin/sphericon/internal/messaging"
 )
@@ -36,14 +37,16 @@ func NotifyWorkspaceSuspended(ctx context.Context, client *ent.Client, sender me
 		return err
 	}
 
-	reason, actor := "", ""
+	reason := ""
 	if ws.SuspensionReason != nil {
 		reason = *ws.SuspensionReason
 	}
-	if ws.SuspendedBy != nil {
-		actor = *ws.SuspendedBy
+	// The owner never sees an Operator's id: the CLI and every Operator are "sphericon staff".
+	actorKey := "email.workspace_suspended.actor_staff"
+	if ws.SuspendedByKind != nil && *ws.SuspendedByKind == workspace.SuspendedByKindSystem {
+		actorKey = "email.workspace_suspended.actor_system"
 	}
-	data := map[string]any{"Workspace": ws.Name, "Reason": reason, "Actor": actor}
+	data := map[string]any{"Workspace": ws.Name, "Reason": reason, "Actor": i18n.T(actorKey, nil)}
 	subject := i18n.T("email.workspace_suspended.subject", data)
 	body := i18n.T("email.workspace_suspended.body", data)
 

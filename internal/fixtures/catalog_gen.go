@@ -365,6 +365,16 @@ const (
 	GlobexSamMembershipID = 9
 	// GlobexSlug is from fixtures/workspaces.
 	GlobexSlug = "globex"
+	// HooliCollectKey is from fixtures/workspaces.
+	HooliCollectKey = "omck_test_hooli_collect_key"
+	// HooliID is from fixtures/workspaces.
+	HooliID = 5
+	// HooliIngestKey is from fixtures/workspaces.
+	HooliIngestKey = "omik_test_hooli_ingest_key"
+	// HooliName is from fixtures/workspaces.
+	HooliName = "Hooli"
+	// HooliSlug is from fixtures/workspaces.
+	HooliSlug = "hooli"
 	// InitechAdminAdaEmail is from fixtures/users.
 	InitechAdminAdaEmail = "ada@initech.test"
 	// InitechAdminAdaID is from fixtures/users.
@@ -375,6 +385,14 @@ const (
 	InitechAdminAdaPassword = "ada-test-password"
 	// InitechAdminMembershipID is from fixtures/memberships.
 	InitechAdminMembershipID = 7
+	// InitechAuditOperatorSuspendAction is from fixtures/audit_entries.
+	InitechAuditOperatorSuspendAction = "workspace.suspend"
+	// InitechAuditOperatorSuspendID is from fixtures/audit_entries.
+	InitechAuditOperatorSuspendID = 7
+	// InitechAuditUserTagAction is from fixtures/audit_entries.
+	InitechAuditUserTagAction = "tag.create"
+	// InitechAuditUserTagID is from fixtures/audit_entries.
+	InitechAuditUserTagID = 8
 	// InitechCoOwnerMembershipID is from fixtures/memberships.
 	InitechCoOwnerMembershipID = 6
 	// InitechCoOwnerOwenEmail is from fixtures/users.
@@ -441,6 +459,28 @@ const (
 	MemberMaryName = "Mary"
 	// MemberMaryPassword is from fixtures/users.
 	MemberMaryPassword = "mary-test-password"
+	// OperatorAlsoCustomerEmail is from fixtures/operators.
+	OperatorAlsoCustomerEmail = "info@getsphericon.com"
+	// OperatorAlsoCustomerID is from fixtures/operators.
+	OperatorAlsoCustomerID = 3
+	// OperatorAlsoCustomerPassword is from fixtures/operators.
+	OperatorAlsoCustomerPassword = "operator-both-password"
+	// OperatorAlsoCustomerTotpSecret is from fixtures/operators.
+	OperatorAlsoCustomerTotpSecret = "MFRGGZDFMZTWQ2LK"
+	// OperatorEnrolledEmail is from fixtures/operators.
+	OperatorEnrolledEmail = "staff@sphericon.test"
+	// OperatorEnrolledID is from fixtures/operators.
+	OperatorEnrolledID = 1
+	// OperatorEnrolledPassword is from fixtures/operators.
+	OperatorEnrolledPassword = "operator-test-password"
+	// OperatorEnrolledTotpSecret is from fixtures/operators.
+	OperatorEnrolledTotpSecret = "KRSXG5CTMVRXEZLU"
+	// OperatorFreshEmail is from fixtures/operators.
+	OperatorFreshEmail = "fresh-staff@sphericon.test"
+	// OperatorFreshID is from fixtures/operators.
+	OperatorFreshID = 2
+	// OperatorFreshPassword is from fixtures/operators.
+	OperatorFreshPassword = "operator-fresh-password"
 	// OutboundMessageBystanderDestination is from fixtures/outbound_messages.
 	OutboundMessageBystanderDestination = "ben@initech.test"
 	// OutboundMessageBystanderID is from fixtures/outbound_messages.
@@ -531,6 +571,14 @@ const (
 	SendingDomainInitechDomain = "mail.initech.test"
 	// SendingDomainInitechID is from fixtures/sending_domains.
 	SendingDomainInitechID = 300
+	// SendingDomainSoylentDomain is from fixtures/sending_domains.
+	SendingDomainSoylentDomain = "mail.soylent.test"
+	// SendingDomainSoylentID is from fixtures/sending_domains.
+	SendingDomainSoylentID = 400
+	// SendingDomainSoylentIdleDomain is from fixtures/sending_domains.
+	SendingDomainSoylentIdleDomain = "idle.soylent.test"
+	// SendingDomainSoylentIdleID is from fixtures/sending_domains.
+	SendingDomainSoylentIdleID = 401
 	// SendingDomainUnverifiedDomain is from fixtures/sending_domains.
 	SendingDomainUnverifiedDomain = "news.acme.com"
 	// SendingDomainUnverifiedID is from fixtures/sending_domains.
@@ -539,6 +587,16 @@ const (
 	SendingDomainVerifiedDomain = "mail.acme.com"
 	// SendingDomainVerifiedID is from fixtures/sending_domains.
 	SendingDomainVerifiedID = 1
+	// SoylentCollectKey is from fixtures/workspaces.
+	SoylentCollectKey = "omck_test_soylent_collect_key"
+	// SoylentID is from fixtures/workspaces.
+	SoylentID = 6
+	// SoylentIngestKey is from fixtures/workspaces.
+	SoylentIngestKey = "omik_test_soylent_ingest_key"
+	// SoylentName is from fixtures/workspaces.
+	SoylentName = "Soylent"
+	// SoylentSlug is from fixtures/workspaces.
+	SoylentSlug = "soylent"
 	// StaleLoginAttemptEmail is from fixtures/auth_attempts.
 	StaleLoginAttemptEmail = "stale@attempts.test"
 	// StaleLoginAttemptID is from fixtures/auth_attempts.

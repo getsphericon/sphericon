@@ -64,6 +64,8 @@ METRICS_ADDR = "127.0.0.1:{{ env.BACKEND_PORT | int - 3300 + 9090 }}"
 CGO_ENABLED = "0"
 # Dev-only secret so a fresh clone authenticates out of the box.
 JWT_SECRET = "dev-secret-change-in-production"
+# Dev-only Operator secret (read only with the `operator` license); never the site's.
+OPERATOR_JWT_SECRET = "dev-operator-secret-change-in-production"
 # Dev-only Tink keyset (same one the old .env.docker.sample shipped); never use in prod.
 ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5EiIaIIOWohIqGhyD2NeiOazlLrnrHqCirukTjCjD1iMFPqiEGAEQARiGprHOCSAB"
 SMTP_HOST = "127.0.0.1"

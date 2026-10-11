@@ -80,6 +80,15 @@ func main() {
 		return
 	}
 
+	// `server operator create <email>` makes a platform Operator (ADR 0026): the only way
+	// one comes to exist, since the /operator surface has no signup.
+	if len(os.Args) > 1 && os.Args[1] == "operator" {
+		if err := runOperatorCommand(env, os.Args[2:]); err != nil {
+			fatal("operator", err)
+		}
+		return
+	}
+
 	cfg, err := config.Load(env)
 	if err != nil {
 		fatal("load config", err)
@@ -219,4 +228,17 @@ func runUserCommand(env string, args []string) error {
 	defer cancel()
 	defer func() { _ = a.Shutdown(ctx) }()
 	return runUser(ctx, a, args, os.Stdout)
+}
+
+// runOperatorCommand boots the minimal operator app and runs one operator command
+// against it.
+func runOperatorCommand(env string, args []string) error {
+	a, err := app.NewOperator(env)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	defer func() { _ = a.Shutdown(ctx) }()
+	return runOperator(ctx, a, args, os.Stdout)
 }

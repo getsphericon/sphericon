@@ -16,6 +16,7 @@ import (
 	"github.com/mokevnin/sphericon/ent"
 	collectapi "github.com/mokevnin/sphericon/gen/collect"
 	externalapi "github.com/mokevnin/sphericon/gen/external"
+	operatorapi "github.com/mokevnin/sphericon/gen/operator"
 	siteapi "github.com/mokevnin/sphericon/gen/site"
 	apiauth "github.com/mokevnin/sphericon/internal/api/auth"
 	apicollect "github.com/mokevnin/sphericon/internal/api/collect"
@@ -24,6 +25,7 @@ import (
 	"github.com/mokevnin/sphericon/internal/clientip"
 	"github.com/mokevnin/sphericon/internal/logging"
 	"github.com/mokevnin/sphericon/internal/oauthserver"
+	"github.com/mokevnin/sphericon/internal/paths"
 	"github.com/mokevnin/sphericon/internal/ratelimit"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/oklog/ulid/v2"
@@ -35,20 +37,14 @@ import (
 // New composes the HTTP handler. client is the raw ent client: only the pieces whose
 // Workspace is not known up front take it (auth, OAuth, tracking, provider hooks);
 // the site, external and collect handlers get none (ADR 0017).
-func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, external, mcp http.Handler) (http.Handler, error) {
+func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, external, mcp, operator http.Handler) (http.Handler, error) {
 	bus := site.Bus
 	mux := http.NewServeMux()
-
-	// Send the JWT cookie with the Secure attribute whenever the instance is served
-	// over HTTPS (AppURL reflects the public scheme, so this holds even though Caddy
-	// terminates TLS and the Go server itself listens on plain HTTP). Stays false for
-	// local http://localhost dev, where a Secure cookie would never be sent back.
-	secureCookies := strings.HasPrefix(cfg.AppURL, "https://")
 
 	// Login and logout are /site operations (ADR 0020), and the login operation is
 	// the one route that mints a session, through this issuer. The library's
 	// /auth/ and /avatar/ routes are gone and must not fall through to the SPA shell.
-	site.Sessions = apiauth.NewSessions(cfg.JWTSecret, cfg.SessionTTL, secureCookies, site.Clock)
+	site.Sessions = apiauth.NewSessions(cfg.JWTSecret, cfg.SessionTTL, cfg.SecureCookies(), site.Clock)
 	mux.Handle("/auth/", http.NotFoundHandler())
 	mux.Handle("/avatar/", http.NotFoundHandler())
 	limiter := ratelimit.New(cfg.RateLimits)
@@ -65,6 +61,14 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 		return nil, err
 	}
 	mux.Handle("/site/", siteSrv)
+
+	// Operator API — /operator (ADR 0026): the platform staff surface, its own cookie and
+	// secret. Without the `operator` license there is no handler and the whole prefix
+	// answers 404, so it never falls through to the SPA shell below.
+	if operator == nil {
+		operator = http.NotFoundHandler()
+	}
+	mux.Handle(operatorPrefix+"/", operator)
 
 	// External API — /api (Bearer token auth via ogen SecurityHandler); built by
 	// NewExternalAPI so the MCP surface dispatches through the same server.
@@ -128,6 +132,24 @@ func NewExternalAPI(client *ent.Client, deps apiexternal.Deps) (http.Handler, er
 		externalapi.WithPathPrefix("/api"),
 		externalapi.WithErrorHandler(problemErrorHandler),
 	)
+}
+
+// operatorPrefix mounts the Operator surface (ADR 0026).
+const operatorPrefix = paths.Operator
+
+// OperatorSurface is the Enterprise Operator API (ee/operator), built into an ogen
+// server here so it renders errors like the other surfaces.
+type OperatorSurface interface {
+	Server(opts ...operatorapi.ServerOption) (http.Handler, error)
+}
+
+// NewOperatorAPI builds the /operator ogen server with RFC 7807 errors. A nil surface
+// (no `operator` license) yields a nil handler, which New mounts as a 404.
+func NewOperatorAPI(surface OperatorSurface) (http.Handler, error) {
+	if surface == nil {
+		return nil, nil
+	}
+	return surface.Server(operatorapi.WithErrorHandler(problemErrorHandler))
 }
 
 // problemErrorHandler renders ogen errors as RFC 7807 application/problem+json.
@@ -281,16 +303,16 @@ func requestID(next http.Handler) http.Handler {
 	})
 }
 
-// cookiePath reports whether a path is authenticated by the JWT cookie (the SPA
-// API), the only surface exposed to CSRF.
+// cookiePath reports whether a path is authenticated by a session cookie (the SPA
+// API and the Operator API), the only surfaces exposed to CSRF.
 func cookiePath(path string) bool {
-	return strings.HasPrefix(path, "/site/")
+	return strings.HasPrefix(path, "/site/") || strings.HasPrefix(path, operatorPrefix+"/")
 }
 
 // corsMiddleware applies three rs/cors policies by path:
 //   - /collect/: echoes any origin without credentials (the collect key is
 //     public, cookies are first-party on the customer's own domain);
-//   - /site/ (cookie auth): credentials only for the configured
+//   - /site/ and /operator/ (cookie auth): credentials only for the configured
 //     allowlist. The SPA is served same-origin, so with no allowlist there are no
 //     CORS headers at all;
 //   - everything else (external API, MCP, OAuth: bearer tokens): echoes any origin

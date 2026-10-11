@@ -22,6 +22,7 @@ import (
 	"github.com/mokevnin/sphericon/ent/membership"
 	"github.com/mokevnin/sphericon/ent/oauthclient"
 	"github.com/mokevnin/sphericon/ent/oauthcode"
+	"github.com/mokevnin/sphericon/ent/operator"
 	"github.com/mokevnin/sphericon/ent/outboundmessage"
 	"github.com/mokevnin/sphericon/ent/recoverycode"
 	"github.com/mokevnin/sphericon/ent/schema"
@@ -496,6 +497,37 @@ func init() {
 	oauthcodeDescScopes := oauthcodeFields[4].Descriptor()
 	// oauthcode.DefaultScopes holds the default value on creation for the scopes field.
 	oauthcode.DefaultScopes = oauthcodeDescScopes.Default.([]string)
+	operatorMixin := schema.Operator{}.Mixin()
+	operatorMixinFields0 := operatorMixin[0].Fields()
+	_ = operatorMixinFields0
+	operatorFields := schema.Operator{}.Fields()
+	_ = operatorFields
+	// operatorDescCreatedAt is the schema descriptor for created_at field.
+	operatorDescCreatedAt := operatorMixinFields0[0].Descriptor()
+	// operator.DefaultCreatedAt holds the default value on creation for the created_at field.
+	operator.DefaultCreatedAt = operatorDescCreatedAt.Default.(func() time.Time)
+	// operatorDescUpdatedAt is the schema descriptor for updated_at field.
+	operatorDescUpdatedAt := operatorMixinFields0[1].Descriptor()
+	// operator.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	operator.DefaultUpdatedAt = operatorDescUpdatedAt.Default.(func() time.Time)
+	// operator.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	operator.UpdateDefaultUpdatedAt = operatorDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// operatorDescEmail is the schema descriptor for email field.
+	operatorDescEmail := operatorFields[1].Descriptor()
+	// operator.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	operator.EmailValidator = operatorDescEmail.Validators[0].(func(string) error)
+	// operatorDescPasswordHash is the schema descriptor for password_hash field.
+	operatorDescPasswordHash := operatorFields[2].Descriptor()
+	// operator.PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
+	operator.PasswordHashValidator = operatorDescPasswordHash.Validators[0].(func(string) error)
+	// operatorDescTotpLastStep is the schema descriptor for totp_last_step field.
+	operatorDescTotpLastStep := operatorFields[5].Descriptor()
+	// operator.DefaultTotpLastStep holds the default value on creation for the totp_last_step field.
+	operator.DefaultTotpLastStep = operatorDescTotpLastStep.Default.(int64)
+	// operatorDescSessionEpoch is the schema descriptor for session_epoch field.
+	operatorDescSessionEpoch := operatorFields[6].Descriptor()
+	// operator.DefaultSessionEpoch holds the default value on creation for the session_epoch field.
+	operator.DefaultSessionEpoch = operatorDescSessionEpoch.Default.(int64)
 	outboundmessageMixin := schema.OutboundMessage{}.Mixin()
 	outboundmessageMixinFields0 := outboundmessageMixin[0].Fields()
 	_ = outboundmessageMixinFields0

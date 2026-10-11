@@ -157,9 +157,9 @@ func TestAuditOperatorSuspensionShowsOnlySphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "ops@example.com", "abuse report")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "abuse report")
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "ops@example.com")
+	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"))
 	require.NoError(t, err)
 
 	for _, action := range []string{events.ActionWorkspaceSuspend, events.ActionWorkspaceUnsuspend} {
@@ -170,8 +170,8 @@ func TestAuditOperatorSuspensionShowsOnlySphericonStaff(t *testing.T) {
 		assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "", "the Operator's identity is never exposed")
 		diff, err := json.Marshal(got[0].Diff.Value)
 		require.NoError(t, err)
-		assert.NotContains(t, string(diff), "ops@example.com")
-		assert.NotContains(t, got[0].Target.Name.Value, "ops@example.com")
+		assert.NotContains(t, string(diff), "op-42")
+		assert.NotContains(t, got[0].Target.Name.Value, "op-42")
 		assert.Equal(t, "workspace", got[0].Target.Type)
 		assert.Equal(t, strconv.Itoa(fixtures.AcmeID), got[0].Target.ID.Value)
 	}
@@ -179,7 +179,7 @@ func TestAuditOperatorSuspensionShowsOnlySphericonStaff(t *testing.T) {
 
 func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, "system", "complaint rate")
+	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.System, "complaint rate")
 	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionWorkspaceSuspend)
@@ -187,12 +187,24 @@ func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 	assert.Equal(t, siteapi.SiteAuditActorKindSystem, got[0].Actor.Kind)
 }
 
+func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
+	env := testhelper.Setup(t)
+	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.CLI, "abuse")
+	require.NoError(t, err)
+
+	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionWorkspaceSuspend)
+	require.Len(t, got, 1)
+	assert.Equal(t, siteapi.SiteAuditActorKindOperator, got[0].Actor.Kind)
+	assert.Equal(t, "sphericon staff", got[0].Actor.Name.Value)
+	assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "")
+}
+
 func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "system", "first")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "first")
 	require.NoError(t, err)
-	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "ops", "second")
+	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "second")
 	require.NoError(t, err)
 	require.False(t, changed)
 
@@ -243,9 +255,9 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = owner.SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Acme Two"}, // workspace.update
 		siteapi.SiteWorkspacesUpdateParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
-	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "ops", "abuse") // workspace.suspend
+	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "abuse") // workspace.suspend
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "ops") // workspace.unsuspend
+	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42")) // workspace.unsuspend
 	require.NoError(t, err)
 
 	_, err = env.ExternalAnchor(t).ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{ // contact.import
@@ -304,7 +316,7 @@ func recordAuditCallSites(t *testing.T) []string {
 func TestAuditOperatorIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, "ops@example.com", "abuse report")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "abuse report")
 	require.NoError(t, err)
 	env.DeliverToEE(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -320,7 +332,7 @@ func TestAuditOperatorIdCannotBeProbed(t *testing.T) {
 		return len(auditCSV(t, mustExport(ctx, t, owner, p))) - 1
 	}
 	operator := siteapi.NewOptSiteAuditActorKind(siteapi.SiteAuditActorKindOperator)
-	probe, other := siteapi.NewOptString("ops@example.com"), siteapi.NewOptString("someone-else")
+	probe, other := siteapi.NewOptString("op-42"), siteapi.NewOptString("someone-else")
 
 	assert.Zero(t, list(siteapi.SiteAuditListParams{ActorId: probe}), "the real id matches nothing without a kind")
 	assert.Zero(t, export(siteapi.SiteAuditExportParams{ActorId: probe}))

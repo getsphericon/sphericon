@@ -1,0 +1,25 @@
+# Platform Operators (ADR 0026): staff identities, separate from users. OperatorEnrolled has a
+# confirmed TOTP (the secret is sealed at load time and lifted into
+# fixtures.OperatorEnrolledTotpSecret); OperatorFresh was created by the CLI and has never
+# logged in, so it enrols at first login. OperatorAlsoCustomer shares its address with the
+# fixture User info@getsphericon.com but has its own password and TOTP: the two identities never
+# meet.
+- id: 1 # fixture: OperatorEnrolled
+  email: staff@sphericon.test
+  password_hash: '{{argonHash "operator-test-password"}}'
+  totp_secret_encrypted: '{{encrypt "KRSXG5CTMVRXEZLU"}}'
+  totp_confirmed_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2 # fixture: OperatorFresh
+  email: fresh-staff@sphericon.test
+  password_hash: '{{argonHash "operator-fresh-password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 3 # fixture: OperatorAlsoCustomer
+  email: info@getsphericon.com
+  password_hash: '{{argonHash "operator-both-password"}}'
+  totp_secret_encrypted: '{{encrypt "MFRGGZDFMZTWQ2LK"}}'
+  totp_confirmed_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

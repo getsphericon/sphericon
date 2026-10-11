@@ -11,6 +11,7 @@ import (
 
 	"github.com/mokevnin/sphericon/ent"
 	"github.com/mokevnin/sphericon/ent/outboundmessage"
+	"github.com/mokevnin/sphericon/ent/workspace"
 	"github.com/mokevnin/sphericon/internal/eligibility"
 	"github.com/mokevnin/sphericon/internal/fixtures"
 	"github.com/mokevnin/sphericon/internal/messaging"
@@ -203,7 +204,7 @@ func TestSuspendedWorkspaceIsHeldNotConsumed(t *testing.T) {
 	ctx := context.Background()
 	m := newModule(env)
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).SetSuspendedBy("system").
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).SetSuspendedByKind(workspace.SuspendedByKindSystem).
 		SetSuspensionReason("complaint rate").ExecX(ctx)
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:held", fixtures.ContactAliceID))
 	require.NoError(t, err)

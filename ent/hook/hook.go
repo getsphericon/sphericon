@@ -213,6 +213,18 @@ func (f OAuthCodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OAuthCodeMutation", m)
 }
 
+// The OperatorFunc type is an adapter to allow the use of ordinary
+// function as Operator mutator.
+type OperatorFunc func(context.Context, *ent.OperatorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OperatorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OperatorMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OperatorMutation", m)
+}
+
 // The OutboundMessageFunc type is an adapter to allow the use of ordinary
 // function as OutboundMessage mutator.
 type OutboundMessageFunc func(context.Context, *ent.OutboundMessageMutation) (ent.Value, error)

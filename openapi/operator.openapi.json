@@ -1,0 +1,1229 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sphericon Operator API",
+    "version": "1.0.0"
+  },
+  "tags": [
+    {
+      "name": "Operator Auth"
+    },
+    {
+      "name": "Operator"
+    },
+    {
+      "name": "Operator Workspaces"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "operationId": "OperatorAuth_login",
+        "description": "Check the password. Answers a challenge (or, at first login, a TOTP enrolment)\nand never a session. Unknown email and wrong password answer the same 401.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorLoginResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperatorLoginInput"
+              }
+            }
+          }
+        },
+        "security": [{}]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "OperatorAuth_logout",
+        "description": "End the session: bumps the Operator's session epoch, so every session token of\nthe Operator (a copied one too) stops verifying, and clears the session cookie.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. ",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The expired session cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Auth"]
+      }
+    },
+    "/auth/second-factor": {
+      "post": {
+        "operationId": "OperatorAuth_secondFactor",
+        "description": "The second login step: verify the challenge and a TOTP code, then start the\nsession (the cookie is set here). At first login the code also confirms the\nenrolment. An expired, reused or forged challenge and a wrong code answer the\nsame 401.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The Operator session cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperatorSecondFactorInput"
+              }
+            }
+          }
+        },
+        "security": [{}]
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "OperatorMe_get",
+        "description": "The authenticated Operator",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator"]
+      }
+    },
+    "/workspaces": {
+      "get": {
+        "operationId": "OperatorWorkspaces_list",
+        "description": "List all Workspaces, newest first, optionally narrowed by a slug search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OperatorWorkspaceSearch"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OperatorWorkspaceResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}": {
+      "get": {
+        "operationId": "OperatorWorkspaces_get",
+        "description": "One Workspace's metadata, suspension state, rates and send volume",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorWorkspaceDetailResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/audit-entries": {
+      "get": {
+        "operationId": "OperatorWorkspaceAudit_list",
+        "description": "One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing is then recorded.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor from a previous page",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorAuditEntryList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/suspend": {
+      "post": {
+        "operationId": "OperatorWorkspaces_suspend",
+        "description": "Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the\nsigned-in Operator. Idempotent: an already-suspended Workspace is left as it was.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorSuspensionChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperatorSuspendInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/unsuspend": {
+      "post": {
+        "operationId": "OperatorWorkspaces_unsuspend",
+        "description": "Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is\nnot suspended is left as it was.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorSuspensionChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Workspaces"]
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "components": {
+    "parameters": {
+      "OperatorWorkspaceSearch": {
+        "name": "slug",
+        "in": "query",
+        "required": false,
+        "description": "Only Workspaces whose slug contains this text (case-insensitive)",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
+      },
+      "PageQuery.page": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "description": "Page number (1-based)",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "default": 1
+        },
+        "explode": false
+      },
+      "PageQuery.pageSize": {
+        "name": "pageSize",
+        "in": "query",
+        "required": false,
+        "description": "Page size",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "default": 25
+        },
+        "explode": false
+      }
+    },
+    "schemas": {
+      "ConflictProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 conflict response"
+      },
+      "EmailAddress": {
+        "type": "string",
+        "format": "email"
+      },
+      "EntityId": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "ForbiddenProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 forbidden response"
+      },
+      "GoneProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
+      },
+      "OperatorAuditActor": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorAuditActorKind"
+              }
+            ],
+            "description": "The kind of actor; an operator carries no id and the name \"sphericon staff\""
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The actor's id (a User id or an API token id); absent for the system and an operator"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name snapshot taken when the entry was written"
+          }
+        },
+        "description": "The actor of an Audit entry"
+      },
+      "OperatorAuditActorKind": {
+        "type": "string",
+        "enum": ["user", "api_token", "operator", "system"],
+        "description": "Who performed an audited change, as the Workspace's own team sees it"
+      },
+      "OperatorAuditEntryList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperatorAuditEntryResource"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `cursor` for the next page; absent on the last page"
+          }
+        },
+        "description": "A page of a Workspace's Audit log, newest first"
+      },
+      "OperatorAuditEntryResource": {
+        "type": "object",
+        "required": ["id", "occurredAt", "actor", "action", "target"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "occurredAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the change happened"
+          },
+          "actor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorAuditActor"
+              }
+            ],
+            "description": "Who did it"
+          },
+          "action": {
+            "type": "string",
+            "description": "What was done, as `<entity>.<verb>`"
+          },
+          "target": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorAuditTarget"
+              }
+            ],
+            "description": "What it was done to"
+          },
+          "diff": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "description": "Before/after of the changed fields"
+          },
+          "requestId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Request id of the change"
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true,
+            "description": "Client address of the change"
+          },
+          "userAgent": {
+            "type": "string",
+            "nullable": true,
+            "description": "Client user agent of the change"
+          }
+        },
+        "description": "One immutable Audit entry of a Workspace. Secrets are never recorded; they appear as changed only."
+      },
+      "OperatorAuditTarget": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Entity type, e.g. membership"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The target's id"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name snapshot taken when the entry was written"
+          }
+        },
+        "description": "What an audited change was done to"
+      },
+      "OperatorDeliverability": {
+        "type": "object",
+        "required": ["windowHours", "volumeFloor", "sendVolume", "domains"],
+        "properties": {
+          "windowHours": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Length of the trailing window, in hours"
+          },
+          "volumeFloor": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Fewest sends in the window (per Sending domain) for a rate to be defined"
+          },
+          "sendVolume": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages sent in the window across all Sending domains"
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperatorDomainRates"
+            },
+            "description": "One entry per Sending domain, oldest first"
+          }
+        },
+        "description": "A Workspace's deliverability over the trailing window: the rates of ADR 0011 per\nSending domain, and how much it sent. Counts only, never message content."
+      },
+      "OperatorDomainRates": {
+        "type": "object",
+        "required": ["sendingDomainId", "domain", "complaintRate", "bounceRate"],
+        "properties": {
+          "sendingDomainId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Sending domain id"
+          },
+          "domain": {
+            "type": "string",
+            "description": "The domain the rates are for"
+          },
+          "complaintRate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorRate"
+              }
+            ],
+            "description": "Complaints over sent minus hard bounces"
+          },
+          "bounceRate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorRate"
+              }
+            ],
+            "description": "Hard bounces over sent"
+          }
+        },
+        "description": "The Complaint and Bounce rates of one Sending domain over the trailing window"
+      },
+      "OperatorEnrolment": {
+        "type": "object",
+        "required": ["secret", "uri", "qrCode"],
+        "properties": {
+          "secret": {
+            "type": "string",
+            "description": "Base32 key"
+          },
+          "uri": {
+            "type": "string",
+            "description": "otpauth:// URI"
+          },
+          "qrCode": {
+            "type": "string",
+            "description": "PNG data URI of the URI"
+          }
+        },
+        "description": "A TOTP secret awaiting its first confirming code"
+      },
+      "OperatorLoginInput": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "description": "Sign in with an email and password. The email is a plain string: a malformed\naddress must answer like an unknown one."
+      },
+      "OperatorLoginOutcome": {
+        "type": "string",
+        "enum": ["challenge", "enrolment"],
+        "description": "What the password step granted. There is never a session at this step: a TOTP is\nmandatory (ADR 0026). `challenge`: the Operator has a TOTP, go on with a code.\n`enrolment`: the Operator has none yet (first login); the `enrolment` secret is to be\nadded to an authenticator app, and the first code confirms it."
+      },
+      "OperatorLoginResult": {
+        "type": "object",
+        "required": ["outcome", "challenge"],
+        "properties": {
+          "outcome": {
+            "$ref": "#/components/schemas/OperatorLoginOutcome"
+          },
+          "challenge": {
+            "type": "string",
+            "description": "The signed challenge for the second step: bound to the Operator, valid for 5\nminutes, working for one successful second step."
+          },
+          "enrolment": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorEnrolment"
+              }
+            ],
+            "description": "Present when the outcome is `enrolment`"
+          }
+        }
+      },
+      "OperatorRate": {
+        "type": "object",
+        "required": ["numerator", "denominator", "rate"],
+        "properties": {
+          "numerator": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Events counted against the rate"
+          },
+          "denominator": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The population the rate is over"
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "nullable": true,
+            "description": "numerator / denominator; null (undefined) when fewer sends than the volume floor\nwere made in the window, never reported as 0"
+          }
+        },
+        "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011)"
+      },
+      "OperatorResource": {
+        "type": "object",
+        "required": ["id", "email"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "Login email"
+          }
+        },
+        "description": "The authenticated platform Operator (shown to customers only as \"sphericon staff\")"
+      },
+      "OperatorSecondFactorInput": {
+        "type": "object",
+        "required": ["challenge", "code"],
+        "properties": {
+          "challenge": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "A current TOTP code from the authenticator app"
+          }
+        },
+        "description": "The second login step: the challenge from the password step and a TOTP code"
+      },
+      "OperatorSuspendInput": {
+        "type": "object",
+        "required": ["reason"],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The reason, required: the Workspace owner is told why sending stopped"
+          }
+        },
+        "description": "Why a Workspace is being suspended; the owner is told"
+      },
+      "OperatorSuspension": {
+        "type": "object",
+        "required": ["at", "actor"],
+        "properties": {
+          "at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When outbound sending was suspended"
+          },
+          "actor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorSuspensionActor"
+              }
+            ],
+            "description": "Who suspended it"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why, as given by the actor"
+          }
+        },
+        "description": "A Workspace's suspension state (ADR 0007)"
+      },
+      "OperatorSuspensionActor": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/OperatorSuspensionActorKind"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Operator id; present only for the `operator` kind"
+          }
+        },
+        "description": "The actor of a suspension. Unlike a customer, an Operator sees the real Operator id."
+      },
+      "OperatorSuspensionActorKind": {
+        "type": "string",
+        "enum": ["system", "cli", "operator"],
+        "description": "Who set a Workspace suspension (ADR 0026)"
+      },
+      "OperatorSuspensionChange": {
+        "type": "object",
+        "required": ["changed", "workspace"],
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          },
+          "workspace": {
+            "$ref": "#/components/schemas/OperatorWorkspaceResource"
+          }
+        },
+        "description": "The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether\nanything changed (suspending a suspended Workspace and unsuspending an active one\nchange nothing)."
+      },
+      "OperatorWorkspaceDetailResource": {
+        "type": "object",
+        "required": ["id", "slug", "name", "createdAt", "deliverability"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Workspace was created"
+          },
+          "suspension": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorSuspension"
+              }
+            ],
+            "nullable": true,
+            "description": "Present only while sending is suspended"
+          },
+          "deliverability": {
+            "$ref": "#/components/schemas/OperatorDeliverability"
+          }
+        },
+        "description": "A Workspace with its deliverability, as the detail page shows it"
+      },
+      "OperatorWorkspaceResource": {
+        "type": "object",
+        "required": ["id", "slug", "name", "createdAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Workspace was created"
+          },
+          "suspension": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorSuspension"
+              }
+            ],
+            "nullable": true,
+            "description": "Present only while sending is suspended"
+          }
+        },
+        "description": "A Workspace as the Operator console sees it: metadata only, never Contacts,\ncontent or Events (ADR 0026)."
+      },
+      "PaymentRequiredProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 payment required response: the feature needs an Enterprise license"
+      },
+      "ProblemCode": {
+        "type": "string",
+        "enum": ["second_factor_required"],
+        "description": "A machine-readable reason a client branches on, beyond the HTTP status"
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProblemCode"
+              }
+            ],
+            "description": "Why the request was refused, when the client should act on it"
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference that identifies the problem type"
+          },
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem type"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status code"
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific occurrence"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Validation errors grouped by field"
+          },
+          "form": {
+            "type": "string",
+            "description": "Form-level validation error"
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Field validation errors"
+          },
+          "retryAfter": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait"
+          }
+        },
+        "description": "RFC 7807 Problem Details"
+      },
+      "TimeZoneName": {
+        "type": "string"
+      },
+      "Timestamp": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "OPERATOR_JWT"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/operator",
+      "description": "Local development operator API",
+      "variables": {}
+    }
+  ]
+}

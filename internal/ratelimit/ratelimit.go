@@ -27,6 +27,7 @@ import (
 	"github.com/mokevnin/sphericon/config"
 	"github.com/mokevnin/sphericon/internal/clientip"
 	"github.com/mokevnin/sphericon/internal/logging"
+	"github.com/mokevnin/sphericon/internal/paths"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -307,7 +308,7 @@ func (l *Limiter) Middleware(next http.Handler) http.Handler {
 		}
 		// The per-IP login cap spans accounts (password spraying) and both login
 		// steps; the per-account delay follows in the operations, which know the address.
-		if r.Method == http.MethodPost && (r.URL.Path == "/site/auth/login" || r.URL.Path == "/site/auth/second-factor") &&
+		if r.Method == http.MethodPost && loginPath(r.URL.Path) &&
 			!l.loginIP.Allow(w, r, "login|"+httprate.CanonicalizeIP(clientip.FromContext(ctx))) {
 			return
 		}
@@ -326,6 +327,15 @@ func (l *Limiter) Middleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// loginPath is the two steps of a login on either surface, /site and /operator.
+func loginPath(path string) bool {
+	switch path {
+	case "/site/auth/login", "/site/auth/second-factor", paths.Operator + "/auth/login", paths.Operator + "/auth/second-factor":
+		return true
+	}
+	return false
 }
 
 // exempt lists what is never limited: probes, metrics and the provider hooks
