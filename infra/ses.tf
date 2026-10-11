@@ -61,3 +61,10 @@ resource "aws_route53_record" "dmarc" {
   ttl     = local.dns_ttl
   records = [var.dmarc_rua != "" ? "v=DMARC1; p=none; rua=mailto:${var.dmarc_rua}" : "v=DMARC1; p=none"]
 }
+
+# While the account is in the SES sandbox, mail goes only to verified recipients. Creating the identity
+# makes SES send the address a verification link.
+resource "aws_sesv2_email_identity" "test_recipient" {
+  for_each       = var.ses_test_recipients
+  email_identity = each.value
+}

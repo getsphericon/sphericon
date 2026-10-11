@@ -134,3 +134,9 @@ variable "docs_github_owner" {
   type        = string
   default     = "getsphericon"
 }
+
+variable "ses_test_recipients" {
+  description = "Email addresses SES verifies as recipients while the account is in the SES sandbox (it delivers only to verified addresses). Each gets a verification email with a link to click. Empty once SES production access is granted."
+  type        = set(string)
+  default     = []
+}
