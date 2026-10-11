@@ -19,6 +19,7 @@ locals {
   # No transaction-mode pooler: river relies on LISTEN/NOTIFY.
   plain_env = {
     APP_URL           = "https://${local.app_host}"
+    MCP_URL           = "https://${local.mcp_host}"
     PORT              = tostring(var.app_port)
     OTEL_SERVICE_NAME = var.otel_service_name
     DB_MAX_OPEN_CONNS = tostring(var.db_max_open_conns)
