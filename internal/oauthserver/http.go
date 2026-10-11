@@ -38,29 +38,33 @@ const (
 	defaultClient   = "MCP client"
 )
 
-// ResourceURL is the canonical URI of the protected MCP resource.
-func ResourceURL(appURL string) string { return strings.TrimSuffix(appURL, "/") + mcpPath }
+// ResourceURL is the canonical URI of the protected MCP resource, served from
+// the MCP origin (the app origin unless MCP_URL gives MCP its own host).
+func ResourceURL(mcpOrigin string) string { return strings.TrimSuffix(mcpOrigin, "/") + mcpPath }
 
-// ResourceMetadataURL is where /mcp points unauthenticated clients (RFC 9728).
-func ResourceMetadataURL(appURL string) string {
-	return strings.TrimSuffix(appURL, "/") + protectedResourcePath + mcpPath
+// ResourceMetadataURL is where /mcp points unauthenticated clients (RFC 9728),
+// on the MCP origin.
+func ResourceMetadataURL(mcpOrigin string) string {
+	return strings.TrimSuffix(mcpOrigin, "/") + protectedResourcePath + mcpPath
 }
 
 // Server mounts the OAuth protocol endpoints.
 type Server struct {
 	*Service
-	issuer string
+	issuer   string
+	resource string
 }
 
-// New builds the server; appURL is the public origin and the OAuth issuer.
-func New(client *ent.Client, appURL string) *Server {
-	return &Server{Service: NewService(client), issuer: strings.TrimSuffix(appURL, "/")}
+// New builds the server; appURL is the public origin and the OAuth issuer, and
+// mcpURL the origin of the MCP resource (the same as appURL on a single host).
+func New(client *ent.Client, appURL, mcpURL string) *Server {
+	return &Server{Service: NewService(client), issuer: strings.TrimSuffix(appURL, "/"), resource: ResourceURL(mcpURL)}
 }
 
 // Mount registers discovery, registration, authorize and token endpoints.
 func (s *Server) Mount(mux *http.ServeMux) {
 	prm := auth.ProtectedResourceMetadataHandler(&oauthex.ProtectedResourceMetadata{
-		Resource:               ResourceURL(s.issuer),
+		Resource:               s.resource,
 		AuthorizationServers:   []string{s.issuer},
 		ScopesSupported:        SupportedScopes(),
 		BearerMethodsSupported: []string{"header"},
@@ -169,7 +173,7 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
 		return
 	}
-	if kind, msg := checkAuthorizeParams(q, ResourceURL(s.issuer)); msg != "" {
+	if kind, msg := checkAuthorizeParams(q, s.resource); msg != "" {
 		target, err := redirectWith(redirectURI, url.Values{"error": {kind}, "error_description": {msg}}, q.Get("state"))
 		if err != nil {
 			writeOAuthError(w, http.StatusBadRequest, kind, msg)
@@ -207,7 +211,7 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 		writeOAuthError(w, http.StatusBadRequest, "unsupported_grant_type", "only authorization_code is supported")
 		return
 	}
-	if res := r.PostForm.Get("resource"); res != "" && res != ResourceURL(s.issuer) {
+	if res := r.PostForm.Get("resource"); res != "" && res != s.resource {
 		writeOAuthError(w, http.StatusBadRequest, "invalid_target", "unknown resource")
 		return
 	}

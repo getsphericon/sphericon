@@ -12,6 +12,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
+	"github.com/mokevnin/sphericon/config"
 	"github.com/mokevnin/sphericon/ent/apitoken"
 	"github.com/mokevnin/sphericon/ent/membership"
 	siteapi "github.com/mokevnin/sphericon/gen/site"
@@ -239,10 +240,20 @@ func TestTokenEndpointChecksPKCEAndTheOriginalRequest(t *testing.T) {
 
 func TestResourceIndicatorMustBeTheMCPResource(t *testing.T) {
 	env := testhelper.Setup(t)
-	mcpResource := oauthserver.ResourceURL(appURL(t))
+	assertResourceIndicator(t, env, oauthserver.ResourceURL(appURL(t)), "https://elsewhere.example/mcp")
+}
+
+func TestSplitHostResourceIndicatorIsTheMCPHostResource(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.MCPURL = splitMCPURL }))
+	// the issuer-host resource is no longer the protected resource
+	assertResourceIndicator(t, env, oauthserver.ResourceURL(splitMCPURL), oauthserver.ResourceURL(appURL(t)))
+}
+
+func assertResourceIndicator(t *testing.T, env *testhelper.TestEnv, mcpResource, wrong string) {
+	t.Helper()
 
 	t.Run("authorize", func(t *testing.T) {
-		rec := authorize(t, env, authorizeQuery(url.Values{"resource": {"https://elsewhere.example/mcp"}}))
+		rec := authorize(t, env, authorizeQuery(url.Values{"resource": {wrong}}))
 		require.Equal(t, http.StatusFound, rec.Code)
 		loc, err := url.Parse(rec.Header().Get("Location"))
 		require.NoError(t, err)
@@ -256,7 +267,7 @@ func TestResourceIndicatorMustBeTheMCPResource(t *testing.T) {
 
 	t.Run("token", func(t *testing.T) {
 		bad := tokenForm(consent(t, env, approval("contacts:read", false)).Query().Get("code"))
-		bad.Set("resource", "https://elsewhere.example/mcp")
+		bad.Set("resource", wrong)
 		rec := exchange(t, env, bad)
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		assert.Contains(t, rec.Body.String(), "invalid_target")
