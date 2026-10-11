@@ -122,3 +122,15 @@ variable "dmarc_rua" {
   type        = string
   default     = ""
 }
+
+variable "docs_host_label" {
+  description = "Label of the documentation host: <label>.<domain> is a CNAME to GitHub Pages. Keep it in step with docs/public/CNAME."
+  type        = string
+  default     = "docs"
+}
+
+variable "docs_github_owner" {
+  description = "GitHub organization that owns the repository publishing the documentation site; the docs host is a CNAME to <owner>.github.io."
+  type        = string
+  default     = "getsphericon"
+}

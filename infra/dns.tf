@@ -30,3 +30,13 @@ resource "aws_route53_record" "hosts" {
     evaluate_target_health = true
   }
 }
+
+# The documentation site is served by GitHub Pages (.github/workflows/docs.yml), not by the load
+# balancer. The custom domain is set on the repository's Pages settings and in docs/public/CNAME.
+resource "aws_route53_record" "docs" {
+  zone_id = aws_route53_zone.this.zone_id
+  name    = "${var.docs_host_label}.${var.domain}"
+  type    = "CNAME"
+  ttl     = local.dns_ttl
+  records = ["${var.docs_github_owner}.github.io"]
+}
