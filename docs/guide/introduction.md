@@ -44,3 +44,4 @@ All three share templates, the same sending domain checks and the same consent r
 - [Quickstart](/guide/quickstart): from zero to a first broadcast.
 - [Tracking visitors and events](/guide/tracking): connect your site or product.
 - [Self-hosting](/self-hosting): configuration, migrations and health checks.
+- [Sphericon Cloud](/guide/cloud): the hosted edition, if you would rather not run it yourself.

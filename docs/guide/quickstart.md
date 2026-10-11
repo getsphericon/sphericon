@@ -4,6 +4,10 @@ This walks you from a running instance to your first broadcast.
 
 ## 1. Run sphericon
 
+::: tip Prefer not to run it?
+[Sphericon Cloud](/guide/cloud) is the hosted edition: skip this step and start at step 2.
+:::
+
 The quickest way is the published image. PostgreSQL is the only dependency.
 
 ```sh
