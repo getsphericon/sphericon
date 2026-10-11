@@ -188,9 +188,11 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   6. the Workspace comes from a secret rather than a login: the SES hook ingest key
      (`internal/server/hooks_ses.go`), signed unsubscribe/confirm tokens
      (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token);
-  7. the platform Operator (ADR 0026): `ee/operator` scopes over the one Workspace whose
-     Audit log it reads (`Module.AuditEntries`, after loading the Workspace row), through the
-     same `audit.Log.Entries` path as `/site`.
+  7. the platform Operator (ADR 0026): `ee/operator` scopes over the one Workspace the console
+     is looking at, in exactly two reads, each after the Workspace row is loaded and each through
+     the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
+     `audit.Log.Entries`) and its deliverability rates (`Module.WorkspaceDeliverability`, via
+     `reputation.Rates`).
 - **The raw `*ent.Client` is allowed only in:** `internal/accounts` (User, Membership,
   Workspace incl. slug resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
@@ -201,7 +203,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition), `ee/audit` (the Audit log bus
   subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/retention` (the
-  periodic prune job: a job entry point that lists Workspaces, then scopes) and the composition roots
+  periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/operator` (the
+  platform Operator, ADR 0026: the Operator table, and the Workspace rows, suspension state and
+  rates the console shows as tenant metadata; Workspace data goes through the two scopes of
+  list item 7) and the composition roots
   (`internal/app`, `internal/db`, `internal/testhelper`). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`.
   `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes

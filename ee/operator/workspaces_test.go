@@ -10,7 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/mokevnin/sphericon/ee/operator"
+	"github.com/mokevnin/sphericon/ent/event"
 	operatorapi "github.com/mokevnin/sphericon/gen/operator"
+	"github.com/mokevnin/sphericon/internal/events"
 	"github.com/mokevnin/sphericon/internal/fixtures"
 	"github.com/mokevnin/sphericon/internal/testhelper"
 )
@@ -193,6 +196,11 @@ func TestTheWorkspaceEndpointsAnswer404WithoutTheLicense(t *testing.T) {
 func soylentDeliverability(t *testing.T, h *harness) operatorapi.OperatorDeliverability {
 	t.Helper()
 	c, _ := h.operatorSession(t)
+	return soylentDeliverabilityAs(t, h, c)
+}
+
+func soylentDeliverabilityAs(t *testing.T, h *harness, c *operatorapi.Client) operatorapi.OperatorDeliverability {
+	t.Helper()
 	soylent, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.SoylentID)).(*operatorapi.OperatorWorkspaceDetailResource)
 	require.True(t, ok)
 	return soylent.Deliverability
@@ -229,6 +237,33 @@ func TestBelowTheVolumeFloorTheRatesAreUndefinedButTheCountsShow(t *testing.T) {
 	assert.EqualValues(t, 0, idle.BounceRate.Denominator)
 	assert.True(t, idle.BounceRate.Rate.Null)
 	assert.True(t, idle.ComplaintRate.Rate.Null)
+}
+
+// The send volume is the number of email.sent Events of the Workspace in the window, read
+// straight from the Events, not derived from the rates it sits beside.
+func TestTheSendVolumeIsTheCountOfSentEventsInTheWindow(t *testing.T) {
+	h := newHarness(t)
+	c, _ := h.operatorSession(t)
+	ctx := t.Context()
+	s := h.env.DB.Scoped(fixtures.SoylentID)
+	inWindow := func() int {
+		return s.Event().Query().Where(
+			event.Action(events.NameEmailSent),
+			event.OccurredAtGTE(time.Now().Add(-operator.RateWindow)),
+		).CountX(ctx)
+	}
+	require.Equal(t, 8, inWindow(), "the fixtures hold 8 sends in the window")
+	assert.EqualValues(t, inWindow(), soylentDeliverabilityAs(t, h, c).SendVolume)
+
+	require.NoError(t, s.Event().Create().SetAction(events.NameEmailSent).SetEmail("extra@example.com").
+		SetProperties(map[string]any{"sendingDomain": fixtures.SendingDomainSoylentDomain}).
+		SetOccurredAt(time.Now().Add(-time.Hour)).Exec(ctx))
+	require.NoError(t, s.Event().Create().SetAction(events.NameEmailSent).SetEmail("old@example.com").
+		SetProperties(map[string]any{"sendingDomain": fixtures.SendingDomainSoylentDomain}).
+		SetOccurredAt(time.Now().Add(-operator.RateWindow-time.Hour)).Exec(ctx))
+
+	assert.Equal(t, 9, inWindow())
+	assert.EqualValues(t, 9, soylentDeliverabilityAs(t, h, c).SendVolume, "a new send counts, one past the window does not")
 }
 
 func TestAtOrAboveTheVolumeFloorTheRatesAreDefined(t *testing.T) {

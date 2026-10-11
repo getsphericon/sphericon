@@ -92,7 +92,8 @@ type DomainRates struct {
 type Deliverability struct {
 	Window      time.Duration
 	VolumeFloor int
-	// SendVolume is the messages sent in the window across all Sending domains.
+	// SendVolume is the messages sent in the window across all Sending domains
+	// (email.sent Events, by their own timestamp).
 	SendVolume int
 	Domains    []DomainRates
 }
@@ -131,8 +132,13 @@ func (m *Module) GetWorkspace(ctx context.Context, id int64) (*ent.Workspace, er
 // WorkspaceDeliverability is the rates of one Workspace, by the existing reputation
 // computation (ADR 0011, no new one), and its send volume. A rate stays undefined
 // while its Sending domain sent fewer than the volume floor in the window. The
-// reputation module reads through a Workspace scope, so one is built here for this
-// read only (the spec's "rate module" exception); nothing else in the package scopes.
+// reputation module reads through a Workspace scope, so one is built here over the
+// Workspace being looked at, for this read and the Audit read (AuditEntries) only.
+//
+// The send volume is the sum of each Sending domain's bounce-rate denominator, which
+// the reputation module defines as the count of the domain's email.sent Events in the
+// window: it is exactly the messages sent in the window from the Workspace's Sending
+// domains (a send naming no Sending domain of the Workspace belongs to no rate).
 func (m *Module) WorkspaceDeliverability(ctx context.Context, id int64) (Deliverability, error) {
 	if err := m.licensed(); err != nil {
 		return Deliverability{}, err

@@ -11,7 +11,8 @@ import (
 // the next page (0 on the last). It rides the same read path as the /site page
 // (audit.Log.Entries), through a scope over the Workspace the Operator is looking at,
 // so the query carries no hand-written Workspace predicate; an ent not-found error
-// when the Workspace does not exist.
+// when the Workspace does not exist. With WorkspaceDeliverability it is one of the
+// two places this package builds a Workspace scope (AGENTS.md, scope list item 7).
 //
 // It is gated by the `operator` feature alone: the console is the Operator's tool and
 // the Audit log is one of its cards (ADR 0026). The separate `audit` license decides
