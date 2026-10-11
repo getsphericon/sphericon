@@ -14,7 +14,7 @@ Drip, without the lock-in.
 
 ![The sphericon workspace overview: email engagement, contacts and automations](docs/public/screenshot.png)
 
-**Documentation:** https://mokevnin.github.io/sphericon/
+**Documentation:** https://docs.getsphericon.app/
 
 ## Stack
 
