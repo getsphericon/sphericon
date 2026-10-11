@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.2](https://github.com/getsphericon/sphericon/compare/v0.1.1...v0.1.2) (2026-10-11)
+
+
+### Features
+
+* **docs:** serve the documentation at docs.getsphericon.app ([#220](https://github.com/getsphericon/sphericon/issues/220)) ([884e516](https://github.com/getsphericon/sphericon/commit/884e51696dfaff0e93161ffc2e426046a91373f3))
+* **infra:** serve the MCP surface on mcp.getsphericon.app ([f29a81b](https://github.com/getsphericon/sphericon/commit/f29a81b34434e8212e9d7d73c8de37a4f2982fa6))
+* **mcp:** serve the MCP resource from an optional dedicated host (MCP_URL) ([72ef0af](https://github.com/getsphericon/sphericon/commit/72ef0afedad7caf09807daf906e5cea028be15a1))
+* **operator:** Operator identity, /operator surface and console v1 (ADR 0026) ([#215](https://github.com/getsphericon/sphericon/issues/215)) ([2210e75](https://github.com/getsphericon/sphericon/commit/2210e756d3d67ee58fbd9f4f83f77e2ae9b080dd))
+
+
+### Bug Fixes
+
+* **infra:** keep RDS backup retention within the AWS free plan limit ([20ba3b1](https://github.com/getsphericon/sphericon/commit/20ba3b1b62b331f25d92215845994a6a84a734a2))
+
 ## [0.1.1](https://github.com/getsphericon/sphericon/compare/v0.1.0...v0.1.1) (2026-10-10)
 
 ### Features
