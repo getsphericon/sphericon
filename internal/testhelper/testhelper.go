@@ -298,7 +298,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit,
 	})
 	require.NoError(t, err, "build external API")
-	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.AppURL)))
+	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
 	require.NoError(t, err, "build MCP handler")
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{

@@ -132,7 +132,7 @@ func TestRegistrationNamesAndBoundsClients(t *testing.T) {
 // A storage outage is a server_error, never a client error or a silent success.
 func TestStorageFailureIsAServerError(t *testing.T) {
 	mux := http.NewServeMux()
-	oauthserver.New(closedClient(t), "https://app.test").Mount(mux)
+	oauthserver.New(closedClient(t), "https://app.test", "https://app.test").Mount(mux)
 	do := func(req *http.Request) *httptest.ResponseRecorder {
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)

@@ -36,6 +36,8 @@ func getJSON(t *testing.T, env *testhelper.TestEnv, path string) map[string]any 
 	return doc
 }
 
+const splitMCPURL = "https://mcp.sphericon.example"
+
 func TestMCPChallengePointsAtProtectedResourceMetadata(t *testing.T) {
 	env := testhelper.Setup(t)
 
@@ -79,4 +81,33 @@ func TestDiscoveryDocuments(t *testing.T) {
 	assert.Equal(t, []any{"authorization_code"}, as["grant_types_supported"])
 	assert.Equal(t, []any{"S256"}, as["code_challenge_methods_supported"])
 	assert.Equal(t, []any{"none"}, as["token_endpoint_auth_methods_supported"])
+}
+
+func TestSplitHostDiscovery(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.MCPURL = splitMCPURL + "/" }))
+	issuer := appURL(t)
+
+	for _, path := range []string{
+		"/.well-known/oauth-protected-resource/mcp",
+		"/.well-known/oauth-protected-resource",
+	} {
+		prm := getJSON(t, env, path)
+		assert.Equal(t, splitMCPURL+"/mcp", prm["resource"], path)
+		assert.Equal(t, []any{issuer}, prm["authorization_servers"], path)
+	}
+
+	as := getJSON(t, env, "/.well-known/oauth-authorization-server")
+	assert.Equal(t, issuer, as["issuer"])
+	assert.Equal(t, issuer+"/oauth/authorize", as["authorization_endpoint"])
+	assert.Equal(t, issuer+"/oauth/token", as["token_endpoint"])
+}
+
+func TestSplitHostChallengeNamesTheMCPHost(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.MCPURL = splitMCPURL }))
+
+	rec := serve(env, httptest.NewRequestWithContext(t.Context(), http.MethodPost, testhelper.MCPEndpoint, strings.NewReader(`{}`)))
+
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	assert.Contains(t, rec.Header().Get("WWW-Authenticate"),
+		`resource_metadata="`+splitMCPURL+`/.well-known/oauth-protected-resource/mcp"`)
 }

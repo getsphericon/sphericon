@@ -76,7 +76,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 
 	// OAuth 2.1 for MCP connectors (ADR 0016): discovery, dynamic client
 	// registration, authorize (hands off to the SPA consent screen) and token.
-	oauthserver.New(client, cfg.AppURL).Mount(mux)
+	oauthserver.New(client, cfg.AppURL, cfg.MCPOrigin()).Mount(mux)
 
 	// Collect API — /collect (x-collect-key via generated SecurityHandler).
 	colSrv, err := collectapi.NewServer(
