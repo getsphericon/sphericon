@@ -32,7 +32,9 @@ resource "aws_db_instance" "pg" {
   publicly_accessible    = false
   multi_az               = false
 
-  backup_retention_period    = 7
+  # One day: the AWS free plan caps backup retention (FreeTierRestrictionError above that). Raise it
+  # after upgrading the account plan.
+  backup_retention_period    = 1
   auto_minor_version_upgrade = true
   apply_immediately          = true
 
