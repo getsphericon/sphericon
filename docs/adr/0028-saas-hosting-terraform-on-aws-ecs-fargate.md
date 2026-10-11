@@ -20,11 +20,14 @@ standby).
   `aws login` (session credentials); no long-lived keys are stored anywhere.
 - **Plain ECS on Fargate (ARM64) behind an Application Load Balancer.** App Runner is closed to new
   customers. ECS Express Mode (`aws_ecs_express_gateway_service`) was evaluated and rejected: it
-  owns its load balancer and exposes no listener rules, so it cannot express the three hosts or the
+  owns its load balancer and exposes no listener rules, so it cannot express the four hosts or the
   API path rewrite. The ALB routes by `Host`: the apex `getsphericon.app` (SPA and `/site/*`; `APP_URL` is
   `https://getsphericon.app`), `api.getsphericon.app` (rewritten to the `/api` prefix by a
-  listener-rule URL transform) and `t.getsphericon.app` (`/t.js` and `/collect/*` only). Anything
-  else is a 404. One ACM certificate with the three hosts as names, validated by DNS in Route 53.
+  listener-rule URL transform) and `t.getsphericon.app` (`/t.js` and `/collect/*` only) and
+  `mcp.getsphericon.app` (`/mcp` and `/.well-known/*` only, no rewrite; `MCP_URL` is
+  `https://mcp.getsphericon.app`, while the OAuth issuer and consent UI stay on the apex). The MCP
+  surface has its own host so agent connectors get a stable origin that can be rate-limited or put
+  behind a WAF on its own. Anything else is a 404. One ACM certificate with the four hosts as names, validated by DNS in Route 53.
   Task: 0.5 vCPU / 1 GB, one task, rolling deploy (new task first, circuit breaker with
   rollback), health check `/readyz`.
 - **No NAT gateway** (cost): tasks run in public subnets with public IPs and a security group that

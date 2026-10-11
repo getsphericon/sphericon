@@ -1,10 +1,10 @@
-# One Application Load Balancer routes the three hosts to the one service by Host header (ECS
+# One Application Load Balancer routes the four hosts to the one service by Host header (ECS
 # Express Mode could not express this: no listener rules, no URL rewrite). One ACM certificate
-# covers the three hosts (the apex and two subdomains), validated through DNS in the zone of dns.tf.
+# covers the four hosts (the apex and three subdomains), validated through DNS in the zone of dns.tf.
 
 resource "aws_acm_certificate" "this" {
   domain_name               = local.app_host
-  subject_alternative_names = [local.api_host, local.tracker_host]
+  subject_alternative_names = [local.api_host, local.tracker_host, local.mcp_host]
   validation_method         = "DNS"
 
   lifecycle {
@@ -13,7 +13,7 @@ resource "aws_acm_certificate" "this" {
 }
 
 resource "aws_route53_record" "cert_validation" {
-  for_each = toset([local.app_host, local.api_host, local.tracker_host])
+  for_each = toset([local.app_host, local.api_host, local.tracker_host, local.mcp_host])
 
   zone_id         = aws_route53_zone.this.zone_id
   allow_overwrite = true
@@ -70,7 +70,7 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# Anything not matched below (an unknown host, other paths on the tracker host) is a 404.
+# Anything not matched below (an unknown host, other paths on the tracker and MCP hosts) is a 404.
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.this.arn
   port              = 443
@@ -134,6 +134,30 @@ resource "aws_lb_listener_rule" "tracker" {
   condition {
     path_pattern {
       values = ["/t.js", "/collect", "/collect/*"]
+    }
+  }
+}
+
+# The MCP host serves the MCP endpoint and the OAuth discovery documents (no rewrite). The OAuth
+# issuer and the consent UI stay on the apex.
+resource "aws_lb_listener_rule" "mcp" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 25
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app.arn
+  }
+
+  condition {
+    host_header {
+      values = [local.mcp_host]
+    }
+  }
+
+  condition {
+    path_pattern {
+      values = ["/mcp", "/.well-known/*"]
     }
   }
 }

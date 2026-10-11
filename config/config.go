@@ -81,8 +81,11 @@ type Config struct {
 	JWTSecret      string
 	// SessionTTL is the lifetime of a site session: both the token's exp and the
 	// cookie's Max-Age (SESSION_TTL, default 24h, no refresh; ADR 0020).
-	SessionTTL    time.Duration
-	AppURL        string
+	SessionTTL time.Duration
+	AppURL     string
+	// MCPURL is the public origin of a dedicated MCP host (MCP_URL); empty means the
+	// MCP resource lives on AppURL. Read it through MCPOrigin.
+	MCPURL        string
 	SMTPHost      string
 	SMTPPort      int
 	SMTPUser      string
@@ -223,6 +226,7 @@ func Load(envName string) (*Config, error) {
 		JWTSecret:      v.GetString("JWT_SECRET"),
 		SessionTTL:     v.GetDuration("SESSION_TTL"),
 		AppURL:         v.GetString("APP_URL"),
+		MCPURL:         v.GetString("MCP_URL"),
 		SMTPHost:       v.GetString("SMTP_HOST"),
 		SMTPPort:       v.GetInt("SMTP_PORT"),
 		SMTPUser:       v.GetString("SMTP_USER"),
@@ -412,6 +416,15 @@ func validateJWTSecret(secret string) error {
 		}
 	}
 	return nil
+}
+
+// MCPOrigin is the public origin the MCP resource is served from: MCP_URL when the
+// deployment gives MCP its own host, otherwise AppURL.
+func (c *Config) MCPOrigin() string {
+	if c.MCPURL != "" {
+		return c.MCPURL
+	}
+	return c.AppURL
 }
 
 // UseListener points the public URL and PORT at a listener the caller opened, so
