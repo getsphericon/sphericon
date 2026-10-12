@@ -111,6 +111,20 @@ resource "aws_vpc_security_group_ingress_rule" "app_from_alb" {
   referenced_security_group_id = aws_security_group.alb.id
 }
 
+# The internal listener (INTERNAL_ADDR) is open to one named security group and nothing else: not
+# the load balancer, not the internet. Without the variable there is no rule and no port. The
+# target group and the load balancer's egress rule stay on app_port only.
+resource "aws_vpc_security_group_ingress_rule" "app_internal_from_source" {
+  count = local.internal_listener ? 1 : 0
+
+  security_group_id            = aws_security_group.app.id
+  description                  = "Internal listener from the named security group"
+  ip_protocol                  = "tcp"
+  from_port                    = var.internal_port
+  to_port                      = var.internal_port
+  referenced_security_group_id = var.internal_listener_source_security_group_id
+}
+
 # Outbound: GHCR, Secrets Manager, CloudWatch Logs, SES, the database.
 resource "aws_vpc_security_group_egress_rule" "app_all" {
   security_group_id = aws_security_group.app.id

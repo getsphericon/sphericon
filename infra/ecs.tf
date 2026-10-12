@@ -1,4 +1,6 @@
 locals {
+  internal_listener = var.internal_listener_source_security_group_id != ""
+
   image = "${var.image_repository}:${var.image_tag}"
 
   # Connection budget. db.t4g.micro (1 GiB) allows LEAST(DBInstanceClassMemory/9531392, 5000)
@@ -17,7 +19,7 @@ locals {
   # 40 stays under the lowest plausible limit (about 85). A third process, or a second task kept
   # permanently (3 x 20 = 60), still fits; beyond that lower the pools or move to a larger class.
   # No transaction-mode pooler: river relies on LISTEN/NOTIFY.
-  plain_env = {
+  plain_env = merge({
     APP_URL           = "https://${local.app_host}"
     MCP_URL           = "https://${local.mcp_host}"
     PORT              = tostring(var.app_port)
@@ -28,7 +30,10 @@ locals {
     SYSTEM_EMAIL_PROVIDER = "ses"
     SYSTEM_EMAIL_FROM     = local.system_email_from
     SES_REGION            = var.region
-  }
+    },
+    # The internal listener exists only when a source security group is named (ADR 0028).
+    local.internal_listener ? { INTERNAL_ADDR = ":${var.internal_port}" } : {},
+  )
 
   # ECS resolves "<secret arn>:<json key>::" to one key of a JSON secret at task start.
   secret_env = merge(
