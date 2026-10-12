@@ -5512,6 +5512,22 @@ func (s *SiteWorkspaceResource) Validate() error {
 	return nil
 }
 
+func (s *SiteWorkspacesAccountLinkForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWorkspacesAccountLinkNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteWorkspacesSetSecondFactorRequirementForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {

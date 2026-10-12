@@ -104,7 +104,7 @@ export function WorkspaceLayout() {
       headerRight={
         <Group gap="sm">
           <WorkspaceSwitcher slug={slug} workspaces={workspaces} />
-          <UserMenu slug={slug} />
+          <UserMenu slug={slug} accountLink={current?.accountLinkAvailable ?? false} />
         </Group>
       }
     />

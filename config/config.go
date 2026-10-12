@@ -97,6 +97,12 @@ type Config struct {
 	EncryptionKey string
 	// LicenseKey is the offline EE license key (ADR 0014). Empty runs the plain core.
 	LicenseKey string
+	// AccountLinkURL is the address of the external account page the Owner's Account
+	// link opens (ACCOUNT_LINK_URL). The link is enabled only with AccountLinkSigningKey too.
+	AccountLinkURL string
+	// AccountLinkSigningKey is the base64 Ed25519 seed that signs the Account link
+	// token (ACCOUNT_LINK_SIGNING_KEY).
+	AccountLinkSigningKey string
 	// OperatorJWTSecret signs the Operator session and login challenge (OPERATOR_JWT_SECRET,
 	// ADR 0026). It is required, and must differ from JWT_SECRET, only when the license
 	// has the `operator` feature; ee.New validates it there.
@@ -246,6 +252,9 @@ func Load(envName string) (*Config, error) {
 		EncryptionKey:  v.GetString("ENCRYPTION_KEY"),
 		LicenseKey:     v.GetString("LICENSE_KEY"),
 
+		AccountLinkURL:        v.GetString("ACCOUNT_LINK_URL"),
+		AccountLinkSigningKey: v.GetString("ACCOUNT_LINK_SIGNING_KEY"),
+
 		OperatorJWTSecret:  v.GetString("OPERATOR_JWT_SECRET"),
 		OperatorSessionTTL: v.GetDuration("OPERATOR_SESSION_TTL"),
 		AutoMigrate:        v.GetBool("AUTO_MIGRATE"),
@@ -326,6 +335,9 @@ func (c *Config) validate(envName string) error {
 	}
 	if c.OperatorSessionTTL <= 0 {
 		return fmt.Errorf("OPERATOR_SESSION_TTL must be positive")
+	}
+	if (c.AccountLinkURL == "") != (c.AccountLinkSigningKey == "") {
+		return fmt.Errorf("ACCOUNT_LINK_URL and ACCOUNT_LINK_SIGNING_KEY must be set together")
 	}
 	if c.BodyLimits.Default <= 0 {
 		return fmt.Errorf("MAX_BODY_BYTES must be positive")

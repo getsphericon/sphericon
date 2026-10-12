@@ -29,6 +29,7 @@ const workspace = {
   collectKey: 'omck_test_key',
   ingestKey: 'omik_test_key',
   postalAddress: '',
+  accountLinkAvailable: false,
   role: 'owner' as const,
   createdAt: '2026-01-01T00:00:00Z',
 }

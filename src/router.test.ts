@@ -21,6 +21,7 @@ const workspace = (slug: string) => ({
   collectKey: 'omck',
   ingestKey: 'omik',
   postalAddress: '',
+  accountLinkAvailable: false,
   role: 'owner' as const,
   createdAt: '2026-01-01T00:00:00Z',
 })

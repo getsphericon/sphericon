@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -28,7 +30,7 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 
 	resources := make([]siteapi.SiteWorkspaceResource, len(items))
 	for i, m := range items {
-		resources[i] = workspaceResource(m)
+		resources[i] = h.workspaceResource(m)
 	}
 	return resources, nil
 }
@@ -36,13 +38,41 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 // workspaceResource is the Membership's Workspace as the Membership's User sees it,
 // with their grace end under the Two-factor requirement (ADR 0020). The Membership's
 // User and Workspace edges must be loaded.
-func workspaceResource(m *ent.Membership) siteapi.SiteWorkspaceResource {
+func (h *Handlers) workspaceResource(m *ent.Membership) siteapi.SiteWorkspaceResource {
 	r := mapper.WorkspaceToResource(m.Edges.Workspace)
 	r.Role = siteapi.SiteMembershipRole(m.Role)
+	r.AccountLinkAvailable = h.accountLink != nil && m.Role == membership.RoleOwner
 	if end, ok := secondfactor.Deadline(m); ok {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}
 	return r
+}
+
+// SiteWorkspacesAccountLink mints the Owner's Account link token. Without the
+// installation's configuration it answers 404 before anything else; any role but
+// Owner is refused.
+func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, params siteapi.SiteWorkspacesAccountLinkParams) (siteapi.SiteWorkspacesAccountLinkRes, error) {
+	if h.accountLink == nil {
+		v := siteapi.SiteWorkspacesAccountLinkNotFound(problem(http.StatusNotFound, "account link is not configured"))
+		return &v, nil
+	}
+	s, m, err := h.membershipFor(ctx, params.Slug)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteWorkspacesAccountLinkNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if m.Role != membership.RoleOwner {
+		v := siteapi.SiteWorkspacesAccountLinkForbidden(problem(http.StatusForbidden, "only the owner can open the account link"))
+		return &v, nil
+	}
+	token, expires, err := h.accountLink.Token(accountlink.Subject{UserID: m.UserID, WorkspaceID: s.WorkspaceID(), Role: string(m.Role)}, h.now())
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteAccountLinkResource{URL: h.accountLink.Address(), Token: token, ExpiresAt: siteapi.Timestamp(expires)}, nil
 }
 
 // withWorkspace is the Membership with its Workspace replaced by w (after an update).
@@ -83,7 +113,7 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 			slog.WarnContext(ctx, "second factor required email not enqueued", "error", merr, "workspace_id", s.WorkspaceID())
 		}
 	}
-	r := workspaceResource(withWorkspace(m, w))
+	r := h.workspaceResource(withWorkspace(m, w))
 	return &r, nil
 }
 
@@ -120,6 +150,6 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 	if err != nil {
 		return nil, err
 	}
-	resource := workspaceResource(withWorkspace(m, w))
+	resource := h.workspaceResource(withWorkspace(m, w))
 	return &resource, nil
 }

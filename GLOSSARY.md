@@ -549,6 +549,15 @@ Messages are **held, not failed**: they wait and go out when the hold lifts. Eve
 the Operator that made it.
 _Avoid_: Suspension (that is the reputation freeze), ban, lockout
 
+**Account link**:
+A link in the app, shown only to a Workspace Owner and only when the installation is configured
+with an address and a signing key, that opens an external account page carrying a short-lived
+(about two minutes) signed token naming the user, the Workspace and the role. The token is signed
+asymmetrically and the app publishes its public key as a key set, so the receiver verifies it with
+no shared secret. The app never calls the address and keeps nothing about the receiving side.
+Unconfigured, the operation answers 404 and the link is absent.
+_Avoid_: SSO (nothing is federated: the receiver keeps no session of the app), magic link
+
 ## Channels & future surfaces
 
 The identity spine — **Contact + Visitor + Event** — is channel-agnostic and is the stable point

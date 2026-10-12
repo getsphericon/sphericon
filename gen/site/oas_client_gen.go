@@ -645,6 +645,13 @@ type Invoker interface {
 	//
 	// PUT /workspaces/{slug}/webhooks/{id}
 	SiteWebhooksUpdate(ctx context.Context, request *SiteUpdateWebhookEndpointInput, params SiteWebhooksUpdateParams) (SiteWebhooksUpdateRes, error)
+	// SiteWorkspacesAccountLink invokes SiteWorkspaces_accountLink operation.
+	//
+	// Mint an Account link token (Owner only). Answers 404 when the installation has no Account link
+	// configured.
+	//
+	// POST /workspaces/{slug}/account-link
+	SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (SiteWorkspacesAccountLinkRes, error)
 	// SiteWorkspacesList invokes SiteWorkspaces_list operation.
 	//
 	// List workspaces owned by the authenticated user.
@@ -14706,6 +14713,139 @@ func (c *Client) sendSiteWebhooksUpdate(ctx context.Context, request *SiteUpdate
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteWebhooksUpdateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteWorkspacesAccountLink invokes SiteWorkspaces_accountLink operation.
+//
+// Mint an Account link token (Owner only). Answers 404 when the installation has no Account link
+// configured.
+//
+// POST /workspaces/{slug}/account-link
+func (c *Client) SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (SiteWorkspacesAccountLinkRes, error) {
+	res, err := c.sendSiteWorkspacesAccountLink(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (res SiteWorkspacesAccountLinkRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteWorkspaces_accountLink"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{slug}/account-link"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteWorkspacesAccountLinkOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "slug" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "slug",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Slug))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/account-link"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteWorkspacesAccountLinkOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteWorkspacesAccountLinkResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

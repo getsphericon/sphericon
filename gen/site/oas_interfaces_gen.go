@@ -369,6 +369,10 @@ type SiteWebhooksUpdateRes interface {
 	siteWebhooksUpdateRes()
 }
 
+type SiteWorkspacesAccountLinkRes interface {
+	siteWorkspacesAccountLinkRes()
+}
+
 type SiteWorkspacesSetSecondFactorRequirementRes interface {
 	siteWorkspacesSetSecondFactorRequirementRes()
 }

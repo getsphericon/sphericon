@@ -920,6 +920,16 @@ func (UnimplementedHandler) SiteWebhooksUpdate(ctx context.Context, req *SiteUpd
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesAccountLink implements SiteWorkspaces_accountLink operation.
+//
+// Mint an Account link token (Owner only). Answers 404 when the installation has no Account link
+// configured.
+//
+// POST /workspaces/{slug}/account-link
+func (UnimplementedHandler) SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (r SiteWorkspacesAccountLinkRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesList implements SiteWorkspaces_list operation.
 //
 // List workspaces owned by the authenticated user.

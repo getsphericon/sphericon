@@ -448,6 +448,27 @@ export type SiteAcceptInvitationInput = {
 };
 
 /**
+ * A short-lived signed token that proves who the Owner is to the external account
+ * page, with the address of that page.
+ */
+export type SiteAccountLinkResource = {
+  /**
+   * Address of the external account page
+   */
+  url: string;
+  /**
+   * Signed token (a JWT, EdDSA) naming the user, the Workspace and the role; it
+   * expires within minutes. Verify it with the key set published at
+   * /.well-known/jwks.json.
+   */
+  token: string;
+  /**
+   * When the token expires
+   */
+  expiresAt: Timestamp;
+};
+
+/**
  * Automation counts (point-in-time snapshot)
  */
 export type SiteAnalyticsAutomations = {
@@ -2493,6 +2514,11 @@ export type SiteWorkspaceResource = {
    */
   secondFactorGraceEndsAt?: Timestamp | null;
   /**
+   * Whether the authenticated User may open the Account link: true only for an
+   * Owner, and only on an installation configured for it.
+   */
+  accountLinkAvailable: boolean;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -3451,6 +3477,37 @@ export type SiteWorkspacesUpdateResponses = {
 };
 
 export type SiteWorkspacesUpdateResponse = SiteWorkspacesUpdateResponses[keyof SiteWorkspacesUpdateResponses];
+
+export type SiteWorkspacesAccountLinkData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/account-link';
+};
+
+export type SiteWorkspacesAccountLinkErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteWorkspacesAccountLinkError = SiteWorkspacesAccountLinkErrors[keyof SiteWorkspacesAccountLinkErrors];
+
+export type SiteWorkspacesAccountLinkResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAccountLinkResource;
+};
+
+export type SiteWorkspacesAccountLinkResponse = SiteWorkspacesAccountLinkResponses[keyof SiteWorkspacesAccountLinkResponses];
 
 export type SiteAnalyticsOverviewData = {
   body?: never;
