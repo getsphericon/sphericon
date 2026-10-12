@@ -8,7 +8,9 @@ package ee
 
 import (
 	"net/http"
+	"time"
 
+	entgo "entgo.io/ent"
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ee/audit"
@@ -40,6 +42,7 @@ type Edition struct {
 	Operators *operator.Module
 
 	operatorSessions *operator.Sessions
+	now              func() time.Time
 }
 
 // New builds the Edition for a license. Subscribers are always registered and each
@@ -55,6 +58,10 @@ func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, si
 		Consumers: []events.Consumer{audit.Consumer(client, lic)},
 		Operators: operator.NewModule(client, lic, auditLog, cipher, operatorCfg),
 	}
+	e.now = operatorCfg.Clock
+	if e.now == nil {
+		e.now = time.Now
+	}
 	if lic.Has(licensekey.FeatureOperator) {
 		if err := operatorCfg.Validate(siteSecret); err != nil {
 			return nil, err
@@ -62,6 +69,16 @@ func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, si
 		e.operatorSessions = operator.NewSessions(client, lic, operatorCfg)
 	}
 	return e, nil
+}
+
+// Hooks are the ent hooks the Edition needs on every client, the long-lived one and the
+// event bus's transaction client alike: the one that keeps the contacts peak of Usage as
+// Contacts change (ADR 0009). Empty without the `operator` license.
+func (e *Edition) Hooks() []entgo.Hook {
+	if !e.lic.Has(licensekey.FeatureOperator) {
+		return nil
+	}
+	return []entgo.Hook{usage.Hook(e.lic, e.now)}
 }
 
 // Operator is the /operator API (ADR 0026) for the composition root to mount, or nil

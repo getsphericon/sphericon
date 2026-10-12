@@ -212,7 +212,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   (tracking by recipient id, provider hooks, composition), `ee/audit` (the Audit log bus
   subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/retention` (the
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/usage` (the periodic
-  usage job, same shape, plus the paged read of every Workspace's stored figures), `ee/operator` (the
+  usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `operator` license, that keeps the contacts peak as Contacts change), `ee/operator` (the
   platform Operator, ADR 0026: the Operator table, and the Workspace rows, suspension state and
   rates the console shows as tenant metadata; Workspace data goes through the two scopes of
   list item 7), `internal/workspacefeed` (the ent hook, installed on every client, that gives

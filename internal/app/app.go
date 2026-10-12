@@ -756,9 +756,14 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return ee.New(client.Client, lic, cipher, cfg.JWTSecret, operator.Config{
+		edition, err := ee.New(client.Client, lic, cipher, cfg.JWTSecret, operator.Config{
 			Secret: cfg.OperatorJWTSecret, SessionTTL: cfg.OperatorSessionTTL, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
 		})
+		if err != nil {
+			return nil, err
+		}
+		client.Use(edition.Hooks()...)
+		return edition, nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*eventsRuntime, error) {
@@ -801,7 +806,13 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return &eventsBus{Bus: events.New(database.DB)}, nil
+		edition, err := do.Invoke[*ee.Edition](i)
+		if err != nil {
+			return nil, err
+		}
+		bus := events.New(database.DB)
+		bus.Use(edition.Hooks()...)
+		return &eventsBus{Bus: bus}, nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*pgxPool, error) {

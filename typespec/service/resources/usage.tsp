@@ -8,6 +8,10 @@ namespace Sphericon;
 enum UsageMetric {
   /** Emails sent: one per recipient across Broadcast, Automation and Transactional */
   emailsSent: "emails_sent",
+
+  /** Contacts: the peak number of identified Contacts (those with an email Destination) reached
+   * during the Usage period */
+  contacts: "contacts",
 }
 
 /** One metric's figure for a Workspace over a Usage period */
