@@ -33,6 +33,15 @@ type Handler interface {
 	//
 	// GET /identity
 	ServiceIdentityGet(ctx context.Context) (ServiceIdentityGetRes, error)
+	// ServiceWorkspaceFeedList implements ServiceWorkspaceFeed_list operation.
+	//
+	// The Workspaces created or changed since an opaque cursor, each with all of its owners, in a stable
+	// order by change position. A change is a new Workspace, an owner added, removed or transferred, or an
+	// owner's email or verification changing. Delivery is at-least-once: replaying a cursor returns the
+	// same entries, and an empty cursor starts from the beginning. Needs the `workspaces:read` scope.
+	//
+	// GET /workspaces/changes
+	ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (ServiceWorkspaceFeedListRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

@@ -26,6 +26,9 @@ func main() {
 			// Lock exposes .ForUpdate() on query builders: accounts locks the Workspace's
 			// owner rows so the Owner invariant holds under concurrent role changes.
 			gen.FeatureLock,
+			// ExecQuery exposes ExecContext on the client: internal/workspacefeed takes
+			// its advisory lock and the next feed position in raw SQL.
+			gen.FeatureExecQuery,
 			// VersionedMigration generates migrate.NamedDiff, which cmd/db uses to write
 			// the next Atlas migration straight from the ent schema (the community Atlas
 			// binary cannot read ent:// itself).

@@ -44,10 +44,11 @@ func (s *ServiceSurface) Server(opts ...serviceapi.ServerOption) (http.Handler, 
 // every credential, so a new endpoint cannot ship unguarded; an entry with no scopes is
 // open to any valid credential. Add an endpoint's row with the endpoint.
 var ServiceOperationScopes = map[serviceapi.OperationName][]Scope{
-	serviceapi.ServiceIdentityGetOperation: nil,
-	serviceapi.ServiceHoldsListOperation:   {ScopeHoldsWrite},
-	serviceapi.ServiceHoldsSetOperation:    {ScopeHoldsWrite},
-	serviceapi.ServiceHoldsClearOperation:  {ScopeHoldsWrite},
+	serviceapi.ServiceIdentityGetOperation:       nil,
+	serviceapi.ServiceWorkspaceFeedListOperation: {ScopeWorkspacesRead},
+	serviceapi.ServiceHoldsListOperation:         {ScopeHoldsWrite},
+	serviceapi.ServiceHoldsSetOperation:          {ScopeHoldsWrite},
+	serviceapi.ServiceHoldsClearOperation:        {ScopeHoldsWrite},
 }
 
 // ServiceOperations lists every operation the service endpoints serve, from the

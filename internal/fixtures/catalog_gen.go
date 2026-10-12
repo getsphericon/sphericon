@@ -372,7 +372,7 @@ const (
 	// HoldGlobexLapsedID is from fixtures/holds.
 	HoldGlobexLapsedID = 900
 	// HoldGlobexLapsedKey is from fixtures/holds.
-	HoldGlobexLapsedKey = "lapsed"
+	HoldGlobexLapsedKey = "lapsed-globex"
 	// HooliCollectKey is from fixtures/workspaces.
 	HooliCollectKey = "omck_test_hooli_collect_key"
 	// HooliID is from fixtures/workspaces.

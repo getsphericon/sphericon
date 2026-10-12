@@ -14,6 +14,9 @@ var (
 	rn7AllowedHeaders = map[string]string{
 		"GET": "Authorization",
 	}
+	rn8AllowedHeaders = map[string]string{
+		"GET": "Authorization",
+	}
 	rn5AllowedHeaders = map[string]string{
 		"GET": "Authorization",
 	}
@@ -107,6 +110,37 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'c': // Prefix: "changes"
+					origElem := elem
+					if l := len("changes"); len(elem) >= l && elem[0:l] == "changes" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch r.Method {
+						case "GET":
+							s.handleServiceWorkspaceFeedListRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "GET",
+								allowedHeaders: rn8AllowedHeaders,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
+					elem = origElem
+				}
 				// Param: "workspaceId"
 				// Match until "/"
 				idx := strings.IndexByte(elem, '/')
@@ -325,6 +359,37 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					break
 				}
 
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'c': // Prefix: "changes"
+					origElem := elem
+					if l := len("changes"); len(elem) >= l && elem[0:l] == "changes" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch method {
+						case "GET":
+							r.name = ServiceWorkspaceFeedListOperation
+							r.summary = ""
+							r.operationID = "ServiceWorkspaceFeed_list"
+							r.operationGroup = ""
+							r.pathPattern = "/workspaces/changes"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+
+					elem = origElem
+				}
 				// Param: "workspaceId"
 				// Match until "/"
 				idx := strings.IndexByte(elem, '/')

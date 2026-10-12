@@ -217,7 +217,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/operator` (the
   platform Operator, ADR 0026: the Operator table, and the Workspace rows, suspension state and
   rates the console shows as tenant metadata; Workspace data goes through the scopes of
-  list item 7) and the composition roots
+  list item 7), `internal/workspacefeed` (the ent hook, installed on every client, that gives
+  a Workspace the next feed position when it is created or an owner is added, removed,
+  transferred or changes email or verification: it must reach the Workspace a User or
+  Membership change belongs to; `ee/operator` serves the feed in `Module.WorkspaceFeed`) and the composition roots
   (`internal/app`, `internal/db`, `internal/testhelper`). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`.
   `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes

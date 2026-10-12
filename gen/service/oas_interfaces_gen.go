@@ -16,3 +16,7 @@ type ServiceHoldsSetRes interface {
 type ServiceIdentityGetRes interface {
 	serviceIdentityGetRes()
 }
+
+type ServiceWorkspaceFeedListRes interface {
+	serviceWorkspaceFeedListRes()
+}
