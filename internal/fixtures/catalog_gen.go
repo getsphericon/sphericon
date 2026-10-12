@@ -23,6 +23,8 @@ const (
 	AcmeOwnerMembershipID = 1
 	// AcmeSlug is from fixtures/workspaces.
 	AcmeSlug = "acme"
+	// AcmeUsageSnapshotID is from fixtures/usages.
+	AcmeUsageSnapshotID = 1
 	// AnchorTokenID is from fixtures/api_tokens.
 	AnchorTokenID = 1
 	// AnchorTokenName is from fixtures/api_tokens.
@@ -365,6 +367,8 @@ const (
 	GlobexSamMembershipID = 9
 	// GlobexSlug is from fixtures/workspaces.
 	GlobexSlug = "globex"
+	// GlobexUsageSnapshotID is from fixtures/usages.
+	GlobexUsageSnapshotID = 2
 	// HoldAcmeLapsedID is from fixtures/holds.
 	HoldAcmeLapsedID = 1
 	// HoldAcmeLapsedKey is from fixtures/holds.

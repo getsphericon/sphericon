@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 )
@@ -450,6 +451,22 @@ func (s *Scoped) verifyUnsubscribe(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Unsubscribe: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyUsage fails with ErrNotInWorkspace unless every id is a Usage of the Workspace.
+func (s *Scoped) verifyUsage(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.Usage.Query().Where(usage.IDIn(ids...), usage.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("Usage: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -19584,6 +19601,578 @@ func (x *UnsubscribeScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *UnsubscribeScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// UsageScoped reaches Usage entities of one Workspace.
+type UsageScoped struct{ s *Scoped }
+
+// Usage returns the Usage entities of the Workspace.
+func (s *Scoped) Usage() *UsageScoped { return &UsageScoped{s: s} }
+
+// Query returns a Usage query already confined to the Workspace.
+func (t *UsageScoped) Query() *UsageQuery {
+	return t.s.c.Usage.Query().Where(usage.WorkspaceID(t.s.ws))
+}
+
+// Get returns the Usage with the id; a row of another Workspace is not found.
+func (t *UsageScoped) Get(ctx context.Context, id int64) (*Usage, error) {
+	return t.Query().Where(usage.ID(id)).Only(ctx)
+}
+
+// UsageScopedDeleteOne wraps UsageDeleteOne.
+type UsageScopedDeleteOne struct {
+	s *Scoped
+	b *UsageDeleteOne
+}
+
+// DeleteOneID deletes the Usage with the id; a row of another Workspace is not found.
+func (t *UsageScoped) DeleteOneID(id int64) *UsageScopedDeleteOne {
+	return &UsageScopedDeleteOne{s: t.s, b: t.s.c.Usage.DeleteOneID(id).Where(usage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *UsageScopedDeleteOne) Where(ps ...predicate.Usage) *UsageScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *UsageScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// UsageScopedDelete wraps UsageDelete.
+type UsageScopedDelete struct {
+	s *Scoped
+	b *UsageDelete
+}
+
+// Delete deletes the Usage entities of the Workspace that match the predicates.
+func (t *UsageScoped) Delete() *UsageScopedDelete {
+	return &UsageScopedDelete{s: t.s, b: t.s.c.Usage.Delete().Where(usage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *UsageScopedDelete) Where(ps ...predicate.Usage) *UsageScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *UsageScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// UsageScopedCreate wraps UsageCreate. It has no way to name a Workspace.
+type UsageScopedCreate struct {
+	s *Scoped
+	b *UsageCreate
+}
+
+// Create starts a Usage in the Workspace.
+func (t *UsageScoped) Create() *UsageScopedCreate {
+	return &UsageScopedCreate{s: t.s, b: t.s.c.Usage.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *UsageScopedCreate) SetCreatedAt(v time.Time) *UsageScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *UsageScopedCreate) SetNillableCreatedAt(v *time.Time) *UsageScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *UsageScopedCreate) SetUpdatedAt(v time.Time) *UsageScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *UsageScopedCreate) SetNillableUpdatedAt(v *time.Time) *UsageScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetPeriodStart sets the "period_start" field.
+func (x *UsageScopedCreate) SetPeriodStart(v time.Time) *UsageScopedCreate {
+	x.b.SetPeriodStart(v)
+	return x
+}
+
+// SetMetric sets the "metric" field.
+func (x *UsageScopedCreate) SetMetric(v string) *UsageScopedCreate {
+	x.b.SetMetric(v)
+	return x
+}
+
+// SetValue sets the "value" field.
+func (x *UsageScopedCreate) SetValue(v int64) *UsageScopedCreate {
+	x.b.SetValue(v)
+	return x
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (x *UsageScopedCreate) SetNillableValue(v *int64) *UsageScopedCreate {
+	x.b.SetNillableValue(v)
+	return x
+}
+
+// SetFinal sets the "final" field.
+func (x *UsageScopedCreate) SetFinal(v bool) *UsageScopedCreate {
+	x.b.SetFinal(v)
+	return x
+}
+
+// SetNillableFinal sets the "final" field if the given value is not nil.
+func (x *UsageScopedCreate) SetNillableFinal(v *bool) *UsageScopedCreate {
+	x.b.SetNillableFinal(v)
+	return x
+}
+
+// SetComputedAt sets the "computed_at" field.
+func (x *UsageScopedCreate) SetComputedAt(v time.Time) *UsageScopedCreate {
+	x.b.SetComputedAt(v)
+	return x
+}
+
+func (x *UsageScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the Usage.
+func (x *UsageScopedCreate) Save(ctx context.Context) (*Usage, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *UsageScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// UsageScopedCreateBulk creates several Usage entities of one Workspace at once.
+type UsageScopedCreateBulk struct {
+	s  *Scoped
+	xs []*UsageScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *UsageScoped) CreateBulk(xs ...*UsageScopedCreate) *UsageScopedCreateBulk {
+	return &UsageScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *UsageScopedCreateBulk) raw(ctx context.Context) (*UsageCreateBulk, error) {
+	builders := make([]*UsageCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("Usage: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.Usage.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the Usage entities.
+func (b *UsageScopedCreateBulk) Save(ctx context.Context) ([]*Usage, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *UsageScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// UsageScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type UsageScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *UsageScopedUpsert) SetUpdatedAt(v time.Time) *UsageScopedUpsert {
+	u.u.Set(usage.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *UsageScopedUpsert) UpdateUpdatedAt() *UsageScopedUpsert {
+	u.u.SetExcluded(usage.FieldUpdatedAt)
+	return u
+}
+
+// SetValue sets the "value" field.
+func (u *UsageScopedUpsert) SetValue(v int64) *UsageScopedUpsert {
+	u.u.Set(usage.FieldValue, v)
+	return u
+}
+
+// AddValue adds v to the "value" field.
+func (u *UsageScopedUpsert) AddValue(v int64) *UsageScopedUpsert {
+	u.u.Add(usage.FieldValue, v)
+	return u
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *UsageScopedUpsert) UpdateValue() *UsageScopedUpsert {
+	u.u.SetExcluded(usage.FieldValue)
+	return u
+}
+
+// SetFinal sets the "final" field.
+func (u *UsageScopedUpsert) SetFinal(v bool) *UsageScopedUpsert {
+	u.u.Set(usage.FieldFinal, v)
+	return u
+}
+
+// UpdateFinal sets the "final" field to the value that was provided on create.
+func (u *UsageScopedUpsert) UpdateFinal() *UsageScopedUpsert {
+	u.u.SetExcluded(usage.FieldFinal)
+	return u
+}
+
+// SetComputedAt sets the "computed_at" field.
+func (u *UsageScopedUpsert) SetComputedAt(v time.Time) *UsageScopedUpsert {
+	u.u.Set(usage.FieldComputedAt, v)
+	return u
+}
+
+// UpdateComputedAt sets the "computed_at" field to the value that was provided on create.
+func (u *UsageScopedUpsert) UpdateComputedAt() *UsageScopedUpsert {
+	u.u.SetExcluded(usage.FieldComputedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+func (t *UsageScoped) conflictOptions(columns []string) []sql.ConflictOption {
+	return []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(usage.FieldWorkspaceID, t.s.ws)),
+	}
+}
+
+// UsageScopedUpsertOne is the "upsert" of one Usage.
+type UsageScopedUpsertOne struct {
+	x *UsageScopedCreate
+	u *UsageUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *UsageScopedCreate) OnConflictColumns(columns ...string) *UsageScopedUpsertOne {
+	return &UsageScopedUpsertOne{x: x, u: x.b.OnConflict((&UsageScoped{s: x.s}).conflictOptions(columns)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *UsageScopedUpsertOne) UpdateNewValues() *UsageScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *UsageScopedUpsertOne) Ignore() *UsageScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *UsageScopedUpsertOne) DoNothing() *UsageScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *UsageScopedUpsertOne) Update(set func(*UsageScopedUpsert)) *UsageScopedUpsertOne {
+	u.u.Update(func(s *UsageUpsert) { set(&UsageScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *UsageScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *UsageScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// UsageScopedUpsertBulk is the "upsert" of several Usage entities.
+type UsageScopedUpsertBulk struct {
+	b       *UsageScopedCreateBulk
+	t       *UsageScoped
+	columns []string
+	opts    []func(*UsageUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *UsageScopedCreateBulk) OnConflictColumns(columns ...string) *UsageScopedUpsertBulk {
+	return &UsageScopedUpsertBulk{b: b, t: &UsageScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *UsageScopedUpsertBulk) UpdateNewValues() *UsageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *UsageUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *UsageScopedUpsertBulk) Ignore() *UsageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *UsageUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *UsageScopedUpsertBulk) DoNothing() *UsageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *UsageUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *UsageScopedUpsertBulk) Update(set func(*UsageScopedUpsert)) *UsageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *UsageUpsertBulk) {
+		r.Update(func(s *UsageUpsert) { set(&UsageScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *UsageScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// UsageScopedUpdateOne wraps UsageUpdateOne. It has no way to move the row to another Workspace.
+type UsageScopedUpdateOne struct {
+	s *Scoped
+	b *UsageUpdateOne
+}
+
+// UpdateOneID updates the Usage with the id; a row of another Workspace is not found.
+func (t *UsageScoped) UpdateOneID(id int64) *UsageScopedUpdateOne {
+	return &UsageScopedUpdateOne{s: t.s, b: t.s.c.Usage.UpdateOneID(id).Where(usage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *UsageScopedUpdateOne) Where(ps ...predicate.Usage) *UsageScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *UsageScopedUpdateOne) SetUpdatedAt(v time.Time) *UsageScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetValue sets the "value" field.
+func (x *UsageScopedUpdateOne) SetValue(v int64) *UsageScopedUpdateOne {
+	x.b.SetValue(v)
+	return x
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (x *UsageScopedUpdateOne) SetNillableValue(v *int64) *UsageScopedUpdateOne {
+	x.b.SetNillableValue(v)
+	return x
+}
+
+// AddValue adds value to the "value" field.
+func (x *UsageScopedUpdateOne) AddValue(v int64) *UsageScopedUpdateOne {
+	x.b.AddValue(v)
+	return x
+}
+
+// SetFinal sets the "final" field.
+func (x *UsageScopedUpdateOne) SetFinal(v bool) *UsageScopedUpdateOne {
+	x.b.SetFinal(v)
+	return x
+}
+
+// SetNillableFinal sets the "final" field if the given value is not nil.
+func (x *UsageScopedUpdateOne) SetNillableFinal(v *bool) *UsageScopedUpdateOne {
+	x.b.SetNillableFinal(v)
+	return x
+}
+
+// SetComputedAt sets the "computed_at" field.
+func (x *UsageScopedUpdateOne) SetComputedAt(v time.Time) *UsageScopedUpdateOne {
+	x.b.SetComputedAt(v)
+	return x
+}
+
+// SetNillableComputedAt sets the "computed_at" field if the given value is not nil.
+func (x *UsageScopedUpdateOne) SetNillableComputedAt(v *time.Time) *UsageScopedUpdateOne {
+	x.b.SetNillableComputedAt(v)
+	return x
+}
+
+func (x *UsageScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the Usage.
+func (x *UsageScopedUpdateOne) Save(ctx context.Context) (*Usage, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *UsageScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// UsageScopedUpdate wraps UsageUpdate: a conditional bulk update of one Workspace.
+type UsageScopedUpdate struct {
+	s *Scoped
+	b *UsageUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the Usage entities of the Workspace that match the predicates.
+func (t *UsageScoped) Update() *UsageScopedUpdate {
+	return &UsageScopedUpdate{s: t.s, b: t.s.c.Usage.Update().Where(usage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *UsageScopedUpdate) Where(ps ...predicate.Usage) *UsageScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *UsageScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *UsageScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(usage.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *UsageScopedUpdate) SetUpdatedAt(v time.Time) *UsageScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetValue sets the "value" field.
+func (x *UsageScopedUpdate) SetValue(v int64) *UsageScopedUpdate {
+	x.b.SetValue(v)
+	return x
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (x *UsageScopedUpdate) SetNillableValue(v *int64) *UsageScopedUpdate {
+	x.b.SetNillableValue(v)
+	return x
+}
+
+// AddValue adds value to the "value" field.
+func (x *UsageScopedUpdate) AddValue(v int64) *UsageScopedUpdate {
+	x.b.AddValue(v)
+	return x
+}
+
+// SetFinal sets the "final" field.
+func (x *UsageScopedUpdate) SetFinal(v bool) *UsageScopedUpdate {
+	x.b.SetFinal(v)
+	return x
+}
+
+// SetNillableFinal sets the "final" field if the given value is not nil.
+func (x *UsageScopedUpdate) SetNillableFinal(v *bool) *UsageScopedUpdate {
+	x.b.SetNillableFinal(v)
+	return x
+}
+
+// SetComputedAt sets the "computed_at" field.
+func (x *UsageScopedUpdate) SetComputedAt(v time.Time) *UsageScopedUpdate {
+	x.b.SetComputedAt(v)
+	return x
+}
+
+// SetNillableComputedAt sets the "computed_at" field if the given value is not nil.
+func (x *UsageScopedUpdate) SetNillableComputedAt(v *time.Time) *UsageScopedUpdate {
+	x.b.SetNillableComputedAt(v)
+	return x
+}
+
+func (x *UsageScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *UsageScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *UsageScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

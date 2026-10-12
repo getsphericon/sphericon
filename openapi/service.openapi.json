@@ -13,6 +13,9 @@
       "name": "Service Holds"
     },
     {
+      "name": "Service Usage"
+    },
+    {
       "name": "Service Workspaces"
     }
   ],
@@ -89,6 +92,141 @@
           }
         },
         "tags": ["Service Identity"]
+      }
+    },
+    "/usage": {
+      "get": {
+        "operationId": "ServiceUsage_list",
+        "description": "The figures of every Workspace for a Usage period, by Workspace id: Live usage for\nthe open period, Usage snapshots for a closed one. Never a recount on read.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UsagePeriodQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WorkspaceUsageResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Service Usage"]
       }
     },
     "/workspaces/changes": {
@@ -522,6 +660,43 @@
     }
   ],
   "components": {
+    "parameters": {
+      "PageQuery.page": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "description": "Page number (1-based)",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "default": 1
+        },
+        "explode": false
+      },
+      "PageQuery.pageSize": {
+        "name": "pageSize",
+        "in": "query",
+        "required": false,
+        "description": "Page size",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "default": 25
+        },
+        "explode": false
+      },
+      "UsagePeriodQuery": {
+        "name": "period",
+        "in": "query",
+        "required": false,
+        "description": "The Usage period as YYYY-MM (UTC); the current one when absent",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        },
+        "explode": false
+      }
+    },
     "schemas": {
       "ConflictProblem": {
         "type": "object",
@@ -853,6 +1028,64 @@
       "Timestamp": {
         "type": "string",
         "format": "date-time"
+      },
+      "UsageFigure": {
+        "type": "object",
+        "required": ["metric", "value", "final", "computedAt"],
+        "properties": {
+          "metric": {
+            "$ref": "#/components/schemas/UsageMetric"
+          },
+          "value": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The value of the metric over the period"
+          },
+          "final": {
+            "type": "boolean",
+            "description": "True once the Usage period closed: the figure is a Usage snapshot and never changes.\nFalse while it is Live usage."
+          },
+          "computedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the figure was last computed"
+          }
+        },
+        "description": "One metric's figure for a Workspace over a Usage period"
+      },
+      "UsageMetric": {
+        "type": "string",
+        "enum": ["emails_sent"],
+        "description": "A metric of Usage"
+      },
+      "WorkspaceUsageResource": {
+        "type": "object",
+        "required": ["workspaceId", "period", "figures"],
+        "properties": {
+          "workspaceId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Workspace"
+          },
+          "period": {
+            "type": "string",
+            "description": "The Usage period: the calendar month in UTC, as YYYY-MM"
+          },
+          "figures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageFigure"
+            },
+            "description": "One figure per metric"
+          }
+        },
+        "description": "The figures of one Workspace for one Usage period"
       }
     },
     "securitySchemes": {

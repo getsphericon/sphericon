@@ -38,6 +38,7 @@ var operationRolesBearerAuth = map[string][]string{
 	ServiceHoldsListOperation:         []string{},
 	ServiceHoldsSetOperation:          []string{},
 	ServiceIdentityGetOperation:       []string{},
+	ServiceUsageListOperation:         []string{},
 	ServiceWorkspaceFeedListOperation: []string{},
 }
 

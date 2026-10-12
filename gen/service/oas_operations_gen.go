@@ -10,5 +10,6 @@ const (
 	ServiceHoldsListOperation         OperationName = "ServiceHoldsList"
 	ServiceHoldsSetOperation          OperationName = "ServiceHoldsSet"
 	ServiceIdentityGetOperation       OperationName = "ServiceIdentityGet"
+	ServiceUsageListOperation         OperationName = "ServiceUsageList"
 	ServiceWorkspaceFeedListOperation OperationName = "ServiceWorkspaceFeedList"
 )

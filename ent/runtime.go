@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
@@ -760,6 +761,35 @@ func init() {
 	unsubscribeDescSendingSource := unsubscribeFields[3].Descriptor()
 	// unsubscribe.SendingSourceValidator is a validator for the "sending_source" field. It is called by the builders before save.
 	unsubscribe.SendingSourceValidator = unsubscribeDescSendingSource.Validators[0].(func(string) error)
+	usageMixin := schema.Usage{}.Mixin()
+	usageMixinFields0 := usageMixin[0].Fields()
+	_ = usageMixinFields0
+	usageFields := schema.Usage{}.Fields()
+	_ = usageFields
+	// usageDescCreatedAt is the schema descriptor for created_at field.
+	usageDescCreatedAt := usageMixinFields0[0].Descriptor()
+	// usage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	usage.DefaultCreatedAt = usageDescCreatedAt.Default.(func() time.Time)
+	// usageDescUpdatedAt is the schema descriptor for updated_at field.
+	usageDescUpdatedAt := usageMixinFields0[1].Descriptor()
+	// usage.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	usage.DefaultUpdatedAt = usageDescUpdatedAt.Default.(func() time.Time)
+	// usage.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	usage.UpdateDefaultUpdatedAt = usageDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// usageDescMetric is the schema descriptor for metric field.
+	usageDescMetric := usageFields[2].Descriptor()
+	// usage.MetricValidator is a validator for the "metric" field. It is called by the builders before save.
+	usage.MetricValidator = usageDescMetric.Validators[0].(func(string) error)
+	// usageDescValue is the schema descriptor for value field.
+	usageDescValue := usageFields[3].Descriptor()
+	// usage.DefaultValue holds the default value on creation for the value field.
+	usage.DefaultValue = usageDescValue.Default.(int64)
+	// usage.ValueValidator is a validator for the "value" field. It is called by the builders before save.
+	usage.ValueValidator = usageDescValue.Validators[0].(func(int64) error)
+	// usageDescFinal is the schema descriptor for final field.
+	usageDescFinal := usageFields[4].Descriptor()
+	// usage.DefaultFinal holds the default value on creation for the final field.
+	usage.DefaultFinal = usageDescFinal.Default.(bool)
 	userMixin := schema.User{}.Mixin()
 	userMixinFields0 := userMixin[0].Fields()
 	_ = userMixinFields0

@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
@@ -112,6 +113,8 @@ type Client struct {
 	Tag *TagClient
 	// Unsubscribe is the client for interacting with the Unsubscribe builders.
 	Unsubscribe *UnsubscribeClient
+	// Usage is the client for interacting with the Usage builders.
+	Usage *UsageClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// Visitor is the client for interacting with the Visitor builders.
@@ -159,6 +162,7 @@ func (c *Client) init() {
 	c.Suppression = NewSuppressionClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Unsubscribe = NewUnsubscribeClient(c.config)
+	c.Usage = NewUsageClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.Visitor = NewVisitorClient(c.config)
 	c.WebhookEndpoint = NewWebhookEndpointClient(c.config)
@@ -283,6 +287,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
+		Usage:              NewUsageClient(cfg),
 		User:               NewUserClient(cfg),
 		Visitor:            NewVisitorClient(cfg),
 		WebhookEndpoint:    NewWebhookEndpointClient(cfg),
@@ -334,6 +339,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
+		Usage:              NewUsageClient(cfg),
 		User:               NewUserClient(cfg),
 		Visitor:            NewVisitorClient(cfg),
 		WebhookEndpoint:    NewWebhookEndpointClient(cfg),
@@ -372,7 +378,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
 		c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.Suppression,
-		c.Tag, c.Unsubscribe, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.Tag, c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -387,7 +394,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
 		c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.Suppression,
-		c.Tag, c.Unsubscribe, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.Tag, c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -452,6 +460,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Tag.mutate(ctx, m)
 	case *UnsubscribeMutation:
 		return c.Unsubscribe.mutate(ctx, m)
+	case *UsageMutation:
+		return c.Usage.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	case *VisitorMutation:
@@ -4765,6 +4775,155 @@ func (c *UnsubscribeClient) mutate(ctx context.Context, m *UnsubscribeMutation) 
 	}
 }
 
+// UsageClient is a client for the Usage schema.
+type UsageClient struct {
+	config
+}
+
+// NewUsageClient returns a client for the Usage from the given config.
+func NewUsageClient(c config) *UsageClient {
+	return &UsageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `usage.Hooks(f(g(h())))`.
+func (c *UsageClient) Use(hooks ...Hook) {
+	c.hooks.Usage = append(c.hooks.Usage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `usage.Intercept(f(g(h())))`.
+func (c *UsageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Usage = append(c.inters.Usage, interceptors...)
+}
+
+// Create returns a builder for creating a Usage entity.
+func (c *UsageClient) Create() *UsageCreate {
+	mutation := newUsageMutation(c.config, OpCreate)
+	return &UsageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Usage entities.
+func (c *UsageClient) CreateBulk(builders ...*UsageCreate) *UsageCreateBulk {
+	return &UsageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UsageClient) MapCreateBulk(slice any, setFunc func(*UsageCreate, int)) *UsageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UsageCreateBulk{err: fmt.Errorf("calling to UsageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UsageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UsageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Usage.
+func (c *UsageClient) Update() *UsageUpdate {
+	mutation := newUsageMutation(c.config, OpUpdate)
+	return &UsageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UsageClient) UpdateOne(_m *Usage) *UsageUpdateOne {
+	mutation := newUsageMutation(c.config, OpUpdateOne, withUsage(_m))
+	return &UsageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UsageClient) UpdateOneID(id int64) *UsageUpdateOne {
+	mutation := newUsageMutation(c.config, OpUpdateOne, withUsageID(id))
+	return &UsageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Usage.
+func (c *UsageClient) Delete() *UsageDelete {
+	mutation := newUsageMutation(c.config, OpDelete)
+	return &UsageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UsageClient) DeleteOne(_m *Usage) *UsageDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UsageClient) DeleteOneID(id int64) *UsageDeleteOne {
+	builder := c.Delete().Where(usage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UsageDeleteOne{builder}
+}
+
+// Query returns a query builder for Usage.
+func (c *UsageClient) Query() *UsageQuery {
+	return &UsageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUsage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Usage entity by its id.
+func (c *UsageClient) Get(ctx context.Context, id int64) (*Usage, error) {
+	return c.Query().Where(usage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UsageClient) GetX(ctx context.Context, id int64) *Usage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a Usage.
+func (c *UsageClient) QueryWorkspace(_m *Usage) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(usage.Table, usage.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, usage.WorkspaceTable, usage.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UsageClient) Hooks() []Hook {
+	return c.hooks.Usage
+}
+
+// Interceptors returns the client interceptors.
+func (c *UsageClient) Interceptors() []Interceptor {
+	return c.inters.Usage
+}
+
+func (c *UsageClient) mutate(ctx context.Context, m *UsageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UsageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UsageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UsageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UsageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Usage mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -5752,6 +5911,22 @@ func (c *WorkspaceClient) QueryAuditEntries(_m *Workspace) *AuditEntryQuery {
 	return query
 }
 
+// QueryUsages queries the usages edge of a Workspace.
+func (c *WorkspaceClient) QueryUsages(_m *Workspace) *UsageQuery {
+	query := (&UsageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(usage.Table, usage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.UsagesTable, workspace.UsagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *WorkspaceClient) Hooks() []Hook {
 	return c.hooks.Workspace
@@ -5784,7 +5959,7 @@ type (
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
 		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
 		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
-		ServiceCredential, Suppression, Tag, Unsubscribe, User, Visitor,
+		ServiceCredential, Suppression, Tag, Unsubscribe, Usage, User, Visitor,
 		WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
@@ -5792,7 +5967,7 @@ type (
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
 		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
 		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
-		ServiceCredential, Suppression, Tag, Unsubscribe, User, Visitor,
+		ServiceCredential, Suppression, Tag, Unsubscribe, Usage, User, Visitor,
 		WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )

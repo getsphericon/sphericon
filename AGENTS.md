@@ -214,7 +214,8 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition), `ee/audit` (the Audit log bus
   subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/retention` (the
-  periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/operator` (the
+  periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/usage` (the periodic
+  usage job, same shape, plus the paged read of every Workspace's stored figures), `ee/operator` (the
   platform Operator, ADR 0026: the Operator table, and the Workspace rows, suspension state and
   rates the console shows as tenant metadata; Workspace data goes through the scopes of
   list item 7), `internal/workspacefeed` (the ent hook, installed on every client, that gives

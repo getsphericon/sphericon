@@ -735,6 +735,7 @@ func (*ProblemDetailsHeaders) serviceHoldsClearRes()        {}
 func (*ProblemDetailsHeaders) serviceHoldsListRes()         {}
 func (*ProblemDetailsHeaders) serviceHoldsSetRes()          {}
 func (*ProblemDetailsHeaders) serviceIdentityGetRes()       {}
+func (*ProblemDetailsHeaders) serviceUsageListRes()         {}
 func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes() {}
 
 // ServiceHoldsClearNoContent is response for ServiceHoldsClear operation.
@@ -862,6 +863,84 @@ func (s *ServiceScope) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type ServiceUsageListBadRequest ProblemDetails
+
+func (*ServiceUsageListBadRequest) serviceUsageListRes() {}
+
+type ServiceUsageListForbidden ProblemDetails
+
+func (*ServiceUsageListForbidden) serviceUsageListRes() {}
+
+// Paginated response.
+type ServiceUsageListOK struct {
+	// List of items.
+	Items []WorkspaceUsageResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *ServiceUsageListOK) GetItems() []WorkspaceUsageResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *ServiceUsageListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *ServiceUsageListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *ServiceUsageListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *ServiceUsageListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *ServiceUsageListOK) SetItems(val []WorkspaceUsageResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *ServiceUsageListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *ServiceUsageListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *ServiceUsageListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *ServiceUsageListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+func (*ServiceUsageListOK) serviceUsageListRes() {}
+
+type ServiceUsageListUnauthorized ProblemDetails
+
+func (*ServiceUsageListUnauthorized) serviceUsageListRes() {}
 
 type ServiceWorkspaceFeedListBadRequest ProblemDetails
 
@@ -1024,3 +1103,133 @@ func (s *ServiceWorkspaceResource) SetOwners(val []ServiceWorkspaceOwner) {
 }
 
 type Timestamp time.Time
+
+// One metric's figure for a Workspace over a Usage period.
+// Ref: #/components/schemas/UsageFigure
+type UsageFigure struct {
+	Metric UsageMetric `json:"metric"`
+	// The value of the metric over the period.
+	Value int64 `json:"value"`
+	// True once the Usage period closed: the figure is a Usage snapshot and never changes. False while it
+	// is Live usage.
+	Final bool `json:"final"`
+	// When the figure was last computed.
+	ComputedAt Timestamp `json:"computedAt"`
+}
+
+// GetMetric returns the value of Metric.
+func (s *UsageFigure) GetMetric() UsageMetric {
+	return s.Metric
+}
+
+// GetValue returns the value of Value.
+func (s *UsageFigure) GetValue() int64 {
+	return s.Value
+}
+
+// GetFinal returns the value of Final.
+func (s *UsageFigure) GetFinal() bool {
+	return s.Final
+}
+
+// GetComputedAt returns the value of ComputedAt.
+func (s *UsageFigure) GetComputedAt() Timestamp {
+	return s.ComputedAt
+}
+
+// SetMetric sets the value of Metric.
+func (s *UsageFigure) SetMetric(val UsageMetric) {
+	s.Metric = val
+}
+
+// SetValue sets the value of Value.
+func (s *UsageFigure) SetValue(val int64) {
+	s.Value = val
+}
+
+// SetFinal sets the value of Final.
+func (s *UsageFigure) SetFinal(val bool) {
+	s.Final = val
+}
+
+// SetComputedAt sets the value of ComputedAt.
+func (s *UsageFigure) SetComputedAt(val Timestamp) {
+	s.ComputedAt = val
+}
+
+// A metric of Usage.
+// Ref: #/components/schemas/UsageMetric
+type UsageMetric string
+
+const (
+	UsageMetricEmailsSent UsageMetric = "emails_sent"
+)
+
+// AllValues returns all UsageMetric values.
+func (UsageMetric) AllValues() []UsageMetric {
+	return []UsageMetric{
+		UsageMetricEmailsSent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UsageMetric) MarshalText() ([]byte, error) {
+	switch s {
+	case UsageMetricEmailsSent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UsageMetric) UnmarshalText(data []byte) error {
+	switch UsageMetric(data) {
+	case UsageMetricEmailsSent:
+		*s = UsageMetricEmailsSent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The figures of one Workspace for one Usage period.
+// Ref: #/components/schemas/WorkspaceUsageResource
+type WorkspaceUsageResource struct {
+	// The Workspace.
+	WorkspaceId EntityId `json:"workspaceId"`
+	// The Usage period: the calendar month in UTC, as YYYY-MM.
+	Period string `json:"period"`
+	// One figure per metric.
+	Figures []UsageFigure `json:"figures"`
+}
+
+// GetWorkspaceId returns the value of WorkspaceId.
+func (s *WorkspaceUsageResource) GetWorkspaceId() EntityId {
+	return s.WorkspaceId
+}
+
+// GetPeriod returns the value of Period.
+func (s *WorkspaceUsageResource) GetPeriod() string {
+	return s.Period
+}
+
+// GetFigures returns the value of Figures.
+func (s *WorkspaceUsageResource) GetFigures() []UsageFigure {
+	return s.Figures
+}
+
+// SetWorkspaceId sets the value of WorkspaceId.
+func (s *WorkspaceUsageResource) SetWorkspaceId(val EntityId) {
+	s.WorkspaceId = val
+}
+
+// SetPeriod sets the value of Period.
+func (s *WorkspaceUsageResource) SetPeriod(val string) {
+	s.Period = val
+}
+
+// SetFigures sets the value of Figures.
+func (s *WorkspaceUsageResource) SetFigures(val []UsageFigure) {
+	s.Figures = val
+}

@@ -50,6 +50,16 @@ func (UnimplementedHandler) ServiceIdentityGet(ctx context.Context) (r ServiceId
 	return r, ht.ErrNotImplemented
 }
 
+// ServiceUsageList implements ServiceUsage_list operation.
+//
+// The figures of every Workspace for a Usage period, by Workspace id: Live usage for the open period,
+// Usage snapshots for a closed one. Never a recount on read.
+//
+// GET /usage
+func (UnimplementedHandler) ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (r ServiceUsageListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ServiceWorkspaceFeedList implements ServiceWorkspaceFeed_list operation.
 //
 // The Workspaces created or changed since an opaque cursor, each with all of its owners, in a stable

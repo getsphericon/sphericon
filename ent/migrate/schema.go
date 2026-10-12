@@ -994,6 +994,44 @@ var (
 			},
 		},
 	}
+	// UsagesColumns holds the columns for the "usages" table.
+	UsagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "period_start", Type: field.TypeTime},
+		{Name: "metric", Type: field.TypeString},
+		{Name: "value", Type: field.TypeInt64, Default: 0},
+		{Name: "final", Type: field.TypeBool, Default: false},
+		{Name: "computed_at", Type: field.TypeTime},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// UsagesTable holds the schema information for the "usages" table.
+	UsagesTable = &schema.Table{
+		Name:       "usages",
+		Columns:    UsagesColumns,
+		PrimaryKey: []*schema.Column{UsagesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "usages_workspaces_usages",
+				Columns:    []*schema.Column{UsagesColumns[8]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "usage_workspace_id_period_start_metric",
+				Unique:  true,
+				Columns: []*schema.Column{UsagesColumns[8], UsagesColumns[3], UsagesColumns[4]},
+			},
+			{
+				Name:    "usage_period_start_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{UsagesColumns[3], UsagesColumns[8]},
+			},
+		},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1175,6 +1213,7 @@ var (
 		SuppressionsTable,
 		TagsTable,
 		UnsubscribesTable,
+		UsagesTable,
 		UsersTable,
 		VisitorsTable,
 		WebhookEndpointsTable,
@@ -1296,6 +1335,10 @@ func init() {
 	UnsubscribesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UnsubscribesTable.Annotation = &entsql.Annotation{
 		Table: "unsubscribes",
+	}
+	UsagesTable.ForeignKeys[0].RefTable = WorkspacesTable
+	UsagesTable.Annotation = &entsql.Annotation{
+		Table: "usages",
 	}
 	UsersTable.Annotation = &entsql.Annotation{
 		Table: "users",
