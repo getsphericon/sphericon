@@ -110,7 +110,7 @@ func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 	})
 }
 
-func TestSiteUserEmailChangeAndResendEdgeCases(t *testing.T) {
+func TestSiteUserEmailChangeEdgeCases(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
@@ -125,10 +125,4 @@ func TestSiteUserEmailChangeAndResendEdgeCases(t *testing.T) {
 	anon := env.SiteAnonymous(t)
 	_, err = anon.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{NewEmail: "x@example.com", CurrentPassword: "x"})
 	require.Error(t, err)
-	require.Error(t, anon.SiteUserResendVerification(ctx))
-
-	// Resend is a silent no-op once the address is verified.
-	require.NoError(t, env.DB.User.UpdateOneID(fixtures.OwnerJohnID).SetEmailVerifiedAt(time.Now()).Exec(ctx))
-	require.NoError(t, c.SiteUserResendVerification(ctx))
-	assert.Empty(t, env.SystemMail.Messages())
 }

@@ -426,6 +426,74 @@
         "security": [{}]
       }
     },
+    "/auth/resend-verification": {
+      "post": {
+        "operationId": "SiteAuth_resendVerification",
+        "description": "Send the verification link again to an Unverified User. Answers 202 the same\nway whether the address is unknown, already verified or unverified, so it adds no\nenumeration; only an Unverified User gets a mail. Rate limited per IP\nlike registration.",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "The request has been accepted for processing, but processing has not yet completed."
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteResendVerificationInput"
+              }
+            }
+          }
+        },
+        "security": [{}]
+      }
+    },
     "/auth/reset-password": {
       "post": {
         "operationId": "SiteAuth_resetPassword",
@@ -1464,19 +1532,6 @@
                 }
               }
             }
-          }
-        },
-        "tags": ["Site User"]
-      }
-    },
-    "/me/verification-email": {
-      "post": {
-        "operationId": "SiteUser_resendVerification",
-        "description": "Resend the signup email-verification link to the current address",
-        "parameters": [],
-        "responses": {
-          "202": {
-            "description": "The request has been accepted for processing, but processing has not yet completed."
           }
         },
         "tags": ["Site User"]
@@ -9274,6 +9329,16 @@
           }
         },
         "description": "Register with a name and an email only: no password is taken before the address\nis proven (ADR 0030)"
+      },
+      "SiteResendVerificationInput": {
+        "type": "object",
+        "required": ["email"],
+        "properties": {
+          "email": {
+            "$ref": "#/components/schemas/EmailAddress"
+          }
+        },
+        "description": "Ask for the verification link again (always accepted; no account enumeration)"
       },
       "SiteResetPasswordInput": {
         "type": "object",

@@ -2,7 +2,11 @@ import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
 import { afterEach, expect, test } from 'vitest'
 
-import { handleSiteAuthLogin, handleSiteAuthSecondFactor } from '../../generated/site/msw.gen.ts'
+import {
+  handleSiteAuthLogin,
+  handleSiteAuthResendVerification,
+  handleSiteAuthSecondFactor,
+} from '../../generated/site/msw.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -52,6 +56,26 @@ test('tells an unverified user to verify their email', async () => {
 
   await expect.element(screen.getByText('Verify your email first')).toBeInTheDocument()
   expect(navigate).not.toHaveBeenCalled()
+})
+
+test('the verify-required refusal offers to send the link again to the typed address', async () => {
+  const resendBodies: unknown[] = []
+  worker.use(
+    handleSiteAuthLogin(() => problem(403, { code: 'email_verification_required' })),
+    handleSiteAuthResendVerification(async ({ request }) => {
+      resendBodies.push(await request.json())
+      return new Response(null, { status: 202 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<LoginPage />)
+
+  await screen.getByLabelText(/^Email/).fill('user@example.com')
+  await screen.getByLabelText(/^Password/).fill('secret')
+  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await screen.getByRole('button', { name: 'Resend verification email' }).click()
+
+  await expect.element(screen.getByText('Verification email sent')).toBeInTheDocument()
+  expect(resendBodies).toEqual([{ email: 'user@example.com' }])
 })
 
 test('shows how long to wait when login is rate limited', async () => {

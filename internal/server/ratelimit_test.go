@@ -25,6 +25,7 @@ const humanLimit = 3
 // covers (ADR 0025). Each one is its own bucket per IP.
 var humanEndpoints = map[string]string{
 	"signup":          "/site/auth/register",
+	"resend":          "/site/auth/resend-verification",
 	"verify email":    "/site/auth/verify-email",
 	"invitation":      "/site/invitations/some-token/accept",
 	"consent confirm": "/site/confirmations/some-token",
