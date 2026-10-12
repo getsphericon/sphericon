@@ -1,6 +1,7 @@
 package emailrender_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,8 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const mjmlWithText = `<mjml><mj-body><mj-section><mj-column><mj-text>%s</mj-text></mj-column></mj-section></mj-body></mjml>`
+
 // A template author must never reach the server's files: {% include %} and
-// {% render %} fail the render instead of reading from the working directory.
+// {% render %} fail the render, in the subject and in the body alike, instead
+// of reading from the working directory.
 func TestRenderRejectsFileTags(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "secret.txt"), []byte("TOP-SECRET"), 0o600))
@@ -19,11 +23,22 @@ func TestRenderRejectsFileTags(t *testing.T) {
 
 	for _, tag := range []string{`{% include "secret.txt" %}`, `{% render "secret.txt" %}`} {
 		t.Run(tag, func(t *testing.T) {
-			out, err := emailrender.Render(tag, nil)
-			require.Error(t, err)
-			assert.NotContains(t, out, "TOP-SECRET")
+			_, err := emailrender.RenderEmail(tag, sampleMJML, nil)
+			require.ErrorContains(t, err, "render subject")
+			assert.ErrorContains(t, err, "include and render tags are not supported")
 
-			require.Error(t, emailrender.Validate("subject", "<mjml><mj-body><mj-section><mj-column><mj-text>"+tag+"</mj-text></mj-column></mj-section></mj-body></mjml>"))
+			out, err := emailrender.RenderEmail("Hi", mjmlWithBody(tag), nil)
+			require.ErrorContains(t, err, "render body")
+			assert.ErrorContains(t, err, "include and render tags are not supported")
+			assert.NotContains(t, out.HTML, "TOP-SECRET")
+
+			require.ErrorContains(t, emailrender.Validate("Hi", mjmlWithBody(tag)), "include and render tags are not supported")
 		})
 	}
+
+	require.NoError(t, emailrender.Validate("Hi", mjmlWithBody("plain text")))
+}
+
+func mjmlWithBody(text string) string {
+	return fmt.Sprintf(mjmlWithText, text)
 }

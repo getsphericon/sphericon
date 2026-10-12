@@ -6,7 +6,7 @@ FROM alpine:3.24
 RUN apk add --no-cache ca-certificates tzdata \
     && adduser -D -H -u 10001 sphericon
 ARG TARGETPLATFORM
-COPY $TARGETPLATFORM/sphericon /usr/local/bin/sphericon
+COPY --chmod=755 $TARGETPLATFORM/sphericon /usr/local/bin/sphericon
 # Run unprivileged from an empty directory, never as root in /.
 WORKDIR /app
 USER sphericon
