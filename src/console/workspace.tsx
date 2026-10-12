@@ -12,6 +12,7 @@ import { consoleHomeRoute, consoleWorkspaceRoute } from '../router.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
 import { AuditLogCard } from './AuditLogCard.tsx'
 import { DeliverabilityCard } from './deliverability.tsx'
+import { HoldsCard } from './HoldsCard.tsx'
 import { SuspensionActions } from './SuspensionActions.tsx'
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -117,6 +118,7 @@ export function ConsoleWorkspacePage() {
             </Stack>
           </Card>
           <SuspensionCard workspaceId={workspace.id} suspension={workspace.suspension} />
+          <HoldsCard holds={workspace.holds} />
           <DeliverabilityCard deliverability={workspace.deliverability} />
           <AuditLogCard workspaceId={workspace.id} />
         </>

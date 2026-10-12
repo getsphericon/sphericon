@@ -302,6 +302,16 @@
       },
       "back": "Todos los espacios de trabajo",
       "detailsTitle": "Detalles",
+      "holds": {
+        "empty": "Sin retenciones activas.",
+        "expires": "Caduca",
+        "key": "Clave",
+        "message": "Mensaje",
+        "reasonCode": "Código de motivo",
+        "setBy": "Establecida por",
+        "since": "Desde",
+        "title": "Retenciones del operador"
+      },
       "id": "ID",
       "loadError": "No se pudo cargar el espacio de trabajo",
       "noReason": "Sin motivo indicado",

@@ -201,6 +201,36 @@ export type OperatorEnrolment = {
 };
 
 /**
+ * An active Operator hold on a Workspace, as the console shows it (read only)
+ */
+export type OperatorHold = {
+  /**
+   * Unique per Workspace, chosen by the setter
+   */
+  key: string;
+  /**
+   * Machine reason code
+   */
+  reasonCode: string;
+  /**
+   * The message the setter gave for the Owner
+   */
+  message: string;
+  /**
+   * When the hold was first set
+   */
+  createdAt: Timestamp;
+  /**
+   * When the hold lapses unless renewed
+   */
+  expiresAt: Timestamp;
+  /**
+   * Who set it: the name of its Service credential
+   */
+  setBy: string;
+};
+
+/**
  * Sign in with an email and password. The email is a plain string: a malformed
  * address must answer like an unknown one.
  */
@@ -346,7 +376,7 @@ export type OperatorSuspensionChange = {
 };
 
 /**
- * A Workspace with its deliverability, as the detail page shows it
+ * A Workspace with its deliverability and active holds, as the detail page shows it
  */
 export type OperatorWorkspaceDetailResource = {
   /**
@@ -363,6 +393,10 @@ export type OperatorWorkspaceDetailResource = {
    * Present only while sending is suspended
    */
   suspension?: OperatorSuspension | null;
+  /**
+   * Active Operator holds by key; a lapsed hold is not listed
+   */
+  holds: Array<OperatorHold>;
   deliverability: OperatorDeliverability;
 };
 

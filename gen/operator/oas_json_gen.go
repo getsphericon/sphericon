@@ -1278,6 +1278,183 @@ func (s *OperatorEnrolment) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *OperatorHold) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *OperatorHold) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("key")
+		e.Str(s.Key)
+	}
+	{
+		e.FieldStart("reasonCode")
+		e.Str(s.ReasonCode)
+	}
+	{
+		e.FieldStart("message")
+		e.Str(s.Message)
+	}
+	{
+		e.FieldStart("createdAt")
+		s.CreatedAt.Encode(e)
+	}
+	{
+		e.FieldStart("expiresAt")
+		s.ExpiresAt.Encode(e)
+	}
+	{
+		e.FieldStart("setBy")
+		e.Str(s.SetBy)
+	}
+}
+
+var jsonFieldsNameOfOperatorHold = [6]string{
+	0: "key",
+	1: "reasonCode",
+	2: "message",
+	3: "createdAt",
+	4: "expiresAt",
+	5: "setBy",
+}
+
+// Decode decodes OperatorHold from json.
+func (s *OperatorHold) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode OperatorHold to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "key":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Key = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "reasonCode":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.ReasonCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"reasonCode\"")
+			}
+		case "message":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Message = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"message\"")
+			}
+		case "createdAt":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.CreatedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "expiresAt":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.ExpiresAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"expiresAt\"")
+			}
+		case "setBy":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.SetBy = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"setBy\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode OperatorHold")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfOperatorHold) {
+					name = jsonFieldsNameOfOperatorHold[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *OperatorHold) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OperatorHold) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *OperatorLoginInput) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -2540,18 +2717,27 @@ func (s *OperatorWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("holds")
+		e.ArrStart()
+		for _, elem := range s.Holds {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
 		e.FieldStart("deliverability")
 		s.Deliverability.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfOperatorWorkspaceDetailResource = [6]string{
+var jsonFieldsNameOfOperatorWorkspaceDetailResource = [7]string{
 	0: "id",
 	1: "slug",
 	2: "name",
 	3: "createdAt",
 	4: "suspension",
-	5: "deliverability",
+	5: "holds",
+	6: "deliverability",
 }
 
 // Decode decodes OperatorWorkspaceDetailResource from json.
@@ -2617,8 +2803,26 @@ func (s *OperatorWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"suspension\"")
 			}
-		case "deliverability":
+		case "holds":
 			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				s.Holds = make([]OperatorHold, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem OperatorHold
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Holds = append(s.Holds, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"holds\"")
+			}
+		case "deliverability":
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.Deliverability.Decode(d); err != nil {
 					return err
@@ -2637,7 +2841,7 @@ func (s *OperatorWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00101111,
+		0b01101111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
