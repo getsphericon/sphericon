@@ -57,7 +57,7 @@ type SystemMailEnqueuer interface {
 	// all the same but nothing is delivered, so forgot-password costs the same
 	// for every address.
 	EnqueuePasswordReset(ctx context.Context, email, token string, send bool) error
-	EnqueueEmailVerification(ctx context.Context, email, token string) error
+	EnqueueEmailVerification(ctx context.Context, email, token string, send bool) error
 	EnqueueEmailChangeConfirm(ctx context.Context, email, token string) error
 	// EnqueueMemberInvite sends the workspace invite email. It is best-effort:
 	// the invite also returns a copy-link, so a missing/failed mailer (common on

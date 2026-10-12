@@ -3074,6 +3074,7 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 func (*ProblemDetailsHeaders) siteAuthForgotPasswordRes()                  {}
 func (*ProblemDetailsHeaders) siteAuthLoginRes()                           {}
 func (*ProblemDetailsHeaders) siteAuthRegisterRes()                        {}
+func (*ProblemDetailsHeaders) siteAuthResendVerificationRes()              {}
 func (*ProblemDetailsHeaders) siteAuthSecondFactorRes()                    {}
 func (*ProblemDetailsHeaders) siteAuthVerifyEmailRes()                     {}
 func (*ProblemDetailsHeaders) sitePublicConfirmationsPerformRes()          {}
@@ -4079,6 +4080,11 @@ func (*SiteAuthRegisterConflict) siteAuthRegisterRes() {}
 type SiteAuthRegisterUnprocessableEntity ProblemDetails
 
 func (*SiteAuthRegisterUnprocessableEntity) siteAuthRegisterRes() {}
+
+// SiteAuthResendVerificationAccepted is response for SiteAuthResendVerification operation.
+type SiteAuthResendVerificationAccepted struct{}
+
+func (*SiteAuthResendVerificationAccepted) siteAuthResendVerificationRes() {}
 
 // SiteAuthResetPasswordOK is response for SiteAuthResetPassword operation.
 type SiteAuthResetPasswordOK struct{}
@@ -8012,6 +8018,22 @@ func (s *SiteRegisterInput) SetPassword(val OptString) {
 	s.Password = val
 }
 
+// Ask for the verification link again (always accepted; no account enumeration).
+// Ref: #/components/schemas/SiteResendVerificationInput
+type SiteResendVerificationInput struct {
+	Email EmailAddress `json:"email"`
+}
+
+// GetEmail returns the value of Email.
+func (s *SiteResendVerificationInput) GetEmail() EmailAddress {
+	return s.Email
+}
+
+// SetEmail sets the value of Email.
+func (s *SiteResendVerificationInput) SetEmail(val EmailAddress) {
+	s.Email = val
+}
+
 // Set a new password using a reset token.
 // Ref: #/components/schemas/SiteResetPasswordInput
 type SiteResetPasswordInput struct {
@@ -11216,9 +11238,6 @@ func (*SiteUserEmailChangeForbidden) siteUserEmailChangeRes() {}
 type SiteUserEmailChangeUnprocessableEntity ProblemDetails
 
 func (*SiteUserEmailChangeUnprocessableEntity) siteUserEmailChangeRes() {}
-
-// SiteUserResendVerificationAccepted is response for SiteUserResendVerification operation.
-type SiteUserResendVerificationAccepted struct{}
 
 // The authenticated dashboard user.
 // Ref: #/components/schemas/SiteUserResource

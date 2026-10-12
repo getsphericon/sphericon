@@ -51,6 +51,11 @@ model SiteForgotPasswordInput {
   email: EmailAddress;
 }
 
+/** Ask for the verification link again (always accepted; no account enumeration) */
+model SiteResendVerificationInput {
+  email: EmailAddress;
+}
+
 /** Set a new password using a reset token */
 model SiteResetPasswordInput {
   token: string;
@@ -171,6 +176,17 @@ namespace SiteAuth {
   op verifyEmail(@body body: SiteVerifyEmailInput):
     | OkResponse
     | BadRequestProblem
+    | TooManyRequestsProblem;
+
+  /** Send the verification link again to an Unverified User. Answers 202 the same
+   * way whether the address is unknown, already verified or unverified, so it adds no
+   * enumeration; only an Unverified User gets a mail. Rate limited per IP
+   * like registration. */
+  @useAuth(NoAuth)
+  @post
+  @route("/resend-verification")
+  op resendVerification(@body body: SiteResendVerificationInput):
+    | AcceptedResponse
     | TooManyRequestsProblem;
 
   /** Confirm an email change from the token sent to the new address. Public:

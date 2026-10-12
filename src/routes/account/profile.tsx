@@ -21,7 +21,6 @@ import {
   siteUserEmailChangeMutation,
   siteUserGetMeOptions,
   siteUserGetMeQueryKey,
-  siteUserResendVerificationMutation,
   siteUserSignOutEverywhereMutation,
   siteUserUpdateMeMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
@@ -103,29 +102,6 @@ function ProfileForm({ user }: { user: SiteUserResource }) {
         </Group>
       </Stack>
     </form>
-  )
-}
-
-// UnverifiedAlert prompts an unverified user to resend the verification email.
-function UnverifiedAlert() {
-  const { t } = useTranslation()
-  const resend = useResourceMutation({
-    mutation: siteUserResendVerificationMutation(),
-    successMessage: t(($) => $.profile.resendSuccess),
-    errorTitle: t(($) => $.profile.resendErrorTitle),
-  })
-
-  return (
-    <Alert color="yellow" title={t(($) => $.profile.unverifiedAlert)}>
-      <Button
-        variant="light"
-        size="xs"
-        loading={resend.isPending}
-        onClick={() => resend.mutate({})}
-      >
-        {t(($) => $.profile.resendVerification)}
-      </Button>
-    </Alert>
   )
 }
 
@@ -234,7 +210,6 @@ export function ProfilePage() {
 
       {meQuery.data ? (
         <Stack>
-          {meQuery.data.emailVerified ? null : <UnverifiedAlert />}
           <ProfileForm user={meQuery.data} />
           <EmailSection />
           <SessionsSection />

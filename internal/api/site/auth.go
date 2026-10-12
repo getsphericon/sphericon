@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/credentials"
@@ -59,7 +60,7 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	// The token is bound to the (still empty) password hash, so it works once: setting
 	// the password ends it. Best-effort send; a lost mail is asked for again.
 	if token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, u.ID, u.PasswordHash, verifyTokenTTL, map[string]string{"email": u.Email}); err == nil {
-		_ = h.sysmail.EnqueueEmailVerification(ctx, u.Email, token)
+		_ = h.sysmail.EnqueueEmailVerification(ctx, u.Email, token, true)
 	}
 	return &siteapi.SiteAuthRegisterAccepted{}, nil
 }
@@ -100,4 +101,34 @@ func emailTaken() siteapi.SiteAuthRegisterRes {
 		map[string][]string{"email": {i18n.T("errors.email_exists", nil)}},
 	))
 	return &v
+}
+
+// SiteAuthResendVerification sends the verification link again to an Unverified User
+// (ADR 0030). It answers 202 the same way for an unknown, an already verified and an
+// unverified address, and every request does the same work (a token is minted, a mail
+// job is queued); only an Unverified User's job delivers, the others' is a no-send one,
+// so neither the answer nor its timing says whether the address has an account. The
+// per-IP cap answers 429 in the rate limit middleware, before this runs.
+func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.SiteResendVerificationInput) (siteapi.SiteAuthResendVerificationRes, error) {
+	email := strings.TrimSpace(string(req.Email))
+	if email == "" {
+		return &siteapi.SiteAuthResendVerificationAccepted{}, nil
+	}
+	u, err := h.accounts.UserByEmail(ctx, email)
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, err
+	}
+	// The same binding as at registration: the link works until the password is set.
+	var uid int64
+	var binding string
+	to := email
+	if u != nil {
+		uid, binding, to = u.ID, u.PasswordHash, u.Email
+	}
+	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, uid, binding, verifyTokenTTL, map[string]string{"email": to})
+	if err != nil {
+		return nil, err
+	}
+	_ = h.sysmail.EnqueueEmailVerification(ctx, to, token, u != nil && u.EmailVerifiedAt == nil)
+	return &siteapi.SiteAuthResendVerificationAccepted{}, nil
 }

@@ -119,6 +119,17 @@ func (UnimplementedHandler) SiteAuthRegister(ctx context.Context, req *SiteRegis
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAuthResendVerification implements SiteAuth_resendVerification operation.
+//
+// Send the verification link again to an Unverified User. Answers 202 the same way whether the address
+// is unknown, already verified or unverified, so it adds no enumeration; only an Unverified User gets
+// a mail. Rate limited per IP like registration.
+//
+// POST /auth/resend-verification
+func (UnimplementedHandler) SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput) (r SiteAuthResendVerificationRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAuthResetPassword implements SiteAuth_resetPassword operation.
 //
 // Set a new password from a reset token.
@@ -853,15 +864,6 @@ func (UnimplementedHandler) SiteUserEmailChange(ctx context.Context, req *SiteEm
 // GET /me
 func (UnimplementedHandler) SiteUserGetMe(ctx context.Context) (r *SiteUserResource, _ error) {
 	return r, ht.ErrNotImplemented
-}
-
-// SiteUserResendVerification implements SiteUser_resendVerification operation.
-//
-// Resend the signup email-verification link to the current address.
-//
-// POST /me/verification-email
-func (UnimplementedHandler) SiteUserResendVerification(ctx context.Context) error {
-	return ht.ErrNotImplemented
 }
 
 // SiteUserSignOutEverywhere implements SiteUser_signOutEverywhere operation.

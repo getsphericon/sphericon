@@ -37,6 +37,10 @@ type SiteAuthRegisterRes interface {
 	siteAuthRegisterRes()
 }
 
+type SiteAuthResendVerificationRes interface {
+	siteAuthResendVerificationRes()
+}
+
 type SiteAuthResetPasswordRes interface {
 	siteAuthResetPasswordRes()
 }
