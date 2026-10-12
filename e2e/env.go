@@ -19,6 +19,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // Env is the running application under test plus its Mailpit. One Env serves every
@@ -29,6 +30,7 @@ type Env struct {
 	mailpit *Mailpit
 
 	accounts *accounts.Accounts
+	bus      *events.Bus
 }
 
 // Boot starts Mailpit and the full application (event router, job queue, HTTP server)
@@ -61,6 +63,12 @@ func Boot() (*Env, func(), error) {
 		stopMailpit()
 		return nil, nil, fmt.Errorf("resolve accounts: %w", err)
 	}
+	bus, err := a.Bus()
+	if err != nil {
+		_ = a.Close(ctx)
+		stopMailpit()
+		return nil, nil, fmt.Errorf("resolve bus: %w", err)
+	}
 	// The same start/stop ordering as the binary; Start unwinds itself on failure.
 	if err := a.Start(ctx); err != nil {
 		stopMailpit()
@@ -77,5 +85,6 @@ func Boot() (*Env, func(), error) {
 		BaseURL:  a.Config.AppURL,
 		mailpit:  mp,
 		accounts: acc,
+		bus:      bus,
 	}, stop, nil
 }

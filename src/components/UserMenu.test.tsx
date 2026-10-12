@@ -75,6 +75,18 @@ test('the account link item is absent unless the workspace offers it', async () 
   expect(screen.container.textContent).not.toContain('Account')
 })
 
+test('a failed account link shows an error and opens nothing', async () => {
+  worker.use(handleSiteWorkspacesAccountLink(() => HttpResponse.error()))
+  const open = vi.spyOn(window, 'open').mockReturnValue(null)
+  const { screen } = await renderWithRouter(<UserMenu slug="acme" accountLink />)
+  await screen.getByRole('button', { expanded: false }).click()
+  await screen.getByText('Account', { exact: true }).click()
+
+  await expect.element(screen.getByText('Could not open the account page')).toBeInTheDocument()
+  expect(open).not.toHaveBeenCalled()
+  open.mockRestore()
+})
+
 test('the account link item opens the external page with the token', async () => {
   worker.use(
     handleSiteWorkspacesAccountLink({
