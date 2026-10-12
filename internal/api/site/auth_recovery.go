@@ -83,29 +83,41 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 	return &siteapi.SiteAuthResetPasswordOK{}, nil
 }
 
-// SiteAuthVerifyEmail confirms the address a token was minted for.
+// SiteAuthVerifyEmail completes a registration from its link (ADR 0030): the token
+// proves the address, so it stamps the Verified email, sets the password, ends every
+// earlier session, creates the User's first Workspace and sends the welcome email.
+// It starts no session; the User signs in afterwards. The token is single use (bound
+// to the password hash it was minted over) and scoped to the address it was sent to:
+// an old link never verifies a changed address.
 func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput) (siteapi.SiteAuthVerifyEmailRes, error) {
-	uid, extra, err := h.tokens.Parse(req.Token, authtoken.PurposeEmailVerify, noBinding)
+	if req.Password == "" {
+		v := problem(http.StatusBadRequest, i18n.T("errors.password_required", nil))
+		return &v, nil
+	}
+	uid, extra, err := h.tokens.Parse(req.Token, authtoken.PurposeEmailVerify, h.passwordHashBinding(ctx))
 	if err != nil {
 		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_invalid", nil))
 		return &v, nil
 	}
 	u, err := h.accounts.User(ctx, uid)
-	if err != nil {
+	if err != nil || u.EmailVerifiedAt != nil {
 		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil))
 		return &v, nil
 	}
-	// A verify link is scoped to the address it was sent to; if the user has since
-	// changed their email, an old link must not mark the new address verified.
-	if claimed := extra["email"]; claimed != "" && claimed != u.Email {
+	if extra["email"] != u.Email {
 		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_stale", nil))
 		return &v, nil
 	}
-	if u.EmailVerifiedAt == nil {
-		if err := h.accounts.MarkEmailVerified(ctx, uid); err != nil {
-			return nil, err
-		}
+	hash, err := credentials.HashPassword(req.Password)
+	if err != nil {
+		return nil, err
 	}
+	if _, err := h.accounts.VerifyEmail(ctx, uid, hash, u.Name); err != nil {
+		return nil, err
+	}
+	// Welcome email is a platform (transactional) send via the system sender, to an
+	// address that is now proven. Best-effort: never fail the verification.
+	_ = h.welcome.EnqueueWelcome(ctx, u.Email, u.Name)
 	return &siteapi.SiteAuthVerifyEmailOK{}, nil
 }
 
@@ -193,6 +205,3 @@ func (h *Handlers) currentEmailBinding(ctx context.Context) func(int64) (string,
 		return u.Email, nil
 	}
 }
-
-// noBinding is the binding for verify tokens, which are scoped by user id alone.
-func noBinding(int64) (string, error) { return "", nil }

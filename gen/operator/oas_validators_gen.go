@@ -714,6 +714,8 @@ func (s ProblemCode) Validate() error {
 	switch s {
 	case "second_factor_required":
 		return nil
+	case "email_verification_required":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

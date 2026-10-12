@@ -177,6 +177,10 @@ func TestAMemberJoiningOrLeavingIsNotAChangeOfOwners(t *testing.T) {
 func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
+	// The fixture Users are verified; Initech's owners start unverified here.
+	for _, id := range []int64{fixtures.InitechOwnerOlgaID, fixtures.InitechCoOwnerOwenID} {
+		require.NoError(t, h.env.DB.User.UpdateOneID(id).ClearEmailVerifiedAt().Exec(t.Context()))
+	}
 	_, saved := feedFrom(t, c, "")
 
 	verifiedAt := time.Now().UTC().Truncate(time.Second)

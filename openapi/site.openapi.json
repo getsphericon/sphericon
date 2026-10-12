@@ -214,7 +214,7 @@
     "/auth/login": {
       "post": {
         "operationId": "SiteAuth_login",
-        "description": "Check the password. A User without a Second factor gets a session (outcome\n`session`, the JWT cookie set here); a User with one gets outcome `challenge`,\na short-lived single-use challenge for the second step and no cookie (ADR\n0020). Unknown email and wrong password answer the same 401; failures feed the\nLogin throttle, which answers 429 even for a correct password while its delay\nruns (ADR 0025). Only a started session resets the throttle's counter.",
+        "description": "Check the password. A User without a Second factor gets a session (outcome\n`session`, the JWT cookie set here); a User with one gets outcome `challenge`,\na short-lived single-use challenge for the second step and no cookie (ADR\n0020). Unknown email and wrong password answer the same 401; failures feed the\nLogin throttle, which answers 429 even for a correct password while its delay\nruns (ADR 0025). Only a started session resets the throttle's counter. An\nUnverified User (ADR 0030) answers 403 with code `email_verification_required`\nbefore any password check or second-factor challenge, and no session.",
         "parameters": [],
         "responses": {
           "200": {
@@ -238,6 +238,16 @@
           },
           "401": {
             "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -331,17 +341,11 @@
     "/auth/register": {
       "post": {
         "operationId": "SiteAuth_register",
+        "description": "Create an Unverified User (ADR 0030): no password, no session, no Workspace.\nA verification email with the link to the set-password screen is on its way\n(202). A taken address answers 409.",
         "parameters": [],
         "responses": {
-          "201": {
-            "description": "The request has succeeded and a new resource has been created as a result.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SiteRegisterResult"
-                }
-              }
-            }
+          "202": {
+            "description": "The request has been accepted for processing, but processing has not yet completed."
           },
           "409": {
             "description": "RFC 7807 conflict response",
@@ -553,7 +557,7 @@
     "/auth/verify-email": {
       "post": {
         "operationId": "SiteAuth_verifyEmail",
-        "description": "Confirm an email address from a verification token (signup verification)",
+        "description": "Complete a registration from the verification link (the token is the\ncredential): stamps the Verified email, sets the password, ends every earlier\nsession, creates the User's first Workspace and sends the welcome email. The\nUser then signs in; the link alone starts no session. A link is single use and\nscoped to the address it was sent to. Rate limited like registration.",
         "parameters": [],
         "responses": {
           "200": {
@@ -561,6 +565,50 @@
           },
           "400": {
             "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7290,7 +7338,7 @@
       },
       "ProblemCode": {
         "type": "string",
-        "enum": ["second_factor_required"],
+        "enum": ["second_factor_required", "email_verification_required"],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
       "ProblemDetails": {
@@ -9191,36 +9239,16 @@
       },
       "SiteRegisterInput": {
         "type": "object",
-        "required": ["name", "email", "password"],
+        "required": ["name", "email"],
         "properties": {
           "name": {
             "type": "string"
           },
           "email": {
             "$ref": "#/components/schemas/EmailAddress"
-          },
-          "password": {
-            "type": "string"
           }
-        }
-      },
-      "SiteRegisterResult": {
-        "type": "object",
-        "required": ["id", "name", "email", "createdAt"],
-        "properties": {
-          "id": {
-            "$ref": "#/components/schemas/EntityId"
-          },
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "$ref": "#/components/schemas/EmailAddress"
-          },
-          "createdAt": {
-            "$ref": "#/components/schemas/Timestamp"
-          }
-        }
+        },
+        "description": "Register with a name and an email only: no password is taken before the address\nis proven (ADR 0030)"
       },
       "SiteResetPasswordInput": {
         "type": "object",
@@ -10250,13 +10278,16 @@
       },
       "SiteVerifyEmailInput": {
         "type": "object",
-        "required": ["token"],
+        "required": ["token", "password"],
         "properties": {
           "token": {
             "type": "string"
+          },
+          "password": {
+            "type": "string"
           }
         },
-        "description": "Confirm ownership of an email address using a verification token"
+        "description": "Prove an email address with the token sent to it and set the password"
       },
       "SiteWebhookEndpointResource": {
         "type": "object",

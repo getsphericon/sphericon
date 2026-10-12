@@ -2,17 +2,11 @@ using TypeSpec.Http;
 
 namespace Sphericon;
 
+/** Register with a name and an email only: no password is taken before the address
+ * is proven (ADR 0030) */
 model SiteRegisterInput {
   name: string;
   email: EmailAddress;
-  password: string;
-}
-
-model SiteRegisterResult {
-  id: EntityId;
-  name: string;
-  email: EmailAddress;
-  createdAt: Timestamp;
 }
 
 /** Sign in with an email and password. The email is a plain string: a malformed
@@ -57,9 +51,10 @@ model SiteResetPasswordInput {
   password: string;
 }
 
-/** Confirm ownership of an email address using a verification token */
+/** Prove an email address with the token sent to it and set the password */
 model SiteVerifyEmailInput {
   token: string;
+  password: string;
 }
 
 /** Confirm a requested email change using the token sent to the new address */
@@ -70,14 +65,14 @@ model SiteConfirmEmailChangeInput {
 @route("/auth")
 @tag("Site Auth")
 namespace SiteAuth {
+  /** Create an Unverified User (ADR 0030): no password, no session, no Workspace.
+   * A verification email with the link to the set-password screen is on its way
+   * (202). A taken address answers 409. */
   @useAuth(NoAuth)
   @post
   @route("/register")
   op register(@body body: SiteRegisterInput):
-    | {
-        @statusCode statusCode: 201;
-        @body body: SiteRegisterResult;
-      }
+    | AcceptedResponse
     | ConflictProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;
@@ -87,7 +82,9 @@ namespace SiteAuth {
    * a short-lived single-use challenge for the second step and no cookie (ADR
    * 0020). Unknown email and wrong password answer the same 401; failures feed the
    * Login throttle, which answers 429 even for a correct password while its delay
-   * runs (ADR 0025). Only a started session resets the throttle's counter. */
+   * runs (ADR 0025). Only a started session resets the throttle's counter. An
+   * Unverified User (ADR 0030) answers 403 with code `email_verification_required`
+   * before any password check or second-factor challenge, and no session. */
   @useAuth(NoAuth)
   @post
   @route("/login")
@@ -101,6 +98,7 @@ namespace SiteAuth {
         @body body: SiteLoginResult;
       }
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem;
 
   /** The second login step of a User with a Second factor: verify the challenge
@@ -154,13 +152,18 @@ namespace SiteAuth {
     | OkResponse
     | BadRequestProblem;
 
-  /** Confirm an email address from a verification token (signup verification) */
+  /** Complete a registration from the verification link (the token is the
+   * credential): stamps the Verified email, sets the password, ends every earlier
+   * session, creates the User's first Workspace and sends the welcome email. The
+   * User then signs in; the link alone starts no session. A link is single use and
+   * scoped to the address it was sent to. Rate limited like registration. */
   @useAuth(NoAuth)
   @post
   @route("/verify-email")
   op verifyEmail(@body body: SiteVerifyEmailInput):
     | OkResponse
-    | BadRequestProblem;
+    | BadRequestProblem
+    | TooManyRequestsProblem;
 
   /** Confirm an email change from the token sent to the new address. Public:
    * the link may be opened from a browser without a session. The change ends

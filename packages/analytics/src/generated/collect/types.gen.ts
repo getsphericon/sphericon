@@ -81,7 +81,7 @@ export type PaymentRequiredProblem = {
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
-export const ProblemCode = { SECOND_FACTOR_REQUIRED: 'second_factor_required' } as const;
+export const ProblemCode = { SECOND_FACTOR_REQUIRED: 'second_factor_required', EMAIL_VERIFICATION_REQUIRED: 'email_verification_required' } as const;
 
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status

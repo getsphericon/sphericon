@@ -84,7 +84,9 @@ type Invoker interface {
 	// set here); a User with one gets outcome `challenge`, a short-lived single-use challenge for the
 	// second step and no cookie (ADR 0020). Unknown email and wrong password answer the same 401; failures
 	// feed the Login throttle, which answers 429 even for a correct password while its delay runs (ADR
-	// 0025). Only a started session resets the throttle's counter.
+	// 0025). Only a started session resets the throttle's counter. An Unverified User (ADR 0030) answers
+	// 403 with code `email_verification_required` before any password check or second-factor challenge,
+	// and no session.
 	//
 	// POST /auth/login
 	SiteAuthLogin(ctx context.Context, request *SiteLoginInput) (SiteAuthLoginRes, error)
@@ -95,6 +97,9 @@ type Invoker interface {
 	// POST /auth/logout
 	SiteAuthLogout(ctx context.Context) (*SiteAuthLogoutNoContent, error)
 	// SiteAuthRegister invokes SiteAuth_register operation.
+	//
+	// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
+	// with the link to the set-password screen is on its way (202). A taken address answers 409.
 	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error)
@@ -115,7 +120,10 @@ type Invoker interface {
 	SiteAuthSecondFactor(ctx context.Context, request *SiteLoginSecondFactorInput) (SiteAuthSecondFactorRes, error)
 	// SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 	//
-	// Confirm an email address from a verification token (signup verification).
+	// Complete a registration from the verification link (the token is the credential): stamps the
+	// Verified email, sets the password, ends every earlier session, creates the User's first Workspace
+	// and sends the welcome email. The User then signs in; the link alone starts no session. A link is
+	// single use and scoped to the address it was sent to. Rate limited like registration.
 	//
 	// POST /auth/verify-email
 	SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput) (SiteAuthVerifyEmailRes, error)
@@ -1957,7 +1965,9 @@ func (c *Client) sendSiteAuthForgotPassword(ctx context.Context, request *SiteFo
 // set here); a User with one gets outcome `challenge`, a short-lived single-use challenge for the
 // second step and no cookie (ADR 0020). Unknown email and wrong password answer the same 401; failures
 // feed the Login throttle, which answers 429 even for a correct password while its delay runs (ADR
-// 0025). Only a started session resets the throttle's counter.
+// 0025). Only a started session resets the throttle's counter. An Unverified User (ADR 0030) answers
+// 403 with code `email_verification_required` before any password check or second-factor challenge,
+// and no session.
 //
 // POST /auth/login
 func (c *Client) SiteAuthLogin(ctx context.Context, request *SiteLoginInput) (SiteAuthLoginRes, error) {
@@ -2119,6 +2129,9 @@ func (c *Client) sendSiteAuthLogout(ctx context.Context) (res *SiteAuthLogoutNoC
 }
 
 // SiteAuthRegister invokes SiteAuth_register operation.
+//
+// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
+// with the link to the set-password screen is on its way (202). A taken address answers 409.
 //
 // POST /auth/register
 func (c *Client) SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error) {
@@ -2370,7 +2383,10 @@ func (c *Client) sendSiteAuthSecondFactor(ctx context.Context, request *SiteLogi
 
 // SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 //
-// Confirm an email address from a verification token (signup verification).
+// Complete a registration from the verification link (the token is the credential): stamps the
+// Verified email, sets the password, ends every earlier session, creates the User's first Workspace
+// and sends the welcome email. The User then signs in; the link alone starts no session. A link is
+// single use and scoped to the address it was sent to. Rate limited like registration.
 //
 // POST /auth/verify-email
 func (c *Client) SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput) (SiteAuthVerifyEmailRes, error) {

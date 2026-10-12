@@ -1,55 +1,89 @@
-import { Anchor, Card, Loader, Stack, Text, Title } from '@mantine/core'
+import { Anchor, Button, Card, Group, PasswordInput, Stack, Text, Title } from '@mantine/core'
+import { useForm } from '@mantine/form'
+import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { siteAuthVerifyEmailMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { indexRoute, verifyEmailRoute } from '../../router.tsx'
+import { loginRoute, verifyEmailRoute } from '../../router.tsx'
+import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 
+// Where the link in the verification email lands (ADR 0030): the token proves the
+// address and the password chosen here is the first one the account ever has.
 export function VerifyEmailPage() {
   const { t } = useTranslation()
   const { token } = verifyEmailRoute.useSearch()
-  const mutation = useMutation(siteAuthVerifyEmailMutation())
 
-  const { mutate } = mutation
+  const form = useForm({
+    initialValues: { password: '', confirm: '' },
+    validate: {
+      confirm: (value, values) =>
+        value === values.password ? null : t(($) => $.verifyEmail.mismatch),
+    },
+  })
 
-  // Fire once on mount; the ref guards against StrictMode's double-invoke.
-  const fired = useRef(false)
-  useEffect(() => {
-    if (fired.current) return
-    fired.current = true
-    mutate({ body: { token } })
-  }, [mutate, token])
+  const mutation = useMutation({
+    ...siteAuthVerifyEmailMutation(),
+    onError: (error) => {
+      form.setValues({ password: '', confirm: '' })
+      notifications.show({
+        color: 'red',
+        title: t(($) => $.verifyEmail.errorTitle),
+        message: getApiErrorMessage(
+          error,
+          t(($) => $.verifyEmail.errorMessage),
+        ),
+      })
+    },
+  })
+
+  if (mutation.isSuccess) {
+    return (
+      <Stack maw={460} mx="auto" mt="xl">
+        <Card withBorder padding="xl">
+          <Stack align="center" gap="sm">
+            <Title order={3}>{t(($) => $.verifyEmail.successTitle)}</Title>
+            <Text c="dimmed" ta="center">
+              {t(($) => $.verifyEmail.successBody)}
+            </Text>
+            <Anchor component="a" href={loginRoute.to} size="sm" mt="md">
+              {t(($) => $.verifyEmail.signIn)}
+            </Anchor>
+          </Stack>
+        </Card>
+      </Stack>
+    )
+  }
 
   return (
-    <Stack maw={460} mx="auto" mt="xl" align="center">
-      <Card withBorder w="100%" padding="xl">
-        <Stack align="center" gap="sm">
-          {mutation.isSuccess ? (
-            <>
-              <Title order={3}>{t(($) => $.verifyEmail.successTitle)}</Title>
-              <Text c="dimmed" ta="center">
-                {t(($) => $.verifyEmail.successBody)}
-              </Text>
-              <Anchor component="a" href={indexRoute.to} size="sm" mt="md">
-                {t(($) => $.verifyEmail.continue)}
-              </Anchor>
-            </>
-          ) : mutation.isError ? (
-            <>
-              <Title order={3}>{t(($) => $.verifyEmail.errorTitle)}</Title>
-              <Text c="dimmed" ta="center">
-                {t(($) => $.verifyEmail.errorBody)}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Loader />
-              <Text c="dimmed">{t(($) => $.verifyEmail.verifying)}</Text>
-            </>
-          )}
+    <Stack maw={420} mx="auto" mt="xl">
+      <Title order={3}>{t(($) => $.verifyEmail.title)}</Title>
+
+      <form
+        onSubmit={form.onSubmit((values) =>
+          mutation.mutate({ body: { token, password: values.password } }),
+        )}
+      >
+        <Stack>
+          <PasswordInput
+            label={t(($) => $.verifyEmail.passwordLabel)}
+            autoComplete="new-password"
+            required
+            {...form.getInputProps('password')}
+          />
+          <PasswordInput
+            label={t(($) => $.verifyEmail.confirmPasswordLabel)}
+            autoComplete="new-password"
+            required
+            {...form.getInputProps('confirm')}
+          />
+          <Group justify="flex-end">
+            <Button type="submit" loading={mutation.isPending}>
+              {t(($) => $.verifyEmail.submitButton)}
+            </Button>
+          </Group>
         </Stack>
-      </Card>
+      </form>
     </Stack>
   )
 }

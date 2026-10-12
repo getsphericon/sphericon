@@ -42,11 +42,23 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 	if err != nil {
 		return nil, err
 	}
+	if u != nil && u.EmailVerifiedAt == nil {
+		// The gate (ADR 0030) sits before the password result and any second-factor
+		// challenge is acted on: whatever the password, an Unverified User gets no
+		// session and no challenge, and the throttle does not count it.
+		v := siteapi.SiteAuthLoginForbidden(siteapi.ProblemDetails{
+			Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeEmailVerificationRequired),
+			Status: siteapi.NewOptInt32(http.StatusForbidden),
+			Title:  siteapi.NewOptString(http.StatusText(http.StatusForbidden)),
+			Detail: siteapi.NewOptString(i18n.T("errors.email_verification_required", nil)),
+		})
+		return &v, nil
+	}
 	if !ok {
 		if err := h.attempts.RecordFailure(ctx, accounts.KindLogin, email); err != nil {
 			return nil, err
 		}
-		v := problem(http.StatusUnauthorized, i18n.T("errors.invalid_credentials", nil))
+		v := siteapi.SiteAuthLoginUnauthorized(problem(http.StatusUnauthorized, i18n.T("errors.invalid_credentials", nil)))
 		return &v, nil
 	}
 	if secondfactor.Active(u) {
@@ -88,8 +100,8 @@ func (h *Handlers) SiteAuthLogout(context.Context) (*siteapi.SiteAuthLogoutNoCon
 	return &siteapi.SiteAuthLogoutNoContent{SetCookie: h.sessions.Cleared().String()}, nil
 }
 
-// checkPassword returns the User the credentials belong to; ok is false when they
-// match none. A password is always hashed, against a throwaway hash when there is no
+// checkPassword returns the User of the email (nil when there is none); ok is false
+// when the credentials do not match, including a User without a password. A password is always hashed, against a throwaway hash when there is no
 // User or the User has no password, so the answer time does not tell an unknown
 // email apart.
 func (h *Handlers) checkPassword(ctx context.Context, email, password string) (u *ent.User, ok bool, err error) {
@@ -99,7 +111,7 @@ func (h *Handlers) checkPassword(ctx context.Context, email, password string) (u
 	}
 	if u == nil || u.PasswordHash == "" {
 		credentials.VerifyPassword(decoyHash(), password)
-		return nil, false, nil
+		return u, false, nil
 	}
 	return u, credentials.VerifyPassword(u.PasswordHash, password), nil
 }

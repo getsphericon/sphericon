@@ -381,7 +381,7 @@ export type EntityId = string;
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
-export const ProblemCode = { SECOND_FACTOR_REQUIRED: 'second_factor_required' } as const;
+export const ProblemCode = { SECOND_FACTOR_REQUIRED: 'second_factor_required', EMAIL_VERIFICATION_REQUIRED: 'email_verification_required' } as const;
 
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
@@ -1761,17 +1761,13 @@ export type SiteRecoveryCodesInput = {
   currentPassword: string;
 };
 
+/**
+ * Register with a name and an email only: no password is taken before the address
+ * is proven (ADR 0030)
+ */
 export type SiteRegisterInput = {
   name: string;
   email: EmailAddress;
-  password: string;
-};
-
-export type SiteRegisterResult = {
-  id: EntityId;
-  name: string;
-  email: EmailAddress;
-  createdAt: Timestamp;
 };
 
 /**
@@ -2501,10 +2497,11 @@ export type SiteUserResource = {
 };
 
 /**
- * Confirm ownership of an email address using a verification token
+ * Prove an email address with the token sent to it and set the password
  */
 export type SiteVerifyEmailInput = {
   token: string;
+  password: string;
 };
 
 /**
@@ -2956,6 +2953,10 @@ export type SiteAuthLoginErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
   429: ProblemDetails;
@@ -3014,12 +3015,10 @@ export type SiteAuthRegisterError = SiteAuthRegisterErrors[keyof SiteAuthRegiste
 
 export type SiteAuthRegisterResponses = {
   /**
-   * The request has succeeded and a new resource has been created as a result.
+   * The request has been accepted for processing, but processing has not yet completed.
    */
-  201: SiteRegisterResult;
+  202: unknown;
 };
-
-export type SiteAuthRegisterResponse = SiteAuthRegisterResponses[keyof SiteAuthRegisterResponses];
 
 export type SiteAuthResetPasswordData = {
   body: SiteResetPasswordInput;
@@ -3085,6 +3084,10 @@ export type SiteAuthVerifyEmailErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
 };
 
 export type SiteAuthVerifyEmailError = SiteAuthVerifyEmailErrors[keyof SiteAuthVerifyEmailErrors];

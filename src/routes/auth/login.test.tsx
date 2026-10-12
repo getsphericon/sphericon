@@ -38,6 +38,22 @@ test('shows an error notification when login fails', async () => {
   expect(navigate).not.toHaveBeenCalled()
 })
 
+test('tells an unverified user to verify their email', async () => {
+  worker.use(
+    handleSiteAuthLogin(() =>
+      problem(403, { code: 'email_verification_required', detail: 'server detail' }),
+    ),
+  )
+  const { screen, navigate } = await renderWithRouter(<LoginPage />)
+
+  await screen.getByLabelText(/^Email/).fill('user@example.com')
+  await screen.getByLabelText(/^Password/).fill('secret')
+  await screen.getByRole('button', { name: 'Sign in' }).click()
+
+  await expect.element(screen.getByText('Verify your email first')).toBeInTheDocument()
+  expect(navigate).not.toHaveBeenCalled()
+})
+
 test('shows how long to wait when login is rate limited', async () => {
   worker.use(handleSiteAuthLogin(() => problem(429, { retryAfter: 90 })))
   const { screen } = await renderWithRouter(<LoginPage />)
