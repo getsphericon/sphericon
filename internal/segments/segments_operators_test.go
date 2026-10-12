@@ -86,6 +86,23 @@ func TestCustomFieldOperators(t *testing.T) {
 	assert.Empty(t, opsEmails(t, env, opsGroup(rule("custom:tags", "contains", "gamma"))))
 }
 
+// The key of a custom-field rule is data, never SQL: quotes in it are matched literally
+// and an injection payload is just a key nobody has.
+func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	_, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("quote@ops.test").
+		SetCustomFields(map[string]any{"it's": "here"}).Save(ctx)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"quote@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:it's", "=", "here"))))
+
+	payload := "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
+	for _, op := range []string{"=", "!=", "contains", "notNull"} {
+		assert.Empty(t, opsEmails(t, env, opsGroup(rule("custom:"+payload, op, "a"))), op)
+	}
+}
+
 func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

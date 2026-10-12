@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqljson"
 )
 
 // eventFieldPrefix marks a leaf as a behavioral condition: field "event:<action>"
@@ -317,21 +316,40 @@ func compileTag(tg *TagSchema, op, value string) (builder, error) {
 	}, nil
 }
 
-func compileJSON(col, path, op, value string) (builder, error) {
-	var p *sql.Predicate
+// compileJSON builds a predicate over one key of a JSON column. The key comes from
+// the stored rule, so it is always a bound argument and never part of the query text.
+func compileJSON(col, key, op, value string) (builder, error) {
+	var write func(b *sql.Builder, column string)
 	switch op {
-	case "=":
-		p = sqljson.ValueEQ(col, value, sqljson.Path(path))
-	case "!=":
-		p = sqljson.ValueNEQ(col, value, sqljson.Path(path))
+	case "=", "!=":
+		cmp := " = "
+		if op == "!=" {
+			cmp = " <> "
+		}
+		write = func(b *sql.Builder, column string) {
+			b.WriteString("(").WriteString(column).WriteString(" ->> ").Arg(key).WriteString(")").
+				WriteString(cmp).Arg(value)
+		}
 	case "contains":
-		p = sqljson.ValueContains(col, value, sqljson.Path(path))
+		// Membership of a JSON array (jsonb containment of the encoded value).
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			return nil, fmt.Errorf("encode json value: %w", err)
+		}
+		write = func(b *sql.Builder, column string) {
+			b.WriteString("(").WriteString(column).WriteString(" -> ").Arg(key).WriteString(") @> ").
+				Arg(string(encoded)).WriteString("::jsonb")
+		}
 	case "notNull":
-		p = sqljson.HasKey(col, sqljson.Path(path))
+		write = func(b *sql.Builder, column string) {
+			b.WriteString("(").WriteString(column).WriteString(" -> ").Arg(key).WriteString(") IS NOT NULL")
+		}
 	default:
 		return nil, fmt.Errorf("unsupported operator %q for json field", op)
 	}
-	return func(*sql.Selector) *sql.Predicate { return p }, nil
+	return func(s *sql.Selector) *sql.Predicate {
+		return sql.P(func(b *sql.Builder) { write(b, s.C(col)) })
+	}, nil
 }
 
 // resolveJSON reports whether field maps to a JSON column via a schema prefix,
