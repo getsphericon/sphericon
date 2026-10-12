@@ -581,6 +581,8 @@ func (s UsageMetric) Validate() error {
 	switch s {
 	case "emails_sent":
 		return nil
+	case "contacts":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

@@ -63,6 +63,7 @@ var metrics = []struct {
 	measure measurer
 }{
 	{EmailsSent, measureEmailsSent},
+	{Contacts, measureContacts},
 }
 
 // measureEmailsSent counts the Outbound messages the provider accepted in the period,

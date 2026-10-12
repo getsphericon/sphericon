@@ -294,6 +294,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Attempts: attempts, VolumeFloor: st.volumeFloor,
 	})
 	require.NoError(t, err, "build edition")
+	// The Edition's ent hooks, on the client and on every transaction the bus opens.
+	client.Use(edition.Hooks()...)
+	bus.Use(edition.Hooks()...)
 	// The Operator hold freezer rides the send chokepoint like the app's.
 	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))
 	fakeSES := &FakeSES{}
