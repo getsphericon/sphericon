@@ -3,7 +3,7 @@ package server
 import (
 	"testing"
 
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

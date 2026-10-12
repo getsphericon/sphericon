@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/go-faster/jx"
-	"github.com/mokevnin/sphericon/ent"
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	"github.com/mokevnin/sphericon/internal/automations"
 )
 
 // automationSteps decodes the stored definition into the typed steps DTO. A

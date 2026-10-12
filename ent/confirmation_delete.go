@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/confirmation"
-	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // ConfirmationDelete is the builder for deleting a Confirmation entity.

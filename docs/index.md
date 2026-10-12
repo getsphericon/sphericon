@@ -32,5 +32,5 @@ features:
     link: /guide/deliverability
   - title: Open core
     details: The core is AGPL-3.0. A small set of enterprise features is commercial and source-available.
-    link: https://github.com/mokevnin/sphericon
+    link: https://github.com/getsphericon/sphericon
 ---

@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/customfield"
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	"github.com/mokevnin/sphericon/internal/api/auth"
-	"github.com/mokevnin/sphericon/internal/reputation"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/customfield"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
 const (

@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/broadcast"
-	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // BroadcastDelete is the builder for deleting a Broadcast entity.

@@ -1,4 +1,4 @@
-module github.com/mokevnin/sphericon
+module github.com/getsphericon/sphericon
 
 go 1.27.2
 

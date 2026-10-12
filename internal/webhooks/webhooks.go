@@ -16,11 +16,11 @@ import (
 	"net/url"
 	"slices"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/webhookendpoint"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/pagination"
-	"github.com/mokevnin/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 // Domain errors. Callers match with errors.Is.

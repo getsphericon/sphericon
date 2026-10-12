@@ -13,11 +13,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/membership"
-	"github.com/mokevnin/sphericon/ent/sendingdomain"
-	"github.com/mokevnin/sphericon/internal/messaging"
-	"github.com/mokevnin/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/sending"
 )
 
 // recheckBatchSize bounds how many domains one periodic tick re-checks, so a

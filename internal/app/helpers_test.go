@@ -5,7 +5,7 @@ import (
 
 	"github.com/samber/do/v2"
 
-	"github.com/mokevnin/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent"
 )
 
 // invokeEnt resolves the app's ent client from its container, the same instance the

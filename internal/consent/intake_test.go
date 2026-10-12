@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ent/suppression"
-	"github.com/mokevnin/sphericon/internal/consent"
-	"github.com/mokevnin/sphericon/internal/eligibility"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/consent"
+	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestSuppressNormalizesAndKeepsTheExistingReason(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mokevnin/sphericon/config"
+	"github.com/getsphericon/sphericon/config"
 	"github.com/stretchr/testify/require"
 )
 

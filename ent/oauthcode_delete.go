@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/oauthcode"
-	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // OAuthCodeDelete is the builder for deleting a OAuthCode entity.

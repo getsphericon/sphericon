@@ -5,7 +5,7 @@ package e2e
 import (
 	"time"
 
-	externalapi "github.com/mokevnin/sphericon/gen/external"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 )
 
 // Broadcast is what a scenario chooses about a Broadcast; the rest defaults.

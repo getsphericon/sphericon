@@ -69,7 +69,7 @@ Both secrets are random values you create once and keep:
 
 ```sh
 openssl rand -hex 32          # JWT_SECRET
-docker run --rm ghcr.io/mokevnin/sphericon:latest genkey   # ENCRYPTION_KEY (or: ./sphericon genkey)
+docker run --rm ghcr.io/getsphericon/sphericon:latest genkey   # ENCRYPTION_KEY (or: ./sphericon genkey)
 ```
 
 Back up `ENCRYPTION_KEY` with your database. It encrypts the stored SMTP and SES-compatible credentials, and
@@ -109,7 +109,7 @@ docker run -p 3000:3000 \
   -e ENCRYPTION_KEY="<base64 tink keyset>" \
   -e APP_URL="https://mail.example.com" \
   -e AUTO_MIGRATE=true \
-  ghcr.io/mokevnin/sphericon:latest
+  ghcr.io/getsphericon/sphericon:latest
 ```
 
 The image declares a `HEALTHCHECK` against `/healthz`, so `docker ps` reports `healthy`

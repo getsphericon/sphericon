@@ -6,7 +6,7 @@
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mokevnin/sphericon.git"
+    "url": "git+https://github.com/getsphericon/sphericon.git"
   },
   "type": "module",
   "imports": {

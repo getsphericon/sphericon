@@ -5,11 +5,11 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/messaging"
-	"github.com/mokevnin/sphericon/internal/outbound"
-	"github.com/mokevnin/sphericon/internal/secrets"
-	"github.com/mokevnin/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/sending"
 )
 
 // Inline is the synchronous adapter of the enqueue seam (the Rails `:inline`

@@ -3,7 +3,7 @@ package resources
 import (
 	"testing"
 
-	"github.com/mokevnin/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent"
 )
 
 func TestBroadcastStatsRates(t *testing.T) {

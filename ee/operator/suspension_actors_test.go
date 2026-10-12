@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ent/auditentry"
-	operatorapi "github.com/mokevnin/sphericon/gen/operator"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/i18n"
-	"github.com/mokevnin/sphericon/internal/jobs"
-	"github.com/mokevnin/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/ent/auditentry"
+	operatorapi "github.com/getsphericon/sphericon/gen/operator"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // The stored Audit row keeps the real Operator id (the platform's own trail); only the

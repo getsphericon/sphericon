@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 )
 
 // A fixture time is an instant, not a wall-clock reading in the database session's

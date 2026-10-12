@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const otelScope = "github.com/mokevnin/sphericon/internal/messaging"
+const otelScope = "github.com/getsphericon/sphericon/internal/messaging"
 
 // SendStatus is the outcome label of the email.send.outcomes counter. The set is
 // closed: the counter carries only provider and status, never a tenant or

@@ -10,11 +10,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mokevnin/sphericon/ee/licensekey"
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/auditentry"
-	"github.com/mokevnin/sphericon/ent/predicate"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // ConsumerName names the bus consumer group of the audit subscriber.

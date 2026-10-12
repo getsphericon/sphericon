@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 type doerFunc func(*http.Request) (*http.Response, error)

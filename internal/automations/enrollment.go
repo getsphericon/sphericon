@@ -3,8 +3,8 @@ package automations
 import (
 	"context"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationrun"
 )
 
 // Enrollment rules (GLOSSARY: Enrollment). A Contact is enrolled into an Automation

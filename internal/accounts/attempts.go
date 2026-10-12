@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 
-	"github.com/mokevnin/sphericon/config"
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/authattempt"
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/authattempt"
 )
 
 // Kind is the action an attempt counter belongs to. Each kind has its own counter

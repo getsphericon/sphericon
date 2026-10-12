@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	apiauth "github.com/mokevnin/sphericon/internal/api/auth"
-	"github.com/mokevnin/sphericon/internal/mcpserver"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/mcpserver"
 )
 
 // specDoc is a small OpenAPI document exercising every argument shape the

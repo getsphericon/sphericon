@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/mokevnin/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/db"
 )
 
 func TestIsUniqueViolationRecognizesPostgresCode23505(t *testing.T) {

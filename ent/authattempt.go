@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent/authattempt"
+	"github.com/getsphericon/sphericon/ent/authattempt"
 )
 
 // AuthAttempt is the model entity for the AuthAttempt schema.

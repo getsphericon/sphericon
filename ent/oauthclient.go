@@ -10,7 +10,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent/oauthclient"
+	"github.com/getsphericon/sphericon/ent/oauthclient"
 )
 
 // OAuthClient is the model entity for the OAuthClient schema.

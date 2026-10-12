@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net/http"
 
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	"github.com/mokevnin/sphericon/internal/api/auth"
-	"github.com/mokevnin/sphericon/internal/api/external/resources"
-	"github.com/mokevnin/sphericon/internal/contactexport"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/api/external/resources"
+	"github.com/getsphericon/sphericon/internal/contactexport"
 )
 
 // ContactsExport streams the subject-access Data export of one contact (ADR 0021),

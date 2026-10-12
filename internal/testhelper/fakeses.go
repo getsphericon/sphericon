@@ -5,9 +5,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/mokevnin/sphericon/internal/messaging"
-	"github.com/mokevnin/sphericon/internal/messaging/ses"
-	"github.com/mokevnin/sphericon/internal/messaging/smtp"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/ses"
+	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 )
 
 // FakeSES stands in for the SES account behind every "ses" Integration the server

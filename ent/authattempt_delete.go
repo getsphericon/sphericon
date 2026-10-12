@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/authattempt"
-	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/authattempt"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // AuthAttemptDelete is the builder for deleting a AuthAttempt entity.

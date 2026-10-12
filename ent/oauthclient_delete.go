@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/oauthclient"
-	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/oauthclient"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // OAuthClientDelete is the builder for deleting a OAuthClient entity.

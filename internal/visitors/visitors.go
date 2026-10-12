@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/event"
-	"github.com/mokevnin/sphericon/ent/visitor"
-	"github.com/mokevnin/sphericon/internal/contacts"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/samber/lo"
 )
 

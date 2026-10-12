@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/contact"
-	"github.com/mokevnin/sphericon/ent/workspace"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/logging"
-	"github.com/mokevnin/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/logging"
+	"github.com/getsphericon/sphericon/internal/webhook"
 	sns "github.com/robbiet480/go.sns"
 )
 

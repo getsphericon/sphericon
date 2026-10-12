@@ -20,17 +20,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/config"
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/jobs"
-	"github.com/mokevnin/sphericon/internal/messaging/registry"
-	"github.com/mokevnin/sphericon/internal/outbound"
-	"github.com/mokevnin/sphericon/internal/secrets"
-	"github.com/mokevnin/sphericon/internal/telemetry"
-	"github.com/mokevnin/sphericon/internal/testhelper"
-	"github.com/mokevnin/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/messaging/registry"
+	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/telemetry"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // forbiddenLabel matches label names that identify a tenant or a person (ADR 0018):

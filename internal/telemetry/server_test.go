@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/config"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestMetricsServerServesExpositionOnItsOwnListener(t *testing.T) {

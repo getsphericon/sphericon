@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/clientip"
-	"github.com/mokevnin/sphericon/internal/logging"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/clientip"
+	"github.com/getsphericon/sphericon/internal/logging"
 )
 
 // NameAuditEntry is the bus type of an Audit entry (ADR 0022). Core only carries the

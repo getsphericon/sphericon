@@ -20,7 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ses"
 	"github.com/aws/aws-sdk-go-v2/service/ses/types"
 
-	"github.com/mokevnin/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
 // Config is the cleartext credential shape stored (encrypted) for an SES

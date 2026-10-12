@@ -65,9 +65,9 @@ export default defineConfig({
         },
       ],
     },
-    socialLinks: [{ icon: 'github', link: 'https://github.com/mokevnin/sphericon' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/getsphericon/sphericon' }],
     editLink: {
-      pattern: 'https://github.com/mokevnin/sphericon/edit/main/docs/:path',
+      pattern: 'https://github.com/getsphericon/sphericon/edit/main/docs/:path',
     },
     search: { provider: 'local' },
   },

@@ -15,16 +15,16 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/integration"
-	"github.com/mokevnin/sphericon/internal/db"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/i18n"
-	"github.com/mokevnin/sphericon/internal/messaging"
-	"github.com/mokevnin/sphericon/internal/messaging/ses"
-	"github.com/mokevnin/sphericon/internal/messaging/smtp"
-	"github.com/mokevnin/sphericon/internal/pagination"
-	"github.com/mokevnin/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/ses"
+	"github.com/getsphericon/sphericon/internal/messaging/smtp"
+	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 // ErrDefaultConflict means another default Integration already exists for the channel.

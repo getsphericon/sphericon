@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/foxcpp/go-mockdns"
-	"github.com/mokevnin/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/dnstest"
 )
 
 func TestGenerateKeypairRoundTrip(t *testing.T) {

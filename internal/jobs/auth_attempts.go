@@ -5,8 +5,8 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/accounts"
 )
 
 // PurgeAuthAttemptsArgs is the periodic tick that removes stale failed-attempt rows

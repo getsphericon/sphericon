@@ -11,10 +11,10 @@ import (
 	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/mokevnin/sphericon/ee/licensekey"
-	"github.com/mokevnin/sphericon/ent"
-	operatorapi "github.com/mokevnin/sphericon/gen/operator"
-	"github.com/mokevnin/sphericon/internal/paths"
+	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ent"
+	operatorapi "github.com/getsphericon/sphericon/gen/operator"
+	"github.com/getsphericon/sphericon/internal/paths"
 )
 
 // SessionCookie is the name of the cookie that carries an Operator session. It differs

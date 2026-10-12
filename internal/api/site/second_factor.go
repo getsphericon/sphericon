@@ -5,13 +5,13 @@ import (
 	"errors"
 	"net/http"
 
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/accounts"
-	"github.com/mokevnin/sphericon/internal/api/auth"
-	"github.com/mokevnin/sphericon/internal/credentials"
-	"github.com/mokevnin/sphericon/internal/i18n"
-	"github.com/mokevnin/sphericon/internal/ratelimit"
-	"github.com/mokevnin/sphericon/internal/secondfactor"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/ratelimit"
+	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
 // SiteSecondFactorGetStatus answers whether the User has a Second factor, a pending

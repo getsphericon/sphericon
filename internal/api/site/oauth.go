@@ -3,12 +3,12 @@ package site
 import (
 	"context"
 	"errors"
-	"github.com/mokevnin/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"net/http"
 
-	"github.com/mokevnin/sphericon/ent"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/ent"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/oauthserver"
 )
 
 // SiteOAuthDescribe validates an OAuth authorization request for the consent

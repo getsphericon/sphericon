@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/fixtures/fixturegen"
+	"github.com/getsphericon/sphericon/internal/fixtures/fixturegen"
 )
 
 func TestWriteGeneratesTheCatalogFile(t *testing.T) {

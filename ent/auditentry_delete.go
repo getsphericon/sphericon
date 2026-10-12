@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/auditentry"
-	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // AuditEntryDelete is the builder for deleting a AuditEntry entity.

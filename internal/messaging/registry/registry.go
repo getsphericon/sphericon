@@ -5,9 +5,9 @@
 package registry
 
 import (
-	"github.com/mokevnin/sphericon/internal/messaging"
-	"github.com/mokevnin/sphericon/internal/messaging/ses"
-	"github.com/mokevnin/sphericon/internal/messaging/smtp"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging/ses"
+	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 )
 
 // Default returns a catalog with all built-in providers registered.

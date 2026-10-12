@@ -11,16 +11,16 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/mokevnin/sphericon/ee/audit"
-	"github.com/mokevnin/sphericon/ee/licensekey"
-	"github.com/mokevnin/sphericon/ee/operator"
-	"github.com/mokevnin/sphericon/ee/retention"
-	"github.com/mokevnin/sphericon/ent"
-	operatorapi "github.com/mokevnin/sphericon/gen/operator"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/jobs"
-	"github.com/mokevnin/sphericon/internal/messaging"
-	"github.com/mokevnin/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/ee/audit"
+	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/retention"
+	"github.com/getsphericon/sphericon/ent"
+	operatorapi "github.com/getsphericon/sphericon/gen/operator"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 // Edition is the Enterprise surface of one running instance.

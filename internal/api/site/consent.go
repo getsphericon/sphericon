@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/clientip"
-	"github.com/mokevnin/sphericon/internal/consent"
-	"github.com/mokevnin/sphericon/internal/tracking"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/clientip"
+	"github.com/getsphericon/sphericon/internal/consent"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // SitePublicConfirmationsPerform is the double opt-in confirmation page's button

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/mokevnin/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 func TestTotalPages(t *testing.T) {

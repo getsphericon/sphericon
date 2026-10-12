@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mokevnin/sphericon/internal/authtoken"
+	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

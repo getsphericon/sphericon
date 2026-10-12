@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // The domain-event outbox is a watermill table, not an ent entity, so tests read it

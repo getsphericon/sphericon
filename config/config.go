@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mokevnin/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/spf13/viper"
 )
 

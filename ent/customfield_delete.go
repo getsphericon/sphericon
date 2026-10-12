@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/customfield"
-	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // CustomFieldDelete is the builder for deleting a CustomField entity.

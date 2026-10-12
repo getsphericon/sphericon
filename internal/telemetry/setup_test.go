@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 
-	"github.com/mokevnin/sphericon/config"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 var otlpEnvKeys = []string{

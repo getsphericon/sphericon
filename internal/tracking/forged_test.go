@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 const forgeSecret = "secret"
