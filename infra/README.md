@@ -67,7 +67,15 @@ Optional: `image_repository` (default `ghcr.io/getsphericon/sphericon`), `otel_s
 `domain` (`getsphericon.app`, also the app host), `api_host_label` (`api`),
 `tracker_host_label` (`t`), `mcp_host_label` (`mcp`), `region`, `name`, `task_cpu`, `task_memory`, `db_instance_class`,
 `db_allocated_storage`, `db_max_open_conns`, `pgx_max_conns`, `mail_from_label` (`mail`),
-`system_email_from` (default `noreply@<domain>`), `dmarc_rua`. There are no secret variables.
+`system_email_from` (default `noreply@<domain>`), `dmarc_rua`, `internal_listener_source_security_group_id` and
+`internal_port` (see below). There are no secret variables.
+
+The internal listener is off by default. Set `internal_listener_source_security_group_id` to the id
+of a security group in the same VPC and the task gets `INTERNAL_ADDR=:<internal_port>` (default
+`3400`) plus one ingress rule on the app security group, from that group only; the load balancer and
+the internet never reach the port. A caller reaches it at the task's private address on that port,
+and needs the `operator` license feature (see [self-hosting](../docs/self-hosting.md#service-credentials)).
+Unset, there is no variable in the task, no rule and no open port, and a plan shows no changes.
 
 ```sh
 mise run infra -- plan -out=tfplan
