@@ -135,6 +135,9 @@ Outbound message row. Queueing it would add latency to password resets and OTPs 
 
 - Workspace suspension and Operator hold (ADR 0007, 0009) are enforced in one place: the module's
   source-level `Held` outcome. EE supplies the freeze reasons; the core only asks the question.
+  A `Freezer` reads through the Workspace's scope (`Frozen(ctx, s, ws)`) and holds no raw client; the
+  Operator hold one answers from the holds whose expiry is after the clock, so a lapsed hold is
+  ignored at once.
 - ADR 0010's gate and ADR 0012's headers (including covering them in the DKIM `h=` list) move into
   this module and are tested once, across all three surfaces.
 - ADR 0011's requirement that the send path stamp the Sending domain onto `email.sent` is met in

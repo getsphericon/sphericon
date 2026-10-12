@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -423,6 +424,21 @@ func (_u *WorkspaceUpdate) AddSendLimiters(v ...*SendLimiter) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddSendLimiterIDs(ids...)
+}
+
+// AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
+func (_u *WorkspaceUpdate) AddHoldIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddHoldIDs(ids...)
+	return _u
+}
+
+// AddHolds adds the "holds" edges to the Hold entity.
+func (_u *WorkspaceUpdate) AddHolds(v ...*Hold) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddHoldIDs(ids...)
 }
 
 // AddBroadcastIDs adds the "broadcasts" edge to the Broadcast entity by IDs.
@@ -833,6 +849,27 @@ func (_u *WorkspaceUpdate) RemoveSendLimiters(v ...*SendLimiter) *WorkspaceUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSendLimiterIDs(ids...)
+}
+
+// ClearHolds clears all "holds" edges to the Hold entity.
+func (_u *WorkspaceUpdate) ClearHolds() *WorkspaceUpdate {
+	_u.mutation.ClearHolds()
+	return _u
+}
+
+// RemoveHoldIDs removes the "holds" edge to Hold entities by IDs.
+func (_u *WorkspaceUpdate) RemoveHoldIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveHoldIDs(ids...)
+	return _u
+}
+
+// RemoveHolds removes "holds" edges to Hold entities.
+func (_u *WorkspaceUpdate) RemoveHolds(v ...*Hold) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveHoldIDs(ids...)
 }
 
 // ClearBroadcasts clears all "broadcasts" edges to the Broadcast entity.
@@ -1703,6 +1740,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.HoldsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedHoldsIDs(); len(nodes) > 0 && !_u.mutation.HoldsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HoldsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -2690,6 +2772,21 @@ func (_u *WorkspaceUpdateOne) AddSendLimiters(v ...*SendLimiter) *WorkspaceUpdat
 	return _u.AddSendLimiterIDs(ids...)
 }
 
+// AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
+func (_u *WorkspaceUpdateOne) AddHoldIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddHoldIDs(ids...)
+	return _u
+}
+
+// AddHolds adds the "holds" edges to the Hold entity.
+func (_u *WorkspaceUpdateOne) AddHolds(v ...*Hold) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddHoldIDs(ids...)
+}
+
 // AddBroadcastIDs adds the "broadcasts" edge to the Broadcast entity by IDs.
 func (_u *WorkspaceUpdateOne) AddBroadcastIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddBroadcastIDs(ids...)
@@ -3098,6 +3195,27 @@ func (_u *WorkspaceUpdateOne) RemoveSendLimiters(v ...*SendLimiter) *WorkspaceUp
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSendLimiterIDs(ids...)
+}
+
+// ClearHolds clears all "holds" edges to the Hold entity.
+func (_u *WorkspaceUpdateOne) ClearHolds() *WorkspaceUpdateOne {
+	_u.mutation.ClearHolds()
+	return _u
+}
+
+// RemoveHoldIDs removes the "holds" edge to Hold entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveHoldIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveHoldIDs(ids...)
+	return _u
+}
+
+// RemoveHolds removes "holds" edges to Hold entities.
+func (_u *WorkspaceUpdateOne) RemoveHolds(v ...*Hold) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveHoldIDs(ids...)
 }
 
 // ClearBroadcasts clears all "broadcasts" edges to the Broadcast entity.
@@ -3998,6 +4116,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.HoldsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedHoldsIDs(); len(nodes) > 0 && !_u.mutation.HoldsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HoldsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

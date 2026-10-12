@@ -365,6 +365,14 @@ const (
 	GlobexSamMembershipID = 9
 	// GlobexSlug is from fixtures/workspaces.
 	GlobexSlug = "globex"
+	// HoldAcmeLapsedID is from fixtures/holds.
+	HoldAcmeLapsedID = 1
+	// HoldAcmeLapsedKey is from fixtures/holds.
+	HoldAcmeLapsedKey = "lapsed"
+	// HoldGlobexLapsedID is from fixtures/holds.
+	HoldGlobexLapsedID = 900
+	// HoldGlobexLapsedKey is from fixtures/holds.
+	HoldGlobexLapsedKey = "lapsed"
 	// HooliCollectKey is from fixtures/workspaces.
 	HooliCollectKey = "omck_test_hooli_collect_key"
 	// HooliID is from fixtures/workspaces.

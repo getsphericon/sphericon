@@ -110,6 +110,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("integrations", Integration.Type),
 		edge.To("sending_domains", SendingDomain.Type),
 		edge.To("send_limiters", SendLimiter.Type),
+		edge.To("holds", Hold.Type),
 		edge.To("broadcasts", Broadcast.Type),
 		edge.To("broadcast_recipients", BroadcastRecipient.Type),
 		edge.To("email_templates", EmailTemplate.Type),

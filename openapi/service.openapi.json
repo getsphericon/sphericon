@@ -8,6 +8,9 @@
   "tags": [
     {
       "name": "Service Identity"
+    },
+    {
+      "name": "Service Holds"
     }
   ],
   "paths": {
@@ -84,6 +87,312 @@
         },
         "tags": ["Service Identity"]
       }
+    },
+    "/workspaces/{workspaceId}/holds": {
+      "get": {
+        "operationId": "ServiceHolds_list",
+        "description": "The holds of a Workspace that are active now; a lapsed one is not listed",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Service Holds"]
+      }
+    },
+    "/workspaces/{workspaceId}/holds/{key}": {
+      "put": {
+        "operationId": "ServiceHolds_set",
+        "description": "Set a hold under a key, or renew it by setting it again with a later expiry.\nIdempotent: setting the same hold twice changes nothing.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Service Holds"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "ServiceHolds_clear",
+        "description": "Clear a hold by its key. Idempotent: clearing a missing hold succeeds.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Service Holds"]
+      }
     }
   },
   "security": [
@@ -141,15 +450,101 @@
         },
         "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
       },
-      "NotFoundProblem": {
+      "HoldInput": {
         "type": "object",
-        "required": ["body"],
+        "required": ["reasonCode", "message", "expiresAt"],
         "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
+          "reasonCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9_]+$",
+            "description": "A machine code for the reason: lowercase letters, digits and underscores"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "The message shown to the Workspace Owner, as given"
+          },
+          "expiresAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Required; in the future and no further than the configured maximum from now"
           }
         },
-        "description": "RFC 7807 not found response"
+        "description": "Setting or renewing a hold"
+      },
+      "HoldList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HoldResource"
+            }
+          }
+        },
+        "description": "The active holds of a Workspace"
+      },
+      "HoldResource": {
+        "type": "object",
+        "required": [
+          "key",
+          "reasonCode",
+          "message",
+          "expiresAt",
+          "setBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The key the setter chose; unique per Workspace"
+          },
+          "reasonCode": {
+            "type": "string",
+            "description": "A machine code for the reason"
+          },
+          "message": {
+            "type": "string",
+            "description": "The message shown to the Workspace Owner, as given"
+          },
+          "expiresAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the hold stops freezing sending unless its setter renews it"
+          },
+          "setBy": {
+            "type": "string",
+            "description": "The name of the Service credential that last set it"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the hold was first set"
+          },
+          "updatedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the hold was last set or renewed"
+          }
+        },
+        "description": "An Operator hold: one reversible freeze of a Workspace's outbound sending (ADR 0009)"
       },
       "PaymentRequiredProblem": {
         "type": "object",
@@ -266,16 +661,6 @@
       "Timestamp": {
         "type": "string",
         "format": "date-time"
-      },
-      "UnprocessableEntityProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 validation response"
       }
     },
     "securitySchemes": {

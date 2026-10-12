@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -77,6 +78,8 @@ type Client struct {
 	EmailTemplate *EmailTemplateClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
+	// Hold is the client for interacting with the Hold builders.
+	Hold *HoldClient
 	// Integration is the client for interacting with the Integration builders.
 	Integration *IntegrationClient
 	// Invitation is the client for interacting with the Invitation builders.
@@ -138,6 +141,7 @@ func (c *Client) init() {
 	c.CustomField = NewCustomFieldClient(c.config)
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
 	c.Event = NewEventClient(c.config)
+	c.Hold = NewHoldClient(c.config)
 	c.Integration = NewIntegrationClient(c.config)
 	c.Invitation = NewInvitationClient(c.config)
 	c.Membership = NewMembershipClient(c.config)
@@ -261,6 +265,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		CustomField:        NewCustomFieldClient(cfg),
 		EmailTemplate:      NewEmailTemplateClient(cfg),
 		Event:              NewEventClient(cfg),
+		Hold:               NewHoldClient(cfg),
 		Integration:        NewIntegrationClient(cfg),
 		Invitation:         NewInvitationClient(cfg),
 		Membership:         NewMembershipClient(cfg),
@@ -311,6 +316,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		CustomField:        NewCustomFieldClient(cfg),
 		EmailTemplate:      NewEmailTemplateClient(cfg),
 		Event:              NewEventClient(cfg),
+		Hold:               NewHoldClient(cfg),
 		Integration:        NewIntegrationClient(cfg),
 		Invitation:         NewInvitationClient(cfg),
 		Membership:         NewMembershipClient(cfg),
@@ -361,7 +367,7 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
-		c.EmailTemplate, c.Event, c.Integration, c.Invitation, c.Membership,
+		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
 		c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.Suppression,
 		c.Tag, c.Unsubscribe, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
@@ -376,7 +382,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
-		c.EmailTemplate, c.Event, c.Integration, c.Invitation, c.Membership,
+		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
 		c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.Suppression,
 		c.Tag, c.Unsubscribe, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
@@ -412,6 +418,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EmailTemplate.mutate(ctx, m)
 	case *EventMutation:
 		return c.Event.mutate(ctx, m)
+	case *HoldMutation:
+		return c.Hold.mutate(ctx, m)
 	case *IntegrationMutation:
 		return c.Integration.mutate(ctx, m)
 	case *InvitationMutation:
@@ -2320,6 +2328,155 @@ func (c *EventClient) mutate(ctx context.Context, m *EventMutation) (Value, erro
 		return (&EventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Event mutation op: %q", m.Op())
+	}
+}
+
+// HoldClient is a client for the Hold schema.
+type HoldClient struct {
+	config
+}
+
+// NewHoldClient returns a client for the Hold from the given config.
+func NewHoldClient(c config) *HoldClient {
+	return &HoldClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `hold.Hooks(f(g(h())))`.
+func (c *HoldClient) Use(hooks ...Hook) {
+	c.hooks.Hold = append(c.hooks.Hold, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `hold.Intercept(f(g(h())))`.
+func (c *HoldClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Hold = append(c.inters.Hold, interceptors...)
+}
+
+// Create returns a builder for creating a Hold entity.
+func (c *HoldClient) Create() *HoldCreate {
+	mutation := newHoldMutation(c.config, OpCreate)
+	return &HoldCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Hold entities.
+func (c *HoldClient) CreateBulk(builders ...*HoldCreate) *HoldCreateBulk {
+	return &HoldCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *HoldClient) MapCreateBulk(slice any, setFunc func(*HoldCreate, int)) *HoldCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &HoldCreateBulk{err: fmt.Errorf("calling to HoldClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*HoldCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &HoldCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Hold.
+func (c *HoldClient) Update() *HoldUpdate {
+	mutation := newHoldMutation(c.config, OpUpdate)
+	return &HoldUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *HoldClient) UpdateOne(_m *Hold) *HoldUpdateOne {
+	mutation := newHoldMutation(c.config, OpUpdateOne, withHold(_m))
+	return &HoldUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *HoldClient) UpdateOneID(id int64) *HoldUpdateOne {
+	mutation := newHoldMutation(c.config, OpUpdateOne, withHoldID(id))
+	return &HoldUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Hold.
+func (c *HoldClient) Delete() *HoldDelete {
+	mutation := newHoldMutation(c.config, OpDelete)
+	return &HoldDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *HoldClient) DeleteOne(_m *Hold) *HoldDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *HoldClient) DeleteOneID(id int64) *HoldDeleteOne {
+	builder := c.Delete().Where(hold.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &HoldDeleteOne{builder}
+}
+
+// Query returns a query builder for Hold.
+func (c *HoldClient) Query() *HoldQuery {
+	return &HoldQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeHold},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Hold entity by its id.
+func (c *HoldClient) Get(ctx context.Context, id int64) (*Hold, error) {
+	return c.Query().Where(hold.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *HoldClient) GetX(ctx context.Context, id int64) *Hold {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a Hold.
+func (c *HoldClient) QueryWorkspace(_m *Hold) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hold.Table, hold.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hold.WorkspaceTable, hold.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *HoldClient) Hooks() []Hook {
+	return c.hooks.Hold
+}
+
+// Interceptors returns the client interceptors.
+func (c *HoldClient) Interceptors() []Interceptor {
+	return c.inters.Hold
+}
+
+func (c *HoldClient) mutate(ctx context.Context, m *HoldMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&HoldCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&HoldUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&HoldUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&HoldDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Hold mutation op: %q", m.Op())
 	}
 }
 
@@ -5369,6 +5526,22 @@ func (c *WorkspaceClient) QuerySendLimiters(_m *Workspace) *SendLimiterQuery {
 	return query
 }
 
+// QueryHolds queries the holds edge of a Workspace.
+func (c *WorkspaceClient) QueryHolds(_m *Workspace) *HoldQuery {
+	query := (&HoldClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(hold.Table, hold.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.HoldsTable, workspace.HoldsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryBroadcasts queries the broadcasts edge of a Workspace.
 func (c *WorkspaceClient) QueryBroadcasts(_m *Workspace) *BroadcastQuery {
 	query := (&BroadcastClient{config: c.config}).Query()
@@ -5607,7 +5780,7 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
+		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
 		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
 		ServiceCredential, Suppression, Tag, Unsubscribe, User, Visitor,
 		WebhookEndpoint, Workspace []ent.Hook
@@ -5615,7 +5788,7 @@ type (
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
+		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
 		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
 		ServiceCredential, Suppression, Tag, Unsubscribe, User, Visitor,
 		WebhookEndpoint, Workspace []ent.Interceptor

@@ -52,7 +52,7 @@ type freezer struct {
 	calls  int
 }
 
-func (f *freezer) Frozen(context.Context, *ent.Workspace) (string, error) {
+func (f *freezer) Frozen(context.Context, *ent.Scoped, *ent.Workspace) (string, error) {
 	f.calls++
 	return f.reason, f.err
 }

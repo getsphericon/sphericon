@@ -197,10 +197,13 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      (`internal/server/hooks_ses.go`), signed unsubscribe/confirm tokens
      (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token);
   7. the platform Operator (ADR 0026): `ee/operator` scopes over the one Workspace the console
-     is looking at, in exactly two reads, each after the Workspace row is loaded and each through
+     is looking at, in two reads, each after the Workspace row is loaded and each through
      the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
      `audit.Log.Entries`) and its deliverability rates (`Module.WorkspaceDeliverability`, via
-     `reputation.Rates`).
+     `reputation.Rates`); and the service endpoints (a Service credential) scope over the one
+     Workspace a call names, after its row is loaded, to set, clear and list its Operator holds
+     (`Module.SetHold`, `ClearHold`, `ActiveHolds`; the send path and the site API read them
+     through `holds.Active` / `holds.Freezer`, which hold no raw client).
 - **The raw `*ent.Client` is allowed only in:** `internal/accounts` (User, Membership,
   Workspace incl. slug resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
@@ -213,7 +216,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/retention` (the
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/operator` (the
   platform Operator, ADR 0026: the Operator table, and the Workspace rows, suspension state and
-  rates the console shows as tenant metadata; Workspace data goes through the two scopes of
+  rates the console shows as tenant metadata; Workspace data goes through the scopes of
   list item 7) and the composition roots
   (`internal/app`, `internal/db`, `internal/testhelper`). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`.

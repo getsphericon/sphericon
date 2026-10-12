@@ -5,6 +5,7 @@ import "@typespec/openapi";
 import "../common/scalars.tsp";
 import "../common/errors.tsp";
 import "./resources/identity.tsp";
+import "./resources/holds.tsp";
 
 using TypeSpec.OpenAPI;
 using TypeSpec.Http;

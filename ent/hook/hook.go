@@ -153,6 +153,18 @@ func (f EventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EventMutation", m)
 }
 
+// The HoldFunc type is an adapter to allow the use of ordinary
+// function as Hold mutator.
+type HoldFunc func(context.Context, *ent.HoldMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f HoldFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.HoldMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HoldMutation", m)
+}
+
 // The IntegrationFunc type is an adapter to allow the use of ordinary
 // function as Integration mutator.
 type IntegrationFunc func(context.Context, *ent.IntegrationMutation) (ent.Value, error)

@@ -275,12 +275,27 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		return nil, &net.DNSError{IsNotFound: true}
 	}
 	tracker := tracking.New(cfg.JWTSecret, cfg.AppURL)
-	sender := outbound.New(bus, resolver, tracker)
 	// Cipher (over the fixture-sealing key) and provider catalog for the site
 	// handlers and the inline jobs — mirrors the app's DI singletons, except that
 	// SES's quota lookup is answered by a fake instead of the AWS API.
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err, "build cipher")
+	lic, err := licensekey.Parse("", licensekey.ProductionKey, time.Now())
+	require.NoError(t, err, "parse empty license")
+	if !st.unlicensed {
+		lic, err = testLicense()
+		require.NoError(t, err, "mint test license")
+	}
+	attempts := accounts.NewAttempts(client,
+		accounts.WithClock(st.now),
+		accounts.WithRateLimits(cfg.RateLimits))
+	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, operator.Config{
+		Secret: newOperatorSecret(), SessionTTL: cfg.OperatorSessionTTL, HoldMaxExpiry: cfg.OperatorHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
+		Attempts: attempts, VolumeFloor: st.volumeFloor,
+	})
+	require.NoError(t, err, "build edition")
+	// The Operator hold freezer rides the send chokepoint like the app's.
+	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
 	inline := jobs.NewInline(client, sender, systemMail, stubTXT, cipher, catalog, cfg.AppURL)
@@ -295,20 +310,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	contactsModule := contacts.New(bus)
 	erasureModule := erasure.New(bus)
 	templatesModule := templates.New()
-	lic, err := licensekey.Parse("", licensekey.ProductionKey, time.Now())
-	require.NoError(t, err, "parse empty license")
-	if !st.unlicensed {
-		lic, err = testLicense()
-		require.NoError(t, err, "mint test license")
-	}
-	attempts := accounts.NewAttempts(client,
-		accounts.WithClock(st.now),
-		accounts.WithRateLimits(cfg.RateLimits))
-	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, operator.Config{
-		Secret: newOperatorSecret(), SessionTTL: cfg.OperatorSessionTTL, SecureCookies: cfg.SecureCookies(), Clock: st.now,
-		Attempts: attempts, VolumeFloor: st.volumeFloor,
-	})
-	require.NoError(t, err, "build edition")
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(cipher, edition.Audit)
 	integrationsModule := integrations.New(bus, cipher, catalog, inline)
@@ -341,7 +342,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Clock:        st.now,
 	}, external, mcpHandler, operatorHandler)
 	require.NoError(t, err, "build server")
-	internalHandler, err := server.NewInternal(&cfg, edition.Service())
+	internalHandler, err := server.NewInternal(&cfg, edition.Service(bus))
 	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{

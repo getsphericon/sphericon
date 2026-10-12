@@ -110,9 +110,12 @@ type Config struct {
 	// OperatorSessionTTL is the lifetime of an Operator session (OPERATOR_SESSION_TTL,
 	// default 4h, no refresh, no remember-me): shorter than a customer's.
 	OperatorSessionTTL time.Duration
-	AutoMigrate        bool
-	BodyLimits         BodyLimits
-	RateLimits         RateLimits
+	// OperatorHoldMaxExpiry is how far ahead a service may set an Operator hold's expiry
+	// (OPERATOR_HOLD_MAX_EXPIRY, default 720h): it is refused beyond it.
+	OperatorHoldMaxExpiry time.Duration
+	AutoMigrate           bool
+	BodyLimits            BodyLimits
+	RateLimits            RateLimits
 	// OutboxFloor is the minimum age of a domain-event outbox row before the
 	// prune job may delete it (OUTBOX_RETENTION_FLOOR_DAYS, default 7; ADR 0019).
 	OutboxFloor time.Duration
@@ -173,6 +176,7 @@ func Load(envName string) (*Config, error) {
 	v.SetDefault("APP_URL", "http://localhost:3000")
 	v.SetDefault("SESSION_TTL", 24*time.Hour)
 	v.SetDefault("OPERATOR_SESSION_TTL", 4*time.Hour)
+	v.SetDefault("OPERATOR_HOLD_MAX_EXPIRY", 30*24*time.Hour)
 	v.SetDefault("SMTP_PORT", 1025)
 	v.SetDefault("SYSTEM_EMAIL_PROVIDER", "smtp")
 	v.SetDefault("SYSTEM_EMAIL_FROM", "noreply@sphericon.localhost")
@@ -255,9 +259,10 @@ func Load(envName string) (*Config, error) {
 		AccountLinkURL:        v.GetString("ACCOUNT_LINK_URL"),
 		AccountLinkSigningKey: v.GetString("ACCOUNT_LINK_SIGNING_KEY"),
 
-		OperatorJWTSecret:  v.GetString("OPERATOR_JWT_SECRET"),
-		OperatorSessionTTL: v.GetDuration("OPERATOR_SESSION_TTL"),
-		AutoMigrate:        v.GetBool("AUTO_MIGRATE"),
+		OperatorJWTSecret:     v.GetString("OPERATOR_JWT_SECRET"),
+		OperatorSessionTTL:    v.GetDuration("OPERATOR_SESSION_TTL"),
+		OperatorHoldMaxExpiry: v.GetDuration("OPERATOR_HOLD_MAX_EXPIRY"),
+		AutoMigrate:           v.GetBool("AUTO_MIGRATE"),
 
 		BodyLimits: BodyLimits{
 			Default:      v.GetInt64("MAX_BODY_BYTES"),
@@ -335,6 +340,9 @@ func (c *Config) validate(envName string) error {
 	}
 	if c.OperatorSessionTTL <= 0 {
 		return fmt.Errorf("OPERATOR_SESSION_TTL must be positive")
+	}
+	if c.OperatorHoldMaxExpiry <= 0 {
+		return fmt.Errorf("OPERATOR_HOLD_MAX_EXPIRY must be positive")
 	}
 	if (c.AccountLinkURL == "") != (c.AccountLinkSigningKey == "") {
 		return fmt.Errorf("ACCOUNT_LINK_URL and ACCOUNT_LINK_SIGNING_KEY must be set together")

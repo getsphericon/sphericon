@@ -13,6 +13,34 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
+// ServiceHoldsClear implements ServiceHolds_clear operation.
+//
+// Clear a hold by its key. Idempotent: clearing a missing hold succeeds.
+//
+// DELETE /workspaces/{workspaceId}/holds/{key}
+func (UnimplementedHandler) ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (r ServiceHoldsClearRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ServiceHoldsList implements ServiceHolds_list operation.
+//
+// The holds of a Workspace that are active now; a lapsed one is not listed.
+//
+// GET /workspaces/{workspaceId}/holds
+func (UnimplementedHandler) ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (r ServiceHoldsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ServiceHoldsSet implements ServiceHolds_set operation.
+//
+// Set a hold under a key, or renew it by setting it again with a later expiry. Idempotent: setting the
+// same hold twice changes nothing.
+//
+// PUT /workspaces/{workspaceId}/holds/{key}
+func (UnimplementedHandler) ServiceHoldsSet(ctx context.Context, req *HoldInput, params ServiceHoldsSetParams) (r ServiceHoldsSetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ServiceIdentityGet implements ServiceIdentity_get operation.
 //
 // The calling credential's own name, scopes and expiry. Any valid credential may read it.

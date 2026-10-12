@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -363,6 +364,21 @@ func (_c *WorkspaceCreate) AddSendLimiters(v ...*SendLimiter) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddSendLimiterIDs(ids...)
+}
+
+// AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
+func (_c *WorkspaceCreate) AddHoldIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddHoldIDs(ids...)
+	return _c
+}
+
+// AddHolds adds the "holds" edges to the Hold entity.
+func (_c *WorkspaceCreate) AddHolds(v ...*Hold) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddHoldIDs(ids...)
 }
 
 // AddBroadcastIDs adds the "broadcasts" edge to the Broadcast entity by IDs.
@@ -908,6 +924,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.HoldsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

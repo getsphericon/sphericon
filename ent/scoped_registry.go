@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -712,6 +713,48 @@ func ScopedEntities() []ScopedEntity {
 				if src.OccurredAt != nil {
 					b.SetOccurredAt(*src.OccurredAt)
 				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Name:    "Hold",
+			Audited: true,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.Hold.Query().Where(hold.WorkspaceID(ws)).Order(Asc(hold.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.Hold().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Hold().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Hold().Update().Where(hold.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Hold().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Hold().Delete().Where(hold.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.Hold.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.Hold().Create()
+				b.SetKey(src.Key)
+				b.SetReasonCode(src.ReasonCode)
+				b.SetMessage(src.Message)
+				b.SetExpiresAt(src.ExpiresAt)
+				b.SetSetBy(src.SetBy)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
