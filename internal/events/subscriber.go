@@ -13,6 +13,7 @@ import (
 	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v2/pkg/sql"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/mokevnin/sphericon/ent"
+	"github.com/mokevnin/sphericon/ent/contact"
 	"github.com/mokevnin/sphericon/ent/event"
 	"github.com/mokevnin/sphericon/ent/suppression"
 	"github.com/mokevnin/sphericon/internal/eligibility"
@@ -334,8 +335,17 @@ func Persist(ctx context.Context, client *ent.Client, env Envelope) error {
 		create.SetSourceID(sourceID)
 	}
 	// The authoritative Contact link, resolved at ingest. 0 ⇒ anonymous (leave null).
+	// Delivery is asynchronous, so the Contact may be gone by now (erased, deleted): the
+	// Event outlives it unlinked rather than violating the contact_id FK.
 	if p.ContactID != 0 {
-		create.SetContactID(p.ContactID)
+		linked, err := client.Contact.Query().
+			Where(contact.ID(p.ContactID), contact.WorkspaceID(env.WorkspaceID)).Exist(ctx)
+		if err != nil {
+			return fmt.Errorf("resolve contact of event %q: %w", env.Name, err)
+		}
+		if linked {
+			create.SetContactID(p.ContactID)
+		}
 	}
 	if p.VisitorID != "" {
 		create.SetVisitorID(p.VisitorID)

@@ -7182,6 +7182,18 @@ func (x *ContactScopedCreate) AddTags(v ...*Tag) *ContactScopedCreate {
 	return x
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (x *ContactScopedCreate) AddEventIDs(ids ...int64) *ContactScopedCreate {
+	x.b.AddEventIDs(ids...)
+	return x
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (x *ContactScopedCreate) AddEvents(v ...*Event) *ContactScopedCreate {
+	x.b.AddEvents(v...)
+	return x
+}
+
 func (x *ContactScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -7190,6 +7202,9 @@ func (x *ContactScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyTag(ctx, m.TagsIDs()); err != nil {
 		return fmt.Errorf("tags: %w", err)
+	}
+	if err := x.s.verifyEvent(ctx, m.EventsIDs()); err != nil {
+		return fmt.Errorf("events: %w", err)
 	}
 	return nil
 }
@@ -7776,6 +7791,36 @@ func (x *ContactScopedUpdateOne) RemoveTags(v ...*Tag) *ContactScopedUpdateOne {
 	return x
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (x *ContactScopedUpdateOne) AddEventIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.b.AddEventIDs(ids...)
+	return x
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (x *ContactScopedUpdateOne) AddEvents(v ...*Event) *ContactScopedUpdateOne {
+	x.b.AddEvents(v...)
+	return x
+}
+
+// ClearEvents clears the "events" edges to the Event entity.
+func (x *ContactScopedUpdateOne) ClearEvents() *ContactScopedUpdateOne {
+	x.b.ClearEvents()
+	return x
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (x *ContactScopedUpdateOne) RemoveEventIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.b.RemoveEventIDs(ids...)
+	return x
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (x *ContactScopedUpdateOne) RemoveEvents(v ...*Event) *ContactScopedUpdateOne {
+	x.b.RemoveEvents(v...)
+	return x
+}
+
 func (x *ContactScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -7784,6 +7829,9 @@ func (x *ContactScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyTag(ctx, m.TagsIDs()); err != nil {
 		return fmt.Errorf("tags: %w", err)
+	}
+	if err := x.s.verifyEvent(ctx, m.EventsIDs()); err != nil {
+		return fmt.Errorf("events: %w", err)
 	}
 	return nil
 }
@@ -8040,6 +8088,36 @@ func (x *ContactScopedUpdate) RemoveTags(v ...*Tag) *ContactScopedUpdate {
 	return x
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (x *ContactScopedUpdate) AddEventIDs(ids ...int64) *ContactScopedUpdate {
+	x.b.AddEventIDs(ids...)
+	return x
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (x *ContactScopedUpdate) AddEvents(v ...*Event) *ContactScopedUpdate {
+	x.b.AddEvents(v...)
+	return x
+}
+
+// ClearEvents clears the "events" edges to the Event entity.
+func (x *ContactScopedUpdate) ClearEvents() *ContactScopedUpdate {
+	x.b.ClearEvents()
+	return x
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (x *ContactScopedUpdate) RemoveEventIDs(ids ...int64) *ContactScopedUpdate {
+	x.b.RemoveEventIDs(ids...)
+	return x
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (x *ContactScopedUpdate) RemoveEvents(v ...*Event) *ContactScopedUpdate {
+	x.b.RemoveEvents(v...)
+	return x
+}
+
 func (x *ContactScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -8048,6 +8126,9 @@ func (x *ContactScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyTag(ctx, m.TagsIDs()); err != nil {
 		return fmt.Errorf("tags: %w", err)
+	}
+	if err := x.s.verifyEvent(ctx, m.EventsIDs()); err != nil {
+		return fmt.Errorf("events: %w", err)
 	}
 	return nil
 }
@@ -9663,9 +9744,18 @@ func (x *EventScopedCreate) SetNillableOccurredAt(v *time.Time) *EventScopedCrea
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *EventScopedCreate) SetContact(v *Contact) *EventScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
 func (x *EventScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	return nil
 }
 
@@ -9758,18 +9848,6 @@ func (u *EventScopedUpsert) UpdateSourceID() *EventScopedUpsert {
 // ClearSourceID clears the value of the "source_id" field.
 func (u *EventScopedUpsert) ClearSourceID() *EventScopedUpsert {
 	u.u.SetNull(event.FieldSourceID)
-	return u
-}
-
-// SetContactID sets the "contact_id" field.
-func (u *EventScopedUpsert) SetContactID(v int64) *EventScopedUpsert {
-	u.u.Set(event.FieldContactID, v)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *EventScopedUpsert) AddContactID(v int64) *EventScopedUpsert {
-	u.u.Add(event.FieldContactID, v)
 	return u
 }
 
@@ -10076,12 +10154,6 @@ func (x *EventScopedUpdateOne) SetNillableContactID(v *int64) *EventScopedUpdate
 	return x
 }
 
-// AddContactID adds value to the "contact_id" field.
-func (x *EventScopedUpdateOne) AddContactID(v int64) *EventScopedUpdateOne {
-	x.b.AddContactID(v)
-	return x
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (x *EventScopedUpdateOne) ClearContactID() *EventScopedUpdateOne {
 	x.b.ClearContactID()
@@ -10202,9 +10274,24 @@ func (x *EventScopedUpdateOne) ClearOccurredAt() *EventScopedUpdateOne {
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *EventScopedUpdateOne) SetContact(v *Contact) *EventScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *EventScopedUpdateOne) ClearContact() *EventScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *EventScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	return nil
 }
 
@@ -10291,12 +10378,6 @@ func (x *EventScopedUpdate) SetContactID(v int64) *EventScopedUpdate {
 // SetNillableContactID sets the "contact_id" field if the given value is not nil.
 func (x *EventScopedUpdate) SetNillableContactID(v *int64) *EventScopedUpdate {
 	x.b.SetNillableContactID(v)
-	return x
-}
-
-// AddContactID adds value to the "contact_id" field.
-func (x *EventScopedUpdate) AddContactID(v int64) *EventScopedUpdate {
-	x.b.AddContactID(v)
 	return x
 }
 
@@ -10420,9 +10501,24 @@ func (x *EventScopedUpdate) ClearOccurredAt() *EventScopedUpdate {
 	return x
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *EventScopedUpdate) SetContact(v *Contact) *EventScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *EventScopedUpdate) ClearContact() *EventScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
 func (x *EventScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
 	return nil
 }
 

@@ -1,35 +1,42 @@
-// Package segments is a domain-agnostic engine that compiles a react-querybuilder
-// definition (the JSON shape the UI emits) into an ent SQL predicate. It depends
-// only on entgo.io/ent's general-purpose SQL builder — not on any generated
-// entity — so it can be lifted into a standalone library. The application-side
-// glue that binds it to our Contact entity lives in contact.go (the only file
-// here that imports the project's ent package); drop that file when extracting.
+// Package segments compiles a Segment's rule query (the react-querybuilder JSON the UI
+// emits) into a Contact predicate: a group {combinator: and|or, not, rules[]} whose
+// entries are nested groups or leaves {field, operator, value}.
 //
-// Definition format (recursive): a group {combinator: and|or, not, rules[]}
-// where each rules[] entry is either a nested group or a leaf {field, operator,
-// value}. A caller supplies a Schema that whitelists which fields may be used
-// and maps them to SQL columns (plain or JSON), which keeps a stored definition
-// from referencing arbitrary columns.
+// A leaf is built from ent's generated predicates wherever one exists: the core
+// attributes (contact.EmailEQ …), Tags (contact.HasTagsWith) and Events
+// (contact.HasEventsWith). The one dynamic piece is a Custom field's key inside the
+// custom_fields JSON column, which no generated predicate covers; it is a bound
+// argument, never part of the query text. A leaf may only name a core attribute, a
+// Tag, an Event action, or a Custom field of the Workspace's catalogue (ADR 0006).
 package segments
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+
+	"github.com/mokevnin/sphericon/ent"
+	"github.com/mokevnin/sphericon/ent/contact"
+	"github.com/mokevnin/sphericon/ent/event"
+	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/mokevnin/sphericon/ent/tag"
 )
 
-// eventFieldPrefix marks a leaf as a behavioral condition: field "event:<action>"
-// with operator "performed"/"notPerformed" and value = a day window ("" = ever).
-const eventFieldPrefix = "event:"
-
-// tagField marks a leaf as a Tag condition: field "tag" with operator "has" or
-// "doesNotHave" and value = the Tag name.
-const tagField = "tag"
+const (
+	// eventFieldPrefix marks a leaf as a behavioral condition: field "event:<action>"
+	// with operator "performed"/"notPerformed" and value = a day window ("" = ever).
+	eventFieldPrefix = "event:"
+	// customFieldPrefix marks a leaf as a Custom field condition: "custom:<key>".
+	customFieldPrefix = "custom:"
+	// tagField marks a leaf as a Tag condition: field "tag" with operator "has" or
+	// "doesNotHave" and value = the Tag name.
+	tagField = "tag"
+)
 
 // Group is a react-querybuilder RuleGroupType. Each rules[] entry is decoded
 // lazily because it is either a nested Group or a leaf Rule.
@@ -46,59 +53,21 @@ type Rule struct {
 	Value    string `json:"value"`
 }
 
-// Schema whitelists the fields a definition may reference and maps them to SQL.
-// Columns maps a field name to a plain column. JSONColumns maps a field-name
-// prefix (e.g. "custom:") to a JSON column; the path is the field after the
-// prefix (e.g. "custom:plan" -> column custom_fields, path "plan").
-type Schema struct {
-	Columns     map[string]string
-	JSONColumns map[string]string
-	// Events, when set, enables "event:<action>" leaves that compile to a
-	// correlated (NOT) EXISTS against an events table. All names are the SQL
-	// columns (kept as strings so this engine stays ent-agnostic).
-	Events *EventSchema
-	// Tags, when set, enables the "tag" leaf (has / doesNotHave a named Tag),
-	// compiled to a correlated (NOT) EXISTS over the subject<->tag join table.
-	Tags *TagSchema
+// textField is the generated predicates of one core text attribute.
+type textField struct {
+	eq, neq, contains, beginsWith func(string) predicate.Contact
+	null, notNull                 predicate.Contact
 }
 
-// TagSchema describes how a subject entity relates to its Tags: the join table
-// (subject id, tag id), the tags table (id, name, workspace), and the outer
-// subject's id/workspace columns. Names are SQL columns, keeping the engine
-// ent-agnostic.
-type TagSchema struct {
-	JoinTable         string
-	JoinSubjectCol    string
-	JoinTagCol        string
-	TagTable          string
-	TagIDCol          string
-	TagNameCol        string
-	TagWorkspaceCol   string
-	OuterJoinCol      string
-	OuterWorkspaceCol string
+// textFields whitelists the core attributes a rule may target.
+var textFields = map[string]textField{
+	"subject_id": {contact.SubjectIDEQ, contact.SubjectIDNEQ, contact.SubjectIDContainsFold, contact.SubjectIDHasPrefix, contact.SubjectIDIsNil(), contact.SubjectIDNotNil()},
+	"email":      {contact.EmailEQ, contact.EmailNEQ, contact.EmailContainsFold, contact.EmailHasPrefix, contact.EmailIsNil(), contact.EmailNotNil()},
+	"phone":      {contact.PhoneEQ, contact.PhoneNEQ, contact.PhoneContainsFold, contact.PhoneHasPrefix, contact.PhoneIsNil(), contact.PhoneNotNil()},
+	"first_name": {contact.FirstNameEQ, contact.FirstNameNEQ, contact.FirstNameContainsFold, contact.FirstNameHasPrefix, contact.FirstNameIsNil(), contact.FirstNameNotNil()},
+	"last_name":  {contact.LastNameEQ, contact.LastNameNEQ, contact.LastNameContainsFold, contact.LastNameHasPrefix, contact.LastNameIsNil(), contact.LastNameNotNil()},
+	"time_zone":  {contact.TimeZoneEQ, contact.TimeZoneNEQ, contact.TimeZoneContainsFold, contact.TimeZoneHasPrefix, contact.TimeZoneIsNil(), contact.TimeZoneNotNil()},
 }
-
-// EventSchema describes how to correlate the subject entity to its events: the
-// events table + its (join, workspace, action, occurred_at) columns, plus the outer
-// subject's join/workspace columns. The join is on the stable identity link
-// (event.contact_id ↔ contact.id), never the email string (ADR 0002).
-type EventSchema struct {
-	Table             string
-	JoinCol           string
-	WorkspaceCol      string
-	ActionCol         string
-	OccurredCol       string
-	OuterJoinCol      string
-	OuterWorkspaceCol string
-}
-
-// Predicate is the compiled output: a selector mutator, assignment-compatible
-// with ent's generated predicate.<Entity> type (also func(*sql.Selector)).
-type Predicate = func(*sql.Selector)
-
-// builder defers predicate construction until a selector is available (so plain
-// columns can be table-qualified via s.C).
-type builder func(*sql.Selector) *sql.Predicate
 
 // Parse decodes a definition string into a Group. A blank definition is a valid
 // "match everyone" group.
@@ -113,67 +82,61 @@ func Parse(def string) (Group, error) {
 	return g, nil
 }
 
-// Validate parses and fully compiles a definition against schema.
-func Validate(def string, schema Schema) error {
+// ContactPredicate parses a stored definition and compiles it for the Workspace of s.
+func ContactPredicate(ctx context.Context, s *ent.Scoped, def string) (predicate.Contact, error) {
 	g, err := Parse(def)
-	if err != nil {
-		return err
-	}
-	_, err = Compile(g, schema)
-	return err
-}
-
-// Compile turns a definition group into a selector predicate. An empty rule set
-// matches everyone (an empty negated group matches no one) — deliberate, so an
-// empty rule is never a silent "nobody".
-func Compile(g Group, schema Schema) (Predicate, error) {
-	b, err := compileGroup(g, schema)
 	if err != nil {
 		return nil, err
 	}
-	return func(s *sql.Selector) { s.Where(b(s)) }, nil
+	return Compile(ctx, s, g)
 }
 
-func compileGroup(g Group, schema Schema) (builder, error) {
-	builders := make([]builder, 0, len(g.Rules))
+// Compile turns a definition group into a Contact predicate. An empty rule set
+// matches everyone (an empty negated group matches no one) — deliberate, so an
+// empty rule is never a silent "nobody".
+func Compile(ctx context.Context, s *ent.Scoped, g Group) (predicate.Contact, error) {
+	return (&compiler{ctx: ctx, s: s, now: time.Now()}).group(g)
+}
+
+// compiler holds what one compilation needs: the Workspace's Custom field keys are
+// loaded the first time a rule names one.
+type compiler struct {
+	ctx  context.Context
+	s    *ent.Scoped
+	now  time.Time
+	keys map[string]struct{}
+}
+
+func (c *compiler) group(g Group) (predicate.Contact, error) {
+	preds := make([]predicate.Contact, 0, len(g.Rules))
 	for i, raw := range g.Rules {
-		b, err := compileEntry(raw, schema)
+		p, err := c.entry(raw)
 		if err != nil {
 			return nil, fmt.Errorf("rule %d: %w", i, err)
 		}
-		builders = append(builders, b)
+		preds = append(preds, p)
 	}
 
-	if len(builders) == 0 {
-		expr := "TRUE"
+	if len(preds) == 0 {
 		if g.Not {
-			expr = "FALSE"
+			return predicate.Contact(func(s *sql.Selector) { s.Where(sql.False()) }), nil
 		}
-		return func(*sql.Selector) *sql.Predicate { return sql.ExprP(expr) }, nil
+		return contact.And(), nil
 	}
 
-	or := strings.EqualFold(g.Combinator, "or")
-	return func(s *sql.Selector) *sql.Predicate {
-		preds := make([]*sql.Predicate, len(builders))
-		for i, b := range builders {
-			preds[i] = b(s)
-		}
-		var p *sql.Predicate
-		if or {
-			p = sql.Or(preds...)
-		} else {
-			p = sql.And(preds...)
-		}
-		if g.Not {
-			p = sql.Not(p)
-		}
-		return p
-	}, nil
+	p := contact.And(preds...)
+	if strings.EqualFold(g.Combinator, "or") {
+		p = contact.Or(preds...)
+	}
+	if g.Not {
+		p = contact.Not(p)
+	}
+	return p, nil
 }
 
-// compileEntry decodes a rules[] entry: a nested group when it carries a
-// combinator (or has no field), a leaf rule otherwise.
-func compileEntry(raw json.RawMessage, schema Schema) (builder, error) {
+// entry decodes a rules[] entry: a nested group when it carries a combinator (or has
+// no field), a leaf rule otherwise.
+func (c *compiler) entry(raw json.RawMessage) (predicate.Contact, error) {
 	var probe struct {
 		Combinator string `json:"combinator"`
 		Field      string `json:"field"`
@@ -186,109 +149,90 @@ func compileEntry(raw json.RawMessage, schema Schema) (builder, error) {
 		if err := json.Unmarshal(raw, &g); err != nil {
 			return nil, fmt.Errorf("malformed group: %w", err)
 		}
-		return compileGroup(g, schema)
+		return c.group(g)
 	}
 	var r Rule
 	if err := json.Unmarshal(raw, &r); err != nil {
 		return nil, fmt.Errorf("malformed rule: %w", err)
 	}
-	return compileRule(r, schema)
+	return c.rule(r)
 }
 
-func compileRule(r Rule, schema Schema) (builder, error) {
-	if strings.HasPrefix(r.Field, eventFieldPrefix) {
+func (c *compiler) rule(r Rule) (predicate.Contact, error) {
+	switch {
+	case strings.HasPrefix(r.Field, eventFieldPrefix):
 		action := strings.TrimPrefix(r.Field, eventFieldPrefix)
-		if schema.Events == nil || action == "" {
+		if action == "" {
 			return nil, fmt.Errorf("unknown field %q", r.Field)
 		}
-		return compileEvent(schema.Events, action, r.Operator, r.Value)
+		return c.event(action, r.Operator, r.Value)
+	case r.Field == tagField:
+		return tagRule(r.Operator, r.Value)
+	case strings.HasPrefix(r.Field, customFieldPrefix):
+		return c.custom(strings.TrimPrefix(r.Field, customFieldPrefix), r.Operator, r.Value)
 	}
-	if r.Field == tagField && schema.Tags != nil {
-		return compileTag(schema.Tags, r.Operator, r.Value)
-	}
-	if col, path, ok := resolveJSON(r.Field, schema); ok {
-		return compileJSON(col, path, r.Operator, r.Value)
-	}
-	col, ok := schema.Columns[r.Field]
+	f, ok := textFields[r.Field]
 	if !ok {
 		return nil, fmt.Errorf("unknown field %q", r.Field)
 	}
 	switch r.Operator {
 	case "=":
-		return func(s *sql.Selector) *sql.Predicate { return sql.EQ(s.C(col), r.Value) }, nil
+		return f.eq(r.Value), nil
 	case "!=":
-		return func(s *sql.Selector) *sql.Predicate { return sql.NEQ(s.C(col), r.Value) }, nil
+		return f.neq(r.Value), nil
 	case "contains":
-		return func(s *sql.Selector) *sql.Predicate { return sql.ContainsFold(s.C(col), r.Value) }, nil
+		return f.contains(r.Value), nil
 	case "beginsWith":
-		return func(s *sql.Selector) *sql.Predicate { return sql.HasPrefix(s.C(col), r.Value) }, nil
+		return f.beginsWith(r.Value), nil
 	case "null":
-		return func(s *sql.Selector) *sql.Predicate { return sql.IsNull(s.C(col)) }, nil
+		return f.null, nil
 	case "notNull":
-		return func(s *sql.Selector) *sql.Predicate { return sql.NotNull(s.C(col)) }, nil
+		return f.notNull, nil
 	default:
 		return nil, fmt.Errorf("unsupported operator %q", r.Operator)
 	}
 }
 
-// compileEvent builds a correlated (NOT) EXISTS against the events table: the
-// subject performed `action` (optionally within the last `value` days). The
-// subquery joins events↔subject on the stable identity link (contact_id ↔ id) +
-// workspace, so anonymous events stitched onto a Contact at Identify become visible
-// to segmentation (ADR 0002), and it works for any subject schema supplying those
-// outer columns.
-func compileEvent(ev *EventSchema, action, op, value string) (builder, error) {
+// event is the subject performed (or never performed) `action`, optionally within the
+// last `value` days. Events attach to a Contact by the stable contact_id, so anonymous
+// events stitched onto it at Identify are visible here (ADR 0002).
+func (c *compiler) event(action, op, value string) (predicate.Contact, error) {
 	var negate bool
 	switch op {
 	case "performed":
-		negate = false
 	case "notPerformed":
 		negate = true
 	default:
 		return nil, fmt.Errorf("unsupported operator %q for event field", op)
 	}
 
-	var since *time.Time
+	preds := []predicate.Event{event.Action(action)}
 	if v := strings.TrimSpace(value); v != "" {
 		days, err := strconv.Atoi(v)
 		if err != nil || days < 0 {
 			return nil, fmt.Errorf("event window must be a non-negative number of days, got %q", value)
 		}
 		if days > 0 {
-			t := time.Now().AddDate(0, 0, -days)
-			since = &t
+			// GTE excludes NULL occurred_at. Safe in practice: the events bus always
+			// stamps occurred_at (zero ⇒ publish time), so persisted events are never
+			// null. "ever" adds no time predicate and matches all.
+			preds = append(preds, event.OccurredAtGTE(c.now.AddDate(0, 0, -days)))
 		}
 	}
 
-	return func(s *sql.Selector) *sql.Predicate {
-		sub := sql.Select(ev.JoinCol).From(sql.Table(ev.Table))
-		preds := []*sql.Predicate{
-			sql.ColumnsEQ(sub.C(ev.JoinCol), s.C(ev.OuterJoinCol)),
-			sql.ColumnsEQ(sub.C(ev.WorkspaceCol), s.C(ev.OuterWorkspaceCol)),
-			sql.EQ(sub.C(ev.ActionCol), action),
-		}
-		if since != nil {
-			// GTE excludes NULL occurred_at. Safe in practice: the events bus always
-			// stamps occurred_at (zero ⇒ publish time), so persisted events are never
-			// null. "ever" (since == nil) adds no time predicate and matches all.
-			preds = append(preds, sql.GTE(sub.C(ev.OccurredCol), *since))
-		}
-		sub.Where(sql.And(preds...))
-		if negate {
-			return sql.NotExists(sub)
-		}
-		return sql.Exists(sub)
-	}, nil
+	p := contact.HasEventsWith(preds...)
+	if negate {
+		p = contact.Not(p)
+	}
+	return p, nil
 }
 
-// compileTag builds a correlated (NOT) EXISTS: the subject has (or lacks) the Tag
-// named value, within the subject's own workspace. Evaluated live — membership is
-// never materialized.
-func compileTag(tg *TagSchema, op, value string) (builder, error) {
+// tagRule is the subject has (or lacks) the Tag named value. Evaluated live —
+// membership is never materialized.
+func tagRule(op, value string) (predicate.Contact, error) {
 	var negate bool
 	switch op {
 	case "has":
-		negate = false
 	case "doesNotHave":
 		negate = true
 	default:
@@ -296,29 +240,27 @@ func compileTag(tg *TagSchema, op, value string) (builder, error) {
 	}
 	name := strings.TrimSpace(value)
 	if name == "" {
-		return nil, errors.New("tag name is required")
+		return nil, fmt.Errorf("tag name is required")
 	}
 
-	return func(s *sql.Selector) *sql.Predicate {
-		join := sql.Table(tg.JoinTable)
-		tags := sql.Table(tg.TagTable)
-		sub := sql.Select(join.C(tg.JoinSubjectCol)).From(join).
-			Join(tags).On(join.C(tg.JoinTagCol), tags.C(tg.TagIDCol))
-		sub.Where(sql.And(
-			sql.ColumnsEQ(join.C(tg.JoinSubjectCol), s.C(tg.OuterJoinCol)),
-			sql.ColumnsEQ(tags.C(tg.TagWorkspaceCol), s.C(tg.OuterWorkspaceCol)),
-			sql.EQ(tags.C(tg.TagNameCol), name),
-		))
-		if negate {
-			return sql.NotExists(sub)
-		}
-		return sql.Exists(sub)
-	}, nil
+	p := contact.HasTagsWith(tag.Name(name))
+	if negate {
+		p = contact.Not(p)
+	}
+	return p, nil
 }
 
-// compileJSON builds a predicate over one key of a JSON column. The key comes from
-// the stored rule, so it is always a bound argument and never part of the query text.
-func compileJSON(col, key, op, value string) (builder, error) {
+// custom is a condition on one Custom field. The key must be in the Workspace's
+// catalogue (ADR 0006), and it reaches the query only as a bound argument: no
+// generated predicate addresses a key of the custom_fields JSON column.
+func (c *compiler) custom(key, op, value string) (predicate.Contact, error) {
+	if key == "" {
+		return nil, fmt.Errorf("unknown field %q", customFieldPrefix)
+	}
+	if err := c.requireCustomField(key); err != nil {
+		return nil, err
+	}
+
 	var write func(b *sql.Builder, column string)
 	switch op {
 	case "=", "!=":
@@ -347,22 +289,25 @@ func compileJSON(col, key, op, value string) (builder, error) {
 	default:
 		return nil, fmt.Errorf("unsupported operator %q for json field", op)
 	}
-	return func(s *sql.Selector) *sql.Predicate {
-		return sql.P(func(b *sql.Builder) { write(b, s.C(col)) })
-	}, nil
+	return predicate.Contact(func(s *sql.Selector) {
+		s.Where(sql.P(func(b *sql.Builder) { write(b, s.C(contact.FieldCustomFields)) }))
+	}), nil
 }
 
-// resolveJSON reports whether field maps to a JSON column via a schema prefix,
-// returning the column and the JSON path (the field minus the prefix).
-func resolveJSON(field string, schema Schema) (col, path string, ok bool) {
-	for prefix, column := range schema.JSONColumns {
-		if strings.HasPrefix(field, prefix) {
-			p := strings.TrimPrefix(field, prefix)
-			if p == "" {
-				return "", "", false
-			}
-			return column, p, true
+// requireCustomField checks key against the Workspace's Custom field catalogue.
+func (c *compiler) requireCustomField(key string) error {
+	if c.keys == nil {
+		fields, err := c.s.CustomField().Query().All(c.ctx)
+		if err != nil {
+			return fmt.Errorf("load custom fields: %w", err)
+		}
+		c.keys = make(map[string]struct{}, len(fields))
+		for _, f := range fields {
+			c.keys[f.Key] = struct{}{}
 		}
 	}
-	return "", "", false
+	if _, ok := c.keys[key]; !ok {
+		return fmt.Errorf("unknown custom field %q", key)
+	}
+	return nil
 }

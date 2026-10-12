@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/mokevnin/sphericon/ent/contact"
 	"github.com/mokevnin/sphericon/ent/event"
 	"github.com/mokevnin/sphericon/ent/workspace"
 )
@@ -53,9 +54,11 @@ type Event struct {
 type EventEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
+	// Contact holds the value of the contact edge.
+	Contact *Contact `json:"contact,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -67,6 +70,17 @@ func (e EventEdges) WorkspaceOrErr() (*Workspace, error) {
 		return nil, &NotFoundError{label: workspace.Label}
 	}
 	return nil, &NotLoadedError{edge: "workspace"}
+}
+
+// ContactOrErr returns the Contact value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e EventEdges) ContactOrErr() (*Contact, error) {
+	if e.Contact != nil {
+		return e.Contact, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: contact.Label}
+	}
+	return nil, &NotLoadedError{edge: "contact"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -199,6 +213,11 @@ func (_m *Event) Value(name string) (ent.Value, error) {
 // QueryWorkspace queries the "workspace" edge of the Event entity.
 func (_m *Event) QueryWorkspace() *WorkspaceQuery {
 	return NewEventClient(_m.config).QueryWorkspace(_m)
+}
+
+// QueryContact queries the "contact" edge of the Event entity.
+func (_m *Event) QueryContact() *ContactQuery {
+	return NewEventClient(_m.config).QueryContact(_m)
 }
 
 // Update returns a builder for updating this Event.

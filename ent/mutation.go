@@ -8869,6 +8869,9 @@ type ContactMutation struct {
 	tags             map[int64]struct{}
 	removedtags      map[int64]struct{}
 	clearedtags      bool
+	events           map[int64]struct{}
+	removedevents    map[int64]struct{}
+	clearedevents    bool
 	done             bool
 	oldValue         func(context.Context) (*Contact, error)
 	predicates       []predicate.Contact
@@ -9564,6 +9567,60 @@ func (m *ContactMutation) ResetTags() {
 	m.removedtags = nil
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by ids.
+func (m *ContactMutation) AddEventIDs(ids ...int64) {
+	if m.events == nil {
+		m.events = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.events[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvents clears the "events" edge to the Event entity.
+func (m *ContactMutation) ClearEvents() {
+	m.clearedevents = true
+}
+
+// EventsCleared reports if the "events" edge to the Event entity was cleared.
+func (m *ContactMutation) EventsCleared() bool {
+	return m.clearedevents
+}
+
+// RemoveEventIDs removes the "events" edge to the Event entity by IDs.
+func (m *ContactMutation) RemoveEventIDs(ids ...int64) {
+	if m.removedevents == nil {
+		m.removedevents = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.events, ids[i])
+		m.removedevents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvents returns the removed IDs of the "events" edge to the Event entity.
+func (m *ContactMutation) RemovedEventsIDs() (ids []int64) {
+	for id := range m.removedevents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EventsIDs returns the "events" edge IDs in the mutation.
+func (m *ContactMutation) EventsIDs() (ids []int64) {
+	for id := range m.events {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvents resets all changes to the "events" edge.
+func (m *ContactMutation) ResetEvents() {
+	m.events = nil
+	m.clearedevents = false
+	m.removedevents = nil
+}
+
 // Where appends a list predicates to the ContactMutation builder.
 func (m *ContactMutation) Where(ps ...predicate.Contact) {
 	m.predicates = append(m.predicates, ps...)
@@ -9898,7 +9955,7 @@ func (m *ContactMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ContactMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.workspace != nil {
 		edges = append(edges, contact.EdgeWorkspace)
 	}
@@ -9907,6 +9964,9 @@ func (m *ContactMutation) AddedEdges() []string {
 	}
 	if m.tags != nil {
 		edges = append(edges, contact.EdgeTags)
+	}
+	if m.events != nil {
+		edges = append(edges, contact.EdgeEvents)
 	}
 	return edges
 }
@@ -9931,18 +9991,27 @@ func (m *ContactMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case contact.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.events))
+		for id := range m.events {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ContactMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedvisitors != nil {
 		edges = append(edges, contact.EdgeVisitors)
 	}
 	if m.removedtags != nil {
 		edges = append(edges, contact.EdgeTags)
+	}
+	if m.removedevents != nil {
+		edges = append(edges, contact.EdgeEvents)
 	}
 	return edges
 }
@@ -9963,13 +10032,19 @@ func (m *ContactMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case contact.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.removedevents))
+		for id := range m.removedevents {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ContactMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedworkspace {
 		edges = append(edges, contact.EdgeWorkspace)
 	}
@@ -9978,6 +10053,9 @@ func (m *ContactMutation) ClearedEdges() []string {
 	}
 	if m.clearedtags {
 		edges = append(edges, contact.EdgeTags)
+	}
+	if m.clearedevents {
+		edges = append(edges, contact.EdgeEvents)
 	}
 	return edges
 }
@@ -9992,6 +10070,8 @@ func (m *ContactMutation) EdgeCleared(name string) bool {
 		return m.clearedvisitors
 	case contact.EdgeTags:
 		return m.clearedtags
+	case contact.EdgeEvents:
+		return m.clearedevents
 	}
 	return false
 }
@@ -10019,6 +10099,9 @@ func (m *ContactMutation) ResetEdge(name string) error {
 		return nil
 	case contact.EdgeTags:
 		m.ResetTags()
+		return nil
+	case contact.EdgeEvents:
+		m.ResetEvents()
 		return nil
 	}
 	return fmt.Errorf("unknown Contact edge %s", name)
@@ -11351,8 +11434,6 @@ type EventMutation struct {
 	created_at       *time.Time
 	updated_at       *time.Time
 	source_id        *string
-	contact_id       *int64
-	addcontact_id    *int64
 	visitor_id       *string
 	subject_id       *string
 	email            *string
@@ -11363,6 +11444,8 @@ type EventMutation struct {
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
+	contact          *int64
+	clearedcontact   bool
 	done             bool
 	oldValue         func(context.Context) (*Event, error)
 	predicates       []predicate.Event
@@ -11631,13 +11714,12 @@ func (m *EventMutation) ResetSourceID() {
 
 // SetContactID sets the "contact_id" field.
 func (m *EventMutation) SetContactID(i int64) {
-	m.contact_id = &i
-	m.addcontact_id = nil
+	m.contact = &i
 }
 
 // ContactID returns the value of the "contact_id" field in the mutation.
 func (m *EventMutation) ContactID() (r int64, exists bool) {
-	v := m.contact_id
+	v := m.contact
 	if v == nil {
 		return
 	}
@@ -11661,28 +11743,9 @@ func (m *EventMutation) OldContactID(ctx context.Context) (v *int64, err error) 
 	return oldValue.ContactID, nil
 }
 
-// AddContactID adds i to the "contact_id" field.
-func (m *EventMutation) AddContactID(i int64) {
-	if m.addcontact_id != nil {
-		*m.addcontact_id += i
-	} else {
-		m.addcontact_id = &i
-	}
-}
-
-// AddedContactID returns the value that was added to the "contact_id" field in this mutation.
-func (m *EventMutation) AddedContactID() (r int64, exists bool) {
-	v := m.addcontact_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ClearContactID clears the value of the "contact_id" field.
 func (m *EventMutation) ClearContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	m.clearedFields[event.FieldContactID] = struct{}{}
 }
 
@@ -11694,8 +11757,7 @@ func (m *EventMutation) ContactIDCleared() bool {
 
 // ResetContactID resets all changes to the "contact_id" field.
 func (m *EventMutation) ResetContactID() {
-	m.contact_id = nil
-	m.addcontact_id = nil
+	m.contact = nil
 	delete(m.clearedFields, event.FieldContactID)
 }
 
@@ -12056,6 +12118,33 @@ func (m *EventMutation) ResetWorkspace() {
 	m.clearedworkspace = false
 }
 
+// ClearContact clears the "contact" edge to the Contact entity.
+func (m *EventMutation) ClearContact() {
+	m.clearedcontact = true
+	m.clearedFields[event.FieldContactID] = struct{}{}
+}
+
+// ContactCleared reports if the "contact" edge to the Contact entity was cleared.
+func (m *EventMutation) ContactCleared() bool {
+	return m.ContactIDCleared() || m.clearedcontact
+}
+
+// ContactIDs returns the "contact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactID instead. It exists only for internal usage by the builders.
+func (m *EventMutation) ContactIDs() (ids []int64) {
+	if id := m.contact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContact resets all changes to the "contact" edge.
+func (m *EventMutation) ResetContact() {
+	m.contact = nil
+	m.clearedcontact = false
+}
+
 // Where appends a list predicates to the EventMutation builder.
 func (m *EventMutation) Where(ps ...predicate.Event) {
 	m.predicates = append(m.predicates, ps...)
@@ -12103,7 +12192,7 @@ func (m *EventMutation) Fields() []string {
 	if m.source_id != nil {
 		fields = append(fields, event.FieldSourceID)
 	}
-	if m.contact_id != nil {
+	if m.contact != nil {
 		fields = append(fields, event.FieldContactID)
 	}
 	if m.visitor_id != nil {
@@ -12293,9 +12382,6 @@ func (m *EventMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *EventMutation) AddedFields() []string {
 	var fields []string
-	if m.addcontact_id != nil {
-		fields = append(fields, event.FieldContactID)
-	}
 	return fields
 }
 
@@ -12304,8 +12390,6 @@ func (m *EventMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *EventMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case event.FieldContactID:
-		return m.AddedContactID()
 	}
 	return nil, false
 }
@@ -12315,13 +12399,6 @@ func (m *EventMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *EventMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case event.FieldContactID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddContactID(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Event numeric field %s", name)
 }
@@ -12442,9 +12519,12 @@ func (m *EventMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EventMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.workspace != nil {
 		edges = append(edges, event.EdgeWorkspace)
+	}
+	if m.contact != nil {
+		edges = append(edges, event.EdgeContact)
 	}
 	return edges
 }
@@ -12457,13 +12537,17 @@ func (m *EventMutation) AddedIDs(name string) []ent.Value {
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
+	case event.EdgeContact:
+		if id := m.contact; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EventMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -12475,9 +12559,12 @@ func (m *EventMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EventMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedworkspace {
 		edges = append(edges, event.EdgeWorkspace)
+	}
+	if m.clearedcontact {
+		edges = append(edges, event.EdgeContact)
 	}
 	return edges
 }
@@ -12488,6 +12575,8 @@ func (m *EventMutation) EdgeCleared(name string) bool {
 	switch name {
 	case event.EdgeWorkspace:
 		return m.clearedworkspace
+	case event.EdgeContact:
+		return m.clearedcontact
 	}
 	return false
 }
@@ -12499,6 +12588,9 @@ func (m *EventMutation) ClearEdge(name string) error {
 	case event.EdgeWorkspace:
 		m.ClearWorkspace()
 		return nil
+	case event.EdgeContact:
+		m.ClearContact()
+		return nil
 	}
 	return fmt.Errorf("unknown Event unique edge %s", name)
 }
@@ -12509,6 +12601,9 @@ func (m *EventMutation) ResetEdge(name string) error {
 	switch name {
 	case event.EdgeWorkspace:
 		m.ResetWorkspace()
+		return nil
+	case event.EdgeContact:
+		m.ResetContact()
 		return nil
 	}
 	return fmt.Errorf("unknown Event edge %s", name)

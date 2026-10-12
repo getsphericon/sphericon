@@ -132,6 +132,50 @@ func TestPersistWritesEventProjection(t *testing.T) {
 	assert.Equal(t, "/pricing", row.Properties["path"])
 }
 
+// An Event outlives its Contact (GLOSSARY: Event). Delivery is asynchronous, so the
+// Contact can be gone, or never have been this Workspace's, when the event is persisted:
+// the row is written unlinked instead of failing on the contact_id foreign key.
+func TestPersistLeavesAnEventUnlinkedWhenItsContactIsGone(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	gone, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("gone@persist.test").Save(ctx)
+	require.NoError(t, err)
+	require.NoError(t, env.DB.Contact.DeleteOneID(gone.ID).Exec(ctx))
+
+	for id, contactID := range map[string]int64{
+		"01J0PERSISTGONE0000000000": gone.ID,
+		// Globex's contact is not an Acme contact.
+		"01J0PERSISTFOREIGN00000000": fixtures.ContactGlobexID,
+	} {
+		collected := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: contactID, Action: "page_view"}
+		require.NoError(t, events.Persist(ctx, env.DB, events.Envelope{
+			ID: id, Name: events.NameCollected, Version: 1, WorkspaceID: fixtures.AcmeID,
+			OccurredAt: time.Now(), Data: dataFor(t, collected),
+		}))
+		row, err := env.DB.Event.Query().Where(event.SourceID(id)).Only(ctx)
+		require.NoError(t, err)
+		assert.Nil(t, row.ContactID, id)
+	}
+}
+
+// Deleting a Contact unlinks its Events and keeps them.
+func TestDeletingAContactKeepsItsEvents(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("unlink@persist.test").Save(ctx)
+	require.NoError(t, err)
+	ev, err := env.DB.Event.Create().SetWorkspaceID(fixtures.AcmeID).SetContactID(c.ID).SetAction("page_view").Save(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, env.DB.Contact.DeleteOneID(c.ID).Exec(ctx))
+
+	kept, err := env.DB.Event.Get(ctx, ev.ID)
+	require.NoError(t, err)
+	assert.Nil(t, kept.ContactID)
+}
+
 // At-least-once delivery can redeliver an envelope; persist must dedupe on the
 // source id (envelope ULID) so the projection row is written at most once.
 func TestPersistIsIdempotent(t *testing.T) {

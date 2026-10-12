@@ -88,7 +88,7 @@ func TestPreviewAndCountAgree(t *testing.T) {
 
 	stored, err := env.DB.Segment.Get(ctx, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
-	pred, err := segments.ContactPredicate(*stored.Definition)
+	pred, err := segments.ContactPredicate(ctx, env.DB.Scoped(fixtures.AcmeID), *stored.Definition)
 	require.NoError(t, err)
 	want, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), pred).Count(ctx)
 	require.NoError(t, err)
