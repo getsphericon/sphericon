@@ -77,8 +77,12 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 	if err != nil {
 		return nil, err
 	}
-	if err := h.accounts.SetPassword(ctx, uid, hash); err != nil {
+	u, verified, err := h.accounts.ResetPassword(ctx, uid, hash)
+	if err != nil {
 		return nil, err
+	}
+	if verified {
+		_ = h.welcome.EnqueueWelcome(ctx, u.Email, u.Name)
 	}
 	return &siteapi.SiteAuthResetPasswordOK{}, nil
 }
