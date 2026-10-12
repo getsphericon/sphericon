@@ -28,8 +28,12 @@ RUN go build -tags embed_spa \
 
 # --- Stage 3: runtime ---
 FROM alpine:3.24
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata \
+    && adduser -D -H -u 10001 sphericon
 COPY --from=gobuild /sphericon /usr/local/bin/sphericon
+# Run unprivileged from an empty directory, never as root in /.
+WORKDIR /app
+USER sphericon
 # Containers are production deployments: enforce the strict secret checks by default.
 ENV APP_ENV=production
 EXPOSE 3000
