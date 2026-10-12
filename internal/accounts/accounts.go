@@ -363,11 +363,24 @@ func (a *Accounts) UpdateProfile(ctx context.Context, id int64, name, passwordHa
 	return saved, err
 }
 
-// SetPassword replaces the User's password hash (a reset by emailed link) and records
-// the change like UpdateProfile.
-func (a *Accounts) SetPassword(ctx context.Context, id int64, passwordHash string) error {
-	_, err := a.UpdateProfile(ctx, id, nil, &passwordHash)
-	return err
+// ResetPassword sets the User's password from a reset link (ADR 0030). The link was
+// mailed to the login address, so following it proves the address as much as the
+// verification link does: for an Unverified User it completes the registration
+// exactly as VerifyEmail (Verified email, first Workspace, `user.email_verify`) and
+// reports verified = true with the User, so the caller sends the welcome email. For a Verified User
+// it is only a password change, recorded like UpdateProfile. Either way every earlier
+// session ends.
+func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash string) (u *ent.User, verified bool, err error) {
+	u, err = a.User(ctx, id)
+	if err != nil {
+		return nil, false, err
+	}
+	if u.EmailVerifiedAt == nil {
+		u, err = a.VerifyEmail(ctx, id, passwordHash, u.Name)
+		return u, err == nil, err
+	}
+	u, err = a.UpdateProfile(ctx, id, nil, &passwordHash)
+	return u, false, err
 }
 
 // EndSessions bumps the User's session epoch, ending every session issued before
