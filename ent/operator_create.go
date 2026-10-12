@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/operator"
+	"github.com/getsphericon/sphericon/ent/operator"
 )
 
 // OperatorCreate is the builder for creating a Operator entity.

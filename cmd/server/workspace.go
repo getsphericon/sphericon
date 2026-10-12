@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/mokevnin/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // workspaceOps is what the `workspace` operator commands need from the app. The

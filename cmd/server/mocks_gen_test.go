@@ -5,7 +5,7 @@ package main
 
 import (
 	"context"
-	"github.com/mokevnin/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/suspension"
 	"sync"
 )
 

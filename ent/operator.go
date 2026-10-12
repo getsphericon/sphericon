@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent/operator"
+	"github.com/getsphericon/sphericon/ent/operator"
 )
 
 // Operator is the model entity for the Operator schema.

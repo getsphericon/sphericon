@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mokevnin/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/webhook"
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

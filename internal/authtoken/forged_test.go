@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/authtoken"
+	"github.com/getsphericon/sphericon/internal/authtoken"
 )
 
 func forge(t *testing.T, claims jwt.MapClaims) string {

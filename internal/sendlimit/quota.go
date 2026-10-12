@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/messaging"
-	"github.com/mokevnin/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 // quotaTimeout bounds one provider quota lookup, so a hung endpoint cannot stall a

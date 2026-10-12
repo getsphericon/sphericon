@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
 // opsReporting is workspaceOps whose suspend and unsuspend both report changed.

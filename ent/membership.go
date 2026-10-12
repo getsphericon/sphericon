@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent/membership"
-	"github.com/mokevnin/sphericon/ent/user"
-	"github.com/mokevnin/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // Membership is the model entity for the Membership schema.

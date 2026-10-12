@@ -4,8 +4,8 @@
 package resources
 
 import (
-	ent "github.com/mokevnin/sphericon/ent"
-	site "github.com/mokevnin/sphericon/gen/site"
+	ent "github.com/getsphericon/sphericon/ent"
+	site "github.com/getsphericon/sphericon/gen/site"
 )
 
 type ConverterImpl struct{}

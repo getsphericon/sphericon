@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/convert"
 )
 
 // optInt mimics an ogen OptInt: Get reports the value and whether it is set.

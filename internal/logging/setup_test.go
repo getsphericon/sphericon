@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/mokevnin/sphericon/config"
+	"github.com/getsphericon/sphericon/config"
 )
 
 func TestSetupInstallsDefaultLogger(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ent/migrate"
+	"github.com/getsphericon/sphericon/ent/migrate"
 )
 
 // Every entity table carries created_at and updated_at (ADR 0017); the pure

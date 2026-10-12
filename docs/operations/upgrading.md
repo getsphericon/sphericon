@@ -34,7 +34,7 @@ then roll the servers.
      -e APP_ENV=production \
      -e DATABASE_URL="postgres://app@db.example.com:5432/sphericon?sslmode=require" \
      -e JWT_SECRET="$JWT_SECRET" \
-     ghcr.io/mokevnin/sphericon:<new-version> migrate
+     ghcr.io/getsphericon/sphericon:<new-version> migrate
    ```
 
    For the plain binary run `./sphericon migrate` with the same environment. Use it as a
@@ -72,7 +72,7 @@ whether fixing forward is cheaper than losing that window.
 
 sphericon is versioned with release-please from Conventional Commits. The authoritative list of
 changes for each release is the
-[GitHub releases page](https://github.com/mokevnin/sphericon/releases). The table below records
+[GitHub releases page](https://github.com/getsphericon/sphericon/releases). The table below records
 only what needs an operator's attention beyond "run `migrate`": a new required setting, a
 removed one, a slow migration, a changed default.
 

@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/config"
-	"github.com/mokevnin/sphericon/ent/authattempt"
-	operatorapi "github.com/mokevnin/sphericon/gen/operator"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent/authattempt"
+	operatorapi "github.com/getsphericon/sphericon/gen/operator"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 const loginFailures = 5

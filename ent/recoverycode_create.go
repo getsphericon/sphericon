@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/recoverycode"
-	"github.com/mokevnin/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/user"
 )
 
 // RecoveryCodeCreate is the builder for creating a RecoveryCode entity.

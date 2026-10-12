@@ -5,5 +5,5 @@ that TypeScript and Go clients are built from. Pick an operation in the sidebar.
 scopes, pagination and errors are explained in the [API guide](/guide/api).
 
 The raw document is
-[`openapi/external.openapi.json`](https://github.com/mokevnin/sphericon/blob/main/openapi/external.openapi.json)
+[`openapi/external.openapi.json`](https://github.com/getsphericon/sphericon/blob/main/openapi/external.openapi.json)
 in the repository.

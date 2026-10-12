@@ -1,6 +1,6 @@
 # Image. The tag defaults to the chart appVersion; pin an explicit version in production.
 image:
-  repository: ghcr.io/mokevnin/sphericon
+  repository: ghcr.io/getsphericon/sphericon
   tag: ''
   pullPolicy: IfNotPresent
 

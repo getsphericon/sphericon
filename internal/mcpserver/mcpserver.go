@@ -19,10 +19,10 @@ import (
 	"strconv"
 	"strings"
 
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	apiauth "github.com/mokevnin/sphericon/internal/api/auth"
-	"github.com/mokevnin/sphericon/internal/ratelimit"
 )
 
 // apiPrefix is where the external ogen server is mounted.

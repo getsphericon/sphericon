@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"time"
 
-	externalapi "github.com/mokevnin/sphericon/gen/external"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/samber/lo"
 
-	"github.com/mokevnin/sphericon/internal/api/auth"
-	"github.com/mokevnin/sphericon/internal/convert"
-	"github.com/mokevnin/sphericon/internal/eventlog"
-	"github.com/mokevnin/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/eventlog"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEventsInput) (externalapi.EventsCreateRes, error) {

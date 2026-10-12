@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent/invitation"
-	"github.com/mokevnin/sphericon/ent/user"
-	"github.com/mokevnin/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // Invitation is the model entity for the Invitation schema.

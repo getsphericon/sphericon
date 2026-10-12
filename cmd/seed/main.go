@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/go-testfixtures/testfixtures/v3"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/mokevnin/sphericon/config"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/secrets"
 )
 
 func main() {

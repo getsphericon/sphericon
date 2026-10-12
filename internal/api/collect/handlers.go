@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"time"
 
+	collectapi "github.com/getsphericon/sphericon/gen/collect"
+	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/visitors"
 	"github.com/go-faster/jx"
-	collectapi "github.com/mokevnin/sphericon/gen/collect"
-	"github.com/mokevnin/sphericon/internal/api/auth"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/visitors"
 	"github.com/samber/lo"
 )
 

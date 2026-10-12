@@ -5,9 +5,9 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/membership"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // The Owner invariants of a Role (GLOSSARY "Role"): a Workspace always keeps at least one

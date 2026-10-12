@@ -5,7 +5,7 @@ package e2e
 import (
 	"github.com/stretchr/testify/require"
 
-	externalapi "github.com/mokevnin/sphericon/gen/external"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 )
 
 // Automation is what a scenario chooses about an Automation: one email step, no waits.

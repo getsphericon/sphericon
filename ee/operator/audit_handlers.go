@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/mokevnin/sphericon/ent"
-	operatorapi "github.com/mokevnin/sphericon/gen/operator"
-	"github.com/mokevnin/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/ent"
+	operatorapi "github.com/getsphericon/sphericon/gen/operator"
+	"github.com/getsphericon/sphericon/internal/auditapi"
 )
 
 // OperatorWorkspaceAuditList is a page of one Workspace's Audit log, newest first. An

@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const otelScope = "github.com/mokevnin/sphericon/internal/events"
+const otelScope = "github.com/getsphericon/sphericon/internal/events"
 
 // otelMiddleware is a watermill router middleware that opens a span and records
 // processed-count + handler-duration metrics per domain-event handler, using

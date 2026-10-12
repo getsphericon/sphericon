@@ -4,7 +4,7 @@ If you send to people in the EU, your Workspace is the data controller and spher
 When a contact asks what you hold about them (access, GDPR Art. 15/20) or asks you to delete them
 (erasure, Art. 17), you answer it from your Workspace. There is no self-service form for the
 contact: both actions are operator actions. The design is recorded in
-[ADR 0021](https://github.com/mokevnin/sphericon/blob/main/docs/adr/0021-gdpr-erasure-and-export.md).
+[ADR 0021](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0021-gdpr-erasure-and-export.md).
 
 ## Access request: export one contact
 

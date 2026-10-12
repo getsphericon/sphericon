@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/mokevnin/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/operator"
 )
 
 // operatorOps is what the `operator` commands need from the app. The app implements

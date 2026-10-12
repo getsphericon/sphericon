@@ -3,18 +3,18 @@ package site
 import (
 	"context"
 	"errors"
-	"github.com/mokevnin/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/samber/lo"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/apitoken"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/apitokens"
-	"github.com/mokevnin/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/apitoken"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
 // SiteTokensList returns the workspace's active (non-revoked) API tokens.

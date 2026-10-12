@@ -3,11 +3,11 @@ package testhelper_test
 import (
 	"testing"
 
-	collectapi "github.com/mokevnin/sphericon/gen/collect"
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	collectapi "github.com/getsphericon/sphericon/gen/collect"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

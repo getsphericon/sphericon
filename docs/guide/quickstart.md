@@ -18,12 +18,12 @@ docker run -p 3000:3000 \
   -e JWT_SECRET="$(openssl rand -hex 32)" \
   -e ENCRYPTION_KEY="<base64 keyset>" \
   -e AUTO_MIGRATE=true \
-  ghcr.io/mokevnin/sphericon:latest
+  ghcr.io/getsphericon/sphericon:latest
 ```
 
 Every variable, and the alternative of running the single binary, is covered in
 [Self-hosting](/self-hosting). To explore with sample data instead, follow the development
-setup in the [README](https://github.com/mokevnin/sphericon#development).
+setup in the [README](https://github.com/getsphericon/sphericon#development).
 
 ## 2. Create an account and a workspace
 

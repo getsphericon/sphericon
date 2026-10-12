@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/go-faster/jx"
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/outboundmessage"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/automations"
 )
 
 // Converter maps ent entities to site API resources. goverter generates the

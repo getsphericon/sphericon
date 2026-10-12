@@ -8,7 +8,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // outboxPruneInterval is how often the outbox is pruned; outboxPruneBatch bounds

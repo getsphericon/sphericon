@@ -13,12 +13,12 @@ import (
 	"ariga.io/atlas/sql/sqltool"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql/schema"
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent/migrate"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/mokevnin/sphericon/config"
-	"github.com/mokevnin/sphericon/ent/migrate"
-	"github.com/mokevnin/sphericon/internal/jobs"
 )
 
 func main() {

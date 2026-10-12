@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ee/licensekey"
 )
 
 func TestParse(t *testing.T) {

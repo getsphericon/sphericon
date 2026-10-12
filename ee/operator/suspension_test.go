@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	collectapi "github.com/mokevnin/sphericon/gen/collect"
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	operatorapi "github.com/mokevnin/sphericon/gen/operator"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/outbound"
+	collectapi "github.com/getsphericon/sphericon/gen/collect"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	operatorapi "github.com/getsphericon/sphericon/gen/operator"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
 func (h *harness) suspend(t *testing.T, c *operatorapi.Client, id int64, reason string) operatorapi.OperatorWorkspacesSuspendRes {

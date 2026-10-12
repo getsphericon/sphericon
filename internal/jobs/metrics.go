@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const otelScope = "github.com/mokevnin/sphericon/internal/jobs"
+const otelScope = "github.com/getsphericon/sphericon/internal/jobs"
 
 // queueStatsQuery counts the jobs a worker could run right now (available, due)
 // per queue and the age of the oldest of them.

@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ee"
-	"github.com/mokevnin/sphericon/ee/licensekey"
-	"github.com/mokevnin/sphericon/ee/operator"
-	"github.com/mokevnin/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/ee"
+	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/internal/accounts"
 )
 
 func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.License {

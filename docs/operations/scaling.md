@@ -45,7 +45,7 @@ per client connection. There is no PgBouncer-compatible mode.
 ## Retention
 
 Two pieces of data grow with traffic: the **Event** table and the domain-event **outbox**. Both
-are pruned in core by background jobs. The policy is [ADR 0019](https://github.com/mokevnin/sphericon/blob/main/docs/adr/0019-event-retention.md).
+are pruned in core by background jobs. The policy is [ADR 0019](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0019-event-retention.md).
 
 | Variable                      | Default | `0` means | What it controls                                                                                                                                                                               |
 | ----------------------------- | ------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

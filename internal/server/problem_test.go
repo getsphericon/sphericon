@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mokevnin/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

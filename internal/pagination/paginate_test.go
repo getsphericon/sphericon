@@ -3,7 +3,7 @@ package pagination_test
 import (
 	"testing"
 
-	"github.com/mokevnin/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/stretchr/testify/assert"
 )
 
