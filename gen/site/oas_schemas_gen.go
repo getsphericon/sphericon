@@ -7977,11 +7977,15 @@ func (s *SiteRecoveryCodesInput) SetCurrentPassword(val string) {
 	s.CurrentPassword = val
 }
 
-// Register with a name and an email only: no password is taken before the address is proven (ADR 0030).
+// Register with a name and an email: no password is taken before the address is proven (ADR 0030).
+// Only an install with `REQUIRE_EMAIL_VERIFICATION=false` takes a password here.
 // Ref: #/components/schemas/SiteRegisterInput
 type SiteRegisterInput struct {
 	Name  string       `json:"name"`
 	Email EmailAddress `json:"email"`
+	// Required when the install does not require email verification, where it makes the account usable at
+	// once. Otherwise ignored and never stored: the password is set by the verification link.
+	Password OptString `json:"password"`
 }
 
 // GetName returns the value of Name.
@@ -7994,6 +7998,11 @@ func (s *SiteRegisterInput) GetEmail() EmailAddress {
 	return s.Email
 }
 
+// GetPassword returns the value of Password.
+func (s *SiteRegisterInput) GetPassword() OptString {
+	return s.Password
+}
+
 // SetName sets the value of Name.
 func (s *SiteRegisterInput) SetName(val string) {
 	s.Name = val
@@ -8002,6 +8011,11 @@ func (s *SiteRegisterInput) SetName(val string) {
 // SetEmail sets the value of Email.
 func (s *SiteRegisterInput) SetEmail(val EmailAddress) {
 	s.Email = val
+}
+
+// SetPassword sets the value of Password.
+func (s *SiteRegisterInput) SetPassword(val OptString) {
+	s.Password = val
 }
 
 // Ask for the verification link again (always accepted; no account enumeration).

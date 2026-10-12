@@ -78,7 +78,9 @@ type Handler interface {
 	// SiteAuthRegister implements SiteAuth_register operation.
 	//
 	// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
-	// with the link to the set-password screen is on its way (202). A taken address answers 409.
+	// with the link to the set-password screen is on its way (202). A taken address answers 409. With
+	// `REQUIRE_EMAIL_VERIFICATION=false` the request must carry a password (422 otherwise) and creates a
+	// Verified User with its first Workspace at once (202, no session: the User signs in next).
 	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, req *SiteRegisterInput) (SiteAuthRegisterRes, error)

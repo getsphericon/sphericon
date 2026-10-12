@@ -18474,11 +18474,18 @@ func (s *SiteRegisterInput) encodeFields(e *jx.Encoder) {
 		e.FieldStart("email")
 		s.Email.Encode(e)
 	}
+	{
+		if s.Password.Set {
+			e.FieldStart("password")
+			s.Password.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteRegisterInput = [2]string{
+var jsonFieldsNameOfSiteRegisterInput = [3]string{
 	0: "name",
 	1: "email",
+	2: "password",
 }
 
 // Decode decodes SiteRegisterInput from json.
@@ -18511,6 +18518,16 @@ func (s *SiteRegisterInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"email\"")
+			}
+		case "password":
+			if err := func() error {
+				s.Password.Reset()
+				if err := s.Password.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"password\"")
 			}
 		default:
 			return d.Skip()

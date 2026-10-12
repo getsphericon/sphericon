@@ -1763,12 +1763,19 @@ export type SiteRecoveryCodesInput = {
 };
 
 /**
- * Register with a name and an email only: no password is taken before the address
- * is proven (ADR 0030)
+ * Register with a name and an email: no password is taken before the address is
+ * proven (ADR 0030). Only an install with `REQUIRE_EMAIL_VERIFICATION=false` takes a
+ * password here.
  */
 export type SiteRegisterInput = {
   name: string;
   email: EmailAddress;
+  /**
+   * Required when the install does not require email verification, where it makes
+   * the account usable at once. Otherwise ignored and never stored: the password is
+   * set by the verification link.
+   */
+  password?: string;
 };
 
 /**

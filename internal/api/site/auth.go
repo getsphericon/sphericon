@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/authtoken"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/i18n"
 )
@@ -44,14 +45,13 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 		return &v, nil
 	}
 
+	if !h.requireVerification {
+		return h.registerVerified(ctx, name, email, req.Password.Or(""))
+	}
+
 	u, err := h.accounts.Register(ctx, name, email)
 	if db.IsUniqueViolation(err) {
-		v := siteapi.SiteAuthRegisterConflict(problemWithErrors(
-			http.StatusConflict,
-			i18n.T("errors.email_exists", nil),
-			map[string][]string{"email": {i18n.T("errors.email_exists", nil)}},
-		))
-		return &v, nil
+		return emailTaken(), nil
 	}
 	if err != nil {
 		return nil, err
@@ -63,6 +63,44 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 		_ = h.sysmail.EnqueueEmailVerification(ctx, u.Email, token, true)
 	}
 	return &siteapi.SiteAuthRegisterAccepted{}, nil
+}
+
+// registerVerified is registration with the gate off (ADR 0030): the password comes
+// with the request, so the User is Verified with its first Workspace at once, and the
+// welcome email follows as it does after a verification link. No session starts; the
+// User signs in next.
+func (h *Handlers) registerVerified(ctx context.Context, name, email, password string) (siteapi.SiteAuthRegisterRes, error) {
+	if password == "" {
+		v := siteapi.SiteAuthRegisterUnprocessableEntity(problemWithErrors(
+			http.StatusUnprocessableEntity,
+			i18n.T("errors.password_required", nil),
+			map[string][]string{"password": {i18n.T("errors.password_required", nil)}},
+		))
+		return &v, nil
+	}
+	hash, err := credentials.HashPassword(password)
+	if err != nil {
+		return nil, err
+	}
+	u, err := h.accounts.RegisterVerified(ctx, name, email, hash)
+	if db.IsUniqueViolation(err) {
+		return emailTaken(), nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	_ = h.welcome.EnqueueWelcome(ctx, u.Email, u.Name)
+	return &siteapi.SiteAuthRegisterAccepted{}, nil
+}
+
+// emailTaken is the 409 answer to a registration with an address already in use.
+func emailTaken() siteapi.SiteAuthRegisterRes {
+	v := siteapi.SiteAuthRegisterConflict(problemWithErrors(
+		http.StatusConflict,
+		i18n.T("errors.email_exists", nil),
+		map[string][]string{"email": {i18n.T("errors.email_exists", nil)}},
+	))
+	return &v
 }
 
 // SiteAuthResendVerification sends the verification link again to an Unverified User

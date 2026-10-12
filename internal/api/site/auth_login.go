@@ -42,8 +42,8 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 	if err != nil {
 		return nil, err
 	}
-	if u != nil && u.EmailVerifiedAt == nil {
-		// The gate (ADR 0030) sits before the password result and any second-factor
+	if h.requireVerification && u != nil && u.EmailVerifiedAt == nil {
+		// The gate (ADR 0030, unless the install turned it off) sits before the password result and any second-factor
 		// challenge is acted on: whatever the password, an Unverified User gets no
 		// session and no challenge, and the throttle does not count it.
 		v := siteapi.SiteAuthLoginForbidden(siteapi.ProblemDetails{

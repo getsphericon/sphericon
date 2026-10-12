@@ -22,7 +22,7 @@ func TestSPAFileHandler(t *testing.T) {
 		"index.html":    {Data: []byte(`<html lang="{{APP_LOCALE}}"></html>`)},
 		"assets/app.js": {Data: []byte(`console.log(1)`)},
 	}
-	h := spaFileHandler(sub, "es")
+	h := spaFileHandler(sub, "es", true)
 
 	// Real files are served as-is.
 	rec := serveSPA(t, h, "/assets/app.js")
@@ -39,7 +39,7 @@ func TestSPAFileHandler(t *testing.T) {
 }
 
 func TestSPAFileHandlerWithoutIndexIsAnError(t *testing.T) {
-	rec := serveSPA(t, spaFileHandler(fstest.MapFS{"assets/app.js": {Data: []byte("x")}}, "en"), "/deep/link")
+	rec := serveSPA(t, spaFileHandler(fstest.MapFS{"assets/app.js": {Data: []byte("x")}}, "en", true), "/deep/link")
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 }
 
@@ -48,7 +48,7 @@ func TestSPAHandlerNotEmbeddedHint(t *testing.T) {
 	if _, embedded := spaFS(); embedded {
 		t.Skip("frontend is embedded in this build")
 	}
-	rec := serveSPA(t, spaHandler("en"), "/")
+	rec := serveSPA(t, spaHandler("en", true), "/")
 	assert.Equal(t, http.StatusNotImplemented, rec.Code)
 	assert.Contains(t, rec.Body.String(), "embed_spa")
 }
