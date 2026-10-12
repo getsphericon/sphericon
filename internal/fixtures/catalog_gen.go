@@ -23,6 +23,8 @@ const (
 	AcmeOwnerMembershipID = 1
 	// AcmeSlug is from fixtures/workspaces.
 	AcmeSlug = "acme"
+	// AcmeUsageSnapshotID is from fixtures/usages.
+	AcmeUsageSnapshotID = 1
 	// AnchorTokenID is from fixtures/api_tokens.
 	AnchorTokenID = 1
 	// AnchorTokenName is from fixtures/api_tokens.
@@ -365,6 +367,8 @@ const (
 	GlobexSamMembershipID = 9
 	// GlobexSlug is from fixtures/workspaces.
 	GlobexSlug = "globex"
+	// GlobexUsageSnapshotID is from fixtures/usages.
+	GlobexUsageSnapshotID = 2
 	// HooliCollectKey is from fixtures/workspaces.
 	HooliCollectKey = "omck_test_hooli_collect_key"
 	// HooliID is from fixtures/workspaces.

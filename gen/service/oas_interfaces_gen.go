@@ -4,3 +4,7 @@ package serviceapi
 type ServiceIdentityGetRes interface {
 	serviceIdentityGetRes()
 }
+
+type ServiceUsageListRes interface {
+	serviceUsageListRes()
+}

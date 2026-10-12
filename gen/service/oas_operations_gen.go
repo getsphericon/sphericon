@@ -7,4 +7,5 @@ type OperationName = string
 
 const (
 	ServiceIdentityGetOperation OperationName = "ServiceIdentityGet"
+	ServiceUsageListOperation   OperationName = "ServiceUsageList"
 )

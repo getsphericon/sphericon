@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/operator"
 	"github.com/getsphericon/sphericon/ee/retention"
+	"github.com/getsphericon/sphericon/ee/usage"
 	"github.com/getsphericon/sphericon/ent"
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
@@ -91,13 +92,15 @@ func (e *Edition) Service() interface {
 }
 
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),
-// which removes nothing without the retention license.
+// which removes nothing without the retention license, and the usage job (ADR 0009),
+// which materializes nothing without the operator license.
 func (e *Edition) Jobs() jobs.Extension {
 	return jobs.Extension{
 		Workers: func(w *river.Workers) {
 			river.AddWorker(w, retention.NewWorker(e.client, e.lic))
+			river.AddWorker(w, usage.NewWorker(e.client, e.lic))
 		},
-		PeriodicJobs: []*river.PeriodicJob{retention.Periodic()},
+		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic()},
 	}
 }
 

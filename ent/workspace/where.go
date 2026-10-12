@@ -1404,6 +1404,29 @@ func HasAuditEntriesWith(preds ...predicate.AuditEntry) predicate.Workspace {
 	})
 }
 
+// HasUsages applies the HasEdge predicate on the "usages" edge.
+func HasUsages() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UsagesTable, UsagesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUsagesWith applies the HasEdge predicate on the "usages" edge with a given conditions (other predicates).
+func HasUsagesWith(preds ...predicate.Usage) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newUsagesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Workspace) predicate.Workspace {
 	return predicate.Workspace(sql.AndPredicates(predicates...))

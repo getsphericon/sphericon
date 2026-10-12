@@ -66,6 +66,8 @@ type Tx struct {
 	Tag *TagClient
 	// Unsubscribe is the client for interacting with the Unsubscribe builders.
 	Unsubscribe *UnsubscribeClient
+	// Usage is the client for interacting with the Usage builders.
+	Usage *UsageClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// Visitor is the client for interacting with the Visitor builders.
@@ -232,6 +234,7 @@ func (tx *Tx) init() {
 	tx.Suppression = NewSuppressionClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Unsubscribe = NewUnsubscribeClient(tx.config)
+	tx.Usage = NewUsageClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.Visitor = NewVisitorClient(tx.config)
 	tx.WebhookEndpoint = NewWebhookEndpointClient(tx.config)

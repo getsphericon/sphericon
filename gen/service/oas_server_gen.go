@@ -14,6 +14,13 @@ type Handler interface {
 	//
 	// GET /identity
 	ServiceIdentityGet(ctx context.Context) (ServiceIdentityGetRes, error)
+	// ServiceUsageList implements ServiceUsage_list operation.
+	//
+	// The figures of every Workspace for a Usage period, by Workspace id: Live usage for the open period,
+	// Usage snapshots for a closed one. Never a recount on read.
+	//
+	// GET /usage
+	ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (ServiceUsageListRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

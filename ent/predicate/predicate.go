@@ -87,6 +87,9 @@ type Tag func(*sql.Selector)
 // Unsubscribe is the predicate function for unsubscribe builders.
 type Unsubscribe func(*sql.Selector)
 
+// Usage is the predicate function for usage builders.
+type Usage func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
 

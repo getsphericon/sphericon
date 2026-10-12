@@ -25,7 +25,7 @@ type ServiceSurface struct {
 // NewServiceSurface builds the surface over the module that issues and checks credentials.
 func NewServiceSurface(m *Module) *ServiceSurface {
 	return &ServiceSurface{
-		handlers: &ServiceHandlers{},
+		handlers: &ServiceHandlers{module: m},
 		security: NewServiceSecurity(m, ServiceOperationScopes),
 	}
 }
@@ -43,6 +43,7 @@ func (s *ServiceSurface) Server(opts ...serviceapi.ServerOption) (http.Handler, 
 // open to any valid credential. Add an endpoint's row with the endpoint.
 var ServiceOperationScopes = map[serviceapi.OperationName][]Scope{
 	serviceapi.ServiceIdentityGetOperation: nil,
+	serviceapi.ServiceUsageListOperation:   {ScopeUsageRead},
 }
 
 // ServiceOperations lists every operation the service endpoints serve, from the
@@ -113,7 +114,7 @@ func covers(have []string, need []Scope) bool {
 }
 
 // ServiceHandlers implements serviceapi.Handler.
-type ServiceHandlers struct{}
+type ServiceHandlers struct{ module *Module }
 
 var _ serviceapi.Handler = (*ServiceHandlers)(nil)
 

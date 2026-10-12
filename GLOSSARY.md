@@ -510,8 +510,9 @@ _Avoid_: Cycle, anniversary period
 A per-(Workspace, Usage period, metric) materialized aggregate of activity, finalized (made
 immutable) at period close. Distinct from the raw Events it is computed from, which stay the
 source of truth for audit and dispute. Two metrics, aggregated differently: `emails_sent` is a
-_sum_ of `email.sent` over all three send surfaces, one per recipient, in a single total (a
-suppressed or held message is never sent, so never counted); `contacts` is a **high-water-mark**
+_sum_ of the Outbound messages the provider accepted over all three send surfaces, one per recipient,
+in a single total, each counted in the Usage period it was accepted in (a suppressed, held or failed
+message is never accepted, so never counted); `contacts` is a **high-water-mark**
 (the peak reached during the period) of identified Contacts — those with an email Destination,
 erased Contacts excluded — never an instantaneous value, and never anonymous tracker Contacts. It
 materializes live Events the same way a Broadcast recipient's rollup materializes engagement —
