@@ -910,6 +910,8 @@
     "unsubscribeAll": "Отписаться от всех писем"
   },
   "userMenu": {
+    "account": "Аккаунт",
+    "accountErrorTitle": "Не удалось открыть страницу аккаунта",
     "logout": "Выйти",
     "logoutErrorTitle": "Не удалось выйти",
     "profile": "Профиль",

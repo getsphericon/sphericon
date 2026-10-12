@@ -3058,6 +3058,51 @@ func (s *SiteAcceptInvitationInput) SetPassword(val OptString) {
 	s.Password = val
 }
 
+// A short-lived signed token that proves who the Owner is to the external account page, with the
+// address of that page.
+// Ref: #/components/schemas/SiteAccountLinkResource
+type SiteAccountLinkResource struct {
+	// Address of the external account page.
+	URL string `json:"url"`
+	// Signed token (a JWT, EdDSA) naming the user, the Workspace and the role; it expires within minutes.
+	// Verify it with the key set published at /.well-known/jwks.json.
+	Token string `json:"token"`
+	// When the token expires.
+	ExpiresAt Timestamp `json:"expiresAt"`
+}
+
+// GetURL returns the value of URL.
+func (s *SiteAccountLinkResource) GetURL() string {
+	return s.URL
+}
+
+// GetToken returns the value of Token.
+func (s *SiteAccountLinkResource) GetToken() string {
+	return s.Token
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *SiteAccountLinkResource) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// SetURL sets the value of URL.
+func (s *SiteAccountLinkResource) SetURL(val string) {
+	s.URL = val
+}
+
+// SetToken sets the value of Token.
+func (s *SiteAccountLinkResource) SetToken(val string) {
+	s.Token = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *SiteAccountLinkResource) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+func (*SiteAccountLinkResource) siteWorkspacesAccountLinkRes() {}
+
 // Automation counts (point-in-time snapshot).
 // Ref: #/components/schemas/SiteAnalyticsAutomations
 type SiteAnalyticsAutomations struct {
@@ -11130,6 +11175,9 @@ type SiteWorkspaceResource struct {
 	// User has a Second factor. After it, every request to this Workspace answers 403 with code
 	// second_factor_required until the User enrolls one.
 	SecondFactorGraceEndsAt OptNilTimestamp `json:"secondFactorGraceEndsAt"`
+	// Whether the authenticated User may open the Account link: true only for an Owner, and only on an
+	// installation configured for it.
+	AccountLinkAvailable bool `json:"accountLinkAvailable"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -11187,6 +11235,11 @@ func (s *SiteWorkspaceResource) GetSecondFactorRequiredAt() OptNilTimestamp {
 // GetSecondFactorGraceEndsAt returns the value of SecondFactorGraceEndsAt.
 func (s *SiteWorkspaceResource) GetSecondFactorGraceEndsAt() OptNilTimestamp {
 	return s.SecondFactorGraceEndsAt
+}
+
+// GetAccountLinkAvailable returns the value of AccountLinkAvailable.
+func (s *SiteWorkspaceResource) GetAccountLinkAvailable() bool {
+	return s.AccountLinkAvailable
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11249,6 +11302,11 @@ func (s *SiteWorkspaceResource) SetSecondFactorGraceEndsAt(val OptNilTimestamp) 
 	s.SecondFactorGraceEndsAt = val
 }
 
+// SetAccountLinkAvailable sets the value of AccountLinkAvailable.
+func (s *SiteWorkspaceResource) SetAccountLinkAvailable(val bool) {
+	s.AccountLinkAvailable = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -11256,6 +11314,14 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 
 func (*SiteWorkspaceResource) siteWorkspacesSetSecondFactorRequirementRes() {}
 func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                     {}
+
+type SiteWorkspacesAccountLinkForbidden ProblemDetails
+
+func (*SiteWorkspacesAccountLinkForbidden) siteWorkspacesAccountLinkRes() {}
+
+type SiteWorkspacesAccountLinkNotFound ProblemDetails
+
+func (*SiteWorkspacesAccountLinkNotFound) siteWorkspacesAccountLinkRes() {}
 
 type SiteWorkspacesSetSecondFactorRequirementForbidden ProblemDetails
 

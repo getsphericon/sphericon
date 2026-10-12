@@ -890,6 +890,8 @@
     "unsubscribeAll": "Unsubscribe from all emails"
   },
   "userMenu": {
+    "account": "Account",
+    "accountErrorTitle": "Could not open the account page",
     "logout": "Sign out",
     "logoutErrorTitle": "Sign out failed",
     "profile": "Profile",
