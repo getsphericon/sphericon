@@ -75,6 +75,9 @@ type SendLimiter func(*sql.Selector)
 // SendingDomain is the predicate function for sendingdomain builders.
 type SendingDomain func(*sql.Selector)
 
+// ServiceCredential is the predicate function for servicecredential builders.
+type ServiceCredential func(*sql.Selector)
+
 // Suppression is the predicate function for suppression builders.
 type Suppression func(*sql.Selector)
 

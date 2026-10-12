@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/retention"
 	"github.com/getsphericon/sphericon/ent"
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
+	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -75,6 +76,18 @@ func (e *Edition) Operator(bus *events.Bus, sender messaging.EmailSender) interf
 		return nil
 	}
 	return operator.NewSurface(e.Operators, e.operatorSessions, bus, sender)
+}
+
+// Service is the service endpoints of the Operator surface (ADR 0026) for the
+// composition root to mount on the internal listener, or nil without the `operator`
+// license, in which case no listener is bound and nothing is served.
+func (e *Edition) Service() interface {
+	Server(opts ...serviceapi.ServerOption) (http.Handler, error)
+} {
+	if e.operatorSessions == nil {
+		return nil
+	}
+	return operator.NewServiceSurface(e.Operators)
 }
 
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),

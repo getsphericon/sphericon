@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -125,6 +126,7 @@ func checkColumn(t, c string) error {
 			segment.Table:            segment.ValidColumn,
 			sendlimiter.Table:        sendlimiter.ValidColumn,
 			sendingdomain.Table:      sendingdomain.ValidColumn,
+			servicecredential.Table:  servicecredential.ValidColumn,
 			suppression.Table:        suppression.ValidColumn,
 			tag.Table:                tag.ValidColumn,
 			unsubscribe.Table:        unsubscribe.ValidColumn,

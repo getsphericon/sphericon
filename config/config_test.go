@@ -253,3 +253,55 @@ func TestConfigLoadE2EProfileIgnoresMetricsAddr(t *testing.T) {
 		t.Fatalf("test profile MetricsAddr = %q, want the configured one", dev.MetricsAddr)
 	}
 }
+
+func TestConfigLoadInternalAddr(t *testing.T) {
+	cases := []struct {
+		name    string
+		port    string
+		metrics string
+		addr    string
+		wantErr bool
+	}{
+		{name: "empty disables the listener", port: "3000", addr: ""},
+		{name: "distinct host and port", port: "3000", addr: "127.0.0.1:3400"},
+		{name: "malformed", port: "3000", addr: "3400", wantErr: true},
+		{name: "same port as PORT", port: "3000", addr: "127.0.0.1:3000", wantErr: true},
+		{name: "same port with an empty host", port: "3000", addr: ":3000", wantErr: true},
+		{name: "same address as METRICS_ADDR", port: "3000", metrics: "127.0.0.1:9090", addr: "127.0.0.1:9090", wantErr: true},
+		{name: "same port as METRICS_ADDR on another host", port: "3000", metrics: "127.0.0.1:9090", addr: "0.0.0.0:9090", wantErr: true},
+		{name: "port out of range", port: "3000", addr: "127.0.0.1:70000", wantErr: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("PORT", tc.port)
+			t.Setenv("METRICS_ADDR", tc.metrics)
+			t.Setenv("INTERNAL_ADDR", tc.addr)
+			cfg, err := Load("test")
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("INTERNAL_ADDR=%q PORT=%s: want error, got nil", tc.addr, tc.port)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("INTERNAL_ADDR=%q PORT=%s: unexpected error: %v", tc.addr, tc.port, err)
+			}
+			if cfg.InternalAddr != tc.addr {
+				t.Fatalf("InternalAddr = %q, want %q", cfg.InternalAddr, tc.addr)
+			}
+		})
+	}
+}
+
+func TestConfigLoadE2EProfileIgnoresInternalAddr(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("INTERNAL_ADDR", "127.0.0.1:3400")
+	cfg, err := Load("e2e")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.InternalAddr != "" {
+		t.Fatalf("e2e InternalAddr = %q, want empty so runs never collide on a port", cfg.InternalAddr)
+	}
+}

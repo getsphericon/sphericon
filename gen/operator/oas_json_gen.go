@@ -289,6 +289,8 @@ func (s *OperatorAuditActorKind) Decode(d *jx.Decoder) error {
 		*s = OperatorAuditActorKindAPIToken
 	case OperatorAuditActorKindOperator:
 		*s = OperatorAuditActorKindOperator
+	case OperatorAuditActorKindService:
+		*s = OperatorAuditActorKindService
 	case OperatorAuditActorKindSystem:
 		*s = OperatorAuditActorKindSystem
 	default:

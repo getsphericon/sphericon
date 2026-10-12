@@ -14,6 +14,7 @@ export const zOperatorAuditActorKind = z.enum([
   'user',
   'api_token',
   'operator',
+  'service',
   'system'
 ]);
 

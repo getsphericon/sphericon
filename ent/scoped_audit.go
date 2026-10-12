@@ -17,8 +17,11 @@ const (
 	ActorUser     = "user"
 	ActorAPIToken = "api_token"
 	ActorOperator = "operator"
-	ActorSystem   = "system"
-	ActorIngest   = "ingest"
+	// ActorService is a Service credential (ADR 0026): a machine identity of the platform,
+	// named in the log, which every customer-facing read shows as ActorOperator.
+	ActorService = "service"
+	ActorSystem  = "system"
+	ActorIngest  = "ingest"
 )
 
 // Actor is who performs the writes of a scope. Name is a display snapshot (a User's

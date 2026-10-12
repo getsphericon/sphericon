@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/server"
+	"github.com/getsphericon/sphericon/internal/sidelistener"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/telemetry"
@@ -67,6 +68,9 @@ type App struct {
 	// Metrics is the opt-in Prometheus listener (ADR 0018); nil when METRICS_ADDR
 	// is empty and for the operator app.
 	Metrics *telemetry.MetricsServer
+	// Internal is the opt-in internal listener of the service endpoints (ADR 0026); nil
+	// when INTERNAL_ADDR is empty, without the `operator` license, and for the operator app.
+	Internal *sidelistener.Server
 
 	injector       *do.RootScope
 	listener       net.Listener // caller-provided; nil means listen on Config.Port
@@ -153,6 +157,10 @@ type outboundModule struct{ *outbound.Module }
 
 // externalAPI is the external (/api) ogen server; the MCP surface dispatches through it.
 type externalAPI struct{ http.Handler }
+
+// internalHandler is the internal listener's handler (ADR 0026); its Handler is nil
+// without the `operator` license.
+type internalHandler struct{ http.Handler }
 
 // mcpHandler is the /mcp surface (ADR 0016), projected from the external contract.
 type mcpHandler struct{ http.Handler }
@@ -259,6 +267,20 @@ func New(env string, opts ...Option) (*App, error) {
 		metrics = telemetry.NewMetricsServer(cfg.MetricsAddr)
 	}
 
+	// The internal listener exists only when an address is configured and the
+	// `operator` license gives it something to serve (ADR 0026).
+	var internal *sidelistener.Server
+	if cfg.InternalAddr != "" {
+		ih, err := do.Invoke[*internalHandler](injector)
+		if err != nil {
+			_ = injector.Shutdown()
+			return nil, err
+		}
+		if ih.Handler != nil {
+			internal = sidelistener.New("internal", cfg.InternalAddr, ih.Handler)
+		}
+	}
+
 	addr := ":" + cfg.Port
 	if o.listener != nil {
 		addr = o.listener.Addr().String()
@@ -267,6 +289,7 @@ func New(env string, opts ...Option) (*App, error) {
 	return &App{
 		Config:   cfg,
 		Metrics:  metrics,
+		Internal: internal,
 		listener: o.listener,
 		Server: &http.Server{
 			Addr:              addr,
@@ -325,6 +348,16 @@ func (a *App) start(ctx context.Context) error {
 	go func() {
 		if err := a.Metrics.Serve(); err != nil {
 			slog.Error("metrics server stopped", "err", err)
+		}
+	}()
+	// The internal listener is bound before anything else is served for the same
+	// reason: an operator who asked for it must not silently run without it.
+	if err := a.Internal.Listen(ctx); err != nil {
+		return err
+	}
+	go func() {
+		if err := a.Internal.Serve(); err != nil {
+			slog.Error("internal server stopped", "err", err)
 		}
 	}()
 
@@ -416,7 +449,7 @@ func (a *App) serve() error {
 // A caller-provided listener is closed too, so a Start that failed before serving
 // does not leave it bound (closing one the server already closed is harmless).
 func (a *App) stop(ctx context.Context) error {
-	errs := []error{a.Server.Shutdown(ctx), a.Metrics.Shutdown(ctx)}
+	errs := []error{a.Server.Shutdown(ctx), a.Metrics.Shutdown(ctx), a.Internal.Shutdown(ctx)}
 	if a.listener != nil {
 		if err := a.listener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
 			errs = append(errs, err)
@@ -546,6 +579,45 @@ func (a *App) ResetOperatorTOTP(ctx context.Context, email string) error {
 		return err
 	}
 	return edition.Operators.ResetTOTP(ctx, email)
+}
+
+// IssueServiceCredential creates a Service credential (ADR 0026) and returns it with its
+// value, shown once. Only the Operator's command line makes one: no endpoint can.
+func (a *App) IssueServiceCredential(ctx context.Context, in operator.IssueInput) (*operator.Issued, error) {
+	edition, err := do.Invoke[*ee.Edition](a.injector)
+	if err != nil {
+		return nil, err
+	}
+	return edition.Operators.IssueServiceCredential(ctx, in)
+}
+
+// RotateServiceCredential issues a new credential with the name and scopes of an active
+// one, leaving the old one active until it is revoked.
+func (a *App) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*operator.Issued, error) {
+	edition, err := do.Invoke[*ee.Edition](a.injector)
+	if err != nil {
+		return nil, err
+	}
+	return edition.Operators.RotateServiceCredential(ctx, id, expiresAt)
+}
+
+// RevokeServiceCredential ends a Service credential.
+func (a *App) RevokeServiceCredential(ctx context.Context, id int64) error {
+	edition, err := do.Invoke[*ee.Edition](a.injector)
+	if err != nil {
+		return err
+	}
+	return edition.Operators.RevokeServiceCredential(ctx, id)
+}
+
+// ServiceCredentials lists the Service credentials with their state, narrowed to one
+// service's by name when set.
+func (a *App) ServiceCredentials(ctx context.Context, name string) ([]*ent.ServiceCredential, error) {
+	edition, err := do.Invoke[*ee.Edition](a.injector)
+	if err != nil {
+		return nil, err
+	}
+	return edition.Operators.ServiceCredentials(ctx, name)
 }
 
 // Accounts is the product's Accounts module from the DI container, for harnesses that
@@ -1023,6 +1095,24 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 		return &mcpHandler{h}, nil
+	})
+
+	// The handler of the internal listener (ADR 0026): the service endpoints of the
+	// Operator surface. Nil without the `operator` license.
+	do.Provide(injector, func(i do.Injector) (*internalHandler, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		edition, err := do.Invoke[*ee.Edition](i)
+		if err != nil {
+			return nil, err
+		}
+		h, err := server.NewInternal(cfg, edition.Service())
+		if err != nil {
+			return nil, err
+		}
+		return &internalHandler{h}, nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (http.Handler, error) {

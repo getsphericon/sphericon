@@ -86,7 +86,8 @@ func (o NilFloat64) Or(d float64) float64 {
 // The actor of an Audit entry.
 // Ref: #/components/schemas/OperatorAuditActor
 type OperatorAuditActor struct {
-	// The kind of actor; an operator carries no id and the name "sphericon staff".
+	// The kind of actor; an operator carries no id and the name "sphericon staff"; a service is a Service
+	// credential, named as the Operator who issued it chose.
 	Kind OperatorAuditActorKind `json:"kind"`
 	// The actor's id (a User id or an API token id); absent for the system and an operator.
 	ID OptNilString `json:"id"`
@@ -132,6 +133,7 @@ const (
 	OperatorAuditActorKindUser     OperatorAuditActorKind = "user"
 	OperatorAuditActorKindAPIToken OperatorAuditActorKind = "api_token"
 	OperatorAuditActorKindOperator OperatorAuditActorKind = "operator"
+	OperatorAuditActorKindService  OperatorAuditActorKind = "service"
 	OperatorAuditActorKindSystem   OperatorAuditActorKind = "system"
 )
 
@@ -141,6 +143,7 @@ func (OperatorAuditActorKind) AllValues() []OperatorAuditActorKind {
 		OperatorAuditActorKindUser,
 		OperatorAuditActorKindAPIToken,
 		OperatorAuditActorKindOperator,
+		OperatorAuditActorKindService,
 		OperatorAuditActorKindSystem,
 	}
 }
@@ -153,6 +156,8 @@ func (s OperatorAuditActorKind) MarshalText() ([]byte, error) {
 	case OperatorAuditActorKindAPIToken:
 		return []byte(s), nil
 	case OperatorAuditActorKindOperator:
+		return []byte(s), nil
+	case OperatorAuditActorKindService:
 		return []byte(s), nil
 	case OperatorAuditActorKindSystem:
 		return []byte(s), nil
@@ -172,6 +177,9 @@ func (s *OperatorAuditActorKind) UnmarshalText(data []byte) error {
 		return nil
 	case OperatorAuditActorKindOperator:
 		*s = OperatorAuditActorKindOperator
+		return nil
+	case OperatorAuditActorKindService:
+		*s = OperatorAuditActorKindService
 		return nil
 	case OperatorAuditActorKindSystem:
 		*s = OperatorAuditActorKindSystem

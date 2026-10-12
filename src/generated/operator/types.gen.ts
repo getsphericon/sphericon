@@ -35,7 +35,7 @@ export type GoneProblem = {
  */
 export type OperatorAuditActor = {
   /**
-   * The kind of actor; an operator carries no id and the name "sphericon staff"
+   * The kind of actor; an operator carries no id and the name "sphericon staff"; a service is a Service credential, named as the Operator who issued it chose
    */
   kind: OperatorAuditActorKind;
   /**
@@ -55,6 +55,7 @@ export const OperatorAuditActorKind = {
   USER: 'user',
   API_TOKEN: 'api_token',
   OPERATOR: 'operator',
+  SERVICE: 'service',
   SYSTEM: 'system'
 } as const;
 

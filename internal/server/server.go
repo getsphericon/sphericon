@@ -17,6 +17,7 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
+	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apicollect "github.com/getsphericon/sphericon/internal/api/collect"
@@ -69,6 +70,11 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 		operator = http.NotFoundHandler()
 	}
 	mux.Handle(operatorPrefix+"/", operator)
+
+	// The service endpoints of the Operator surface are served only by the internal
+	// listener (ADR 0026). The public port has no route for them: the prefix is a 404
+	// here, so it never falls through to the SPA shell below either.
+	mux.Handle(paths.Service+"/", http.NotFoundHandler())
 
 	// External API — /api (Bearer token auth via ogen SecurityHandler); built by
 	// NewExternalAPI so the MCP surface dispatches through the same server.
@@ -150,6 +156,31 @@ func NewOperatorAPI(surface OperatorSurface) (http.Handler, error) {
 		return nil, nil
 	}
 	return surface.Server(operatorapi.WithErrorHandler(problemErrorHandler))
+}
+
+// ServiceSurface is the service endpoints of the Operator surface (ee/operator), built
+// into an ogen server here so it renders errors like the other surfaces.
+type ServiceSurface interface {
+	Server(opts ...serviceapi.ServerOption) (http.Handler, error)
+}
+
+// NewInternal builds the handler of the internal listener (ADR 0026): the service
+// endpoints under /service and nothing else, behind the middleware the public server
+// uses where it applies (recoverer, request id, client address, rate limit, timeout,
+// body limit). A nil surface (no `operator` license) yields a nil handler, and the
+// composition root then binds no listener at all.
+func NewInternal(cfg *config.Config, surface ServiceSurface) (http.Handler, error) {
+	if surface == nil {
+		return nil, nil
+	}
+	srv, err := surface.Server(serviceapi.WithErrorHandler(problemErrorHandler))
+	if err != nil {
+		return nil, err
+	}
+	mux := http.NewServeMux()
+	mux.Handle(paths.Service+"/", srv)
+	limiter := ratelimit.New(cfg.RateLimits)
+	return chain(mux, recoverer, requestID, clientip.Middleware, limiter.Middleware, timeout(30*time.Second), bodyLimit(cfg.BodyLimits)), nil
 }
 
 // problemErrorHandler renders ogen errors as RFC 7807 application/problem+json.
