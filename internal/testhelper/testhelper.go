@@ -341,8 +341,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Automations: automationsModule, Broadcasts: broadcastsModule,
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, Integrations: integrationsModule,
 		Tokens: authtoken.New(baseCfg.JWTSecret), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New(),
-		SecondFactor: secondFactor,
-		Clock:        st.now,
+		SecondFactor:             secondFactor,
+		Clock:                    st.now,
+		RequireEmailVerification: cfg.RequireEmailVerification,
 	}, external, mcpHandler, operatorHandler)
 	require.NoError(t, err, "build server")
 	internalHandler, err := server.NewInternal(&cfg, edition.Service(bus))

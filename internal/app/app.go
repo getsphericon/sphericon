@@ -1376,6 +1376,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Automations: auto,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, Integrations: integ,
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Analytics: an,
+		RequireEmailVerification: cfg.RequireEmailVerification,
 	}, nil
 }
 

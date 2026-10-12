@@ -8,6 +8,45 @@ import (
 
 var strongSecret = strings.Repeat("k7", 16)
 
+func TestConfigLoadRequireEmailVerificationOnlyAnExplicitFalseTurnsItOff(t *testing.T) {
+	cases := map[string]bool{
+		"":      true,
+		"true":  true,
+		"false": false,
+		"0":     true,
+		"no":    true,
+		"off":   true,
+		"False": true,
+		"FALSE": true,
+		"junk":  true,
+	}
+	for value, want := range cases {
+		t.Run("value="+value, func(t *testing.T) {
+			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("REQUIRE_EMAIL_VERIFICATION", value)
+			cfg, err := Load("test")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.RequireEmailVerification != want {
+				t.Fatalf("REQUIRE_EMAIL_VERIFICATION=%q: RequireEmailVerification = %v, want %v", value, cfg.RequireEmailVerification, want)
+			}
+		})
+	}
+}
+
+func TestConfigLoadRequireEmailVerificationIgnoresSMTPSettings(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SMTP_HOST", "")
+	cfg, err := Load("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.RequireEmailVerification {
+		t.Fatal("an unset SMTP host must not turn the gate off")
+	}
+}
+
 func TestConfigLoad_JWTSecret(t *testing.T) {
 	cases := []struct {
 		name      string

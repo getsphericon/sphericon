@@ -498,11 +498,15 @@ export default interface Resources {
     "registration": {
       "checkEmailBody": "We sent a link to {{email}}. Follow it to confirm your address and choose your password.",
       "checkEmailTitle": "Check your email",
+      "createdBody": "Your account is ready. Sign in with your email and password.",
+      "createdTitle": "Account created",
       "emailLabel": "Email",
       "errorMessage": "We couldn't create your account. Please check your details and try again.",
       "errorTitle": "Registration failed",
       "loginLink": "Already have an account? Sign in",
       "nameLabel": "Name",
+      "passwordLabel": "Password",
+      "signInLink": "Sign in",
       "submitButton": "Register",
       "title": "Create account"
     },

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/config"
 	entmembership "github.com/getsphericon/sphericon/ent/membership"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -179,4 +180,81 @@ func TestVerifyingIsRecordedInTheNewWorkspacesAuditLog(t *testing.T) {
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, "Grace Hopper", got[0].Actor.Name.Value)
 	assert.Equal(t, "user", got[0].Target.Type)
+}
+
+// registerWithPassword drives the registration of an install with the gate off.
+func registerWithPassword(t *testing.T, env *testhelper.TestEnv, name, email, password string) siteapi.SiteAuthRegisterRes {
+	t.Helper()
+	res, err := env.SiteAnonymous(t).SiteAuthRegister(t.Context(), &siteapi.SiteRegisterInput{
+		Name: name, Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(password),
+	})
+	require.NoError(t, err)
+	return res
+}
+
+func gateOff(t *testing.T) *testhelper.TestEnv {
+	t.Helper()
+	return testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.RequireEmailVerification = false }))
+}
+
+func TestWithTheGateOffRegisteringCreatesAVerifiedUserWithAWorkspaceAndSignInWorks(t *testing.T) {
+	env := gateOff(t)
+
+	require.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, registerWithPassword(t, env, "Grace Hopper", "grace@example.com", "grace-password-1"))
+
+	u, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Only(t.Context())
+	require.NoError(t, err)
+	assert.NotNil(t, u.EmailVerifiedAt)
+	assert.NotEmpty(t, u.PasswordHash)
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 1, "no verification email: only the welcome")
+	assert.Contains(t, msgs[0].Subject, "Welcome")
+
+	rec := postLogin(t, env, "grace@example.com", "grace-password-1")
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	cookie := sessionCookie(rec.Result())
+	require.NotNil(t, cookie)
+	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
+	require.NoError(t, err)
+	require.Len(t, spaces, 1)
+	assert.Equal(t, "grace-hopper", spaces[0].Slug)
+
+	got := entriesNamed(t, env, "grace@example.com", "grace-hopper", events.ActionUserEmailVerify)
+	assert.Len(t, got, 1)
+}
+
+func TestWithTheGateOffRegisteringNeedsAPasswordAndRefusesATakenAddress(t *testing.T) {
+	env := gateOff(t)
+
+	missing := registerWithPassword(t, env, "Grace Hopper", "grace@example.com", "")
+	problem, ok := missing.(*siteapi.SiteAuthRegisterUnprocessableEntity)
+	require.Truef(t, ok, "got %T", missing)
+	assert.Contains(t, problem.Errors.Value, "password")
+	exists, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Exist(t.Context())
+	require.NoError(t, err)
+	assert.False(t, exists, "a rejected registration creates no user")
+
+	dup := registerWithPassword(t, env, "John again", fixtures.OwnerJohnEmail, "some-password-1")
+	assert.IsType(t, &siteapi.SiteAuthRegisterConflict{}, dup)
+	assert.Empty(t, env.SystemMail.Messages())
+}
+
+func TestWithTheGateOffLoginHasNoVerificationCheck(t *testing.T) {
+	env := gateOff(t)
+	require.NoError(t, env.DB.User.UpdateOneID(fixtures.OwnerJohnID).ClearEmailVerifiedAt().Exec(t.Context()))
+
+	assert.Equal(t, http.StatusOK, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
+}
+
+func TestWithTheGateOnAPasswordInTheRegistrationIsNeverStored(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	require.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, registerWithPassword(t, env, "Grace Hopper", "grace@example.com", "attacker-chosen-1"))
+
+	u, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Only(t.Context())
+	require.NoError(t, err)
+	assert.Empty(t, u.PasswordHash)
+	assert.Nil(t, u.EmailVerifiedAt)
+	assert.Equal(t, http.StatusForbidden, loginStatus(t, env, "grace@example.com", "attacker-chosen-1"))
 }

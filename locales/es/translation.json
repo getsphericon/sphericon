@@ -520,11 +520,15 @@
   "registration": {
     "checkEmailBody": "Enviamos un enlace a {{email}}. Sigue el enlace para confirmar tu dirección y elegir tu contraseña.",
     "checkEmailTitle": "Revisa tu correo",
+    "createdBody": "Tu cuenta está lista. Inicia sesión con tu correo y contraseña.",
+    "createdTitle": "Cuenta creada",
     "emailLabel": "Correo",
     "errorMessage": "No pudimos crear tu cuenta. Revisa tus datos e inténtalo de nuevo.",
     "errorTitle": "Error de registro",
     "loginLink": "¿Ya tienes una cuenta? Inicia sesión",
     "nameLabel": "Nombre",
+    "passwordLabel": "Contraseña",
+    "signInLink": "Iniciar sesión",
     "submitButton": "Registrarse",
     "title": "Crear cuenta"
   },

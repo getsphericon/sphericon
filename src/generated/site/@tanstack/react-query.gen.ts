@@ -92,7 +92,9 @@ export const siteAuthLogoutMutation = (options?: Partial<Options<SiteAuthLogoutD
 /**
  * Create an Unverified User (ADR 0030): no password, no session, no Workspace.
  * A verification email with the link to the set-password screen is on its way
- * (202). A taken address answers 409.
+ * (202). A taken address answers 409. With `REQUIRE_EMAIL_VERIFICATION=false` the
+ * request must carry a password (422 otherwise) and creates a Verified User with
+ * its first Workspace at once (202, no session: the User signs in next).
  */
 export const siteAuthRegisterMutation = (options?: Partial<Options<SiteAuthRegisterData>>): UseMutationOptions<unknown, SiteAuthRegisterError, Options<SiteAuthRegisterData>> => {
   const mutationOptions: UseMutationOptions<unknown, SiteAuthRegisterError, Options<SiteAuthRegisterData>> = {

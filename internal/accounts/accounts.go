@@ -311,24 +311,50 @@ func (a *Accounts) CreateUser(ctx context.Context, name, email, passwordHash str
 // User's first Workspace named workspaceName with the User as owner. It records
 // `user.email_verify` in that Workspace's Audit log and returns the User.
 func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash, workspaceName string) (*ent.User, error) {
+	return a.verified(ctx, workspaceName, func(tx *ent.Client) (*ent.User, error) {
+		return tx.User.UpdateOneID(id).
+			SetPasswordHash(passwordHash).
+			SetEmailVerifiedAt(time.Now()).
+			AddSessionEpoch(1).
+			Save(ctx)
+	})
+}
+
+// RegisterVerified is registration on an install that does not require email
+// verification (ADR 0030): in one transaction it creates a User that is Verified at
+// once with its password, and the first Workspace, exactly as VerifyEmail does. The
+// unique index on the email refuses a taken address (see db.IsUniqueViolation).
+func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
+	return a.verified(ctx, name, func(tx *ent.Client) (*ent.User, error) {
+		return tx.User.Create().
+			SetName(name).
+			SetEmail(email).
+			SetPasswordHash(passwordHash).
+			SetEmailVerifiedAt(time.Now()).
+			Save(ctx)
+	})
+}
+
+// verified is what makes a User Verified, shared by VerifyEmail and RegisterVerified:
+// write stores the User's verified state, then the User's first Workspace is created
+// and `user.email_verify` recorded in its Audit log, all in one transaction.
+func (a *Accounts) verified(ctx context.Context, workspaceName string, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, error) {
 	for {
 		var verified *ent.User
+		written := false
 		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-			u, err := tx.User.UpdateOneID(id).
-				SetPasswordHash(passwordHash).
-				SetEmailVerifiedAt(time.Now()).
-				AddSessionEpoch(1).
-				Save(ctx)
+			u, err := write(tx)
 			if err != nil {
 				return err
 			}
-			if _, err := createWorkspaceIn(ctx, tx, id, workspaceName); err != nil {
+			written = true
+			if _, err := createWorkspaceIn(ctx, tx, u.ID, workspaceName); err != nil {
 				return err
 			}
 			verified = u
 			return RecordUserAction(ctx, tx, pub, u, events.ActionUserEmailVerify, nil)
 		})
-		if db.IsUniqueViolation(err) {
+		if written && db.IsUniqueViolation(err) {
 			continue // lost a race on the slug; the next attempt sees it taken
 		}
 		return verified, err
