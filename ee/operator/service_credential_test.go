@@ -20,6 +20,7 @@ import (
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -172,8 +173,9 @@ func TestIssuingShowsTheValueOnceAndStoresOnlyAHash(t *testing.T) {
 	assert.True(t, strings.HasPrefix(issued.Value, "omsc_"))
 	row := h.env.DB.ServiceCredential.GetX(t.Context(), issued.ID)
 	assert.NotContains(t, issued.Value, row.SecretHash)
-	secret := issued.Value[strings.LastIndex(issued.Value, "_")+1:]
-	assert.NotContains(t, row.SecretHash, secret, "only a hash of the secret is stored")
+	parsed := credentials.ParseServiceCredential(issued.Value)
+	require.NotNil(t, parsed)
+	assert.NotContains(t, row.SecretHash, parsed.Secret, "only a hash of the secret is stored")
 	assert.Equal(t, "service-c", identity(t, h.env.ServiceClient(t, issued.Value)).Name, "the value works")
 }
 
