@@ -34,8 +34,8 @@ export const zProblemDetails = z.object({
 });
 
 /**
- * Accept an invite. name + password are required only when the invitee has no
- * account yet; ignored otherwise.
+ * Accept an invite. name + password are required unless the invited address has a
+ * Verified User (answer 422 otherwise); ignored for a Verified User.
  */
 export const zSiteAcceptInvitationInput = z.object({
   name: z.exactOptional(z.string()),

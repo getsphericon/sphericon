@@ -3083,8 +3083,8 @@ func (*ProblemDetailsHeaders) siteSecondFactorDisableRes()                 {}
 func (*ProblemDetailsHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
 
-// Accept an invite. name + password are required only when the invitee has no account yet; ignored
-// otherwise.
+// Accept an invite. name + password are required unless the invited address has a Verified User
+// (answer 422 otherwise); ignored for a Verified User.
 // Ref: #/components/schemas/SiteAcceptInvitationInput
 type SiteAcceptInvitationInput struct {
 	Name     OptString `json:"name"`
@@ -7160,7 +7160,8 @@ type SiteInvitationLookupResult struct {
 	WorkspaceName string `json:"workspaceName"`
 	// The address the invite was sent to.
 	Email EmailAddress `json:"email"`
-	// True when that email already has a sphericon account (accept needs no signup).
+	// True only when that email has a Verified User; an address with no User or an Unverified User needs a
+	// name and a password to accept.
 	HasAccount bool `json:"hasAccount"`
 }
 
