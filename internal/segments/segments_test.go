@@ -69,25 +69,25 @@ func TestCompileEvaluatesAgainstContacts(t *testing.T) {
 	assert.Equal(t, 3, count(segments.Group{}))
 
 	// custom:plan = pro → Ann + Cara
-	assert.Equal(t, 2, count(segments.Group{Rules: marshal(rule("custom:plan", "=", "pro"))}))
+	assert.Equal(t, 2, count(segments.Group{Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 
 	// and: first_name=Ann AND plan=pro → just Ann
 	assert.Equal(t, 1, count(segments.Group{
 		Combinator: "and",
-		Rules:      marshal(rule("first_name", "=", "Ann"), rule("custom:plan", "=", "pro")),
+		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("custom:plan", "eq", "pro")),
 	}))
 
 	// or: first_name=Ann OR first_name=Bob → 2
 	assert.Equal(t, 2, count(segments.Group{
 		Combinator: "or",
-		Rules:      marshal(rule("first_name", "=", "Ann"), rule("first_name", "=", "Bob")),
+		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("first_name", "eq", "Bob")),
 	}))
 
 	// custom:plan notNull → all 3 have it
 	assert.Equal(t, 3, count(segments.Group{Rules: marshal(rule("custom:plan", "notNull", ""))}))
 
 	// not: NOT(plan=pro) → only Bob (free)
-	assert.Equal(t, 1, count(segments.Group{Not: true, Rules: marshal(rule("custom:plan", "=", "pro"))}))
+	assert.Equal(t, 1, count(segments.Group{Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 }
 
 func TestEventConditions(t *testing.T) {
@@ -184,7 +184,7 @@ func TestTagConditions(t *testing.T) {
 	assert.Equal(t, 0, count(has(fixtures.TagGlobexName)))
 
 	// Validation: only has / doesNotHave are valid for the tag field.
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"tag","operator":"=","value":"vip"}]}`))
+	assert.Error(t, validate(t, env, `{"rules":[{"field":"tag","operator":"eq","value":"vip"}]}`))
 }
 
 func TestParseAndValidate(t *testing.T) {
@@ -196,10 +196,10 @@ func TestParseAndValidate(t *testing.T) {
 	require.NoError(t, validate(t, env, `{"combinator":"or","rules":[{"field":"email","operator":"contains","value":"x"}]}`))
 
 	// nested group
-	require.NoError(t, validate(t, env, `{"combinator":"and","rules":[{"combinator":"or","rules":[{"field":"first_name","operator":"=","value":"Ann"}]}]}`))
+	require.NoError(t, validate(t, env, `{"combinator":"and","rules":[{"combinator":"or","rules":[{"field":"first_name","operator":"eq","value":"Ann"}]}]}`))
 
 	// unknown field
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"nope","operator":"=","value":"x"}]}`))
+	assert.Error(t, validate(t, env, `{"rules":[{"field":"nope","operator":"eq","value":"x"}]}`))
 	// unsupported operator
 	assert.Error(t, validate(t, env, `{"rules":[{"field":"email","operator":"weird","value":"x"}]}`))
 	// malformed JSON

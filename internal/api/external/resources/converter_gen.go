@@ -184,7 +184,7 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentR
 	if source != nil {
 		externalapiSegmentResource.ID = entityID((*source).ID)
 		externalapiSegmentResource.Name = (*source).Name
-		externalapiSegmentResource.Definition = optString((*source).Definition)
+		externalapiSegmentResource.Definition = segmentDefinition((*source).Definition)
 		externalapiSegmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

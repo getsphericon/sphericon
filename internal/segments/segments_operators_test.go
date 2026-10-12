@@ -63,8 +63,8 @@ func TestPlainColumnOperators(t *testing.T) {
 		rule segments.Rule
 		want []string
 	}{
-		"equals":      {rule("first_name", "=", "Anna"), []string{"anna@ops.test"}},
-		"not equals":  {rule("first_name", "!=", "Anna"), []string{"andy@ops.test", "bella@ops.test"}},
+		"equals":      {rule("first_name", "eq", "Anna"), []string{"anna@ops.test"}},
+		"not equals":  {rule("first_name", "neq", "Anna"), []string{"andy@ops.test", "bella@ops.test"}},
 		"contains":    {rule("first_name", "contains", "ELL"), []string{"bella@ops.test"}},
 		"begins with": {rule("email", "beginsWith", "an"), []string{"andy@ops.test", "anna@ops.test"}},
 		"null":        {rule("phone", "null", ""), []string{"andy@ops.test"}},
@@ -87,8 +87,8 @@ func TestCustomFieldOperators(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	assert.Equal(t, []string{"one@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "=", "pro"))))
-	assert.Equal(t, []string{"two@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "!=", "pro"))))
+	assert.Equal(t, []string{"one@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "eq", "pro"))))
+	assert.Equal(t, []string{"two@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "neq", "pro"))))
 	assert.Equal(t, []string{"one@ops.test", "two@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "notNull", ""))))
 	// "contains" on a JSON column is membership of a JSON array, not substring.
 	assert.Equal(t, []string{"one@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:tags", "contains", "beta"))))
@@ -105,13 +105,13 @@ func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 		SetCustomFields(map[string]any{"it's": "here"}).Save(ctx)
 	require.NoError(t, err)
 
-	assert.Equal(t, []string{"quote@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:it's", "=", "here"))))
+	assert.Equal(t, []string{"quote@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:it's", "eq", "here"))))
 
 	// Even a declared key that looks like SQL is data: the catalogue accepts any key
 	// ingest created, and it only ever reaches the query as a bound argument.
 	payload := "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
 	declare(t, env, payload)
-	for _, op := range []string{"=", "!=", "contains", "notNull"} {
+	for _, op := range []string{"eq", "neq", "contains", "notNull"} {
 		assert.Empty(t, opsEmails(t, env, opsGroup(rule("custom:"+payload, op, "a"))), op)
 	}
 }
@@ -126,7 +126,7 @@ func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 		"declared by another Workspace":  fixtures.CustomFieldGlobexKey,
 		"injection that nobody declared": "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a",
 	} {
-		def, err := json.Marshal(opsGroup(rule("custom:"+key, "=", "a")))
+		def, err := json.Marshal(opsGroup(rule("custom:"+key, "eq", "a")))
 		require.NoError(t, err)
 		_, err = m.Preview(context.Background(), ws, string(def))
 		require.ErrorIs(t, err, segments.ErrInvalidDefinition, name)
@@ -150,16 +150,16 @@ func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
 		rule segments.Rule
 		msg  string
 	}{
-		"unknown column":                {rule("password", "=", "x"), "unknown field"},
+		"unknown column":                {rule("password", "eq", "x"), "unknown field"},
 		"unsupported plain operator":    {rule("email", "regex", "x"), "unsupported operator"},
 		"event without action":          {rule("event:", "performed", ""), "unknown field"},
-		"unsupported event operator":    {rule("event:signup", "=", ""), "for event field"},
+		"unsupported event operator":    {rule("event:signup", "eq", ""), "for event field"},
 		"bad event window":              {rule("event:signup", "performed", "abc"), "event window"},
 		"negative event window":         {rule("event:signup", "performed", "-3"), "event window"},
-		"unsupported tag operator":      {rule("tag", "=", "vip"), "for tag field"},
+		"unsupported tag operator":      {rule("tag", "eq", "vip"), "for tag field"},
 		"blank tag name":                {rule("tag", "has", "   "), "tag name is required"},
 		"unsupported json operator":     {rule("custom:plan", "beginsWith", "p"), "for json field"},
-		"json prefix without a key":     {rule("custom:", "=", "x"), "unknown field"},
+		"json prefix without a key":     {rule("custom:", "eq", "x"), "unknown field"},
 		"plain operator on json column": {rule("custom:plan", "null", ""), "for json field"},
 	} {
 		_, err := segments.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule))
@@ -185,12 +185,12 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	assert.Contains(t, err.Error(), "malformed group")
 
 	// A leaf whose value is not a string.
-	_, err = segments.Compile(ctx, ws, segments.Group{Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"=","value":{"a":1}}`)}})
+	_, err = segments.Compile(ctx, ws, segments.Group{Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":{"a":1}}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// An error deep in a nested group is reported with its path.
-	nested := opsGroup(opsGroup(rule("password", "=", "x")))
+	nested := opsGroup(opsGroup(rule("password", "eq", "x")))
 	_, err = segments.Compile(ctx, ws, nested)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rule 0: rule 0: unknown field")
@@ -205,7 +205,7 @@ func TestContactPredicateRefusesInvalidDefinitions(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid segment definition")
 
-	_, err = segments.ContactPredicate(ctx, ws, `{"combinator":"and","rules":[{"field":"nope","operator":"=","value":"x"}]}`)
+	_, err = segments.ContactPredicate(ctx, ws, `{"combinator":"and","rules":[{"field":"nope","operator":"eq","value":"x"}]}`)
 	require.Error(t, err)
 
 	p, err := segments.ContactPredicate(ctx, ws, "")

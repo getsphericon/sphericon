@@ -243,14 +243,6 @@ export const zSiteCreateEmailTemplateInput = z.object({
 });
 
 /**
- * Site request body for creating a segment
- */
-export const zSiteCreateSegmentInput = z.object({
-  name: z.string(),
-  definition: z.string()
-});
-
-/**
  * Site request body for adding a sending domain
  */
 export const zSiteCreateSendingDomainInput = z.object({
@@ -422,13 +414,6 @@ export const zSiteOAuthDecisionResult = z.object({
 });
 
 /**
- * Request body for previewing a rule definition's audience
- */
-export const zSitePreviewSegmentInput = z.object({
-  definition: z.exactOptional(z.string().nullable())
-});
-
-/**
  * Result of a segment preview: how many deliverable contacts match
  */
 export const zSitePreviewSegmentResult = z.object({
@@ -510,6 +495,39 @@ export const zSiteSecondFactorStatus = z.object({
   enabled: z.boolean(),
   pending: z.boolean(),
   recoveryCodesRemaining: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * How a segment group combines its rules
+ */
+export const zSiteSegmentCombinator = z.enum(['and', 'or']);
+
+/**
+ * What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and
+ * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
+ * notPerformed; the tag field takes has and doesNotHave.
+ */
+export const zSiteSegmentOperator = z.enum([
+  'eq',
+  'neq',
+  'contains',
+  'beginsWith',
+  'null',
+  'notNull',
+  'performed',
+  'notPerformed',
+  'has',
+  'doesNotHave'
+]);
+
+/**
+ * One condition of a segment: a field, an operator and a value
+ */
+export const zSiteSegmentRule = z.object({
+  kind: z.enum(['rule']),
+  field: z.string(),
+  operator: zSiteSegmentOperator,
+  value: z.exactOptional(z.string())
 });
 
 /**
@@ -721,14 +739,6 @@ export const zSiteUpdateMeInput = z.object({
  */
 export const zSiteUpdateMembershipInput = z.object({
   role: zSiteMembershipRole
-});
-
-/**
- * Site request body for updating a segment
- */
-export const zSiteUpdateSegmentInput = z.object({
-  name: z.exactOptional(z.string()),
-  definition: z.exactOptional(z.string())
 });
 
 /**
@@ -1143,17 +1153,6 @@ export const zSiteScheduleBroadcastInput = z.object({
 });
 
 /**
- * Segment resource used by the site UI
- */
-export const zSiteSegmentResource = z.object({
-  id: zEntityId,
-  name: z.string(),
-  definition: z.exactOptional(z.string()),
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
-});
-
-/**
  * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
  * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
  * private key is never exposed. `verified` is a live property re-checked in the
@@ -1248,6 +1247,59 @@ export const zSiteWorkspaceResource = z.object({
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp
+});
+
+/**
+ * Site request body for creating a segment
+ */
+export const zSiteCreateSegmentInput = z.object({
+  name: z.string(),
+  definition: z.lazy((): any => zSiteSegmentRuleGroup)
+});
+
+/**
+ * Request body for previewing a rule definition's audience
+ */
+export const zSitePreviewSegmentInput = z.object({
+  definition: z.exactOptional(z.lazy((): any => zSiteSegmentRuleGroup))
+});
+
+/**
+ * Segment resource used by the site UI
+ */
+export const zSiteSegmentResource = z.object({
+  id: zEntityId,
+  name: z.string(),
+  definition: z.exactOptional(z.lazy((): any => zSiteSegmentRuleGroup)),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
+ * A group of rules combined with and/or, optionally negated. An empty group matches every
+ * contact (an empty negated group matches none).
+ */
+export const zSiteSegmentRuleGroup = z.object({
+  kind: z.enum(['group']),
+  combinator: zSiteSegmentCombinator,
+  not: z.exactOptional(z.boolean()),
+  rules: z.array(z.lazy((): any => zSiteSegmentRuleNode))
+});
+
+/**
+ * A rule or a nested group inside a segment group, discriminated by `kind`.
+ */
+export const zSiteSegmentRuleNode = z.discriminatedUnion('kind', [
+  zSiteSegmentRule.extend({ kind: z.literal('rule') }),
+  zSiteSegmentRuleGroup.extend({ kind: z.literal('group') })
+]);
+
+/**
+ * Site request body for updating a segment
+ */
+export const zSiteUpdateSegmentInput = z.object({
+  name: z.exactOptional(z.string()),
+  definition: z.exactOptional(zSiteSegmentRuleGroup)
 });
 
 /**
@@ -2212,48 +2264,6 @@ export const zSiteWorkspacesSetSecondFactorRequirementPath = z.object({
  */
 export const zSiteWorkspacesSetSecondFactorRequirementResponse = zSiteWorkspaceResource;
 
-export const zSiteSegmentsListPath = z.object({
-  slug: z.string()
-});
-
-export const zSiteSegmentsListQuery = z.object({
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
-});
-
-/**
- * Paginated response
- */
-export const zSiteSegmentsListResponse = z.object({
-  items: z.array(zSiteSegmentResource),
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-export const zSiteSegmentsCreateBody = zSiteCreateSegmentInput;
-
-export const zSiteSegmentsCreatePath = z.object({
-  slug: z.string()
-});
-
-/**
- * The request has succeeded and a new resource has been created as a result.
- */
-export const zSiteSegmentsCreateResponse = zSiteSegmentResource;
-
-export const zSiteSegmentsPreviewBody = zSitePreviewSegmentInput;
-
-export const zSiteSegmentsPreviewPath = z.object({
-  slug: z.string()
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteSegmentsPreviewResponse = zSitePreviewSegmentResult;
-
 export const zSiteSegmentsDeletePath = z.object({
   slug: z.string(),
   id: zEntityId
@@ -2263,28 +2273,6 @@ export const zSiteSegmentsDeletePath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteSegmentsDeleteResponse = z.void();
-
-export const zSiteSegmentsGetPath = z.object({
-  slug: z.string(),
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteSegmentsGetResponse = zSiteSegmentResource;
-
-export const zSiteSegmentsUpdateBody = zSiteUpdateSegmentInput;
-
-export const zSiteSegmentsUpdatePath = z.object({
-  slug: z.string(),
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteSegmentsUpdateResponse = zSiteSegmentResource;
 
 export const zSiteSendingDomainsListPath = z.object({
   slug: z.string()
@@ -2583,3 +2571,67 @@ export const zSiteWebhooksUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteWebhooksUpdateResponse = zSiteWebhookEndpointResource;
+
+export const zSiteSegmentsListPath = z.object({
+  slug: z.string()
+});
+
+export const zSiteSegmentsListQuery = z.object({
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+});
+
+/**
+ * Paginated response
+ */
+export const zSiteSegmentsListResponse = z.object({
+  items: z.array(zSiteSegmentResource),
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+export const zSiteSegmentsCreateBody = zSiteCreateSegmentInput;
+
+export const zSiteSegmentsCreatePath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteSegmentsCreateResponse = zSiteSegmentResource;
+
+export const zSiteSegmentsPreviewBody = zSitePreviewSegmentInput;
+
+export const zSiteSegmentsPreviewPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSegmentsPreviewResponse = zSitePreviewSegmentResult;
+
+export const zSiteSegmentsGetPath = z.object({
+  slug: z.string(),
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSegmentsGetResponse = zSiteSegmentResource;
+
+export const zSiteSegmentsUpdateBody = zSiteUpdateSegmentInput;
+
+export const zSiteSegmentsUpdatePath = z.object({
+  slug: z.string(),
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSegmentsUpdateResponse = zSiteSegmentResource;

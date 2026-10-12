@@ -49,14 +49,14 @@ func TestExternalSegmentsWrite(t *testing.T) {
 
 	bad, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:       "Bad",
-		Definition: `{"combinator":"and","rules":[{"field":"nope","operator":"=","value":"x"}]}`,
+		Definition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`),
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsCreateUnprocessableEntity{}, bad)
 
-	const def = `{"combinator":"and","rules":[{"field":"custom:plan","operator":"=","value":"pro"}]}`
+	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`
 	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
-		Name: "Pros", Definition: def,
+		Name: "Pros", Definition: testhelper.ExternalRuleGroup(t, def),
 	})
 	require.NoError(t, err)
 	seg, isSeg := created.(*externalapi.SegmentResource)
@@ -68,7 +68,7 @@ func TestExternalSegmentsWrite(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Pros 2", upd.(*externalapi.SegmentResource).Name)
 
-	badUpd, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Definition: externalapi.NewOptString(`{`)},
+	badUpd, err := c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Definition: externalapi.NewOptSegmentRuleGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))},
 		externalapi.SegmentsUpdateParams{ID: seg.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsUpdateUnprocessableEntity{}, badUpd)
@@ -87,16 +87,16 @@ func TestExternalSegmentsPreview(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "segments:read")
 
-	const def = `{"combinator":"and","rules":[{"field":"custom:plan","operator":"=","value":"pro"}]}`
+	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`
 	want, err := segments.New().Preview(ctx, env.DB.Scoped(1), def)
 	require.NoError(t, err)
-	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Definition: externalapi.NewOptNilString(def)})
+	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Definition: externalapi.NewOptSegmentRuleGroup(testhelper.ExternalRuleGroup(t, def))})
 	require.NoError(t, err)
 	ok, isOK := res.(*externalapi.PreviewSegmentResult)
 	require.Truef(t, isOK, "got %T", res)
 	assert.EqualValues(t, want, ok.Count)
 
-	bad, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Definition: externalapi.NewOptNilString(`{`)})
+	bad, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Definition: externalapi.NewOptSegmentRuleGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsPreviewUnprocessableEntity{}, bad)
 }
@@ -115,7 +115,10 @@ func TestExternalSegmentsScopes(t *testing.T) {
 
 	// Read scope cannot write.
 	ro := env.ExternalScoped(t, "segments:read")
-	cr, err := ro.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "x"})
+	cr, err := ro.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
+		Name:       "x",
+		Definition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`),
+	})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsCreateUnauthorized{}, cr)
 	up, err := ro.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentActiveID)})

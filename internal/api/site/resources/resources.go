@@ -14,6 +14,7 @@ import (
 	"github.com/mokevnin/sphericon/ent/outboundmessage"
 	siteapi "github.com/mokevnin/sphericon/gen/site"
 	"github.com/mokevnin/sphericon/internal/automations"
+	"github.com/mokevnin/sphericon/internal/segments"
 )
 
 // Converter maps ent entities to site API resources. goverter generates the
@@ -27,7 +28,6 @@ import (
 // goverter:extend entityID
 // goverter:extend timestamp
 // goverter:extend optNilString
-// goverter:extend optString
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
 // goverter:extend optNilTimeZone
@@ -38,6 +38,7 @@ import (
 // goverter:extend eventProperties
 // goverter:extend broadcastStats
 // goverter:extend automationSteps
+// goverter:extend segmentDefinition
 // goverter:extend emailVerified
 // goverter:extend requiredEntityID
 // goverter:extend transactionalChannel
@@ -198,13 +199,6 @@ func transactionalError(m ent.OutboundMessage) siteapi.OptNilString {
 	return siteapi.NewOptNilString(*m.Reason)
 }
 
-func optString(v *string) siteapi.OptString {
-	if v == nil {
-		return siteapi.OptString{}
-	}
-	return siteapi.NewOptString(*v)
-}
-
 func optNilString(v *string) siteapi.OptNilString {
 	if v == nil {
 		return siteapi.OptNilString{}
@@ -336,4 +330,17 @@ func AutomationSteps(steps []siteapi.SiteAutomationStep) []automations.Step {
 		})
 	}
 	return out
+}
+
+// segmentDefinition decodes the stored rule group into the typed DTO. A segment with no
+// definition (or one that no longer decodes) reads as having none.
+func segmentDefinition(def *string) siteapi.OptSiteSegmentRuleGroup {
+	if def == nil || *def == "" {
+		return siteapi.OptSiteSegmentRuleGroup{}
+	}
+	var group siteapi.SiteSegmentRuleGroup
+	if err := segments.Decode(*def, &group); err != nil {
+		return siteapi.OptSiteSegmentRuleGroup{}
+	}
+	return siteapi.NewOptSiteSegmentRuleGroup(group)
 }

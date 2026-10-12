@@ -176,9 +176,9 @@ func (c *compiler) rule(r Rule) (predicate.Contact, error) {
 		return nil, fmt.Errorf("unknown field %q", r.Field)
 	}
 	switch r.Operator {
-	case "=":
+	case "eq":
 		return f.eq(r.Value), nil
-	case "!=":
+	case "neq":
 		return f.neq(r.Value), nil
 	case "contains":
 		return f.contains(r.Value), nil
@@ -263,9 +263,9 @@ func (c *compiler) custom(key, op, value string) (predicate.Contact, error) {
 
 	var write func(b *sql.Builder, column string)
 	switch op {
-	case "=", "!=":
+	case "eq", "neq":
 		cmp := " = "
-		if op == "!=" {
+		if op == "neq" {
 			cmp = " <> "
 		}
 		write = func(b *sql.Builder, column string) {
@@ -308,6 +308,24 @@ func (c *compiler) requireCustomField(key string) error {
 	}
 	if _, ok := c.keys[key]; !ok {
 		return fmt.Errorf("unknown custom field %q", key)
+	}
+	return nil
+}
+
+// Encode stores a rule group given as an API DTO. The API's typed tree is the stored
+// shape: a definition is saved as its JSON, and ContactPredicate reads it back.
+func Encode(group json.Marshaler) (string, error) {
+	b, err := group.MarshalJSON()
+	if err != nil {
+		return "", fmt.Errorf("encode segment definition: %w", err)
+	}
+	return string(b), nil
+}
+
+// Decode loads a stored definition into an API DTO.
+func Decode(def string, into json.Unmarshaler) error {
+	if err := into.UnmarshalJSON([]byte(def)); err != nil {
+		return fmt.Errorf("decode segment definition: %w", err)
 	}
 	return nil
 }

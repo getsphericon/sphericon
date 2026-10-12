@@ -43,9 +43,13 @@ func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSe
 	}
 
 	ws := auth.TokenScoped(ctx)
+	def, err := segments.Encode(&req.Definition)
+	if err != nil {
+		return nil, err
+	}
 	s, err := h.segments.Create(ctx, ws, segments.CreateInput{
 		Name:       req.Name,
-		Definition: &req.Definition,
+		Definition: &def,
 	})
 	if errors.Is(err, segments.ErrInvalidDefinition) {
 		res := externalapi.SegmentsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
@@ -94,9 +98,13 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 		res := externalapi.SegmentsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
 		return &res, nil
 	}
-	in := segments.UpdateInput{
-		Name:       convert.StringPtr(req.Name),
-		Definition: convert.StringPtr(req.Definition),
+	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
+	if group, ok := req.Definition.Get(); ok {
+		def, err := segments.Encode(&group)
+		if err != nil {
+			return nil, err
+		}
+		in.Definition = &def
 	}
 	s, err := h.segments.Update(ctx, ws, id, in)
 	if errors.Is(err, segments.ErrInvalidDefinition) {
@@ -145,8 +153,11 @@ func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.Preview
 
 	ws := auth.TokenScoped(ctx)
 	def := ""
-	if v := convert.StringPtr(req.Definition); v != nil {
-		def = *v
+	if group, ok := req.Definition.Get(); ok {
+		var err error
+		if def, err = segments.Encode(&group); err != nil {
+			return nil, err
+		}
 	}
 	count, err := h.segments.Preview(ctx, ws, def)
 	if errors.Is(err, segments.ErrInvalidDefinition) {

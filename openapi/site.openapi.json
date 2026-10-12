@@ -8337,8 +8337,12 @@
             "description": "Segment name"
           },
           "definition": {
-            "type": "string",
-            "description": "Segment definition: the rule query (react-querybuilder JSON); an empty rule group matches all contacts"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSegmentRuleGroup"
+              }
+            ],
+            "description": "Segment definition: the rule group; an empty group matches all contacts"
           }
         },
         "description": "Site request body for creating a segment"
@@ -9066,9 +9070,12 @@
         "type": "object",
         "properties": {
           "definition": {
-            "type": "string",
-            "nullable": true,
-            "description": "Rule definition (react-querybuilder JSON); empty means all contacts"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSegmentRuleGroup"
+              }
+            ],
+            "description": "Rule definition; absent means all contacts"
           }
         },
         "description": "Request body for previewing a rule definition's audience"
@@ -9262,6 +9269,27 @@
         },
         "description": "The authenticated User's Second factor (ADR 0020). Recovery codes are never\nreadable here: only how many are left."
       },
+      "SiteSegmentCombinator": {
+        "type": "string",
+        "enum": ["and", "or"],
+        "description": "How a segment group combines its rules"
+      },
+      "SiteSegmentOperator": {
+        "type": "string",
+        "enum": [
+          "eq",
+          "neq",
+          "contains",
+          "beginsWith",
+          "null",
+          "notNull",
+          "performed",
+          "notPerformed",
+          "has",
+          "doesNotHave"
+        ],
+        "description": "What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; a custom field takes eq, neq, contains and notNull; an event takes performed and\nnotPerformed; the tag field takes has and doesNotHave."
+      },
       "SiteSegmentResource": {
         "type": "object",
         "required": ["id", "name", "createdAt", "updatedAt"],
@@ -9279,8 +9307,12 @@
             "description": "Segment name"
           },
           "definition": {
-            "type": "string",
-            "description": "Segment definition: the rule query (react-querybuilder JSON); an empty rule group matches all contacts"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSegmentRuleGroup"
+              }
+            ],
+            "description": "Segment definition: the rule group; an empty group matches all contacts"
           },
           "createdAt": {
             "allOf": [
@@ -9300,6 +9332,82 @@
           }
         },
         "description": "Segment resource used by the site UI"
+      },
+      "SiteSegmentRule": {
+        "type": "object",
+        "required": ["kind", "field", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["rule"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, or \"event:<action>\""
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSegmentOperator"
+              }
+            ],
+            "description": "How the field is tested"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value to test against: a tag name, a day window for events (\"\" = ever), blank for\nnull and notNull"
+          }
+        },
+        "description": "One condition of a segment: a field, an operator and a value"
+      },
+      "SiteSegmentRuleGroup": {
+        "type": "object",
+        "required": ["kind", "combinator", "rules"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSegmentCombinator"
+              }
+            ],
+            "description": "How the rules combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSegmentRuleNode"
+            },
+            "description": "The group's rules and nested groups"
+          }
+        },
+        "description": "A group of rules combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none)."
+      },
+      "SiteSegmentRuleNode": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SiteSegmentRule"
+          },
+          {
+            "$ref": "#/components/schemas/SiteSegmentRuleGroup"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "rule": "#/components/schemas/SiteSegmentRule",
+            "group": "#/components/schemas/SiteSegmentRuleGroup"
+          }
+        },
+        "description": "A rule or a nested group inside a segment group, discriminated by `kind`."
       },
       "SiteSendLimitSource": {
         "type": "string",
@@ -9986,8 +10094,12 @@
             "description": "Segment name"
           },
           "definition": {
-            "type": "string",
-            "description": "Segment definition: the rule query (react-querybuilder JSON); an empty rule group matches all contacts"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSegmentRuleGroup"
+              }
+            ],
+            "description": "Segment definition: the rule group; an empty group matches all contacts"
           }
         },
         "description": "Site request body for updating a segment"

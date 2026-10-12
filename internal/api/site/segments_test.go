@@ -42,7 +42,7 @@ func TestSiteSegmentsScopedToWorkspace(t *testing.T) {
 	// Create scopes the segment to the workspace and returns the resource.
 	created, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
 		Name:       "VIP customers",
-		Definition: `{"combinator":"and","rules":[{"field":"custom:plan","operator":"=","value":"vip"}]}`,
+		Definition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"vip"}]}`),
 	}, siteapi.SiteSegmentsCreateParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteSegmentResource)

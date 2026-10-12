@@ -13,6 +13,7 @@ import (
 	"github.com/mokevnin/sphericon/ent"
 	externalapi "github.com/mokevnin/sphericon/gen/external"
 	"github.com/mokevnin/sphericon/internal/automations"
+	"github.com/mokevnin/sphericon/internal/segments"
 )
 
 // automationSteps decodes the stored definition into the typed steps DTO. A
@@ -64,7 +65,6 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend entityID
 // goverter:extend timestamp
 // goverter:extend optNilString
-// goverter:extend optString
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
 // goverter:extend optNilTimestamp
@@ -72,6 +72,7 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend contactCustomFields
 // goverter:extend optNilInt32
 // goverter:extend exportJSON
+// goverter:extend segmentDefinition
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
@@ -160,13 +161,6 @@ func optNilString(v *string) externalapi.OptNilString {
 	return externalapi.NewOptNilString(*v)
 }
 
-func optString(v *string) externalapi.OptString {
-	if v == nil {
-		return externalapi.OptString{}
-	}
-	return externalapi.NewOptString(*v)
-}
-
 func optNilEmailAddress(v *string) externalapi.OptNilEmailAddress {
 	if v == nil {
 		return externalapi.OptNilEmailAddress{}
@@ -208,4 +202,17 @@ func contactCustomFields(m map[string]any) externalapi.OptNilContactResourceCust
 		fields[k] = jx.Raw(b)
 	}
 	return externalapi.NewOptNilContactResourceCustomFields(fields)
+}
+
+// segmentDefinition decodes the stored rule group into the typed DTO. A segment with no
+// definition (or one that no longer decodes) reads as having none.
+func segmentDefinition(def *string) externalapi.OptSegmentRuleGroup {
+	if def == nil || *def == "" {
+		return externalapi.OptSegmentRuleGroup{}
+	}
+	var group externalapi.SegmentRuleGroup
+	if err := segments.Decode(*def, &group); err != nil {
+		return externalapi.OptSegmentRuleGroup{}
+	}
+	return externalapi.NewOptSegmentRuleGroup(group)
 }

@@ -14,6 +14,7 @@ import {
   handleSiteSegmentsList,
   handleSiteSegmentsUpdate,
 } from '../../generated/site/msw.gen.ts'
+import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
 import { segmentsCreateRoute, segmentsEditRoute } from '../../router.tsx'
 import { page } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -22,7 +23,11 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { SegmentCreatePage, SegmentEditPage } from './resource.tsx'
 
-const RULE = '{"combinator":"and","rules":[{"field":"email","operator":"contains","value":"@x"}]}'
+const RULE: SiteSegmentRuleGroup = {
+  kind: 'group',
+  combinator: 'and',
+  rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
+}
 
 const CREATE_ROUTE = routeMount(segmentsCreateRoute, { slug: 'test' })
 
@@ -77,12 +82,10 @@ test('creating a segment sends name and a rule, refreshes the list and opens the
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.poll(() => bodies.length).toBe(1)
-  // The rule builder stamps its own id on the group; the rule itself is the empty group.
-  expect(bodies[0]).toEqual({ name: 'Everyone', definition: expect.any(String) })
-  expect(JSON.parse(String(Reflect.get(bodies[0] ?? {}, 'definition')))).toMatchObject({
-    combinator: 'and',
-    rules: [],
-  })
+  // A new segment starts as the empty rule group, which matches every contact.
+  expect(bodies).toEqual([
+    { name: 'Everyone', definition: { kind: 'group', combinator: 'and', rules: [] } },
+  ])
   await expect.element(screen.getByText('Segment created')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
