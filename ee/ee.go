@@ -22,8 +22,10 @@ import (
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -99,13 +101,21 @@ func (e *Edition) Operator(bus *events.Bus, sender messaging.EmailSender) interf
 // Service is the service endpoints of the Operator surface (ADR 0026) for the
 // composition root to mount on the internal listener, or nil without the `operator`
 // license, in which case no listener is bound and nothing is served.
-func (e *Edition) Service() interface {
+func (e *Edition) Service(bus *events.Bus) interface {
 	Server(opts ...serviceapi.ServerOption) (http.Handler, error)
 } {
 	if e.operatorSessions == nil {
 		return nil
 	}
-	return operator.NewServiceSurface(e.Operators)
+	return operator.NewServiceSurface(e.Operators, bus)
+}
+
+// Freezer is the Operator holds' seat on the send chokepoint (ADR 0009, 0015): any
+// active hold freezes a Workspace's sending, and a lapsed one is ignored at once. It
+// honours holds only with the `operator` license, so an unlicensed instance never
+// freezes on a row it could not have written.
+func (e *Edition) Freezer() outbound.Freezer {
+	return holds.Freezer{Now: e.now, Enabled: func() bool { return e.lic.Has(licensekey.FeatureOperator) }}
 }
 
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),

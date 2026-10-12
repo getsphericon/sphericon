@@ -369,6 +369,14 @@ const (
 	GlobexSlug = "globex"
 	// GlobexUsageSnapshotID is from fixtures/usages.
 	GlobexUsageSnapshotID = 2
+	// HoldAcmeLapsedID is from fixtures/holds.
+	HoldAcmeLapsedID = 1
+	// HoldAcmeLapsedKey is from fixtures/holds.
+	HoldAcmeLapsedKey = "lapsed"
+	// HoldGlobexLapsedID is from fixtures/holds.
+	HoldGlobexLapsedID = 900
+	// HoldGlobexLapsedKey is from fixtures/holds.
+	HoldGlobexLapsedKey = "lapsed-globex"
 	// HooliCollectKey is from fixtures/workspaces.
 	HooliCollectKey = "omck_test_hooli_collect_key"
 	// HooliID is from fixtures/workspaces.

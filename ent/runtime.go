@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -368,6 +369,37 @@ func init() {
 	eventDescAction := eventFields[7].Descriptor()
 	// event.ActionValidator is a validator for the "action" field. It is called by the builders before save.
 	event.ActionValidator = eventDescAction.Validators[0].(func(string) error)
+	holdMixin := schema.Hold{}.Mixin()
+	holdMixinFields0 := holdMixin[0].Fields()
+	_ = holdMixinFields0
+	holdFields := schema.Hold{}.Fields()
+	_ = holdFields
+	// holdDescCreatedAt is the schema descriptor for created_at field.
+	holdDescCreatedAt := holdMixinFields0[0].Descriptor()
+	// hold.DefaultCreatedAt holds the default value on creation for the created_at field.
+	hold.DefaultCreatedAt = holdDescCreatedAt.Default.(func() time.Time)
+	// holdDescUpdatedAt is the schema descriptor for updated_at field.
+	holdDescUpdatedAt := holdMixinFields0[1].Descriptor()
+	// hold.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	hold.DefaultUpdatedAt = holdDescUpdatedAt.Default.(func() time.Time)
+	// hold.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	hold.UpdateDefaultUpdatedAt = holdDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// holdDescKey is the schema descriptor for key field.
+	holdDescKey := holdFields[1].Descriptor()
+	// hold.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	hold.KeyValidator = holdDescKey.Validators[0].(func(string) error)
+	// holdDescReasonCode is the schema descriptor for reason_code field.
+	holdDescReasonCode := holdFields[2].Descriptor()
+	// hold.ReasonCodeValidator is a validator for the "reason_code" field. It is called by the builders before save.
+	hold.ReasonCodeValidator = holdDescReasonCode.Validators[0].(func(string) error)
+	// holdDescMessage is the schema descriptor for message field.
+	holdDescMessage := holdFields[3].Descriptor()
+	// hold.MessageValidator is a validator for the "message" field. It is called by the builders before save.
+	hold.MessageValidator = holdDescMessage.Validators[0].(func(string) error)
+	// holdDescSetBy is the schema descriptor for set_by field.
+	holdDescSetBy := holdFields[5].Descriptor()
+	// hold.SetByValidator is a validator for the "set_by" field. It is called by the builders before save.
+	hold.SetByValidator = holdDescSetBy.Validators[0].(func(string) error)
 	integrationMixin := schema.Integration{}.Mixin()
 	integrationMixinFields0 := integrationMixin[0].Fields()
 	_ = integrationMixinFields0

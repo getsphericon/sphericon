@@ -757,7 +757,7 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 		edition, err := ee.New(client.Client, lic, cipher, cfg.JWTSecret, operator.Config{
-			Secret: cfg.OperatorJWTSecret, SessionTTL: cfg.OperatorSessionTTL, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
+			Secret: cfg.OperatorJWTSecret, SessionTTL: cfg.OperatorSessionTTL, HoldMaxExpiry: cfg.OperatorHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
 		})
 		if err != nil {
 			return nil, err
@@ -910,7 +910,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return &outboundModule{outbound.New(bus.Bus, resolver, tracker)}, nil
+		edition, err := do.Invoke[*ee.Edition](i)
+		if err != nil {
+			return nil, err
+		}
+		return &outboundModule{outbound.New(bus.Bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))}, nil
 	})
 
 	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).
@@ -1120,7 +1124,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		h, err := server.NewInternal(cfg, edition.Service())
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		h, err := server.NewInternal(cfg, edition.Service(bus.Bus))
 		if err != nil {
 			return nil, err
 		}

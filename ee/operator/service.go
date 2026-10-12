@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
@@ -22,10 +23,11 @@ type ServiceSurface struct {
 	security *ServiceSecurityHandler
 }
 
-// NewServiceSurface builds the surface over the module that issues and checks credentials.
-func NewServiceSurface(m *Module) *ServiceSurface {
+// NewServiceSurface builds the surface over the module that issues and checks credentials
+// and the bus its writes are audited through.
+func NewServiceSurface(m *Module, bus *events.Bus) *ServiceSurface {
 	return &ServiceSurface{
-		handlers: &ServiceHandlers{module: m},
+		handlers: &ServiceHandlers{module: m, bus: bus},
 		security: NewServiceSecurity(m, ServiceOperationScopes),
 	}
 }
@@ -45,6 +47,9 @@ var ServiceOperationScopes = map[serviceapi.OperationName][]Scope{
 	serviceapi.ServiceIdentityGetOperation:       nil,
 	serviceapi.ServiceUsageListOperation:         {ScopeUsageRead},
 	serviceapi.ServiceWorkspaceFeedListOperation: {ScopeWorkspacesRead},
+	serviceapi.ServiceHoldsListOperation:         {ScopeHoldsWrite},
+	serviceapi.ServiceHoldsSetOperation:          {ScopeHoldsWrite},
+	serviceapi.ServiceHoldsClearOperation:        {ScopeHoldsWrite},
 }
 
 // ServiceOperations lists every operation the service endpoints serve, from the
@@ -115,7 +120,10 @@ func covers(have []string, need []Scope) bool {
 }
 
 // ServiceHandlers implements serviceapi.Handler.
-type ServiceHandlers struct{ module *Module }
+type ServiceHandlers struct {
+	module *Module
+	bus    *events.Bus
+}
 
 var _ serviceapi.Handler = (*ServiceHandlers)(nil)
 

@@ -543,7 +543,7 @@ A reversible Workspace state that **freezes all outbound sending** — all three
 (Broadcast, Automation, Transactional), exactly like Workspace suspension — set by an Operator
 through the Operator surface for a reason other than reputation. Several can coexist: each is
 stored separately under its own key, with a reason shown to the Workspace Owner and an expiry the
-setter must renew, and each is cleared by its own setter or by its expiry. It is a **distinct
+setter must renew (required, and no further ahead than a configured maximum, 30 days by default), and each is cleared by its own setter or by its expiry. It is a **distinct
 cause on the same core chokepoint**, never a repurposing of suspension: the send path asks one
 question ("may this Workspace send now?") answered by several independent freeze reasons.
 Messages are **held, not failed**: they wait and go out when the hold lifts. Every change records

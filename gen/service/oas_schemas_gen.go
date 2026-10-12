@@ -37,6 +37,156 @@ type EmailAddress string
 
 type EntityId string
 
+// Setting or renewing a hold.
+// Ref: #/components/schemas/HoldInput
+type HoldInput struct {
+	// A machine code for the reason: lowercase letters, digits and underscores.
+	ReasonCode string `json:"reasonCode"`
+	// The message shown to the Workspace Owner, as given.
+	Message string `json:"message"`
+	// Required; in the future and no further than the configured maximum from now.
+	ExpiresAt Timestamp `json:"expiresAt"`
+}
+
+// GetReasonCode returns the value of ReasonCode.
+func (s *HoldInput) GetReasonCode() string {
+	return s.ReasonCode
+}
+
+// GetMessage returns the value of Message.
+func (s *HoldInput) GetMessage() string {
+	return s.Message
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *HoldInput) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// SetReasonCode sets the value of ReasonCode.
+func (s *HoldInput) SetReasonCode(val string) {
+	s.ReasonCode = val
+}
+
+// SetMessage sets the value of Message.
+func (s *HoldInput) SetMessage(val string) {
+	s.Message = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *HoldInput) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+// The active holds of a Workspace.
+// Ref: #/components/schemas/HoldList
+type HoldList struct {
+	Items []HoldResource `json:"items"`
+}
+
+// GetItems returns the value of Items.
+func (s *HoldList) GetItems() []HoldResource {
+	return s.Items
+}
+
+// SetItems sets the value of Items.
+func (s *HoldList) SetItems(val []HoldResource) {
+	s.Items = val
+}
+
+func (*HoldList) serviceHoldsListRes() {}
+
+// An Operator hold: one reversible freeze of a Workspace's outbound sending (ADR 0009).
+// Ref: #/components/schemas/HoldResource
+type HoldResource struct {
+	// The key the setter chose; unique per Workspace.
+	Key string `json:"key"`
+	// A machine code for the reason.
+	ReasonCode string `json:"reasonCode"`
+	// The message shown to the Workspace Owner, as given.
+	Message string `json:"message"`
+	// When the hold stops freezing sending unless its setter renews it.
+	ExpiresAt Timestamp `json:"expiresAt"`
+	// The name of the Service credential that last set it.
+	SetBy string `json:"setBy"`
+	// When the hold was first set.
+	CreatedAt Timestamp `json:"createdAt"`
+	// When the hold was last set or renewed.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetKey returns the value of Key.
+func (s *HoldResource) GetKey() string {
+	return s.Key
+}
+
+// GetReasonCode returns the value of ReasonCode.
+func (s *HoldResource) GetReasonCode() string {
+	return s.ReasonCode
+}
+
+// GetMessage returns the value of Message.
+func (s *HoldResource) GetMessage() string {
+	return s.Message
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *HoldResource) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// GetSetBy returns the value of SetBy.
+func (s *HoldResource) GetSetBy() string {
+	return s.SetBy
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *HoldResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *HoldResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetKey sets the value of Key.
+func (s *HoldResource) SetKey(val string) {
+	s.Key = val
+}
+
+// SetReasonCode sets the value of ReasonCode.
+func (s *HoldResource) SetReasonCode(val string) {
+	s.ReasonCode = val
+}
+
+// SetMessage sets the value of Message.
+func (s *HoldResource) SetMessage(val string) {
+	s.Message = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *HoldResource) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+// SetSetBy sets the value of SetBy.
+func (s *HoldResource) SetSetBy(val string) {
+	s.SetBy = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *HoldResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *HoldResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+func (*HoldResource) serviceHoldsSetRes() {}
+
 // NewOptInt32 returns new OptInt32 with value set to v.
 func NewOptInt32(v int32) OptInt32 {
 	return OptInt32{
@@ -581,9 +731,45 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
+func (*ProblemDetailsHeaders) serviceHoldsClearRes()        {}
+func (*ProblemDetailsHeaders) serviceHoldsListRes()         {}
+func (*ProblemDetailsHeaders) serviceHoldsSetRes()          {}
 func (*ProblemDetailsHeaders) serviceIdentityGetRes()       {}
 func (*ProblemDetailsHeaders) serviceUsageListRes()         {}
 func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes() {}
+
+// ServiceHoldsClearNoContent is response for ServiceHoldsClear operation.
+type ServiceHoldsClearNoContent struct{}
+
+func (*ServiceHoldsClearNoContent) serviceHoldsClearRes() {}
+
+type ServiceHoldsClearNotFound ProblemDetails
+
+func (*ServiceHoldsClearNotFound) serviceHoldsClearRes() {}
+
+type ServiceHoldsClearUnauthorized ProblemDetails
+
+func (*ServiceHoldsClearUnauthorized) serviceHoldsClearRes() {}
+
+type ServiceHoldsListNotFound ProblemDetails
+
+func (*ServiceHoldsListNotFound) serviceHoldsListRes() {}
+
+type ServiceHoldsListUnauthorized ProblemDetails
+
+func (*ServiceHoldsListUnauthorized) serviceHoldsListRes() {}
+
+type ServiceHoldsSetNotFound ProblemDetails
+
+func (*ServiceHoldsSetNotFound) serviceHoldsSetRes() {}
+
+type ServiceHoldsSetUnauthorized ProblemDetails
+
+func (*ServiceHoldsSetUnauthorized) serviceHoldsSetRes() {}
+
+type ServiceHoldsSetUnprocessableEntity ProblemDetails
+
+func (*ServiceHoldsSetUnprocessableEntity) serviceHoldsSetRes() {}
 
 // What a Service credential is: its name, its scopes and its expiry.
 // Ref: #/components/schemas/ServiceIdentityResource

@@ -8,6 +8,25 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// ServiceHoldsClear implements ServiceHolds_clear operation.
+	//
+	// Clear a hold by its key. Idempotent: clearing a missing hold succeeds.
+	//
+	// DELETE /workspaces/{workspaceId}/holds/{key}
+	ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (ServiceHoldsClearRes, error)
+	// ServiceHoldsList implements ServiceHolds_list operation.
+	//
+	// The holds of a Workspace that are active now; a lapsed one is not listed.
+	//
+	// GET /workspaces/{workspaceId}/holds
+	ServiceHoldsList(ctx context.Context, params ServiceHoldsListParams) (ServiceHoldsListRes, error)
+	// ServiceHoldsSet implements ServiceHolds_set operation.
+	//
+	// Set a hold under a key, or renew it by setting it again with a later expiry. Idempotent: setting the
+	// same hold twice changes nothing.
+	//
+	// PUT /workspaces/{workspaceId}/holds/{key}
+	ServiceHoldsSet(ctx context.Context, req *HoldInput, params ServiceHoldsSetParams) (ServiceHoldsSetRes, error)
 	// ServiceIdentityGet implements ServiceIdentity_get operation.
 	//
 	// The calling credential's own name, scopes and expiry. Any valid credential may read it.

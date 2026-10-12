@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -116,6 +117,7 @@ func checkColumn(t, c string) error {
 			customfield.Table:        customfield.ValidColumn,
 			emailtemplate.Table:      emailtemplate.ValidColumn,
 			event.Table:              event.ValidColumn,
+			hold.Table:               hold.ValidColumn,
 			integration.Table:        integration.ValidColumn,
 			invitation.Table:         invitation.ValidColumn,
 			membership.Table:         membership.ValidColumn,

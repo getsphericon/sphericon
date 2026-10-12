@@ -477,6 +477,39 @@ var (
 			},
 		},
 	}
+	// HoldsColumns holds the columns for the "holds" table.
+	HoldsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "key", Type: field.TypeString},
+		{Name: "reason_code", Type: field.TypeString},
+		{Name: "message", Type: field.TypeString},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "set_by", Type: field.TypeString},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// HoldsTable holds the schema information for the "holds" table.
+	HoldsTable = &schema.Table{
+		Name:       "holds",
+		Columns:    HoldsColumns,
+		PrimaryKey: []*schema.Column{HoldsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "holds_workspaces_holds",
+				Columns:    []*schema.Column{HoldsColumns[8]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "holds_key_workspace_id",
+				Unique:  true,
+				Columns: []*schema.Column{HoldsColumns[3], HoldsColumns[8]},
+			},
+		},
+	}
 	// IntegrationsColumns holds the columns for the "integrations" table.
 	IntegrationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1164,6 +1197,7 @@ var (
 		CustomFieldsTable,
 		EmailTemplatesTable,
 		EventsTable,
+		HoldsTable,
 		IntegrationsTable,
 		InvitationsTable,
 		MembershipsTable,
@@ -1237,6 +1271,10 @@ func init() {
 	EventsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	EventsTable.Annotation = &entsql.Annotation{
 		Table: "events",
+	}
+	HoldsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	HoldsTable.Annotation = &entsql.Annotation{
+		Table: "holds",
 	}
 	IntegrationsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	IntegrationsTable.Annotation = &entsql.Annotation{

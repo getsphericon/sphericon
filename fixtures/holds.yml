@@ -1,0 +1,20 @@
+# Operator holds (ADR 0009). Both rows are lapsed, so no fixture Workspace is frozen: a
+# test that wants a freeze sets a hold through the service endpoints (or the scoped client).
+- id: 1 # fixture: HoldAcmeLapsed
+  key: lapsed
+  reason_code: review
+  message: Sending is paused for now.
+  expires_at: '{{daysAgo 1}}'
+  set_by: service-a
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 900 # fixture: HoldGlobexLapsed
+  key: lapsed-globex
+  reason_code: review
+  message: Sending is paused for now.
+  expires_at: '{{daysAgo 1}}'
+  set_by: service-a
+  workspace_id: 2
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 1}}'

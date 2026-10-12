@@ -42,6 +42,9 @@ type EmailTemplate func(*sql.Selector)
 // Event is the predicate function for event builders.
 type Event func(*sql.Selector)
 
+// Hold is the predicate function for hold builders.
+type Hold func(*sql.Selector)
+
 // Integration is the predicate function for integration builders.
 type Integration func(*sql.Selector)
 

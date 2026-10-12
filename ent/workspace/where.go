@@ -1150,6 +1150,29 @@ func HasSendLimitersWith(preds ...predicate.SendLimiter) predicate.Workspace {
 	})
 }
 
+// HasHolds applies the HasEdge predicate on the "holds" edge.
+func HasHolds() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, HoldsTable, HoldsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasHoldsWith applies the HasEdge predicate on the "holds" edge with a given conditions (other predicates).
+func HasHoldsWith(preds ...predicate.Hold) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newHoldsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasBroadcasts applies the HasEdge predicate on the "broadcasts" edge.
 func HasBroadcasts() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

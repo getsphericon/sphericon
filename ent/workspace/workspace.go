@@ -65,6 +65,8 @@ const (
 	EdgeSendingDomains = "sending_domains"
 	// EdgeSendLimiters holds the string denoting the send_limiters edge name in mutations.
 	EdgeSendLimiters = "send_limiters"
+	// EdgeHolds holds the string denoting the holds edge name in mutations.
+	EdgeHolds = "holds"
 	// EdgeBroadcasts holds the string denoting the broadcasts edge name in mutations.
 	EdgeBroadcasts = "broadcasts"
 	// EdgeBroadcastRecipients holds the string denoting the broadcast_recipients edge name in mutations.
@@ -165,6 +167,13 @@ const (
 	SendLimitersInverseTable = "send_limiters"
 	// SendLimitersColumn is the table column denoting the send_limiters relation/edge.
 	SendLimitersColumn = "workspace_id"
+	// HoldsTable is the table that holds the holds relation/edge.
+	HoldsTable = "holds"
+	// HoldsInverseTable is the table name for the Hold entity.
+	// It exists in this package in order to avoid circular dependency with the "hold" package.
+	HoldsInverseTable = "holds"
+	// HoldsColumn is the table column denoting the holds relation/edge.
+	HoldsColumn = "workspace_id"
 	// BroadcastsTable is the table that holds the broadcasts relation/edge.
 	BroadcastsTable = "broadcasts"
 	// BroadcastsInverseTable is the table name for the Broadcast entity.
@@ -567,6 +576,20 @@ func BySendLimiters(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByHoldsCount orders the results by holds count.
+func ByHoldsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newHoldsStep(), opts...)
+	}
+}
+
+// ByHolds orders the results by holds terms.
+func ByHolds(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHoldsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByBroadcastsCount orders the results by broadcasts count.
 func ByBroadcastsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -830,6 +853,13 @@ func newSendLimitersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SendLimitersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, SendLimitersTable, SendLimitersColumn),
+	)
+}
+func newHoldsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HoldsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, HoldsTable, HoldsColumn),
 	)
 }
 func newBroadcastsStep() *sqlgraph.Step {

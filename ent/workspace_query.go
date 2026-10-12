@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -58,6 +59,7 @@ type WorkspaceQuery struct {
 	withIntegrations        *IntegrationQuery
 	withSendingDomains      *SendingDomainQuery
 	withSendLimiters        *SendLimiterQuery
+	withHolds               *HoldQuery
 	withBroadcasts          *BroadcastQuery
 	withBroadcastRecipients *BroadcastRecipientQuery
 	withEmailTemplates      *EmailTemplateQuery
@@ -322,6 +324,28 @@ func (_q *WorkspaceQuery) QuerySendLimiters() *SendLimiterQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(sendlimiter.Table, sendlimiter.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.SendLimitersTable, workspace.SendLimitersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryHolds chains the current query on the "holds" edge.
+func (_q *WorkspaceQuery) QueryHolds() *HoldQuery {
+	query := (&HoldClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(hold.Table, hold.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.HoldsTable, workspace.HoldsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -839,6 +863,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withIntegrations:        _q.withIntegrations.Clone(),
 		withSendingDomains:      _q.withSendingDomains.Clone(),
 		withSendLimiters:        _q.withSendLimiters.Clone(),
+		withHolds:               _q.withHolds.Clone(),
 		withBroadcasts:          _q.withBroadcasts.Clone(),
 		withBroadcastRecipients: _q.withBroadcastRecipients.Clone(),
 		withEmailTemplates:      _q.withEmailTemplates.Clone(),
@@ -967,6 +992,17 @@ func (_q *WorkspaceQuery) WithSendLimiters(opts ...func(*SendLimiterQuery)) *Wor
 		opt(query)
 	}
 	_q.withSendLimiters = query
+	return _q
+}
+
+// WithHolds tells the query-builder to eager-load the nodes that are connected to
+// the "holds" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithHolds(opts ...func(*HoldQuery)) *WorkspaceQuery {
+	query := (&HoldClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withHolds = query
 	return _q
 }
 
@@ -1202,7 +1238,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [24]bool{
+		loadedTypes = [25]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1213,6 +1249,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withIntegrations != nil,
 			_q.withSendingDomains != nil,
 			_q.withSendLimiters != nil,
+			_q.withHolds != nil,
 			_q.withBroadcasts != nil,
 			_q.withBroadcastRecipients != nil,
 			_q.withEmailTemplates != nil,
@@ -1317,6 +1354,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadSendLimiters(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.SendLimiters = []*SendLimiter{} },
 			func(n *Workspace, e *SendLimiter) { n.Edges.SendLimiters = append(n.Edges.SendLimiters, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withHolds; query != nil {
+		if err := _q.loadHolds(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.Holds = []*Hold{} },
+			func(n *Workspace, e *Hold) { n.Edges.Holds = append(n.Edges.Holds, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1708,6 +1752,36 @@ func (_q *WorkspaceQuery) loadSendLimiters(ctx context.Context, query *SendLimit
 	}
 	query.Where(predicate.SendLimiter(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.SendLimitersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadHolds(ctx context.Context, query *HoldQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *Hold)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(hold.FieldWorkspaceID)
+	}
+	query.Where(predicate.Hold(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.HoldsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
