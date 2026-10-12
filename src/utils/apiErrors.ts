@@ -31,6 +31,16 @@ export function isSecondFactorRequiredError(error: unknown) {
   )
 }
 
+// A 403 problem with code email_verification_required: login refused an Unverified
+// User until the emailed link is followed (ADR 0030).
+export function isEmailVerificationRequiredError(error: unknown) {
+  return (
+    isApiErrorLike(error) &&
+    error.status === 403 &&
+    error.code === ProblemCode.EMAIL_VERIFICATION_REQUIRED
+  )
+}
+
 // A 429 problem body carries `status: 429` (RFC 7807): a rate limit was hit
 // (ADR 0025). The generated client types it, so callers branch on the status, not
 // on the English detail.

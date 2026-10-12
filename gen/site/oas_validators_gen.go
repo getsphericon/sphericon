@@ -595,6 +595,8 @@ func (s ProblemCode) Validate() error {
 	switch s {
 	case "second_factor_required":
 		return nil
+	case "email_verification_required":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -1052,6 +1054,22 @@ func (s *SiteAuthConfirmEmailChangeBadRequest) Validate() error {
 }
 
 func (s *SiteAuthConfirmEmailChangeConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAuthLoginForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAuthLoginUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3502,40 +3520,6 @@ func (s *SiteRegisterInput) Validate() error {
 	}
 
 	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.Email.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "email",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s *SiteRegisterResult) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.ID.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "id",
-			Error: err,
-		})
-	}
 	if err := func() error {
 		if err := s.Email.Validate(); err != nil {
 			return err

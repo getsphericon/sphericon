@@ -403,7 +403,9 @@ export default interface Resources {
       "startOver": "Start over",
       "submitButton": "Sign in",
       "title": "Sign in",
-      "verifyButton": "Verify"
+      "verifyButton": "Verify",
+      "verifyRequiredMessage": "Follow the link we emailed you to confirm your address and set your password, then sign in.",
+      "verifyRequiredTitle": "Verify your email first"
     },
     "nav": {
       "activity": "Activity",
@@ -494,14 +496,14 @@ export default interface Resources {
       "verifiedBadge": "Verified"
     },
     "registration": {
+      "checkEmailBody": "We sent a link to {{email}}. Follow it to confirm your address and choose your password.",
+      "checkEmailTitle": "Check your email",
       "emailLabel": "Email",
       "errorMessage": "We couldn't create your account. Please check your details and try again.",
       "errorTitle": "Registration failed",
       "loginLink": "Already have an account? Sign in",
       "nameLabel": "Name",
-      "passwordLabel": "Password",
       "submitButton": "Register",
-      "successMessage": "Account created successfully",
       "title": "Create account"
     },
     "resetPassword": {
@@ -893,12 +895,17 @@ export default interface Resources {
       "required": "This field is required"
     },
     "verifyEmail": {
-      "continue": "Continue",
+      "confirmPasswordLabel": "Confirm password",
       "errorBody": "This verification link is invalid or has expired.",
+      "errorMessage": "We couldn't verify your email. The link may have expired.",
       "errorTitle": "Verification failed",
-      "successBody": "Thanks — your email address is confirmed.",
+      "mismatch": "Passwords do not match",
+      "passwordLabel": "Password",
+      "signIn": "Sign in",
+      "submitButton": "Set password",
+      "successBody": "Your email is confirmed and your password is set. You can sign in now.",
       "successTitle": "Email verified",
-      "verifying": "Verifying your email…"
+      "title": "Set your password"
     },
     "workspaceHold": {
       "description": "Outbound email is on hold for this workspace. Scheduled broadcasts and automations wait and continue on their own when the hold lifts. You can still sign in and view your data.",

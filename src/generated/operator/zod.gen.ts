@@ -141,7 +141,7 @@ export const zOperatorSuspensionActor = z.object({
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
-export const zProblemCode = z.enum(['second_factor_required']);
+export const zProblemCode = z.enum(['second_factor_required', 'email_verification_required']);
 
 /**
  * RFC 7807 Problem Details

@@ -217,59 +217,64 @@ func ptrEqual(a, b *int) bool {
 // created atomically: a Workspace is reached through Memberships, so one without its
 // owner row would be inaccessible.
 func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name string) (*ent.Workspace, error) {
+	for {
+		var ws *ent.Workspace
+		err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+			var err error
+			ws, err = createWorkspaceIn(ctx, tx, userID, name)
+			return err
+		})
+		if db.IsUniqueViolation(err) {
+			continue // lost a race on the slug; the next attempt sees it taken
+		}
+		return ws, err
+	}
+}
+
+// createWorkspaceIn creates the Workspace and its owner Membership on tx, under the
+// first free slug derived from name. A unique violation (a lost race on the slug)
+// aborts tx, so the caller retries the whole transaction.
+func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name string) (*ent.Workspace, error) {
 	base := Slugify(name)
 	if base == "" {
 		base = "workspace"
 	}
-	for i := 0; ; i++ {
-		slug := base
-		if i > 0 {
-			slug = fmt.Sprintf("%s-%d", base, i+1)
-		}
-		exists, err := a.ent.Workspace.Query().Where(workspace.Slug(slug)).Exist(ctx)
+	slug := base
+	for i := 2; ; i++ {
+		exists, err := tx.Workspace.Query().Where(workspace.Slug(slug)).Exist(ctx)
 		if err != nil {
 			return nil, err
 		}
-		if exists {
-			continue
+		if !exists {
+			break
 		}
-		collectKey, err := credentials.GenerateCollectKey()
-		if err != nil {
-			return nil, err
-		}
-		ingestKey, err := credentials.GenerateIngestKey()
-		if err != nil {
-			return nil, err
-		}
-		var ws *ent.Workspace
-		err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-			created, cerr := tx.Workspace.Create().
-				SetName(name).
-				SetSlug(slug).
-				SetCollectKey(collectKey).
-				SetIngestKey(ingestKey).
-				Save(ctx)
-			if cerr != nil {
-				return cerr
-			}
-			if _, merr := tx.Membership.Create().
-				SetUserID(userID).
-				SetWorkspaceID(created.ID).
-				SetRole(membership.RoleOwner).
-				Save(ctx); merr != nil {
-				return merr
-			}
-			ws = created
-			return nil
-		})
-		if db.IsUniqueViolation(err) {
-			continue // lost a race on the slug; try the next suffix
-		}
-		if err != nil {
-			return nil, err
-		}
-		return ws, nil
+		slug = fmt.Sprintf("%s-%d", base, i)
 	}
+	collectKey, err := credentials.GenerateCollectKey()
+	if err != nil {
+		return nil, err
+	}
+	ingestKey, err := credentials.GenerateIngestKey()
+	if err != nil {
+		return nil, err
+	}
+	ws, err := tx.Workspace.Create().
+		SetName(name).
+		SetSlug(slug).
+		SetCollectKey(collectKey).
+		SetIngestKey(ingestKey).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tx.Membership.Create().
+		SetUserID(userID).
+		SetWorkspaceID(ws.ID).
+		SetRole(membership.RoleOwner).
+		Save(ctx); err != nil {
+		return nil, err
+	}
+	return ws, nil
 }
 
 // User loads a User by id.
@@ -287,9 +292,47 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(email)).Exist(ctx)
 }
 
-// CreateUser registers a User with a password hash.
+// Register creates an Unverified User (ADR 0030): a name and an email, no password,
+// no Membership. The unique index on the email refuses a taken address (see
+// db.IsUniqueViolation).
+func (a *Accounts) Register(ctx context.Context, name, email string) (*ent.User, error) {
+	return a.ent.User.Create().SetName(name).SetEmail(email).Save(ctx)
+}
+
+// CreateUser creates a User whose email is already proven, with a password hash: a
+// User made by the platform itself rather than by a registration.
 func (a *Accounts) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).Save(ctx)
+	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(time.Now()).Save(ctx)
+}
+
+// VerifyEmail completes a registration from its link (ADR 0030), in one transaction:
+// it stamps the Verified email, sets the password hash, bumps the session epoch
+// (ending every session issued before, as a password change does) and creates the
+// User's first Workspace named workspaceName with the User as owner. It records
+// `user.email_verify` in that Workspace's Audit log and returns the User.
+func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash, workspaceName string) (*ent.User, error) {
+	for {
+		var verified *ent.User
+		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+			u, err := tx.User.UpdateOneID(id).
+				SetPasswordHash(passwordHash).
+				SetEmailVerifiedAt(time.Now()).
+				AddSessionEpoch(1).
+				Save(ctx)
+			if err != nil {
+				return err
+			}
+			if _, err := createWorkspaceIn(ctx, tx, id, workspaceName); err != nil {
+				return err
+			}
+			verified = u
+			return RecordUserAction(ctx, tx, pub, u, events.ActionUserEmailVerify, nil)
+		})
+		if db.IsUniqueViolation(err) {
+			continue // lost a race on the slug; the next attempt sees it taken
+		}
+		return verified, err
+	}
 }
 
 // UpdateProfile sets the User's name and/or password hash (nil leaves a field
@@ -390,13 +433,6 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 		}
 	}
 	return nil
-}
-
-// MarkEmailVerified stamps the User's email as verified now.
-func (a *Accounts) MarkEmailVerified(ctx context.Context, id int64) error {
-	return a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return tx.User.UpdateOneID(id).SetEmailVerifiedAt(time.Now()).Exec(ctx)
-	})
 }
 
 // ChangeEmail swaps the login email for one proven by a confirmation link, so it is

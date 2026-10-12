@@ -69,7 +69,9 @@ export const siteAuthForgotPassword = <ThrowOnError extends boolean = false>(opt
  * a short-lived single-use challenge for the second step and no cookie (ADR
  * 0020). Unknown email and wrong password answer the same 401; failures feed the
  * Login throttle, which answers 429 even for a correct password while its delay
- * runs (ADR 0025). Only a started session resets the throttle's counter.
+ * runs (ADR 0025). Only a started session resets the throttle's counter. An
+ * Unverified User (ADR 0030) answers 403 with code `email_verification_required`
+ * before any password check or second-factor challenge, and no session.
  */
 export const siteAuthLogin = <ThrowOnError extends boolean = false>(options: Options<SiteAuthLoginData, ThrowOnError>): RequestResult<SiteAuthLoginResponses, SiteAuthLoginErrors, ThrowOnError> => (options.client ?? client).post<SiteAuthLoginResponses, SiteAuthLoginErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -98,6 +100,11 @@ export const siteAuthLogout = <ThrowOnError extends boolean = false>(options?: O
   ...options
 });
 
+/**
+ * Create an Unverified User (ADR 0030): no password, no session, no Workspace.
+ * A verification email with the link to the set-password screen is on its way
+ * (202). A taken address answers 409.
+ */
 export const siteAuthRegister = <ThrowOnError extends boolean = false>(options: Options<SiteAuthRegisterData, ThrowOnError>): RequestResult<SiteAuthRegisterResponses, SiteAuthRegisterErrors, ThrowOnError> => (options.client ?? client).post<SiteAuthRegisterResponses, SiteAuthRegisterErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
     body: zSiteAuthRegisterBody,
@@ -151,7 +158,11 @@ export const siteAuthSecondFactor = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
- * Confirm an email address from a verification token (signup verification)
+ * Complete a registration from the verification link (the token is the
+ * credential): stamps the Verified email, sets the password, ends every earlier
+ * session, creates the User's first Workspace and sends the welcome email. The
+ * User then signs in; the link alone starts no session. A link is single use and
+ * scoped to the address it was sent to. Rate limited like registration.
  */
 export const siteAuthVerifyEmail = <ThrowOnError extends boolean = false>(options: Options<SiteAuthVerifyEmailData, ThrowOnError>): RequestResult<SiteAuthVerifyEmailResponses, SiteAuthVerifyEmailErrors, ThrowOnError> => (options.client ?? client).post<SiteAuthVerifyEmailResponses, SiteAuthVerifyEmailErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

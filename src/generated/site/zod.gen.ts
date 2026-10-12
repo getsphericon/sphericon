@@ -15,7 +15,7 @@ export const zEntityId = z.string().regex(/^[0-9]+$/);
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
-export const zProblemCode = z.enum(['second_factor_required']);
+export const zProblemCode = z.enum(['second_factor_required', 'email_verification_required']);
 
 /**
  * RFC 7807 Problem Details
@@ -434,10 +434,13 @@ export const zSiteRecoveryCodesInput = z.object({
   currentPassword: z.string()
 });
 
+/**
+ * Register with a name and an email only: no password is taken before the address
+ * is proven (ADR 0030)
+ */
 export const zSiteRegisterInput = z.object({
   name: z.string(),
-  email: zEmailAddress,
-  password: z.string()
+  email: zEmailAddress
 });
 
 /**
@@ -760,10 +763,11 @@ export const zSiteUpdateWorkspaceInput = z.object({
 });
 
 /**
- * Confirm ownership of an email address using a verification token
+ * Prove an email address with the token sent to it and set the password
  */
 export const zSiteVerifyEmailInput = z.object({
-  token: z.string()
+  token: z.string(),
+  password: z.string()
 });
 
 export const zTimeZoneName = z.string();
@@ -1145,13 +1149,6 @@ export const zSiteMembershipResource = z.object({
   email: zEmailAddress,
   name: z.string(),
   role: zSiteMembershipRole,
-  createdAt: zTimestamp
-});
-
-export const zSiteRegisterResult = z.object({
-  id: zEntityId,
-  name: z.string(),
-  email: zEmailAddress,
   createdAt: zTimestamp
 });
 
@@ -1593,11 +1590,6 @@ export const zSiteAuthLoginResponse = zSiteLoginResult;
 export const zSiteAuthLogoutResponse = z.void();
 
 export const zSiteAuthRegisterBody = zSiteRegisterInput;
-
-/**
- * The request has succeeded and a new resource has been created as a result.
- */
-export const zSiteAuthRegisterResponse = zSiteRegisterResult;
 
 export const zSiteAuthResetPasswordBody = zSiteResetPasswordInput;
 

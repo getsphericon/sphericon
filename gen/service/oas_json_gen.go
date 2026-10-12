@@ -757,6 +757,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 	switch ProblemCode(v) {
 	case ProblemCodeSecondFactorRequired:
 		*s = ProblemCodeSecondFactorRequired
+	case ProblemCodeEmailVerificationRequired:
+		*s = ProblemCodeEmailVerificationRequired
 	default:
 		*s = ProblemCode(v)
 	}

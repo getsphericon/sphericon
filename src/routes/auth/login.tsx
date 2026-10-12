@@ -13,7 +13,7 @@ import {
 import type { SiteLoginInput, SiteLoginResult } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { forgotPasswordRoute, indexRoute, registerRoute } from '../../router.tsx'
-import { getRateLimitWait } from '../../utils/apiErrors.ts'
+import { getRateLimitWait, isEmailVerificationRequiredError } from '../../utils/apiErrors.ts'
 
 export function LoginPage() {
   const { t } = useTranslation()
@@ -46,16 +46,22 @@ export function LoginPage() {
   const codeForm = useForm({ initialValues: { code: '' } })
 
   const showError = (error: unknown) =>
-    notifications.show({
-      color: 'red',
-      title: t(($) => $.login.errorTitle),
-      message:
-        rateLimitMessage(error) ??
-        apiErrorMessage(
-          error,
-          t(($) => $.login.errorMessage),
-        ),
-    })
+    isEmailVerificationRequiredError(error)
+      ? notifications.show({
+          color: 'yellow',
+          title: t(($) => $.login.verifyRequiredTitle),
+          message: t(($) => $.login.verifyRequiredMessage),
+        })
+      : notifications.show({
+          color: 'red',
+          title: t(($) => $.login.errorTitle),
+          message:
+            rateLimitMessage(error) ??
+            apiErrorMessage(
+              error,
+              t(($) => $.login.errorMessage),
+            ),
+        })
 
   const signedIn = () =>
     redirect ? router.history.push(redirect) : navigate({ to: indexRoute.to })

@@ -1381,7 +1381,9 @@ func (s *Server) handleSiteAuthForgotPasswordRequest(args [0]string, argsEscaped
 // set here); a User with one gets outcome `challenge`, a short-lived single-use challenge for the
 // second step and no cookie (ADR 0020). Unknown email and wrong password answer the same 401; failures
 // feed the Login throttle, which answers 429 even for a correct password while its delay runs (ADR
-// 0025). Only a started session resets the throttle's counter.
+// 0025). Only a started session resets the throttle's counter. An Unverified User (ADR 0030) answers
+// 403 with code `email_verification_required` before any password check or second-factor challenge,
+// and no session.
 //
 // POST /auth/login
 func (s *Server) handleSiteAuthLoginRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -1647,6 +1649,9 @@ func (s *Server) handleSiteAuthLogoutRequest(args [0]string, argsEscaped bool, w
 }
 
 // handleSiteAuthRegisterRequest handles SiteAuth_register operation.
+//
+// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
+// with the link to the set-password screen is on its way (202). A taken address answers 409.
 //
 // POST /auth/register
 func (s *Server) handleSiteAuthRegisterRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -2078,7 +2083,10 @@ func (s *Server) handleSiteAuthSecondFactorRequest(args [0]string, argsEscaped b
 
 // handleSiteAuthVerifyEmailRequest handles SiteAuth_verifyEmail operation.
 //
-// Confirm an email address from a verification token (signup verification).
+// Complete a registration from the verification link (the token is the credential): stamps the
+// Verified email, sets the password, ends every earlier session, creates the User's first Workspace
+// and sends the welcome email. The User then signs in; the link alone starts no session. A link is
+// single use and scoped to the address it was sent to. Rate limited like registration.
 //
 // POST /auth/verify-email
 func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

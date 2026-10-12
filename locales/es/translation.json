@@ -425,7 +425,9 @@
     "startOver": "Empezar de nuevo",
     "submitButton": "Iniciar sesión",
     "title": "Iniciar sesión",
-    "verifyButton": "Verificar"
+    "verifyButton": "Verificar",
+    "verifyRequiredMessage": "Sigue el enlace que te enviamos por correo para confirmar tu dirección y establecer tu contraseña, y luego inicia sesión.",
+    "verifyRequiredTitle": "Verifica primero tu correo"
   },
   "nav": {
     "activity": "Actividad",
@@ -516,14 +518,14 @@
     "verifiedBadge": "Verificado"
   },
   "registration": {
+    "checkEmailBody": "Enviamos un enlace a {{email}}. Sigue el enlace para confirmar tu dirección y elegir tu contraseña.",
+    "checkEmailTitle": "Revisa tu correo",
     "emailLabel": "Correo",
     "errorMessage": "No pudimos crear tu cuenta. Revisa tus datos e inténtalo de nuevo.",
     "errorTitle": "Error de registro",
     "loginLink": "¿Ya tienes una cuenta? Inicia sesión",
     "nameLabel": "Nombre",
-    "passwordLabel": "Contraseña",
     "submitButton": "Registrarse",
-    "successMessage": "Cuenta creada correctamente",
     "title": "Crear cuenta"
   },
   "resetPassword": {
@@ -921,12 +923,17 @@
     "required": "Este campo es obligatorio"
   },
   "verifyEmail": {
-    "continue": "Continuar",
+    "confirmPasswordLabel": "Confirma la contraseña",
     "errorBody": "Este enlace de verificación no es válido o ha caducado.",
+    "errorMessage": "No pudimos verificar tu correo. Puede que el enlace haya caducado.",
     "errorTitle": "Error de verificación",
-    "successBody": "Gracias; tu dirección de correo está confirmada.",
+    "mismatch": "Las contraseñas no coinciden",
+    "passwordLabel": "Contraseña",
+    "signIn": "Iniciar sesión",
+    "submitButton": "Establecer contraseña",
+    "successBody": "Tu correo está confirmado y tu contraseña establecida. Ya puedes iniciar sesión.",
     "successTitle": "Correo verificado",
-    "verifying": "Verificando tu correo…"
+    "title": "Establece tu contraseña"
   },
   "workspaceHold": {
     "description": "El envío de correos salientes está retenido para este espacio de trabajo. Los envíos programados y las automatizaciones esperan y continúan solos cuando se levante la retención. Aún puede iniciar sesión y consultar sus datos.",

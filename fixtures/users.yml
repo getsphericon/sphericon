@@ -1,4 +1,4 @@
-# Anchor users. Passwords are stated as plaintext and hashed at load time
+# Anchor users, all with a Verified email (ADR 0030: an Unverified User cannot log in). Passwords are stated as plaintext and hashed at load time
 # (argonHash template call); the plaintext becomes a catalog constant (fixtures.<Name>Password).
 # OwnerJohn owns Acme, OwnerJane owns Globex, MemberMary is a member of Acme,
 # OutsiderOscar has no membership.
@@ -8,24 +8,28 @@
   password_hash: '{{argonHash "password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 - id: 2 # fixture: OwnerJane
   name: Jane
   email: jane@globex.test
   password_hash: '{{argonHash "jane-test-password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 - id: 3 # fixture: MemberMary
   name: Mary
   email: mary@acme.test
   password_hash: '{{argonHash "mary-test-password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 - id: 4 # fixture: OutsiderOscar
   name: Oscar
   email: oscar@nowhere.test
   password_hash: '{{argonHash "oscar-test-password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 # Initech's roster for the Role invariant tests (internal/accounts): two owners, an admin and
 # a member. None of them logs in, so they add no audit rows anywhere.
 - id: 5 # fixture: InitechOwnerOlga
@@ -34,24 +38,28 @@
   password_hash: '{{argonHash "olga-test-password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 - id: 6 # fixture: InitechCoOwnerOwen
   name: Owen
   email: owen@initech.test
   password_hash: '{{argonHash "owen-test-password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 - id: 7 # fixture: InitechAdminAda
   name: Ada
   email: ada@initech.test
   password_hash: '{{argonHash "ada-test-password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 - id: 8 # fixture: InitechMemberMax
   name: Max
   email: max@initech.test
   password_hash: '{{argonHash "max-test-password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 # Sam has an active TOTP Second factor (ADR 0020): the secret is sealed at load time
 # and lifted into fixtures.SecondFactorSamTotpSecret; his Recovery codes are in
 # recovery_codes.yml. He is a member of Globex and an admin of Umbrella (Acme's member list
@@ -64,6 +72,7 @@
   second_factor_confirmed_at: '2026-01-01 00:00:00'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 # Rita owns Umbrella, the Workspace with a Two-factor requirement, through a Membership
 # older than the requirement (her grace ends 2026-03-08), and has no Second factor. She is
 # also a member of Initech, which requires none, so that Workspace stays reachable.
@@ -73,6 +82,7 @@
   password_hash: '{{argonHash "rita-test-password"}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 # Nina joined Umbrella after its requirement started (her grace ends 2026-03-12) and has no
 # Second factor.
 - id: 11 # fixture: UmbrellaMemberNina
@@ -81,3 +91,4 @@
   password_hash: '{{argonHash "nina-test-password"}}'
   created_at: '2026-03-05 00:00:00'
   updated_at: '2026-03-05 00:00:00'
+  email_verified_at: '2026-03-05 00:00:00'

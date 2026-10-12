@@ -119,8 +119,8 @@ export function handleSiteAuthLogout(response?: HandleSiteAuthLogoutResponse | H
 }
 
 export type HandleSiteAuthRegisterResponse = {
-  body: SiteAuthRegisterResponses[201];
-  status?: 201;
+  body: SiteAuthRegisterResponses[202];
+  status?: 202;
 };
 
 /**
@@ -133,7 +133,7 @@ export function handleSiteAuthRegister(response?: HandleSiteAuthRegisterResponse
     }
     const body = response?.body;
     if (body !== undefined) {
-      return HttpResponse.json(body, { status: response?.status ?? 201 });
+      return new HttpResponse(body, { status: response?.status ?? 202 });
     }
     if (options?.responseFallback === 'passthrough') {
       return;

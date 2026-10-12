@@ -3527,6 +3527,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 	switch ProblemCode(v) {
 	case ProblemCodeSecondFactorRequired:
 		*s = ProblemCodeSecondFactorRequired
+	case ProblemCodeEmailVerificationRequired:
+		*s = ProblemCodeEmailVerificationRequired
 	default:
 		*s = ProblemCode(v)
 	}
@@ -6576,6 +6578,82 @@ func (s *SiteAuthConfirmEmailChangeConflict) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteAuthConfirmEmailChangeConflict) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteAuthLoginForbidden as json.
+func (s *SiteAuthLoginForbidden) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteAuthLoginForbidden from json.
+func (s *SiteAuthLoginForbidden) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAuthLoginForbidden to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteAuthLoginForbidden(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAuthLoginForbidden) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAuthLoginForbidden) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteAuthLoginUnauthorized as json.
+func (s *SiteAuthLoginUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteAuthLoginUnauthorized from json.
+func (s *SiteAuthLoginUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAuthLoginUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteAuthLoginUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAuthLoginUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAuthLoginUnauthorized) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -18396,16 +18474,11 @@ func (s *SiteRegisterInput) encodeFields(e *jx.Encoder) {
 		e.FieldStart("email")
 		s.Email.Encode(e)
 	}
-	{
-		e.FieldStart("password")
-		e.Str(s.Password)
-	}
 }
 
-var jsonFieldsNameOfSiteRegisterInput = [3]string{
+var jsonFieldsNameOfSiteRegisterInput = [2]string{
 	0: "name",
 	1: "email",
-	2: "password",
 }
 
 // Decode decodes SiteRegisterInput from json.
@@ -18439,18 +18512,6 @@ func (s *SiteRegisterInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"email\"")
 			}
-		case "password":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Str()
-				s.Password = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"password\"")
-			}
 		default:
 			return d.Skip()
 		}
@@ -18461,7 +18522,7 @@ func (s *SiteRegisterInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -18503,147 +18564,6 @@ func (s *SiteRegisterInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteRegisterInput) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *SiteRegisterResult) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *SiteRegisterResult) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("id")
-		s.ID.Encode(e)
-	}
-	{
-		e.FieldStart("name")
-		e.Str(s.Name)
-	}
-	{
-		e.FieldStart("email")
-		s.Email.Encode(e)
-	}
-	{
-		e.FieldStart("createdAt")
-		s.CreatedAt.Encode(e)
-	}
-}
-
-var jsonFieldsNameOfSiteRegisterResult = [4]string{
-	0: "id",
-	1: "name",
-	2: "email",
-	3: "createdAt",
-}
-
-// Decode decodes SiteRegisterResult from json.
-func (s *SiteRegisterResult) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SiteRegisterResult to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "id":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.ID.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"id\"")
-			}
-		case "name":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"name\"")
-			}
-		case "email":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				if err := s.Email.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"email\"")
-			}
-		case "createdAt":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				if err := s.CreatedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"createdAt\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode SiteRegisterResult")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00001111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfSiteRegisterResult) {
-					name = jsonFieldsNameOfSiteRegisterResult[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SiteRegisterResult) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SiteRegisterResult) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -28336,10 +28256,15 @@ func (s *SiteVerifyEmailInput) encodeFields(e *jx.Encoder) {
 		e.FieldStart("token")
 		e.Str(s.Token)
 	}
+	{
+		e.FieldStart("password")
+		e.Str(s.Password)
+	}
 }
 
-var jsonFieldsNameOfSiteVerifyEmailInput = [1]string{
+var jsonFieldsNameOfSiteVerifyEmailInput = [2]string{
 	0: "token",
+	1: "password",
 }
 
 // Decode decodes SiteVerifyEmailInput from json.
@@ -28363,6 +28288,18 @@ func (s *SiteVerifyEmailInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"token\"")
 			}
+		case "password":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Password = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"password\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -28373,7 +28310,7 @@ func (s *SiteVerifyEmailInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
