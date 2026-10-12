@@ -363,6 +363,14 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[10]},
 			},
+			{
+				Name:    "contacts_workspace_id_identified",
+				Unique:  false,
+				Columns: []*schema.Column{ContactsColumns[10]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "email IS NOT NULL AND email <> ''",
+				},
+			},
 		},
 	}
 	// CustomFieldsColumns holds the columns for the "custom_fields" table.
