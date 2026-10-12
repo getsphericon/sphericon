@@ -309,6 +309,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Attempts: attempts, VolumeFloor: st.volumeFloor,
 	})
 	require.NoError(t, err, "build edition")
+	// The Edition's ent hooks, on the client and on every transaction the bus opens.
+	client.Use(edition.Hooks()...)
+	bus.Use(edition.Hooks()...)
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(cipher, edition.Audit)
 	integrationsModule := integrations.New(bus, cipher, catalog, inline)

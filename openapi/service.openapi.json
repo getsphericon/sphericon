@@ -673,7 +673,7 @@
       },
       "UsageMetric": {
         "type": "string",
-        "enum": ["emails_sent"],
+        "enum": ["emails_sent", "contacts"],
         "description": "A metric of Usage"
       },
       "WorkspaceUsageResource": {

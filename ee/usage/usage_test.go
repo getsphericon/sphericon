@@ -52,6 +52,12 @@ func message(t *testing.T, env *testhelper.TestEnv, key string, kind outboundmes
 // figure is Acme's emails_sent figure of the period, failing when there is none.
 func figure(t *testing.T, env *testhelper.TestEnv, period time.Time) usage.Figure {
 	t.Helper()
+	return figureOf(t, env, period, usage.EmailsSent)
+}
+
+// figureOf is Acme's figure of the metric for the period, failing when there is none.
+func figureOf(t *testing.T, env *testhelper.TestEnv, period time.Time, metric usage.Metric) usage.Figure {
+	t.Helper()
 	page, err := usage.List(t.Context(), env.DB, period, pagination.Params{Page: 1, PageSize: pagination.MaxPageSize})
 	require.NoError(t, err)
 	for _, w := range page.Items {
@@ -59,12 +65,12 @@ func figure(t *testing.T, env *testhelper.TestEnv, period time.Time) usage.Figur
 			continue
 		}
 		for _, f := range w.Figures {
-			if f.Metric == usage.EmailsSent {
+			if f.Metric == metric {
 				return f
 			}
 		}
 	}
-	require.Failf(t, "no figure", "Acme has no emails_sent figure for %s", period.Format("2006-01"))
+	require.Failf(t, "no figure", "Acme has no %s figure for %s", metric, period.Format("2006-01"))
 	return usage.Figure{}
 }
 

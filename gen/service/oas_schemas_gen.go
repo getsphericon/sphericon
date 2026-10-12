@@ -977,12 +977,14 @@ type UsageMetric string
 
 const (
 	UsageMetricEmailsSent UsageMetric = "emails_sent"
+	UsageMetricContacts   UsageMetric = "contacts"
 )
 
 // AllValues returns all UsageMetric values.
 func (UsageMetric) AllValues() []UsageMetric {
 	return []UsageMetric{
 		UsageMetricEmailsSent,
+		UsageMetricContacts,
 	}
 }
 
@@ -990,6 +992,8 @@ func (UsageMetric) AllValues() []UsageMetric {
 func (s UsageMetric) MarshalText() ([]byte, error) {
 	switch s {
 	case UsageMetricEmailsSent:
+		return []byte(s), nil
+	case UsageMetricContacts:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -1001,6 +1005,9 @@ func (s *UsageMetric) UnmarshalText(data []byte) error {
 	switch UsageMetric(data) {
 	case UsageMetricEmailsSent:
 		*s = UsageMetricEmailsSent
+		return nil
+	case UsageMetricContacts:
+		*s = UsageMetricContacts
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
