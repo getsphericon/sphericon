@@ -168,7 +168,7 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 		return nil, err
 	}
 
-	hasAccount, err := h.accounts.EmailTaken(ctx, inv.Email)
+	hasAccount, err := h.accounts.HasVerifiedAccount(ctx, inv.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -197,12 +197,9 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	name = strings.TrimSpace(name)
 	password, _ := req.Password.Get()
 
-	userExists, err := h.accounts.EmailTaken(ctx, inv.Email)
-	if err != nil {
-		return nil, err
-	}
-	// A new invitee must set up an account.
-	if !userExists && (name == "" || password == "") {
+	err = h.accounts.AcceptInvitation(ctx, inv, name, password)
+	if errors.Is(err, accounts.ErrCredentialsRequired) {
+		// No Verified User for the address: the invitee sets up the account.
 		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity, "name and password are required",
 			map[string][]string{
@@ -211,8 +208,6 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 			}))
 		return &v, nil
 	}
-
-	err = h.accounts.AcceptInvitation(ctx, inv, name, password)
 	if err != nil {
 		return nil, err
 	}

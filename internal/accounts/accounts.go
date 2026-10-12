@@ -292,6 +292,13 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(email)).Exist(ctx)
 }
 
+// HasVerifiedAccount reports whether the email belongs to a Verified User: the only
+// kind of account an Invitation may attach to. An Unverified User is not an account
+// (ADR 0030): it holds no password and is handled like a new address.
+func (a *Accounts) HasVerifiedAccount(ctx context.Context, email string) (bool, error) {
+	return a.ent.User.Query().Where(user.Email(email), user.EmailVerifiedAtNotNil()).Exist(ctx)
+}
+
 // Register creates an Unverified User (ADR 0030): a name and an email, no password,
 // no Membership. The unique index on the email refuses a taken address (see
 // db.IsUniqueViolation).
@@ -459,28 +466,48 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 		Only(ctx)
 }
 
-// AcceptInvitation turns a pending Invitation into a Membership: it attaches the
-// existing User of the invited email or creates one (name + password, already
-// email-verified because the link proves control of the address), joins them to the
-// Workspace (a duplicate is not an error) and marks the Invitation accepted.
+// AcceptInvitation turns a pending Invitation into a Membership. For an address with
+// no User or an Unverified User (ADR 0030) the name and password are required
+// (ErrCredentialsRequired otherwise): the link proves control of the address, so the
+// User is created, or the Unverified User's row completed (name and password set,
+// Verified email stamped, session epoch bumped), and nothing the registrant set
+// survives. A Verified User is attached as is. The Membership is created (a
+// duplicate is not an error), the Invitation marked accepted and the acceptance
+// audited, all in one transaction.
 func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password string) error {
 	role := membership.Role(inv.Role)
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		u, uerr := tx.User.Query().Where(user.Email(inv.Email)).Only(ctx)
-		if ent.IsNotFound(uerr) {
+		if uerr != nil && !ent.IsNotFound(uerr) {
+			return uerr
+		}
+		if uerr != nil || u.EmailVerifiedAt == nil {
+			name = strings.TrimSpace(name)
+			if name == "" || password == "" {
+				return ErrCredentialsRequired
+			}
 			hash, herr := credentials.HashPassword(password)
 			if herr != nil {
 				return herr
 			}
-			u, uerr = tx.User.Create().
-				SetName(name).
-				SetEmail(inv.Email).
-				SetPasswordHash(hash).
-				SetEmailVerifiedAt(time.Now()).
-				Save(ctx)
-		}
-		if uerr != nil {
-			return uerr
+			if ent.IsNotFound(uerr) {
+				u, uerr = tx.User.Create().
+					SetName(name).
+					SetEmail(inv.Email).
+					SetPasswordHash(hash).
+					SetEmailVerifiedAt(time.Now()).
+					Save(ctx)
+			} else {
+				u, uerr = tx.User.UpdateOneID(u.ID).
+					SetName(name).
+					SetPasswordHash(hash).
+					SetEmailVerifiedAt(time.Now()).
+					AddSessionEpoch(1).
+					Save(ctx)
+			}
+			if uerr != nil {
+				return uerr
+			}
 		}
 
 		ts := tx.Scoped(inv.WorkspaceID)

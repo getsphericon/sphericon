@@ -98,12 +98,13 @@ model SiteInvitationLookupResult {
   /** The address the invite was sent to */
   email: EmailAddress;
 
-  /** True when that email already has a sphericon account (accept needs no signup) */
+  /** True only when that email has a Verified User; an address with no User or an
+   * Unverified User needs a name and a password to accept */
   hasAccount: boolean;
 }
 
-/** Accept an invite. name + password are required only when the invitee has no
- * account yet; ignored otherwise. */
+/** Accept an invite. name + password are required unless the invited address has a
+ * Verified User (answer 422 otherwise); ignored for a Verified User. */
 model SiteAcceptInvitationInput {
   name?: string;
   password?: string;

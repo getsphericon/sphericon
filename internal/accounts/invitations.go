@@ -20,6 +20,9 @@ var (
 	ErrEmailEmpty = errors.New("accounts: invitation email is empty")
 	// ErrAlreadyMember means the invited address already has a Membership in the Workspace.
 	ErrAlreadyMember = errors.New("accounts: invited email is already a member")
+	// ErrCredentialsRequired means the invited address has no Verified User, so the
+	// invitee must give a name and a password to accept.
+	ErrCredentialsRequired = errors.New("accounts: invitation needs a name and a password")
 )
 
 // generateInviteToken returns a random, URL-safe invitation token: the raw value
