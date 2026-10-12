@@ -134,6 +134,12 @@ type Config struct {
 	// system emails and validation messages (internal/i18n).
 	Locale string
 
+	// RequireEmailVerification keeps the email verification gate on (ADR 0030). Only an
+	// explicit REQUIRE_EMAIL_VERIFICATION=false turns it off, for a self-hosted install
+	// without outbound mail; the default and any other value keep it on. It is never
+	// inferred from the SMTP settings.
+	RequireEmailVerification bool
+
 	// Logging: level is one of debug|info|warn|error; format is text|json.
 	// Dev defaults to a human-readable coloured text handler, prod to JSON.
 	LogLevel  string
@@ -293,8 +299,10 @@ func Load(envName string) (*Config, error) {
 		EventsRetention: time.Duration(v.GetInt("EVENTS_RETENTION_DAYS")) * 24 * time.Hour,
 		IsDev:           isDevEnv(envName),
 		Locale:          i18n.Normalize(v.GetString("APP_LOCALE")),
-		LogLevel:        v.GetString("LOG_LEVEL"),
-		LogFormat:       v.GetString("LOG_FORMAT"),
+
+		RequireEmailVerification: strings.TrimSpace(v.GetString("REQUIRE_EMAIL_VERIFICATION")) != "false",
+		LogLevel:                 v.GetString("LOG_LEVEL"),
+		LogFormat:                v.GetString("LOG_FORMAT"),
 
 		OtelServiceName: v.GetString("OTEL_SERVICE_NAME"),
 		MetricsAddr:     v.GetString("METRICS_ADDR"),

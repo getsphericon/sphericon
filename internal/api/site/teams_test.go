@@ -117,8 +117,8 @@ func TestSiteInvitationAcceptExistingUser(t *testing.T) {
 	created := res.(*siteapi.SiteCreateInvitationResponse)
 	token := created.InviteUrl[strings.LastIndex(created.InviteUrl, "/")+1:]
 
-	// No name/password needed — the account already exists.
-	accept, err := c.SitePublicInvitationsAccept(ctx, &siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})
+	// The invitee's own session, no name/password: the account is Verified.
+	accept, err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SitePublicInvitationsAccept(ctx, &siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, accept)
 

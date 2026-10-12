@@ -168,25 +168,3 @@ func (h *Handlers) SiteUserSignOutEverywhere(ctx context.Context) (*siteapi.Site
 	}
 	return &siteapi.SiteUserSignOutEverywhereNoContent{SetCookie: h.sessions.Cleared().String()}, nil
 }
-
-// SiteUserResendVerification re-sends the signup verification link to the
-// current address. A no-op (still 202) when the email is already verified.
-func (h *Handlers) SiteUserResendVerification(ctx context.Context) error {
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		return auth.ErrUnauthorized
-	}
-	u, err := h.accounts.User(ctx, a.UserID)
-	if err != nil {
-		return err
-	}
-	if u.EmailVerifiedAt != nil {
-		return nil
-	}
-	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, u.ID, "", verifyTokenTTL, map[string]string{"email": u.Email})
-	if err != nil {
-		return err
-	}
-	_ = h.sysmail.EnqueueEmailVerification(ctx, u.Email, token)
-	return nil
-}

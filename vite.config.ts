@@ -21,7 +21,11 @@ function devLocalePlugin(): Plugin {
     transformIndexHtml(html) {
       const env = process.env.APP_LOCALE ?? 'en'
       const locale = SUPPORTED_LOCALES.includes(env) ? env : 'en'
-      return html.replaceAll('{{APP_LOCALE}}', locale)
+      // Only an explicit `false` turns the gate off, as in the backend's config.
+      const verification = process.env.REQUIRE_EMAIL_VERIFICATION === 'false' ? 'false' : 'true'
+      return html
+        .replaceAll('{{APP_LOCALE}}', locale)
+        .replaceAll('{{REQUIRE_EMAIL_VERIFICATION}}', verification)
     },
   }
 }

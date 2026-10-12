@@ -1,21 +1,37 @@
-import { Anchor, Button, Group, PasswordInput, Stack, TextInput, Title } from '@mantine/core'
+import {
+  Anchor,
+  Button,
+  Card,
+  Group,
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { siteAuthRegisterMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteRegisterInput } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
-import { indexRoute, loginRoute } from '../../router.tsx'
+import { requiresEmailVerification } from '../../instance.ts'
+import { loginRoute } from '../../router.tsx'
 
 export function RegisterPage() {
   const { t } = useTranslation()
   const apiErrorMessage = useApiErrorMessage()
-  const navigate = useNavigate()
+  // With the gate off (ADR 0030) the form collects the password and the account is
+  // usable at once; with it on, a link to the address sets the password.
+  const collectsPassword = !requiresEmailVerification()
+  // The address the verification link went to; set once registration is accepted.
+  const [sentTo, setSentTo] = useState<string | null>(null)
+  const [created, setCreated] = useState(false)
 
-  const form = useForm<SiteRegisterInput>({
+  const form = useForm<Required<SiteRegisterInput>>({
     initialValues: {
       name: '',
       email: '',
@@ -25,17 +41,11 @@ export function RegisterPage() {
 
   const registerMutation = useMutation({
     ...siteAuthRegisterMutation(),
-    onSuccess: () => {
-      notifications.show({
-        color: 'teal',
-        title: t(($) => $.notifications.successTitle),
-        message: t(($) => $.registration.successMessage),
-      })
-      return navigate({ to: indexRoute.to })
+    onSuccess: (_data, variables) => {
+      if (collectsPassword) setCreated(true)
+      else setSentTo(variables.body.email)
     },
     onError: (error) => {
-      // Drop the rejected password so the user retypes a fresh one.
-      form.setFieldValue('password', '')
       notifications.show({
         color: 'red',
         title: t(($) => $.registration.errorTitle),
@@ -47,14 +57,50 @@ export function RegisterPage() {
     },
   })
 
-  const handleSubmit = (values: SiteRegisterInput) => {
+  const handleSubmit = (values: Required<SiteRegisterInput>) => {
     registerMutation.mutate({
       body: {
         name: values.name.trim(),
         email: values.email.trim(),
-        password: values.password,
+        ...(collectsPassword ? { password: values.password } : {}),
       },
     })
+  }
+
+  if (created) {
+    return (
+      <Stack maw={460} mx="auto" mt="xl">
+        <Card withBorder padding="xl">
+          <Stack align="center" gap="sm">
+            <Title order={3}>{t(($) => $.registration.createdTitle)}</Title>
+            <Text c="dimmed" ta="center">
+              {t(($) => $.registration.createdBody)}
+            </Text>
+            <Anchor component="a" href={loginRoute.to} size="sm" mt="md">
+              {t(($) => $.registration.signInLink)}
+            </Anchor>
+          </Stack>
+        </Card>
+      </Stack>
+    )
+  }
+
+  if (sentTo) {
+    return (
+      <Stack maw={460} mx="auto" mt="xl">
+        <Card withBorder padding="xl">
+          <Stack align="center" gap="sm">
+            <Title order={3}>{t(($) => $.registration.checkEmailTitle)}</Title>
+            <Text c="dimmed" ta="center">
+              {t(($) => $.registration.checkEmailBody, { email: sentTo })}
+            </Text>
+            <Anchor component="a" href={loginRoute.to} size="sm" mt="md">
+              {t(($) => $.registration.loginLink)}
+            </Anchor>
+          </Stack>
+        </Card>
+      </Stack>
+    )
   }
 
   return (
@@ -74,11 +120,14 @@ export function RegisterPage() {
             required
             {...form.getInputProps('email')}
           />
-          <PasswordInput
-            label={t(($) => $.registration.passwordLabel)}
-            required
-            {...form.getInputProps('password')}
-          />
+          {collectsPassword && (
+            <PasswordInput
+              label={t(($) => $.registration.passwordLabel)}
+              autoComplete="new-password"
+              required
+              {...form.getInputProps('password')}
+            />
+          )}
 
           <Group justify="space-between" align="center">
             <Anchor component="a" href={loginRoute.to} size="sm">

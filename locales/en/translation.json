@@ -6,9 +6,12 @@
     "errorTitle": "Could not accept invitation",
     "intro": "You've been invited to join {{workspace}} on sphericon.",
     "invalid": "This invitation is invalid or has expired.",
+    "joinedMessage": "You've joined the workspace.",
     "loading": "Loading invitation…",
     "nameLabel": "Your name",
     "passwordLabel": "Password",
+    "signInButton": "Sign in",
+    "signInRequired": "Sign in to the account for this address to accept the invitation.",
     "successMessage": "You've joined the workspace. Please sign in.",
     "successTitle": "Invitation accepted",
     "title": "Accept invitation"
@@ -412,12 +415,17 @@
     "rateLimitedSeconds_one": "Too many sign-in attempts. Try again in {{count}} second.",
     "rateLimitedSeconds_other": "Too many sign-in attempts. Try again in {{count}} seconds.",
     "registerLink": "Create account",
+    "resendErrorTitle": "Could not send verification email",
+    "resendSuccess": "Verification email sent",
+    "resendVerification": "Resend verification email",
     "secondStepDescription": "Enter the code from your authenticator app, or one of your recovery codes.",
     "secondStepTitle": "Two-step verification",
     "startOver": "Start over",
     "submitButton": "Sign in",
     "title": "Sign in",
-    "verifyButton": "Verify"
+    "verifyButton": "Verify",
+    "verifyRequiredMessage": "Follow the link we emailed you to confirm your address and set your password, then sign in.",
+    "verifyRequiredTitle": "Verify your email first"
   },
   "nav": {
     "activity": "Activity",
@@ -492,9 +500,6 @@
     "newEmailLabel": "New email",
     "newPasswordLabel": "New password",
     "passwordSectionTitle": "Change password",
-    "resendErrorTitle": "Could not send verification email",
-    "resendSuccess": "Verification email sent",
-    "resendVerification": "Resend verification email",
     "sessionsSectionTitle": "Sessions",
     "signOutEverywhereButton": "Sign out everywhere",
     "signOutEverywhereConfirm": "You will be signed out on every device, including this one, and will need to sign in again.",
@@ -502,20 +507,23 @@
     "signOutEverywhereErrorTitle": "Could not sign out everywhere",
     "signOutEverywhereTitle": "Sign out everywhere?",
     "title": "Profile",
-    "unverifiedAlert": "Your email address is not verified.",
     "unverifiedBadge": "Not verified",
     "updated": "Profile updated",
     "verifiedBadge": "Verified"
   },
   "registration": {
+    "checkEmailBody": "We sent a link to {{email}}. Follow it to confirm your address and choose your password.",
+    "checkEmailTitle": "Check your email",
+    "createdBody": "Your account is ready. Sign in with your email and password.",
+    "createdTitle": "Account created",
     "emailLabel": "Email",
     "errorMessage": "We couldn't create your account. Please check your details and try again.",
     "errorTitle": "Registration failed",
     "loginLink": "Already have an account? Sign in",
     "nameLabel": "Name",
     "passwordLabel": "Password",
+    "signInLink": "Sign in",
     "submitButton": "Register",
-    "successMessage": "Account created successfully",
     "title": "Create account"
   },
   "resetPassword": {
@@ -911,12 +919,17 @@
     "required": "This field is required"
   },
   "verifyEmail": {
-    "continue": "Continue",
+    "confirmPasswordLabel": "Confirm password",
     "errorBody": "This verification link is invalid or has expired.",
+    "errorMessage": "We couldn't verify your email. The link may have expired.",
     "errorTitle": "Verification failed",
-    "successBody": "Thanks — your email address is confirmed.",
+    "mismatch": "Passwords do not match",
+    "passwordLabel": "Password",
+    "signIn": "Sign in",
+    "submitButton": "Set password",
+    "successBody": "Your email is confirmed and your password is set. You can sign in now.",
     "successTitle": "Email verified",
-    "verifying": "Verifying your email…"
+    "title": "Set your password"
   },
   "workspaceHold": {
     "description": "Outbound email is on hold for this workspace. Scheduled broadcasts and automations wait and continue on their own when the hold lifts. You can still sign in and view your data.",

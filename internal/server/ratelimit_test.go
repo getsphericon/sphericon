@@ -25,6 +25,8 @@ const humanLimit = 3
 // covers (ADR 0025). Each one is its own bucket per IP.
 var humanEndpoints = map[string]string{
 	"signup":          "/site/auth/register",
+	"resend":          "/site/auth/resend-verification",
+	"verify email":    "/site/auth/verify-email",
 	"invitation":      "/site/invitations/some-token/accept",
 	"consent confirm": "/site/confirmations/some-token",
 }
@@ -117,7 +119,7 @@ func TestARejectionCarriesCORSHeaders(t *testing.T) {
 func TestTheGeneratedClientTypesTheRateLimitResponse(t *testing.T) {
 	env := testhelper.Setup(t, withHumanLimit(1))
 	client := env.SiteAnonymous(t)
-	input := &siteapi.SiteRegisterInput{Name: "Eve", Email: "eve@example.test", Password: "hunter2hunter2"}
+	input := &siteapi.SiteRegisterInput{Name: "Eve", Email: "eve@example.test"}
 
 	_, err := client.SiteAuthRegister(t.Context(), input)
 	require.NoError(t, err)

@@ -2812,13 +2812,15 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 type ProblemCode string
 
 const (
-	ProblemCodeSecondFactorRequired ProblemCode = "second_factor_required"
+	ProblemCodeSecondFactorRequired      ProblemCode = "second_factor_required"
+	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
 )
 
 // AllValues returns all ProblemCode values.
 func (ProblemCode) AllValues() []ProblemCode {
 	return []ProblemCode{
 		ProblemCodeSecondFactorRequired,
+		ProblemCodeEmailVerificationRequired,
 	}
 }
 
@@ -2826,6 +2828,8 @@ func (ProblemCode) AllValues() []ProblemCode {
 func (s ProblemCode) MarshalText() ([]byte, error) {
 	switch s {
 	case ProblemCodeSecondFactorRequired:
+		return []byte(s), nil
+	case ProblemCodeEmailVerificationRequired:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -2837,6 +2841,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 	switch ProblemCode(data) {
 	case ProblemCodeSecondFactorRequired:
 		*s = ProblemCodeSecondFactorRequired
+		return nil
+	case ProblemCodeEmailVerificationRequired:
+		*s = ProblemCodeEmailVerificationRequired
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -2969,7 +2976,6 @@ func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 }
 
 func (*ProblemDetails) siteAnalyticsOverviewRes()         {}
-func (*ProblemDetails) siteAuthLoginRes()                 {}
 func (*ProblemDetails) siteAuthResetPasswordRes()         {}
 func (*ProblemDetails) siteAuthSecondFactorRes()          {}
 func (*ProblemDetails) siteAuthVerifyEmailRes()           {}
@@ -3068,7 +3074,9 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 func (*ProblemDetailsHeaders) siteAuthForgotPasswordRes()                  {}
 func (*ProblemDetailsHeaders) siteAuthLoginRes()                           {}
 func (*ProblemDetailsHeaders) siteAuthRegisterRes()                        {}
+func (*ProblemDetailsHeaders) siteAuthResendVerificationRes()              {}
 func (*ProblemDetailsHeaders) siteAuthSecondFactorRes()                    {}
+func (*ProblemDetailsHeaders) siteAuthVerifyEmailRes()                     {}
 func (*ProblemDetailsHeaders) sitePublicConfirmationsPerformRes()          {}
 func (*ProblemDetailsHeaders) sitePublicInvitationsAcceptRes()             {}
 func (*ProblemDetailsHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
@@ -3076,8 +3084,9 @@ func (*ProblemDetailsHeaders) siteSecondFactorDisableRes()                 {}
 func (*ProblemDetailsHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
 
-// Accept an invite. name + password are required only when the invitee has no account yet; ignored
-// otherwise.
+// Accept an invite. For an address with no User or an Unverified User, name + password are required
+// (422 otherwise). For a Verified User the body is not read: the session of that same User is the
+// proof.
 // Ref: #/components/schemas/SiteAcceptInvitationInput
 type SiteAcceptInvitationInput struct {
 	Name     OptString `json:"name"`
@@ -4037,6 +4046,14 @@ type SiteAuthForgotPasswordAccepted struct{}
 
 func (*SiteAuthForgotPasswordAccepted) siteAuthForgotPasswordRes() {}
 
+type SiteAuthLoginForbidden ProblemDetails
+
+func (*SiteAuthLoginForbidden) siteAuthLoginRes() {}
+
+type SiteAuthLoginUnauthorized ProblemDetails
+
+func (*SiteAuthLoginUnauthorized) siteAuthLoginRes() {}
+
 // SiteAuthLogoutNoContent is response for SiteAuthLogout operation.
 type SiteAuthLogoutNoContent struct {
 	SetCookie string
@@ -4052,6 +4069,11 @@ func (s *SiteAuthLogoutNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
 
+// SiteAuthRegisterAccepted is response for SiteAuthRegister operation.
+type SiteAuthRegisterAccepted struct{}
+
+func (*SiteAuthRegisterAccepted) siteAuthRegisterRes() {}
+
 type SiteAuthRegisterConflict ProblemDetails
 
 func (*SiteAuthRegisterConflict) siteAuthRegisterRes() {}
@@ -4059,6 +4081,11 @@ func (*SiteAuthRegisterConflict) siteAuthRegisterRes() {}
 type SiteAuthRegisterUnprocessableEntity ProblemDetails
 
 func (*SiteAuthRegisterUnprocessableEntity) siteAuthRegisterRes() {}
+
+// SiteAuthResendVerificationAccepted is response for SiteAuthResendVerification operation.
+type SiteAuthResendVerificationAccepted struct{}
+
+func (*SiteAuthResendVerificationAccepted) siteAuthResendVerificationRes() {}
 
 // SiteAuthResetPasswordOK is response for SiteAuthResetPassword operation.
 type SiteAuthResetPasswordOK struct{}
@@ -7140,7 +7167,8 @@ type SiteInvitationLookupResult struct {
 	WorkspaceName string `json:"workspaceName"`
 	// The address the invite was sent to.
 	Email EmailAddress `json:"email"`
-	// True when that email already has a sphericon account (accept needs no signup).
+	// True only when that email has a Verified User; an address with no User or an Unverified User needs a
+	// name and a password to accept.
 	HasAccount bool `json:"hasAccount"`
 }
 
@@ -7869,6 +7897,10 @@ type SitePublicConfirmationsPerformNoContent struct{}
 
 func (*SitePublicConfirmationsPerformNoContent) sitePublicConfirmationsPerformRes() {}
 
+type SitePublicInvitationsAcceptForbidden ProblemDetails
+
+func (*SitePublicInvitationsAcceptForbidden) sitePublicInvitationsAcceptRes() {}
+
 type SitePublicInvitationsAcceptNotFound ProblemDetails
 
 func (*SitePublicInvitationsAcceptNotFound) sitePublicInvitationsAcceptRes() {}
@@ -7877,6 +7909,10 @@ func (*SitePublicInvitationsAcceptNotFound) sitePublicInvitationsAcceptRes() {}
 type SitePublicInvitationsAcceptOK struct{}
 
 func (*SitePublicInvitationsAcceptOK) sitePublicInvitationsAcceptRes() {}
+
+type SitePublicInvitationsAcceptUnauthorized ProblemDetails
+
+func (*SitePublicInvitationsAcceptUnauthorized) sitePublicInvitationsAcceptRes() {}
 
 type SitePublicInvitationsAcceptUnprocessableEntity ProblemDetails
 
@@ -7950,11 +7986,15 @@ func (s *SiteRecoveryCodesInput) SetCurrentPassword(val string) {
 	s.CurrentPassword = val
 }
 
+// Register with a name and an email: no password is taken before the address is proven (ADR 0030).
+// Only an install with `REQUIRE_EMAIL_VERIFICATION=false` takes a password here.
 // Ref: #/components/schemas/SiteRegisterInput
 type SiteRegisterInput struct {
-	Name     string       `json:"name"`
-	Email    EmailAddress `json:"email"`
-	Password string       `json:"password"`
+	Name  string       `json:"name"`
+	Email EmailAddress `json:"email"`
+	// Required when the install does not require email verification, where it makes the account usable at
+	// once. Otherwise ignored and never stored: the password is set by the verification link.
+	Password OptString `json:"password"`
 }
 
 // GetName returns the value of Name.
@@ -7968,7 +8008,7 @@ func (s *SiteRegisterInput) GetEmail() EmailAddress {
 }
 
 // GetPassword returns the value of Password.
-func (s *SiteRegisterInput) GetPassword() string {
+func (s *SiteRegisterInput) GetPassword() OptString {
 	return s.Password
 }
 
@@ -7983,59 +8023,25 @@ func (s *SiteRegisterInput) SetEmail(val EmailAddress) {
 }
 
 // SetPassword sets the value of Password.
-func (s *SiteRegisterInput) SetPassword(val string) {
+func (s *SiteRegisterInput) SetPassword(val OptString) {
 	s.Password = val
 }
 
-// Ref: #/components/schemas/SiteRegisterResult
-type SiteRegisterResult struct {
-	ID        EntityId     `json:"id"`
-	Name      string       `json:"name"`
-	Email     EmailAddress `json:"email"`
-	CreatedAt Timestamp    `json:"createdAt"`
-}
-
-// GetID returns the value of ID.
-func (s *SiteRegisterResult) GetID() EntityId {
-	return s.ID
-}
-
-// GetName returns the value of Name.
-func (s *SiteRegisterResult) GetName() string {
-	return s.Name
+// Ask for the verification link again (always accepted; no account enumeration).
+// Ref: #/components/schemas/SiteResendVerificationInput
+type SiteResendVerificationInput struct {
+	Email EmailAddress `json:"email"`
 }
 
 // GetEmail returns the value of Email.
-func (s *SiteRegisterResult) GetEmail() EmailAddress {
+func (s *SiteResendVerificationInput) GetEmail() EmailAddress {
 	return s.Email
 }
 
-// GetCreatedAt returns the value of CreatedAt.
-func (s *SiteRegisterResult) GetCreatedAt() Timestamp {
-	return s.CreatedAt
-}
-
-// SetID sets the value of ID.
-func (s *SiteRegisterResult) SetID(val EntityId) {
-	s.ID = val
-}
-
-// SetName sets the value of Name.
-func (s *SiteRegisterResult) SetName(val string) {
-	s.Name = val
-}
-
 // SetEmail sets the value of Email.
-func (s *SiteRegisterResult) SetEmail(val EmailAddress) {
+func (s *SiteResendVerificationInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
-
-// SetCreatedAt sets the value of CreatedAt.
-func (s *SiteRegisterResult) SetCreatedAt(val Timestamp) {
-	s.CreatedAt = val
-}
-
-func (*SiteRegisterResult) siteAuthRegisterRes() {}
 
 // Set a new password using a reset token.
 // Ref: #/components/schemas/SiteResetPasswordInput
@@ -11242,9 +11248,6 @@ type SiteUserEmailChangeUnprocessableEntity ProblemDetails
 
 func (*SiteUserEmailChangeUnprocessableEntity) siteUserEmailChangeRes() {}
 
-// SiteUserResendVerificationAccepted is response for SiteUserResendVerification operation.
-type SiteUserResendVerificationAccepted struct{}
-
 // The authenticated dashboard user.
 // Ref: #/components/schemas/SiteUserResource
 type SiteUserResource struct {
@@ -11361,10 +11364,11 @@ type SiteUserUpdateMeUnprocessableEntity ProblemDetails
 
 func (*SiteUserUpdateMeUnprocessableEntity) siteUserUpdateMeRes() {}
 
-// Confirm ownership of an email address using a verification token.
+// Prove an email address with the token sent to it and set the password.
 // Ref: #/components/schemas/SiteVerifyEmailInput
 type SiteVerifyEmailInput struct {
-	Token string `json:"token"`
+	Token    string `json:"token"`
+	Password string `json:"password"`
 }
 
 // GetToken returns the value of Token.
@@ -11372,9 +11376,19 @@ func (s *SiteVerifyEmailInput) GetToken() string {
 	return s.Token
 }
 
+// GetPassword returns the value of Password.
+func (s *SiteVerifyEmailInput) GetPassword() string {
+	return s.Password
+}
+
 // SetToken sets the value of Token.
 func (s *SiteVerifyEmailInput) SetToken(val string) {
 	s.Token = val
+}
+
+// SetPassword sets the value of Password.
+func (s *SiteVerifyEmailInput) SetPassword(val string) {
+	s.Password = val
 }
 
 // Webhook endpoint resource used by the site UI.

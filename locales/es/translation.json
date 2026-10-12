@@ -6,9 +6,12 @@
     "errorTitle": "No se pudo aceptar la invitación",
     "intro": "Te han invitado a unirte a {{workspace}} en sphericon.",
     "invalid": "Esta invitación no es válida o ha caducado.",
+    "joinedMessage": "Te has unido al espacio de trabajo.",
     "loading": "Cargando invitación…",
     "nameLabel": "Tu nombre",
     "passwordLabel": "Contraseña",
+    "signInButton": "Iniciar sesión",
+    "signInRequired": "Inicia sesión en la cuenta de esta dirección para aceptar la invitación.",
     "successMessage": "Te has unido al espacio de trabajo. Inicia sesión.",
     "successTitle": "Invitación aceptada",
     "title": "Aceptar invitación"
@@ -420,12 +423,17 @@
     "rateLimitedSeconds_many": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} segundos.",
     "rateLimitedSeconds_other": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo en {{count}} segundos.",
     "registerLink": "Crear cuenta",
+    "resendErrorTitle": "No se pudo enviar el correo de verificación",
+    "resendSuccess": "Correo de verificación enviado",
+    "resendVerification": "Reenviar correo de verificación",
     "secondStepDescription": "Introduce el código de tu aplicación de autenticación o uno de tus códigos de recuperación.",
     "secondStepTitle": "Verificación en dos pasos",
     "startOver": "Empezar de nuevo",
     "submitButton": "Iniciar sesión",
     "title": "Iniciar sesión",
-    "verifyButton": "Verificar"
+    "verifyButton": "Verificar",
+    "verifyRequiredMessage": "Sigue el enlace que te enviamos por correo para confirmar tu dirección y establecer tu contraseña, y luego inicia sesión.",
+    "verifyRequiredTitle": "Verifica primero tu correo"
   },
   "nav": {
     "activity": "Actividad",
@@ -500,9 +508,6 @@
     "newEmailLabel": "Nuevo correo",
     "newPasswordLabel": "Nueva contraseña",
     "passwordSectionTitle": "Cambiar contraseña",
-    "resendErrorTitle": "No se pudo enviar el correo de verificación",
-    "resendSuccess": "Correo de verificación enviado",
-    "resendVerification": "Reenviar correo de verificación",
     "sessionsSectionTitle": "Sesiones",
     "signOutEverywhereButton": "Cerrar sesión en todas partes",
     "signOutEverywhereConfirm": "Se cerrará tu sesión en todos los dispositivos, incluido este, y tendrás que volver a iniciar sesión.",
@@ -510,20 +515,23 @@
     "signOutEverywhereErrorTitle": "No se pudo cerrar sesión en todas partes",
     "signOutEverywhereTitle": "¿Cerrar sesión en todas partes?",
     "title": "Perfil",
-    "unverifiedAlert": "Tu dirección de correo no está verificada.",
     "unverifiedBadge": "Sin verificar",
     "updated": "Perfil actualizado",
     "verifiedBadge": "Verificado"
   },
   "registration": {
+    "checkEmailBody": "Enviamos un enlace a {{email}}. Sigue el enlace para confirmar tu dirección y elegir tu contraseña.",
+    "checkEmailTitle": "Revisa tu correo",
+    "createdBody": "Tu cuenta está lista. Inicia sesión con tu correo y contraseña.",
+    "createdTitle": "Cuenta creada",
     "emailLabel": "Correo",
     "errorMessage": "No pudimos crear tu cuenta. Revisa tus datos e inténtalo de nuevo.",
     "errorTitle": "Error de registro",
     "loginLink": "¿Ya tienes una cuenta? Inicia sesión",
     "nameLabel": "Nombre",
     "passwordLabel": "Contraseña",
+    "signInLink": "Iniciar sesión",
     "submitButton": "Registrarse",
-    "successMessage": "Cuenta creada correctamente",
     "title": "Crear cuenta"
   },
   "resetPassword": {
@@ -921,12 +929,17 @@
     "required": "Este campo es obligatorio"
   },
   "verifyEmail": {
-    "continue": "Continuar",
+    "confirmPasswordLabel": "Confirma la contraseña",
     "errorBody": "Este enlace de verificación no es válido o ha caducado.",
+    "errorMessage": "No pudimos verificar tu correo. Puede que el enlace haya caducado.",
     "errorTitle": "Error de verificación",
-    "successBody": "Gracias; tu dirección de correo está confirmada.",
+    "mismatch": "Las contraseñas no coinciden",
+    "passwordLabel": "Contraseña",
+    "signIn": "Iniciar sesión",
+    "submitButton": "Establecer contraseña",
+    "successBody": "Tu correo está confirmado y tu contraseña establecida. Ya puedes iniciar sesión.",
     "successTitle": "Correo verificado",
-    "verifying": "Verificando tu correo…"
+    "title": "Establece tu contraseña"
   },
   "workspaceHold": {
     "description": "El envío de correos salientes está retenido para este espacio de trabajo. Los envíos programados y las automatizaciones esperan y continúan solos cuando se levante la retención. Aún puede iniciar sesión y consultar sus datos.",

@@ -110,7 +110,7 @@ func TestClientEnqueuesEveryJobKind(t *testing.T) {
 	require.NoError(t, e.client.EnqueueBroadcast(ctx, fixtures.BroadcastDraftID, &later))
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "new@example.com", "New"))
 	require.NoError(t, e.client.EnqueuePasswordReset(ctx, "a@example.com", "tok", true))
-	require.NoError(t, e.client.EnqueueEmailVerification(ctx, "a@example.com", "tok"))
+	require.NoError(t, e.client.EnqueueEmailVerification(ctx, "a@example.com", "tok", true))
 	require.NoError(t, e.client.EnqueueEmailChangeConfirm(ctx, "a@example.com", "tok"))
 	require.NoError(t, e.client.EnqueueMemberInvite(ctx, "a@example.com", "https://x/invite", "Acme", "Jane"))
 	require.NoError(t, e.client.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))

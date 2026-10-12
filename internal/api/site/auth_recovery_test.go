@@ -88,46 +88,14 @@ func TestResetPasswordRejectsInvalidToken(t *testing.T) {
 func TestResetPasswordRejectsWrongPurposeToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	pub := env.SiteAnonymous(t)
-	authed := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	// Mint a verify token via resend, then try to use it as a reset token.
-	require.NoError(t, authed.SiteUserResendVerification(ctx))
-	_, body := lastSystemEmail(t, env)
-	verifyToken := tokenFromEmail(t, body)
+	// Take a verify token from a registration mail, then try to use it as a reset token.
+	verifyToken := register(t, env, "Grace Hopper", "grace@example.com")
 
 	res, err := pub.SiteAuthResetPassword(ctx, &siteapi.SiteResetPasswordInput{Token: verifyToken, Password: "whatever123"})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.ProblemDetails{}, res, "a verify token must not reset a password")
-}
-
-func TestVerifyEmailFlow(t *testing.T) {
-	env := testhelper.Setup(t)
-	authed := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	pub := env.SiteAnonymous(t)
-	ctx := context.Background()
-
-	// Seed user starts unverified.
-	me, err := authed.SiteUserGetMe(ctx)
-	require.NoError(t, err)
-	require.False(t, me.EmailVerified)
-
-	require.NoError(t, authed.SiteUserResendVerification(ctx))
-	_, body := lastSystemEmail(t, env)
-	token := tokenFromEmail(t, body)
-
-	res, err := pub.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: token})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, res)
-
-	me, err = authed.SiteUserGetMe(ctx)
-	require.NoError(t, err)
-	assert.True(t, me.EmailVerified)
-
-	// Replaying the link is idempotent (still OK).
-	res, err = pub.SiteAuthVerifyEmail(ctx, &siteapi.SiteVerifyEmailInput{Token: token})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, res)
 }
 
 func TestEmailChangeRequiresCurrentPassword(t *testing.T) {
@@ -148,12 +116,7 @@ func TestEmailChangeRejectsTakenAddress(t *testing.T) {
 	ctx := context.Background()
 
 	// Register a second user so its address is taken.
-	pub := env.SiteAnonymous(t)
-	reg, err := pub.SiteAuthRegister(ctx, &siteapi.SiteRegisterInput{
-		Name: "Jane", Email: "jane@example.com", Password: "password123",
-	})
-	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteRegisterResult{}, reg)
+	register(t, env, "Jane", "jane@example.com")
 
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	res, err := c.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{

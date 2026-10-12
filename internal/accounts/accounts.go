@@ -9,6 +9,7 @@ package accounts
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -217,59 +218,64 @@ func ptrEqual(a, b *int) bool {
 // created atomically: a Workspace is reached through Memberships, so one without its
 // owner row would be inaccessible.
 func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name string) (*ent.Workspace, error) {
+	for {
+		var ws *ent.Workspace
+		err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+			var err error
+			ws, err = createWorkspaceIn(ctx, tx, userID, name)
+			return err
+		})
+		if db.IsUniqueViolation(err) {
+			continue // lost a race on the slug; the next attempt sees it taken
+		}
+		return ws, err
+	}
+}
+
+// createWorkspaceIn creates the Workspace and its owner Membership on tx, under the
+// first free slug derived from name. A unique violation (a lost race on the slug)
+// aborts tx, so the caller retries the whole transaction.
+func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name string) (*ent.Workspace, error) {
 	base := Slugify(name)
 	if base == "" {
 		base = "workspace"
 	}
-	for i := 0; ; i++ {
-		slug := base
-		if i > 0 {
-			slug = fmt.Sprintf("%s-%d", base, i+1)
-		}
-		exists, err := a.ent.Workspace.Query().Where(workspace.Slug(slug)).Exist(ctx)
+	slug := base
+	for i := 2; ; i++ {
+		exists, err := tx.Workspace.Query().Where(workspace.Slug(slug)).Exist(ctx)
 		if err != nil {
 			return nil, err
 		}
-		if exists {
-			continue
+		if !exists {
+			break
 		}
-		collectKey, err := credentials.GenerateCollectKey()
-		if err != nil {
-			return nil, err
-		}
-		ingestKey, err := credentials.GenerateIngestKey()
-		if err != nil {
-			return nil, err
-		}
-		var ws *ent.Workspace
-		err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-			created, cerr := tx.Workspace.Create().
-				SetName(name).
-				SetSlug(slug).
-				SetCollectKey(collectKey).
-				SetIngestKey(ingestKey).
-				Save(ctx)
-			if cerr != nil {
-				return cerr
-			}
-			if _, merr := tx.Membership.Create().
-				SetUserID(userID).
-				SetWorkspaceID(created.ID).
-				SetRole(membership.RoleOwner).
-				Save(ctx); merr != nil {
-				return merr
-			}
-			ws = created
-			return nil
-		})
-		if db.IsUniqueViolation(err) {
-			continue // lost a race on the slug; try the next suffix
-		}
-		if err != nil {
-			return nil, err
-		}
-		return ws, nil
+		slug = fmt.Sprintf("%s-%d", base, i)
 	}
+	collectKey, err := credentials.GenerateCollectKey()
+	if err != nil {
+		return nil, err
+	}
+	ingestKey, err := credentials.GenerateIngestKey()
+	if err != nil {
+		return nil, err
+	}
+	ws, err := tx.Workspace.Create().
+		SetName(name).
+		SetSlug(slug).
+		SetCollectKey(collectKey).
+		SetIngestKey(ingestKey).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tx.Membership.Create().
+		SetUserID(userID).
+		SetWorkspaceID(ws.ID).
+		SetRole(membership.RoleOwner).
+		Save(ctx); err != nil {
+		return nil, err
+	}
+	return ws, nil
 }
 
 // User loads a User by id.
@@ -287,9 +293,101 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(email)).Exist(ctx)
 }
 
-// CreateUser registers a User with a password hash.
+// HasVerifiedAccount reports whether the email belongs to a Verified User: the only
+// kind of account an Invitation may attach to. An Unverified User is not an account
+// (ADR 0030): it holds no password and is handled like a new address.
+func (a *Accounts) HasVerifiedAccount(ctx context.Context, email string) (bool, error) {
+	return a.ent.User.Query().Where(user.Email(email), user.EmailVerifiedAtNotNil()).Exist(ctx)
+}
+
+// Register creates an Unverified User (ADR 0030): a name and an email, no password,
+// no Membership. The unique index on the email refuses a taken address (see
+// db.IsUniqueViolation).
+func (a *Accounts) Register(ctx context.Context, name, email string) (*ent.User, error) {
+	return a.ent.User.Create().SetName(name).SetEmail(email).Save(ctx)
+}
+
+// CreateUser creates a User whose email is already proven, with a password hash: a
+// User made by the platform itself rather than by a registration.
 func (a *Accounts) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).Save(ctx)
+	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(time.Now()).Save(ctx)
+}
+
+// markVerified completes an Unverified User's row: it sets the password hash (and the
+// name when not empty), stamps the Verified email and bumps the session epoch, ending
+// every earlier session. The write lands only on a still-Unverified User, so of two
+// racing completions exactly one wins; the other gets ErrAlreadyVerified and changes
+// nothing.
+func markVerified(ctx context.Context, tx *ent.Client, id int64, name, passwordHash string) (*ent.User, error) {
+	upd := tx.User.Update().
+		Where(user.ID(id), user.EmailVerifiedAtIsNil()).
+		SetPasswordHash(passwordHash).
+		SetEmailVerifiedAt(time.Now()).
+		AddSessionEpoch(1)
+	if name != "" {
+		upd = upd.SetName(name)
+	}
+	n, err := upd.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		return nil, ErrAlreadyVerified
+	}
+	return tx.User.Get(ctx, id)
+}
+
+// VerifyEmail completes a registration from its link (ADR 0030), in one transaction:
+// it stamps the Verified email, sets the password hash, bumps the session epoch
+// (ending every session issued before, as a password change does) and creates the
+// User's first Workspace named workspaceName with the User as owner. It records
+// `user.email_verify` in that Workspace's Audit log and returns the User.
+// ErrAlreadyVerified when the User is no longer Unverified (a used link).
+func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash, workspaceName string) (*ent.User, error) {
+	return a.verified(ctx, workspaceName, func(tx *ent.Client) (*ent.User, error) {
+		return markVerified(ctx, tx, id, "", passwordHash)
+	})
+}
+
+// RegisterVerified is registration on an install that does not require email
+// verification (ADR 0030): in one transaction it creates a User that is Verified at
+// once with its password, and the first Workspace, exactly as VerifyEmail does. The
+// unique index on the email refuses a taken address (see db.IsUniqueViolation).
+func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
+	return a.verified(ctx, name, func(tx *ent.Client) (*ent.User, error) {
+		return tx.User.Create().
+			SetName(name).
+			SetEmail(email).
+			SetPasswordHash(passwordHash).
+			SetEmailVerifiedAt(time.Now()).
+			Save(ctx)
+	})
+}
+
+// verified is what makes a User Verified, shared by VerifyEmail and RegisterVerified:
+// write stores the User's verified state, then the User's first Workspace is created
+// and `user.email_verify` recorded in its Audit log, all in one transaction.
+func (a *Accounts) verified(ctx context.Context, workspaceName string, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, error) {
+	for {
+		var verified *ent.User
+		written := false
+		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+			u, err := write(tx)
+			if err != nil {
+				return err
+			}
+			written = true
+			if _, err := createWorkspaceIn(ctx, tx, u.ID, workspaceName); err != nil {
+				return err
+			}
+			verified = u
+			return RecordUserAction(ctx, tx, pub, u, events.ActionUserEmailVerify, nil)
+		})
+		if written && db.IsUniqueViolation(err) {
+			continue // lost a race on the slug; the next attempt sees it taken
+		}
+		return verified, err
+	}
 }
 
 // UpdateProfile sets the User's name and/or password hash (nil leaves a field
@@ -320,11 +418,30 @@ func (a *Accounts) UpdateProfile(ctx context.Context, id int64, name, passwordHa
 	return saved, err
 }
 
-// SetPassword replaces the User's password hash (a reset by emailed link) and records
-// the change like UpdateProfile.
-func (a *Accounts) SetPassword(ctx context.Context, id int64, passwordHash string) error {
-	_, err := a.UpdateProfile(ctx, id, nil, &passwordHash)
-	return err
+// ResetPassword sets the User's password from a reset link (ADR 0030). The link was
+// mailed to the login address, so following it proves the address as much as the
+// verification link does: for an Unverified User it completes the registration
+// exactly as VerifyEmail (Verified email, first Workspace, `user.email_verify`) and
+// reports completedRegistration = true with the User, so the caller sends the welcome
+// email. For a Verified User it is only a password change, recorded like UpdateProfile.
+// Either way every earlier session ends.
+func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash string) (u *ent.User, completedRegistration bool, err error) {
+	u, err = a.User(ctx, id)
+	if err != nil {
+		return nil, false, err
+	}
+	if u.EmailVerifiedAt == nil {
+		u, err = a.VerifyEmail(ctx, id, passwordHash, u.Name)
+		if err == nil {
+			return u, true, nil
+		}
+		if !errors.Is(err, ErrAlreadyVerified) {
+			return nil, false, err
+		}
+		// A concurrent link verified the User first: this is now a plain password change.
+	}
+	u, err = a.UpdateProfile(ctx, id, nil, &passwordHash)
+	return u, false, err
 }
 
 // EndSessions bumps the User's session epoch, ending every session issued before
@@ -392,13 +509,6 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 	return nil
 }
 
-// MarkEmailVerified stamps the User's email as verified now.
-func (a *Accounts) MarkEmailVerified(ctx context.Context, id int64) error {
-	return a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return tx.User.UpdateOneID(id).SetEmailVerifiedAt(time.Now()).Exec(ctx)
-	})
-}
-
 // ChangeEmail swaps the login email for one proven by a confirmation link, so it is
 // stored verified, and bumps the session epoch: every session issued before the
 // change ends (ADR 0020). The unique index guards a race on the address (see
@@ -423,28 +533,55 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 		Only(ctx)
 }
 
-// AcceptInvitation turns a pending Invitation into a Membership: it attaches the
-// existing User of the invited email or creates one (name + password, already
-// email-verified because the link proves control of the address), joins them to the
-// Workspace (a duplicate is not an error) and marks the Invitation accepted.
-func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password string) error {
+// AcceptInvitation turns a pending Invitation into a Membership. sessionEmail is the
+// login email of the session the request carried ("" for none). A Verified User is
+// attached only with their own session (ErrSignInRequired without one, ErrWrongAccount
+// for another User's), decided on the row read inside the transaction. For an address with
+// no User or an Unverified User (ADR 0030) the name and password are required
+// (ErrCredentialsRequired otherwise): the link proves control of the address, so the
+// User is created, or the Unverified User's row completed (name and password set,
+// Verified email stamped, session epoch bumped), and nothing the registrant set
+// survives; if the address was verified meanwhile that is ErrAlreadyVerified. A
+// Verified User is attached as is. The Membership is created (a
+// duplicate is not an error), the Invitation marked accepted and the acceptance
+// audited, all in one transaction.
+func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password, sessionEmail string) error {
 	role := membership.Role(inv.Role)
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		u, uerr := tx.User.Query().Where(user.Email(inv.Email)).Only(ctx)
-		if ent.IsNotFound(uerr) {
+		if uerr != nil && !ent.IsNotFound(uerr) {
+			return uerr
+		}
+		if uerr == nil && u.EmailVerifiedAt != nil {
+			// A Verified User's own session is the proof of the address (ADR 0030).
+			if sessionEmail == "" {
+				return ErrSignInRequired
+			}
+			if !strings.EqualFold(sessionEmail, inv.Email) {
+				return ErrWrongAccount
+			}
+		} else {
+			name = strings.TrimSpace(name)
+			if name == "" || password == "" {
+				return ErrCredentialsRequired
+			}
 			hash, herr := credentials.HashPassword(password)
 			if herr != nil {
 				return herr
 			}
-			u, uerr = tx.User.Create().
-				SetName(name).
-				SetEmail(inv.Email).
-				SetPasswordHash(hash).
-				SetEmailVerifiedAt(time.Now()).
-				Save(ctx)
-		}
-		if uerr != nil {
-			return uerr
+			if ent.IsNotFound(uerr) {
+				u, uerr = tx.User.Create().
+					SetName(name).
+					SetEmail(inv.Email).
+					SetPasswordHash(hash).
+					SetEmailVerifiedAt(time.Now()).
+					Save(ctx)
+			} else {
+				u, uerr = markVerified(ctx, tx, u.ID, name, hash)
+			}
+			if uerr != nil {
+				return uerr
+			}
 		}
 
 		ts := tx.Scoped(inv.WorkspaceID)

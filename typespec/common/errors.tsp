@@ -10,6 +10,10 @@ enum ProblemCode {
   /** The Workspace requires a Second factor, the User has none and their grace
    * period is over (ADR 0020); enrolling one lifts the block */
   secondFactorRequired: "second_factor_required",
+
+  /** The User's email is not proven yet (ADR 0030): login is refused until the
+   * link sent to the address is followed */
+  emailVerificationRequired: "email_verification_required",
 }
 
 /** RFC 7807 Problem Details */

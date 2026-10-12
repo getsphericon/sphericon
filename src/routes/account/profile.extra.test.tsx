@@ -4,7 +4,6 @@ import { expect, test } from 'vitest'
 import {
   handleSiteUserEmailChange,
   handleSiteUserGetMe,
-  handleSiteUserResendVerification,
   handleSiteUserSignOutEverywhere,
   handleSiteUserUpdateMe,
 } from '../../generated/site/msw.gen.ts'
@@ -25,7 +24,7 @@ const user: SiteUserResource = {
 
 const noContent = () => new Response(null, { status: 204 })
 
-type Op = 'get' | 'update' | 'emailChange' | 'resend' | 'signOutEverywhere'
+type Op = 'get' | 'update' | 'emailChange' | 'signOutEverywhere'
 type Call = { op: Op; body: unknown }
 type Handler = (req: Request) => Response | Promise<Response>
 
@@ -49,43 +48,11 @@ function serveProfile(
     handleSiteUserGetMe(({ request }) => serve('get', json)(request)),
     handleSiteUserUpdateMe(({ request }) => serve('update', json)(request)),
     handleSiteUserEmailChange(({ request }) => serve('emailChange', noContent)(request)),
-    handleSiteUserResendVerification(({ request }) => serve('resend', noContent)(request)),
     handleSiteUserSignOutEverywhere(({ request }) =>
       serve('signOutEverywhere', noContent)(request),
     ),
   )
 }
-
-test('an unverified user can ask for the verification email again', async () => {
-  const calls: Call[] = []
-  serveProfile(calls)
-  const { screen } = await renderWithRouter(<ProfilePage />)
-
-  await expect.element(screen.getByText('Not verified')).toBeInTheDocument()
-  await screen.getByRole('button', { name: 'Resend verification email' }).click()
-
-  await expect.element(screen.getByText('Verification email sent')).toBeInTheDocument()
-  expect(calls.map((c) => c.op)).toEqual(['resend'])
-})
-
-test('a verified user sees the verified badge and no resend prompt', async () => {
-  serveProfile([], {}, { ...user, emailVerified: true })
-  const { screen } = await renderWithRouter(<ProfilePage />)
-
-  await expect.element(screen.getByText('Verified', { exact: true })).toBeInTheDocument()
-  expect(screen.getByText('Your email address is not verified.').elements()).toHaveLength(0)
-})
-
-test('reports a failed verification resend', async () => {
-  serveProfile([], {
-    resend: () => problem(429, { detail: 'slow down' }),
-  })
-  const { screen } = await renderWithRouter(<ProfilePage />)
-
-  await screen.getByRole('button', { name: 'Resend verification email' }).click()
-
-  await expect.element(screen.getByText('Could not send verification email')).toBeInTheDocument()
-})
 
 test('changing the password sends the current and new password', async () => {
   const calls: Call[] = []

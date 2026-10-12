@@ -490,13 +490,15 @@ func (o OptString) Or(d string) string {
 type ProblemCode string
 
 const (
-	ProblemCodeSecondFactorRequired ProblemCode = "second_factor_required"
+	ProblemCodeSecondFactorRequired      ProblemCode = "second_factor_required"
+	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
 )
 
 // AllValues returns all ProblemCode values.
 func (ProblemCode) AllValues() []ProblemCode {
 	return []ProblemCode{
 		ProblemCodeSecondFactorRequired,
+		ProblemCodeEmailVerificationRequired,
 	}
 }
 
@@ -504,6 +506,8 @@ func (ProblemCode) AllValues() []ProblemCode {
 func (s ProblemCode) MarshalText() ([]byte, error) {
 	switch s {
 	case ProblemCodeSecondFactorRequired:
+		return []byte(s), nil
+	case ProblemCodeEmailVerificationRequired:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -515,6 +519,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 	switch ProblemCode(data) {
 	case ProblemCodeSecondFactorRequired:
 		*s = ProblemCodeSecondFactorRequired
+		return nil
+	case ProblemCodeEmailVerificationRequired:
+		*s = ProblemCodeEmailVerificationRequired
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

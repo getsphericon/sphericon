@@ -381,7 +381,7 @@ export type EntityId = string;
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
-export const ProblemCode = { SECOND_FACTOR_REQUIRED: 'second_factor_required' } as const;
+export const ProblemCode = { SECOND_FACTOR_REQUIRED: 'second_factor_required', EMAIL_VERIFICATION_REQUIRED: 'email_verification_required' } as const;
 
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
@@ -439,8 +439,9 @@ export type ProblemDetails = {
 };
 
 /**
- * Accept an invite. name + password are required only when the invitee has no
- * account yet; ignored otherwise.
+ * Accept an invite. For an address with no User or an Unverified User, name + password
+ * are required (422 otherwise). For a Verified User the body is not read: the session of
+ * that same User is the proof.
  */
 export type SiteAcceptInvitationInput = {
   name?: string;
@@ -1527,7 +1528,8 @@ export type SiteInvitationLookupResult = {
    */
   email: EmailAddress;
   /**
-   * True when that email already has a sphericon account (accept needs no signup)
+   * True only when that email has a Verified User; an address with no User or an
+   * Unverified User needs a name and a password to accept
    */
   hasAccount: boolean;
 };
@@ -1761,17 +1763,27 @@ export type SiteRecoveryCodesInput = {
   currentPassword: string;
 };
 
+/**
+ * Register with a name and an email: no password is taken before the address is
+ * proven (ADR 0030). Only an install with `REQUIRE_EMAIL_VERIFICATION=false` takes a
+ * password here.
+ */
 export type SiteRegisterInput = {
   name: string;
   email: EmailAddress;
-  password: string;
+  /**
+   * Required when the install does not require email verification, where it makes
+   * the account usable at once. Otherwise ignored and never stored: the password is
+   * set by the verification link.
+   */
+  password?: string;
 };
 
-export type SiteRegisterResult = {
-  id: EntityId;
-  name: string;
+/**
+ * Ask for the verification link again (always accepted; no account enumeration)
+ */
+export type SiteResendVerificationInput = {
   email: EmailAddress;
-  createdAt: Timestamp;
 };
 
 /**
@@ -2501,10 +2513,11 @@ export type SiteUserResource = {
 };
 
 /**
- * Confirm ownership of an email address using a verification token
+ * Prove an email address with the token sent to it and set the password
  */
 export type SiteVerifyEmailInput = {
   token: string;
+  password: string;
 };
 
 /**
@@ -2956,6 +2969,10 @@ export type SiteAuthLoginErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
   429: ProblemDetails;
@@ -3014,12 +3031,33 @@ export type SiteAuthRegisterError = SiteAuthRegisterErrors[keyof SiteAuthRegiste
 
 export type SiteAuthRegisterResponses = {
   /**
-   * The request has succeeded and a new resource has been created as a result.
+   * The request has been accepted for processing, but processing has not yet completed.
    */
-  201: SiteRegisterResult;
+  202: unknown;
 };
 
-export type SiteAuthRegisterResponse = SiteAuthRegisterResponses[keyof SiteAuthRegisterResponses];
+export type SiteAuthResendVerificationData = {
+  body: SiteResendVerificationInput;
+  path?: never;
+  query?: never;
+  url: '/auth/resend-verification';
+};
+
+export type SiteAuthResendVerificationErrors = {
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SiteAuthResendVerificationError = SiteAuthResendVerificationErrors[keyof SiteAuthResendVerificationErrors];
+
+export type SiteAuthResendVerificationResponses = {
+  /**
+   * The request has been accepted for processing, but processing has not yet completed.
+   */
+  202: unknown;
+};
 
 export type SiteAuthResetPasswordData = {
   body: SiteResetPasswordInput;
@@ -3085,6 +3123,10 @@ export type SiteAuthVerifyEmailErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
 };
 
 export type SiteAuthVerifyEmailError = SiteAuthVerifyEmailErrors[keyof SiteAuthVerifyEmailErrors];
@@ -3168,6 +3210,14 @@ export type SitePublicInvitationsAcceptData = {
 };
 
 export type SitePublicInvitationsAcceptErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -3438,20 +3488,6 @@ export type SiteUserSignOutEverywhereResponses = {
 };
 
 export type SiteUserSignOutEverywhereResponse = SiteUserSignOutEverywhereResponses[keyof SiteUserSignOutEverywhereResponses];
-
-export type SiteUserResendVerificationData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/me/verification-email';
-};
-
-export type SiteUserResendVerificationResponses = {
-  /**
-   * The request has been accepted for processing, but processing has not yet completed.
-   */
-  202: unknown;
-};
 
 export type SiteOAuthDescribeData = {
   body?: never;

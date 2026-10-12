@@ -43,11 +43,13 @@ type Actor = ent.Actor
 // actions that are not a row write. A test drives every one of them and compares with
 // ExplicitAuditActions, so adding an explicit path means listing it here.
 const (
-	ActionMembershipUpdate   = "membership.update"
-	ActionInvitationCreate   = "invitation.create"
-	ActionInvitationAccept   = "invitation.accept"
-	ActionInvitationRevoke   = "invitation.revoke"
-	ActionUserLogin          = "user.login"
+	ActionMembershipUpdate = "membership.update"
+	ActionInvitationCreate = "invitation.create"
+	ActionInvitationAccept = "invitation.accept"
+	ActionInvitationRevoke = "invitation.revoke"
+	ActionUserLogin        = "user.login"
+	// The User proved its email by the emailed link and set its password (ADR 0030).
+	ActionUserEmailVerify    = "user.email_verify"
 	ActionUserPasswordChange = "user.password_change"
 	// "Sign out everywhere": every session of the User ends (ADR 0020).
 	ActionUserSignOutEverywhere = "user.sign_out_everywhere"
@@ -71,6 +73,7 @@ var ExplicitAuditActions = []string{
 	ActionInvitationAccept,
 	ActionInvitationRevoke,
 	ActionUserLogin,
+	ActionUserEmailVerify,
 	ActionUserPasswordChange,
 	ActionUserSignOutEverywhere,
 	ActionUserSecondFactorEnroll,

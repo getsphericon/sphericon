@@ -359,7 +359,7 @@ func exempt(path string) bool {
 }
 
 // humanRoute names the public human-facing endpoints (one bucket per IP and
-// route): signup, invitation accept and consent confirm. "" means not one.
+// route): signup, resend-verification, verify-email, invitation accept and consent confirm. "" means not one.
 func humanRoute(r *http.Request) string {
 	if r.Method != http.MethodPost {
 		return ""
@@ -368,6 +368,10 @@ func humanRoute(r *http.Request) string {
 	switch {
 	case p == "/site/auth/register":
 		return "signup"
+	case p == "/site/auth/resend-verification":
+		return "resend-verification"
+	case p == "/site/auth/verify-email":
+		return "verify-email"
 	case strings.HasPrefix(p, "/site/invitations/") && strings.HasSuffix(p, "/accept"):
 		return "invitation-accept"
 	case strings.HasPrefix(p, "/site/confirmations/") && !strings.Contains(strings.TrimPrefix(p, "/site/confirmations/"), "/"):

@@ -63,7 +63,9 @@ type Handler interface {
 	// set here); a User with one gets outcome `challenge`, a short-lived single-use challenge for the
 	// second step and no cookie (ADR 0020). Unknown email and wrong password answer the same 401; failures
 	// feed the Login throttle, which answers 429 even for a correct password while its delay runs (ADR
-	// 0025). Only a started session resets the throttle's counter.
+	// 0025). Only a started session resets the throttle's counter. An Unverified User (ADR 0030) answers
+	// 403 with code `email_verification_required` before any password check or second-factor challenge,
+	// and no session.
 	//
 	// POST /auth/login
 	SiteAuthLogin(ctx context.Context, req *SiteLoginInput) (SiteAuthLoginRes, error)
@@ -75,8 +77,21 @@ type Handler interface {
 	SiteAuthLogout(ctx context.Context) (*SiteAuthLogoutNoContent, error)
 	// SiteAuthRegister implements SiteAuth_register operation.
 	//
+	// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
+	// with the link to the set-password screen is on its way (202). A taken address answers 409. With
+	// `REQUIRE_EMAIL_VERIFICATION=false` the request must carry a password (422 otherwise) and creates a
+	// Verified User with its first Workspace at once (202, no session: the User signs in next).
+	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, req *SiteRegisterInput) (SiteAuthRegisterRes, error)
+	// SiteAuthResendVerification implements SiteAuth_resendVerification operation.
+	//
+	// Send the verification link again to an Unverified User. Answers 202 the same way whether the address
+	// is unknown, already verified or unverified, so it adds no enumeration; only an Unverified User gets
+	// a mail. Rate limited per IP like registration.
+	//
+	// POST /auth/resend-verification
+	SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput) (SiteAuthResendVerificationRes, error)
 	// SiteAuthResetPassword implements SiteAuth_resetPassword operation.
 	//
 	// Set a new password from a reset token.
@@ -94,7 +109,10 @@ type Handler interface {
 	SiteAuthSecondFactor(ctx context.Context, req *SiteLoginSecondFactorInput) (SiteAuthSecondFactorRes, error)
 	// SiteAuthVerifyEmail implements SiteAuth_verifyEmail operation.
 	//
-	// Confirm an email address from a verification token (signup verification).
+	// Complete a registration from the verification link (the token is the credential): stamps the
+	// Verified email, sets the password, ends every earlier session, creates the User's first Workspace
+	// and sends the welcome email. The User then signs in; the link alone starts no session. A link is
+	// single use and scoped to the address it was sent to. Rate limited like registration.
 	//
 	// POST /auth/verify-email
 	SiteAuthVerifyEmail(ctx context.Context, req *SiteVerifyEmailInput) (SiteAuthVerifyEmailRes, error)
@@ -341,7 +359,9 @@ type Handler interface {
 	SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) (SitePublicConfirmationsPerformRes, error)
 	// SitePublicInvitationsAccept implements SitePublicInvitations_accept operation.
 	//
-	// Accept an invite: create or attach the User and create the Membership.
+	// Accept an invite: create or complete the User, or attach the signed-in Verified User, and create the
+	// Membership. 401 without a session and 403 for another User's session when the address has a Verified
+	// User.
 	//
 	// POST /invitations/{token}/accept
 	SitePublicInvitationsAccept(ctx context.Context, req *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) (SitePublicInvitationsAcceptRes, error)
@@ -573,12 +593,6 @@ type Handler interface {
 	//
 	// GET /me
 	SiteUserGetMe(ctx context.Context) (*SiteUserResource, error)
-	// SiteUserResendVerification implements SiteUser_resendVerification operation.
-	//
-	// Resend the signup email-verification link to the current address.
-	//
-	// POST /me/verification-email
-	SiteUserResendVerification(ctx context.Context) error
 	// SiteUserSignOutEverywhere implements SiteUser_signOutEverywhere operation.
 	//
 	// Sign out everywhere: end every session of the user, on every device, including the one making the

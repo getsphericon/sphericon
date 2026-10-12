@@ -105,6 +105,7 @@ func TestAuditLoginDuplicatesIntoEachOfTheUsersWorkspacesOnly(t *testing.T) {
 	}
 
 	// John's login lands in Acme, never in Globex.
+	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1") // user.email_verify
 	require.Equal(t, 200, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
 	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserLogin), 2)
 	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexSlug, events.ActionUserLogin), 1)
@@ -232,6 +233,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Ivy"), Password: siteapi.NewOptString("ivy-password-1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_acme"})
 	require.NoError(t, err)
+	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1")              // user.email_verify
 	require.Equal(t, 200, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword)) // user.login
 	_, err = owner.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{                                // user.password_change
 		CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword), NewPassword: siteapi.NewOptString("another-pass-1")})

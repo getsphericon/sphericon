@@ -57,7 +57,7 @@ type SystemMailEnqueuer interface {
 	// all the same but nothing is delivered, so forgot-password costs the same
 	// for every address.
 	EnqueuePasswordReset(ctx context.Context, email, token string, send bool) error
-	EnqueueEmailVerification(ctx context.Context, email, token string) error
+	EnqueueEmailVerification(ctx context.Context, email, token string, send bool) error
 	EnqueueEmailChangeConfirm(ctx context.Context, email, token string) error
 	// EnqueueMemberInvite sends the workspace invite email. It is best-effort:
 	// the invite also returns a copy-link, so a missing/failed mailer (common on
@@ -97,6 +97,9 @@ type Handlers struct {
 	now            func() time.Time
 	accountLink    *accountlink.Link
 	holdsHonoured  func() bool
+	// requireVerification is the email verification gate (ADR 0030): off only on an
+	// install that set REQUIRE_EMAIL_VERIFICATION=false.
+	requireVerification bool
 	// challenges signs the login challenge on the env clock (ADR 0020).
 	challenges *authtoken.Signer
 }
@@ -159,6 +162,10 @@ type Deps struct {
 	// HoldsHonoured reports whether Operator holds are shown to Owners: the same
 	// license gate the send path applies (ADR 0009). Nil is always.
 	HoldsHonoured func() bool
+	// RequireEmailVerification is the email verification gate (ADR 0030): when false,
+	// registration takes a password and yields a Verified User at once, and login
+	// checks no verification.
+	RequireEmailVerification bool
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -171,7 +178,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured,
+		oauth: d.OAuth, audit: d.Audit, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }

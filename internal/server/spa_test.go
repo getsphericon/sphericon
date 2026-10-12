@@ -13,7 +13,7 @@ func TestBuildIndexShellInjectsLocale(t *testing.T) {
 		)},
 	}
 
-	shell := buildIndexShell(fs, "ru")
+	shell := buildIndexShell(fs, "ru", true)
 	got := string(shell)
 
 	if strings.Contains(got, localeSentinel) {
@@ -27,7 +27,25 @@ func TestBuildIndexShellInjectsLocale(t *testing.T) {
 }
 
 func TestBuildIndexShellMissingFile(t *testing.T) {
-	if shell := buildIndexShell(fstest.MapFS{}, "en"); shell != nil {
+	if shell := buildIndexShell(fstest.MapFS{}, "en", true); shell != nil {
 		t.Fatalf("expected nil shell when index.html is absent, got %q", shell)
+	}
+}
+
+func TestBuildIndexShellInjectsTheVerificationGate(t *testing.T) {
+	fs := fstest.MapFS{
+		"index.html": &fstest.MapFile{Data: []byte(
+			`<script>window.__REQUIRE_EMAIL_VERIFICATION__ = '{{REQUIRE_EMAIL_VERIFICATION}}' !== 'false'</script>`,
+		)},
+	}
+
+	on := string(buildIndexShell(fs, "en", true))
+	off := string(buildIndexShell(fs, "en", false))
+
+	if !strings.Contains(on, `= 'true' !== 'false'`) {
+		t.Fatalf("gate on not injected: %s", on)
+	}
+	if !strings.Contains(off, `= 'false' !== 'false'`) {
+		t.Fatalf("gate off not injected: %s", off)
 	}
 }

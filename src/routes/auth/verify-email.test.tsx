@@ -1,8 +1,9 @@
+import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { afterEach, expect, test } from 'vitest'
 
 import { handleSiteAuthVerifyEmail } from '../../generated/site/msw.gen.ts'
-import { indexRoute, verifyEmailRoute } from '../../router.tsx'
+import { loginRoute, verifyEmailRoute } from '../../router.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -12,7 +13,21 @@ import { VerifyEmailPage } from './verify-email.tsx'
 const mount = routeMount(verifyEmailRoute)
 const MOUNT = { path: mount.path, initialPath: `${mount.initialPath}?token=tok-v` }
 
-test('verifies the token on mount and offers to continue', async () => {
+// Toasts live in a global store and would cover the form's buttons in the next test.
+afterEach(() => {
+  notifications.clean()
+})
+
+async function fillAndSubmit(
+  screen: Awaited<ReturnType<typeof renderWithRouter>>['screen'],
+  confirm: string,
+) {
+  await screen.getByLabelText(/^Password/).fill('s3cret-pass')
+  await screen.getByLabelText(/^Confirm password/).fill(confirm)
+  await screen.getByRole('button', { name: 'Set password' }).click()
+}
+
+test('sends the token with the chosen password and offers to sign in', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthVerifyEmail(async ({ request }) => {
@@ -22,26 +37,42 @@ test('verifies the token on mount and offers to continue', async () => {
   )
   const { screen } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
 
+  await fillAndSubmit(screen, 's3cret-pass')
+
   await expect.element(screen.getByText('Email verified')).toBeInTheDocument()
-  expect(bodies).toEqual([{ token: 'tok-v' }])
+  expect(bodies).toEqual([{ token: 'tok-v', password: 's3cret-pass' }])
   await expect
-    .element(screen.getByRole('link', { name: 'Continue' }))
-    .toHaveAttribute('href', indexRoute.to)
+    .element(screen.getByRole('link', { name: 'Sign in' }))
+    .toHaveAttribute('href', loginRoute.to)
 })
 
-test('shows a loading state while the request is in flight', async () => {
-  worker.use(handleSiteAuthVerifyEmail(() => new Promise<never>(() => undefined)))
+test('does not send anything when the confirmation differs', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAuthVerifyEmail(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({})
+    }),
+  )
   const { screen } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
 
-  await expect.element(screen.getByText('Verifying your email…')).toBeInTheDocument()
+  await fillAndSubmit(screen, 'something-else')
+
+  await expect.element(screen.getByText('Passwords do not match')).toBeInTheDocument()
+  expect(bodies).toEqual([])
 })
 
-test('shows the failure state when the token is rejected', async () => {
-  worker.use(handleSiteAuthVerifyEmail(() => problem(400, {})))
+test('shows the failure and keeps the form when the link is rejected', async () => {
+  worker.use(
+    handleSiteAuthVerifyEmail(() =>
+      problem(400, { detail: 'invalid or expired verification link' }),
+    ),
+  )
   const { screen } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
+
+  await fillAndSubmit(screen, 's3cret-pass')
 
   await expect.element(screen.getByText('Verification failed')).toBeInTheDocument()
-  await expect
-    .element(screen.getByText('This verification link is invalid or has expired.'))
-    .toBeInTheDocument()
+  await expect.element(screen.getByText('invalid or expired verification link')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Set password' })).toBeInTheDocument()
 })

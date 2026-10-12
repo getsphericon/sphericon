@@ -168,7 +168,7 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 		return nil, err
 	}
 
-	hasAccount, err := h.accounts.EmailTaken(ctx, inv.Email)
+	hasAccount, err := h.accounts.HasVerifiedAccount(ctx, inv.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +181,9 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 }
 
 // SitePublicInvitationsAccept turns an invite into a Membership: it attaches an
-// existing User or creates one (name + password), then joins them to the
-// workspace. Link possession is the authorization.
+// Verified User (their own session) or sets up the account (name + password), then
+// joins them to the workspace. Link possession authorizes an address with no Verified
+// User; a Verified User's address also needs that User's session.
 func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi.SiteAcceptInvitationInput, params siteapi.SitePublicInvitationsAcceptParams) (siteapi.SitePublicInvitationsAcceptRes, error) {
 	inv, err := h.validInvitation(ctx, params.Token)
 	if ent.IsNotFound(err) {
@@ -193,16 +194,26 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		return nil, err
 	}
 
+	// A Verified User's own session is the proof of the address (ADR 0030); the
+	// transaction decides whether the address is one, so the session is always passed.
+	sessionEmail := ""
+	if a := auth.GetSiteAuth(ctx); a != nil {
+		sessionEmail = a.Email
+	}
 	name, _ := req.Name.Get()
-	name = strings.TrimSpace(name)
 	password, _ := req.Password.Get()
 
-	userExists, err := h.accounts.EmailTaken(ctx, inv.Email)
-	if err != nil {
-		return nil, err
+	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(name), password, sessionEmail)
+	if errors.Is(err, accounts.ErrSignInRequired) || errors.Is(err, accounts.ErrAlreadyVerified) {
+		v := siteapi.SitePublicInvitationsAcceptUnauthorized(problem(http.StatusUnauthorized, "sign in to accept this invitation"))
+		return &v, nil
 	}
-	// A new invitee must set up an account.
-	if !userExists && (name == "" || password == "") {
+	if errors.Is(err, accounts.ErrWrongAccount) {
+		v := siteapi.SitePublicInvitationsAcceptForbidden(problem(http.StatusForbidden, "this invitation is for another account"))
+		return &v, nil
+	}
+	if errors.Is(err, accounts.ErrCredentialsRequired) {
+		// No Verified User for the address: the invitee sets up the account.
 		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity, "name and password are required",
 			map[string][]string{
@@ -211,8 +222,6 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 			}))
 		return &v, nil
 	}
-
-	err = h.accounts.AcceptInvitation(ctx, inv, name, password)
 	if err != nil {
 		return nil, err
 	}

@@ -98,18 +98,21 @@ model SiteInvitationLookupResult {
   /** The address the invite was sent to */
   email: EmailAddress;
 
-  /** True when that email already has a sphericon account (accept needs no signup) */
+  /** True only when that email has a Verified User; an address with no User or an
+   * Unverified User needs a name and a password to accept */
   hasAccount: boolean;
 }
 
-/** Accept an invite. name + password are required only when the invitee has no
- * account yet; ignored otherwise. */
+/** Accept an invite. For an address with no User or an Unverified User, name + password
+ * are required (422 otherwise). For a Verified User the body is not read: the session of
+ * that same User is the proof. */
 model SiteAcceptInvitationInput {
   name?: string;
   password?: string;
 }
 
-// Public, session-less flow opened from the invite link. Not workspace-scoped.
+// Opened from the invite link. Not workspace-scoped. Lookup is session-less; accept
+// takes an optional session cookie, required (and matched) only for a Verified User.
 @route("/invitations")
 @tag("Site Invitations")
 namespace SitePublicInvitations {
@@ -124,12 +127,16 @@ namespace SitePublicInvitations {
       }
     | NotFoundProblem;
 
-  /** Accept an invite: create or attach the User and create the Membership */
-  @useAuth(NoAuth)
+  /** Accept an invite: create or complete the User, or attach the signed-in Verified
+   * User, and create the Membership. 401 without a session and 403 for another User's
+   * session when the address has a Verified User. */
+  @useAuth(ApiKeyAuth<ApiKeyLocation.cookie, "JWT"> | NoAuth)
   @post
   @route("/{token}/accept")
   op accept(@path token: string, @body body: SiteAcceptInvitationInput):
     | OkResponse
+    | UnauthorizedProblem
+    | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;
