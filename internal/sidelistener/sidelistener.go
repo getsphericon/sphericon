@@ -22,13 +22,30 @@ type Server struct {
 	ln   net.Listener
 }
 
+// Option adjusts a Server before it is built.
+type Option func(*http.Server)
+
+// WithTimeouts bounds how long a connection may spend reading a whole request and
+// sitting idle between requests. Without it only the header read is bounded, which
+// suits the metrics scrape but leaves a service endpoint open to a stalled body.
+func WithTimeouts(read, idle time.Duration) Option {
+	return func(srv *http.Server) {
+		srv.ReadTimeout = read
+		srv.IdleTimeout = idle
+	}
+}
+
 // New builds a server named name (for errors) that serves handler on addr (host:port).
-func New(name, addr string, handler http.Handler) *Server {
-	return &Server{name: name, srv: &http.Server{
+func New(name, addr string, handler http.Handler, opts ...Option) *Server {
+	srv := &http.Server{
 		Addr:              addr,
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
-	}}
+	}
+	for _, opt := range opts {
+		opt(srv)
+	}
+	return &Server{name: name, srv: srv}
 }
 
 // Listen binds the configured address.

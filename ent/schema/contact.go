@@ -79,5 +79,11 @@ func (Contact) Indexes() []ent.Index {
 		index.Fields("email", "workspace_id").Unique().StorageKey("contacts_email_workspace_id"),
 		index.Fields("subject_id", "workspace_id").Unique().StorageKey("contacts_subject_id_workspace_id"),
 		index.Fields("phone", "workspace_id").Unique().StorageKey("contacts_phone_workspace_id"),
+		// The identified Contacts of a Workspace: the usage peak counts them on every
+		// mutation that can move the count, and this keeps that an index-only scan of the
+		// Workspace's own rows instead of a scan of the whole table.
+		index.Fields("workspace_id").
+			StorageKey("contacts_workspace_id_identified").
+			Annotations(entsql.IndexWhere("email IS NOT NULL AND email <> ''")),
 	}
 }

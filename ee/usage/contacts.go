@@ -148,6 +148,18 @@ func raise(ctx context.Context, c *ent.Client, now time.Time, workspaceIDs ...in
 		if err != nil {
 			return fmt.Errorf("count contacts: %w", err)
 		}
+		// A growing import finds the row and raises it: one statement. Only when nothing
+		// was raised (the row is absent, or already at least n) is the row inserted.
+		raised, err := s.Usage().Update().
+			Where(entusage.PeriodStart(period), entusage.Metric(string(Contacts)), entusage.Final(false), entusage.ValueLT(n)).
+			SetValue(n).SetComputedAt(now).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("raise contacts peak: %w", err)
+		}
+		if raised > 0 {
+			continue
+		}
 		err = s.Usage().Create().
 			SetPeriodStart(period).SetMetric(string(Contacts)).
 			SetValue(n).SetComputedAt(now).
@@ -155,12 +167,6 @@ func raise(ctx context.Context, c *ent.Client, now time.Time, workspaceIDs ...in
 			DoNothing().Exec(ctx)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("record contacts peak: %w", err)
-		}
-		if err := s.Usage().Update().
-			Where(entusage.PeriodStart(period), entusage.Metric(string(Contacts)), entusage.Final(false), entusage.ValueLT(n)).
-			SetValue(n).SetComputedAt(now).
-			Exec(ctx); err != nil {
-			return fmt.Errorf("raise contacts peak: %w", err)
 		}
 	}
 	return nil

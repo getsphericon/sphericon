@@ -1,7 +1,9 @@
 package sidelistener_test
 
 import (
+	"bufio"
 	"io"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -46,4 +48,23 @@ func TestListenFailsWhenTheAddressIsTaken(t *testing.T) {
 
 	second := sidelistener.New("internal", first.Addr(), http.NotFoundHandler())
 	require.Error(t, second.Listen(t.Context()))
+}
+
+func TestWithTimeoutsClosesAConnectionThatStallsItsBody(t *testing.T) {
+	s := sidelistener.New("internal", "127.0.0.1:0", http.NotFoundHandler(), sidelistener.WithTimeouts(200*time.Millisecond, time.Minute))
+	require.NoError(t, s.Listen(t.Context()))
+	go func() { _ = s.Serve() }()
+	t.Cleanup(func() { _ = s.Shutdown(t.Context()) })
+
+	conn, err := (&net.Dialer{}).DialContext(t.Context(), "tcp", s.Addr())
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	// Complete headers promise a body that never arrives.
+	_, err = io.WriteString(conn, "POST /service/x HTTP/1.1\r\nHost: x\r\nContent-Length: 10\r\n\r\n")
+	require.NoError(t, err)
+
+	require.NoError(t, conn.SetReadDeadline(time.Now().Add(5*time.Second)))
+	// Whatever the server answers, it then closes: reading ends with EOF, not our deadline.
+	_, err = io.ReadAll(bufio.NewReader(conn))
+	require.NoError(t, err, "the server closed the stalled connection before the client gave up")
 }
