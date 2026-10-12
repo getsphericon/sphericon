@@ -31,3 +31,15 @@ func (UnimplementedHandler) ServiceIdentityGet(ctx context.Context) (r ServiceId
 func (UnimplementedHandler) ServiceUsageList(ctx context.Context, params ServiceUsageListParams) (r ServiceUsageListRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
+
+// ServiceWorkspaceFeedList implements ServiceWorkspaceFeed_list operation.
+//
+// The Workspaces created or changed since an opaque cursor, each with all of its owners, in a stable
+// order by change position. A change is a new Workspace, an owner added, removed or transferred, or an
+// owner's email or verification changing. Delivery is at-least-once: replaying a cursor returns the
+// same entries, and an empty cursor starts from the beginning. Needs the `workspaces:read` scope.
+//
+// GET /workspaces/changes
+func (UnimplementedHandler) ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (r ServiceWorkspaceFeedListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}

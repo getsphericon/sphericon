@@ -8,3 +8,7 @@ type ServiceIdentityGetRes interface {
 type ServiceUsageListRes interface {
 	serviceUsageListRes()
 }
+
+type ServiceWorkspaceFeedListRes interface {
+	serviceWorkspaceFeedListRes()
+}

@@ -878,4 +878,8 @@ func init() {
 	workspaceDescRetentionDays := workspaceFields[7].Descriptor()
 	// workspace.RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	workspace.RetentionDaysValidator = workspaceDescRetentionDays.Validators[0].(func(int) error)
+	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
+	workspaceDescFeedPosition := workspaceFields[9].Descriptor()
+	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
+	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 }

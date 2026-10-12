@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type Workspace struct {
@@ -79,6 +80,12 @@ func (Workspace) Fields() []ent.Field {
 		field.Time("second_factor_required_at").
 			Optional().
 			Nillable(),
+		// The Workspace's place in the service feed (ADR 0009): a position that only
+		// grows, taken whenever the Workspace is created or an owner is added, removed,
+		// transferred or changes email or verification. 0 until the first change. Set
+		// only by internal/workspacefeed.
+		field.Int64("feed_position").
+			Default(0),
 		field.Time("suspended_at").
 			Optional().
 			Nillable(),
@@ -95,6 +102,13 @@ func (Workspace) Fields() []ent.Field {
 		field.String("suspension_reason").
 			Optional().
 			Nillable(),
+	}
+}
+
+func (Workspace) Indexes() []ent.Index {
+	return []ent.Index{
+		// The feed pages by (feed_position, id).
+		index.Fields("feed_position", "id"),
 	}
 }
 

@@ -33,6 +33,8 @@ func (s *BearerAuth) SetRoles(val []string) {
 	s.Roles = val
 }
 
+type EmailAddress string
+
 type EntityId string
 
 // NewOptInt32 returns new OptInt32 with value set to v.
@@ -579,8 +581,9 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
-func (*ProblemDetailsHeaders) serviceIdentityGetRes() {}
-func (*ProblemDetailsHeaders) serviceUsageListRes()   {}
+func (*ProblemDetailsHeaders) serviceIdentityGetRes()       {}
+func (*ProblemDetailsHeaders) serviceUsageListRes()         {}
+func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes() {}
 
 // What a Service credential is: its name, its scopes and its expiry.
 // Ref: #/components/schemas/ServiceIdentityResource
@@ -752,6 +755,166 @@ func (*ServiceUsageListOK) serviceUsageListRes() {}
 type ServiceUsageListUnauthorized ProblemDetails
 
 func (*ServiceUsageListUnauthorized) serviceUsageListRes() {}
+
+type ServiceWorkspaceFeedListBadRequest ProblemDetails
+
+func (*ServiceWorkspaceFeedListBadRequest) serviceWorkspaceFeedListRes() {}
+
+type ServiceWorkspaceFeedListForbidden ProblemDetails
+
+func (*ServiceWorkspaceFeedListForbidden) serviceWorkspaceFeedListRes() {}
+
+type ServiceWorkspaceFeedListUnauthorized ProblemDetails
+
+func (*ServiceWorkspaceFeedListUnauthorized) serviceWorkspaceFeedListRes() {}
+
+// One page of the Workspace feed.
+// Ref: #/components/schemas/ServiceWorkspaceFeedPage
+type ServiceWorkspaceFeedPage struct {
+	// Workspaces created or changed after the requested cursor, in change order.
+	Items []ServiceWorkspaceResource `json:"items"`
+	// Pass it back as the cursor to read what follows this page. It is the requested cursor itself when
+	// the page is empty. Saving it is what advances the caller: the core keeps no position of its own.
+	NextCursor string `json:"nextCursor"`
+	// Whether more entries follow this page right now.
+	HasMore bool `json:"hasMore"`
+}
+
+// GetItems returns the value of Items.
+func (s *ServiceWorkspaceFeedPage) GetItems() []ServiceWorkspaceResource {
+	return s.Items
+}
+
+// GetNextCursor returns the value of NextCursor.
+func (s *ServiceWorkspaceFeedPage) GetNextCursor() string {
+	return s.NextCursor
+}
+
+// GetHasMore returns the value of HasMore.
+func (s *ServiceWorkspaceFeedPage) GetHasMore() bool {
+	return s.HasMore
+}
+
+// SetItems sets the value of Items.
+func (s *ServiceWorkspaceFeedPage) SetItems(val []ServiceWorkspaceResource) {
+	s.Items = val
+}
+
+// SetNextCursor sets the value of NextCursor.
+func (s *ServiceWorkspaceFeedPage) SetNextCursor(val string) {
+	s.NextCursor = val
+}
+
+// SetHasMore sets the value of HasMore.
+func (s *ServiceWorkspaceFeedPage) SetHasMore(val bool) {
+	s.HasMore = val
+}
+
+func (*ServiceWorkspaceFeedPage) serviceWorkspaceFeedListRes() {}
+
+// One owner of a Workspace in the feed.
+// Ref: #/components/schemas/ServiceWorkspaceOwner
+type ServiceWorkspaceOwner struct {
+	// The owner's User id.
+	UserId EntityId `json:"userId"`
+	// The owner's current email.
+	Email EmailAddress `json:"email"`
+	// When the owner confirmed their email; absent while it is unverified.
+	EmailVerifiedAt OptNilTimestamp `json:"emailVerifiedAt"`
+}
+
+// GetUserId returns the value of UserId.
+func (s *ServiceWorkspaceOwner) GetUserId() EntityId {
+	return s.UserId
+}
+
+// GetEmail returns the value of Email.
+func (s *ServiceWorkspaceOwner) GetEmail() EmailAddress {
+	return s.Email
+}
+
+// GetEmailVerifiedAt returns the value of EmailVerifiedAt.
+func (s *ServiceWorkspaceOwner) GetEmailVerifiedAt() OptNilTimestamp {
+	return s.EmailVerifiedAt
+}
+
+// SetUserId sets the value of UserId.
+func (s *ServiceWorkspaceOwner) SetUserId(val EntityId) {
+	s.UserId = val
+}
+
+// SetEmail sets the value of Email.
+func (s *ServiceWorkspaceOwner) SetEmail(val EmailAddress) {
+	s.Email = val
+}
+
+// SetEmailVerifiedAt sets the value of EmailVerifiedAt.
+func (s *ServiceWorkspaceOwner) SetEmailVerifiedAt(val OptNilTimestamp) {
+	s.EmailVerifiedAt = val
+}
+
+// A Workspace with all of its owners, as the feed reports it.
+// Ref: #/components/schemas/ServiceWorkspaceResource
+type ServiceWorkspaceResource struct {
+	// Unique identifier.
+	ID   EntityId `json:"id"`
+	Slug string   `json:"slug"`
+	Name string   `json:"name"`
+	// When the Workspace was created.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Every owner of the Workspace as of this entry.
+	Owners []ServiceWorkspaceOwner `json:"owners"`
+}
+
+// GetID returns the value of ID.
+func (s *ServiceWorkspaceResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetSlug returns the value of Slug.
+func (s *ServiceWorkspaceResource) GetSlug() string {
+	return s.Slug
+}
+
+// GetName returns the value of Name.
+func (s *ServiceWorkspaceResource) GetName() string {
+	return s.Name
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *ServiceWorkspaceResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetOwners returns the value of Owners.
+func (s *ServiceWorkspaceResource) GetOwners() []ServiceWorkspaceOwner {
+	return s.Owners
+}
+
+// SetID sets the value of ID.
+func (s *ServiceWorkspaceResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetSlug sets the value of Slug.
+func (s *ServiceWorkspaceResource) SetSlug(val string) {
+	s.Slug = val
+}
+
+// SetName sets the value of Name.
+func (s *ServiceWorkspaceResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *ServiceWorkspaceResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetOwners sets the value of Owners.
+func (s *ServiceWorkspaceResource) SetOwners(val []ServiceWorkspaceOwner) {
+	s.Owners = val
+}
 
 type Timestamp time.Time
 

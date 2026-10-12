@@ -29621,6 +29621,8 @@ type WorkspaceMutation struct {
 	retention_days              *int
 	addretention_days           *int
 	second_factor_required_at   *time.Time
+	feed_position               *int64
+	addfeed_position            *int64
 	suspended_at                *time.Time
 	suspended_by_kind           *workspace.SuspendedByKind
 	suspended_by_id             *string
@@ -30225,6 +30227,62 @@ func (m *WorkspaceMutation) SecondFactorRequiredAtCleared() bool {
 func (m *WorkspaceMutation) ResetSecondFactorRequiredAt() {
 	m.second_factor_required_at = nil
 	delete(m.clearedFields, workspace.FieldSecondFactorRequiredAt)
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (m *WorkspaceMutation) SetFeedPosition(i int64) {
+	m.feed_position = &i
+	m.addfeed_position = nil
+}
+
+// FeedPosition returns the value of the "feed_position" field in the mutation.
+func (m *WorkspaceMutation) FeedPosition() (r int64, exists bool) {
+	v := m.feed_position
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeedPosition returns the old "feed_position" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldFeedPosition(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeedPosition is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeedPosition requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeedPosition: %w", err)
+	}
+	return oldValue.FeedPosition, nil
+}
+
+// AddFeedPosition adds i to the "feed_position" field.
+func (m *WorkspaceMutation) AddFeedPosition(i int64) {
+	if m.addfeed_position != nil {
+		*m.addfeed_position += i
+	} else {
+		m.addfeed_position = &i
+	}
+}
+
+// AddedFeedPosition returns the value that was added to the "feed_position" field in this mutation.
+func (m *WorkspaceMutation) AddedFeedPosition() (r int64, exists bool) {
+	v := m.addfeed_position
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFeedPosition resets all changes to the "feed_position" field.
+func (m *WorkspaceMutation) ResetFeedPosition() {
+	m.feed_position = nil
+	m.addfeed_position = nil
 }
 
 // SetSuspendedAt sets the "suspended_at" field.
@@ -31753,7 +31811,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -31783,6 +31841,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.second_factor_required_at != nil {
 		fields = append(fields, workspace.FieldSecondFactorRequiredAt)
+	}
+	if m.feed_position != nil {
+		fields = append(fields, workspace.FieldFeedPosition)
 	}
 	if m.suspended_at != nil {
 		fields = append(fields, workspace.FieldSuspendedAt)
@@ -31824,6 +31885,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.RetentionDays()
 	case workspace.FieldSecondFactorRequiredAt:
 		return m.SecondFactorRequiredAt()
+	case workspace.FieldFeedPosition:
+		return m.FeedPosition()
 	case workspace.FieldSuspendedAt:
 		return m.SuspendedAt()
 	case workspace.FieldSuspendedByKind:
@@ -31861,6 +31924,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldRetentionDays(ctx)
 	case workspace.FieldSecondFactorRequiredAt:
 		return m.OldSecondFactorRequiredAt(ctx)
+	case workspace.FieldFeedPosition:
+		return m.OldFeedPosition(ctx)
 	case workspace.FieldSuspendedAt:
 		return m.OldSuspendedAt(ctx)
 	case workspace.FieldSuspendedByKind:
@@ -31948,6 +32013,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSecondFactorRequiredAt(v)
 		return nil
+	case workspace.FieldFeedPosition:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeedPosition(v)
+		return nil
 	case workspace.FieldSuspendedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -31987,6 +32059,9 @@ func (m *WorkspaceMutation) AddedFields() []string {
 	if m.addretention_days != nil {
 		fields = append(fields, workspace.FieldRetentionDays)
 	}
+	if m.addfeed_position != nil {
+		fields = append(fields, workspace.FieldFeedPosition)
+	}
 	return fields
 }
 
@@ -31997,6 +32072,8 @@ func (m *WorkspaceMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case workspace.FieldRetentionDays:
 		return m.AddedRetentionDays()
+	case workspace.FieldFeedPosition:
+		return m.AddedFeedPosition()
 	}
 	return nil, false
 }
@@ -32012,6 +32089,13 @@ func (m *WorkspaceMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRetentionDays(v)
+		return nil
+	case workspace.FieldFeedPosition:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFeedPosition(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Workspace numeric field %s", name)
@@ -32114,6 +32198,9 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldSecondFactorRequiredAt:
 		m.ResetSecondFactorRequiredAt()
+		return nil
+	case workspace.FieldFeedPosition:
+		m.ResetFeedPosition()
 		return nil
 	case workspace.FieldSuspendedAt:
 		m.ResetSuspendedAt()
