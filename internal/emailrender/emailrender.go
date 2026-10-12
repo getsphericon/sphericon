@@ -10,6 +10,7 @@
 package emailrender
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/k3a/html2text"
@@ -18,7 +19,24 @@ import (
 )
 
 // engine is safe for concurrent ParseAndRender calls.
-var engine = liquid.NewEngine()
+var engine = newEngine()
+
+// errFileTags is what {% include %} and {% render %} fail with: template authors
+// are workspace members and API clients, never trusted with the server's files.
+var errFileTags = errors.New("include and render tags are not supported")
+
+// noFiles is the template store behind those tags. The library default reads
+// from the process working directory, so an author could print any file the
+// server can read (/proc/self/environ among them).
+type noFiles struct{}
+
+func (noFiles) ReadTemplate(string) ([]byte, error) { return nil, errFileTags }
+
+func newEngine() *liquid.Engine {
+	e := liquid.NewEngine()
+	e.RegisterTemplateStore(noFiles{})
+	return e
+}
 
 // Email is a fully-rendered message ready for tracking + delivery.
 type Email struct {

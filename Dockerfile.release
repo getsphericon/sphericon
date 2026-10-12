@@ -3,9 +3,13 @@
 # under $TARGETPLATFORM, so here we only wrap the prebuilt binary. For building
 # straight from source, use the top-level Dockerfile instead.
 FROM alpine:3.24
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata \
+    && adduser -D -H -u 10001 sphericon
 ARG TARGETPLATFORM
 COPY $TARGETPLATFORM/sphericon /usr/local/bin/sphericon
+# Run unprivileged from an empty directory, never as root in /.
+WORKDIR /app
+USER sphericon
 # Containers are production deployments: enforce the strict secret checks by default.
 ENV APP_ENV=production
 EXPOSE 3000
