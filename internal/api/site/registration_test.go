@@ -359,3 +359,40 @@ func TestSettingThePasswordEndsEveryEarlierVerifyLinkAfterAResend(t *testing.T) 
 	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, fresh, "grace-password-1"))
 	assert.IsType(t, &siteapi.ProblemDetails{}, verify(t, env, first, "attacker-password-1"))
 }
+
+// Story 18: setting the password through the verify link bumps the session epoch,
+// so no session issued before it survives (none can exist for an Unverified User, so
+// the epoch itself is what is observable).
+func TestVerifyingBumpsTheSessionEpoch(t *testing.T) {
+	env := testhelper.Setup(t)
+	token := register(t, env, "Grace Hopper", "grace@example.com")
+	before, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Only(t.Context())
+	require.NoError(t, err)
+
+	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, token, "grace-password-1"))
+
+	after, err := env.DB.User.Get(t.Context(), before.ID)
+	require.NoError(t, err)
+	assert.Greater(t, after.SessionEpoch, before.SessionEpoch)
+}
+
+// Story 18: a password reset ends every session issued before it.
+func TestPasswordResetEndsEveryEarlierSession(t *testing.T) {
+	env := testhelper.Setup(t)
+	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1")
+	rec := postLogin(t, env, "grace@example.com", "grace-password-1")
+	require.Equal(t, http.StatusOK, rec.Code)
+	earlier := sessionCookie(rec.Result()).Value
+	require.Equal(t, http.StatusOK, workspacesStatus(t, env, earlier))
+
+	c := env.SiteAnonymous(t)
+	_, err := c.SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: "grace@example.com"})
+	require.NoError(t, err)
+	_, body := lastSystemEmail(t, env)
+	res, err := c.SiteAuthResetPassword(t.Context(),
+		&siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "grace-password-2"})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, res)
+
+	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, earlier))
+}

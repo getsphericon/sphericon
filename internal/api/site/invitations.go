@@ -194,30 +194,24 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		return nil, err
 	}
 
-	// A Verified User's own session is the proof of the address (ADR 0030): no session
-	// is 401, another User's is 403, and no name or password is read.
-	verified, err := h.accounts.HasVerifiedAccount(ctx, inv.Email)
-	if err != nil {
-		return nil, err
+	// A Verified User's own session is the proof of the address (ADR 0030); the
+	// transaction decides whether the address is one, so the session is always passed.
+	sessionEmail := ""
+	if a := auth.GetSiteAuth(ctx); a != nil {
+		sessionEmail = a.Email
 	}
-	name, password := "", ""
-	if verified {
-		a := auth.GetSiteAuth(ctx)
-		if a == nil {
-			v := siteapi.SitePublicInvitationsAcceptUnauthorized(problem(http.StatusUnauthorized, "sign in to accept this invitation"))
-			return &v, nil
-		}
-		if !strings.EqualFold(a.Email, inv.Email) {
-			v := siteapi.SitePublicInvitationsAcceptForbidden(problem(http.StatusForbidden, "this invitation is for another account"))
-			return &v, nil
-		}
-	} else {
-		n, _ := req.Name.Get()
-		name = strings.TrimSpace(n)
-		password, _ = req.Password.Get()
-	}
+	name, _ := req.Name.Get()
+	password, _ := req.Password.Get()
 
-	err = h.accounts.AcceptInvitation(ctx, inv, name, password)
+	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(name), password, sessionEmail)
+	if errors.Is(err, accounts.ErrSignInRequired) || errors.Is(err, accounts.ErrAlreadyVerified) {
+		v := siteapi.SitePublicInvitationsAcceptUnauthorized(problem(http.StatusUnauthorized, "sign in to accept this invitation"))
+		return &v, nil
+	}
+	if errors.Is(err, accounts.ErrWrongAccount) {
+		v := siteapi.SitePublicInvitationsAcceptForbidden(problem(http.StatusForbidden, "this invitation is for another account"))
+		return &v, nil
+	}
 	if errors.Is(err, accounts.ErrCredentialsRequired) {
 		// No Verified User for the address: the invitee sets up the account.
 		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(problemWithErrors(

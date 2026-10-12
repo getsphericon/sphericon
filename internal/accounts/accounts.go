@@ -9,6 +9,7 @@ package accounts
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -312,18 +313,39 @@ func (a *Accounts) CreateUser(ctx context.Context, name, email, passwordHash str
 	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(time.Now()).Save(ctx)
 }
 
+// markVerified completes an Unverified User's row: it sets the password hash (and the
+// name when not empty), stamps the Verified email and bumps the session epoch, ending
+// every earlier session. The write lands only on a still-Unverified User, so of two
+// racing completions exactly one wins; the other gets ErrAlreadyVerified and changes
+// nothing.
+func markVerified(ctx context.Context, tx *ent.Client, id int64, name, passwordHash string) (*ent.User, error) {
+	upd := tx.User.Update().
+		Where(user.ID(id), user.EmailVerifiedAtIsNil()).
+		SetPasswordHash(passwordHash).
+		SetEmailVerifiedAt(time.Now()).
+		AddSessionEpoch(1)
+	if name != "" {
+		upd = upd.SetName(name)
+	}
+	n, err := upd.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		return nil, ErrAlreadyVerified
+	}
+	return tx.User.Get(ctx, id)
+}
+
 // VerifyEmail completes a registration from its link (ADR 0030), in one transaction:
 // it stamps the Verified email, sets the password hash, bumps the session epoch
 // (ending every session issued before, as a password change does) and creates the
 // User's first Workspace named workspaceName with the User as owner. It records
 // `user.email_verify` in that Workspace's Audit log and returns the User.
+// ErrAlreadyVerified when the User is no longer Unverified (a used link).
 func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash, workspaceName string) (*ent.User, error) {
 	return a.verified(ctx, workspaceName, func(tx *ent.Client) (*ent.User, error) {
-		return tx.User.UpdateOneID(id).
-			SetPasswordHash(passwordHash).
-			SetEmailVerifiedAt(time.Now()).
-			AddSessionEpoch(1).
-			Save(ctx)
+		return markVerified(ctx, tx, id, "", passwordHash)
 	})
 }
 
@@ -400,17 +422,23 @@ func (a *Accounts) UpdateProfile(ctx context.Context, id int64, name, passwordHa
 // mailed to the login address, so following it proves the address as much as the
 // verification link does: for an Unverified User it completes the registration
 // exactly as VerifyEmail (Verified email, first Workspace, `user.email_verify`) and
-// reports verified = true with the User, so the caller sends the welcome email. For a Verified User
-// it is only a password change, recorded like UpdateProfile. Either way every earlier
-// session ends.
-func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash string) (u *ent.User, verified bool, err error) {
+// reports completedRegistration = true with the User, so the caller sends the welcome
+// email. For a Verified User it is only a password change, recorded like UpdateProfile.
+// Either way every earlier session ends.
+func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash string) (u *ent.User, completedRegistration bool, err error) {
 	u, err = a.User(ctx, id)
 	if err != nil {
 		return nil, false, err
 	}
 	if u.EmailVerifiedAt == nil {
 		u, err = a.VerifyEmail(ctx, id, passwordHash, u.Name)
-		return u, err == nil, err
+		if err == nil {
+			return u, true, nil
+		}
+		if !errors.Is(err, ErrAlreadyVerified) {
+			return nil, false, err
+		}
+		// A concurrent link verified the User first: this is now a plain password change.
 	}
 	u, err = a.UpdateProfile(ctx, id, nil, &passwordHash)
 	return u, false, err
@@ -505,22 +533,34 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 		Only(ctx)
 }
 
-// AcceptInvitation turns a pending Invitation into a Membership. For an address with
+// AcceptInvitation turns a pending Invitation into a Membership. sessionEmail is the
+// login email of the session the request carried ("" for none). A Verified User is
+// attached only with their own session (ErrSignInRequired without one, ErrWrongAccount
+// for another User's), decided on the row read inside the transaction. For an address with
 // no User or an Unverified User (ADR 0030) the name and password are required
 // (ErrCredentialsRequired otherwise): the link proves control of the address, so the
 // User is created, or the Unverified User's row completed (name and password set,
 // Verified email stamped, session epoch bumped), and nothing the registrant set
-// survives. A Verified User is attached as is. The Membership is created (a
+// survives; if the address was verified meanwhile that is ErrAlreadyVerified. A
+// Verified User is attached as is. The Membership is created (a
 // duplicate is not an error), the Invitation marked accepted and the acceptance
 // audited, all in one transaction.
-func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password string) error {
+func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password, sessionEmail string) error {
 	role := membership.Role(inv.Role)
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		u, uerr := tx.User.Query().Where(user.Email(inv.Email)).Only(ctx)
 		if uerr != nil && !ent.IsNotFound(uerr) {
 			return uerr
 		}
-		if uerr != nil || u.EmailVerifiedAt == nil {
+		if uerr == nil && u.EmailVerifiedAt != nil {
+			// A Verified User's own session is the proof of the address (ADR 0030).
+			if sessionEmail == "" {
+				return ErrSignInRequired
+			}
+			if !strings.EqualFold(sessionEmail, inv.Email) {
+				return ErrWrongAccount
+			}
+		} else {
 			name = strings.TrimSpace(name)
 			if name == "" || password == "" {
 				return ErrCredentialsRequired
@@ -537,12 +577,7 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 					SetEmailVerifiedAt(time.Now()).
 					Save(ctx)
 			} else {
-				u, uerr = tx.User.UpdateOneID(u.ID).
-					SetName(name).
-					SetPasswordHash(hash).
-					SetEmailVerifiedAt(time.Now()).
-					AddSessionEpoch(1).
-					Save(ctx)
+				u, uerr = markVerified(ctx, tx, u.ID, name, hash)
 			}
 			if uerr != nil {
 				return uerr

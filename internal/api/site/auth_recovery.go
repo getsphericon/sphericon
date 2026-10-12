@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -77,11 +78,11 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 	if err != nil {
 		return nil, err
 	}
-	u, verified, err := h.accounts.ResetPassword(ctx, uid, hash)
+	u, completedRegistration, err := h.accounts.ResetPassword(ctx, uid, hash)
 	if err != nil {
 		return nil, err
 	}
-	if verified {
+	if completedRegistration {
 		_ = h.welcome.EnqueueWelcome(ctx, u.Email, u.Name)
 	}
 	return &siteapi.SiteAuthResetPasswordOK{}, nil
@@ -116,7 +117,10 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	if err != nil {
 		return nil, err
 	}
-	if _, err := h.accounts.VerifyEmail(ctx, uid, hash, u.Name); err != nil {
+	if _, err := h.accounts.VerifyEmail(ctx, uid, hash, u.Name); errors.Is(err, accounts.ErrAlreadyVerified) {
+		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil))
+		return &v, nil
+	} else if err != nil {
 		return nil, err
 	}
 	// Welcome email is a platform (transactional) send via the system sender, to an
