@@ -444,6 +444,19 @@ A human who authenticates (email + password). A User reaches Workspaces through 
 each carrying a Role — a Workspace is never owned by a single User directly.
 _Avoid_: Account, member, customer, owner
 
+**Verified email**:
+A User's email address whose control has been proven by following a link sent to it (a verify
+link, an accepted Invitation, or a confirmed email change). Until then the User is an
+**Unverified User**: it holds no session, no Membership, no Workspace and no password. The
+password is set only through a link that proves the address, so whoever proves it is the one who
+sets it.
+_Avoid_: Confirmed email, activated account
+
+**Unverified User**:
+A User whose email is not yet a Verified email: a registration awaiting its verify link. It
+cannot log in, owns nothing and is not attached to any Workspace.
+_Avoid_: Pending account, inactive user
+
 **Second factor**:
 A time-based one-time code (TOTP) a User enrolls in addition to their password, proving possession
 of their authenticator app at login. Email-based and SMS factors do not exist.
