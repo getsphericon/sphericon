@@ -23,6 +23,15 @@ var (
 	// ErrCredentialsRequired means the invited address has no Verified User, so the
 	// invitee must give a name and a password to accept.
 	ErrCredentialsRequired = errors.New("accounts: invitation needs a name and a password")
+	// ErrSignInRequired means the invited address belongs to a Verified User and no
+	// session was presented: only that User's own session may accept.
+	ErrSignInRequired = errors.New("accounts: sign in to accept this invitation")
+	// ErrWrongAccount means the presented session is another User's than the
+	// Verified User the invitation is for.
+	ErrWrongAccount = errors.New("accounts: this invitation is for another account")
+	// ErrAlreadyVerified means the User's email was already verified: a link that
+	// completes an Unverified User lost the race to another one.
+	ErrAlreadyVerified = errors.New("accounts: the email is already verified")
 )
 
 // generateInviteToken returns a random, URL-safe invitation token: the raw value
