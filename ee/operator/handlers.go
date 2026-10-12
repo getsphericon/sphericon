@@ -178,13 +178,24 @@ func (h *Handlers) OperatorWorkspacesGet(ctx context.Context, params operatorapi
 	if err != nil {
 		return nil, err
 	}
-	res := workspaceDetail(w, d)
+	active, err := h.module.ActiveHolds(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := workspaceDetail(w, d, active)
 	return &res, nil
 }
 
 // workspaceDetail is the detail page's view: the metadata of workspaceResource plus
-// the deliverability counts.
-func workspaceDetail(w *ent.Workspace, d Deliverability) operatorapi.OperatorWorkspaceDetailResource {
+// the deliverability counts and the active holds.
+func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold) operatorapi.OperatorWorkspaceDetailResource {
+	holds := make([]operatorapi.OperatorHold, len(active))
+	for i, r := range active {
+		holds[i] = operatorapi.OperatorHold{
+			Key: r.Key, ReasonCode: r.ReasonCode, Message: r.Message, SetBy: r.SetBy,
+			CreatedAt: operatorapi.Timestamp(r.CreatedAt), ExpiresAt: operatorapi.Timestamp(r.ExpiresAt),
+		}
+	}
 	base := workspaceResource(w)
 	domains := make([]operatorapi.OperatorDomainRates, 0, len(d.Domains))
 	for _, r := range d.Domains {
@@ -196,7 +207,7 @@ func workspaceDetail(w *ent.Workspace, d Deliverability) operatorapi.OperatorWor
 		})
 	}
 	return operatorapi.OperatorWorkspaceDetailResource{
-		ID: base.ID, Slug: base.Slug, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension,
+		ID: base.ID, Slug: base.Slug, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Holds: holds,
 		Deliverability: operatorapi.OperatorDeliverability{
 			WindowHours: int32(d.Window / time.Hour),
 			VolumeFloor: int32(d.VolumeFloor),

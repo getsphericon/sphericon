@@ -546,6 +546,17 @@ func (s *OperatorWorkspaceDetailResource) Validate() error {
 		})
 	}
 	if err := func() error {
+		if s.Holds == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "holds",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if err := s.Deliverability.Validate(); err != nil {
 			return err
 		}

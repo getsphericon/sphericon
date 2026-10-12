@@ -22,7 +22,7 @@ import (
 // (never Contacts, content, Events or the Workspace's secret keys).
 func requireMetadataOnly(t *testing.T, w map[string]any) {
 	t.Helper()
-	allowed := []string{"id", "slug", "name", "createdAt", "suspension", "deliverability"}
+	allowed := []string{"id", "slug", "name", "createdAt", "suspension", "deliverability", "holds"}
 	for k := range w {
 		assert.Contains(t, allowed, k)
 	}
@@ -288,4 +288,39 @@ func TestAWorkspaceWithoutSendingDomainsHasNoRatesAndNoVolume(t *testing.T) {
 	require.True(t, ok)
 	assert.Empty(t, hooli.Deliverability.Domains)
 	assert.EqualValues(t, 0, hooli.Deliverability.SendVolume)
+}
+
+func (h *harness) acmeHolds(t *testing.T, c *operatorapi.Client) []operatorapi.OperatorHold {
+	t.Helper()
+	detail, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.AcmeID)).(*operatorapi.OperatorWorkspaceDetailResource)
+	require.True(t, ok)
+	return detail.Holds
+}
+
+func TestTheWorkspaceDetailListsItsActiveHolds(t *testing.T) {
+	h := newHarness(t)
+	c, _ := h.operatorSession(t)
+	h.setHold(t, "k1", time.Hour)
+
+	holds := h.acmeHolds(t, c)
+
+	require.Len(t, holds, 1)
+	assert.Equal(t, "k1", holds[0].Key)
+	assert.Equal(t, "review", holds[0].ReasonCode)
+	assert.Equal(t, "Sending is paused for now.", holds[0].Message)
+	assert.Equal(t, fixtures.ServiceCredentialPrimaryName, holds[0].SetBy)
+	assert.WithinDuration(t, h.clock.now().Add(time.Hour), time.Time(holds[0].ExpiresAt), time.Second)
+	assert.WithinDuration(t, h.clock.now(), time.Time(holds[0].CreatedAt), time.Minute)
+}
+
+func TestAnExpiredHoldIsNotListedAndAnUnaffectedWorkspaceShowsNone(t *testing.T) {
+	h := newHarness(t)
+	c, _ := h.operatorSession(t)
+	h.setHold(t, "k1", time.Hour)
+	h.clock.t = h.clock.t.Add(2 * time.Hour)
+
+	assert.Empty(t, h.acmeHolds(t, c), "the fixture's lapsed hold and the expired one are not active")
+	globex, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.GlobexID)).(*operatorapi.OperatorWorkspaceDetailResource)
+	require.True(t, ok)
+	assert.Empty(t, globex.Holds)
 }

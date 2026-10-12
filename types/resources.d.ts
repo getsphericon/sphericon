@@ -292,6 +292,16 @@ export default interface Resources {
         },
         "back": "All workspaces",
         "detailsTitle": "Details",
+        "holds": {
+          "empty": "No active holds.",
+          "expires": "Expires",
+          "key": "Key",
+          "message": "Message",
+          "reasonCode": "Reason code",
+          "setBy": "Set by",
+          "since": "Since",
+          "title": "Operator holds"
+        },
         "id": "ID",
         "loadError": "Could not load the workspace",
         "noReason": "No reason given",

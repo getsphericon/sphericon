@@ -215,6 +215,18 @@ export const zOperatorAuditEntryList = z.object({
 });
 
 /**
+ * An active Operator hold on a Workspace, as the console shows it (read only)
+ */
+export const zOperatorHold = z.object({
+  key: z.string(),
+  reasonCode: z.string(),
+  message: z.string(),
+  createdAt: zTimestamp,
+  expiresAt: zTimestamp,
+  setBy: z.string()
+});
+
+/**
  * A Workspace's suspension state (ADR 0007)
  */
 export const zOperatorSuspension = z.object({
@@ -224,7 +236,7 @@ export const zOperatorSuspension = z.object({
 });
 
 /**
- * A Workspace with its deliverability, as the detail page shows it
+ * A Workspace with its deliverability and active holds, as the detail page shows it
  */
 export const zOperatorWorkspaceDetailResource = z.object({
   id: zEntityId,
@@ -232,6 +244,7 @@ export const zOperatorWorkspaceDetailResource = z.object({
   name: z.string(),
   createdAt: zTimestamp,
   suspension: z.exactOptional(zOperatorSuspension.nullable()),
+  holds: z.array(zOperatorHold),
   deliverability: zOperatorDeliverability
 });
 

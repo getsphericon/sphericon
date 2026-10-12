@@ -32,6 +32,7 @@ const HOOLI: OperatorWorkspaceDetailResource = {
     reason: 'abuse report',
   },
   deliverability: { windowHours: 24, volumeFloor: 1000, sendVolume: 0, domains: [] },
+  holds: [],
 }
 
 const ABOVE_FLOOR = {
@@ -251,4 +252,38 @@ test('a no-op says nothing changed', async () => {
   await expect
     .element(screen.getByText('Nothing changed: sending was not suspended.'))
     .toBeInTheDocument()
+})
+
+test('lists the active holds with key, reason code, message, since, expiry and setter', async () => {
+  worker.use(
+    handleOperatorWorkspacesGet({
+      body: {
+        ...HOOLI,
+        holds: [
+          {
+            key: 'k1',
+            reasonCode: 'review',
+            message: 'Sending is paused for now.',
+            createdAt: '2026-03-01T00:00:00Z',
+            expiresAt: '2026-03-08T00:00:00Z',
+            setBy: 'service-a',
+          },
+        ],
+      },
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByRole('heading', { name: 'Operator holds' })).toBeInTheDocument()
+  await expect.element(screen.getByText('k1', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('review', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is paused for now.')).toBeInTheDocument()
+  await expect.element(screen.getByText('service-a', { exact: true })).toBeInTheDocument()
+})
+
+test('a workspace without holds says so', async () => {
+  worker.use(handleOperatorWorkspacesGet({ body: HOOLI }))
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByText('No active holds.')).toBeInTheDocument()
 })
