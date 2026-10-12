@@ -1772,6 +1772,13 @@ export type SiteRegisterInput = {
 };
 
 /**
+ * Ask for the verification link again (always accepted; no account enumeration)
+ */
+export type SiteResendVerificationInput = {
+  email: EmailAddress;
+};
+
+/**
  * Set a new password using a reset token
  */
 export type SiteResetPasswordInput = {
@@ -3021,6 +3028,29 @@ export type SiteAuthRegisterResponses = {
   202: unknown;
 };
 
+export type SiteAuthResendVerificationData = {
+  body: SiteResendVerificationInput;
+  path?: never;
+  query?: never;
+  url: '/auth/resend-verification';
+};
+
+export type SiteAuthResendVerificationErrors = {
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SiteAuthResendVerificationError = SiteAuthResendVerificationErrors[keyof SiteAuthResendVerificationErrors];
+
+export type SiteAuthResendVerificationResponses = {
+  /**
+   * The request has been accepted for processing, but processing has not yet completed.
+   */
+  202: unknown;
+};
+
 export type SiteAuthResetPasswordData = {
   body: SiteResetPasswordInput;
   path?: never;
@@ -3442,20 +3472,6 @@ export type SiteUserSignOutEverywhereResponses = {
 };
 
 export type SiteUserSignOutEverywhereResponse = SiteUserSignOutEverywhereResponses[keyof SiteUserSignOutEverywhereResponses];
-
-export type SiteUserResendVerificationData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/me/verification-email';
-};
-
-export type SiteUserResendVerificationResponses = {
-  /**
-   * The request has been accepted for processing, but processing has not yet completed.
-   */
-  202: unknown;
-};
 
 export type SiteOAuthDescribeData = {
   body?: never;

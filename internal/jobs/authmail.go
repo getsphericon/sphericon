@@ -95,9 +95,11 @@ func (c *Client) EnqueuePasswordReset(ctx context.Context, email, token string, 
 	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowPasswordReset, Email: email, Token: token, Discard: !send})
 }
 
-// EnqueueEmailVerification schedules the signup email-verification email.
-func (c *Client) EnqueueEmailVerification(ctx context.Context, email, token string) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowEmailVerify, Email: email, Token: token})
+// EnqueueEmailVerification schedules the email-verification email. With send false
+// the job is queued all the same but its worker drops the mail (the resend answer
+// must not tell an Unverified User from anyone else by its response time).
+func (c *Client) EnqueueEmailVerification(ctx context.Context, email, token string, send bool) error {
+	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowEmailVerify, Email: email, Token: token, Discard: !send})
 }
 
 // EnqueueEmailChangeConfirm schedules the confirm-new-email email (sent to the

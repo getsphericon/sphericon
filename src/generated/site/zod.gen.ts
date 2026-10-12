@@ -444,6 +444,13 @@ export const zSiteRegisterInput = z.object({
 });
 
 /**
+ * Ask for the verification link again (always accepted; no account enumeration)
+ */
+export const zSiteResendVerificationInput = z.object({
+  email: zEmailAddress
+});
+
+/**
  * Set a new password using a reset token
  */
 export const zSiteResetPasswordInput = z.object({
@@ -1590,6 +1597,8 @@ export const zSiteAuthLoginResponse = zSiteLoginResult;
 export const zSiteAuthLogoutResponse = z.void();
 
 export const zSiteAuthRegisterBody = zSiteRegisterInput;
+
+export const zSiteAuthResendVerificationBody = zSiteResendVerificationInput;
 
 export const zSiteAuthResetPasswordBody = zSiteResetPasswordInput;
 

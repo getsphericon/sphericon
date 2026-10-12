@@ -89,9 +89,4 @@ namespace SiteUser {
     /** The expired session cookie */
     @header("Set-Cookie") setCookie: string;
   };
-
-  /** Resend the signup email-verification link to the current address */
-  @post
-  @route("/verification-email")
-  op resendVerification(): AcceptedResponse;
 }
