@@ -131,7 +131,11 @@ func (w *Workspace) AddOwner() []int64 {
 	id := uniq()
 	user, err := w.env.accounts.CreateUser(ctx, "E2E co-owner "+id, "co-owner-"+id+"@e2e.test", "!")
 	require.NoError(w.t, err)
-	_, err = w.scoped.Membership().Create().SetUserID(user.ID).SetRole(membership.RoleOwner).Save(ctx)
+	// An owner change takes its Workspace feed position inside a transaction.
+	err = w.env.bus.WithinScopedTx(ctx, w.scoped, func(ts *ent.Scoped, _ events.Publisher) error {
+		_, cerr := ts.Membership().Create().SetUserID(user.ID).SetRole(membership.RoleOwner).Save(ctx)
+		return cerr
+	})
 	require.NoError(w.t, err)
 	return w.OwnerMembershipIDs()
 }

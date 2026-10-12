@@ -628,6 +628,16 @@ func (a *App) Accounts() (*accounts.Accounts, error) {
 	return do.Invoke[*accounts.Accounts](a.injector)
 }
 
+// Bus is the event bus from the DI container, for harnesses that must change data
+// inside a transaction (events.Bus.WithinScopedTx) like the product's own write paths.
+func (a *App) Bus() (*events.Bus, error) {
+	b, err := do.Invoke[*eventsBus](a.injector)
+	if err != nil {
+		return nil, err
+	}
+	return b.Bus, nil
+}
+
 func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {
 	a.shutdownOnce.Do(func() {
 		a.shutdownReport = a.injector.ShutdownWithContext(ctx)
