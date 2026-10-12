@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -29,9 +30,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
@@ -366,6 +369,37 @@ func init() {
 	eventDescAction := eventFields[7].Descriptor()
 	// event.ActionValidator is a validator for the "action" field. It is called by the builders before save.
 	event.ActionValidator = eventDescAction.Validators[0].(func(string) error)
+	holdMixin := schema.Hold{}.Mixin()
+	holdMixinFields0 := holdMixin[0].Fields()
+	_ = holdMixinFields0
+	holdFields := schema.Hold{}.Fields()
+	_ = holdFields
+	// holdDescCreatedAt is the schema descriptor for created_at field.
+	holdDescCreatedAt := holdMixinFields0[0].Descriptor()
+	// hold.DefaultCreatedAt holds the default value on creation for the created_at field.
+	hold.DefaultCreatedAt = holdDescCreatedAt.Default.(func() time.Time)
+	// holdDescUpdatedAt is the schema descriptor for updated_at field.
+	holdDescUpdatedAt := holdMixinFields0[1].Descriptor()
+	// hold.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	hold.DefaultUpdatedAt = holdDescUpdatedAt.Default.(func() time.Time)
+	// hold.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	hold.UpdateDefaultUpdatedAt = holdDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// holdDescKey is the schema descriptor for key field.
+	holdDescKey := holdFields[1].Descriptor()
+	// hold.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	hold.KeyValidator = holdDescKey.Validators[0].(func(string) error)
+	// holdDescReasonCode is the schema descriptor for reason_code field.
+	holdDescReasonCode := holdFields[2].Descriptor()
+	// hold.ReasonCodeValidator is a validator for the "reason_code" field. It is called by the builders before save.
+	hold.ReasonCodeValidator = holdDescReasonCode.Validators[0].(func(string) error)
+	// holdDescMessage is the schema descriptor for message field.
+	holdDescMessage := holdFields[3].Descriptor()
+	// hold.MessageValidator is a validator for the "message" field. It is called by the builders before save.
+	hold.MessageValidator = holdDescMessage.Validators[0].(func(string) error)
+	// holdDescSetBy is the schema descriptor for set_by field.
+	holdDescSetBy := holdFields[5].Descriptor()
+	// hold.SetByValidator is a validator for the "set_by" field. It is called by the builders before save.
+	hold.SetByValidator = holdDescSetBy.Validators[0].(func(string) error)
 	integrationMixin := schema.Integration{}.Mixin()
 	integrationMixinFields0 := integrationMixin[0].Fields()
 	_ = integrationMixinFields0
@@ -635,6 +669,37 @@ func init() {
 	sendingdomainDescVerified := sendingdomainFields[5].Descriptor()
 	// sendingdomain.DefaultVerified holds the default value on creation for the verified field.
 	sendingdomain.DefaultVerified = sendingdomainDescVerified.Default.(bool)
+	servicecredentialMixin := schema.ServiceCredential{}.Mixin()
+	servicecredentialMixinFields0 := servicecredentialMixin[0].Fields()
+	_ = servicecredentialMixinFields0
+	servicecredentialFields := schema.ServiceCredential{}.Fields()
+	_ = servicecredentialFields
+	// servicecredentialDescCreatedAt is the schema descriptor for created_at field.
+	servicecredentialDescCreatedAt := servicecredentialMixinFields0[0].Descriptor()
+	// servicecredential.DefaultCreatedAt holds the default value on creation for the created_at field.
+	servicecredential.DefaultCreatedAt = servicecredentialDescCreatedAt.Default.(func() time.Time)
+	// servicecredentialDescUpdatedAt is the schema descriptor for updated_at field.
+	servicecredentialDescUpdatedAt := servicecredentialMixinFields0[1].Descriptor()
+	// servicecredential.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	servicecredential.DefaultUpdatedAt = servicecredentialDescUpdatedAt.Default.(func() time.Time)
+	// servicecredential.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	servicecredential.UpdateDefaultUpdatedAt = servicecredentialDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// servicecredentialDescName is the schema descriptor for name field.
+	servicecredentialDescName := servicecredentialFields[1].Descriptor()
+	// servicecredential.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	servicecredential.NameValidator = servicecredentialDescName.Validators[0].(func(string) error)
+	// servicecredentialDescPrefix is the schema descriptor for prefix field.
+	servicecredentialDescPrefix := servicecredentialFields[2].Descriptor()
+	// servicecredential.PrefixValidator is a validator for the "prefix" field. It is called by the builders before save.
+	servicecredential.PrefixValidator = servicecredentialDescPrefix.Validators[0].(func(string) error)
+	// servicecredentialDescSecretHash is the schema descriptor for secret_hash field.
+	servicecredentialDescSecretHash := servicecredentialFields[3].Descriptor()
+	// servicecredential.SecretHashValidator is a validator for the "secret_hash" field. It is called by the builders before save.
+	servicecredential.SecretHashValidator = servicecredentialDescSecretHash.Validators[0].(func(string) error)
+	// servicecredentialDescScopes is the schema descriptor for scopes field.
+	servicecredentialDescScopes := servicecredentialFields[4].Descriptor()
+	// servicecredential.DefaultScopes holds the default value on creation for the scopes field.
+	servicecredential.DefaultScopes = servicecredentialDescScopes.Default.([]string)
 	suppressionMixin := schema.Suppression{}.Mixin()
 	suppressionMixinFields0 := suppressionMixin[0].Fields()
 	_ = suppressionMixinFields0
@@ -696,6 +761,35 @@ func init() {
 	unsubscribeDescSendingSource := unsubscribeFields[3].Descriptor()
 	// unsubscribe.SendingSourceValidator is a validator for the "sending_source" field. It is called by the builders before save.
 	unsubscribe.SendingSourceValidator = unsubscribeDescSendingSource.Validators[0].(func(string) error)
+	usageMixin := schema.Usage{}.Mixin()
+	usageMixinFields0 := usageMixin[0].Fields()
+	_ = usageMixinFields0
+	usageFields := schema.Usage{}.Fields()
+	_ = usageFields
+	// usageDescCreatedAt is the schema descriptor for created_at field.
+	usageDescCreatedAt := usageMixinFields0[0].Descriptor()
+	// usage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	usage.DefaultCreatedAt = usageDescCreatedAt.Default.(func() time.Time)
+	// usageDescUpdatedAt is the schema descriptor for updated_at field.
+	usageDescUpdatedAt := usageMixinFields0[1].Descriptor()
+	// usage.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	usage.DefaultUpdatedAt = usageDescUpdatedAt.Default.(func() time.Time)
+	// usage.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	usage.UpdateDefaultUpdatedAt = usageDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// usageDescMetric is the schema descriptor for metric field.
+	usageDescMetric := usageFields[2].Descriptor()
+	// usage.MetricValidator is a validator for the "metric" field. It is called by the builders before save.
+	usage.MetricValidator = usageDescMetric.Validators[0].(func(string) error)
+	// usageDescValue is the schema descriptor for value field.
+	usageDescValue := usageFields[3].Descriptor()
+	// usage.DefaultValue holds the default value on creation for the value field.
+	usage.DefaultValue = usageDescValue.Default.(int64)
+	// usage.ValueValidator is a validator for the "value" field. It is called by the builders before save.
+	usage.ValueValidator = usageDescValue.Validators[0].(func(int64) error)
+	// usageDescFinal is the schema descriptor for final field.
+	usageDescFinal := usageFields[4].Descriptor()
+	// usage.DefaultFinal holds the default value on creation for the final field.
+	usage.DefaultFinal = usageDescFinal.Default.(bool)
 	userMixin := schema.User{}.Mixin()
 	userMixinFields0 := userMixin[0].Fields()
 	_ = userMixinFields0
@@ -816,4 +910,8 @@ func init() {
 	workspaceDescRetentionDays := workspaceFields[7].Descriptor()
 	// workspace.RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	workspace.RetentionDaysValidator = workspaceDescRetentionDays.Validators[0].(func(int) error)
+	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
+	workspaceDescFeedPosition := workspaceFields[9].Descriptor()
+	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
+	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 }

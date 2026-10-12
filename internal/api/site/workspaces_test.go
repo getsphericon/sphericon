@@ -80,3 +80,50 @@ func TestSiteWorkspacesListExposesSuspension(t *testing.T) {
 	reason, _ := list[0].SuspensionReason.Get()
 	assert.Equal(t, "complaint rate above 0.3%", reason)
 }
+
+// Every member sees the Operator holds on their Workspace (ADR 0009), told apart from a
+// suspension: the resource lists the active holds with the setter's message as given, a
+// lapsed hold is not listed, and an unaffected Workspace lists none.
+func TestSiteWorkspacesListExposesActiveOperatorHolds(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	const message = "Sending is paused for now."
+	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
+		SetKey("k1").SetReasonCode("review").SetMessage(message).SetSetBy("service-a").
+		SetExpiresAt(time.Now().Add(time.Hour)).Save(ctx)
+	require.NoError(t, err)
+
+	for _, email := range []string{fixtures.OwnerJohnEmail, fixtures.MemberMaryEmail} {
+		acme := workspaceOf(t, env.SiteActor(t, email), fixtures.AcmeSlug)
+		require.Len(t, acme.Holds, 1, "the lapsed fixture hold is not listed")
+		assert.Equal(t, "k1", acme.Holds[0].Key)
+		assert.Equal(t, "review", acme.Holds[0].ReasonCode)
+		assert.Equal(t, message, acme.Holds[0].Message)
+		assert.False(t, time.Time(acme.Holds[0].Since).IsZero())
+		_, suspended := acme.SuspendedAt.Get()
+		assert.False(t, suspended, "a hold is not a suspension")
+	}
+}
+
+func TestSiteWorkspacesListShowsNoHoldsForAnUnaffectedWorkspace(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	assert.Empty(t, workspaceOf(t, c, fixtures.AcmeSlug).Holds, "only a lapsed hold exists")
+
+	_, err := env.DB.Scoped(fixtures.GlobexID).Hold().Create().
+		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").
+		SetExpiresAt(time.Now().Add(time.Hour)).Save(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, workspaceOf(t, c, fixtures.AcmeSlug).Holds, "another Workspace's hold does not leak")
+}
+
+// Holds are honoured only with the `operator` license, on the send path and in what a
+// Workspace is shown alike: an unlicensed instance lists none.
+func TestSiteWorkspacesListShowsNoHoldsWithoutTheOperatorLicense(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithoutLicense())
+	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
+		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").
+		SetExpiresAt(time.Now().Add(time.Hour)).Save(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug).Holds)
+}

@@ -89,9 +89,34 @@ model OperatorDeliverability {
   domains: OperatorDomainRates[];
 }
 
-/** A Workspace with its deliverability, as the detail page shows it */
+/** An active Operator hold on a Workspace, as the console shows it (read only) */
+model OperatorHold {
+  /** Unique per Workspace, chosen by the setter */
+  key: string;
+
+  /** Machine reason code */
+  reasonCode: string;
+
+  /** The message the setter gave for the Owner */
+  message: string;
+
+  /** When the hold was first set */
+  createdAt: Timestamp;
+
+  /** When the hold lapses unless renewed */
+  expiresAt: Timestamp;
+
+  /** Who set it: the name of its Service credential */
+  setBy: string;
+}
+
+/** A Workspace with its deliverability and active holds, as the detail page shows it */
 model OperatorWorkspaceDetailResource {
   ...OperatorWorkspaceResource;
+
+  /** Active Operator holds by key; a lapsed hold is not listed */
+  holds: OperatorHold[];
+
   deliverability: OperatorDeliverability;
 }
 

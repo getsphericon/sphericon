@@ -80,6 +80,8 @@ func (s OperatorAuditActorKind) Validate() error {
 		return nil
 	case "operator":
 		return nil
+	case "service":
+		return nil
 	case "system":
 		return nil
 	default:
@@ -540,6 +542,17 @@ func (s *OperatorWorkspaceDetailResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "suspension",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Holds == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "holds",
 			Error: err,
 		})
 	}

@@ -37,6 +37,39 @@ The Operator, its console and the detector ship under a single license feature, 
 - One Operator role. Roles wait for a second support person.
 - Operator handlers need the raw `*ent.Client`, so `ee/operator` joins the closed list in AGENTS.md.
 
+### Service credential: the machine identity of the Operator surface
+
+A service that is not a person calls the Operator surface with a **Service credential**
+([[0009-usage-metering-and-operator-holds]]). It sits next to the human Operator, not inside it: no
+password, no cookie, no TOTP, no console access.
+
+- Own ent table `service_credential`, written and read only from `ee/operator`, with no Workspace and
+  no Membership (like the Operator). It is a bearer value `omsc_<prefix>_<secret>`; only the SHA-256 of
+  the secret is stored (the secret is 40 random characters and is checked on every request, so a slow
+  password hash would add cost and no strength).
+- Created, rotated and revoked **only by the command line** (`sphericon service-credential
+  create|rotate|revoke|list`). No endpoint can mint or change a credential. The value is shown once.
+- Limited to named scopes: `usage:read`, `workspaces:read`, `holds:write`. Every service operation
+  names the scopes it needs in one map, and an operation without an entry is refused to every
+  credential, so a new endpoint cannot ship unguarded.
+- A service may hold two active credentials at once (the name is not unique), so a rotation has no
+  downtime: `rotate` issues a second one, `revoke` ends the old one. Each credential has an optional
+  expiry and a last-used time, which `list` shows. A revoked or expired credential is refused.
+- **Served only on an internal listener**, in the manner of the metrics listener
+  ([[0018-metrics-opt-in-internal-listener]]): the service endpoints are a separate TypeSpec
+  surface and ogen server (`/service`), bound to `INTERNAL_ADDR`, empty by default and then no
+  listener and no route anywhere; an address equal to the public `PORT` (or `METRICS_ADDR`) is a
+  configuration error and a bind failure is fatal. The public port answers 404 for `/service`. The
+  network boundary is the first control and the credential the second.
+- Rate limited per credential (`RATE_LIMIT_SERVICE_PER_MINUTE`) and per client address on failed
+  authentication, by the machinery of [[0025-rate-limiting-hybrid-store-workspace-key]].
+- **Audit actor.** A write made under a credential is recorded with actor kind `service`, the
+  credential's id and its name, in the manner of an API token. Like an Operator it is staff of the
+  platform: every customer-facing read shows it as "sphericon staff" with no id
+  ([[0022-audit-log-ee-captured-at-scoped-client]]), and only the Operator console names it.
+- All of it runs under the same `operator` license feature; unlicensed, nothing is served and the
+  commands refuse.
+
 ### Console v1 shows metadata only
 
 Workspace list and search by slug, suspension state (actor, reason, time), Complaint and Bounce

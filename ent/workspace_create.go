@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -32,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -149,6 +151,20 @@ func (_c *WorkspaceCreate) SetSecondFactorRequiredAt(v time.Time) *WorkspaceCrea
 func (_c *WorkspaceCreate) SetNillableSecondFactorRequiredAt(v *time.Time) *WorkspaceCreate {
 	if v != nil {
 		_c.SetSecondFactorRequiredAt(*v)
+	}
+	return _c
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (_c *WorkspaceCreate) SetFeedPosition(v int64) *WorkspaceCreate {
+	_c.mutation.SetFeedPosition(v)
+	return _c
+}
+
+// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableFeedPosition(v *int64) *WorkspaceCreate {
+	if v != nil {
+		_c.SetFeedPosition(*v)
 	}
 	return _c
 }
@@ -365,6 +381,21 @@ func (_c *WorkspaceCreate) AddSendLimiters(v ...*SendLimiter) *WorkspaceCreate {
 	return _c.AddSendLimiterIDs(ids...)
 }
 
+// AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
+func (_c *WorkspaceCreate) AddHoldIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddHoldIDs(ids...)
+	return _c
+}
+
+// AddHolds adds the "holds" edges to the Hold entity.
+func (_c *WorkspaceCreate) AddHolds(v ...*Hold) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddHoldIDs(ids...)
+}
+
 // AddBroadcastIDs adds the "broadcasts" edge to the Broadcast entity by IDs.
 func (_c *WorkspaceCreate) AddBroadcastIDs(ids ...int64) *WorkspaceCreate {
 	_c.mutation.AddBroadcastIDs(ids...)
@@ -560,6 +591,21 @@ func (_c *WorkspaceCreate) AddAuditEntries(v ...*AuditEntry) *WorkspaceCreate {
 	return _c.AddAuditEntryIDs(ids...)
 }
 
+// AddUsageIDs adds the "usages" edge to the Usage entity by IDs.
+func (_c *WorkspaceCreate) AddUsageIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddUsageIDs(ids...)
+	return _c
+}
+
+// AddUsages adds the "usages" edges to the Usage entity.
+func (_c *WorkspaceCreate) AddUsages(v ...*Usage) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddUsageIDs(ids...)
+}
+
 // Mutation returns the WorkspaceMutation object of the builder.
 func (_c *WorkspaceCreate) Mutation() *WorkspaceMutation {
 	return _c.mutation
@@ -611,6 +657,10 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultPostalAddress
 		_c.mutation.SetPostalAddress(v)
 	}
+	if _, ok := _c.mutation.FeedPosition(); !ok {
+		v := workspace.DefaultFeedPosition
+		_c.mutation.SetFeedPosition(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -660,6 +710,9 @@ func (_c *WorkspaceCreate) check() error {
 		if err := workspace.RetentionDaysValidator(v); err != nil {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.FeedPosition(); !ok {
+		return &ValidationError{Name: "feed_position", err: errors.New(`ent: missing required field "Workspace.feed_position"`)}
 	}
 	if v, ok := _c.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
@@ -738,6 +791,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
 		_node.SecondFactorRequiredAt = &value
+	}
+	if value, ok := _c.mutation.FeedPosition(); ok {
+		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
+		_node.FeedPosition = value
 	}
 	if value, ok := _c.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
@@ -908,6 +965,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.HoldsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1123,6 +1196,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.UsagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -1304,6 +1393,24 @@ func (u *WorkspaceUpsert) UpdateSecondFactorRequiredAt() *WorkspaceUpsert {
 // ClearSecondFactorRequiredAt clears the value of the "second_factor_required_at" field.
 func (u *WorkspaceUpsert) ClearSecondFactorRequiredAt() *WorkspaceUpsert {
 	u.SetNull(workspace.FieldSecondFactorRequiredAt)
+	return u
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (u *WorkspaceUpsert) SetFeedPosition(v int64) *WorkspaceUpsert {
+	u.Set(workspace.FieldFeedPosition, v)
+	return u
+}
+
+// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateFeedPosition() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldFeedPosition)
+	return u
+}
+
+// AddFeedPosition adds v to the "feed_position" field.
+func (u *WorkspaceUpsert) AddFeedPosition(v int64) *WorkspaceUpsert {
+	u.Add(workspace.FieldFeedPosition, v)
 	return u
 }
 
@@ -1581,6 +1688,27 @@ func (u *WorkspaceUpsertOne) UpdateSecondFactorRequiredAt() *WorkspaceUpsertOne 
 func (u *WorkspaceUpsertOne) ClearSecondFactorRequiredAt() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearSecondFactorRequiredAt()
+	})
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (u *WorkspaceUpsertOne) SetFeedPosition(v int64) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetFeedPosition(v)
+	})
+}
+
+// AddFeedPosition adds v to the "feed_position" field.
+func (u *WorkspaceUpsertOne) AddFeedPosition(v int64) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddFeedPosition(v)
+	})
+}
+
+// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateFeedPosition() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateFeedPosition()
 	})
 }
 
@@ -2036,6 +2164,27 @@ func (u *WorkspaceUpsertBulk) UpdateSecondFactorRequiredAt() *WorkspaceUpsertBul
 func (u *WorkspaceUpsertBulk) ClearSecondFactorRequiredAt() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearSecondFactorRequiredAt()
+	})
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (u *WorkspaceUpsertBulk) SetFeedPosition(v int64) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetFeedPosition(v)
+	})
+}
+
+// AddFeedPosition adds v to the "feed_position" field.
+func (u *WorkspaceUpsertBulk) AddFeedPosition(v int64) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddFeedPosition(v)
+	})
+}
+
+// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateFeedPosition() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateFeedPosition()
 	})
 }
 

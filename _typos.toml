@@ -14,6 +14,7 @@ extend-exclude = [
   "internal/i18n/locales",
   "locales",
   "internal/server/assets",
+  "CHANGELOG.md",
 ]
 
 [default]

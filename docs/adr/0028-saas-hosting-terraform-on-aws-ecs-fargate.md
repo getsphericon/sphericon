@@ -72,6 +72,12 @@ standby).
   `ghcr.io/getsphericon/sphericon`). ECS pulls it anonymously, so there are no registry credentials. The
   package must be made public once by hand (not possible through Terraform), and an image only
   exists after the first release.
+- **The internal listener is opt-in** (ADR 0018, ADR 0026). The variable
+  `internal_listener_source_security_group_id` names a security group in the same VPC and
+  `internal_port` (default 3400) the port. When set, the task definition passes
+  `INTERNAL_ADDR=:<port>` and the app security group gets one ingress rule on that port from that
+  group alone; the load balancer, its target group and the internet never reach it. When empty (the
+  default) there is no `INTERNAL_ADDR`, no rule and no open port, so the plan is unchanged.
 - **The AWS MCP server is for read-only inspection.** Every change goes through Terraform.
 
 ## Considered Options

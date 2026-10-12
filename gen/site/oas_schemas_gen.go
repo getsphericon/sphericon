@@ -3104,6 +3104,51 @@ func (s *SiteAcceptInvitationInput) SetPassword(val OptString) {
 	s.Password = val
 }
 
+// A short-lived signed token that proves who the Owner is to the external account page, with the
+// address of that page.
+// Ref: #/components/schemas/SiteAccountLinkResource
+type SiteAccountLinkResource struct {
+	// Address of the external account page.
+	URL string `json:"url"`
+	// Signed token (a JWT, EdDSA) naming the user, the Workspace and the role; it expires within minutes.
+	// Verify it with the key set published at /.well-known/jwks.json.
+	Token string `json:"token"`
+	// When the token expires.
+	ExpiresAt Timestamp `json:"expiresAt"`
+}
+
+// GetURL returns the value of URL.
+func (s *SiteAccountLinkResource) GetURL() string {
+	return s.URL
+}
+
+// GetToken returns the value of Token.
+func (s *SiteAccountLinkResource) GetToken() string {
+	return s.Token
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *SiteAccountLinkResource) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// SetURL sets the value of URL.
+func (s *SiteAccountLinkResource) SetURL(val string) {
+	s.URL = val
+}
+
+// SetToken sets the value of Token.
+func (s *SiteAccountLinkResource) SetToken(val string) {
+	s.Token = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *SiteAccountLinkResource) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+func (*SiteAccountLinkResource) siteWorkspacesAccountLinkRes() {}
+
 // Automation counts (point-in-time snapshot).
 // Ref: #/components/schemas/SiteAnalyticsAutomations
 type SiteAnalyticsAutomations struct {
@@ -11544,6 +11589,61 @@ type SiteWebhooksUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteWebhooksUpdateUnprocessableEntity) siteWebhooksUpdateRes() {}
 
+// An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's members see it.
+// It is not a suspension: it is set from outside, carries its own message, and lifts by itself at its
+// expiry.
+// Ref: #/components/schemas/SiteWorkspaceHold
+type SiteWorkspaceHold struct {
+	// The setter's key, unique per Workspace.
+	Key string `json:"key"`
+	// Machine reason code the setter gave.
+	ReasonCode string `json:"reasonCode"`
+	// The setter's message for the Owner, to show as given.
+	Message string `json:"message"`
+	// When the hold was set.
+	Since Timestamp `json:"since"`
+}
+
+// GetKey returns the value of Key.
+func (s *SiteWorkspaceHold) GetKey() string {
+	return s.Key
+}
+
+// GetReasonCode returns the value of ReasonCode.
+func (s *SiteWorkspaceHold) GetReasonCode() string {
+	return s.ReasonCode
+}
+
+// GetMessage returns the value of Message.
+func (s *SiteWorkspaceHold) GetMessage() string {
+	return s.Message
+}
+
+// GetSince returns the value of Since.
+func (s *SiteWorkspaceHold) GetSince() Timestamp {
+	return s.Since
+}
+
+// SetKey sets the value of Key.
+func (s *SiteWorkspaceHold) SetKey(val string) {
+	s.Key = val
+}
+
+// SetReasonCode sets the value of ReasonCode.
+func (s *SiteWorkspaceHold) SetReasonCode(val string) {
+	s.ReasonCode = val
+}
+
+// SetMessage sets the value of Message.
+func (s *SiteWorkspaceHold) SetMessage(val string) {
+	s.Message = val
+}
+
+// SetSince sets the value of Since.
+func (s *SiteWorkspaceHold) SetSince(val Timestamp) {
+	s.Since = val
+}
+
 // Workspace the current user belongs to.
 // Ref: #/components/schemas/SiteWorkspaceResource
 type SiteWorkspaceResource struct {
@@ -11569,6 +11669,9 @@ type SiteWorkspaceResource struct {
 	SuspendedAt OptNilTimestamp `json:"suspendedAt"`
 	// Why sending was suspended, shown to the owner; present only while suspended.
 	SuspensionReason OptNilString `json:"suspensionReason"`
+	// The Operator holds active now, oldest key first; empty while nothing holds sending. Any one freezes
+	// every send surface, like a suspension, but a lapsed hold is never listed.
+	Holds []SiteWorkspaceHold `json:"holds"`
 	// When an Owner or Admin switched on the Two-factor requirement (ADR 0020); absent while every member
 	// may work without a Second factor.
 	SecondFactorRequiredAt OptNilTimestamp `json:"secondFactorRequiredAt"`
@@ -11577,6 +11680,9 @@ type SiteWorkspaceResource struct {
 	// User has a Second factor. After it, every request to this Workspace answers 403 with code
 	// second_factor_required until the User enrolls one.
 	SecondFactorGraceEndsAt OptNilTimestamp `json:"secondFactorGraceEndsAt"`
+	// Whether the authenticated User may open the Account link: true only for an Owner, and only on an
+	// installation configured for it.
+	AccountLinkAvailable bool `json:"accountLinkAvailable"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -11626,6 +11732,11 @@ func (s *SiteWorkspaceResource) GetSuspensionReason() OptNilString {
 	return s.SuspensionReason
 }
 
+// GetHolds returns the value of Holds.
+func (s *SiteWorkspaceResource) GetHolds() []SiteWorkspaceHold {
+	return s.Holds
+}
+
 // GetSecondFactorRequiredAt returns the value of SecondFactorRequiredAt.
 func (s *SiteWorkspaceResource) GetSecondFactorRequiredAt() OptNilTimestamp {
 	return s.SecondFactorRequiredAt
@@ -11634,6 +11745,11 @@ func (s *SiteWorkspaceResource) GetSecondFactorRequiredAt() OptNilTimestamp {
 // GetSecondFactorGraceEndsAt returns the value of SecondFactorGraceEndsAt.
 func (s *SiteWorkspaceResource) GetSecondFactorGraceEndsAt() OptNilTimestamp {
 	return s.SecondFactorGraceEndsAt
+}
+
+// GetAccountLinkAvailable returns the value of AccountLinkAvailable.
+func (s *SiteWorkspaceResource) GetAccountLinkAvailable() bool {
+	return s.AccountLinkAvailable
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11686,6 +11802,11 @@ func (s *SiteWorkspaceResource) SetSuspensionReason(val OptNilString) {
 	s.SuspensionReason = val
 }
 
+// SetHolds sets the value of Holds.
+func (s *SiteWorkspaceResource) SetHolds(val []SiteWorkspaceHold) {
+	s.Holds = val
+}
+
 // SetSecondFactorRequiredAt sets the value of SecondFactorRequiredAt.
 func (s *SiteWorkspaceResource) SetSecondFactorRequiredAt(val OptNilTimestamp) {
 	s.SecondFactorRequiredAt = val
@@ -11696,6 +11817,11 @@ func (s *SiteWorkspaceResource) SetSecondFactorGraceEndsAt(val OptNilTimestamp) 
 	s.SecondFactorGraceEndsAt = val
 }
 
+// SetAccountLinkAvailable sets the value of AccountLinkAvailable.
+func (s *SiteWorkspaceResource) SetAccountLinkAvailable(val bool) {
+	s.AccountLinkAvailable = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -11703,6 +11829,14 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 
 func (*SiteWorkspaceResource) siteWorkspacesSetSecondFactorRequirementRes() {}
 func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                     {}
+
+type SiteWorkspacesAccountLinkForbidden ProblemDetails
+
+func (*SiteWorkspacesAccountLinkForbidden) siteWorkspacesAccountLinkRes() {}
+
+type SiteWorkspacesAccountLinkNotFound ProblemDetails
+
+func (*SiteWorkspacesAccountLinkNotFound) siteWorkspacesAccountLinkRes() {}
 
 type SiteWorkspacesSetSecondFactorRequirementForbidden ProblemDetails
 

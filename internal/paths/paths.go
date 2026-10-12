@@ -5,3 +5,7 @@ package paths
 
 // Operator is the prefix of the platform Operator API (ADR 0026).
 const Operator = "/operator"
+
+// Service is the prefix of the service endpoints of the Operator surface, served only
+// by the internal listener (ADR 0026).
+const Service = "/service"

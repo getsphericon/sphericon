@@ -49,6 +49,9 @@ type RateLimits struct {
 	Collect int
 	// CollectIP caps /collect per client IP per minute.
 	CollectIP int
+	// ServicePerMinute caps the internal listener's service endpoints per Service
+	// credential per minute.
+	ServicePerMinute int
 	// ForgotAddress is how many password-reset mails one address may be sent per
 	// hour. Over it the request is still answered 202 and nothing is sent.
 	ForgotAddress int
@@ -57,7 +60,7 @@ type RateLimits struct {
 }
 
 // DefaultRateLimits are the production budgets.
-var DefaultRateLimits = RateLimits{Human: 60, APIBurst: 20, APIPerMinute: 600, FailedAuth: 30, Tracking: 600, LoginFailures: 5, LoginIP: 20, Collect: 6000, CollectIP: 300, ForgotAddress: 3, ForgotIP: 10}
+var DefaultRateLimits = RateLimits{Human: 60, APIBurst: 20, APIPerMinute: 600, FailedAuth: 30, Tracking: 600, LoginFailures: 5, LoginIP: 20, Collect: 6000, CollectIP: 300, ServicePerMinute: 600, ForgotAddress: 3, ForgotIP: 10}
 
 // DBPool bounds the Postgres connections one replica may open: the
 // database/sql pool (ent, pubsub) and the pgx pool river runs on. Defaults
@@ -94,6 +97,12 @@ type Config struct {
 	EncryptionKey string
 	// LicenseKey is the offline EE license key (ADR 0014). Empty runs the plain core.
 	LicenseKey string
+	// AccountLinkURL is the address of the external account page the Owner's Account
+	// link opens (ACCOUNT_LINK_URL). The link is enabled only with AccountLinkSigningKey too.
+	AccountLinkURL string
+	// AccountLinkSigningKey is the base64 Ed25519 seed that signs the Account link
+	// token (ACCOUNT_LINK_SIGNING_KEY).
+	AccountLinkSigningKey string
 	// OperatorJWTSecret signs the Operator session and login challenge (OPERATOR_JWT_SECRET,
 	// ADR 0026). It is required, and must differ from JWT_SECRET, only when the license
 	// has the `operator` feature; ee.New validates it there.
@@ -101,9 +110,12 @@ type Config struct {
 	// OperatorSessionTTL is the lifetime of an Operator session (OPERATOR_SESSION_TTL,
 	// default 4h, no refresh, no remember-me): shorter than a customer's.
 	OperatorSessionTTL time.Duration
-	AutoMigrate        bool
-	BodyLimits         BodyLimits
-	RateLimits         RateLimits
+	// OperatorHoldMaxExpiry is how far ahead a service may set an Operator hold's expiry
+	// (OPERATOR_HOLD_MAX_EXPIRY, default 720h): it is refused beyond it.
+	OperatorHoldMaxExpiry time.Duration
+	AutoMigrate           bool
+	BodyLimits            BodyLimits
+	RateLimits            RateLimits
 	// OutboxFloor is the minimum age of a domain-event outbox row before the
 	// prune job may delete it (OUTBOX_RETENTION_FLOOR_DAYS, default 7; ADR 0019).
 	OutboxFloor time.Duration
@@ -137,6 +149,13 @@ type Config struct {
 	// (ADR 0025).
 	MetricsAddr string
 
+	// InternalAddr (host:port) is where the opt-in internal listener binds: the only
+	// place the service endpoints of the Operator surface are served (ADR 0026). Empty
+	// (the default) means no listener and no route for them anywhere; it must differ
+	// from the public PORT and from METRICS_ADDR. Nothing is served either without the
+	// `operator` license.
+	InternalAddr string
+
 	// System (platform) transactional email — sphericon's OWN sender, distinct from a
 	// customer's per-workspace integration. Dev uses smtp → mailpit (the SMTP_*
 	// values); prod uses ses (the SES_* values). Sent via the same messaging
@@ -157,6 +176,7 @@ func Load(envName string) (*Config, error) {
 	v.SetDefault("APP_URL", "http://localhost:3000")
 	v.SetDefault("SESSION_TTL", 24*time.Hour)
 	v.SetDefault("OPERATOR_SESSION_TTL", 4*time.Hour)
+	v.SetDefault("OPERATOR_HOLD_MAX_EXPIRY", 30*24*time.Hour)
 	v.SetDefault("SMTP_PORT", 1025)
 	v.SetDefault("SYSTEM_EMAIL_PROVIDER", "smtp")
 	v.SetDefault("SYSTEM_EMAIL_FROM", "noreply@sphericon.localhost")
@@ -179,6 +199,7 @@ func Load(envName string) (*Config, error) {
 	v.SetDefault("RATE_LIMIT_LOGIN_IP_PER_MINUTE", limits.LoginIP)
 	v.SetDefault("RATE_LIMIT_COLLECT_PER_MINUTE", limits.Collect)
 	v.SetDefault("RATE_LIMIT_COLLECT_IP_PER_MINUTE", limits.CollectIP)
+	v.SetDefault("RATE_LIMIT_SERVICE_PER_MINUTE", limits.ServicePerMinute)
 	v.SetDefault("RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR", limits.ForgotAddress)
 	v.SetDefault("RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR", limits.ForgotIP)
 	v.SetDefault("OUTBOX_RETENTION_FLOOR_DAYS", 7)
@@ -235,9 +256,13 @@ func Load(envName string) (*Config, error) {
 		EncryptionKey:  v.GetString("ENCRYPTION_KEY"),
 		LicenseKey:     v.GetString("LICENSE_KEY"),
 
-		OperatorJWTSecret:  v.GetString("OPERATOR_JWT_SECRET"),
-		OperatorSessionTTL: v.GetDuration("OPERATOR_SESSION_TTL"),
-		AutoMigrate:        v.GetBool("AUTO_MIGRATE"),
+		AccountLinkURL:        v.GetString("ACCOUNT_LINK_URL"),
+		AccountLinkSigningKey: v.GetString("ACCOUNT_LINK_SIGNING_KEY"),
+
+		OperatorJWTSecret:     v.GetString("OPERATOR_JWT_SECRET"),
+		OperatorSessionTTL:    v.GetDuration("OPERATOR_SESSION_TTL"),
+		OperatorHoldMaxExpiry: v.GetDuration("OPERATOR_HOLD_MAX_EXPIRY"),
+		AutoMigrate:           v.GetBool("AUTO_MIGRATE"),
 
 		BodyLimits: BodyLimits{
 			Default:      v.GetInt64("MAX_BODY_BYTES"),
@@ -245,17 +270,18 @@ func Load(envName string) (*Config, error) {
 			CollectEvent: v.GetInt64("COLLECT_MAX_EVENT_BYTES"),
 		},
 		RateLimits: RateLimits{
-			Human:         v.GetInt("RATE_LIMIT_HUMAN_PER_MINUTE"),
-			APIBurst:      v.GetInt("RATE_LIMIT_API_BURST_PER_SECOND"),
-			APIPerMinute:  v.GetInt("RATE_LIMIT_API_PER_MINUTE"),
-			FailedAuth:    v.GetInt("RATE_LIMIT_FAILED_AUTH_PER_MINUTE"),
-			Tracking:      v.GetInt("RATE_LIMIT_TRACKING_PER_MINUTE"),
-			LoginFailures: v.GetInt("RATE_LIMIT_LOGIN_FAILURES"),
-			LoginIP:       v.GetInt("RATE_LIMIT_LOGIN_IP_PER_MINUTE"),
-			Collect:       v.GetInt("RATE_LIMIT_COLLECT_PER_MINUTE"),
-			CollectIP:     v.GetInt("RATE_LIMIT_COLLECT_IP_PER_MINUTE"),
-			ForgotAddress: v.GetInt("RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR"),
-			ForgotIP:      v.GetInt("RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR"),
+			Human:            v.GetInt("RATE_LIMIT_HUMAN_PER_MINUTE"),
+			APIBurst:         v.GetInt("RATE_LIMIT_API_BURST_PER_SECOND"),
+			APIPerMinute:     v.GetInt("RATE_LIMIT_API_PER_MINUTE"),
+			FailedAuth:       v.GetInt("RATE_LIMIT_FAILED_AUTH_PER_MINUTE"),
+			Tracking:         v.GetInt("RATE_LIMIT_TRACKING_PER_MINUTE"),
+			LoginFailures:    v.GetInt("RATE_LIMIT_LOGIN_FAILURES"),
+			LoginIP:          v.GetInt("RATE_LIMIT_LOGIN_IP_PER_MINUTE"),
+			Collect:          v.GetInt("RATE_LIMIT_COLLECT_PER_MINUTE"),
+			CollectIP:        v.GetInt("RATE_LIMIT_COLLECT_IP_PER_MINUTE"),
+			ServicePerMinute: v.GetInt("RATE_LIMIT_SERVICE_PER_MINUTE"),
+			ForgotAddress:    v.GetInt("RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR"),
+			ForgotIP:         v.GetInt("RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR"),
 		},
 		DBPool: DBPool{
 			MaxOpenConns:    maxOpen,
@@ -272,6 +298,7 @@ func Load(envName string) (*Config, error) {
 
 		OtelServiceName: v.GetString("OTEL_SERVICE_NAME"),
 		MetricsAddr:     v.GetString("METRICS_ADDR"),
+		InternalAddr:    v.GetString("INTERNAL_ADDR"),
 
 		SystemEmailProvider: v.GetString("SYSTEM_EMAIL_PROVIDER"),
 		SystemEmailFrom:     v.GetString("SYSTEM_EMAIL_FROM"),
@@ -284,6 +311,7 @@ func Load(envName string) (*Config, error) {
 		// The suite never scrapes metrics; a global METRICS_ADDR (the dev stack's) would
 		// make concurrent runs, or a running dev stack, collide on the port.
 		cfg.MetricsAddr = ""
+		cfg.InternalAddr = "" // likewise a global INTERNAL_ADDR
 	}
 
 	if err := cfg.validate(envName); err != nil {
@@ -312,6 +340,12 @@ func (c *Config) validate(envName string) error {
 	}
 	if c.OperatorSessionTTL <= 0 {
 		return fmt.Errorf("OPERATOR_SESSION_TTL must be positive")
+	}
+	if c.OperatorHoldMaxExpiry <= 0 {
+		return fmt.Errorf("OPERATOR_HOLD_MAX_EXPIRY must be positive")
+	}
+	if (c.AccountLinkURL == "") != (c.AccountLinkSigningKey == "") {
+		return fmt.Errorf("ACCOUNT_LINK_URL and ACCOUNT_LINK_SIGNING_KEY must be set together")
 	}
 	if c.BodyLimits.Default <= 0 {
 		return fmt.Errorf("MAX_BODY_BYTES must be positive")
@@ -347,6 +381,9 @@ func (c *Config) validate(envName string) error {
 	if c.RateLimits.CollectIP < 0 {
 		return fmt.Errorf("RATE_LIMIT_COLLECT_IP_PER_MINUTE must not be negative (0 disables)")
 	}
+	if c.RateLimits.ServicePerMinute < 0 {
+		return fmt.Errorf("RATE_LIMIT_SERVICE_PER_MINUTE must not be negative (0 disables)")
+	}
 	if c.RateLimits.ForgotAddress < 0 {
 		return fmt.Errorf("RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR must not be negative (0 disables)")
 	}
@@ -371,27 +408,51 @@ func (c *Config) validate(envName string) error {
 	if c.DBPool.PGXMaxConns <= 0 {
 		return fmt.Errorf("PGX_MAX_CONNS must be positive")
 	}
-	return c.validateMetricsAddr()
+	if err := c.validateMetricsAddr(); err != nil {
+		return err
+	}
+	return c.validateInternalAddr()
 }
 
 // validateMetricsAddr rejects a malformed METRICS_ADDR and one sharing the public
 // PORT (the public server binds every interface, so any host collides).
 func (c *Config) validateMetricsAddr() error {
-	if c.MetricsAddr == "" {
-		return nil
+	_, err := c.listenPort("METRICS_ADDR", c.MetricsAddr)
+	return err
+}
+
+// validateInternalAddr rejects a malformed INTERNAL_ADDR and one sharing the public
+// PORT or the metrics listener's port: the internal listener is a server of its own.
+func (c *Config) validateInternalAddr() error {
+	port, err := c.listenPort("INTERNAL_ADDR", c.InternalAddr)
+	if err != nil || port == 0 {
+		return err
 	}
-	_, portStr, err := net.SplitHostPort(c.MetricsAddr)
+	if metrics, err := c.listenPort("METRICS_ADDR", c.MetricsAddr); err == nil && metrics == port {
+		return fmt.Errorf("INTERNAL_ADDR must not use the METRICS_ADDR port (%d)", port)
+	}
+	return nil
+}
+
+// listenPort is the port of an opt-in listener address, 0 when it is empty (no
+// listener). A malformed address and one on the public PORT are refused (the public
+// server binds every interface, so any host collides).
+func (c *Config) listenPort(name, addr string) (int, error) {
+	if addr == "" {
+		return 0, nil
+	}
+	_, portStr, err := net.SplitHostPort(addr)
 	if err != nil {
-		return fmt.Errorf("METRICS_ADDR must be host:port: %w", err)
+		return 0, fmt.Errorf("%s must be host:port: %w", name, err)
 	}
 	port, err := strconv.Atoi(portStr)
 	if err != nil || port < 1 || port > 65535 {
-		return fmt.Errorf("METRICS_ADDR port %q is not a valid port", portStr)
+		return 0, fmt.Errorf("%s port %q is not a valid port", name, portStr)
 	}
 	if public, err := strconv.Atoi(c.Port); err == nil && public == port {
-		return fmt.Errorf("METRICS_ADDR must not use the public PORT (%d)", port)
+		return 0, fmt.Errorf("%s must not use the public PORT (%d)", name, port)
 	}
-	return nil
+	return port, nil
 }
 
 // minJWTSecretLength is the shortest JWT_SECRET accepted outside development

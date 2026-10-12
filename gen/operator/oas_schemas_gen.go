@@ -86,7 +86,8 @@ func (o NilFloat64) Or(d float64) float64 {
 // The actor of an Audit entry.
 // Ref: #/components/schemas/OperatorAuditActor
 type OperatorAuditActor struct {
-	// The kind of actor; an operator carries no id and the name "sphericon staff".
+	// The kind of actor; an operator carries no id and the name "sphericon staff"; a service is a Service
+	// credential, named as the Operator who issued it chose.
 	Kind OperatorAuditActorKind `json:"kind"`
 	// The actor's id (a User id or an API token id); absent for the system and an operator.
 	ID OptNilString `json:"id"`
@@ -132,6 +133,7 @@ const (
 	OperatorAuditActorKindUser     OperatorAuditActorKind = "user"
 	OperatorAuditActorKindAPIToken OperatorAuditActorKind = "api_token"
 	OperatorAuditActorKindOperator OperatorAuditActorKind = "operator"
+	OperatorAuditActorKindService  OperatorAuditActorKind = "service"
 	OperatorAuditActorKindSystem   OperatorAuditActorKind = "system"
 )
 
@@ -141,6 +143,7 @@ func (OperatorAuditActorKind) AllValues() []OperatorAuditActorKind {
 		OperatorAuditActorKindUser,
 		OperatorAuditActorKindAPIToken,
 		OperatorAuditActorKindOperator,
+		OperatorAuditActorKindService,
 		OperatorAuditActorKindSystem,
 	}
 }
@@ -153,6 +156,8 @@ func (s OperatorAuditActorKind) MarshalText() ([]byte, error) {
 	case OperatorAuditActorKindAPIToken:
 		return []byte(s), nil
 	case OperatorAuditActorKindOperator:
+		return []byte(s), nil
+	case OperatorAuditActorKindService:
 		return []byte(s), nil
 	case OperatorAuditActorKindSystem:
 		return []byte(s), nil
@@ -172,6 +177,9 @@ func (s *OperatorAuditActorKind) UnmarshalText(data []byte) error {
 		return nil
 	case OperatorAuditActorKindOperator:
 		*s = OperatorAuditActorKindOperator
+		return nil
+	case OperatorAuditActorKindService:
+		*s = OperatorAuditActorKindService
 		return nil
 	case OperatorAuditActorKindSystem:
 		*s = OperatorAuditActorKindSystem
@@ -540,6 +548,83 @@ func (s *OperatorEnrolment) SetURI(val string) {
 // SetQrCode sets the value of QrCode.
 func (s *OperatorEnrolment) SetQrCode(val string) {
 	s.QrCode = val
+}
+
+// An active Operator hold on a Workspace, as the console shows it (read only).
+// Ref: #/components/schemas/OperatorHold
+type OperatorHold struct {
+	// Unique per Workspace, chosen by the setter.
+	Key string `json:"key"`
+	// Machine reason code.
+	ReasonCode string `json:"reasonCode"`
+	// The message the setter gave for the Owner.
+	Message string `json:"message"`
+	// When the hold was first set.
+	CreatedAt Timestamp `json:"createdAt"`
+	// When the hold lapses unless renewed.
+	ExpiresAt Timestamp `json:"expiresAt"`
+	// Who set it: the name of its Service credential.
+	SetBy string `json:"setBy"`
+}
+
+// GetKey returns the value of Key.
+func (s *OperatorHold) GetKey() string {
+	return s.Key
+}
+
+// GetReasonCode returns the value of ReasonCode.
+func (s *OperatorHold) GetReasonCode() string {
+	return s.ReasonCode
+}
+
+// GetMessage returns the value of Message.
+func (s *OperatorHold) GetMessage() string {
+	return s.Message
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *OperatorHold) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *OperatorHold) GetExpiresAt() Timestamp {
+	return s.ExpiresAt
+}
+
+// GetSetBy returns the value of SetBy.
+func (s *OperatorHold) GetSetBy() string {
+	return s.SetBy
+}
+
+// SetKey sets the value of Key.
+func (s *OperatorHold) SetKey(val string) {
+	s.Key = val
+}
+
+// SetReasonCode sets the value of ReasonCode.
+func (s *OperatorHold) SetReasonCode(val string) {
+	s.ReasonCode = val
+}
+
+// SetMessage sets the value of Message.
+func (s *OperatorHold) SetMessage(val string) {
+	s.Message = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *OperatorHold) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *OperatorHold) SetExpiresAt(val Timestamp) {
+	s.ExpiresAt = val
+}
+
+// SetSetBy sets the value of SetBy.
+func (s *OperatorHold) SetSetBy(val string) {
+	s.SetBy = val
 }
 
 // Sign in with an email and password. The email is a plain string: a malformed address must answer
@@ -966,7 +1051,7 @@ type OperatorWorkspaceAuditListUnauthorized ProblemDetails
 
 func (*OperatorWorkspaceAuditListUnauthorized) operatorWorkspaceAuditListRes() {}
 
-// A Workspace with its deliverability, as the detail page shows it.
+// A Workspace with its deliverability and active holds, as the detail page shows it.
 // Ref: #/components/schemas/OperatorWorkspaceDetailResource
 type OperatorWorkspaceDetailResource struct {
 	// Unique identifier.
@@ -976,8 +1061,10 @@ type OperatorWorkspaceDetailResource struct {
 	// When the Workspace was created.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Present only while sending is suspended.
-	Suspension     OptNilOperatorSuspension `json:"suspension"`
-	Deliverability OperatorDeliverability   `json:"deliverability"`
+	Suspension OptNilOperatorSuspension `json:"suspension"`
+	// Active Operator holds by key; a lapsed hold is not listed.
+	Holds          []OperatorHold         `json:"holds"`
+	Deliverability OperatorDeliverability `json:"deliverability"`
 }
 
 // GetID returns the value of ID.
@@ -1003,6 +1090,11 @@ func (s *OperatorWorkspaceDetailResource) GetCreatedAt() Timestamp {
 // GetSuspension returns the value of Suspension.
 func (s *OperatorWorkspaceDetailResource) GetSuspension() OptNilOperatorSuspension {
 	return s.Suspension
+}
+
+// GetHolds returns the value of Holds.
+func (s *OperatorWorkspaceDetailResource) GetHolds() []OperatorHold {
+	return s.Holds
 }
 
 // GetDeliverability returns the value of Deliverability.
@@ -1033,6 +1125,11 @@ func (s *OperatorWorkspaceDetailResource) SetCreatedAt(val Timestamp) {
 // SetSuspension sets the value of Suspension.
 func (s *OperatorWorkspaceDetailResource) SetSuspension(val OptNilOperatorSuspension) {
 	s.Suspension = val
+}
+
+// SetHolds sets the value of Holds.
+func (s *OperatorWorkspaceDetailResource) SetHolds(val []OperatorHold) {
+	s.Holds = val
 }
 
 // SetDeliverability sets the value of Deliverability.

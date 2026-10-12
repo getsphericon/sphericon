@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -35,9 +36,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
@@ -114,6 +117,7 @@ func checkColumn(t, c string) error {
 			customfield.Table:        customfield.ValidColumn,
 			emailtemplate.Table:      emailtemplate.ValidColumn,
 			event.Table:              event.ValidColumn,
+			hold.Table:               hold.ValidColumn,
 			integration.Table:        integration.ValidColumn,
 			invitation.Table:         invitation.ValidColumn,
 			membership.Table:         membership.ValidColumn,
@@ -125,9 +129,11 @@ func checkColumn(t, c string) error {
 			segment.Table:            segment.ValidColumn,
 			sendlimiter.Table:        sendlimiter.ValidColumn,
 			sendingdomain.Table:      sendingdomain.ValidColumn,
+			servicecredential.Table:  servicecredential.ValidColumn,
 			suppression.Table:        suppression.ValidColumn,
 			tag.Table:                tag.ValidColumn,
 			unsubscribe.Table:        unsubscribe.ValidColumn,
+			usage.Table:              usage.ValidColumn,
 			user.Table:               user.ValidColumn,
 			visitor.Table:            visitor.ValidColumn,
 			webhookendpoint.Table:    webhookendpoint.ValidColumn,

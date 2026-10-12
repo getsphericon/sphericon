@@ -448,6 +448,27 @@ export type SiteAcceptInvitationInput = {
 };
 
 /**
+ * A short-lived signed token that proves who the Owner is to the external account
+ * page, with the address of that page.
+ */
+export type SiteAccountLinkResource = {
+  /**
+   * Address of the external account page
+   */
+  url: string;
+  /**
+   * Signed token (a JWT, EdDSA) naming the user, the Workspace and the role; it
+   * expires within minutes. Verify it with the key set published at
+   * /.well-known/jwks.json.
+   */
+  token: string;
+  /**
+   * When the token expires
+   */
+  expiresAt: Timestamp;
+};
+
+/**
  * Automation counts (point-in-time snapshot)
  */
 export type SiteAnalyticsAutomations = {
@@ -2521,6 +2542,30 @@ export type SiteWebhookEndpointResource = {
 };
 
 /**
+ * An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's
+ * members see it. It is not a suspension: it is set from outside, carries its own
+ * message, and lifts by itself at its expiry.
+ */
+export type SiteWorkspaceHold = {
+  /**
+   * The setter's key, unique per Workspace
+   */
+  key: string;
+  /**
+   * Machine reason code the setter gave
+   */
+  reasonCode: string;
+  /**
+   * The setter's message for the Owner, to show as given
+   */
+  message: string;
+  /**
+   * When the hold was set
+   */
+  since: Timestamp;
+};
+
+/**
  * Workspace the current user belongs to
  */
 export type SiteWorkspaceResource = {
@@ -2565,6 +2610,12 @@ export type SiteWorkspaceResource = {
    */
   suspensionReason?: string | null;
   /**
+   * The Operator holds active now, oldest key first; empty while nothing holds sending.
+   * Any one freezes every send surface, like a suspension, but a lapsed hold is never
+   * listed.
+   */
+  holds: Array<SiteWorkspaceHold>;
+  /**
    * When an Owner or Admin switched on the Two-factor requirement (ADR 0020);
    * absent while every member may work without a Second factor.
    */
@@ -2577,6 +2628,11 @@ export type SiteWorkspaceResource = {
    * second_factor_required until the User enrolls one.
    */
   secondFactorGraceEndsAt?: Timestamp | null;
+  /**
+   * Whether the authenticated User may open the Account link: true only for an
+   * Owner, and only on an installation configured for it.
+   */
+  accountLinkAvailable: boolean;
   /**
    * Creation timestamp
    */
@@ -3536,6 +3592,37 @@ export type SiteWorkspacesUpdateResponses = {
 };
 
 export type SiteWorkspacesUpdateResponse = SiteWorkspacesUpdateResponses[keyof SiteWorkspacesUpdateResponses];
+
+export type SiteWorkspacesAccountLinkData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/account-link';
+};
+
+export type SiteWorkspacesAccountLinkErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteWorkspacesAccountLinkError = SiteWorkspacesAccountLinkErrors[keyof SiteWorkspacesAccountLinkErrors];
+
+export type SiteWorkspacesAccountLinkResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAccountLinkResource;
+};
+
+export type SiteWorkspacesAccountLinkResponse = SiteWorkspacesAccountLinkResponses[keyof SiteWorkspacesAccountLinkResponses];
 
 export type SiteAnalyticsOverviewData = {
   body?: never;

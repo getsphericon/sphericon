@@ -483,6 +483,39 @@ var (
 			},
 		},
 	}
+	// HoldsColumns holds the columns for the "holds" table.
+	HoldsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "key", Type: field.TypeString},
+		{Name: "reason_code", Type: field.TypeString},
+		{Name: "message", Type: field.TypeString},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "set_by", Type: field.TypeString},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// HoldsTable holds the schema information for the "holds" table.
+	HoldsTable = &schema.Table{
+		Name:       "holds",
+		Columns:    HoldsColumns,
+		PrimaryKey: []*schema.Column{HoldsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "holds_workspaces_holds",
+				Columns:    []*schema.Column{HoldsColumns[8]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "holds_key_workspace_id",
+				Unique:  true,
+				Columns: []*schema.Column{HoldsColumns[3], HoldsColumns[8]},
+			},
+		},
+	}
 	// IntegrationsColumns holds the columns for the "integrations" table.
 	IntegrationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -850,6 +883,25 @@ var (
 			},
 		},
 	}
+	// ServiceCredentialsColumns holds the columns for the "service_credentials" table.
+	ServiceCredentialsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "name", Type: field.TypeString},
+		{Name: "prefix", Type: field.TypeString, Unique: true},
+		{Name: "secret_hash", Type: field.TypeString},
+		{Name: "scopes", Type: field.TypeJSON},
+		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
+	}
+	// ServiceCredentialsTable holds the schema information for the "service_credentials" table.
+	ServiceCredentialsTable = &schema.Table{
+		Name:       "service_credentials",
+		Columns:    ServiceCredentialsColumns,
+		PrimaryKey: []*schema.Column{ServiceCredentialsColumns[0]},
+	}
 	// SuppressionsColumns holds the columns for the "suppressions" table.
 	SuppressionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -945,6 +997,44 @@ var (
 				Name:    "unsubscribes_ws_channel_dest",
 				Unique:  false,
 				Columns: []*schema.Column{UnsubscribesColumns[7], UnsubscribesColumns[3], UnsubscribesColumns[4]},
+			},
+		},
+	}
+	// UsagesColumns holds the columns for the "usages" table.
+	UsagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "period_start", Type: field.TypeTime},
+		{Name: "metric", Type: field.TypeString},
+		{Name: "value", Type: field.TypeInt64, Default: 0},
+		{Name: "final", Type: field.TypeBool, Default: false},
+		{Name: "computed_at", Type: field.TypeTime},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// UsagesTable holds the schema information for the "usages" table.
+	UsagesTable = &schema.Table{
+		Name:       "usages",
+		Columns:    UsagesColumns,
+		PrimaryKey: []*schema.Column{UsagesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "usages_workspaces_usages",
+				Columns:    []*schema.Column{UsagesColumns[8]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "usage_workspace_id_period_start_metric",
+				Unique:  true,
+				Columns: []*schema.Column{UsagesColumns[8], UsagesColumns[3], UsagesColumns[4]},
+			},
+			{
+				Name:    "usage_period_start_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{UsagesColumns[3], UsagesColumns[8]},
 			},
 		},
 	}
@@ -1055,6 +1145,7 @@ var (
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
+		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
 		{Name: "suspended_at", Type: field.TypeTime, Nullable: true},
 		{Name: "suspended_by_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"system", "cli", "operator"}},
 		{Name: "suspended_by_id", Type: field.TypeString, Nullable: true},
@@ -1065,6 +1156,13 @@ var (
 		Name:       "workspaces",
 		Columns:    WorkspacesColumns,
 		PrimaryKey: []*schema.Column{WorkspacesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "workspace_feed_position_id",
+				Unique:  false,
+				Columns: []*schema.Column{WorkspacesColumns[11], WorkspacesColumns[0]},
+			},
+		},
 	}
 	// ContactTagsColumns holds the columns for the "contact_tags" table.
 	ContactTagsColumns = []*schema.Column{
@@ -1105,6 +1203,7 @@ var (
 		CustomFieldsTable,
 		EmailTemplatesTable,
 		EventsTable,
+		HoldsTable,
 		IntegrationsTable,
 		InvitationsTable,
 		MembershipsTable,
@@ -1116,9 +1215,11 @@ var (
 		SegmentsTable,
 		SendLimitersTable,
 		SendingDomainsTable,
+		ServiceCredentialsTable,
 		SuppressionsTable,
 		TagsTable,
 		UnsubscribesTable,
+		UsagesTable,
 		UsersTable,
 		VisitorsTable,
 		WebhookEndpointsTable,
@@ -1178,6 +1279,10 @@ func init() {
 	EventsTable.Annotation = &entsql.Annotation{
 		Table: "events",
 	}
+	HoldsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	HoldsTable.Annotation = &entsql.Annotation{
+		Table: "holds",
+	}
 	IntegrationsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	IntegrationsTable.Annotation = &entsql.Annotation{
 		Table: "integrations",
@@ -1223,6 +1328,9 @@ func init() {
 	SendingDomainsTable.Annotation = &entsql.Annotation{
 		Table: "sending_domains",
 	}
+	ServiceCredentialsTable.Annotation = &entsql.Annotation{
+		Table: "service_credentials",
+	}
 	SuppressionsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SuppressionsTable.Annotation = &entsql.Annotation{
 		Table: "suppressions",
@@ -1234,6 +1342,10 @@ func init() {
 	UnsubscribesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UnsubscribesTable.Annotation = &entsql.Annotation{
 		Table: "unsubscribes",
+	}
+	UsagesTable.ForeignKeys[0].RefTable = WorkspacesTable
+	UsagesTable.Annotation = &entsql.Annotation{
+		Table: "usages",
 	}
 	UsersTable.Annotation = &entsql.Annotation{
 		Table: "users",

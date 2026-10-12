@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -38,13 +39,17 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
+
+	stdsql "database/sql"
 )
 
 // Client is the client that holds all ent builders.
@@ -76,6 +81,8 @@ type Client struct {
 	EmailTemplate *EmailTemplateClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
+	// Hold is the client for interacting with the Hold builders.
+	Hold *HoldClient
 	// Integration is the client for interacting with the Integration builders.
 	Integration *IntegrationClient
 	// Invitation is the client for interacting with the Invitation builders.
@@ -98,12 +105,16 @@ type Client struct {
 	SendLimiter *SendLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
+	// ServiceCredential is the client for interacting with the ServiceCredential builders.
+	ServiceCredential *ServiceCredentialClient
 	// Suppression is the client for interacting with the Suppression builders.
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Unsubscribe is the client for interacting with the Unsubscribe builders.
 	Unsubscribe *UnsubscribeClient
+	// Usage is the client for interacting with the Usage builders.
+	Usage *UsageClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// Visitor is the client for interacting with the Visitor builders.
@@ -135,6 +146,7 @@ func (c *Client) init() {
 	c.CustomField = NewCustomFieldClient(c.config)
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
 	c.Event = NewEventClient(c.config)
+	c.Hold = NewHoldClient(c.config)
 	c.Integration = NewIntegrationClient(c.config)
 	c.Invitation = NewInvitationClient(c.config)
 	c.Membership = NewMembershipClient(c.config)
@@ -146,9 +158,11 @@ func (c *Client) init() {
 	c.Segment = NewSegmentClient(c.config)
 	c.SendLimiter = NewSendLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
+	c.ServiceCredential = NewServiceCredentialClient(c.config)
 	c.Suppression = NewSuppressionClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Unsubscribe = NewUnsubscribeClient(c.config)
+	c.Usage = NewUsageClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.Visitor = NewVisitorClient(c.config)
 	c.WebhookEndpoint = NewWebhookEndpointClient(c.config)
@@ -257,6 +271,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		CustomField:        NewCustomFieldClient(cfg),
 		EmailTemplate:      NewEmailTemplateClient(cfg),
 		Event:              NewEventClient(cfg),
+		Hold:               NewHoldClient(cfg),
 		Integration:        NewIntegrationClient(cfg),
 		Invitation:         NewInvitationClient(cfg),
 		Membership:         NewMembershipClient(cfg),
@@ -268,9 +283,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
 		SendingDomain:      NewSendingDomainClient(cfg),
+		ServiceCredential:  NewServiceCredentialClient(cfg),
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
+		Usage:              NewUsageClient(cfg),
 		User:               NewUserClient(cfg),
 		Visitor:            NewVisitorClient(cfg),
 		WebhookEndpoint:    NewWebhookEndpointClient(cfg),
@@ -306,6 +323,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		CustomField:        NewCustomFieldClient(cfg),
 		EmailTemplate:      NewEmailTemplateClient(cfg),
 		Event:              NewEventClient(cfg),
+		Hold:               NewHoldClient(cfg),
 		Integration:        NewIntegrationClient(cfg),
 		Invitation:         NewInvitationClient(cfg),
 		Membership:         NewMembershipClient(cfg),
@@ -317,9 +335,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
 		SendingDomain:      NewSendingDomainClient(cfg),
+		ServiceCredential:  NewServiceCredentialClient(cfg),
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
+		Usage:              NewUsageClient(cfg),
 		User:               NewUserClient(cfg),
 		Visitor:            NewVisitorClient(cfg),
 		WebhookEndpoint:    NewWebhookEndpointClient(cfg),
@@ -355,10 +375,11 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
-		c.EmailTemplate, c.Event, c.Integration, c.Invitation, c.Membership,
+		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
-		c.Segment, c.SendLimiter, c.SendingDomain, c.Suppression, c.Tag, c.Unsubscribe,
-		c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.Suppression,
+		c.Tag, c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -370,10 +391,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
-		c.EmailTemplate, c.Event, c.Integration, c.Invitation, c.Membership,
+		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
-		c.Segment, c.SendLimiter, c.SendingDomain, c.Suppression, c.Tag, c.Unsubscribe,
-		c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.Suppression,
+		c.Tag, c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -406,6 +428,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EmailTemplate.mutate(ctx, m)
 	case *EventMutation:
 		return c.Event.mutate(ctx, m)
+	case *HoldMutation:
+		return c.Hold.mutate(ctx, m)
 	case *IntegrationMutation:
 		return c.Integration.mutate(ctx, m)
 	case *InvitationMutation:
@@ -428,12 +452,16 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SendLimiter.mutate(ctx, m)
 	case *SendingDomainMutation:
 		return c.SendingDomain.mutate(ctx, m)
+	case *ServiceCredentialMutation:
+		return c.ServiceCredential.mutate(ctx, m)
 	case *SuppressionMutation:
 		return c.Suppression.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
 	case *UnsubscribeMutation:
 		return c.Unsubscribe.mutate(ctx, m)
+	case *UsageMutation:
+		return c.Usage.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	case *VisitorMutation:
@@ -2347,6 +2375,155 @@ func (c *EventClient) mutate(ctx context.Context, m *EventMutation) (Value, erro
 	}
 }
 
+// HoldClient is a client for the Hold schema.
+type HoldClient struct {
+	config
+}
+
+// NewHoldClient returns a client for the Hold from the given config.
+func NewHoldClient(c config) *HoldClient {
+	return &HoldClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `hold.Hooks(f(g(h())))`.
+func (c *HoldClient) Use(hooks ...Hook) {
+	c.hooks.Hold = append(c.hooks.Hold, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `hold.Intercept(f(g(h())))`.
+func (c *HoldClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Hold = append(c.inters.Hold, interceptors...)
+}
+
+// Create returns a builder for creating a Hold entity.
+func (c *HoldClient) Create() *HoldCreate {
+	mutation := newHoldMutation(c.config, OpCreate)
+	return &HoldCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Hold entities.
+func (c *HoldClient) CreateBulk(builders ...*HoldCreate) *HoldCreateBulk {
+	return &HoldCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *HoldClient) MapCreateBulk(slice any, setFunc func(*HoldCreate, int)) *HoldCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &HoldCreateBulk{err: fmt.Errorf("calling to HoldClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*HoldCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &HoldCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Hold.
+func (c *HoldClient) Update() *HoldUpdate {
+	mutation := newHoldMutation(c.config, OpUpdate)
+	return &HoldUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *HoldClient) UpdateOne(_m *Hold) *HoldUpdateOne {
+	mutation := newHoldMutation(c.config, OpUpdateOne, withHold(_m))
+	return &HoldUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *HoldClient) UpdateOneID(id int64) *HoldUpdateOne {
+	mutation := newHoldMutation(c.config, OpUpdateOne, withHoldID(id))
+	return &HoldUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Hold.
+func (c *HoldClient) Delete() *HoldDelete {
+	mutation := newHoldMutation(c.config, OpDelete)
+	return &HoldDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *HoldClient) DeleteOne(_m *Hold) *HoldDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *HoldClient) DeleteOneID(id int64) *HoldDeleteOne {
+	builder := c.Delete().Where(hold.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &HoldDeleteOne{builder}
+}
+
+// Query returns a query builder for Hold.
+func (c *HoldClient) Query() *HoldQuery {
+	return &HoldQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeHold},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Hold entity by its id.
+func (c *HoldClient) Get(ctx context.Context, id int64) (*Hold, error) {
+	return c.Query().Where(hold.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *HoldClient) GetX(ctx context.Context, id int64) *Hold {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a Hold.
+func (c *HoldClient) QueryWorkspace(_m *Hold) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hold.Table, hold.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hold.WorkspaceTable, hold.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *HoldClient) Hooks() []Hook {
+	return c.hooks.Hold
+}
+
+// Interceptors returns the client interceptors.
+func (c *HoldClient) Interceptors() []Interceptor {
+	return c.inters.Hold
+}
+
+func (c *HoldClient) mutate(ctx context.Context, m *HoldMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&HoldCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&HoldUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&HoldUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&HoldDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Hold mutation op: %q", m.Op())
+	}
+}
+
 // IntegrationClient is a client for the Integration schema.
 type IntegrationClient struct {
 	config
@@ -4034,6 +4211,139 @@ func (c *SendingDomainClient) mutate(ctx context.Context, m *SendingDomainMutati
 	}
 }
 
+// ServiceCredentialClient is a client for the ServiceCredential schema.
+type ServiceCredentialClient struct {
+	config
+}
+
+// NewServiceCredentialClient returns a client for the ServiceCredential from the given config.
+func NewServiceCredentialClient(c config) *ServiceCredentialClient {
+	return &ServiceCredentialClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `servicecredential.Hooks(f(g(h())))`.
+func (c *ServiceCredentialClient) Use(hooks ...Hook) {
+	c.hooks.ServiceCredential = append(c.hooks.ServiceCredential, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `servicecredential.Intercept(f(g(h())))`.
+func (c *ServiceCredentialClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ServiceCredential = append(c.inters.ServiceCredential, interceptors...)
+}
+
+// Create returns a builder for creating a ServiceCredential entity.
+func (c *ServiceCredentialClient) Create() *ServiceCredentialCreate {
+	mutation := newServiceCredentialMutation(c.config, OpCreate)
+	return &ServiceCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ServiceCredential entities.
+func (c *ServiceCredentialClient) CreateBulk(builders ...*ServiceCredentialCreate) *ServiceCredentialCreateBulk {
+	return &ServiceCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ServiceCredentialClient) MapCreateBulk(slice any, setFunc func(*ServiceCredentialCreate, int)) *ServiceCredentialCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ServiceCredentialCreateBulk{err: fmt.Errorf("calling to ServiceCredentialClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ServiceCredentialCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ServiceCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ServiceCredential.
+func (c *ServiceCredentialClient) Update() *ServiceCredentialUpdate {
+	mutation := newServiceCredentialMutation(c.config, OpUpdate)
+	return &ServiceCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ServiceCredentialClient) UpdateOne(_m *ServiceCredential) *ServiceCredentialUpdateOne {
+	mutation := newServiceCredentialMutation(c.config, OpUpdateOne, withServiceCredential(_m))
+	return &ServiceCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ServiceCredentialClient) UpdateOneID(id int64) *ServiceCredentialUpdateOne {
+	mutation := newServiceCredentialMutation(c.config, OpUpdateOne, withServiceCredentialID(id))
+	return &ServiceCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ServiceCredential.
+func (c *ServiceCredentialClient) Delete() *ServiceCredentialDelete {
+	mutation := newServiceCredentialMutation(c.config, OpDelete)
+	return &ServiceCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ServiceCredentialClient) DeleteOne(_m *ServiceCredential) *ServiceCredentialDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ServiceCredentialClient) DeleteOneID(id int64) *ServiceCredentialDeleteOne {
+	builder := c.Delete().Where(servicecredential.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ServiceCredentialDeleteOne{builder}
+}
+
+// Query returns a query builder for ServiceCredential.
+func (c *ServiceCredentialClient) Query() *ServiceCredentialQuery {
+	return &ServiceCredentialQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeServiceCredential},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ServiceCredential entity by its id.
+func (c *ServiceCredentialClient) Get(ctx context.Context, id int64) (*ServiceCredential, error) {
+	return c.Query().Where(servicecredential.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ServiceCredentialClient) GetX(ctx context.Context, id int64) *ServiceCredential {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ServiceCredentialClient) Hooks() []Hook {
+	return c.hooks.ServiceCredential
+}
+
+// Interceptors returns the client interceptors.
+func (c *ServiceCredentialClient) Interceptors() []Interceptor {
+	return c.inters.ServiceCredential
+}
+
+func (c *ServiceCredentialClient) mutate(ctx context.Context, m *ServiceCredentialMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ServiceCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ServiceCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ServiceCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ServiceCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ServiceCredential mutation op: %q", m.Op())
+	}
+}
+
 // SuppressionClient is a client for the Suppression schema.
 type SuppressionClient struct {
 	config
@@ -4494,6 +4804,155 @@ func (c *UnsubscribeClient) mutate(ctx context.Context, m *UnsubscribeMutation) 
 		return (&UnsubscribeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Unsubscribe mutation op: %q", m.Op())
+	}
+}
+
+// UsageClient is a client for the Usage schema.
+type UsageClient struct {
+	config
+}
+
+// NewUsageClient returns a client for the Usage from the given config.
+func NewUsageClient(c config) *UsageClient {
+	return &UsageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `usage.Hooks(f(g(h())))`.
+func (c *UsageClient) Use(hooks ...Hook) {
+	c.hooks.Usage = append(c.hooks.Usage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `usage.Intercept(f(g(h())))`.
+func (c *UsageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Usage = append(c.inters.Usage, interceptors...)
+}
+
+// Create returns a builder for creating a Usage entity.
+func (c *UsageClient) Create() *UsageCreate {
+	mutation := newUsageMutation(c.config, OpCreate)
+	return &UsageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Usage entities.
+func (c *UsageClient) CreateBulk(builders ...*UsageCreate) *UsageCreateBulk {
+	return &UsageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UsageClient) MapCreateBulk(slice any, setFunc func(*UsageCreate, int)) *UsageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UsageCreateBulk{err: fmt.Errorf("calling to UsageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UsageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UsageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Usage.
+func (c *UsageClient) Update() *UsageUpdate {
+	mutation := newUsageMutation(c.config, OpUpdate)
+	return &UsageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UsageClient) UpdateOne(_m *Usage) *UsageUpdateOne {
+	mutation := newUsageMutation(c.config, OpUpdateOne, withUsage(_m))
+	return &UsageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UsageClient) UpdateOneID(id int64) *UsageUpdateOne {
+	mutation := newUsageMutation(c.config, OpUpdateOne, withUsageID(id))
+	return &UsageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Usage.
+func (c *UsageClient) Delete() *UsageDelete {
+	mutation := newUsageMutation(c.config, OpDelete)
+	return &UsageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UsageClient) DeleteOne(_m *Usage) *UsageDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UsageClient) DeleteOneID(id int64) *UsageDeleteOne {
+	builder := c.Delete().Where(usage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UsageDeleteOne{builder}
+}
+
+// Query returns a query builder for Usage.
+func (c *UsageClient) Query() *UsageQuery {
+	return &UsageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUsage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Usage entity by its id.
+func (c *UsageClient) Get(ctx context.Context, id int64) (*Usage, error) {
+	return c.Query().Where(usage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UsageClient) GetX(ctx context.Context, id int64) *Usage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a Usage.
+func (c *UsageClient) QueryWorkspace(_m *Usage) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(usage.Table, usage.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, usage.WorkspaceTable, usage.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UsageClient) Hooks() []Hook {
+	return c.hooks.Usage
+}
+
+// Interceptors returns the client interceptors.
+func (c *UsageClient) Interceptors() []Interceptor {
+	return c.inters.Usage
+}
+
+func (c *UsageClient) mutate(ctx context.Context, m *UsageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UsageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UsageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UsageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UsageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Usage mutation op: %q", m.Op())
 	}
 }
 
@@ -5260,6 +5719,22 @@ func (c *WorkspaceClient) QuerySendLimiters(_m *Workspace) *SendLimiterQuery {
 	return query
 }
 
+// QueryHolds queries the holds edge of a Workspace.
+func (c *WorkspaceClient) QueryHolds(_m *Workspace) *HoldQuery {
+	query := (&HoldClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(hold.Table, hold.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.HoldsTable, workspace.HoldsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryBroadcasts queries the broadcasts edge of a Workspace.
 func (c *WorkspaceClient) QueryBroadcasts(_m *Workspace) *BroadcastQuery {
 	query := (&BroadcastClient{config: c.config}).Query()
@@ -5468,6 +5943,22 @@ func (c *WorkspaceClient) QueryAuditEntries(_m *Workspace) *AuditEntryQuery {
 	return query
 }
 
+// QueryUsages queries the usages edge of a Workspace.
+func (c *WorkspaceClient) QueryUsages(_m *Workspace) *UsageQuery {
+	query := (&UsageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(usage.Table, usage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.UsagesTable, workspace.UsagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *WorkspaceClient) Hooks() []Hook {
 	return c.hooks.Workspace
@@ -5498,17 +5989,41 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
+		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
 		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
-		Suppression, Tag, Unsubscribe, User, Visitor, WebhookEndpoint,
-		Workspace []ent.Hook
+		ServiceCredential, Suppression, Tag, Unsubscribe, Usage, User, Visitor,
+		WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
+		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
 		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
-		Suppression, Tag, Unsubscribe, User, Visitor, WebhookEndpoint,
-		Workspace []ent.Interceptor
+		ServiceCredential, Suppression, Tag, Unsubscribe, Usage, User, Visitor,
+		WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
+
+// ExecContext allows calling the underlying ExecContext method of the driver if it is supported by it.
+// See, database/sql#DB.ExecContext for more information.
+func (c *config) ExecContext(ctx context.Context, query string, args ...any) (stdsql.Result, error) {
+	ex, ok := c.driver.(interface {
+		ExecContext(context.Context, string, ...any) (stdsql.Result, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("Driver.ExecContext is not supported")
+	}
+	return ex.ExecContext(ctx, query, args...)
+}
+
+// QueryContext allows calling the underlying QueryContext method of the driver if it is supported by it.
+// See, database/sql#DB.QueryContext for more information.
+func (c *config) QueryContext(ctx context.Context, query string, args ...any) (*stdsql.Rows, error) {
+	q, ok := c.driver.(interface {
+		QueryContext(context.Context, string, ...any) (*stdsql.Rows, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("Driver.QueryContext is not supported")
+	}
+	return q.QueryContext(ctx, query, args...)
+}

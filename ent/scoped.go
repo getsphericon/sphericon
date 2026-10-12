@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -32,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 )
@@ -277,6 +279,22 @@ func (s *Scoped) verifyEvent(ctx context.Context, ids []int64) error {
 	return nil
 }
 
+// verifyHold fails with ErrNotInWorkspace unless every id is a Hold of the Workspace.
+func (s *Scoped) verifyHold(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.Hold.Query().Where(hold.IDIn(ids...), hold.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("Hold: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
 // verifyIntegration fails with ErrNotInWorkspace unless every id is a Integration of the Workspace.
 func (s *Scoped) verifyIntegration(ctx context.Context, ids []int64) error {
 	ids = uniqueIDs(ids)
@@ -433,6 +451,22 @@ func (s *Scoped) verifyUnsubscribe(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Unsubscribe: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyUsage fails with ErrNotInWorkspace unless every id is a Usage of the Workspace.
+func (s *Scoped) verifyUsage(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.Usage.Query().Where(usage.IDIn(ids...), usage.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("Usage: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -10540,6 +10574,728 @@ func (x *EventScopedUpdate) Exec(ctx context.Context) error {
 	return err
 }
 
+// HoldScoped reaches Hold entities of one Workspace.
+type HoldScoped struct{ s *Scoped }
+
+// Hold returns the Hold entities of the Workspace.
+func (s *Scoped) Hold() *HoldScoped { return &HoldScoped{s: s} }
+
+// Query returns a Hold query already confined to the Workspace.
+func (t *HoldScoped) Query() *HoldQuery {
+	return t.s.c.Hold.Query().Where(hold.WorkspaceID(t.s.ws))
+}
+
+// Get returns the Hold with the id; a row of another Workspace is not found.
+func (t *HoldScoped) Get(ctx context.Context, id int64) (*Hold, error) {
+	return t.Query().Where(hold.ID(id)).Only(ctx)
+}
+
+// HoldScopedDeleteOne wraps HoldDeleteOne.
+type HoldScopedDeleteOne struct {
+	s *Scoped
+	b *HoldDeleteOne
+}
+
+// DeleteOneID deletes the Hold with the id; a row of another Workspace is not found.
+func (t *HoldScoped) DeleteOneID(id int64) *HoldScopedDeleteOne {
+	return &HoldScopedDeleteOne{s: t.s, b: t.s.c.Hold.DeleteOneID(id).Where(hold.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *HoldScopedDeleteOne) Where(ps ...predicate.Hold) *HoldScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *HoldScopedDeleteOne) Exec(ctx context.Context) error {
+	if x.s.auditing() {
+		return x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.Hold.Query().Where(x.b._d.mutation.predicates...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b._d.auditRebind(ts.c)
+			if err := x.b.Exec(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeHold("delete", before, nil))
+		})
+	}
+	return x.b.Exec(ctx)
+}
+
+// HoldScopedDelete wraps HoldDelete.
+type HoldScopedDelete struct {
+	s *Scoped
+	b *HoldDelete
+}
+
+// Delete deletes the Hold entities of the Workspace that match the predicates.
+func (t *HoldScoped) Delete() *HoldScopedDelete {
+	return &HoldScopedDelete{s: t.s, b: t.s.c.Hold.Delete().Where(hold.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *HoldScopedDelete) Where(ps ...predicate.Hold) *HoldScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *HoldScopedDelete) Exec(ctx context.Context) (int, error) {
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			rows, err := ts.c.Hold.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Exec(ctx); err != nil {
+				return err
+			}
+			for _, row := range rows {
+				if err := ts.record(ctx, auditChangeHold("delete", row, nil)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// HoldScopedCreate wraps HoldCreate. It has no way to name a Workspace.
+type HoldScopedCreate struct {
+	s *Scoped
+	b *HoldCreate
+}
+
+// Create starts a Hold in the Workspace.
+func (t *HoldScoped) Create() *HoldScopedCreate {
+	return &HoldScopedCreate{s: t.s, b: t.s.c.Hold.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *HoldScopedCreate) SetCreatedAt(v time.Time) *HoldScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *HoldScopedCreate) SetNillableCreatedAt(v *time.Time) *HoldScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *HoldScopedCreate) SetUpdatedAt(v time.Time) *HoldScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *HoldScopedCreate) SetNillableUpdatedAt(v *time.Time) *HoldScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetKey sets the "key" field.
+func (x *HoldScopedCreate) SetKey(v string) *HoldScopedCreate {
+	x.b.SetKey(v)
+	return x
+}
+
+// SetReasonCode sets the "reason_code" field.
+func (x *HoldScopedCreate) SetReasonCode(v string) *HoldScopedCreate {
+	x.b.SetReasonCode(v)
+	return x
+}
+
+// SetMessage sets the "message" field.
+func (x *HoldScopedCreate) SetMessage(v string) *HoldScopedCreate {
+	x.b.SetMessage(v)
+	return x
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (x *HoldScopedCreate) SetExpiresAt(v time.Time) *HoldScopedCreate {
+	x.b.SetExpiresAt(v)
+	return x
+}
+
+// SetSetBy sets the "set_by" field.
+func (x *HoldScopedCreate) SetSetBy(v string) *HoldScopedCreate {
+	x.b.SetSetBy(v)
+	return x
+}
+
+func (x *HoldScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the Hold.
+func (x *HoldScopedCreate) Save(ctx context.Context) (*Hold, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var created *Hold
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			x.b.auditRebind(ts.c)
+			var err error
+			if created, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeHold("create", nil, created))
+		})
+		return created, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *HoldScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// HoldScopedCreateBulk creates several Hold entities of one Workspace at once.
+type HoldScopedCreateBulk struct {
+	s  *Scoped
+	xs []*HoldScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *HoldScoped) CreateBulk(xs ...*HoldScopedCreate) *HoldScopedCreateBulk {
+	return &HoldScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *HoldScopedCreateBulk) raw(ctx context.Context) (*HoldCreateBulk, error) {
+	builders := make([]*HoldCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("Hold: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.Hold.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the Hold entities.
+func (b *HoldScopedCreateBulk) Save(ctx context.Context) ([]*Hold, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if b.s.auditing() {
+		var created []*Hold
+		err := b.s.audited(ctx, func(ts *Scoped) error {
+			raw.auditRebind(ts.c)
+			var err error
+			if created, err = raw.Save(ctx); err != nil {
+				return err
+			}
+			for _, row := range created {
+				if err := ts.record(ctx, auditChangeHold("create", nil, row)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return created, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *HoldScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// HoldScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type HoldScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *HoldScopedUpsert) SetUpdatedAt(v time.Time) *HoldScopedUpsert {
+	u.u.Set(hold.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *HoldScopedUpsert) UpdateUpdatedAt() *HoldScopedUpsert {
+	u.u.SetExcluded(hold.FieldUpdatedAt)
+	return u
+}
+
+// SetReasonCode sets the "reason_code" field.
+func (u *HoldScopedUpsert) SetReasonCode(v string) *HoldScopedUpsert {
+	u.u.Set(hold.FieldReasonCode, v)
+	return u
+}
+
+// UpdateReasonCode sets the "reason_code" field to the value that was provided on create.
+func (u *HoldScopedUpsert) UpdateReasonCode() *HoldScopedUpsert {
+	u.u.SetExcluded(hold.FieldReasonCode)
+	return u
+}
+
+// SetMessage sets the "message" field.
+func (u *HoldScopedUpsert) SetMessage(v string) *HoldScopedUpsert {
+	u.u.Set(hold.FieldMessage, v)
+	return u
+}
+
+// UpdateMessage sets the "message" field to the value that was provided on create.
+func (u *HoldScopedUpsert) UpdateMessage() *HoldScopedUpsert {
+	u.u.SetExcluded(hold.FieldMessage)
+	return u
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (u *HoldScopedUpsert) SetExpiresAt(v time.Time) *HoldScopedUpsert {
+	u.u.Set(hold.FieldExpiresAt, v)
+	return u
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *HoldScopedUpsert) UpdateExpiresAt() *HoldScopedUpsert {
+	u.u.SetExcluded(hold.FieldExpiresAt)
+	return u
+}
+
+// SetSetBy sets the "set_by" field.
+func (u *HoldScopedUpsert) SetSetBy(v string) *HoldScopedUpsert {
+	u.u.Set(hold.FieldSetBy, v)
+	return u
+}
+
+// UpdateSetBy sets the "set_by" field to the value that was provided on create.
+func (u *HoldScopedUpsert) UpdateSetBy() *HoldScopedUpsert {
+	u.u.SetExcluded(hold.FieldSetBy)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+func (t *HoldScoped) conflictOptions(columns []string) []sql.ConflictOption {
+	return []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(hold.FieldWorkspaceID, t.s.ws)),
+	}
+}
+
+// HoldScopedUpsertOne is the "upsert" of one Hold.
+type HoldScopedUpsertOne struct {
+	x *HoldScopedCreate
+	u *HoldUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *HoldScopedCreate) OnConflictColumns(columns ...string) *HoldScopedUpsertOne {
+	return &HoldScopedUpsertOne{x: x, u: x.b.OnConflict((&HoldScoped{s: x.s}).conflictOptions(columns)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *HoldScopedUpsertOne) UpdateNewValues() *HoldScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *HoldScopedUpsertOne) Ignore() *HoldScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *HoldScopedUpsertOne) DoNothing() *HoldScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *HoldScopedUpsertOne) Update(set func(*HoldScopedUpsert)) *HoldScopedUpsertOne {
+	u.u.Update(func(s *HoldUpsert) { set(&HoldScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *HoldScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	if u.x.s.auditing() {
+		_, err := u.audited(ctx)
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *HoldScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	if u.x.s.auditing() {
+		return u.audited(ctx)
+	}
+	return u.u.ID(ctx)
+}
+
+// audited runs a DO NOTHING upsert with its entry: an insert is a create, a conflict
+// (sql.ErrNoRows) writes nothing and records nothing.
+func (u *HoldScopedUpsertOne) audited(ctx context.Context) (int64, error) {
+	if !u.doNothing {
+		return 0, ErrAuditUpsert
+	}
+	var id int64
+	err := u.x.s.audited(ctx, func(ts *Scoped) error {
+		u.x.b.auditRebind(ts.c)
+		var err error
+		if id, err = u.u.ID(ctx); err != nil {
+			return err
+		}
+		row, err := ts.c.Hold.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		return ts.record(ctx, auditChangeHold("create", nil, row))
+	})
+	return id, err
+}
+
+// HoldScopedUpsertBulk is the "upsert" of several Hold entities.
+type HoldScopedUpsertBulk struct {
+	b       *HoldScopedCreateBulk
+	t       *HoldScoped
+	columns []string
+	opts    []func(*HoldUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *HoldScopedCreateBulk) OnConflictColumns(columns ...string) *HoldScopedUpsertBulk {
+	return &HoldScopedUpsertBulk{b: b, t: &HoldScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *HoldScopedUpsertBulk) UpdateNewValues() *HoldScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *HoldUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *HoldScopedUpsertBulk) Ignore() *HoldScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *HoldUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *HoldScopedUpsertBulk) DoNothing() *HoldScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *HoldUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *HoldScopedUpsertBulk) Update(set func(*HoldScopedUpsert)) *HoldScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *HoldUpsertBulk) {
+		r.Update(func(s *HoldUpsert) { set(&HoldScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *HoldScopedUpsertBulk) Exec(ctx context.Context) error {
+	if u.b.s.auditing() {
+		return ErrAuditUpsert
+	}
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// HoldScopedUpdateOne wraps HoldUpdateOne. It has no way to move the row to another Workspace.
+type HoldScopedUpdateOne struct {
+	s *Scoped
+	b *HoldUpdateOne
+}
+
+// UpdateOneID updates the Hold with the id; a row of another Workspace is not found.
+func (t *HoldScoped) UpdateOneID(id int64) *HoldScopedUpdateOne {
+	return &HoldScopedUpdateOne{s: t.s, b: t.s.c.Hold.UpdateOneID(id).Where(hold.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *HoldScopedUpdateOne) Where(ps ...predicate.Hold) *HoldScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *HoldScopedUpdateOne) SetUpdatedAt(v time.Time) *HoldScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetReasonCode sets the "reason_code" field.
+func (x *HoldScopedUpdateOne) SetReasonCode(v string) *HoldScopedUpdateOne {
+	x.b.SetReasonCode(v)
+	return x
+}
+
+// SetNillableReasonCode sets the "reason_code" field if the given value is not nil.
+func (x *HoldScopedUpdateOne) SetNillableReasonCode(v *string) *HoldScopedUpdateOne {
+	x.b.SetNillableReasonCode(v)
+	return x
+}
+
+// SetMessage sets the "message" field.
+func (x *HoldScopedUpdateOne) SetMessage(v string) *HoldScopedUpdateOne {
+	x.b.SetMessage(v)
+	return x
+}
+
+// SetNillableMessage sets the "message" field if the given value is not nil.
+func (x *HoldScopedUpdateOne) SetNillableMessage(v *string) *HoldScopedUpdateOne {
+	x.b.SetNillableMessage(v)
+	return x
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (x *HoldScopedUpdateOne) SetExpiresAt(v time.Time) *HoldScopedUpdateOne {
+	x.b.SetExpiresAt(v)
+	return x
+}
+
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (x *HoldScopedUpdateOne) SetNillableExpiresAt(v *time.Time) *HoldScopedUpdateOne {
+	x.b.SetNillableExpiresAt(v)
+	return x
+}
+
+// SetSetBy sets the "set_by" field.
+func (x *HoldScopedUpdateOne) SetSetBy(v string) *HoldScopedUpdateOne {
+	x.b.SetSetBy(v)
+	return x
+}
+
+// SetNillableSetBy sets the "set_by" field if the given value is not nil.
+func (x *HoldScopedUpdateOne) SetNillableSetBy(v *string) *HoldScopedUpdateOne {
+	x.b.SetNillableSetBy(v)
+	return x
+}
+
+func (x *HoldScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the Hold.
+func (x *HoldScopedUpdateOne) Save(ctx context.Context) (*Hold, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var updated *Hold
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			id, _ := x.b.Mutation().ID()
+			before, err := ts.c.Hold.Query().Where(x.b.mutation.predicates...).Where(hold.ID(id)).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if updated, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeHold("update", before, updated))
+		})
+		return updated, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *HoldScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// HoldScopedUpdate wraps HoldUpdate: a conditional bulk update of one Workspace.
+type HoldScopedUpdate struct {
+	s *Scoped
+	b *HoldUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the Hold entities of the Workspace that match the predicates.
+func (t *HoldScoped) Update() *HoldScopedUpdate {
+	return &HoldScopedUpdate{s: t.s, b: t.s.c.Hold.Update().Where(hold.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *HoldScopedUpdate) Where(ps ...predicate.Hold) *HoldScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *HoldScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *HoldScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(hold.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *HoldScopedUpdate) SetUpdatedAt(v time.Time) *HoldScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetReasonCode sets the "reason_code" field.
+func (x *HoldScopedUpdate) SetReasonCode(v string) *HoldScopedUpdate {
+	x.b.SetReasonCode(v)
+	return x
+}
+
+// SetNillableReasonCode sets the "reason_code" field if the given value is not nil.
+func (x *HoldScopedUpdate) SetNillableReasonCode(v *string) *HoldScopedUpdate {
+	x.b.SetNillableReasonCode(v)
+	return x
+}
+
+// SetMessage sets the "message" field.
+func (x *HoldScopedUpdate) SetMessage(v string) *HoldScopedUpdate {
+	x.b.SetMessage(v)
+	return x
+}
+
+// SetNillableMessage sets the "message" field if the given value is not nil.
+func (x *HoldScopedUpdate) SetNillableMessage(v *string) *HoldScopedUpdate {
+	x.b.SetNillableMessage(v)
+	return x
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (x *HoldScopedUpdate) SetExpiresAt(v time.Time) *HoldScopedUpdate {
+	x.b.SetExpiresAt(v)
+	return x
+}
+
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (x *HoldScopedUpdate) SetNillableExpiresAt(v *time.Time) *HoldScopedUpdate {
+	x.b.SetNillableExpiresAt(v)
+	return x
+}
+
+// SetSetBy sets the "set_by" field.
+func (x *HoldScopedUpdate) SetSetBy(v string) *HoldScopedUpdate {
+	x.b.SetSetBy(v)
+	return x
+}
+
+// SetNillableSetBy sets the "set_by" field if the given value is not nil.
+func (x *HoldScopedUpdate) SetNillableSetBy(v *string) *HoldScopedUpdate {
+	x.b.SetNillableSetBy(v)
+	return x
+}
+
+func (x *HoldScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *HoldScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.Hold.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			ids := make([]int64, len(before))
+			for i, row := range before {
+				ids[i] = row.ID
+			}
+			after, err := ts.c.Hold.Query().Where(hold.IDIn(ids...)).All(ctx)
+			if err != nil {
+				return err
+			}
+			byID := make(map[int64]*Hold, len(after))
+			for _, row := range after {
+				byID[row.ID] = row
+			}
+			for _, row := range before {
+				if now, ok := byID[row.ID]; ok {
+					if err := ts.record(ctx, auditChangeHold("update", row, now)); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *HoldScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
 // IntegrationScoped reaches Integration entities of one Workspace.
 type IntegrationScoped struct{ s *Scoped }
 
@@ -18941,6 +19697,578 @@ func (x *UnsubscribeScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *UnsubscribeScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// UsageScoped reaches Usage entities of one Workspace.
+type UsageScoped struct{ s *Scoped }
+
+// Usage returns the Usage entities of the Workspace.
+func (s *Scoped) Usage() *UsageScoped { return &UsageScoped{s: s} }
+
+// Query returns a Usage query already confined to the Workspace.
+func (t *UsageScoped) Query() *UsageQuery {
+	return t.s.c.Usage.Query().Where(usage.WorkspaceID(t.s.ws))
+}
+
+// Get returns the Usage with the id; a row of another Workspace is not found.
+func (t *UsageScoped) Get(ctx context.Context, id int64) (*Usage, error) {
+	return t.Query().Where(usage.ID(id)).Only(ctx)
+}
+
+// UsageScopedDeleteOne wraps UsageDeleteOne.
+type UsageScopedDeleteOne struct {
+	s *Scoped
+	b *UsageDeleteOne
+}
+
+// DeleteOneID deletes the Usage with the id; a row of another Workspace is not found.
+func (t *UsageScoped) DeleteOneID(id int64) *UsageScopedDeleteOne {
+	return &UsageScopedDeleteOne{s: t.s, b: t.s.c.Usage.DeleteOneID(id).Where(usage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *UsageScopedDeleteOne) Where(ps ...predicate.Usage) *UsageScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *UsageScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// UsageScopedDelete wraps UsageDelete.
+type UsageScopedDelete struct {
+	s *Scoped
+	b *UsageDelete
+}
+
+// Delete deletes the Usage entities of the Workspace that match the predicates.
+func (t *UsageScoped) Delete() *UsageScopedDelete {
+	return &UsageScopedDelete{s: t.s, b: t.s.c.Usage.Delete().Where(usage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *UsageScopedDelete) Where(ps ...predicate.Usage) *UsageScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *UsageScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// UsageScopedCreate wraps UsageCreate. It has no way to name a Workspace.
+type UsageScopedCreate struct {
+	s *Scoped
+	b *UsageCreate
+}
+
+// Create starts a Usage in the Workspace.
+func (t *UsageScoped) Create() *UsageScopedCreate {
+	return &UsageScopedCreate{s: t.s, b: t.s.c.Usage.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *UsageScopedCreate) SetCreatedAt(v time.Time) *UsageScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *UsageScopedCreate) SetNillableCreatedAt(v *time.Time) *UsageScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *UsageScopedCreate) SetUpdatedAt(v time.Time) *UsageScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *UsageScopedCreate) SetNillableUpdatedAt(v *time.Time) *UsageScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetPeriodStart sets the "period_start" field.
+func (x *UsageScopedCreate) SetPeriodStart(v time.Time) *UsageScopedCreate {
+	x.b.SetPeriodStart(v)
+	return x
+}
+
+// SetMetric sets the "metric" field.
+func (x *UsageScopedCreate) SetMetric(v string) *UsageScopedCreate {
+	x.b.SetMetric(v)
+	return x
+}
+
+// SetValue sets the "value" field.
+func (x *UsageScopedCreate) SetValue(v int64) *UsageScopedCreate {
+	x.b.SetValue(v)
+	return x
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (x *UsageScopedCreate) SetNillableValue(v *int64) *UsageScopedCreate {
+	x.b.SetNillableValue(v)
+	return x
+}
+
+// SetFinal sets the "final" field.
+func (x *UsageScopedCreate) SetFinal(v bool) *UsageScopedCreate {
+	x.b.SetFinal(v)
+	return x
+}
+
+// SetNillableFinal sets the "final" field if the given value is not nil.
+func (x *UsageScopedCreate) SetNillableFinal(v *bool) *UsageScopedCreate {
+	x.b.SetNillableFinal(v)
+	return x
+}
+
+// SetComputedAt sets the "computed_at" field.
+func (x *UsageScopedCreate) SetComputedAt(v time.Time) *UsageScopedCreate {
+	x.b.SetComputedAt(v)
+	return x
+}
+
+func (x *UsageScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the Usage.
+func (x *UsageScopedCreate) Save(ctx context.Context) (*Usage, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *UsageScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// UsageScopedCreateBulk creates several Usage entities of one Workspace at once.
+type UsageScopedCreateBulk struct {
+	s  *Scoped
+	xs []*UsageScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *UsageScoped) CreateBulk(xs ...*UsageScopedCreate) *UsageScopedCreateBulk {
+	return &UsageScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *UsageScopedCreateBulk) raw(ctx context.Context) (*UsageCreateBulk, error) {
+	builders := make([]*UsageCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("Usage: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.Usage.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the Usage entities.
+func (b *UsageScopedCreateBulk) Save(ctx context.Context) ([]*Usage, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *UsageScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// UsageScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type UsageScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *UsageScopedUpsert) SetUpdatedAt(v time.Time) *UsageScopedUpsert {
+	u.u.Set(usage.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *UsageScopedUpsert) UpdateUpdatedAt() *UsageScopedUpsert {
+	u.u.SetExcluded(usage.FieldUpdatedAt)
+	return u
+}
+
+// SetValue sets the "value" field.
+func (u *UsageScopedUpsert) SetValue(v int64) *UsageScopedUpsert {
+	u.u.Set(usage.FieldValue, v)
+	return u
+}
+
+// AddValue adds v to the "value" field.
+func (u *UsageScopedUpsert) AddValue(v int64) *UsageScopedUpsert {
+	u.u.Add(usage.FieldValue, v)
+	return u
+}
+
+// UpdateValue sets the "value" field to the value that was provided on create.
+func (u *UsageScopedUpsert) UpdateValue() *UsageScopedUpsert {
+	u.u.SetExcluded(usage.FieldValue)
+	return u
+}
+
+// SetFinal sets the "final" field.
+func (u *UsageScopedUpsert) SetFinal(v bool) *UsageScopedUpsert {
+	u.u.Set(usage.FieldFinal, v)
+	return u
+}
+
+// UpdateFinal sets the "final" field to the value that was provided on create.
+func (u *UsageScopedUpsert) UpdateFinal() *UsageScopedUpsert {
+	u.u.SetExcluded(usage.FieldFinal)
+	return u
+}
+
+// SetComputedAt sets the "computed_at" field.
+func (u *UsageScopedUpsert) SetComputedAt(v time.Time) *UsageScopedUpsert {
+	u.u.Set(usage.FieldComputedAt, v)
+	return u
+}
+
+// UpdateComputedAt sets the "computed_at" field to the value that was provided on create.
+func (u *UsageScopedUpsert) UpdateComputedAt() *UsageScopedUpsert {
+	u.u.SetExcluded(usage.FieldComputedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+func (t *UsageScoped) conflictOptions(columns []string) []sql.ConflictOption {
+	return []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(usage.FieldWorkspaceID, t.s.ws)),
+	}
+}
+
+// UsageScopedUpsertOne is the "upsert" of one Usage.
+type UsageScopedUpsertOne struct {
+	x *UsageScopedCreate
+	u *UsageUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *UsageScopedCreate) OnConflictColumns(columns ...string) *UsageScopedUpsertOne {
+	return &UsageScopedUpsertOne{x: x, u: x.b.OnConflict((&UsageScoped{s: x.s}).conflictOptions(columns)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *UsageScopedUpsertOne) UpdateNewValues() *UsageScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *UsageScopedUpsertOne) Ignore() *UsageScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *UsageScopedUpsertOne) DoNothing() *UsageScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *UsageScopedUpsertOne) Update(set func(*UsageScopedUpsert)) *UsageScopedUpsertOne {
+	u.u.Update(func(s *UsageUpsert) { set(&UsageScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *UsageScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *UsageScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// UsageScopedUpsertBulk is the "upsert" of several Usage entities.
+type UsageScopedUpsertBulk struct {
+	b       *UsageScopedCreateBulk
+	t       *UsageScoped
+	columns []string
+	opts    []func(*UsageUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *UsageScopedCreateBulk) OnConflictColumns(columns ...string) *UsageScopedUpsertBulk {
+	return &UsageScopedUpsertBulk{b: b, t: &UsageScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *UsageScopedUpsertBulk) UpdateNewValues() *UsageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *UsageUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *UsageScopedUpsertBulk) Ignore() *UsageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *UsageUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *UsageScopedUpsertBulk) DoNothing() *UsageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *UsageUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *UsageScopedUpsertBulk) Update(set func(*UsageScopedUpsert)) *UsageScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *UsageUpsertBulk) {
+		r.Update(func(s *UsageUpsert) { set(&UsageScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *UsageScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// UsageScopedUpdateOne wraps UsageUpdateOne. It has no way to move the row to another Workspace.
+type UsageScopedUpdateOne struct {
+	s *Scoped
+	b *UsageUpdateOne
+}
+
+// UpdateOneID updates the Usage with the id; a row of another Workspace is not found.
+func (t *UsageScoped) UpdateOneID(id int64) *UsageScopedUpdateOne {
+	return &UsageScopedUpdateOne{s: t.s, b: t.s.c.Usage.UpdateOneID(id).Where(usage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *UsageScopedUpdateOne) Where(ps ...predicate.Usage) *UsageScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *UsageScopedUpdateOne) SetUpdatedAt(v time.Time) *UsageScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetValue sets the "value" field.
+func (x *UsageScopedUpdateOne) SetValue(v int64) *UsageScopedUpdateOne {
+	x.b.SetValue(v)
+	return x
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (x *UsageScopedUpdateOne) SetNillableValue(v *int64) *UsageScopedUpdateOne {
+	x.b.SetNillableValue(v)
+	return x
+}
+
+// AddValue adds value to the "value" field.
+func (x *UsageScopedUpdateOne) AddValue(v int64) *UsageScopedUpdateOne {
+	x.b.AddValue(v)
+	return x
+}
+
+// SetFinal sets the "final" field.
+func (x *UsageScopedUpdateOne) SetFinal(v bool) *UsageScopedUpdateOne {
+	x.b.SetFinal(v)
+	return x
+}
+
+// SetNillableFinal sets the "final" field if the given value is not nil.
+func (x *UsageScopedUpdateOne) SetNillableFinal(v *bool) *UsageScopedUpdateOne {
+	x.b.SetNillableFinal(v)
+	return x
+}
+
+// SetComputedAt sets the "computed_at" field.
+func (x *UsageScopedUpdateOne) SetComputedAt(v time.Time) *UsageScopedUpdateOne {
+	x.b.SetComputedAt(v)
+	return x
+}
+
+// SetNillableComputedAt sets the "computed_at" field if the given value is not nil.
+func (x *UsageScopedUpdateOne) SetNillableComputedAt(v *time.Time) *UsageScopedUpdateOne {
+	x.b.SetNillableComputedAt(v)
+	return x
+}
+
+func (x *UsageScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the Usage.
+func (x *UsageScopedUpdateOne) Save(ctx context.Context) (*Usage, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *UsageScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// UsageScopedUpdate wraps UsageUpdate: a conditional bulk update of one Workspace.
+type UsageScopedUpdate struct {
+	s *Scoped
+	b *UsageUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the Usage entities of the Workspace that match the predicates.
+func (t *UsageScoped) Update() *UsageScopedUpdate {
+	return &UsageScopedUpdate{s: t.s, b: t.s.c.Usage.Update().Where(usage.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *UsageScopedUpdate) Where(ps ...predicate.Usage) *UsageScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *UsageScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *UsageScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(usage.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *UsageScopedUpdate) SetUpdatedAt(v time.Time) *UsageScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetValue sets the "value" field.
+func (x *UsageScopedUpdate) SetValue(v int64) *UsageScopedUpdate {
+	x.b.SetValue(v)
+	return x
+}
+
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (x *UsageScopedUpdate) SetNillableValue(v *int64) *UsageScopedUpdate {
+	x.b.SetNillableValue(v)
+	return x
+}
+
+// AddValue adds value to the "value" field.
+func (x *UsageScopedUpdate) AddValue(v int64) *UsageScopedUpdate {
+	x.b.AddValue(v)
+	return x
+}
+
+// SetFinal sets the "final" field.
+func (x *UsageScopedUpdate) SetFinal(v bool) *UsageScopedUpdate {
+	x.b.SetFinal(v)
+	return x
+}
+
+// SetNillableFinal sets the "final" field if the given value is not nil.
+func (x *UsageScopedUpdate) SetNillableFinal(v *bool) *UsageScopedUpdate {
+	x.b.SetNillableFinal(v)
+	return x
+}
+
+// SetComputedAt sets the "computed_at" field.
+func (x *UsageScopedUpdate) SetComputedAt(v time.Time) *UsageScopedUpdate {
+	x.b.SetComputedAt(v)
+	return x
+}
+
+// SetNillableComputedAt sets the "computed_at" field if the given value is not nil.
+func (x *UsageScopedUpdate) SetNillableComputedAt(v *time.Time) *UsageScopedUpdate {
+	x.b.SetNillableComputedAt(v)
+	return x
+}
+
+func (x *UsageScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *UsageScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *UsageScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

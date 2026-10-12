@@ -26,6 +26,8 @@ const workspace = (over: Partial<SiteWorkspaceResource>): SiteWorkspaceResource 
   collectKey: 'ck',
   ingestKey: 'ik',
   postalAddress: '',
+  accountLinkAvailable: false,
+  holds: [],
   role: 'member',
   createdAt: '2026-01-01T00:00:00Z',
   ...over,
@@ -55,6 +57,55 @@ test('a suspension without a reason omits the reason line', async () => {
 
   await expect.element(screen.getByText('Sending is suspended')).toBeInTheDocument()
   await expect.element(screen.getByText(/Reason:/)).not.toBeInTheDocument()
+})
+
+const HOLD = {
+  key: 'k1',
+  reasonCode: 'review',
+  message: 'Please wait a day.',
+  since: '2026-02-01T00:00:00Z',
+}
+
+test('a held workspace shows the hold banner with the setter message as given, to a member', async () => {
+  worker.use(list([workspace({ role: 'member', holds: [HOLD] })]))
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
+  await expect.element(screen.getByText('Please wait a day.')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is suspended')).not.toBeInTheDocument()
+})
+
+test('every active hold message is shown', async () => {
+  const other = { ...HOLD, key: 'k2', message: 'Second message.' }
+  worker.use(list([workspace({ holds: [HOLD, other] })]))
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect.element(screen.getByText('Please wait a day.')).toBeInTheDocument()
+  await expect.element(screen.getByText('Second message.')).toBeInTheDocument()
+})
+
+test('a suspended workspace shows the suspension banner and no hold banner', async () => {
+  worker.use(list([workspace({ suspendedAt: '2026-02-01T00:00:00Z' })]))
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect.element(screen.getByText('Sending is suspended')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is on hold')).not.toBeInTheDocument()
+})
+
+test('a workspace held and suspended shows both banners', async () => {
+  worker.use(list([workspace({ suspendedAt: '2026-02-01T00:00:00Z', holds: [HOLD] })]))
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect.element(screen.getByText('Sending is suspended')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
+})
+
+test('an unaffected workspace shows no hold banner', async () => {
+  worker.use(list([workspace({})]))
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect.element(screen.getByText('Overview', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is on hold')).not.toBeInTheDocument()
 })
 
 test('the switcher navigates to the chosen workspace overview', async () => {

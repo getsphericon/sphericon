@@ -29,4 +29,9 @@ customer holds two separate identities, by design, for least-privilege and clean
   place these two worlds must touch; it is deferred until support load demands it, so that
   bridge is designed against a real need rather than speculatively.
 
+- A platform **service** (not a person) is a second kind of machine identity on the same surface: a
+  **Service credential**, also held by no Workspace and no Membership, created only from the command
+  line, limited to named scopes and reached only through an internal listener. It is not an Operator
+  and logs in nowhere; see [[0026-operator-console-and-abuse-detector]].
+
 See [[0026-operator-console-and-abuse-detector]] for the Operator's credentials, surface and console.

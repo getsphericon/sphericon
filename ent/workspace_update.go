@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -33,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -192,6 +194,27 @@ func (_u *WorkspaceUpdate) SetNillableSecondFactorRequiredAt(v *time.Time) *Work
 // ClearSecondFactorRequiredAt clears the value of the "second_factor_required_at" field.
 func (_u *WorkspaceUpdate) ClearSecondFactorRequiredAt() *WorkspaceUpdate {
 	_u.mutation.ClearSecondFactorRequiredAt()
+	return _u
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (_u *WorkspaceUpdate) SetFeedPosition(v int64) *WorkspaceUpdate {
+	_u.mutation.ResetFeedPosition()
+	_u.mutation.SetFeedPosition(v)
+	return _u
+}
+
+// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableFeedPosition(v *int64) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetFeedPosition(*v)
+	}
+	return _u
+}
+
+// AddFeedPosition adds value to the "feed_position" field.
+func (_u *WorkspaceUpdate) AddFeedPosition(v int64) *WorkspaceUpdate {
+	_u.mutation.AddFeedPosition(v)
 	return _u
 }
 
@@ -425,6 +448,21 @@ func (_u *WorkspaceUpdate) AddSendLimiters(v ...*SendLimiter) *WorkspaceUpdate {
 	return _u.AddSendLimiterIDs(ids...)
 }
 
+// AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
+func (_u *WorkspaceUpdate) AddHoldIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddHoldIDs(ids...)
+	return _u
+}
+
+// AddHolds adds the "holds" edges to the Hold entity.
+func (_u *WorkspaceUpdate) AddHolds(v ...*Hold) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddHoldIDs(ids...)
+}
+
 // AddBroadcastIDs adds the "broadcasts" edge to the Broadcast entity by IDs.
 func (_u *WorkspaceUpdate) AddBroadcastIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddBroadcastIDs(ids...)
@@ -618,6 +656,21 @@ func (_u *WorkspaceUpdate) AddAuditEntries(v ...*AuditEntry) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddAuditEntryIDs(ids...)
+}
+
+// AddUsageIDs adds the "usages" edge to the Usage entity by IDs.
+func (_u *WorkspaceUpdate) AddUsageIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddUsageIDs(ids...)
+	return _u
+}
+
+// AddUsages adds the "usages" edges to the Usage entity.
+func (_u *WorkspaceUpdate) AddUsages(v ...*Usage) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddUsageIDs(ids...)
 }
 
 // Mutation returns the WorkspaceMutation object of the builder.
@@ -833,6 +886,27 @@ func (_u *WorkspaceUpdate) RemoveSendLimiters(v ...*SendLimiter) *WorkspaceUpdat
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSendLimiterIDs(ids...)
+}
+
+// ClearHolds clears all "holds" edges to the Hold entity.
+func (_u *WorkspaceUpdate) ClearHolds() *WorkspaceUpdate {
+	_u.mutation.ClearHolds()
+	return _u
+}
+
+// RemoveHoldIDs removes the "holds" edge to Hold entities by IDs.
+func (_u *WorkspaceUpdate) RemoveHoldIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveHoldIDs(ids...)
+	return _u
+}
+
+// RemoveHolds removes "holds" edges to Hold entities.
+func (_u *WorkspaceUpdate) RemoveHolds(v ...*Hold) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveHoldIDs(ids...)
 }
 
 // ClearBroadcasts clears all "broadcasts" edges to the Broadcast entity.
@@ -1108,6 +1182,27 @@ func (_u *WorkspaceUpdate) RemoveAuditEntries(v ...*AuditEntry) *WorkspaceUpdate
 	return _u.RemoveAuditEntryIDs(ids...)
 }
 
+// ClearUsages clears all "usages" edges to the Usage entity.
+func (_u *WorkspaceUpdate) ClearUsages() *WorkspaceUpdate {
+	_u.mutation.ClearUsages()
+	return _u
+}
+
+// RemoveUsageIDs removes the "usages" edge to Usage entities by IDs.
+func (_u *WorkspaceUpdate) RemoveUsageIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveUsageIDs(ids...)
+	return _u
+}
+
+// RemoveUsages removes "usages" edges to Usage entities.
+func (_u *WorkspaceUpdate) RemoveUsages(v ...*Usage) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveUsageIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *WorkspaceUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
@@ -1235,6 +1330,12 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SecondFactorRequiredAtCleared() {
 		_spec.ClearField(workspace.FieldSecondFactorRequiredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FeedPosition(); ok {
+		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFeedPosition(); ok {
+		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
@@ -1703,6 +1804,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.HoldsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedHoldsIDs(); len(nodes) > 0 && !_u.mutation.HoldsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HoldsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -2295,6 +2441,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.UsagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedUsagesIDs(); len(nodes) > 0 && !_u.mutation.UsagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UsagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -2457,6 +2648,27 @@ func (_u *WorkspaceUpdateOne) SetNillableSecondFactorRequiredAt(v *time.Time) *W
 // ClearSecondFactorRequiredAt clears the value of the "second_factor_required_at" field.
 func (_u *WorkspaceUpdateOne) ClearSecondFactorRequiredAt() *WorkspaceUpdateOne {
 	_u.mutation.ClearSecondFactorRequiredAt()
+	return _u
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (_u *WorkspaceUpdateOne) SetFeedPosition(v int64) *WorkspaceUpdateOne {
+	_u.mutation.ResetFeedPosition()
+	_u.mutation.SetFeedPosition(v)
+	return _u
+}
+
+// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableFeedPosition(v *int64) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetFeedPosition(*v)
+	}
+	return _u
+}
+
+// AddFeedPosition adds value to the "feed_position" field.
+func (_u *WorkspaceUpdateOne) AddFeedPosition(v int64) *WorkspaceUpdateOne {
+	_u.mutation.AddFeedPosition(v)
 	return _u
 }
 
@@ -2690,6 +2902,21 @@ func (_u *WorkspaceUpdateOne) AddSendLimiters(v ...*SendLimiter) *WorkspaceUpdat
 	return _u.AddSendLimiterIDs(ids...)
 }
 
+// AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
+func (_u *WorkspaceUpdateOne) AddHoldIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddHoldIDs(ids...)
+	return _u
+}
+
+// AddHolds adds the "holds" edges to the Hold entity.
+func (_u *WorkspaceUpdateOne) AddHolds(v ...*Hold) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddHoldIDs(ids...)
+}
+
 // AddBroadcastIDs adds the "broadcasts" edge to the Broadcast entity by IDs.
 func (_u *WorkspaceUpdateOne) AddBroadcastIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddBroadcastIDs(ids...)
@@ -2883,6 +3110,21 @@ func (_u *WorkspaceUpdateOne) AddAuditEntries(v ...*AuditEntry) *WorkspaceUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.AddAuditEntryIDs(ids...)
+}
+
+// AddUsageIDs adds the "usages" edge to the Usage entity by IDs.
+func (_u *WorkspaceUpdateOne) AddUsageIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddUsageIDs(ids...)
+	return _u
+}
+
+// AddUsages adds the "usages" edges to the Usage entity.
+func (_u *WorkspaceUpdateOne) AddUsages(v ...*Usage) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddUsageIDs(ids...)
 }
 
 // Mutation returns the WorkspaceMutation object of the builder.
@@ -3098,6 +3340,27 @@ func (_u *WorkspaceUpdateOne) RemoveSendLimiters(v ...*SendLimiter) *WorkspaceUp
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSendLimiterIDs(ids...)
+}
+
+// ClearHolds clears all "holds" edges to the Hold entity.
+func (_u *WorkspaceUpdateOne) ClearHolds() *WorkspaceUpdateOne {
+	_u.mutation.ClearHolds()
+	return _u
+}
+
+// RemoveHoldIDs removes the "holds" edge to Hold entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveHoldIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveHoldIDs(ids...)
+	return _u
+}
+
+// RemoveHolds removes "holds" edges to Hold entities.
+func (_u *WorkspaceUpdateOne) RemoveHolds(v ...*Hold) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveHoldIDs(ids...)
 }
 
 // ClearBroadcasts clears all "broadcasts" edges to the Broadcast entity.
@@ -3373,6 +3636,27 @@ func (_u *WorkspaceUpdateOne) RemoveAuditEntries(v ...*AuditEntry) *WorkspaceUpd
 	return _u.RemoveAuditEntryIDs(ids...)
 }
 
+// ClearUsages clears all "usages" edges to the Usage entity.
+func (_u *WorkspaceUpdateOne) ClearUsages() *WorkspaceUpdateOne {
+	_u.mutation.ClearUsages()
+	return _u
+}
+
+// RemoveUsageIDs removes the "usages" edge to Usage entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveUsageIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveUsageIDs(ids...)
+	return _u
+}
+
+// RemoveUsages removes "usages" edges to Usage entities.
+func (_u *WorkspaceUpdateOne) RemoveUsages(v ...*Usage) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveUsageIDs(ids...)
+}
+
 // Where appends a list predicates to the WorkspaceUpdate builder.
 func (_u *WorkspaceUpdateOne) Where(ps ...predicate.Workspace) *WorkspaceUpdateOne {
 	_u.mutation.Where(ps...)
@@ -3530,6 +3814,12 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.SecondFactorRequiredAtCleared() {
 		_spec.ClearField(workspace.FieldSecondFactorRequiredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FeedPosition(); ok {
+		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFeedPosition(); ok {
+		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
@@ -3998,6 +4288,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.HoldsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedHoldsIDs(); len(nodes) > 0 && !_u.mutation.HoldsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HoldsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HoldsTable,
+			Columns: []string{workspace.HoldsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hold.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -4583,6 +4918,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(auditentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UsagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedUsagesIDs(); len(nodes) > 0 && !_u.mutation.UsagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UsagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

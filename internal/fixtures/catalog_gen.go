@@ -23,6 +23,8 @@ const (
 	AcmeOwnerMembershipID = 1
 	// AcmeSlug is from fixtures/workspaces.
 	AcmeSlug = "acme"
+	// AcmeUsageSnapshotID is from fixtures/usages.
+	AcmeUsageSnapshotID = 1
 	// AnchorTokenID is from fixtures/api_tokens.
 	AnchorTokenID = 1
 	// AnchorTokenName is from fixtures/api_tokens.
@@ -365,6 +367,16 @@ const (
 	GlobexSamMembershipID = 9
 	// GlobexSlug is from fixtures/workspaces.
 	GlobexSlug = "globex"
+	// GlobexUsageSnapshotID is from fixtures/usages.
+	GlobexUsageSnapshotID = 2
+	// HoldAcmeLapsedID is from fixtures/holds.
+	HoldAcmeLapsedID = 1
+	// HoldAcmeLapsedKey is from fixtures/holds.
+	HoldAcmeLapsedKey = "lapsed"
+	// HoldGlobexLapsedID is from fixtures/holds.
+	HoldGlobexLapsedID = 900
+	// HoldGlobexLapsedKey is from fixtures/holds.
+	HoldGlobexLapsedKey = "lapsed-globex"
 	// HooliCollectKey is from fixtures/workspaces.
 	HooliCollectKey = "omck_test_hooli_collect_key"
 	// HooliID is from fixtures/workspaces.
@@ -587,6 +599,46 @@ const (
 	SendingDomainVerifiedDomain = "mail.acme.com"
 	// SendingDomainVerifiedID is from fixtures/sending_domains.
 	SendingDomainVerifiedID = 1
+	// ServiceCredentialExpiredID is from fixtures/service_credentials.
+	ServiceCredentialExpiredID = 5
+	// ServiceCredentialExpiredName is from fixtures/service_credentials.
+	ServiceCredentialExpiredName = "service-a"
+	// ServiceCredentialExpiredPrefix is from fixtures/service_credentials.
+	ServiceCredentialExpiredPrefix = "svcexpired005"
+	// ServiceCredentialExpiredSecret is from fixtures/service_credentials.
+	ServiceCredentialExpiredSecret = "service-expired-secret"
+	// ServiceCredentialPrimaryID is from fixtures/service_credentials.
+	ServiceCredentialPrimaryID = 1
+	// ServiceCredentialPrimaryName is from fixtures/service_credentials.
+	ServiceCredentialPrimaryName = "service-a"
+	// ServiceCredentialPrimaryPrefix is from fixtures/service_credentials.
+	ServiceCredentialPrimaryPrefix = "svcprimary01"
+	// ServiceCredentialPrimarySecret is from fixtures/service_credentials.
+	ServiceCredentialPrimarySecret = "service-primary-secret"
+	// ServiceCredentialReadOnlyID is from fixtures/service_credentials.
+	ServiceCredentialReadOnlyID = 3
+	// ServiceCredentialReadOnlyName is from fixtures/service_credentials.
+	ServiceCredentialReadOnlyName = "service-b"
+	// ServiceCredentialReadOnlyPrefix is from fixtures/service_credentials.
+	ServiceCredentialReadOnlyPrefix = "svcreadonly03"
+	// ServiceCredentialReadOnlySecret is from fixtures/service_credentials.
+	ServiceCredentialReadOnlySecret = "service-readonly-secret"
+	// ServiceCredentialRevokedID is from fixtures/service_credentials.
+	ServiceCredentialRevokedID = 4
+	// ServiceCredentialRevokedName is from fixtures/service_credentials.
+	ServiceCredentialRevokedName = "service-a"
+	// ServiceCredentialRevokedPrefix is from fixtures/service_credentials.
+	ServiceCredentialRevokedPrefix = "svcrevoked004"
+	// ServiceCredentialRevokedSecret is from fixtures/service_credentials.
+	ServiceCredentialRevokedSecret = "service-revoked-secret"
+	// ServiceCredentialSecondID is from fixtures/service_credentials.
+	ServiceCredentialSecondID = 2
+	// ServiceCredentialSecondName is from fixtures/service_credentials.
+	ServiceCredentialSecondName = "service-a"
+	// ServiceCredentialSecondPrefix is from fixtures/service_credentials.
+	ServiceCredentialSecondPrefix = "svcsecond002"
+	// ServiceCredentialSecondSecret is from fixtures/service_credentials.
+	ServiceCredentialSecondSecret = "service-second-secret"
 	// SoylentCollectKey is from fixtures/workspaces.
 	SoylentCollectKey = "omck_test_soylent_collect_key"
 	// SoylentID is from fixtures/workspaces.

@@ -3,6 +3,23 @@ using TypeSpec.Rest;
 
 namespace Sphericon;
 
+/** An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's
+ * members see it. It is not a suspension: it is set from outside, carries its own
+ * message, and lifts by itself at its expiry. */
+model SiteWorkspaceHold {
+  /** The setter's key, unique per Workspace */
+  key: string;
+
+  /** Machine reason code the setter gave */
+  reasonCode: string;
+
+  /** The setter's message for the Owner, to show as given */
+  message: string;
+
+  /** When the hold was set */
+  since: Timestamp;
+}
+
 /** Workspace the current user belongs to */
 @resource("workspaces")
 @segment("workspaces")
@@ -39,6 +56,11 @@ model SiteWorkspaceResource {
   /** Why sending was suspended, shown to the owner; present only while suspended. */
   suspensionReason?: string | null;
 
+  /** The Operator holds active now, oldest key first; empty while nothing holds sending.
+   * Any one freezes every send surface, like a suspension, but a lapsed hold is never
+   * listed. */
+  holds: SiteWorkspaceHold[];
+
   /** When an Owner or Admin switched on the Two-factor requirement (ADR 0020);
    * absent while every member may work without a Second factor. */
   secondFactorRequiredAt?: Timestamp | null;
@@ -50,8 +72,27 @@ model SiteWorkspaceResource {
    * second_factor_required until the User enrolls one. */
   secondFactorGraceEndsAt?: Timestamp | null;
 
+  /** Whether the authenticated User may open the Account link: true only for an
+   * Owner, and only on an installation configured for it. */
+  accountLinkAvailable: boolean;
+
   /** Creation timestamp */
   createdAt: Timestamp;
+}
+
+/** A short-lived signed token that proves who the Owner is to the external account
+ * page, with the address of that page. */
+model SiteAccountLinkResource {
+  /** Address of the external account page */
+  url: string;
+
+  /** Signed token (a JWT, EdDSA) naming the user, the Workspace and the role; it
+   * expires within minutes. Verify it with the key set published at
+   * /.well-known/jwks.json. */
+  token: string;
+
+  /** When the token expires */
+  expiresAt: Timestamp;
 }
 
 /** Update a workspace. The slug is immutable (it is the route key and globally
@@ -98,4 +139,13 @@ namespace SiteWorkspaces {
     @path slug: string,
     @body body: SiteSecondFactorRequirementInput,
   ): SiteWorkspaceResource | ForbiddenProblem | NotFoundProblem;
+
+  /** Mint an Account link token (Owner only). Answers 404 when the installation has no
+   * Account link configured. */
+  @post
+  @route("/{slug}/account-link")
+  op accountLink(@path slug: string):
+    | SiteAccountLinkResource
+    | ForbiddenProblem
+    | NotFoundProblem;
 }

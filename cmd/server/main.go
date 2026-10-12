@@ -89,6 +89,15 @@ func main() {
 		return
 	}
 
+	// `server service-credential create|rotate|revoke|list …` manages the Service
+	// credentials of the Operator surface (ADR 0026): no endpoint can mint or change one.
+	if len(os.Args) > 1 && os.Args[1] == "service-credential" {
+		if err := runServiceCredentialCommand(env, os.Args[2:]); err != nil {
+			fatal("service-credential", err)
+		}
+		return
+	}
+
 	cfg, err := config.Load(env)
 	if err != nil {
 		fatal("load config", err)
@@ -228,6 +237,19 @@ func runUserCommand(env string, args []string) error {
 	defer cancel()
 	defer func() { _ = a.Shutdown(ctx) }()
 	return runUser(ctx, a, args, os.Stdout)
+}
+
+// runServiceCredentialCommand boots the minimal operator app and runs one
+// service-credential command against it.
+func runServiceCredentialCommand(env string, args []string) error {
+	a, err := app.NewOperator(env)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	defer func() { _ = a.Shutdown(ctx) }()
+	return runServiceCredential(ctx, a, time.Now, args, os.Stdout)
 }
 
 // runOperatorCommand boots the minimal operator app and runs one operator command

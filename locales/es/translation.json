@@ -302,6 +302,16 @@
       },
       "back": "Todos los espacios de trabajo",
       "detailsTitle": "Detalles",
+      "holds": {
+        "empty": "Sin retenciones activas.",
+        "expires": "Caduca",
+        "key": "Clave",
+        "message": "Mensaje",
+        "reasonCode": "Código de motivo",
+        "setBy": "Establecida por",
+        "since": "Desde",
+        "title": "Retenciones del operador"
+      },
       "id": "ID",
       "loadError": "No se pudo cargar el espacio de trabajo",
       "noReason": "Sin motivo indicado",
@@ -900,6 +910,8 @@
     "unsubscribeAll": "Darse de baja de todos los correos"
   },
   "userMenu": {
+    "account": "Cuenta",
+    "accountErrorTitle": "No se pudo abrir la página de la cuenta",
     "logout": "Cerrar sesión",
     "logoutErrorTitle": "Error al cerrar sesión",
     "profile": "Perfil",
@@ -915,6 +927,10 @@
     "successBody": "Gracias; tu dirección de correo está confirmada.",
     "successTitle": "Correo verificado",
     "verifying": "Verificando tu correo…"
+  },
+  "workspaceHold": {
+    "description": "El envío de correos salientes está retenido para este espacio de trabajo. Los envíos programados y las automatizaciones esperan y continúan solos cuando se levante la retención. Aún puede iniciar sesión y consultar sus datos.",
+    "title": "El envío está retenido"
   },
   "workspaceSuspension": {
     "description": "El envío de correos salientes está suspendido para este espacio de trabajo. Los envíos programados y las automatizaciones están en pausa y se reanudarán cuando se levante la suspensión. Aún puede iniciar sesión y consultar sus datos. Para apelar, póngase en contacto con su administrador de sphericon.",

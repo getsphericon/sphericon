@@ -20,6 +20,8 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
   collectKey: 'ck',
   ingestKey: 'ik',
   postalAddress: '',
+  accountLinkAvailable: false,
+  holds: [],
   role: 'member',
   createdAt: NOW,
   ...over,

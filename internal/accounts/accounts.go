@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/user"
@@ -51,11 +52,18 @@ func (a *Accounts) Scope(ctx context.Context, userID int64, slug string) (*ent.S
 	if err != nil {
 		return nil, nil, err
 	}
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(userID, 10)}
+	return a.ScopeOf(m), m, nil
+}
+
+// ScopeOf is the scoped client of a loaded Membership's Workspace, acting as its User
+// (the User edge, when loaded, names the actor). It is Scope without the lookup, for a
+// caller that already holds the Membership.
+func (a *Accounts) ScopeOf(m *ent.Membership) *ent.Scoped {
+	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(m.UserID, 10)}
 	if u := m.Edges.User; u != nil {
 		actor.Name = u.Name
 	}
-	return a.bus.Act(a.ent.Scoped(m.WorkspaceID), actor), m, nil
+	return a.bus.Act(a.ent.Scoped(m.WorkspaceID), actor)
 }
 
 // BootstrapScope is the scoped client of the oldest Workspace, for the bootstrap
@@ -68,13 +76,14 @@ func (a *Accounts) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
 	return events.Ingest(a.ent.Scoped(id)), nil
 }
 
-// MembershipsOf lists a User's Memberships with their User and Workspace loaded,
+// MembershipsOf lists a User's Memberships with their User and Workspace loaded, and
+// the Workspace's Operator holds (every row, by key: expiry is the caller's to apply),
 // oldest Workspace first.
 func (a *Accounts) MembershipsOf(ctx context.Context, userID int64) ([]*ent.Membership, error) {
 	return a.ent.Membership.Query().
 		Where(membership.UserID(userID)).
 		WithUser().
-		WithWorkspace().
+		WithWorkspace(func(q *ent.WorkspaceQuery) { q.WithHolds(func(h *ent.HoldQuery) { h.Order(enthold.ByKey()) }) }).
 		Order(ent.Asc(membership.FieldWorkspaceID)).
 		All(ctx)
 }
@@ -385,7 +394,9 @@ func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor event
 
 // MarkEmailVerified stamps the User's email as verified now.
 func (a *Accounts) MarkEmailVerified(ctx context.Context, id int64) error {
-	return a.ent.User.UpdateOneID(id).SetEmailVerifiedAt(time.Now()).Exec(ctx)
+	return a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		return tx.User.UpdateOneID(id).SetEmailVerifiedAt(time.Now()).Exec(ctx)
+	})
 }
 
 // ChangeEmail swaps the login email for one proven by a confirmation link, so it is
@@ -393,7 +404,9 @@ func (a *Accounts) MarkEmailVerified(ctx context.Context, id int64) error {
 // change ends (ADR 0020). The unique index guards a race on the address (see
 // db.IsUniqueViolation).
 func (a *Accounts) ChangeEmail(ctx context.Context, id int64, newEmail string) error {
-	return a.ent.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(time.Now()).AddSessionEpoch(1).Exec(ctx)
+	return a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		return tx.User.UpdateOneID(id).SetEmail(newEmail).SetEmailVerifiedAt(time.Now()).AddSessionEpoch(1).Exec(ctx)
+	})
 }
 
 // PendingInvitation looks up a pending, unexpired Invitation by its raw token, with

@@ -292,6 +292,16 @@ export default interface Resources {
         },
         "back": "All workspaces",
         "detailsTitle": "Details",
+        "holds": {
+          "empty": "No active holds.",
+          "expires": "Expires",
+          "key": "Key",
+          "message": "Message",
+          "reasonCode": "Reason code",
+          "setBy": "Set by",
+          "since": "Since",
+          "title": "Operator holds"
+        },
         "id": "ID",
         "loadError": "Could not load the workspace",
         "noReason": "No reason given",
@@ -872,6 +882,8 @@ export default interface Resources {
       "unsubscribeAll": "Unsubscribe from all emails"
     },
     "userMenu": {
+      "account": "Account",
+      "accountErrorTitle": "Could not open the account page",
       "logout": "Sign out",
       "logoutErrorTitle": "Sign out failed",
       "profile": "Profile",
@@ -887,6 +899,10 @@ export default interface Resources {
       "successBody": "Thanks — your email address is confirmed.",
       "successTitle": "Email verified",
       "verifying": "Verifying your email…"
+    },
+    "workspaceHold": {
+      "description": "Outbound email is on hold for this workspace. Scheduled broadcasts and automations wait and continue on their own when the hold lifts. You can still sign in and view your data.",
+      "title": "Sending is on hold"
     },
     "workspaceSuspension": {
       "description": "Outbound email sending is suspended for this workspace. Scheduled broadcasts and automations are paused and resume when the suspension is lifted. You can still sign in and view your data. To appeal, contact your sphericon administrator.",

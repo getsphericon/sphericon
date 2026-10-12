@@ -38,6 +38,8 @@ test('shows the workspace name and contacts count', async () => {
           collectKey: 'k',
           ingestKey: 'i',
           postalAddress: '',
+          accountLinkAvailable: false,
+          holds: [],
           role: 'owner' as const,
           createdAt: '2026-01-01T00:00:00Z',
         },

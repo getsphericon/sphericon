@@ -98,6 +98,9 @@ type Config struct {
 	// VolumeFloor is the fewest sends in the rate window (per Sending domain) for a
 	// rate to be defined (ADR 0026); zero is DefaultVolumeFloor.
 	VolumeFloor int
+	// HoldMaxExpiry is how far ahead an Operator hold's expiry may be set
+	// (OPERATOR_HOLD_MAX_EXPIRY); zero is DefaultHoldMaxExpiry.
+	HoldMaxExpiry time.Duration
 }
 
 // Validate refuses a configuration an Operator surface cannot run on. It is checked
@@ -128,6 +131,7 @@ type Module struct {
 	attempts   *accounts.Attempts
 	now        func() time.Time
 	floor      int
+	holdMax    time.Duration
 }
 
 // NewModule builds the module over the raw client.
@@ -140,8 +144,12 @@ func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log,
 	if floor <= 0 {
 		floor = DefaultVolumeFloor
 	}
+	holdMax := cfg.HoldMaxExpiry
+	if holdMax <= 0 {
+		holdMax = DefaultHoldMaxExpiry
+	}
 	return &Module{
-		ent: client, lic: lic, audit: auditLog, cipher: cipher, attempts: cfg.Attempts, now: now, floor: floor,
+		ent: client, lic: lic, audit: auditLog, cipher: cipher, attempts: cfg.Attempts, now: now, floor: floor, holdMax: holdMax,
 		challenges: authtoken.New(cfg.Secret).WithClock(now),
 	}
 }

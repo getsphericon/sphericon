@@ -17,8 +17,11 @@ const (
 	ActorUser     = "user"
 	ActorAPIToken = "api_token"
 	ActorOperator = "operator"
-	ActorSystem   = "system"
-	ActorIngest   = "ingest"
+	// ActorService is a Service credential (ADR 0026): a machine identity of the platform,
+	// named in the log, which every customer-facing read shows as ActorOperator.
+	ActorService = "service"
+	ActorSystem  = "system"
+	ActorIngest  = "ingest"
 )
 
 // Actor is who performs the writes of a scope. Name is a display snapshot (a User's
@@ -458,6 +461,55 @@ func (b *EmailTemplateDelete) auditRebind(c *Client) {
 	b.config, b.mutation.config = c.config, c.config
 }
 func (b *EmailTemplateCreateBulk) auditRebind(c *Client) {
+	b.config = c.config
+	for _, x := range b.builders {
+		x.auditRebind(c)
+	}
+}
+
+// HoldAuditSensitive lists the Hold fields whose values never reach the Audit log.
+var HoldAuditSensitive = map[string]bool{}
+
+// auditFields maps every audited field of the Hold to its value.
+func (e *Hold) auditFields() map[string]any {
+	return map[string]any{
+		"key":         e.Key,
+		"reason_code": e.ReasonCode,
+		"message":     e.Message,
+		"expires_at":  e.ExpiresAt,
+		"set_by":      e.SetBy,
+	}
+}
+
+// auditChangeHold describes a Hold create (before is nil), update or delete
+// (after is nil).
+func auditChangeHold(verb string, before, after *Hold) AuditChange {
+	var b, a map[string]any
+	target := before
+	if before != nil {
+		b = before.auditFields()
+	}
+	if after != nil {
+		a = after.auditFields()
+		target = after
+	}
+	change := AuditChange{
+		Action:     "hold." + verb,
+		TargetType: "hold",
+		TargetID:   auditID(target.ID),
+		Diff:       AuditDiff(b, a, HoldAuditSensitive),
+	}
+	change.TargetName = fmt.Sprint(derefAudit(target.Key))
+	return change
+}
+
+// auditRebind points the builders at the client of the transaction that carries the
+// entry, so the mutation and the entry commit together.
+func (b *HoldCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+func (b *HoldUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *HoldUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+func (b *HoldDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+func (b *HoldCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
 		x.auditRebind(c)

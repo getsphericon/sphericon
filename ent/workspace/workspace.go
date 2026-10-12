@@ -35,6 +35,8 @@ const (
 	FieldRetentionDays = "retention_days"
 	// FieldSecondFactorRequiredAt holds the string denoting the second_factor_required_at field in the database.
 	FieldSecondFactorRequiredAt = "second_factor_required_at"
+	// FieldFeedPosition holds the string denoting the feed_position field in the database.
+	FieldFeedPosition = "feed_position"
 	// FieldSuspendedAt holds the string denoting the suspended_at field in the database.
 	FieldSuspendedAt = "suspended_at"
 	// FieldSuspendedByKind holds the string denoting the suspended_by_kind field in the database.
@@ -63,6 +65,8 @@ const (
 	EdgeSendingDomains = "sending_domains"
 	// EdgeSendLimiters holds the string denoting the send_limiters edge name in mutations.
 	EdgeSendLimiters = "send_limiters"
+	// EdgeHolds holds the string denoting the holds edge name in mutations.
+	EdgeHolds = "holds"
 	// EdgeBroadcasts holds the string denoting the broadcasts edge name in mutations.
 	EdgeBroadcasts = "broadcasts"
 	// EdgeBroadcastRecipients holds the string denoting the broadcast_recipients edge name in mutations.
@@ -89,6 +93,8 @@ const (
 	EdgeInvitations = "invitations"
 	// EdgeAuditEntries holds the string denoting the audit_entries edge name in mutations.
 	EdgeAuditEntries = "audit_entries"
+	// EdgeUsages holds the string denoting the usages edge name in mutations.
+	EdgeUsages = "usages"
 	// Table holds the table name of the workspace in the database.
 	Table = "workspaces"
 	// ContactsTable is the table that holds the contacts relation/edge.
@@ -161,6 +167,13 @@ const (
 	SendLimitersInverseTable = "send_limiters"
 	// SendLimitersColumn is the table column denoting the send_limiters relation/edge.
 	SendLimitersColumn = "workspace_id"
+	// HoldsTable is the table that holds the holds relation/edge.
+	HoldsTable = "holds"
+	// HoldsInverseTable is the table name for the Hold entity.
+	// It exists in this package in order to avoid circular dependency with the "hold" package.
+	HoldsInverseTable = "holds"
+	// HoldsColumn is the table column denoting the holds relation/edge.
+	HoldsColumn = "workspace_id"
 	// BroadcastsTable is the table that holds the broadcasts relation/edge.
 	BroadcastsTable = "broadcasts"
 	// BroadcastsInverseTable is the table name for the Broadcast entity.
@@ -252,6 +265,13 @@ const (
 	AuditEntriesInverseTable = "audit_entries"
 	// AuditEntriesColumn is the table column denoting the audit_entries relation/edge.
 	AuditEntriesColumn = "workspace_id"
+	// UsagesTable is the table that holds the usages relation/edge.
+	UsagesTable = "usages"
+	// UsagesInverseTable is the table name for the Usage entity.
+	// It exists in this package in order to avoid circular dependency with the "usage" package.
+	UsagesInverseTable = "usages"
+	// UsagesColumn is the table column denoting the usages relation/edge.
+	UsagesColumn = "workspace_id"
 )
 
 // Columns holds all SQL columns for workspace fields.
@@ -267,6 +287,7 @@ var Columns = []string{
 	FieldPostalAddress,
 	FieldRetentionDays,
 	FieldSecondFactorRequiredAt,
+	FieldFeedPosition,
 	FieldSuspendedAt,
 	FieldSuspendedByKind,
 	FieldSuspendedByID,
@@ -304,6 +325,8 @@ var (
 	DefaultPostalAddress string
 	// RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	RetentionDaysValidator func(int) error
+	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
+	DefaultFeedPosition int64
 )
 
 // SuspendedByKind defines the type for the "suspended_by_kind" enum field.
@@ -386,6 +409,11 @@ func ByRetentionDays(opts ...sql.OrderTermOption) OrderOption {
 // BySecondFactorRequiredAt orders the results by the second_factor_required_at field.
 func BySecondFactorRequiredAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSecondFactorRequiredAt, opts...).ToFunc()
+}
+
+// ByFeedPosition orders the results by the feed_position field.
+func ByFeedPosition(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFeedPosition, opts...).ToFunc()
 }
 
 // BySuspendedAt orders the results by the suspended_at field.
@@ -545,6 +573,20 @@ func BySendLimitersCount(opts ...sql.OrderTermOption) OrderOption {
 func BySendLimiters(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newSendLimitersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByHoldsCount orders the results by holds count.
+func ByHoldsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newHoldsStep(), opts...)
+	}
+}
+
+// ByHolds orders the results by holds terms.
+func ByHolds(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHoldsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -729,6 +771,20 @@ func ByAuditEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newAuditEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByUsagesCount orders the results by usages count.
+func ByUsagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUsagesStep(), opts...)
+	}
+}
+
+// ByUsages orders the results by usages terms.
+func ByUsages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUsagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newContactsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -797,6 +853,13 @@ func newSendLimitersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SendLimitersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, SendLimitersTable, SendLimitersColumn),
+	)
+}
+func newHoldsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HoldsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, HoldsTable, HoldsColumn),
 	)
 }
 func newBroadcastsStep() *sqlgraph.Step {
@@ -888,5 +951,12 @@ func newAuditEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AuditEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AuditEntriesTable, AuditEntriesColumn),
+	)
+}
+func newUsagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UsagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, UsagesTable, UsagesColumn),
 	)
 }

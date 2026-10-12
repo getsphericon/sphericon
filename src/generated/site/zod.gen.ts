@@ -934,6 +934,16 @@ export const zContactExportDocument = z.object({
 });
 
 /**
+ * A short-lived signed token that proves who the Owner is to the external account
+ * page, with the address of that page.
+ */
+export const zSiteAccountLinkResource = z.object({
+  url: z.string(),
+  token: z.string(),
+  expiresAt: zTimestamp
+});
+
+/**
  * A workspace API token (secret shown only once, at creation)
  */
 export const zSiteApiTokenResource = z.object({
@@ -1232,6 +1242,18 @@ export const zSiteWebhookEndpointResource = z.object({
 });
 
 /**
+ * An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's
+ * members see it. It is not a suspension: it is set from outside, carries its own
+ * message, and lifts by itself at its expiry.
+ */
+export const zSiteWorkspaceHold = z.object({
+  key: z.string(),
+  reasonCode: z.string(),
+  message: z.string(),
+  since: zTimestamp
+});
+
+/**
  * Workspace the current user belongs to
  */
 export const zSiteWorkspaceResource = z.object({
@@ -1244,8 +1266,10 @@ export const zSiteWorkspaceResource = z.object({
   role: zSiteMembershipRole,
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
   suspensionReason: z.exactOptional(z.string().nullable()),
+  holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
+  accountLinkAvailable: z.boolean(),
   createdAt: zTimestamp
 });
 
@@ -1704,6 +1728,15 @@ export const zSiteWorkspacesUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteWorkspacesUpdateResponse = zSiteWorkspaceResource;
+
+export const zSiteWorkspacesAccountLinkPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesAccountLinkResponse = zSiteAccountLinkResource;
 
 export const zSiteAnalyticsOverviewPath = z.object({
   slug: z.string()

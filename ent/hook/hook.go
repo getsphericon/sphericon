@@ -153,6 +153,18 @@ func (f EventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EventMutation", m)
 }
 
+// The HoldFunc type is an adapter to allow the use of ordinary
+// function as Hold mutator.
+type HoldFunc func(context.Context, *ent.HoldMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f HoldFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.HoldMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HoldMutation", m)
+}
+
 // The IntegrationFunc type is an adapter to allow the use of ordinary
 // function as Integration mutator.
 type IntegrationFunc func(context.Context, *ent.IntegrationMutation) (ent.Value, error)
@@ -285,6 +297,18 @@ func (f SendingDomainFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SendingDomainMutation", m)
 }
 
+// The ServiceCredentialFunc type is an adapter to allow the use of ordinary
+// function as ServiceCredential mutator.
+type ServiceCredentialFunc func(context.Context, *ent.ServiceCredentialMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ServiceCredentialFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ServiceCredentialMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ServiceCredentialMutation", m)
+}
+
 // The SuppressionFunc type is an adapter to allow the use of ordinary
 // function as Suppression mutator.
 type SuppressionFunc func(context.Context, *ent.SuppressionMutation) (ent.Value, error)
@@ -319,6 +343,18 @@ func (f UnsubscribeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UnsubscribeMutation", m)
+}
+
+// The UsageFunc type is an adapter to allow the use of ordinary
+// function as Usage mutator.
+type UsageFunc func(context.Context, *ent.UsageMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UsageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UsageMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UsageMutation", m)
 }
 
 // The UserFunc type is an adapter to allow the use of ordinary

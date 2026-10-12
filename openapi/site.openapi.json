@@ -1650,6 +1650,55 @@
         }
       }
     },
+    "/workspaces/{slug}/account-link": {
+      "post": {
+        "operationId": "SiteWorkspaces_accountLink",
+        "description": "Mint an Account link token (Owner only). Answers 404 when the installation has no\nAccount link configured.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAccountLinkResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"]
+      }
+    },
     "/workspaces/{slug}/analytics/overview": {
       "get": {
         "operationId": "SiteAnalytics_overview",
@@ -7317,6 +7366,29 @@
         },
         "description": "Accept an invite. name + password are required only when the invitee has no\naccount yet; ignored otherwise."
       },
+      "SiteAccountLinkResource": {
+        "type": "object",
+        "required": ["url", "token", "expiresAt"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Address of the external account page"
+          },
+          "token": {
+            "type": "string",
+            "description": "Signed token (a JWT, EdDSA) naming the user, the Workspace and the role; it\nexpires within minutes. Verify it with the key set published at\n/.well-known/jwks.json."
+          },
+          "expiresAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the token expires"
+          }
+        },
+        "description": "A short-lived signed token that proves who the Owner is to the external account\npage, with the address of that page."
+      },
       "SiteAnalyticsAutomations": {
         "type": "object",
         "required": ["total", "active", "runsActive", "runsCompleted"],
@@ -10236,6 +10308,33 @@
         },
         "description": "Webhook endpoint resource used by the site UI"
       },
+      "SiteWorkspaceHold": {
+        "type": "object",
+        "required": ["key", "reasonCode", "message", "since"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The setter's key, unique per Workspace"
+          },
+          "reasonCode": {
+            "type": "string",
+            "description": "Machine reason code the setter gave"
+          },
+          "message": {
+            "type": "string",
+            "description": "The setter's message for the Owner, to show as given"
+          },
+          "since": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the hold was set"
+          }
+        },
+        "description": "An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's\nmembers see it. It is not a suspension: it is set from outside, carries its own\nmessage, and lifts by itself at its expiry."
+      },
       "SiteWorkspaceResource": {
         "type": "object",
         "required": [
@@ -10246,6 +10345,8 @@
           "ingestKey",
           "postalAddress",
           "role",
+          "holds",
+          "accountLinkAvailable",
           "createdAt"
         ],
         "properties": {
@@ -10300,6 +10401,13 @@
             "nullable": true,
             "description": "Why sending was suspended, shown to the owner; present only while suspended."
           },
+          "holds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteWorkspaceHold"
+            },
+            "description": "The Operator holds active now, oldest key first; empty while nothing holds sending.\nAny one freezes every send surface, like a suspension, but a lapsed hold is never\nlisted."
+          },
           "secondFactorRequiredAt": {
             "type": "string",
             "allOf": [
@@ -10319,6 +10427,10 @@
             ],
             "nullable": true,
             "description": "When the authenticated User's grace under the Two-factor requirement ends:\n7 days after the later of the requirement's start and their Membership's\ncreation. Absent without a requirement or once the User has a Second factor.\nAfter it, every request to this Workspace answers 403 with code\nsecond_factor_required until the User enrolls one."
+          },
+          "accountLinkAvailable": {
+            "type": "boolean",
+            "description": "Whether the authenticated User may open the Account link: true only for an\nOwner, and only on an installation configured for it."
           },
           "createdAt": {
             "allOf": [

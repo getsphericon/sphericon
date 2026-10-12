@@ -511,13 +511,26 @@ _Avoid_: Cycle, anniversary period
 A per-(Workspace, Usage period, metric) materialized aggregate of activity, finalized (made
 immutable) at period close. Distinct from the raw Events it is computed from, which stay the
 source of truth for audit and dispute. Two metrics, aggregated differently: `emails_sent` is a
-_sum_ of `email.sent` over all three send surfaces, one per recipient, in a single total (a
-suppressed or held message is never sent, so never counted); `contacts` is a **high-water-mark**
+_sum_ of the Outbound messages the provider accepted over all three send surfaces, one per recipient,
+in a single total, each counted in the Usage period it was accepted in (a suppressed, held or failed
+message is never accepted, so never counted); `contacts` is a **high-water-mark**
 (the peak reached during the period) of identified Contacts — those with an email Destination,
 erased Contacts excluded — never an instantaneous value, and never anonymous tracker Contacts. It
 materializes live Events the same way a Broadcast recipient's rollup materializes engagement —
 the Events are truth, the snapshot is the closed, reproducible figure.
 _Avoid_: Meter, counter, quota (quota is an allowance, not a measurement)
+
+**Service credential**:
+A machine identity of the Operator surface, next to the human Operator and not a User: a bearer value
+that lets a service call the service endpoints without a login, held by no Workspace and no
+Membership. It carries a name, a set of scopes (read usage, read Workspaces, write holds) and an
+optional expiry, and records when it was last used. Created, rotated and revoked only by the
+`sphericon service-credential` command (no endpoint can mint or change one); the value is shown once
+and only a hash is stored. A service may hold two active credentials at once so a rotation has no
+downtime. The service endpoints are served only by a separate internal listener, never on the public
+port. Its writes are recorded in the Audit log under its name, which customers see only as
+"sphericon staff".
+_Avoid_: API key, API token (that is a Workspace's), service account, Operator
 
 **Live usage**:
 The same per-(Workspace, metric) figures for the Usage period still open: not final, with the
@@ -531,12 +544,21 @@ A reversible Workspace state that **freezes all outbound sending** — all three
 (Broadcast, Automation, Transactional), exactly like Workspace suspension — set by an Operator
 through the Operator surface for a reason other than reputation. Several can coexist: each is
 stored separately under its own key, with a reason shown to the Workspace Owner and an expiry the
-setter must renew, and each is cleared by its own setter or by its expiry. It is a **distinct
+setter must renew (required, and no further ahead than a configured maximum, 30 days by default), and each is cleared by its own setter or by its expiry. It is a **distinct
 cause on the same core chokepoint**, never a repurposing of suspension: the send path asks one
 question ("may this Workspace send now?") answered by several independent freeze reasons.
 Messages are **held, not failed**: they wait and go out when the hold lifts. Every change records
 the Operator that made it.
 _Avoid_: Suspension (that is the reputation freeze), ban, lockout
+
+**Account link**:
+A link in the app, shown only to a Workspace Owner and only when the installation is configured
+with an address and a signing key, that opens an external account page carrying a short-lived
+(about two minutes) signed token naming the user, the Workspace and the role. The token is signed
+asymmetrically and the app publishes its public key as a key set, so the receiver verifies it with
+no shared secret. The app never calls the address and keeps nothing about the receiving side.
+Unconfigured, the operation answers 404 and the link is absent.
+_Avoid_: SSO (nothing is federated: the receiver keeps no session of the app), magic link
 
 ## Channels & future surfaces
 

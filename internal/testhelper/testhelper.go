@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/operator"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
@@ -152,6 +153,10 @@ type TestEnv struct {
 	SQLDB  *sql.DB     // the same txdb connection the ent client and bus ride
 	Bus    *events.Bus // domain-event bus over SQLDB (nested savepoint per WithinTx)
 	Server http.Handler
+	// Internal is the handler of the internal listener (ADR 0026), built like the
+	// composition root builds it: the service endpoints and nothing else. Nil on an
+	// unlicensed instance, where no listener would be bound.
+	Internal http.Handler
 	// Tracker is the instance the server and the sender share: mint tracking,
 	// unsubscribe and confirmation tokens with it, never with a second one.
 	Tracker *tracking.Tracker
@@ -254,7 +259,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	txDB.SetMaxOpenConns(1)
 	t.Cleanup(func() { _ = txDB.Close() }) // rollback
 
-	client := db.NewEntClient(txDB)
+	client := db.NewEntClientOnTx(txDB)
 	// Bus over the same txdb connection: WithinTx opens a nested (savepoint)
 	// transaction, so producer writes + outbox inserts roll back with the test.
 	bus := events.New(txDB)
@@ -270,12 +275,30 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		return nil, &net.DNSError{IsNotFound: true}
 	}
 	tracker := tracking.New(cfg.JWTSecret, cfg.AppURL)
-	sender := outbound.New(bus, resolver, tracker)
 	// Cipher (over the fixture-sealing key) and provider catalog for the site
 	// handlers and the inline jobs — mirrors the app's DI singletons, except that
 	// SES's quota lookup is answered by a fake instead of the AWS API.
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err, "build cipher")
+	lic, err := licensekey.Parse("", licensekey.ProductionKey, time.Now())
+	require.NoError(t, err, "parse empty license")
+	if !st.unlicensed {
+		lic, err = testLicense()
+		require.NoError(t, err, "mint test license")
+	}
+	attempts := accounts.NewAttempts(client,
+		accounts.WithClock(st.now),
+		accounts.WithRateLimits(cfg.RateLimits))
+	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, operator.Config{
+		Secret: newOperatorSecret(), SessionTTL: cfg.OperatorSessionTTL, HoldMaxExpiry: cfg.OperatorHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
+		Attempts: attempts, VolumeFloor: st.volumeFloor,
+	})
+	require.NoError(t, err, "build edition")
+	// The Edition's ent hooks, on the client and on every transaction the bus opens.
+	client.Use(edition.Hooks()...)
+	bus.Use(edition.Hooks()...)
+	// The Operator hold freezer rides the send chokepoint like the app's.
+	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
 	inline := jobs.NewInline(client, sender, systemMail, stubTXT, cipher, catalog, cfg.AppURL)
@@ -290,20 +313,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	contactsModule := contacts.New(bus)
 	erasureModule := erasure.New(bus)
 	templatesModule := templates.New()
-	lic, err := licensekey.Parse("", licensekey.ProductionKey, time.Now())
-	require.NoError(t, err, "parse empty license")
-	if !st.unlicensed {
-		lic, err = testLicense()
-		require.NoError(t, err, "mint test license")
-	}
-	attempts := accounts.NewAttempts(client,
-		accounts.WithClock(st.now),
-		accounts.WithRateLimits(cfg.RateLimits))
-	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, operator.Config{
-		Secret: newOperatorSecret(), SessionTTL: cfg.OperatorSessionTTL, SecureCookies: cfg.SecureCookies(), Clock: st.now,
-		Attempts: attempts, VolumeFloor: st.volumeFloor,
-	})
-	require.NoError(t, err, "build edition")
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(cipher, edition.Audit)
 	integrationsModule := integrations.New(bus, cipher, catalog, inline)
@@ -323,7 +332,10 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
 	operatorHandler, err := server.NewOperatorAPI(edition.Operator(bus, systemMail))
 	require.NoError(t, err, "build operator API")
+	accountLink, _, err := accountlink.FromConfig(&cfg)
+	require.NoError(t, err, "build account link")
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,
@@ -333,9 +345,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Clock:        st.now,
 	}, external, mcpHandler, operatorHandler)
 	require.NoError(t, err, "build server")
+	internalHandler, err := server.NewInternal(&cfg, edition.Service(bus))
+	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{
-		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
+		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
 		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor, Operators: edition.Operators,
 	}
 }

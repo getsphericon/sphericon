@@ -86,6 +86,7 @@ const SkipContactErased = "contact_erased"
 // Reasons an Outbound send is Held.
 const (
 	HoldSuspended        = "workspace_suspended"
+	HoldOperator         = "operator_hold"
 	HoldNoIntegration    = "no_integration"
 	HoldUnverifiedDomain = "unverified_domain"
 )
@@ -96,6 +97,8 @@ func HoldDetail(reason string) string {
 	switch reason {
 	case HoldSuspended:
 		return "sending is suspended for this workspace"
+	case HoldOperator:
+		return "sending is on hold for this workspace"
 	case HoldNoIntegration:
 		return "no default email provider configured"
 	case HoldUnverifiedDomain:
@@ -136,9 +139,10 @@ type Senders interface {
 
 // Freezer is an extra reason a Workspace may not send right now, consulted after the
 // core suspension check (ADR 0007, 0009): the Operator hold plugs in here. It
-// returns "" when the Workspace may send, otherwise a Hold* style reason.
+// returns "" when the Workspace may send, otherwise a Hold* style reason. It reads
+// through the Workspace's scope s, so an implementation holds no raw client.
 type Freezer interface {
-	Frozen(ctx context.Context, ws *ent.Workspace) (reason string, err error)
+	Frozen(ctx context.Context, s *ent.Scoped, ws *ent.Workspace) (reason string, err error)
 }
 
 // DefaultLease is how long a pending claim blocks other attempts before a retry may
@@ -413,7 +417,7 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, fro
 		return gateResult{hold: HoldSuspended}, nil
 	}
 	for _, f := range m.freezers {
-		reason, err := f.Frozen(ctx, ws)
+		reason, err := f.Frozen(ctx, s, ws)
 		if err != nil {
 			return gateResult{}, fmt.Errorf("outbound: freeze check: %w", err)
 		}

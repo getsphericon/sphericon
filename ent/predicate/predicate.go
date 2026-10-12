@@ -42,6 +42,9 @@ type EmailTemplate func(*sql.Selector)
 // Event is the predicate function for event builders.
 type Event func(*sql.Selector)
 
+// Hold is the predicate function for hold builders.
+type Hold func(*sql.Selector)
+
 // Integration is the predicate function for integration builders.
 type Integration func(*sql.Selector)
 
@@ -75,6 +78,9 @@ type SendLimiter func(*sql.Selector)
 // SendingDomain is the predicate function for sendingdomain builders.
 type SendingDomain func(*sql.Selector)
 
+// ServiceCredential is the predicate function for servicecredential builders.
+type ServiceCredential func(*sql.Selector)
+
 // Suppression is the predicate function for suppression builders.
 type Suppression func(*sql.Selector)
 
@@ -83,6 +89,9 @@ type Tag func(*sql.Selector)
 
 // Unsubscribe is the predicate function for unsubscribe builders.
 type Unsubscribe func(*sql.Selector)
+
+// Usage is the predicate function for usage builders.
+type Usage func(*sql.Selector)
 
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

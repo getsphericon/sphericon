@@ -56,6 +56,10 @@ type Converter interface {
 	// which the mapper cannot see: the handler attaches them.
 	// goverter:ignore SecondFactorGraceEndsAt
 	// goverter:ignore Role
+	// goverter:ignore AccountLinkAvailable
+	// The active holds are read through the Workspace's scope, which the mapper cannot
+	// see: the handler attaches them.
+	// goverter:ignore Holds
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 

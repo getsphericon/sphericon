@@ -37,6 +37,8 @@ type Workspace struct {
 	RetentionDays *int `json:"retention_days,omitempty"`
 	// SecondFactorRequiredAt holds the value of the "second_factor_required_at" field.
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
+	// FeedPosition holds the value of the "feed_position" field.
+	FeedPosition int64 `json:"feed_position,omitempty"`
 	// SuspendedAt holds the value of the "suspended_at" field.
 	SuspendedAt *time.Time `json:"suspended_at,omitempty"`
 	// SuspendedByKind holds the value of the "suspended_by_kind" field.
@@ -73,6 +75,8 @@ type WorkspaceEdges struct {
 	SendingDomains []*SendingDomain `json:"sending_domains,omitempty"`
 	// SendLimiters holds the value of the send_limiters edge.
 	SendLimiters []*SendLimiter `json:"send_limiters,omitempty"`
+	// Holds holds the value of the holds edge.
+	Holds []*Hold `json:"holds,omitempty"`
 	// Broadcasts holds the value of the broadcasts edge.
 	Broadcasts []*Broadcast `json:"broadcasts,omitempty"`
 	// BroadcastRecipients holds the value of the broadcast_recipients edge.
@@ -99,9 +103,11 @@ type WorkspaceEdges struct {
 	Invitations []*Invitation `json:"invitations,omitempty"`
 	// AuditEntries holds the value of the audit_entries edge.
 	AuditEntries []*AuditEntry `json:"audit_entries,omitempty"`
+	// Usages holds the value of the usages edge.
+	Usages []*Usage `json:"usages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [23]bool
+	loadedTypes [25]bool
 }
 
 // ContactsOrErr returns the Contacts value or an error if the edge
@@ -194,10 +200,19 @@ func (e WorkspaceEdges) SendLimitersOrErr() ([]*SendLimiter, error) {
 	return nil, &NotLoadedError{edge: "send_limiters"}
 }
 
+// HoldsOrErr returns the Holds value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) HoldsOrErr() ([]*Hold, error) {
+	if e.loadedTypes[10] {
+		return e.Holds, nil
+	}
+	return nil, &NotLoadedError{edge: "holds"}
+}
+
 // BroadcastsOrErr returns the Broadcasts value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) BroadcastsOrErr() ([]*Broadcast, error) {
-	if e.loadedTypes[10] {
+	if e.loadedTypes[11] {
 		return e.Broadcasts, nil
 	}
 	return nil, &NotLoadedError{edge: "broadcasts"}
@@ -206,7 +221,7 @@ func (e WorkspaceEdges) BroadcastsOrErr() ([]*Broadcast, error) {
 // BroadcastRecipientsOrErr returns the BroadcastRecipients value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) BroadcastRecipientsOrErr() ([]*BroadcastRecipient, error) {
-	if e.loadedTypes[11] {
+	if e.loadedTypes[12] {
 		return e.BroadcastRecipients, nil
 	}
 	return nil, &NotLoadedError{edge: "broadcast_recipients"}
@@ -215,7 +230,7 @@ func (e WorkspaceEdges) BroadcastRecipientsOrErr() ([]*BroadcastRecipient, error
 // EmailTemplatesOrErr returns the EmailTemplates value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) EmailTemplatesOrErr() ([]*EmailTemplate, error) {
-	if e.loadedTypes[12] {
+	if e.loadedTypes[13] {
 		return e.EmailTemplates, nil
 	}
 	return nil, &NotLoadedError{edge: "email_templates"}
@@ -224,7 +239,7 @@ func (e WorkspaceEdges) EmailTemplatesOrErr() ([]*EmailTemplate, error) {
 // AutomationsOrErr returns the Automations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationsOrErr() ([]*Automation, error) {
-	if e.loadedTypes[13] {
+	if e.loadedTypes[14] {
 		return e.Automations, nil
 	}
 	return nil, &NotLoadedError{edge: "automations"}
@@ -233,7 +248,7 @@ func (e WorkspaceEdges) AutomationsOrErr() ([]*Automation, error) {
 // AutomationRunsOrErr returns the AutomationRuns value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationRunsOrErr() ([]*AutomationRun, error) {
-	if e.loadedTypes[14] {
+	if e.loadedTypes[15] {
 		return e.AutomationRuns, nil
 	}
 	return nil, &NotLoadedError{edge: "automation_runs"}
@@ -242,7 +257,7 @@ func (e WorkspaceEdges) AutomationRunsOrErr() ([]*AutomationRun, error) {
 // WebhookEndpointsOrErr returns the WebhookEndpoints value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) WebhookEndpointsOrErr() ([]*WebhookEndpoint, error) {
-	if e.loadedTypes[15] {
+	if e.loadedTypes[16] {
 		return e.WebhookEndpoints, nil
 	}
 	return nil, &NotLoadedError{edge: "webhook_endpoints"}
@@ -251,7 +266,7 @@ func (e WorkspaceEdges) WebhookEndpointsOrErr() ([]*WebhookEndpoint, error) {
 // SuppressionsOrErr returns the Suppressions value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) SuppressionsOrErr() ([]*Suppression, error) {
-	if e.loadedTypes[16] {
+	if e.loadedTypes[17] {
 		return e.Suppressions, nil
 	}
 	return nil, &NotLoadedError{edge: "suppressions"}
@@ -260,7 +275,7 @@ func (e WorkspaceEdges) SuppressionsOrErr() ([]*Suppression, error) {
 // UnsubscribesOrErr returns the Unsubscribes value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UnsubscribesOrErr() ([]*Unsubscribe, error) {
-	if e.loadedTypes[17] {
+	if e.loadedTypes[18] {
 		return e.Unsubscribes, nil
 	}
 	return nil, &NotLoadedError{edge: "unsubscribes"}
@@ -269,7 +284,7 @@ func (e WorkspaceEdges) UnsubscribesOrErr() ([]*Unsubscribe, error) {
 // ConfirmationsOrErr returns the Confirmations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ConfirmationsOrErr() ([]*Confirmation, error) {
-	if e.loadedTypes[18] {
+	if e.loadedTypes[19] {
 		return e.Confirmations, nil
 	}
 	return nil, &NotLoadedError{edge: "confirmations"}
@@ -278,7 +293,7 @@ func (e WorkspaceEdges) ConfirmationsOrErr() ([]*Confirmation, error) {
 // OutboundMessagesOrErr returns the OutboundMessages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
-	if e.loadedTypes[19] {
+	if e.loadedTypes[20] {
 		return e.OutboundMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "outbound_messages"}
@@ -287,7 +302,7 @@ func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
 // MembershipsOrErr returns the Memberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
-	if e.loadedTypes[20] {
+	if e.loadedTypes[21] {
 		return e.Memberships, nil
 	}
 	return nil, &NotLoadedError{edge: "memberships"}
@@ -296,7 +311,7 @@ func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
 // InvitationsOrErr returns the Invitations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
-	if e.loadedTypes[21] {
+	if e.loadedTypes[22] {
 		return e.Invitations, nil
 	}
 	return nil, &NotLoadedError{edge: "invitations"}
@@ -305,10 +320,19 @@ func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
 // AuditEntriesOrErr returns the AuditEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
-	if e.loadedTypes[22] {
+	if e.loadedTypes[23] {
 		return e.AuditEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "audit_entries"}
+}
+
+// UsagesOrErr returns the Usages value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
+	if e.loadedTypes[24] {
+		return e.Usages, nil
+	}
+	return nil, &NotLoadedError{edge: "usages"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -318,7 +342,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case workspace.FieldRequireConfirmedOptIn:
 			values[i] = new(sql.NullBool)
-		case workspace.FieldID, workspace.FieldRetentionDays:
+		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
 		case workspace.FieldName, workspace.FieldSlug, workspace.FieldCollectKey, workspace.FieldIngestKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
@@ -406,6 +430,12 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SecondFactorRequiredAt = new(time.Time)
 				*_m.SecondFactorRequiredAt = value.Time
+			}
+		case workspace.FieldFeedPosition:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field feed_position", values[i])
+			} else if value.Valid {
+				_m.FeedPosition = value.Int64
 			}
 		case workspace.FieldSuspendedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -498,6 +528,11 @@ func (_m *Workspace) QuerySendLimiters() *SendLimiterQuery {
 	return NewWorkspaceClient(_m.config).QuerySendLimiters(_m)
 }
 
+// QueryHolds queries the "holds" edge of the Workspace entity.
+func (_m *Workspace) QueryHolds() *HoldQuery {
+	return NewWorkspaceClient(_m.config).QueryHolds(_m)
+}
+
 // QueryBroadcasts queries the "broadcasts" edge of the Workspace entity.
 func (_m *Workspace) QueryBroadcasts() *BroadcastQuery {
 	return NewWorkspaceClient(_m.config).QueryBroadcasts(_m)
@@ -563,6 +598,11 @@ func (_m *Workspace) QueryAuditEntries() *AuditEntryQuery {
 	return NewWorkspaceClient(_m.config).QueryAuditEntries(_m)
 }
 
+// QueryUsages queries the "usages" edge of the Workspace entity.
+func (_m *Workspace) QueryUsages() *UsageQuery {
+	return NewWorkspaceClient(_m.config).QueryUsages(_m)
+}
+
 // Update returns a builder for updating this Workspace.
 // Note that you need to call Workspace.Unwrap() before calling this method if this Workspace
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -617,6 +657,9 @@ func (_m *Workspace) String() string {
 		builder.WriteString("second_factor_required_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("feed_position=")
+	builder.WriteString(fmt.Sprintf("%v", _m.FeedPosition))
 	builder.WriteString(", ")
 	if v := _m.SuspendedAt; v != nil {
 		builder.WriteString("suspended_at=")

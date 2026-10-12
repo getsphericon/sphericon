@@ -5,8 +5,11 @@ package main
 
 import (
 	"context"
+	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"sync"
+	"time"
 )
 
 // Ensure, that workspaceOpsMock does implement workspaceOps.
@@ -268,5 +271,233 @@ func (mock *operatorOpsMock) ResetOperatorTOTPCalls() []struct {
 	mock.lockResetOperatorTOTP.RLock()
 	calls = mock.calls.ResetOperatorTOTP
 	mock.lockResetOperatorTOTP.RUnlock()
+	return calls
+}
+
+// Ensure, that serviceCredentialOpsMock does implement serviceCredentialOps.
+// If this is not the case, regenerate this file with moq.
+var _ serviceCredentialOps = &serviceCredentialOpsMock{}
+
+// serviceCredentialOpsMock is a mock implementation of serviceCredentialOps.
+//
+//	func TestSomethingThatUsesserviceCredentialOps(t *testing.T) {
+//
+//		// make and configure a mocked serviceCredentialOps
+//		mockedserviceCredentialOps := &serviceCredentialOpsMock{
+//			IssueServiceCredentialFunc: func(ctx context.Context, in operator.IssueInput) (*operator.Issued, error) {
+//				panic("mock out the IssueServiceCredential method")
+//			},
+//			RevokeServiceCredentialFunc: func(ctx context.Context, id int64) error {
+//				panic("mock out the RevokeServiceCredential method")
+//			},
+//			RotateServiceCredentialFunc: func(ctx context.Context, id int64, expiresAt *time.Time) (*operator.Issued, error) {
+//				panic("mock out the RotateServiceCredential method")
+//			},
+//			ServiceCredentialsFunc: func(ctx context.Context, name string) ([]*ent.ServiceCredential, error) {
+//				panic("mock out the ServiceCredentials method")
+//			},
+//		}
+//
+//		// use mockedserviceCredentialOps in code that requires serviceCredentialOps
+//		// and then make assertions.
+//
+//	}
+type serviceCredentialOpsMock struct {
+	// IssueServiceCredentialFunc mocks the IssueServiceCredential method.
+	IssueServiceCredentialFunc func(ctx context.Context, in operator.IssueInput) (*operator.Issued, error)
+
+	// RevokeServiceCredentialFunc mocks the RevokeServiceCredential method.
+	RevokeServiceCredentialFunc func(ctx context.Context, id int64) error
+
+	// RotateServiceCredentialFunc mocks the RotateServiceCredential method.
+	RotateServiceCredentialFunc func(ctx context.Context, id int64, expiresAt *time.Time) (*operator.Issued, error)
+
+	// ServiceCredentialsFunc mocks the ServiceCredentials method.
+	ServiceCredentialsFunc func(ctx context.Context, name string) ([]*ent.ServiceCredential, error)
+
+	// calls tracks calls to the methods.
+	calls struct {
+		// IssueServiceCredential holds details about calls to the IssueServiceCredential method.
+		IssueServiceCredential []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// In is the in argument value.
+			In operator.IssueInput
+		}
+		// RevokeServiceCredential holds details about calls to the RevokeServiceCredential method.
+		RevokeServiceCredential []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID int64
+		}
+		// RotateServiceCredential holds details about calls to the RotateServiceCredential method.
+		RotateServiceCredential []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID int64
+			// ExpiresAt is the expiresAt argument value.
+			ExpiresAt *time.Time
+		}
+		// ServiceCredentials holds details about calls to the ServiceCredentials method.
+		ServiceCredentials []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Name is the name argument value.
+			Name string
+		}
+	}
+	lockIssueServiceCredential  sync.RWMutex
+	lockRevokeServiceCredential sync.RWMutex
+	lockRotateServiceCredential sync.RWMutex
+	lockServiceCredentials      sync.RWMutex
+}
+
+// IssueServiceCredential calls IssueServiceCredentialFunc.
+func (mock *serviceCredentialOpsMock) IssueServiceCredential(ctx context.Context, in operator.IssueInput) (*operator.Issued, error) {
+	if mock.IssueServiceCredentialFunc == nil {
+		panic("serviceCredentialOpsMock.IssueServiceCredentialFunc: method is nil but serviceCredentialOps.IssueServiceCredential was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		In  operator.IssueInput
+	}{
+		Ctx: ctx,
+		In:  in,
+	}
+	mock.lockIssueServiceCredential.Lock()
+	mock.calls.IssueServiceCredential = append(mock.calls.IssueServiceCredential, callInfo)
+	mock.lockIssueServiceCredential.Unlock()
+	return mock.IssueServiceCredentialFunc(ctx, in)
+}
+
+// IssueServiceCredentialCalls gets all the calls that were made to IssueServiceCredential.
+// Check the length with:
+//
+//	len(mockedserviceCredentialOps.IssueServiceCredentialCalls())
+func (mock *serviceCredentialOpsMock) IssueServiceCredentialCalls() []struct {
+	Ctx context.Context
+	In  operator.IssueInput
+} {
+	var calls []struct {
+		Ctx context.Context
+		In  operator.IssueInput
+	}
+	mock.lockIssueServiceCredential.RLock()
+	calls = mock.calls.IssueServiceCredential
+	mock.lockIssueServiceCredential.RUnlock()
+	return calls
+}
+
+// RevokeServiceCredential calls RevokeServiceCredentialFunc.
+func (mock *serviceCredentialOpsMock) RevokeServiceCredential(ctx context.Context, id int64) error {
+	if mock.RevokeServiceCredentialFunc == nil {
+		panic("serviceCredentialOpsMock.RevokeServiceCredentialFunc: method is nil but serviceCredentialOps.RevokeServiceCredential was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  int64
+	}{
+		Ctx: ctx,
+		ID:  id,
+	}
+	mock.lockRevokeServiceCredential.Lock()
+	mock.calls.RevokeServiceCredential = append(mock.calls.RevokeServiceCredential, callInfo)
+	mock.lockRevokeServiceCredential.Unlock()
+	return mock.RevokeServiceCredentialFunc(ctx, id)
+}
+
+// RevokeServiceCredentialCalls gets all the calls that were made to RevokeServiceCredential.
+// Check the length with:
+//
+//	len(mockedserviceCredentialOps.RevokeServiceCredentialCalls())
+func (mock *serviceCredentialOpsMock) RevokeServiceCredentialCalls() []struct {
+	Ctx context.Context
+	ID  int64
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  int64
+	}
+	mock.lockRevokeServiceCredential.RLock()
+	calls = mock.calls.RevokeServiceCredential
+	mock.lockRevokeServiceCredential.RUnlock()
+	return calls
+}
+
+// RotateServiceCredential calls RotateServiceCredentialFunc.
+func (mock *serviceCredentialOpsMock) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*operator.Issued, error) {
+	if mock.RotateServiceCredentialFunc == nil {
+		panic("serviceCredentialOpsMock.RotateServiceCredentialFunc: method is nil but serviceCredentialOps.RotateServiceCredential was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		ID        int64
+		ExpiresAt *time.Time
+	}{
+		Ctx:       ctx,
+		ID:        id,
+		ExpiresAt: expiresAt,
+	}
+	mock.lockRotateServiceCredential.Lock()
+	mock.calls.RotateServiceCredential = append(mock.calls.RotateServiceCredential, callInfo)
+	mock.lockRotateServiceCredential.Unlock()
+	return mock.RotateServiceCredentialFunc(ctx, id, expiresAt)
+}
+
+// RotateServiceCredentialCalls gets all the calls that were made to RotateServiceCredential.
+// Check the length with:
+//
+//	len(mockedserviceCredentialOps.RotateServiceCredentialCalls())
+func (mock *serviceCredentialOpsMock) RotateServiceCredentialCalls() []struct {
+	Ctx       context.Context
+	ID        int64
+	ExpiresAt *time.Time
+} {
+	var calls []struct {
+		Ctx       context.Context
+		ID        int64
+		ExpiresAt *time.Time
+	}
+	mock.lockRotateServiceCredential.RLock()
+	calls = mock.calls.RotateServiceCredential
+	mock.lockRotateServiceCredential.RUnlock()
+	return calls
+}
+
+// ServiceCredentials calls ServiceCredentialsFunc.
+func (mock *serviceCredentialOpsMock) ServiceCredentials(ctx context.Context, name string) ([]*ent.ServiceCredential, error) {
+	if mock.ServiceCredentialsFunc == nil {
+		panic("serviceCredentialOpsMock.ServiceCredentialsFunc: method is nil but serviceCredentialOps.ServiceCredentials was just called")
+	}
+	callInfo := struct {
+		Ctx  context.Context
+		Name string
+	}{
+		Ctx:  ctx,
+		Name: name,
+	}
+	mock.lockServiceCredentials.Lock()
+	mock.calls.ServiceCredentials = append(mock.calls.ServiceCredentials, callInfo)
+	mock.lockServiceCredentials.Unlock()
+	return mock.ServiceCredentialsFunc(ctx, name)
+}
+
+// ServiceCredentialsCalls gets all the calls that were made to ServiceCredentials.
+// Check the length with:
+//
+//	len(mockedserviceCredentialOps.ServiceCredentialsCalls())
+func (mock *serviceCredentialOpsMock) ServiceCredentialsCalls() []struct {
+	Ctx  context.Context
+	Name string
+} {
+	var calls []struct {
+		Ctx  context.Context
+		Name string
+	}
+	mock.lockServiceCredentials.RLock()
+	calls = mock.calls.ServiceCredentials
+	mock.lockServiceCredentials.RUnlock()
 	return calls
 }

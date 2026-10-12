@@ -105,6 +105,11 @@ func SecondFactorRequiredAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSecondFactorRequiredAt, v))
 }
 
+// FeedPosition applies equality check predicate on the "feed_position" field. It's identical to FeedPositionEQ.
+func FeedPosition(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldFeedPosition, v))
+}
+
 // SuspendedAt applies equality check predicate on the "suspended_at" field. It's identical to SuspendedAtEQ.
 func SuspendedAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSuspendedAt, v))
@@ -645,6 +650,46 @@ func SecondFactorRequiredAtNotNil() predicate.Workspace {
 	return predicate.Workspace(sql.FieldNotNull(FieldSecondFactorRequiredAt))
 }
 
+// FeedPositionEQ applies the EQ predicate on the "feed_position" field.
+func FeedPositionEQ(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldFeedPosition, v))
+}
+
+// FeedPositionNEQ applies the NEQ predicate on the "feed_position" field.
+func FeedPositionNEQ(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldFeedPosition, v))
+}
+
+// FeedPositionIn applies the In predicate on the "feed_position" field.
+func FeedPositionIn(vs ...int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldFeedPosition, vs...))
+}
+
+// FeedPositionNotIn applies the NotIn predicate on the "feed_position" field.
+func FeedPositionNotIn(vs ...int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldFeedPosition, vs...))
+}
+
+// FeedPositionGT applies the GT predicate on the "feed_position" field.
+func FeedPositionGT(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldFeedPosition, v))
+}
+
+// FeedPositionGTE applies the GTE predicate on the "feed_position" field.
+func FeedPositionGTE(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldFeedPosition, v))
+}
+
+// FeedPositionLT applies the LT predicate on the "feed_position" field.
+func FeedPositionLT(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldFeedPosition, v))
+}
+
+// FeedPositionLTE applies the LTE predicate on the "feed_position" field.
+func FeedPositionLTE(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldFeedPosition, v))
+}
+
 // SuspendedAtEQ applies the EQ predicate on the "suspended_at" field.
 func SuspendedAtEQ(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSuspendedAt, v))
@@ -1105,6 +1150,29 @@ func HasSendLimitersWith(preds ...predicate.SendLimiter) predicate.Workspace {
 	})
 }
 
+// HasHolds applies the HasEdge predicate on the "holds" edge.
+func HasHolds() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, HoldsTable, HoldsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasHoldsWith applies the HasEdge predicate on the "holds" edge with a given conditions (other predicates).
+func HasHoldsWith(preds ...predicate.Hold) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newHoldsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasBroadcasts applies the HasEdge predicate on the "broadcasts" edge.
 func HasBroadcasts() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
@@ -1396,6 +1464,29 @@ func HasAuditEntries() predicate.Workspace {
 func HasAuditEntriesWith(preds ...predicate.AuditEntry) predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
 		step := newAuditEntriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUsages applies the HasEdge predicate on the "usages" edge.
+func HasUsages() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UsagesTable, UsagesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUsagesWith applies the HasEdge predicate on the "usages" edge with a given conditions (other predicates).
+func HasUsagesWith(preds ...predicate.Usage) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newUsagesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

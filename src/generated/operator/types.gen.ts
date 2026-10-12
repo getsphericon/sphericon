@@ -35,7 +35,7 @@ export type GoneProblem = {
  */
 export type OperatorAuditActor = {
   /**
-   * The kind of actor; an operator carries no id and the name "sphericon staff"
+   * The kind of actor; an operator carries no id and the name "sphericon staff"; a service is a Service credential, named as the Operator who issued it chose
    */
   kind: OperatorAuditActorKind;
   /**
@@ -55,6 +55,7 @@ export const OperatorAuditActorKind = {
   USER: 'user',
   API_TOKEN: 'api_token',
   OPERATOR: 'operator',
+  SERVICE: 'service',
   SYSTEM: 'system'
 } as const;
 
@@ -197,6 +198,36 @@ export type OperatorEnrolment = {
    * PNG data URI of the URI
    */
   qrCode: string;
+};
+
+/**
+ * An active Operator hold on a Workspace, as the console shows it (read only)
+ */
+export type OperatorHold = {
+  /**
+   * Unique per Workspace, chosen by the setter
+   */
+  key: string;
+  /**
+   * Machine reason code
+   */
+  reasonCode: string;
+  /**
+   * The message the setter gave for the Owner
+   */
+  message: string;
+  /**
+   * When the hold was first set
+   */
+  createdAt: Timestamp;
+  /**
+   * When the hold lapses unless renewed
+   */
+  expiresAt: Timestamp;
+  /**
+   * Who set it: the name of its Service credential
+   */
+  setBy: string;
 };
 
 /**
@@ -345,7 +376,7 @@ export type OperatorSuspensionChange = {
 };
 
 /**
- * A Workspace with its deliverability, as the detail page shows it
+ * A Workspace with its deliverability and active holds, as the detail page shows it
  */
 export type OperatorWorkspaceDetailResource = {
   /**
@@ -362,6 +393,10 @@ export type OperatorWorkspaceDetailResource = {
    * Present only while sending is suspended
    */
   suspension?: OperatorSuspension | null;
+  /**
+   * Active Operator holds by key; a lapsed hold is not listed
+   */
+  holds: Array<OperatorHold>;
   deliverability: OperatorDeliverability;
 };
 

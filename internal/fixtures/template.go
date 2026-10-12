@@ -59,6 +59,9 @@ func TemplateFuncs(cipher *secrets.Cipher) template.FuncMap {
 		// from the stored hash, so verification still works and loading stays fast.
 		"argonHash":  hashPasswordMinCost,
 		"bcryptHash": hashTokenSecretMinCost,
+		// A Service credential's secret is stored as the SHA-256 the Operator module
+		// computes when it issues one (credentials.HashServiceSecret).
+		"serviceSecretHash": func(secret string) string { return credentials.HashServiceSecret(secret) },
 	}
 }
 

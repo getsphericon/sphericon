@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -27,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 )
@@ -734,6 +736,48 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Name:    "Hold",
+			Audited: true,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.Hold.Query().Where(hold.WorkspaceID(ws)).Order(Asc(hold.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.Hold().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Hold().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Hold().Update().Where(hold.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Hold().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Hold().Delete().Where(hold.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.Hold.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.Hold().Create()
+				b.SetKey(src.Key)
+				b.SetReasonCode(src.ReasonCode)
+				b.SetMessage(src.Message)
+				b.SetExpiresAt(src.ExpiresAt)
+				b.SetSetBy(src.SetBy)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
 			Name:    "Integration",
 			Audited: true,
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
@@ -1282,6 +1326,48 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Name:    "Usage",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.Usage.Query().Where(usage.WorkspaceID(ws)).Order(Asc(usage.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.Usage().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Usage().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Usage().Update().Where(usage.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Usage().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Usage().Delete().Where(usage.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.Usage.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.Usage().Create()
+				b.SetPeriodStart(src.PeriodStart)
+				b.SetMetric(src.Metric)
+				b.SetValue(src.Value)
+				b.SetFinal(src.Final)
+				b.SetComputedAt(src.ComputedAt)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Name:    "Visitor",

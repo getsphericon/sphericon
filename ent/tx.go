@@ -4,6 +4,8 @@ package ent
 
 import (
 	"context"
+	stdsql "database/sql"
+	"fmt"
 	"sync"
 
 	"entgo.io/ent/dialect"
@@ -36,6 +38,8 @@ type Tx struct {
 	EmailTemplate *EmailTemplateClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
+	// Hold is the client for interacting with the Hold builders.
+	Hold *HoldClient
 	// Integration is the client for interacting with the Integration builders.
 	Integration *IntegrationClient
 	// Invitation is the client for interacting with the Invitation builders.
@@ -58,12 +62,16 @@ type Tx struct {
 	SendLimiter *SendLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
+	// ServiceCredential is the client for interacting with the ServiceCredential builders.
+	ServiceCredential *ServiceCredentialClient
 	// Suppression is the client for interacting with the Suppression builders.
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Unsubscribe is the client for interacting with the Unsubscribe builders.
 	Unsubscribe *UnsubscribeClient
+	// Usage is the client for interacting with the Usage builders.
+	Usage *UsageClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// Visitor is the client for interacting with the Visitor builders.
@@ -215,6 +223,7 @@ func (tx *Tx) init() {
 	tx.CustomField = NewCustomFieldClient(tx.config)
 	tx.EmailTemplate = NewEmailTemplateClient(tx.config)
 	tx.Event = NewEventClient(tx.config)
+	tx.Hold = NewHoldClient(tx.config)
 	tx.Integration = NewIntegrationClient(tx.config)
 	tx.Invitation = NewInvitationClient(tx.config)
 	tx.Membership = NewMembershipClient(tx.config)
@@ -226,9 +235,11 @@ func (tx *Tx) init() {
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendLimiter = NewSendLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
+	tx.ServiceCredential = NewServiceCredentialClient(tx.config)
 	tx.Suppression = NewSuppressionClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Unsubscribe = NewUnsubscribeClient(tx.config)
+	tx.Usage = NewUsageClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.Visitor = NewVisitorClient(tx.config)
 	tx.WebhookEndpoint = NewWebhookEndpointClient(tx.config)
@@ -295,3 +306,27 @@ func (tx *txDriver) Query(ctx context.Context, query string, args, v any) error 
 }
 
 var _ dialect.Driver = (*txDriver)(nil)
+
+// ExecContext allows calling the underlying ExecContext method of the transaction if it is supported by it.
+// See, database/sql#Tx.ExecContext for more information.
+func (tx *txDriver) ExecContext(ctx context.Context, query string, args ...any) (stdsql.Result, error) {
+	ex, ok := tx.tx.(interface {
+		ExecContext(context.Context, string, ...any) (stdsql.Result, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("Tx.ExecContext is not supported")
+	}
+	return ex.ExecContext(ctx, query, args...)
+}
+
+// QueryContext allows calling the underlying QueryContext method of the transaction if it is supported by it.
+// See, database/sql#Tx.QueryContext for more information.
+func (tx *txDriver) QueryContext(ctx context.Context, query string, args ...any) (*stdsql.Rows, error) {
+	q, ok := tx.tx.(interface {
+		QueryContext(context.Context, string, ...any) (*stdsql.Rows, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("Tx.QueryContext is not supported")
+	}
+	return q.QueryContext(ctx, query, args...)
+}
