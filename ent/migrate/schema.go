@@ -1068,6 +1068,7 @@ var (
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
+		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
 		{Name: "suspended_at", Type: field.TypeTime, Nullable: true},
 		{Name: "suspended_by_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"system", "cli", "operator"}},
 		{Name: "suspended_by_id", Type: field.TypeString, Nullable: true},
@@ -1078,6 +1079,13 @@ var (
 		Name:       "workspaces",
 		Columns:    WorkspacesColumns,
 		PrimaryKey: []*schema.Column{WorkspacesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "workspace_feed_position_id",
+				Unique:  false,
+				Columns: []*schema.Column{WorkspacesColumns[11], WorkspacesColumns[0]},
+			},
+		},
 	}
 	// ContactTagsColumns holds the columns for the "contact_tags" table.
 	ContactTagsColumns = []*schema.Column{

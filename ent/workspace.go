@@ -37,6 +37,8 @@ type Workspace struct {
 	RetentionDays *int `json:"retention_days,omitempty"`
 	// SecondFactorRequiredAt holds the value of the "second_factor_required_at" field.
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
+	// FeedPosition holds the value of the "feed_position" field.
+	FeedPosition int64 `json:"feed_position,omitempty"`
 	// SuspendedAt holds the value of the "suspended_at" field.
 	SuspendedAt *time.Time `json:"suspended_at,omitempty"`
 	// SuspendedByKind holds the value of the "suspended_by_kind" field.
@@ -318,7 +320,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case workspace.FieldRequireConfirmedOptIn:
 			values[i] = new(sql.NullBool)
-		case workspace.FieldID, workspace.FieldRetentionDays:
+		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
 		case workspace.FieldName, workspace.FieldSlug, workspace.FieldCollectKey, workspace.FieldIngestKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
@@ -406,6 +408,12 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SecondFactorRequiredAt = new(time.Time)
 				*_m.SecondFactorRequiredAt = value.Time
+			}
+		case workspace.FieldFeedPosition:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field feed_position", values[i])
+			} else if value.Valid {
+				_m.FeedPosition = value.Int64
 			}
 		case workspace.FieldSuspendedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -617,6 +625,9 @@ func (_m *Workspace) String() string {
 		builder.WriteString("second_factor_required_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("feed_position=")
+	builder.WriteString(fmt.Sprintf("%v", _m.FeedPosition))
 	builder.WriteString(", ")
 	if v := _m.SuspendedAt; v != nil {
 		builder.WriteString("suspended_at=")

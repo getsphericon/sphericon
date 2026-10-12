@@ -35,6 +35,8 @@ const (
 	FieldRetentionDays = "retention_days"
 	// FieldSecondFactorRequiredAt holds the string denoting the second_factor_required_at field in the database.
 	FieldSecondFactorRequiredAt = "second_factor_required_at"
+	// FieldFeedPosition holds the string denoting the feed_position field in the database.
+	FieldFeedPosition = "feed_position"
 	// FieldSuspendedAt holds the string denoting the suspended_at field in the database.
 	FieldSuspendedAt = "suspended_at"
 	// FieldSuspendedByKind holds the string denoting the suspended_by_kind field in the database.
@@ -267,6 +269,7 @@ var Columns = []string{
 	FieldPostalAddress,
 	FieldRetentionDays,
 	FieldSecondFactorRequiredAt,
+	FieldFeedPosition,
 	FieldSuspendedAt,
 	FieldSuspendedByKind,
 	FieldSuspendedByID,
@@ -304,6 +307,8 @@ var (
 	DefaultPostalAddress string
 	// RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	RetentionDaysValidator func(int) error
+	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
+	DefaultFeedPosition int64
 )
 
 // SuspendedByKind defines the type for the "suspended_by_kind" enum field.
@@ -386,6 +391,11 @@ func ByRetentionDays(opts ...sql.OrderTermOption) OrderOption {
 // BySecondFactorRequiredAt orders the results by the second_factor_required_at field.
 func BySecondFactorRequiredAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSecondFactorRequiredAt, opts...).ToFunc()
+}
+
+// ByFeedPosition orders the results by the feed_position field.
+func ByFeedPosition(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFeedPosition, opts...).ToFunc()
 }
 
 // BySuspendedAt orders the results by the suspended_at field.

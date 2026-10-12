@@ -195,6 +195,27 @@ func (_u *WorkspaceUpdate) ClearSecondFactorRequiredAt() *WorkspaceUpdate {
 	return _u
 }
 
+// SetFeedPosition sets the "feed_position" field.
+func (_u *WorkspaceUpdate) SetFeedPosition(v int64) *WorkspaceUpdate {
+	_u.mutation.ResetFeedPosition()
+	_u.mutation.SetFeedPosition(v)
+	return _u
+}
+
+// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableFeedPosition(v *int64) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetFeedPosition(*v)
+	}
+	return _u
+}
+
+// AddFeedPosition adds value to the "feed_position" field.
+func (_u *WorkspaceUpdate) AddFeedPosition(v int64) *WorkspaceUpdate {
+	_u.mutation.AddFeedPosition(v)
+	return _u
+}
+
 // SetSuspendedAt sets the "suspended_at" field.
 func (_u *WorkspaceUpdate) SetSuspendedAt(v time.Time) *WorkspaceUpdate {
 	_u.mutation.SetSuspendedAt(v)
@@ -1235,6 +1256,12 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SecondFactorRequiredAtCleared() {
 		_spec.ClearField(workspace.FieldSecondFactorRequiredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FeedPosition(); ok {
+		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFeedPosition(); ok {
+		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
@@ -2460,6 +2487,27 @@ func (_u *WorkspaceUpdateOne) ClearSecondFactorRequiredAt() *WorkspaceUpdateOne 
 	return _u
 }
 
+// SetFeedPosition sets the "feed_position" field.
+func (_u *WorkspaceUpdateOne) SetFeedPosition(v int64) *WorkspaceUpdateOne {
+	_u.mutation.ResetFeedPosition()
+	_u.mutation.SetFeedPosition(v)
+	return _u
+}
+
+// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableFeedPosition(v *int64) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetFeedPosition(*v)
+	}
+	return _u
+}
+
+// AddFeedPosition adds value to the "feed_position" field.
+func (_u *WorkspaceUpdateOne) AddFeedPosition(v int64) *WorkspaceUpdateOne {
+	_u.mutation.AddFeedPosition(v)
+	return _u
+}
+
 // SetSuspendedAt sets the "suspended_at" field.
 func (_u *WorkspaceUpdateOne) SetSuspendedAt(v time.Time) *WorkspaceUpdateOne {
 	_u.mutation.SetSuspendedAt(v)
@@ -3530,6 +3578,12 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.SecondFactorRequiredAtCleared() {
 		_spec.ClearField(workspace.FieldSecondFactorRequiredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FeedPosition(); ok {
+		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFeedPosition(); ok {
+		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)

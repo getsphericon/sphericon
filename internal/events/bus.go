@@ -14,6 +14,7 @@ import (
 	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v2/pkg/sql"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/workspacefeed"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -83,6 +84,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 
 	// ent client bound to the same *sql.Tx the outbox publisher uses.
 	txClient := ent.NewClient(ent.Driver(newTxDriver(sqlTx)))
+	txClient.Use(workspacefeed.Hook)
 	txClient.Use(b.hooks...)
 
 	// watermill-sql forbids AutoInitializeSchema on a tx handle (a CREATE TABLE
@@ -126,6 +128,12 @@ func (d *txDriver) Exec(ctx context.Context, query string, args, v any) error {
 }
 func (d *txDriver) Query(ctx context.Context, query string, args, v any) error {
 	return d.conn.Query(ctx, query, args, v)
+}
+
+// ExecContext lets the client's raw ExecContext (ent's sql/execquery) run on the
+// transaction, as internal/workspacefeed needs.
+func (d *txDriver) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	return d.conn.ExecContext(ctx, query, args...)
 }
 func (d *txDriver) Tx(context.Context) (dialect.Tx, error) { return nopTx{d.conn}, nil }
 func (d *txDriver) BeginTx(context.Context, *entsql.TxOptions) (dialect.Tx, error) {

@@ -6,5 +6,6 @@ package serviceapi
 type OperationName = string
 
 const (
-	ServiceIdentityGetOperation OperationName = "ServiceIdentityGet"
+	ServiceIdentityGetOperation       OperationName = "ServiceIdentityGet"
+	ServiceWorkspaceFeedListOperation OperationName = "ServiceWorkspaceFeedList"
 )
