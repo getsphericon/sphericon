@@ -5,6 +5,10 @@ type ServiceIdentityGetRes interface {
 	serviceIdentityGetRes()
 }
 
+type ServiceUsageListRes interface {
+	serviceUsageListRes()
+}
+
 type ServiceWorkspaceFeedListRes interface {
 	serviceWorkspaceFeedListRes()
 }

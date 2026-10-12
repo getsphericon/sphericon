@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -641,6 +642,21 @@ func (_u *WorkspaceUpdate) AddAuditEntries(v ...*AuditEntry) *WorkspaceUpdate {
 	return _u.AddAuditEntryIDs(ids...)
 }
 
+// AddUsageIDs adds the "usages" edge to the Usage entity by IDs.
+func (_u *WorkspaceUpdate) AddUsageIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddUsageIDs(ids...)
+	return _u
+}
+
+// AddUsages adds the "usages" edges to the Usage entity.
+func (_u *WorkspaceUpdate) AddUsages(v ...*Usage) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddUsageIDs(ids...)
+}
+
 // Mutation returns the WorkspaceMutation object of the builder.
 func (_u *WorkspaceUpdate) Mutation() *WorkspaceMutation {
 	return _u.mutation
@@ -1127,6 +1143,27 @@ func (_u *WorkspaceUpdate) RemoveAuditEntries(v ...*AuditEntry) *WorkspaceUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAuditEntryIDs(ids...)
+}
+
+// ClearUsages clears all "usages" edges to the Usage entity.
+func (_u *WorkspaceUpdate) ClearUsages() *WorkspaceUpdate {
+	_u.mutation.ClearUsages()
+	return _u
+}
+
+// RemoveUsageIDs removes the "usages" edge to Usage entities by IDs.
+func (_u *WorkspaceUpdate) RemoveUsageIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveUsageIDs(ids...)
+	return _u
+}
+
+// RemoveUsages removes "usages" edges to Usage entities.
+func (_u *WorkspaceUpdate) RemoveUsages(v ...*Usage) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveUsageIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -2322,6 +2359,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.UsagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedUsagesIDs(); len(nodes) > 0 && !_u.mutation.UsagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UsagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -2933,6 +3015,21 @@ func (_u *WorkspaceUpdateOne) AddAuditEntries(v ...*AuditEntry) *WorkspaceUpdate
 	return _u.AddAuditEntryIDs(ids...)
 }
 
+// AddUsageIDs adds the "usages" edge to the Usage entity by IDs.
+func (_u *WorkspaceUpdateOne) AddUsageIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddUsageIDs(ids...)
+	return _u
+}
+
+// AddUsages adds the "usages" edges to the Usage entity.
+func (_u *WorkspaceUpdateOne) AddUsages(v ...*Usage) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddUsageIDs(ids...)
+}
+
 // Mutation returns the WorkspaceMutation object of the builder.
 func (_u *WorkspaceUpdateOne) Mutation() *WorkspaceMutation {
 	return _u.mutation
@@ -3419,6 +3516,27 @@ func (_u *WorkspaceUpdateOne) RemoveAuditEntries(v ...*AuditEntry) *WorkspaceUpd
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAuditEntryIDs(ids...)
+}
+
+// ClearUsages clears all "usages" edges to the Usage entity.
+func (_u *WorkspaceUpdateOne) ClearUsages() *WorkspaceUpdateOne {
+	_u.mutation.ClearUsages()
+	return _u
+}
+
+// RemoveUsageIDs removes the "usages" edge to Usage entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveUsageIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveUsageIDs(ids...)
+	return _u
+}
+
+// RemoveUsages removes "usages" edges to Usage entities.
+func (_u *WorkspaceUpdateOne) RemoveUsages(v ...*Usage) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveUsageIDs(ids...)
 }
 
 // Where appends a list predicates to the WorkspaceUpdate builder.
@@ -4637,6 +4755,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(auditentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UsagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedUsagesIDs(); len(nodes) > 0 && !_u.mutation.UsagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UsagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -43,6 +43,7 @@ func (s *ServiceSurface) Server(opts ...serviceapi.ServerOption) (http.Handler, 
 // open to any valid credential. Add an endpoint's row with the endpoint.
 var ServiceOperationScopes = map[serviceapi.OperationName][]Scope{
 	serviceapi.ServiceIdentityGetOperation:       nil,
+	serviceapi.ServiceUsageListOperation:         {ScopeUsageRead},
 	serviceapi.ServiceWorkspaceFeedListOperation: {ScopeWorkspacesRead},
 }
 

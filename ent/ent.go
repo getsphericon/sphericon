@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
@@ -130,6 +131,7 @@ func checkColumn(t, c string) error {
 			suppression.Table:        suppression.ValidColumn,
 			tag.Table:                tag.ValidColumn,
 			unsubscribe.Table:        unsubscribe.ValidColumn,
+			usage.Table:              usage.ValidColumn,
 			user.Table:               user.ValidColumn,
 			visitor.Table:            visitor.ValidColumn,
 			webhookendpoint.Table:    webhookendpoint.ValidColumn,

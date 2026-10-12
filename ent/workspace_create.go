@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -572,6 +573,21 @@ func (_c *WorkspaceCreate) AddAuditEntries(v ...*AuditEntry) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddAuditEntryIDs(ids...)
+}
+
+// AddUsageIDs adds the "usages" edge to the Usage entity by IDs.
+func (_c *WorkspaceCreate) AddUsageIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddUsageIDs(ids...)
+	return _c
+}
+
+// AddUsages adds the "usages" edges to the Usage entity.
+func (_c *WorkspaceCreate) AddUsages(v ...*Usage) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddUsageIDs(ids...)
 }
 
 // Mutation returns the WorkspaceMutation object of the builder.
@@ -1141,6 +1157,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(auditentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.UsagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.UsagesTable,
+			Columns: []string{workspace.UsagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

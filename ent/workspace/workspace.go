@@ -91,6 +91,8 @@ const (
 	EdgeInvitations = "invitations"
 	// EdgeAuditEntries holds the string denoting the audit_entries edge name in mutations.
 	EdgeAuditEntries = "audit_entries"
+	// EdgeUsages holds the string denoting the usages edge name in mutations.
+	EdgeUsages = "usages"
 	// Table holds the table name of the workspace in the database.
 	Table = "workspaces"
 	// ContactsTable is the table that holds the contacts relation/edge.
@@ -254,6 +256,13 @@ const (
 	AuditEntriesInverseTable = "audit_entries"
 	// AuditEntriesColumn is the table column denoting the audit_entries relation/edge.
 	AuditEntriesColumn = "workspace_id"
+	// UsagesTable is the table that holds the usages relation/edge.
+	UsagesTable = "usages"
+	// UsagesInverseTable is the table name for the Usage entity.
+	// It exists in this package in order to avoid circular dependency with the "usage" package.
+	UsagesInverseTable = "usages"
+	// UsagesColumn is the table column denoting the usages relation/edge.
+	UsagesColumn = "workspace_id"
 )
 
 // Columns holds all SQL columns for workspace fields.
@@ -739,6 +748,20 @@ func ByAuditEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newAuditEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByUsagesCount orders the results by usages count.
+func ByUsagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newUsagesStep(), opts...)
+	}
+}
+
+// ByUsages orders the results by usages terms.
+func ByUsages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUsagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newContactsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -898,5 +921,12 @@ func newAuditEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AuditEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AuditEntriesTable, AuditEntriesColumn),
+	)
+}
+func newUsagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UsagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, UsagesTable, UsagesColumn),
 	)
 }

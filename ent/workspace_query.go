@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -70,6 +71,7 @@ type WorkspaceQuery struct {
 	withMemberships         *MembershipQuery
 	withInvitations         *InvitationQuery
 	withAuditEntries        *AuditEntryQuery
+	withUsages              *UsageQuery
 	modifiers               []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -613,6 +615,28 @@ func (_q *WorkspaceQuery) QueryAuditEntries() *AuditEntryQuery {
 	return query
 }
 
+// QueryUsages chains the current query on the "usages" edge.
+func (_q *WorkspaceQuery) QueryUsages() *UsageQuery {
+	query := (&UsageClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(usage.Table, usage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.UsagesTable, workspace.UsagesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Workspace entity from the query.
 // Returns a *NotFoundError when no Workspace was found.
 func (_q *WorkspaceQuery) First(ctx context.Context) (*Workspace, error) {
@@ -828,6 +852,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withMemberships:         _q.withMemberships.Clone(),
 		withInvitations:         _q.withInvitations.Clone(),
 		withAuditEntries:        _q.withAuditEntries.Clone(),
+		withUsages:              _q.withUsages.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -1088,6 +1113,17 @@ func (_q *WorkspaceQuery) WithAuditEntries(opts ...func(*AuditEntryQuery)) *Work
 	return _q
 }
 
+// WithUsages tells the query-builder to eager-load the nodes that are connected to
+// the "usages" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithUsages(opts ...func(*UsageQuery)) *WorkspaceQuery {
+	query := (&UsageClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withUsages = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -1166,7 +1202,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [23]bool{
+		loadedTypes = [24]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1190,6 +1226,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withMemberships != nil,
 			_q.withInvitations != nil,
 			_q.withAuditEntries != nil,
+			_q.withUsages != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -1373,6 +1410,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadAuditEntries(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.AuditEntries = []*AuditEntry{} },
 			func(n *Workspace, e *AuditEntry) { n.Edges.AuditEntries = append(n.Edges.AuditEntries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withUsages; query != nil {
+		if err := _q.loadUsages(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.Usages = []*Usage{} },
+			func(n *Workspace, e *Usage) { n.Edges.Usages = append(n.Edges.Usages, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2054,6 +2098,36 @@ func (_q *WorkspaceQuery) loadAuditEntries(ctx context.Context, query *AuditEntr
 	}
 	query.Where(predicate.AuditEntry(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.AuditEntriesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadUsages(ctx context.Context, query *UsageQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *Usage)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(usage.FieldWorkspaceID)
+	}
+	query.Where(predicate.Usage(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.UsagesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
