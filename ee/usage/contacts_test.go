@@ -1,6 +1,7 @@
 package usage_test
 
 import (
+	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -144,4 +145,21 @@ func TestContactsIsNotMaintainedWithoutTheOperatorLicense(t *testing.T) {
 	n, err := env.DB.Scoped(fixtures.AcmeID).Usage().Query().Where(entusage.Metric(string(usage.Contacts))).Count(t.Context())
 	require.NoError(t, err)
 	assert.Zero(t, n)
+}
+
+func TestContactsPeakOfABulkImportIsTheNumberReachedEvenWhenSomeAreDeleted(t *testing.T) {
+	now := at(2027, time.February, 10, 12)
+	env, _, base := contactsEnv(t, now)
+	const imported = 30
+	ids := make([]int64, 0, imported)
+	for i := range imported {
+		ids = append(ids, addContact(t, env, fmt.Sprintf("bulk-%d@example.com", i)))
+	}
+	for _, id := range ids[:10] {
+		deleteContact(t, env, id)
+	}
+
+	refreshAt(t, env, now.Add(time.Hour))
+
+	assert.Equal(t, base+imported, figureOf(t, env, feb, usage.Contacts).Value)
 }

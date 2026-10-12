@@ -15,20 +15,26 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
+
+// ActiveAt is the one rule for an active hold: its expiry is after now. Every read
+// goes through it, in SQL here and in Go in Live.
+func ActiveAt(now time.Time) predicate.Hold { return enthold.ExpiresAtGT(now) }
 
 // Active lists the holds of the scope's Workspace that are active at now, ordered by
 // key. It is what the owner-facing and console reads of a Workspace's holds use.
 func Active(ctx context.Context, s *ent.Scoped, now time.Time) ([]*ent.Hold, error) {
 	return s.Hold().Query().
-		Where(enthold.ExpiresAtGT(now)).
+		Where(ActiveAt(now)).
 		Order(enthold.ByKey()).
 		All(ctx)
 }
 
 // Live keeps the holds of rows that are active at now, in their order. It is Active
-// over rows already loaded, for a read that loads the holds of many Workspaces at once.
+// over rows already loaded (the eager-loaded edge, where no predicate can be passed), so
+// it states ActiveAt's rule in Go: keep it in step.
 func Live(rows []*ent.Hold, now time.Time) []*ent.Hold {
 	return lo.Filter(rows, func(h *ent.Hold, _ int) bool { return h.ExpiresAt.After(now) })
 }
@@ -55,7 +61,7 @@ func (f Freezer) Frozen(ctx context.Context, s *ent.Scoped, _ *ent.Workspace) (s
 	if f.Now != nil {
 		now = f.Now
 	}
-	held, err := s.Hold().Query().Where(enthold.ExpiresAtGT(now())).Exist(ctx)
+	held, err := s.Hold().Query().Where(ActiveAt(now())).Exist(ctx)
 	if err != nil || !held {
 		return "", err
 	}

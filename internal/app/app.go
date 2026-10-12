@@ -278,7 +278,7 @@ func New(env string, opts ...Option) (*App, error) {
 			return nil, err
 		}
 		if ih.Handler != nil {
-			internal = sidelistener.New("internal", cfg.InternalAddr, ih.Handler)
+			internal = sidelistener.New("internal", cfg.InternalAddr, ih.Handler, sidelistener.WithTimeouts(30*time.Second, 2*time.Minute))
 		}
 	}
 
