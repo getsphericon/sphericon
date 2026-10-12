@@ -8,6 +8,9 @@
   "tags": [
     {
       "name": "Service Identity"
+    },
+    {
+      "name": "Service Workspaces"
     }
   ],
   "paths": {
@@ -84,6 +87,124 @@
         },
         "tags": ["Service Identity"]
       }
+    },
+    "/workspaces/changes": {
+      "get": {
+        "operationId": "ServiceWorkspaceFeed_list",
+        "description": "The Workspaces created or changed since an opaque cursor, each with all of its\nowners, in a stable order by change position. A change is a new Workspace, an owner\nadded, removed or transferred, or an owner's email or verification changing.\nDelivery is at-least-once: replaying a cursor returns the same entries, and an\nempty cursor starts from the beginning. Needs the `workspaces:read` scope.",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "The `nextCursor` of a page the caller has saved; empty starts from the beginning",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Most entries on the page",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceWorkspaceFeedPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Service Workspaces"]
+      }
     }
   },
   "security": [
@@ -93,16 +214,6 @@
   ],
   "components": {
     "schemas": {
-      "BadRequestProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 bad request response"
-      },
       "ConflictProblem": {
         "type": "object",
         "required": ["body"],
@@ -120,16 +231,6 @@
       "EntityId": {
         "type": "string",
         "pattern": "^[0-9]+$"
-      },
-      "ForbiddenProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 forbidden response"
       },
       "GoneProblem": {
         "type": "object",
@@ -259,6 +360,97 @@
         "type": "string",
         "enum": ["usage:read", "workspaces:read", "holds:write"],
         "description": "A scope a Service credential may carry"
+      },
+      "ServiceWorkspaceFeedPage": {
+        "type": "object",
+        "required": ["items", "nextCursor", "hasMore"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceWorkspaceResource"
+            },
+            "description": "Workspaces created or changed after the requested cursor, in change order"
+          },
+          "nextCursor": {
+            "type": "string",
+            "description": "Pass it back as the cursor to read what follows this page. It is the requested\ncursor itself when the page is empty. Saving it is what advances the caller: the\ncore keeps no position of its own."
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Whether more entries follow this page right now"
+          }
+        },
+        "description": "One page of the Workspace feed"
+      },
+      "ServiceWorkspaceOwner": {
+        "type": "object",
+        "required": ["userId", "email"],
+        "properties": {
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The owner's User id"
+          },
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "The owner's current email"
+          },
+          "emailVerifiedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the owner confirmed their email; absent while it is unverified"
+          }
+        },
+        "description": "One owner of a Workspace in the feed"
+      },
+      "ServiceWorkspaceResource": {
+        "type": "object",
+        "required": ["id", "slug", "name", "createdAt", "owners"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Workspace was created"
+          },
+          "owners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceWorkspaceOwner"
+            },
+            "description": "Every owner of the Workspace as of this entry"
+          }
+        },
+        "description": "A Workspace with all of its owners, as the feed reports it"
       },
       "TimeZoneName": {
         "type": "string"

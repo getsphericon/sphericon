@@ -105,6 +105,11 @@ func SecondFactorRequiredAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSecondFactorRequiredAt, v))
 }
 
+// FeedPosition applies equality check predicate on the "feed_position" field. It's identical to FeedPositionEQ.
+func FeedPosition(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldFeedPosition, v))
+}
+
 // SuspendedAt applies equality check predicate on the "suspended_at" field. It's identical to SuspendedAtEQ.
 func SuspendedAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSuspendedAt, v))
@@ -643,6 +648,46 @@ func SecondFactorRequiredAtIsNil() predicate.Workspace {
 // SecondFactorRequiredAtNotNil applies the NotNil predicate on the "second_factor_required_at" field.
 func SecondFactorRequiredAtNotNil() predicate.Workspace {
 	return predicate.Workspace(sql.FieldNotNull(FieldSecondFactorRequiredAt))
+}
+
+// FeedPositionEQ applies the EQ predicate on the "feed_position" field.
+func FeedPositionEQ(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldFeedPosition, v))
+}
+
+// FeedPositionNEQ applies the NEQ predicate on the "feed_position" field.
+func FeedPositionNEQ(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldFeedPosition, v))
+}
+
+// FeedPositionIn applies the In predicate on the "feed_position" field.
+func FeedPositionIn(vs ...int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldFeedPosition, vs...))
+}
+
+// FeedPositionNotIn applies the NotIn predicate on the "feed_position" field.
+func FeedPositionNotIn(vs ...int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldFeedPosition, vs...))
+}
+
+// FeedPositionGT applies the GT predicate on the "feed_position" field.
+func FeedPositionGT(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldFeedPosition, v))
+}
+
+// FeedPositionGTE applies the GTE predicate on the "feed_position" field.
+func FeedPositionGTE(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldFeedPosition, v))
+}
+
+// FeedPositionLT applies the LT predicate on the "feed_position" field.
+func FeedPositionLT(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldFeedPosition, v))
+}
+
+// FeedPositionLTE applies the LTE predicate on the "feed_position" field.
+func FeedPositionLTE(v int64) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldFeedPosition, v))
 }
 
 // SuspendedAtEQ applies the EQ predicate on the "suspended_at" field.

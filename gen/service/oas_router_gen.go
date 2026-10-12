@@ -14,6 +14,9 @@ var (
 	rn1AllowedHeaders = map[string]string{
 		"GET": "Authorization",
 	}
+	rn3AllowedHeaders = map[string]string{
+		"GET": "Authorization",
+	}
 )
 
 func (s *Server) cutPrefix(path string) (string, bool) {
@@ -54,29 +57,68 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/identity"
+		case '/': // Prefix: "/"
 
-			if l := len("/identity"); len(elem) >= l && elem[0:l] == "/identity" {
+			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 				elem = elem[l:]
 			} else {
 				break
 			}
 
 			if len(elem) == 0 {
-				// Leaf node.
-				switch r.Method {
-				case "GET":
-					s.handleServiceIdentityGetRequest([0]string{}, elemIsEscaped, w, r)
-				default:
-					s.notAllowed(w, r, notAllowedParams{
-						allowedMethods: "GET",
-						allowedHeaders: rn1AllowedHeaders,
-						acceptPost:     "",
-						acceptPatch:    "",
-					})
+				break
+			}
+			switch elem[0] {
+			case 'i': // Prefix: "identity"
+
+				if l := len("identity"); len(elem) >= l && elem[0:l] == "identity" {
+					elem = elem[l:]
+				} else {
+					break
 				}
 
-				return
+				if len(elem) == 0 {
+					// Leaf node.
+					switch r.Method {
+					case "GET":
+						s.handleServiceIdentityGetRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, notAllowedParams{
+							allowedMethods: "GET",
+							allowedHeaders: rn1AllowedHeaders,
+							acceptPost:     "",
+							acceptPatch:    "",
+						})
+					}
+
+					return
+				}
+
+			case 'w': // Prefix: "workspaces/changes"
+
+				if l := len("workspaces/changes"); len(elem) >= l && elem[0:l] == "workspaces/changes" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch r.Method {
+					case "GET":
+						s.handleServiceWorkspaceFeedListRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, notAllowedParams{
+							allowedMethods: "GET",
+							allowedHeaders: rn3AllowedHeaders,
+							acceptPost:     "",
+							acceptPatch:    "",
+						})
+					}
+
+					return
+				}
+
 			}
 
 		}
@@ -165,29 +207,68 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/identity"
+		case '/': // Prefix: "/"
 
-			if l := len("/identity"); len(elem) >= l && elem[0:l] == "/identity" {
+			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 				elem = elem[l:]
 			} else {
 				break
 			}
 
 			if len(elem) == 0 {
-				// Leaf node.
-				switch method {
-				case "GET":
-					r.name = ServiceIdentityGetOperation
-					r.summary = ""
-					r.operationID = "ServiceIdentity_get"
-					r.operationGroup = ""
-					r.pathPattern = "/identity"
-					r.args = args
-					r.count = 0
-					return r, true
-				default:
-					return
+				break
+			}
+			switch elem[0] {
+			case 'i': // Prefix: "identity"
+
+				if l := len("identity"); len(elem) >= l && elem[0:l] == "identity" {
+					elem = elem[l:]
+				} else {
+					break
 				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch method {
+					case "GET":
+						r.name = ServiceIdentityGetOperation
+						r.summary = ""
+						r.operationID = "ServiceIdentity_get"
+						r.operationGroup = ""
+						r.pathPattern = "/identity"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
+				}
+
+			case 'w': // Prefix: "workspaces/changes"
+
+				if l := len("workspaces/changes"); len(elem) >= l && elem[0:l] == "workspaces/changes" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch method {
+					case "GET":
+						r.name = ServiceWorkspaceFeedListOperation
+						r.summary = ""
+						r.operationID = "ServiceWorkspaceFeed_list"
+						r.operationGroup = ""
+						r.pathPattern = "/workspaces/changes"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
+				}
+
 			}
 
 		}

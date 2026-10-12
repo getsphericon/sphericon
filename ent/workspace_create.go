@@ -153,6 +153,20 @@ func (_c *WorkspaceCreate) SetNillableSecondFactorRequiredAt(v *time.Time) *Work
 	return _c
 }
 
+// SetFeedPosition sets the "feed_position" field.
+func (_c *WorkspaceCreate) SetFeedPosition(v int64) *WorkspaceCreate {
+	_c.mutation.SetFeedPosition(v)
+	return _c
+}
+
+// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableFeedPosition(v *int64) *WorkspaceCreate {
+	if v != nil {
+		_c.SetFeedPosition(*v)
+	}
+	return _c
+}
+
 // SetSuspendedAt sets the "suspended_at" field.
 func (_c *WorkspaceCreate) SetSuspendedAt(v time.Time) *WorkspaceCreate {
 	_c.mutation.SetSuspendedAt(v)
@@ -611,6 +625,10 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultPostalAddress
 		_c.mutation.SetPostalAddress(v)
 	}
+	if _, ok := _c.mutation.FeedPosition(); !ok {
+		v := workspace.DefaultFeedPosition
+		_c.mutation.SetFeedPosition(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -660,6 +678,9 @@ func (_c *WorkspaceCreate) check() error {
 		if err := workspace.RetentionDaysValidator(v); err != nil {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.FeedPosition(); !ok {
+		return &ValidationError{Name: "feed_position", err: errors.New(`ent: missing required field "Workspace.feed_position"`)}
 	}
 	if v, ok := _c.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
@@ -738,6 +759,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
 		_node.SecondFactorRequiredAt = &value
+	}
+	if value, ok := _c.mutation.FeedPosition(); ok {
+		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
+		_node.FeedPosition = value
 	}
 	if value, ok := _c.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
@@ -1307,6 +1332,24 @@ func (u *WorkspaceUpsert) ClearSecondFactorRequiredAt() *WorkspaceUpsert {
 	return u
 }
 
+// SetFeedPosition sets the "feed_position" field.
+func (u *WorkspaceUpsert) SetFeedPosition(v int64) *WorkspaceUpsert {
+	u.Set(workspace.FieldFeedPosition, v)
+	return u
+}
+
+// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateFeedPosition() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldFeedPosition)
+	return u
+}
+
+// AddFeedPosition adds v to the "feed_position" field.
+func (u *WorkspaceUpsert) AddFeedPosition(v int64) *WorkspaceUpsert {
+	u.Add(workspace.FieldFeedPosition, v)
+	return u
+}
+
 // SetSuspendedAt sets the "suspended_at" field.
 func (u *WorkspaceUpsert) SetSuspendedAt(v time.Time) *WorkspaceUpsert {
 	u.Set(workspace.FieldSuspendedAt, v)
@@ -1581,6 +1624,27 @@ func (u *WorkspaceUpsertOne) UpdateSecondFactorRequiredAt() *WorkspaceUpsertOne 
 func (u *WorkspaceUpsertOne) ClearSecondFactorRequiredAt() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearSecondFactorRequiredAt()
+	})
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (u *WorkspaceUpsertOne) SetFeedPosition(v int64) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetFeedPosition(v)
+	})
+}
+
+// AddFeedPosition adds v to the "feed_position" field.
+func (u *WorkspaceUpsertOne) AddFeedPosition(v int64) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddFeedPosition(v)
+	})
+}
+
+// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateFeedPosition() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateFeedPosition()
 	})
 }
 
@@ -2036,6 +2100,27 @@ func (u *WorkspaceUpsertBulk) UpdateSecondFactorRequiredAt() *WorkspaceUpsertBul
 func (u *WorkspaceUpsertBulk) ClearSecondFactorRequiredAt() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearSecondFactorRequiredAt()
+	})
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (u *WorkspaceUpsertBulk) SetFeedPosition(v int64) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetFeedPosition(v)
+	})
+}
+
+// AddFeedPosition adds v to the "feed_position" field.
+func (u *WorkspaceUpsertBulk) AddFeedPosition(v int64) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddFeedPosition(v)
+	})
+}
+
+// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateFeedPosition() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateFeedPosition()
 	})
 }
 
