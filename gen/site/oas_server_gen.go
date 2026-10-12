@@ -624,6 +624,13 @@ type Handler interface {
 	//
 	// PUT /workspaces/{slug}/webhooks/{id}
 	SiteWebhooksUpdate(ctx context.Context, req *SiteUpdateWebhookEndpointInput, params SiteWebhooksUpdateParams) (SiteWebhooksUpdateRes, error)
+	// SiteWorkspacesAccountLink implements SiteWorkspaces_accountLink operation.
+	//
+	// Mint an Account link token (Owner only). Answers 404 when the installation has no Account link
+	// configured.
+	//
+	// POST /workspaces/{slug}/account-link
+	SiteWorkspacesAccountLink(ctx context.Context, params SiteWorkspacesAccountLinkParams) (SiteWorkspacesAccountLinkRes, error)
 	// SiteWorkspacesList implements SiteWorkspaces_list operation.
 	//
 	// List workspaces owned by the authenticated user.

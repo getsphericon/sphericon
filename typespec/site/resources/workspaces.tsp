@@ -50,8 +50,27 @@ model SiteWorkspaceResource {
    * second_factor_required until the User enrolls one. */
   secondFactorGraceEndsAt?: Timestamp | null;
 
+  /** Whether the authenticated User may open the Account link: true only for an
+   * Owner, and only on an installation configured for it. */
+  accountLinkAvailable: boolean;
+
   /** Creation timestamp */
   createdAt: Timestamp;
+}
+
+/** A short-lived signed token that proves who the Owner is to the external account
+ * page, with the address of that page. */
+model SiteAccountLinkResource {
+  /** Address of the external account page */
+  url: string;
+
+  /** Signed token (a JWT, EdDSA) naming the user, the Workspace and the role; it
+   * expires within minutes. Verify it with the key set published at
+   * /.well-known/jwks.json. */
+  token: string;
+
+  /** When the token expires */
+  expiresAt: Timestamp;
 }
 
 /** Update a workspace. The slug is immutable (it is the route key and globally
@@ -98,4 +117,13 @@ namespace SiteWorkspaces {
     @path slug: string,
     @body body: SiteSecondFactorRequirementInput,
   ): SiteWorkspaceResource | ForbiddenProblem | NotFoundProblem;
+
+  /** Mint an Account link token (Owner only). Answers 404 when the installation has no
+   * Account link configured. */
+  @post
+  @route("/{slug}/account-link")
+  op accountLink(@path slug: string):
+    | SiteAccountLinkResource
+    | ForbiddenProblem
+    | NotFoundProblem;
 }

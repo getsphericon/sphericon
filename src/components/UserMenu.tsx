@@ -1,11 +1,20 @@
 import { Avatar, Group, Menu, Text, UnstyledButton } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconChevronDown, IconLogout, IconSettings, IconUser } from '@tabler/icons-react'
+import {
+  IconChevronDown,
+  IconExternalLink,
+  IconLogout,
+  IconSettings,
+  IconUser,
+} from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { siteAuthLogoutMutation } from '../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteAuthLogoutMutation,
+  siteWorkspacesAccountLinkMutation,
+} from '../generated/site/@tanstack/react-query.gen.ts'
 import { loginRoute, profileRoute, settingsRoute } from '../router.tsx'
 
 // UserMenu is the header account dropdown: profile, workspace settings, logout.
@@ -13,10 +22,32 @@ import { loginRoute, profileRoute, settingsRoute } from '../router.tsx'
 // settings item only renders when one is set. Logout calls the site logout
 // operation, which clears the session cookie; we then drop cached queries and
 // route to login.
-export function UserMenu({ slug, label }: { slug?: string; label?: string }) {
+export function UserMenu({
+  slug,
+  label,
+  accountLink = false,
+}: {
+  slug?: string
+  label?: string
+  accountLink?: boolean
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+
+  // The Account link: the server mints a short-lived token and names the page; the
+  // app only opens it.
+  const accountLinkMutation = useMutation({
+    ...siteWorkspacesAccountLinkMutation(),
+    onSuccess: ({ url, token }) => {
+      const target = new URL(url)
+      target.searchParams.set('token', token)
+      window.open(target.toString(), '_blank', 'noopener')
+    },
+    onError: () => {
+      notifications.show({ color: 'red', message: t(($) => $.userMenu.accountErrorTitle) })
+    },
+  })
 
   const logoutMutation = useMutation({
     ...siteAuthLogoutMutation(),
@@ -60,6 +91,14 @@ export function UserMenu({ slug, label }: { slug?: string; label?: string }) {
             onClick={() => navigate({ to: settingsRoute.to, params: { slug } })}
           >
             {t(($) => $.userMenu.workspaceSettings)}
+          </Menu.Item>
+        ) : null}
+        {slug && accountLink ? (
+          <Menu.Item
+            leftSection={<IconExternalLink size={16} />}
+            onClick={() => accountLinkMutation.mutate({ path: { slug } })}
+          >
+            {t(($) => $.userMenu.account)}
           </Menu.Item>
         ) : null}
         <Menu.Divider />

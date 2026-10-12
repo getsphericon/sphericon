@@ -21,6 +21,7 @@ require (
 	github.com/go-crypt/crypt v0.14.15
 	github.com/go-faster/errors v0.8.0
 	github.com/go-faster/jx v1.2.0
+	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/go-pkgz/auth/v2 v2.3.0
 	github.com/go-testfixtures/testfixtures/v3 v3.19.0
 	github.com/golang-jwt/jwt/v5 v5.3.1

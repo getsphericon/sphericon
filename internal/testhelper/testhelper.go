@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/operator"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
@@ -323,8 +324,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
 	operatorHandler, err := server.NewOperatorAPI(edition.Operator(bus, systemMail))
 	require.NoError(t, err, "build operator API")
+	accountLink, err := accountlink.FromConfig(&cfg)
+	require.NoError(t, err, "build account link")
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
-		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
+		AccountLink: accountLink,
+		Accounts:    acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, Integrations: integrationsModule,

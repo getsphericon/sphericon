@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -94,6 +95,7 @@ type Handlers struct {
 	sessions       *auth.Sessions
 	secondFactor   *secondfactor.Module
 	now            func() time.Time
+	accountLink    *accountlink.Link
 	// challenges signs the login challenge on the env clock (ADR 0020).
 	challenges *authtoken.Signer
 }
@@ -150,6 +152,9 @@ type Deps struct {
 	// grace are checked against (ADR 0020); nil means time.Now. Tests inject one to
 	// move past a session's lifetime or a grace period.
 	Clock func() time.Time
+	// AccountLink mints the Owner's Account link token; nil when the installation is
+	// not configured for it, which leaves the operation answering 404.
+	AccountLink *accountlink.Link
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -162,7 +167,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now,
+		oauth: d.OAuth, audit: d.Audit, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }

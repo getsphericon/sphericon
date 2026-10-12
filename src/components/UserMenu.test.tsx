@@ -1,7 +1,7 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
-import { handleSiteAuthLogout } from '../generated/site/msw.gen.ts'
+import { handleSiteAuthLogout, handleSiteWorkspacesAccountLink } from '../generated/site/msw.gen.ts'
 import { profileRoute, settingsRoute } from '../router.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'
@@ -65,4 +65,37 @@ test('shows the label and its initial in the avatar when given', async () => {
 
   await expect.element(screen.getByText('ada@example.com')).toBeInTheDocument()
   await expect.element(screen.getByText('A', { exact: true })).toBeInTheDocument()
+})
+
+test('the account link item is absent unless the workspace offers it', async () => {
+  const { screen } = await renderWithRouter(<UserMenu slug="acme" />)
+  await screen.getByRole('button', { expanded: false }).click()
+
+  await expect.element(screen.getByText('Profile')).toBeInTheDocument()
+  expect(screen.container.textContent).not.toContain('Account')
+})
+
+test('the account link item opens the external page with the token', async () => {
+  worker.use(
+    handleSiteWorkspacesAccountLink({
+      body: {
+        url: 'https://accounts.example.test/open',
+        token: 'signed.jwt.token',
+        expiresAt: '2026-05-01T12:02:00Z',
+      },
+    }),
+  )
+  const open = vi.spyOn(window, 'open').mockReturnValue(null)
+  const { screen } = await renderWithRouter(<UserMenu slug="acme" accountLink />)
+  await screen.getByRole('button', { expanded: false }).click()
+  await screen.getByText('Account', { exact: true }).click()
+
+  await expect
+    .poll(() => open.mock.calls)
+    .toContainEqual([
+      'https://accounts.example.test/open?token=signed.jwt.token',
+      '_blank',
+      'noopener',
+    ])
+  open.mockRestore()
 })

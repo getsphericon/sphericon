@@ -900,6 +900,8 @@
     "unsubscribeAll": "Darse de baja de todos los correos"
   },
   "userMenu": {
+    "account": "Cuenta",
+    "accountErrorTitle": "No se pudo abrir la página de la cuenta",
     "logout": "Cerrar sesión",
     "logoutErrorTitle": "Error al cerrar sesión",
     "profile": "Perfil",

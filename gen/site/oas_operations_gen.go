@@ -103,6 +103,7 @@ const (
 	SiteWebhooksGetOperation                          OperationName = "SiteWebhooksGet"
 	SiteWebhooksListOperation                         OperationName = "SiteWebhooksList"
 	SiteWebhooksUpdateOperation                       OperationName = "SiteWebhooksUpdate"
+	SiteWorkspacesAccountLinkOperation                OperationName = "SiteWorkspacesAccountLink"
 	SiteWorkspacesListOperation                       OperationName = "SiteWorkspacesList"
 	SiteWorkspacesSetSecondFactorRequirementOperation OperationName = "SiteWorkspacesSetSecondFactorRequirement"
 	SiteWorkspacesUpdateOperation                     OperationName = "SiteWorkspacesUpdate"

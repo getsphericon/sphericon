@@ -924,6 +924,16 @@ export const zContactExportDocument = z.object({
 });
 
 /**
+ * A short-lived signed token that proves who the Owner is to the external account
+ * page, with the address of that page.
+ */
+export const zSiteAccountLinkResource = z.object({
+  url: z.string(),
+  token: z.string(),
+  expiresAt: zTimestamp
+});
+
+/**
  * A workspace API token (secret shown only once, at creation)
  */
 export const zSiteApiTokenResource = z.object({
@@ -1247,6 +1257,7 @@ export const zSiteWorkspaceResource = z.object({
   suspensionReason: z.exactOptional(z.string().nullable()),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
+  accountLinkAvailable: z.boolean(),
   createdAt: zTimestamp
 });
 
@@ -1652,6 +1663,15 @@ export const zSiteWorkspacesUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteWorkspacesUpdateResponse = zSiteWorkspaceResource;
+
+export const zSiteWorkspacesAccountLinkPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesAccountLinkResponse = zSiteAccountLinkResource;
 
 export const zSiteAnalyticsOverviewPath = z.object({
   slug: z.string()

@@ -101,7 +101,7 @@ var (
 	rn53AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn105AllowedHeaders = map[string]string{
+	rn106AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn70AllowedHeaders = map[string]string{
@@ -947,6 +947,33 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								break
 							}
 							switch elem[0] {
+							case 'c': // Prefix: "ccount-link"
+
+								if l := len("ccount-link"); len(elem) >= l && elem[0:l] == "ccount-link" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleSiteWorkspacesAccountLinkRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
 							case 'n': // Prefix: "nalytics/overview"
 
 								if l := len("nalytics/overview"); len(elem) >= l && elem[0:l] == "nalytics/overview" {
@@ -2016,7 +2043,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										default:
 											s.notAllowed(w, r, notAllowedParams{
 												allowedMethods: "PUT",
-												allowedHeaders: rn105AllowedHeaders,
+												allowedHeaders: rn106AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -3478,6 +3505,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								break
 							}
 							switch elem[0] {
+							case 'c': // Prefix: "ccount-link"
+
+								if l := len("ccount-link"); len(elem) >= l && elem[0:l] == "ccount-link" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = SiteWorkspacesAccountLinkOperation
+										r.summary = ""
+										r.operationID = "SiteWorkspaces_accountLink"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{slug}/account-link"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
 							case 'n': // Prefix: "nalytics/overview"
 
 								if l := len("nalytics/overview"); len(elem) >= l && elem[0:l] == "nalytics/overview" {

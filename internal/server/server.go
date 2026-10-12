@@ -18,6 +18,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accountlink"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apicollect "github.com/getsphericon/sphericon/internal/api/collect"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
@@ -61,6 +62,11 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 		return nil, err
 	}
 	mux.Handle("/site/", siteSrv)
+
+	// The Account link's public key set: published only when the link is configured.
+	if site.AccountLink != nil {
+		mux.Handle("GET "+accountlink.JWKSPath, jwksHandler(site.AccountLink.JWKS()))
+	}
 
 	// Operator API — /operator (ADR 0026): the platform staff surface, its own cookie and
 	// secret. Without the `operator` license there is no handler and the whole prefix
