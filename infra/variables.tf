@@ -61,6 +61,28 @@ variable "app_port" {
   default     = 3000
 }
 
+variable "internal_listener_source_security_group_id" {
+  description = "Security group (same VPC) allowed to reach the app's internal listener. Empty (the default) exposes nothing: no INTERNAL_ADDR, no port, no rule."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.internal_listener_source_security_group_id == "" || can(regex("^sg-[0-9a-f]+$", var.internal_listener_source_security_group_id))
+    error_message = "Must be empty or a security group id (sg-...)."
+  }
+}
+
+variable "internal_port" {
+  description = "Port of the internal listener (INTERNAL_ADDR), used only when internal_listener_source_security_group_id is set."
+  type        = number
+  default     = 3400
+
+  validation {
+    condition     = var.internal_port >= 1 && var.internal_port <= 65535 && var.internal_port != var.app_port
+    error_message = "Must be a valid port and differ from app_port."
+  }
+}
+
 variable "task_cpu" {
   description = "Fargate task CPU units (512 = 0.5 vCPU)."
   type        = number
