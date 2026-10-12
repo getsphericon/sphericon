@@ -3452,7 +3452,23 @@ func (s *SitePublicConfirmationsPerformGone) Validate() error {
 	return nil
 }
 
+func (s *SitePublicInvitationsAcceptForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SitePublicInvitationsAcceptNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SitePublicInvitationsAcceptUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

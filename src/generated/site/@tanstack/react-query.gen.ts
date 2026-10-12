@@ -260,7 +260,9 @@ export const sitePublicInvitationsLookupOptions = (options: Options<SitePublicIn
 });
 
 /**
- * Accept an invite: create or attach the User and create the Membership
+ * Accept an invite: create or complete the User, or attach the signed-in Verified
+ * User, and create the Membership. 401 without a session and 403 for another User's
+ * session when the address has a Verified User.
  */
 export const sitePublicInvitationsAcceptMutation = (options?: Partial<Options<SitePublicInvitationsAcceptData>>): UseMutationOptions<unknown, SitePublicInvitationsAcceptError, Options<SitePublicInvitationsAcceptData>> => {
   const mutationOptions: UseMutationOptions<unknown, SitePublicInvitationsAcceptError, Options<SitePublicInvitationsAcceptData>> = {

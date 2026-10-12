@@ -6,9 +6,12 @@
     "errorTitle": "No se pudo aceptar la invitación",
     "intro": "Te han invitado a unirte a {{workspace}} en sphericon.",
     "invalid": "Esta invitación no es válida o ha caducado.",
+    "joinedMessage": "Te has unido al espacio de trabajo.",
     "loading": "Cargando invitación…",
     "nameLabel": "Tu nombre",
     "passwordLabel": "Contraseña",
+    "signInButton": "Iniciar sesión",
+    "signInRequired": "Inicia sesión en la cuenta de esta dirección para aceptar la invitación.",
     "successMessage": "Te has unido al espacio de trabajo. Inicia sesión.",
     "successTitle": "Invitación aceptada",
     "title": "Aceptar invitación"

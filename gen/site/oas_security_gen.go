@@ -77,6 +77,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteMembershipsUpdateOperation:                    []string{},
 	SiteOAuthDecideOperation:                          []string{},
 	SiteOAuthDescribeOperation:                        []string{},
+	SitePublicInvitationsAcceptOperation:              []string{},
 	SiteSecondFactorConfirmEnrollmentOperation:        []string{},
 	SiteSecondFactorDisableOperation:                  []string{},
 	SiteSecondFactorGetStatusOperation:                []string{},

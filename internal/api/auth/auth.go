@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	gptoken "github.com/go-pkgz/auth/v2/token"
+	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/samber/lo"
 )
 
@@ -275,8 +276,13 @@ func NewSiteSecurityHandler(jwtSecret string, client *ent.Client, now func() tim
 
 var _ siteapi.SecurityHandler = (*SiteSecurityHandler)(nil)
 
-func (h *SiteSecurityHandler) HandleApiKeyAuth(ctx context.Context, _ siteapi.OperationName, t siteapi.ApiKeyAuth) (context.Context, error) {
+func (h *SiteSecurityHandler) HandleApiKeyAuth(ctx context.Context, op siteapi.OperationName, t siteapi.ApiKeyAuth) (context.Context, error) {
 	u, err := h.Verify(ctx, t.APIKey)
+	if errors.Is(err, ErrUnauthorized) && op == siteapi.SitePublicInvitationsAcceptOperation {
+		// The session is optional here: a stale cookie is the same as none, so an
+		// invitee with no Verified User is not blocked by it.
+		return ctx, ogenerrors.ErrSkipServerSecurity
+	}
 	if err != nil {
 		return ctx, err
 	}

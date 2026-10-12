@@ -439,8 +439,9 @@ export type ProblemDetails = {
 };
 
 /**
- * Accept an invite. name + password are required unless the invited address has a
- * Verified User (answer 422 otherwise); ignored for a Verified User.
+ * Accept an invite. For an address with no User or an Unverified User, name + password
+ * are required (422 otherwise). For a Verified User the body is not read: the session of
+ * that same User is the proof.
  */
 export type SiteAcceptInvitationInput = {
   name?: string;
@@ -3209,6 +3210,14 @@ export type SitePublicInvitationsAcceptData = {
 };
 
 export type SitePublicInvitationsAcceptErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */

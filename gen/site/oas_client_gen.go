@@ -380,7 +380,9 @@ type Invoker interface {
 	SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) (SitePublicConfirmationsPerformRes, error)
 	// SitePublicInvitationsAccept invokes SitePublicInvitations_accept operation.
 	//
-	// Accept an invite: create or attach the User and create the Membership.
+	// Accept an invite: create or complete the User, or attach the signed-in Verified User, and create the
+	// Membership. 401 without a session and 403 for another User's session when the address has a Verified
+	// User.
 	//
 	// POST /invitations/{token}/accept
 	SitePublicInvitationsAccept(ctx context.Context, request *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) (SitePublicInvitationsAcceptRes, error)
@@ -8428,7 +8430,9 @@ func (c *Client) sendSitePublicConfirmationsPerform(ctx context.Context, params 
 
 // SitePublicInvitationsAccept invokes SitePublicInvitations_accept operation.
 //
-// Accept an invite: create or attach the User and create the Membership.
+// Accept an invite: create or complete the User, or attach the signed-in Verified User, and create the
+// Membership. 401 without a session and 403 for another User's session when the address has a Verified
+// User.
 //
 // POST /invitations/{token}/accept
 func (c *Client) SitePublicInvitationsAccept(ctx context.Context, request *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) (SitePublicInvitationsAcceptRes, error) {
@@ -8503,6 +8507,40 @@ func (c *Client) sendSitePublicInvitationsAccept(ctx context.Context, request *S
 	}
 	if err := encodeSitePublicInvitationsAcceptRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SitePublicInvitationsAcceptOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+				{},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
 	}
 
 	stage = "SendRequest"

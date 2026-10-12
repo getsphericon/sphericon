@@ -8,9 +8,12 @@ export default interface Resources {
       "errorTitle": "Could not accept invitation",
       "intro": "You've been invited to join {{workspace}} on sphericon.",
       "invalid": "This invitation is invalid or has expired.",
+      "joinedMessage": "You've joined the workspace.",
       "loading": "Loading invitation…",
       "nameLabel": "Your name",
       "passwordLabel": "Password",
+      "signInButton": "Sign in",
+      "signInRequired": "Sign in to the account for this address to accept the invitation.",
       "successMessage": "You've joined the workspace. Please sign in.",
       "successTitle": "Invitation accepted",
       "title": "Accept invitation"

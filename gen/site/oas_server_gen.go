@@ -359,7 +359,9 @@ type Handler interface {
 	SitePublicConfirmationsPerform(ctx context.Context, params SitePublicConfirmationsPerformParams) (SitePublicConfirmationsPerformRes, error)
 	// SitePublicInvitationsAccept implements SitePublicInvitations_accept operation.
 	//
-	// Accept an invite: create or attach the User and create the Membership.
+	// Accept an invite: create or complete the User, or attach the signed-in Verified User, and create the
+	// Membership. 401 without a session and 403 for another User's session when the address has a Verified
+	// User.
 	//
 	// POST /invitations/{token}/accept
 	SitePublicInvitationsAccept(ctx context.Context, req *SiteAcceptInvitationInput, params SitePublicInvitationsAcceptParams) (SitePublicInvitationsAcceptRes, error)

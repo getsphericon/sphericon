@@ -3084,8 +3084,9 @@ func (*ProblemDetailsHeaders) siteSecondFactorDisableRes()                 {}
 func (*ProblemDetailsHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
 
-// Accept an invite. name + password are required unless the invited address has a Verified User
-// (answer 422 otherwise); ignored for a Verified User.
+// Accept an invite. For an address with no User or an Unverified User, name + password are required
+// (422 otherwise). For a Verified User the body is not read: the session of that same User is the
+// proof.
 // Ref: #/components/schemas/SiteAcceptInvitationInput
 type SiteAcceptInvitationInput struct {
 	Name     OptString `json:"name"`
@@ -7896,6 +7897,10 @@ type SitePublicConfirmationsPerformNoContent struct{}
 
 func (*SitePublicConfirmationsPerformNoContent) sitePublicConfirmationsPerformRes() {}
 
+type SitePublicInvitationsAcceptForbidden ProblemDetails
+
+func (*SitePublicInvitationsAcceptForbidden) sitePublicInvitationsAcceptRes() {}
+
 type SitePublicInvitationsAcceptNotFound ProblemDetails
 
 func (*SitePublicInvitationsAcceptNotFound) sitePublicInvitationsAcceptRes() {}
@@ -7904,6 +7909,10 @@ func (*SitePublicInvitationsAcceptNotFound) sitePublicInvitationsAcceptRes() {}
 type SitePublicInvitationsAcceptOK struct{}
 
 func (*SitePublicInvitationsAcceptOK) sitePublicInvitationsAcceptRes() {}
+
+type SitePublicInvitationsAcceptUnauthorized ProblemDetails
+
+func (*SitePublicInvitationsAcceptUnauthorized) sitePublicInvitationsAcceptRes() {}
 
 type SitePublicInvitationsAcceptUnprocessableEntity ProblemDetails
 

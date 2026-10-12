@@ -2,24 +2,33 @@ import { Alert, Button, Loader, PasswordInput, Stack, Text, TextInput, Title } f
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import {
   sitePublicInvitationsAcceptMutation,
   sitePublicInvitationsLookupOptions,
+  siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
-import { acceptInvitationRoute, loginRoute } from '../../router.tsx'
+import { acceptInvitationRoute, indexRoute, loginRoute } from '../../router.tsx'
 
 export function AcceptInvitationPage() {
   const { t } = useTranslation()
   const apiErrorMessage = useApiErrorMessage()
   const navigate = useNavigate()
   const { token } = acceptInvitationRoute.useParams()
+  const location = useLocation()
 
   const lookup = useQuery({
     ...sitePublicInvitationsLookupOptions({ path: { token } }),
+    retry: false,
+  })
+
+  // A Verified User accepts with their own session: probe it once the lookup says so.
+  const session = useQuery({
+    ...siteWorkspacesListOptions(),
+    enabled: lookup.data?.hasAccount === true,
     retry: false,
   })
 
@@ -28,12 +37,15 @@ export function AcceptInvitationPage() {
   const mutation = useMutation({
     ...sitePublicInvitationsAcceptMutation(),
     onSuccess: () => {
+      const signedIn = lookup.data?.hasAccount === true
       notifications.show({
         color: 'teal',
         title: t(($) => $.acceptInvitation.successTitle),
-        message: t(($) => $.acceptInvitation.successMessage),
+        message: signedIn
+          ? t(($) => $.acceptInvitation.joinedMessage)
+          : t(($) => $.acceptInvitation.successMessage),
       })
-      void navigate({ to: loginRoute.to })
+      void navigate({ to: signedIn ? indexRoute.to : loginRoute.to })
     },
     onError: (error) => {
       notifications.show({
@@ -47,7 +59,7 @@ export function AcceptInvitationPage() {
     },
   })
 
-  if (lookup.isLoading) {
+  if (lookup.isLoading || session.isLoading) {
     return (
       <Stack maw={420} mx="auto" mt="xl" align="center">
         <Loader />
@@ -68,6 +80,7 @@ export function AcceptInvitationPage() {
 
   const invite = lookup.data
   const needsAccount = !invite.hasAccount
+  const needsSignIn = invite.hasAccount && session.isError
 
   const handleSubmit = (values: { name: string; password: string }) => {
     mutation.mutate({
@@ -84,29 +97,42 @@ export function AcceptInvitationPage() {
         {invite.email}
       </Text>
 
-      <form onSubmit={form.onSubmit(handleSubmit)}>
+      {needsSignIn ? (
         <Stack>
-          {needsAccount ? (
-            <>
-              <TextInput
-                label={t(($) => $.acceptInvitation.nameLabel)}
-                required
-                {...form.getInputProps('name')}
-              />
-              <PasswordInput
-                label={t(($) => $.acceptInvitation.passwordLabel)}
-                required
-                {...form.getInputProps('password')}
-              />
-            </>
-          ) : null}
-          <Button type="submit" loading={mutation.isPending}>
-            {needsAccount
-              ? t(($) => $.acceptInvitation.acceptButton)
-              : t(($) => $.acceptInvitation.acceptExistingButton)}
+          <Alert color="blue">{t(($) => $.acceptInvitation.signInRequired)}</Alert>
+          <Button
+            onClick={() =>
+              void navigate({ to: loginRoute.to, search: { redirect: location.href } })
+            }
+          >
+            {t(($) => $.acceptInvitation.signInButton)}
           </Button>
         </Stack>
-      </form>
+      ) : (
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Stack>
+            {needsAccount ? (
+              <>
+                <TextInput
+                  label={t(($) => $.acceptInvitation.nameLabel)}
+                  required
+                  {...form.getInputProps('name')}
+                />
+                <PasswordInput
+                  label={t(($) => $.acceptInvitation.passwordLabel)}
+                  required
+                  {...form.getInputProps('password')}
+                />
+              </>
+            ) : null}
+            <Button type="submit" loading={mutation.isPending}>
+              {needsAccount
+                ? t(($) => $.acceptInvitation.acceptButton)
+                : t(($) => $.acceptInvitation.acceptExistingButton)}
+            </Button>
+          </Stack>
+        </form>
+      )}
     </Stack>
   )
 }
