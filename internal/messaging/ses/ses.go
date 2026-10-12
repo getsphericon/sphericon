@@ -13,6 +13,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -21,6 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ses/types"
 
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // Config is the cleartext credential shape stored (encrypted) for an SES
@@ -36,13 +39,26 @@ type Config struct {
 	Endpoint string `json:"endpoint,omitempty"`
 }
 
-// Descriptor registers the SES provider with the messaging catalog.
+// requestTimeout bounds one SES API call made through the SSRF-hardened client.
+const requestTimeout = 30 * time.Second
+
+// Descriptor registers the SES provider with the messaging catalog. Its requests go through
+// an SSRF-hardened client (the webhook one): the Endpoint is customer-supplied, so a
+// private, loopback or metadata address is refused when dialled, on the resolved IP.
 func Descriptor() messaging.ProviderDescriptor {
+	return NewDescriptor(webhook.NewClient(requestTimeout))
+}
+
+// NewDescriptor is Descriptor with the HTTP client the SES API is reached through, so a
+// test can point the provider at a local fake. Production uses Descriptor.
+func NewDescriptor(client aws.HTTPClient) messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
 		Channel:  messaging.ChannelEmail,
 		Provider: messaging.ProviderSES,
 		Validate: validate,
-		Build:    build,
+		Build: func(raw []byte, signer messaging.Signer) (any, error) {
+			return build(raw, signer, client)
+		},
 	}
 }
 
@@ -59,15 +75,28 @@ func validate(raw []byte) error {
 	case cfg.From == "":
 		return fmt.Errorf("ses: from is required")
 	}
+	return validEndpoint(cfg.Endpoint)
+}
+
+// validEndpoint accepts no endpoint (AWS) or an absolute https URL with a host. Which
+// addresses it may reach is decided when the request dials, not here.
+func validEndpoint(endpoint string) error {
+	if endpoint == "" {
+		return nil
+	}
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Scheme != "https" || u.Hostname() == "" {
+		return fmt.Errorf("ses: endpoint must be an https URL")
+	}
 	return nil
 }
 
-func build(raw []byte, signer messaging.Signer) (any, error) {
+func build(raw []byte, signer messaging.Signer, client aws.HTTPClient) (any, error) {
 	cfg, err := parse(raw)
 	if err != nil {
 		return nil, err
 	}
-	return &sender{cfg: cfg, signer: signer}, nil
+	return &sender{cfg: cfg, signer: signer, http: client}, nil
 }
 
 func parse(raw []byte) (Config, error) {
@@ -81,6 +110,7 @@ func parse(raw []byte) (Config, error) {
 type sender struct {
 	cfg    Config
 	signer messaging.Signer
+	http   aws.HTTPClient
 }
 
 // DefaultFrom reports the integration's configured From (see messaging.DefaultFromer).
@@ -158,6 +188,7 @@ func (s *sender) client(ctx context.Context) (*ses.Client, error) {
 		return nil, fmt.Errorf("ses: load config: %w", err)
 	}
 	return ses.NewFromConfig(cfg, func(o *ses.Options) {
+		o.HTTPClient = s.http
 		if s.cfg.Endpoint != "" {
 			o.BaseEndpoint = aws.String(s.cfg.Endpoint)
 		}

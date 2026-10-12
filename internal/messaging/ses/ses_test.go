@@ -61,7 +61,7 @@ func throttledBody(message string) string {
 func build(t *testing.T, endpoint string) messaging.EmailSender {
 	t.Helper()
 	raw := fmt.Sprintf(`{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com","fromName":"Acme","endpoint":%q}`, endpoint)
-	built, err := ses.Descriptor().Build([]byte(raw), nil)
+	built, err := ses.NewDescriptor(http.DefaultClient).Build([]byte(raw), nil)
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
 	require.True(t, ok)
@@ -169,6 +169,10 @@ func TestDescriptorValidate(t *testing.T) {
 		"missing region": {`{"accessKeyId":"k","from":"a@b.com"}`, "region is required"},
 		"missing key":    {`{"region":"r","from":"a@b.com"}`, "accessKeyId is required"},
 		"missing from":   {`{"region":"r","accessKeyId":"k"}`, "from is required"},
+		"https endpoint": {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"https://postbox.cloud.yandex.net"}`, ""},
+		"http endpoint":  {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"http://attacker.example"}`, "endpoint must be an https URL"},
+		"no host":        {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"https://"}`, "endpoint must be an https URL"},
+		"bare host":      {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"attacker.example"}`, "endpoint must be an https URL"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -236,4 +240,15 @@ func TestSendQuota(t *testing.T) {
 		_, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
 		assert.ErrorContains(t, err, "ses: get send quota")
 	})
+}
+
+func TestSendRefusesPrivateEndpoint(t *testing.T) {
+	api := newSESAPI(t, http.StatusOK, okBody)
+	raw := fmt.Sprintf(`{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com","endpoint":%q}`, api.srv.URL)
+	built, err := ses.Descriptor().Build([]byte(raw), nil)
+	require.NoError(t, err)
+
+	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "Hello", Text: "body"})
+	require.Error(t, err, "the production client must not dial a loopback endpoint")
+	assert.Empty(t, api.auth, "no signed request reached the endpoint")
 }

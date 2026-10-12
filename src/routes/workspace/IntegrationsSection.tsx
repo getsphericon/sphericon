@@ -28,6 +28,7 @@ import type {
   SiteIntegrationConfigInput,
   SiteIntegrationResource,
 } from '../../generated/site/types.gen.ts'
+import { useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from './auditFilter.ts'
@@ -105,6 +106,8 @@ function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput 
 export function IntegrationsSection({ slug }: { slug: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
+  const role = useCurrentRole(slug)
+  const canManage = role === 'owner' || role === 'admin'
 
   const queryKey = siteIntegrationsListQueryKey({ path: { slug: slug } })
   const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { slug: slug } }))
@@ -160,122 +163,124 @@ export function IntegrationsSection({ slug }: { slug: string }) {
         </Alert>
       ) : null}
 
-      <form
-        onSubmit={form.onSubmit((values) =>
-          createMutation.mutate({
-            path: { slug: slug },
-            body: {
-              name: values.name.trim(),
-              isDefault: values.isDefault,
-              maxPerSecond: toLimit(values.maxPerSecond),
-              maxPerDay: toLimit(values.maxPerDay),
-              config: buildConfig(values),
-            },
-          }),
-        )}
-      >
-        <Stack maw={520} mb="md">
-          <Group grow>
-            <TextInput
-              label={t(($) => $.settings.integrations.nameLabel)}
-              required
-              {...form.getInputProps('name')}
-            />
-            <Select
-              label={t(($) => $.settings.integrations.providerLabel)}
-              data={[
-                { value: 'smtp', label: 'SMTP' },
-                { value: 'ses', label: 'Amazon SES' },
-              ]}
-              allowDeselect={false}
-              {...form.getInputProps('provider')}
-            />
-          </Group>
-
-          {isSes ? (
-            <>
-              <Group grow>
-                <TextInput
-                  label={t(($) => $.settings.integrations.fields.region)}
-                  required
-                  {...form.getInputProps('region')}
-                />
-                <TextInput
-                  label={t(($) => $.settings.integrations.fields.accessKeyId)}
-                  required
-                  {...form.getInputProps('accessKeyId')}
-                />
-                <TextInput
-                  label={t(($) => $.settings.integrations.fields.secretAccessKey)}
-                  type="password"
-                  required
-                  {...form.getInputProps('secretAccessKey')}
-                />
-              </Group>
-              <TextInput
-                label={t(($) => $.settings.integrations.fields.endpoint)}
-                description={t(($) => $.settings.integrations.fields.endpointHint)}
-                placeholder="https://postbox.cloud.yandex.net"
-                {...form.getInputProps('endpoint')}
-              />
-            </>
-          ) : (
-            <>
-              <Group grow>
-                <TextInput
-                  label={t(($) => $.settings.integrations.fields.host)}
-                  required
-                  {...form.getInputProps('host')}
-                />
-                <NumberInput
-                  label={t(($) => $.settings.integrations.fields.port)}
-                  required
-                  {...form.getInputProps('port')}
-                />
-              </Group>
-              <Group grow>
-                <TextInput
-                  label={t(($) => $.settings.integrations.fields.username)}
-                  {...form.getInputProps('username')}
-                />
-                <TextInput
-                  label={t(($) => $.settings.integrations.fields.password)}
-                  type="password"
-                  {...form.getInputProps('password')}
-                />
-              </Group>
-            </>
+      {canManage ? (
+        <form
+          onSubmit={form.onSubmit((values) =>
+            createMutation.mutate({
+              path: { slug: slug },
+              body: {
+                name: values.name.trim(),
+                isDefault: values.isDefault,
+                maxPerSecond: toLimit(values.maxPerSecond),
+                maxPerDay: toLimit(values.maxPerDay),
+                config: buildConfig(values),
+              },
+            }),
           )}
+        >
+          <Stack maw={520} mb="md">
+            <Group grow>
+              <TextInput
+                label={t(($) => $.settings.integrations.nameLabel)}
+                required
+                {...form.getInputProps('name')}
+              />
+              <Select
+                label={t(($) => $.settings.integrations.providerLabel)}
+                data={[
+                  { value: 'smtp', label: 'SMTP' },
+                  { value: 'ses', label: 'Amazon SES' },
+                ]}
+                allowDeselect={false}
+                {...form.getInputProps('provider')}
+              />
+            </Group>
 
-          <Group grow>
-            <TextInput
-              label={t(($) => $.settings.integrations.fields.from)}
-              required
-              {...form.getInputProps('from')}
+            {isSes ? (
+              <>
+                <Group grow>
+                  <TextInput
+                    label={t(($) => $.settings.integrations.fields.region)}
+                    required
+                    {...form.getInputProps('region')}
+                  />
+                  <TextInput
+                    label={t(($) => $.settings.integrations.fields.accessKeyId)}
+                    required
+                    {...form.getInputProps('accessKeyId')}
+                  />
+                  <TextInput
+                    label={t(($) => $.settings.integrations.fields.secretAccessKey)}
+                    type="password"
+                    required
+                    {...form.getInputProps('secretAccessKey')}
+                  />
+                </Group>
+                <TextInput
+                  label={t(($) => $.settings.integrations.fields.endpoint)}
+                  description={t(($) => $.settings.integrations.fields.endpointHint)}
+                  placeholder="https://postbox.cloud.yandex.net"
+                  {...form.getInputProps('endpoint')}
+                />
+              </>
+            ) : (
+              <>
+                <Group grow>
+                  <TextInput
+                    label={t(($) => $.settings.integrations.fields.host)}
+                    required
+                    {...form.getInputProps('host')}
+                  />
+                  <NumberInput
+                    label={t(($) => $.settings.integrations.fields.port)}
+                    required
+                    {...form.getInputProps('port')}
+                  />
+                </Group>
+                <Group grow>
+                  <TextInput
+                    label={t(($) => $.settings.integrations.fields.username)}
+                    {...form.getInputProps('username')}
+                  />
+                  <TextInput
+                    label={t(($) => $.settings.integrations.fields.password)}
+                    type="password"
+                    {...form.getInputProps('password')}
+                  />
+                </Group>
+              </>
+            )}
+
+            <Group grow>
+              <TextInput
+                label={t(($) => $.settings.integrations.fields.from)}
+                required
+                {...form.getInputProps('from')}
+              />
+              <TextInput
+                label={t(($) => $.settings.integrations.fields.fromName)}
+                {...form.getInputProps('fromName')}
+              />
+            </Group>
+
+            <SendLimitFields
+              perSecondProps={form.getInputProps('maxPerSecond')}
+              perDayProps={form.getInputProps('maxPerDay')}
             />
-            <TextInput
-              label={t(($) => $.settings.integrations.fields.fromName)}
-              {...form.getInputProps('fromName')}
+
+            <Checkbox
+              label={t(($) => $.settings.integrations.makeDefault)}
+              {...form.getInputProps('isDefault', { type: 'checkbox' })}
             />
-          </Group>
 
-          <SendLimitFields
-            perSecondProps={form.getInputProps('maxPerSecond')}
-            perDayProps={form.getInputProps('maxPerDay')}
-          />
-
-          <Checkbox
-            label={t(($) => $.settings.integrations.makeDefault)}
-            {...form.getInputProps('isDefault', { type: 'checkbox' })}
-          />
-
-          <Group justify="flex-end">
-            <Button type="submit" loading={createMutation.isPending}>
-              {t(($) => $.settings.integrations.create)}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
+            <Group justify="flex-end">
+              <Button type="submit" loading={createMutation.isPending}>
+                {t(($) => $.settings.integrations.create)}
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      ) : null}
 
       {integrationsQuery.isLoading ? <Loader /> : null}
 
@@ -327,22 +332,26 @@ export function IntegrationsSection({ slug }: { slug: string }) {
             title: '',
             render: (record) => (
               <Group gap="xs" wrap="nowrap">
-                <Button size="compact-sm" variant="light" onClick={() => setEditing(record)}>
-                  {t(($) => $.settings.integrations.limits.edit)}
-                </Button>
+                {canManage ? (
+                  <Button size="compact-sm" variant="light" onClick={() => setEditing(record)}>
+                    {t(($) => $.settings.integrations.limits.edit)}
+                  </Button>
+                ) : null}
                 <ChangeHistoryLink
                   slug={slug}
                   targetType={AUDIT_TARGET_INTEGRATION}
                   targetId={record.id}
                 />
-                <Button
-                  size="compact-sm"
-                  color="red"
-                  variant="light"
-                  onClick={() => onDelete(record.id)}
-                >
-                  {t(($) => $.settings.integrations.delete)}
-                </Button>
+                {canManage ? (
+                  <Button
+                    size="compact-sm"
+                    color="red"
+                    variant="light"
+                    onClick={() => onDelete(record.id)}
+                  >
+                    {t(($) => $.settings.integrations.delete)}
+                  </Button>
+                ) : null}
               </Group>
             ),
           },

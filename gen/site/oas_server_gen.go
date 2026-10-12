@@ -264,13 +264,13 @@ type Handler interface {
 	SiteEventsList(ctx context.Context, params SiteEventsListParams) (SiteEventsListRes, error)
 	// SiteIntegrationsCreate implements SiteIntegrations_create operation.
 	//
-	// Create an integration.
+	// Create an integration. Owners and admins only.
 	//
 	// POST /workspaces/{slug}/integrations
 	SiteIntegrationsCreate(ctx context.Context, req *SiteCreateIntegrationInput, params SiteIntegrationsCreateParams) (SiteIntegrationsCreateRes, error)
 	// SiteIntegrationsDelete implements SiteIntegrations_delete operation.
 	//
-	// Delete an integration.
+	// Delete an integration. Owners and admins only.
 	//
 	// DELETE /workspaces/{slug}/integrations/{id}
 	SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (SiteIntegrationsDeleteRes, error)
@@ -288,7 +288,7 @@ type Handler interface {
 	SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (SiteIntegrationsListRes, error)
 	// SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 	//
-	// Update an integration.
+	// Update an integration. Owners and admins only.
 	//
 	// PUT /workspaces/{slug}/integrations/{id}
 	SiteIntegrationsUpdate(ctx context.Context, req *SiteUpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error)

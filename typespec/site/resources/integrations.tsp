@@ -224,7 +224,7 @@ namespace SiteIntegrations {
       }
     | NotFoundProblem;
 
-  /** Create an integration */
+  /** Create an integration. Owners and admins only. */
   @createsResource(SiteIntegrationResource)
   @post
   @autoRoute
@@ -236,6 +236,7 @@ namespace SiteIntegrations {
         @statusCode statusCode: 201;
         @body body: SiteIntegrationResource;
       }
+    | ForbiddenProblem
     | NotFoundProblem
     | ConflictProblem
     | UnprocessableEntityProblem;
@@ -249,7 +250,7 @@ namespace SiteIntegrations {
     | BadRequestProblem
     | NotFoundProblem;
 
-  /** Update an integration */
+  /** Update an integration. Owners and admins only. */
   @updatesResource(SiteIntegrationResource)
   @put
   @autoRoute
@@ -259,16 +260,18 @@ namespace SiteIntegrations {
   ):
     | SiteIntegrationResource
     | BadRequestProblem
+    | ForbiddenProblem
     | NotFoundProblem
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Delete an integration */
+  /** Delete an integration. Owners and admins only. */
   @deletesResource(SiteIntegrationResource)
   @delete
   @autoRoute
   op delete(...ResourceParameters<SiteIntegrationResource>):
     | NoContentResponse
     | BadRequestProblem
+    | ForbiddenProblem
     | NotFoundProblem;
 }

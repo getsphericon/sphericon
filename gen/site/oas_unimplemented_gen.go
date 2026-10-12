@@ -383,7 +383,7 @@ func (UnimplementedHandler) SiteEventsList(ctx context.Context, params SiteEvent
 
 // SiteIntegrationsCreate implements SiteIntegrations_create operation.
 //
-// Create an integration.
+// Create an integration. Owners and admins only.
 //
 // POST /workspaces/{slug}/integrations
 func (UnimplementedHandler) SiteIntegrationsCreate(ctx context.Context, req *SiteCreateIntegrationInput, params SiteIntegrationsCreateParams) (r SiteIntegrationsCreateRes, _ error) {
@@ -392,7 +392,7 @@ func (UnimplementedHandler) SiteIntegrationsCreate(ctx context.Context, req *Sit
 
 // SiteIntegrationsDelete implements SiteIntegrations_delete operation.
 //
-// Delete an integration.
+// Delete an integration. Owners and admins only.
 //
 // DELETE /workspaces/{slug}/integrations/{id}
 func (UnimplementedHandler) SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (r SiteIntegrationsDeleteRes, _ error) {
@@ -419,7 +419,7 @@ func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params Sit
 
 // SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 //
-// Update an integration.
+// Update an integration. Owners and admins only.
 //
 // PUT /workspaces/{slug}/integrations/{id}
 func (UnimplementedHandler) SiteIntegrationsUpdate(ctx context.Context, req *SiteUpdateIntegrationInput, params SiteIntegrationsUpdateParams) (r SiteIntegrationsUpdateRes, _ error) {

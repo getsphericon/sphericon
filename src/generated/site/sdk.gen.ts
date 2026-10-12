@@ -1207,7 +1207,7 @@ export const siteIntegrationsList = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
- * Create an integration
+ * Create an integration. Owners and admins only.
  */
 export const siteIntegrationsCreate = <ThrowOnError extends boolean = false>(options: Options<SiteIntegrationsCreateData, ThrowOnError>): RequestResult<SiteIntegrationsCreateResponses, SiteIntegrationsCreateErrors, ThrowOnError> => (options.client ?? client).post<SiteIntegrationsCreateResponses, SiteIntegrationsCreateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -1229,7 +1229,7 @@ export const siteIntegrationsCreate = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Delete an integration
+ * Delete an integration. Owners and admins only.
  */
 export const siteIntegrationsDelete = <ThrowOnError extends boolean = false>(options: Options<SiteIntegrationsDeleteData, ThrowOnError>): RequestResult<SiteIntegrationsDeleteResponses, SiteIntegrationsDeleteErrors, ThrowOnError> => (options.client ?? client).delete<SiteIntegrationsDeleteResponses, SiteIntegrationsDeleteErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -1265,7 +1265,7 @@ export const siteIntegrationsGet = <ThrowOnError extends boolean = false>(option
 });
 
 /**
- * Update an integration
+ * Update an integration. Owners and admins only.
  */
 export const siteIntegrationsUpdate = <ThrowOnError extends boolean = false>(options: Options<SiteIntegrationsUpdateData, ThrowOnError>): RequestResult<SiteIntegrationsUpdateResponses, SiteIntegrationsUpdateErrors, ThrowOnError> => (options.client ?? client).put<SiteIntegrationsUpdateResponses, SiteIntegrationsUpdateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

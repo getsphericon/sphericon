@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -239,4 +240,123 @@ func TestSiteIntegrationsScopedToWorkspace(t *testing.T) {
 	res, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{Slug: "does-not-exist"})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+}
+
+func createSMTP(t *testing.T, c *siteapi.Client, host, password string) siteapi.EntityId {
+	t.Helper()
+	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.SiteCreateIntegrationInput{
+		Name:   "Primary SMTP",
+		Config: smtpInput(host, password),
+	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
+	require.NoError(t, err)
+	return created.(*siteapi.SiteIntegrationResource).ID
+}
+
+func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	id := createSMTP(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "smtp.example.com", "s3cret-pass")
+	member := env.SiteActor(t, fixtures.MemberMaryEmail)
+
+	created, err := member.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+		Name: "Mine", Config: smtpInput("attacker.example", "pw"),
+	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationsCreateForbidden), created)
+
+	updated, err := member.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+		Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("attacker.example", "")),
+	}, siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationsUpdateForbidden), updated)
+
+	deleted, err := member.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{Slug: fixtures.AcmeSlug, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationsDeleteForbidden), deleted)
+
+	// Reading stays open to a member, secrets redacted.
+	got, err := member.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{Slug: fixtures.AcmeSlug, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationResource), got)
+
+	// An admin manages them.
+	addMember(t, env, "admin@acme.test", membership.RoleAdmin)
+	ok, err := env.SiteActor(t, "admin@acme.test").SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+		Name: siteapi.NewOptString("Renamed"),
+	}, siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationResource), ok)
+}
+
+func TestSiteIntegrationsBlankSecretIsKeptOnlyForTheSameDestination(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	id := createSMTP(t, c, "smtp.example.com", "s3cret-pass")
+	params := siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: id}
+
+	// Same host, port and username: the blank password keeps the stored one.
+	kept, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+		Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("smtp.example.com", "")),
+	}, params)
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationResource), kept)
+
+	// A new host with a blank password is refused rather than sent the stored secret.
+	moved, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+		Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("attacker.example", "")),
+	}, params)
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationsUpdateUnprocessableEntity), moved)
+
+	// Supplying the password again is how a destination changes.
+	ok, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+		Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("smtp2.example.com", "new-pass")),
+	}, params)
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationResource), ok)
+}
+
+func TestSiteIntegrationsSesBlankSecretFollowsRegionAndKey(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+		Name: "AWS", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
+	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
+	require.NoError(t, err)
+	params := siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: created.(*siteapi.SiteIntegrationResource).ID}
+
+	kept, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+		Config: siteapi.NewOptNilSiteIntegrationConfigInput(sesInput("eu-west-1", "AKIA1234", "")),
+	}, params)
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationResource), kept)
+
+	for name, cfg := range map[string]siteapi.SiteIntegrationConfigInput{
+		"new key id": sesInput("eu-west-1", "AKIA9999", ""),
+		"new region": sesInput("us-east-1", "AKIA1234", ""),
+	} {
+		res, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+			Config: siteapi.NewOptNilSiteIntegrationConfigInput(cfg),
+		}, params)
+		require.NoError(t, err, name)
+		assert.IsType(t, new(siteapi.SiteIntegrationsUpdateUnprocessableEntity), res, name)
+	}
+}
+
+func TestSiteIntegrationsRefuseAnInsecureSesEndpoint(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	res, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.SiteCreateIntegrationInput{
+		Name: "Bad",
+		Config: siteapi.SiteIntegrationConfigInput{
+			OneOf: siteapi.NewSiteSesConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSesConfigInput{
+				Kind: siteapi.SiteSesConfigInputKindSes, Region: "r", AccessKeyId: "AKIA1", SecretAccessKey: "s",
+				From: "noreply@acme.test", Endpoint: siteapi.NewOptNilString("http://169.254.169.254"),
+			}),
+		},
+	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteIntegrationsCreateUnprocessableEntity), res)
 }

@@ -7068,6 +7068,10 @@ type SiteIntegrationsCreateConflict ProblemDetails
 
 func (*SiteIntegrationsCreateConflict) siteIntegrationsCreateRes() {}
 
+type SiteIntegrationsCreateForbidden ProblemDetails
+
+func (*SiteIntegrationsCreateForbidden) siteIntegrationsCreateRes() {}
+
 type SiteIntegrationsCreateNotFound ProblemDetails
 
 func (*SiteIntegrationsCreateNotFound) siteIntegrationsCreateRes() {}
@@ -7079,6 +7083,10 @@ func (*SiteIntegrationsCreateUnprocessableEntity) siteIntegrationsCreateRes() {}
 type SiteIntegrationsDeleteBadRequest ProblemDetails
 
 func (*SiteIntegrationsDeleteBadRequest) siteIntegrationsDeleteRes() {}
+
+type SiteIntegrationsDeleteForbidden ProblemDetails
+
+func (*SiteIntegrationsDeleteForbidden) siteIntegrationsDeleteRes() {}
 
 // SiteIntegrationsDeleteNoContent is response for SiteIntegrationsDelete operation.
 type SiteIntegrationsDeleteNoContent struct{}
@@ -7108,6 +7116,10 @@ func (*SiteIntegrationsUpdateBadRequest) siteIntegrationsUpdateRes() {}
 type SiteIntegrationsUpdateConflict ProblemDetails
 
 func (*SiteIntegrationsUpdateConflict) siteIntegrationsUpdateRes() {}
+
+type SiteIntegrationsUpdateForbidden ProblemDetails
+
+func (*SiteIntegrationsUpdateForbidden) siteIntegrationsUpdateRes() {}
 
 type SiteIntegrationsUpdateNotFound ProblemDetails
 

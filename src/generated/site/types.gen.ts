@@ -5179,6 +5179,10 @@ export type SiteIntegrationsCreateData = {
 
 export type SiteIntegrationsCreateErrors = {
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -5224,6 +5228,10 @@ export type SiteIntegrationsDeleteErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -5300,6 +5308,10 @@ export type SiteIntegrationsUpdateErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */

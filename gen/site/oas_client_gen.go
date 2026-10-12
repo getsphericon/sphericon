@@ -285,13 +285,13 @@ type Invoker interface {
 	SiteEventsList(ctx context.Context, params SiteEventsListParams) (SiteEventsListRes, error)
 	// SiteIntegrationsCreate invokes SiteIntegrations_create operation.
 	//
-	// Create an integration.
+	// Create an integration. Owners and admins only.
 	//
 	// POST /workspaces/{slug}/integrations
 	SiteIntegrationsCreate(ctx context.Context, request *SiteCreateIntegrationInput, params SiteIntegrationsCreateParams) (SiteIntegrationsCreateRes, error)
 	// SiteIntegrationsDelete invokes SiteIntegrations_delete operation.
 	//
-	// Delete an integration.
+	// Delete an integration. Owners and admins only.
 	//
 	// DELETE /workspaces/{slug}/integrations/{id}
 	SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (SiteIntegrationsDeleteRes, error)
@@ -309,7 +309,7 @@ type Invoker interface {
 	SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (SiteIntegrationsListRes, error)
 	// SiteIntegrationsUpdate invokes SiteIntegrations_update operation.
 	//
-	// Update an integration.
+	// Update an integration. Owners and admins only.
 	//
 	// PUT /workspaces/{slug}/integrations/{id}
 	SiteIntegrationsUpdate(ctx context.Context, request *SiteUpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error)
@@ -6305,7 +6305,7 @@ func (c *Client) sendSiteEventsList(ctx context.Context, params SiteEventsListPa
 
 // SiteIntegrationsCreate invokes SiteIntegrations_create operation.
 //
-// Create an integration.
+// Create an integration. Owners and admins only.
 //
 // POST /workspaces/{slug}/integrations
 func (c *Client) SiteIntegrationsCreate(ctx context.Context, request *SiteCreateIntegrationInput, params SiteIntegrationsCreateParams) (SiteIntegrationsCreateRes, error) {
@@ -6440,7 +6440,7 @@ func (c *Client) sendSiteIntegrationsCreate(ctx context.Context, request *SiteCr
 
 // SiteIntegrationsDelete invokes SiteIntegrations_delete operation.
 //
-// Delete an integration.
+// Delete an integration. Owners and admins only.
 //
 // DELETE /workspaces/{slug}/integrations/{id}
 func (c *Client) SiteIntegrationsDelete(ctx context.Context, params SiteIntegrationsDeleteParams) (SiteIntegrationsDeleteRes, error) {
@@ -6878,7 +6878,7 @@ func (c *Client) sendSiteIntegrationsList(ctx context.Context, params SiteIntegr
 
 // SiteIntegrationsUpdate invokes SiteIntegrations_update operation.
 //
-// Update an integration.
+// Update an integration. Owners and admins only.
 //
 // PUT /workspaces/{slug}/integrations/{id}
 func (c *Client) SiteIntegrationsUpdate(ctx context.Context, request *SiteUpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error) {

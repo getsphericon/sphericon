@@ -7,8 +7,10 @@ import {
   handleSiteIntegrationsDelete,
   handleSiteIntegrationsList,
   handleSiteIntegrationsUpdate,
+  handleSiteMembershipsList,
+  handleSiteUserGetMe,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
+import type { SiteIntegrationResource, SiteMembershipRole } from '../../generated/site/types.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -36,6 +38,31 @@ const smtp: SiteIntegrationResource = {
   updatedAt: '2026-01-01T00:00:00Z',
 }
 
+// The signed-in User holds `role` in the Workspace (writes are owner/admin-only).
+const signedInAs = (role: SiteMembershipRole) => [
+  handleSiteUserGetMe({
+    body: {
+      id: '10',
+      name: 'Ann',
+      email: 'ann@acme.com',
+      emailVerified: true,
+      createdAt: '2026-01-01T00:00:00Z',
+    },
+  }),
+  handleSiteMembershipsList({
+    body: [
+      {
+        id: '1',
+        userId: '10',
+        email: 'ann@acme.com',
+        name: 'Ann',
+        role,
+        createdAt: '2026-01-01T00:00:00Z',
+      },
+    ],
+  }),
+]
+
 const list = (items: SiteIntegrationResource[]) => handleSiteIntegrationsList({ body: items })
 
 const create = (bodies: unknown[]) =>
@@ -46,7 +73,10 @@ const create = (bodies: unknown[]) =>
 
 // Without a license the change-history link probes the Audit log and hides itself.
 beforeEach(() => {
-  worker.use(handleSiteAuditList(() => problem(402)))
+  worker.use(
+    handleSiteAuditList(() => problem(402)),
+    ...signedInAs('owner'),
+  )
 })
 
 test('lists connected providers', async () => {
@@ -259,4 +289,15 @@ test('edits only the limits of an existing provider, and a blank clears one', as
   await dialog.getByRole('button', { name: 'Save limits' }).click()
 
   await expect.poll(() => bodies).toEqual([{ maxPerSecond: 20, maxPerDay: null }])
+})
+
+test('a member can read the providers but not change them', async () => {
+  worker.use(list([smtp]), ...signedInAs('member'))
+  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+
+  await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('button', { name: 'Connect provider' }))
+    .not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
 })

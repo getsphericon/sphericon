@@ -60,5 +60,6 @@
   "errors.broadcast_already_sending": "la campaña ya se está enviando o ya se envió",
   "errors.already_member": "ya es miembro",
   "errors.keep_one_owner": "el espacio de trabajo debe conservar al menos un propietario",
-  "errors.integration_kind_mismatch": "el tipo debe coincidir con el proveedor de la integración"
+  "errors.integration_kind_mismatch": "el tipo debe coincidir con el proveedor de la integración",
+  "errors.integration_secret_required": "vuelve a introducir el secreto: solo se conserva mientras no cambien el host, el puerto, el usuario, la región, el endpoint y el id de clave"
 }

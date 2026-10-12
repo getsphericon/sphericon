@@ -2196,6 +2196,18 @@ func encodeSiteIntegrationsCreateResponse(response SiteIntegrationsCreateRes, w 
 
 		return nil
 
+	case *SiteIntegrationsCreateForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteIntegrationsCreateNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -2247,6 +2259,18 @@ func encodeSiteIntegrationsDeleteResponse(response SiteIntegrationsDeleteRes, w 
 	case *SiteIntegrationsDeleteBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteIntegrationsDeleteForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -2364,6 +2388,18 @@ func encodeSiteIntegrationsUpdateResponse(response SiteIntegrationsUpdateRes, w 
 	case *SiteIntegrationsUpdateBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteIntegrationsUpdateForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
