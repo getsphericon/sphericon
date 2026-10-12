@@ -194,7 +194,7 @@ func TestSendAndPreflightAgreeOnAnOperatorHold(t *testing.T) {
 		}
 	}
 
-	create("lapsed", time.Now().Add(-time.Hour))
+	// The fixture Workspace already carries a lapsed hold.
 	agree("tx:lapsed", "")
 	create("active", time.Now().Add(time.Hour))
 	agree("tx:active", outbound.HoldOperator)
