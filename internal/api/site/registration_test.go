@@ -180,3 +180,52 @@ func TestVerifyingIsRecordedInTheNewWorkspacesAuditLog(t *testing.T) {
 	assert.Equal(t, "Grace Hopper", got[0].Actor.Name.Value)
 	assert.Equal(t, "user", got[0].Target.Type)
 }
+
+func resend(t *testing.T, env *testhelper.TestEnv, email string) siteapi.SiteAuthResendVerificationRes {
+	t.Helper()
+	res, err := env.SiteAnonymous(t).SiteAuthResendVerification(t.Context(),
+		&siteapi.SiteResendVerificationInput{Email: siteapi.EmailAddress(email)})
+	require.NoError(t, err)
+	return res
+}
+
+func TestResendSendsAFreshLinkThatCompletesTheRegistration(t *testing.T) {
+	env := testhelper.Setup(t)
+	register(t, env, "Grace Hopper", "grace@example.com")
+
+	require.IsType(t, &siteapi.SiteAuthResendVerificationAccepted{}, resend(t, env, "grace@example.com"))
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 2, "the registration mail and the resent one")
+	assert.Equal(t, "grace@example.com", msgs[1].To)
+	assert.Contains(t, msgs[1].Subject, "Verify")
+	fresh := tokenFromEmail(t, msgs[1].Text)
+
+	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, fresh, "grace-password-1"))
+	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", "grace-password-1"))
+}
+
+func TestResendAnswersTheSameForUnknownAndVerifiedAddressesAndSendsNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	register(t, env, "Grace Hopper", "grace@example.com")
+	before := len(env.SystemMail.Messages())
+
+	for _, email := range []string{"nobody@example.com", fixtures.OwnerJohnEmail, "grace@example.com"} {
+		assert.IsType(t, &siteapi.SiteAuthResendVerificationAccepted{}, resend(t, env, email), email)
+	}
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, before+1, "only the Unverified User gets a mail")
+	assert.Equal(t, "grace@example.com", msgs[before].To)
+}
+
+func TestSettingThePasswordEndsEveryEarlierVerifyLinkAfterAResend(t *testing.T) {
+	env := testhelper.Setup(t)
+	first := register(t, env, "Grace Hopper", "grace@example.com")
+	resend(t, env, "grace@example.com")
+	_, body := lastSystemEmail(t, env)
+	fresh := tokenFromEmail(t, body)
+
+	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, fresh, "grace-password-1"))
+	assert.IsType(t, &siteapi.ProblemDetails{}, verify(t, env, first, "attacker-password-1"))
+}

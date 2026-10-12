@@ -82,6 +82,14 @@ type Handler interface {
 	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, req *SiteRegisterInput) (SiteAuthRegisterRes, error)
+	// SiteAuthResendVerification implements SiteAuth_resendVerification operation.
+	//
+	// Send the verification link again to an Unverified User. Answers 202 the same way whether the address
+	// is unknown, already verified or unverified, so it adds no enumeration; only an Unverified User gets
+	// a mail. Rate limited per IP like registration.
+	//
+	// POST /auth/resend-verification
+	SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput) (SiteAuthResendVerificationRes, error)
 	// SiteAuthResetPassword implements SiteAuth_resetPassword operation.
 	//
 	// Set a new password from a reset token.
@@ -581,12 +589,6 @@ type Handler interface {
 	//
 	// GET /me
 	SiteUserGetMe(ctx context.Context) (*SiteUserResource, error)
-	// SiteUserResendVerification implements SiteUser_resendVerification operation.
-	//
-	// Resend the signup email-verification link to the current address.
-	//
-	// POST /me/verification-email
-	SiteUserResendVerification(ctx context.Context) error
 	// SiteUserSignOutEverywhere implements SiteUser_signOutEverywhere operation.
 	//
 	// Sign out everywhere: end every session of the user, on every device, including the one making the

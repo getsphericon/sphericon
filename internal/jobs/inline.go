@@ -57,9 +57,10 @@ func (i *Inline) EnqueuePasswordReset(ctx context.Context, email, token string, 
 	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowPasswordReset, Email: email, Token: token, Discard: !send})
 }
 
-// EnqueueEmailVerification sends the signup email-verification email now.
-func (i *Inline) EnqueueEmailVerification(ctx context.Context, email, token string) error {
-	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowEmailVerify, Email: email, Token: token})
+// EnqueueEmailVerification sends the email-verification email now, or only builds
+// it when send is false.
+func (i *Inline) EnqueueEmailVerification(ctx context.Context, email, token string, send bool) error {
+	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowEmailVerify, Email: email, Token: token, Discard: !send})
 }
 
 // EnqueueEmailChangeConfirm sends the confirm-new-email email now.
