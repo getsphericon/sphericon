@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/predicate"
-	"github.com/mokevnin/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/suppression"
 )
 
 // SuppressionDelete is the builder for deleting a Suppression entity.

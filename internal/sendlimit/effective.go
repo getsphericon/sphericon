@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 )
 
 // Source says where an effective ceiling comes from.

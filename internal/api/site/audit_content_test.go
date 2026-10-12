@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // Content and audience entities emit entries with a diff, a name snapshot and the User.

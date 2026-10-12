@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/operator"
 )
 
 func opsCreating(password string, err error) *operatorOpsMock {

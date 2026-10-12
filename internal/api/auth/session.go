@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent"
 	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mokevnin/sphericon/ent"
 )
 
 // The session token's claims beyond go-pkgz's own (ADR 0020). Both ride the token's

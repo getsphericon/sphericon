@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mokevnin/sphericon/config"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/telemetry"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/config"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/telemetry"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

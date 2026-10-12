@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/mokevnin/sphericon/config"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

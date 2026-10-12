@@ -5,7 +5,7 @@ package events
 
 import (
 	"context"
-	"github.com/mokevnin/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent"
 	"sync"
 )
 

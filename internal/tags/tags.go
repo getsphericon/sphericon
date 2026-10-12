@@ -11,10 +11,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/contact"
-	"github.com/mokevnin/sphericon/ent/tag"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // Domain errors. Callers match with errors.Is.

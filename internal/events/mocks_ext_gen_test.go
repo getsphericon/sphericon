@@ -5,8 +5,8 @@ package events_test
 
 import (
 	"context"
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/events"
 	"sync"
 )
 

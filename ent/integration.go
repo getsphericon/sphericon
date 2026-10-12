@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent/integration"
-	"github.com/mokevnin/sphericon/ent/sendlimiter"
-	"github.com/mokevnin/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // Integration is the model entity for the Integration schema.

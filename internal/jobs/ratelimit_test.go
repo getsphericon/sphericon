@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ent/automationrun"
-	"github.com/mokevnin/sphericon/ent/broadcast"
-	"github.com/mokevnin/sphericon/ent/outboundmessage"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/jobs"
-	"github.com/mokevnin/sphericon/internal/outbound"
-	"github.com/mokevnin/sphericon/internal/testhelper"
-	"github.com/mokevnin/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // A Broadcast through an Integration limited to 2 per second: recipient jobs past the

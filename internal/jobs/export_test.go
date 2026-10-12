@@ -8,12 +8,12 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/messaging"
-	"github.com/mokevnin/sphericon/internal/outbound"
-	"github.com/mokevnin/sphericon/internal/secrets"
-	"github.com/mokevnin/sphericon/internal/sending"
-	"github.com/mokevnin/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // Worker constructors for the external jobs_test package: Work is exercised

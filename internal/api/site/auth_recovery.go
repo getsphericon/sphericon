@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/accounts"
-	"github.com/mokevnin/sphericon/internal/authtoken"
-	"github.com/mokevnin/sphericon/internal/credentials"
-	"github.com/mokevnin/sphericon/internal/db"
-	"github.com/mokevnin/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/ent"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/authtoken"
+	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
 // Token lifetimes for the self-service account flows.

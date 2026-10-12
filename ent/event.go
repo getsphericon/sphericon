@@ -10,9 +10,9 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent/contact"
-	"github.com/mokevnin/sphericon/ent/event"
-	"github.com/mokevnin/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // Event is the model entity for the Event schema.

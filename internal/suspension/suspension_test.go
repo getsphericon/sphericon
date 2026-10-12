@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ent/workspace"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/suspension"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/suspension"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestSuspendWorkspaceRecordsAttribution(t *testing.T) {

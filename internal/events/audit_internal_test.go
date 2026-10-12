@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent"
 )
 
 func auditMessage(t *testing.T) *message.Message {

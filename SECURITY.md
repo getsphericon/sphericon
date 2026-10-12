@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please report vulnerabilities privately through GitHub private vulnerability reporting:
-open the [Security tab](https://github.com/mokevnin/sphericon/security) of this repository and
+open the [Security tab](https://github.com/getsphericon/sphericon/security) of this repository and
 choose **Report a vulnerability**. This is the only supported channel; there is no security
 mailbox.
 

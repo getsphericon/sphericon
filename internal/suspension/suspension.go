@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/workspace"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // Actor is who suspends or lifts a suspension (ADR 0026): the automated abuse detector

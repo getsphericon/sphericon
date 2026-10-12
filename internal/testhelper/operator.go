@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	operatorapi "github.com/mokevnin/sphericon/gen/operator"
+	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 )
 
 const operatorBase = "http://local/operator"

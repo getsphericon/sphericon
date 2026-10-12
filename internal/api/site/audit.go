@@ -2,16 +2,16 @@ package site
 
 import (
 	"context"
-	"github.com/mokevnin/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/auditapi"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/ent"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
 // SiteAuditList shows the Workspace's Audit log, newest first. Owner and admin only;

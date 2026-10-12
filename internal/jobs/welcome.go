@@ -6,8 +6,8 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/mokevnin/sphericon/internal/i18n"
-	"github.com/mokevnin/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
 // SendWelcomeArgs is the river job payload for the platform welcome email.

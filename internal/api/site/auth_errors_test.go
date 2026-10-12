@@ -8,14 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/config"
-	"github.com/mokevnin/sphericon/ent/membership"
-	entuser "github.com/mokevnin/sphericon/ent/user"
-	"github.com/mokevnin/sphericon/ent/workspace"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/authtoken"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent/membership"
+	entuser "github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/ent/workspace"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/authtoken"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // signer is the production token signer keyed with the test instance's secret,

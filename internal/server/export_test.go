@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/events"
 	sns "github.com/robbiet480/go.sns"
 )
 

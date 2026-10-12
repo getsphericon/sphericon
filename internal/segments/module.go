@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/segment"
-	"github.com/mokevnin/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 // Domain errors returned by Module. Callers match with errors.Is.

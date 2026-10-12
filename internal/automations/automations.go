@@ -10,9 +10,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/automation"
-	"github.com/mokevnin/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 // Step kinds.

@@ -5,11 +5,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/broadcast"
-	"github.com/mokevnin/sphericon/ent/broadcastrecipient"
-	"github.com/mokevnin/sphericon/internal/messaging"
-	"github.com/mokevnin/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
 // Progress is how far a sending Broadcast has got (ADR 0023). A Broadcast stays

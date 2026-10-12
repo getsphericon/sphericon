@@ -13,10 +13,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/contact"
-	"github.com/mokevnin/sphericon/ent/predicate"
-	"github.com/mokevnin/sphericon/ent/tag"
-	"github.com/mokevnin/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // TagQuery is the builder for querying Tag entities.

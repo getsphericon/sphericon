@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/eventlog"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/eventlog"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // unserializable cannot be marshalled into the outbox payload, so publishing it fails.

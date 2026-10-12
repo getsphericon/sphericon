@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/segments"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/segments"
 )
 
 // SiteRuleGroup builds a site API rule group from its JSON, so a test reads as the rule

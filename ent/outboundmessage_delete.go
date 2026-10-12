@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/outboundmessage"
-	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // OutboundMessageDelete is the builder for deleting a OutboundMessage entity.

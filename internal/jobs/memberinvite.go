@@ -6,7 +6,7 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/mokevnin/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
 // SendMemberInviteArgs is the river payload for a workspace member invitation

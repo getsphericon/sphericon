@@ -6,17 +6,17 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/automationrun"
-	"github.com/mokevnin/sphericon/ent/broadcastrecipient"
-	"github.com/mokevnin/sphericon/ent/confirmation"
-	"github.com/mokevnin/sphericon/ent/event"
-	"github.com/mokevnin/sphericon/ent/outboundmessage"
-	"github.com/mokevnin/sphericon/ent/predicate"
-	"github.com/mokevnin/sphericon/ent/suppression"
-	"github.com/mokevnin/sphericon/ent/unsubscribe"
-	"github.com/mokevnin/sphericon/ent/visitor"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // idChunk bounds how many ids go into one IN (...) list, well below the driver's

@@ -12,9 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/apitoken"
-	"github.com/mokevnin/sphericon/ent/predicate"
-	"github.com/mokevnin/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/apitoken"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // ApiTokenQuery is the builder for querying ApiToken entities.

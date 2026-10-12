@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/mokevnin/sphericon/internal/clientip"
+	"github.com/getsphericon/sphericon/internal/clientip"
 )
 
 func TestFromRequestUsesTheRawRemoteAddrWhenItHasNoPort(t *testing.T) {

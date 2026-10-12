@@ -36,7 +36,7 @@ Names below are the ones Prometheus sees on `/metrics`. They come from OpenTelem
 counters end in `_total` and the unit becomes a suffix (`_seconds`, `_milliseconds`). Every
 series also carries `otel_scope_*` labels, which this page leaves out. Labels are bounded
 technical dimensions (handler, route template, queue, status class); tenant or recipient
-identifiers are never used as labels ([ADR 0018](https://github.com/mokevnin/sphericon/blob/main/docs/adr/0018-metrics-opt-in-internal-listener.md)).
+identifiers are never used as labels ([ADR 0018](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0018-metrics-opt-in-internal-listener.md)).
 
 ### HTTP
 
@@ -101,7 +101,7 @@ opened, so it can rise while the pool is below its maximum.
 
 `bounce` and `complaint` count provider reports about messages the provider had accepted, so
 they arrive later than the send. Per-workspace complaint and bounce rates are on the workspace
-dashboard ([ADR 0011](https://github.com/mokevnin/sphericon/blob/main/docs/adr/0011-deliverability-rate-metrics.md));
+dashboard ([ADR 0011](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0011-deliverability-rate-metrics.md));
 the metric above is the instance-wide view.
 
 ### Runtime

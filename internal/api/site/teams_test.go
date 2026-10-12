@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mokevnin/sphericon/ent/membership"
-	entuser "github.com/mokevnin/sphericon/ent/user"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/ent/membership"
+	entuser "github.com/getsphericon/sphericon/ent/user"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

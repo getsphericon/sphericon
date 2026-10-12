@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/oauthcode"
-	"github.com/mokevnin/sphericon/internal/credentials"
 	"golang.org/x/oauth2"
 )
 

@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/oauthclient"
-	"github.com/mokevnin/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/oauthclient"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 )
 
 // OAuthClientCreate is the builder for creating a OAuthClient entity.

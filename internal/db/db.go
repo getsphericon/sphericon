@@ -5,7 +5,7 @@ import (
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent"
 )
 
 func NewEntClient(sqlDB *sql.DB) *ent.Client {

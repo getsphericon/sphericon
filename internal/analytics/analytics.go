@@ -13,12 +13,12 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/automation"
-	"github.com/mokevnin/sphericon/ent/automationrun"
-	"github.com/mokevnin/sphericon/ent/broadcastrecipient"
-	"github.com/mokevnin/sphericon/ent/contact"
-	"github.com/mokevnin/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/internal/eligibility"
 )
 
 // Window is the selectable trailing window in UTC days, today included.

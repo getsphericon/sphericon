@@ -9,8 +9,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent/broadcast"
-	"github.com/mokevnin/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // Broadcast is the model entity for the Broadcast schema.

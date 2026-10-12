@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/internal/fixtures/fixturegen"
+	"github.com/getsphericon/sphericon/internal/fixtures/fixturegen"
 )
 
 func writeFixtures(t *testing.T, files map[string]string) string {

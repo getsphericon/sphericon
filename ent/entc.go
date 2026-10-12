@@ -15,7 +15,7 @@ import (
 func main() {
 	err := entc.Generate("./schema", &gen.Config{
 		Target:  ".",
-		Package: "github.com/mokevnin/sphericon/ent",
+		Package: "github.com/getsphericon/sphericon/ent",
 		IDType:  &field.TypeInfo{Type: field.TypeInt64},
 		Features: []gen.Feature{
 			gen.FeatureSnapshot,

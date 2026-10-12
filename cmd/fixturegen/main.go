@@ -5,7 +5,7 @@ package main
 import (
 	"log"
 
-	"github.com/mokevnin/sphericon/internal/fixtures/fixturegen"
+	"github.com/getsphericon/sphericon/internal/fixtures/fixturegen"
 )
 
 func main() {

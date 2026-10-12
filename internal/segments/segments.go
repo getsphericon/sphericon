@@ -20,11 +20,11 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/contact"
-	"github.com/mokevnin/sphericon/ent/event"
-	"github.com/mokevnin/sphericon/ent/predicate"
-	"github.com/mokevnin/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/tag"
 )
 
 const (

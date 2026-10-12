@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/mokevnin/sphericon/ent/automationrun"
-	"github.com/mokevnin/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // AutomationRunDelete is the builder for deleting a AutomationRun entity.

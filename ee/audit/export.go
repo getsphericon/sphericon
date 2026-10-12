@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/auditapi"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // exportPageSize is how many entries one query fetches while an export streams.

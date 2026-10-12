@@ -18,9 +18,9 @@ import (
 
 	entsql "entgo.io/ent/dialect/sql"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/predicate"
-	"github.com/mokevnin/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/sendlimiter"
 )
 
 // daySeconds is the length of the rolling window in seconds.

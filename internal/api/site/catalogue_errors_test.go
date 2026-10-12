@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ent/automation"
-	"github.com/mokevnin/sphericon/ent/emailtemplate"
-	"github.com/mokevnin/sphericon/ent/segment"
-	"github.com/mokevnin/sphericon/ent/webhookendpoint"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestSiteAutomationsErrorBranches(t *testing.T) {

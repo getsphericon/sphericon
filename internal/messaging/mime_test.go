@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mokevnin/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/stretchr/testify/require"
 )
 

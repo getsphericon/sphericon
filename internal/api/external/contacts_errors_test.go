@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mokevnin/sphericon/ent/customfield"
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	"github.com/mokevnin/sphericon/internal/api/external"
-	"github.com/mokevnin/sphericon/internal/contacts"
-	"github.com/mokevnin/sphericon/internal/eventlog"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/ent/customfield"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/api/external"
+	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/eventlog"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func globexContact(t *testing.T, env *testhelper.TestEnv, email string) int64 {

@@ -6,13 +6,13 @@ package consent
 import (
 	"context"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/confirmation"
-	"github.com/mokevnin/sphericon/ent/unsubscribe"
-	"github.com/mokevnin/sphericon/internal/automations"
-	"github.com/mokevnin/sphericon/internal/eligibility"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // RecordUnsubscribe writes a per-(channel, destination, sending source) opt-out

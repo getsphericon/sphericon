@@ -6,12 +6,12 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/webhookendpoint"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/jobkind"
-	"github.com/mokevnin/sphericon/internal/secrets"
-	"github.com/mokevnin/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // DeliverWebhookArgs is one delivery attempt of an event to one endpoint. river

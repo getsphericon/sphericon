@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/tracking"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

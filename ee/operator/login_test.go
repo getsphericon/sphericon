@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	operatorapi "github.com/mokevnin/sphericon/gen/operator"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	operatorapi "github.com/getsphericon/sphericon/gen/operator"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // movableClock is the clock the server checks TOTP codes and session expiry against.

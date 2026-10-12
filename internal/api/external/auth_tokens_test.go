@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mokevnin/sphericon/ent/apitoken"
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	"github.com/mokevnin/sphericon/internal/accounts"
-	"github.com/mokevnin/sphericon/internal/api/external"
-	"github.com/mokevnin/sphericon/internal/fixtures"
-	"github.com/mokevnin/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/ent/apitoken"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/external"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

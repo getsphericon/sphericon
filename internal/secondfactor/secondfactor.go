@@ -21,14 +21,14 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/recoverycode"
-	"github.com/mokevnin/sphericon/ent/user"
-	"github.com/mokevnin/sphericon/internal/accounts"
-	"github.com/mokevnin/sphericon/internal/credentials"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/otpcode"
-	"github.com/mokevnin/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/otpcode"
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 // Issuer names the instance in the authenticator app.

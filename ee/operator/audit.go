@@ -3,8 +3,8 @@ package operator
 import (
 	"context"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // AuditEntries is one page of a Workspace's Audit log, newest first, and the cursor of

@@ -94,7 +94,7 @@ for 15 minutes. `/collect` is excluded because it should always be fast.
    ([`SphericonDBPoolSaturated`](#sphericondbpoolsaturated)) and PostgreSQL itself (CPU, IO, long
    queries in `pg_stat_activity`).
 3. Large `events` tables make segment and analytics queries slow; confirm Event retention is
-   running ([ADR 0019](https://github.com/mokevnin/sphericon/blob/main/docs/adr/0019-event-retention.md)).
+   running ([ADR 0019](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0019-event-retention.md)).
 
 **Fix.** Kill or fix the slow query, add a missing index, or scale the database. Adding
 replicas does not help if the database is the limit.
@@ -245,7 +245,7 @@ placed under review.
 **Check.**
 
 1. Which Workspace? The metric is instance-wide; the per-Workspace bounce rate is on the
-   Workspace dashboard ([ADR 0011](https://github.com/mokevnin/sphericon/blob/main/docs/adr/0011-deliverability-rate-metrics.md)).
+   Workspace dashboard ([ADR 0011](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0011-deliverability-rate-metrics.md)).
 2. A recent import of an old or purchased list is the usual cause. Permanent bounces are
    added to the suppression list automatically, but the damage is done by the first send.
 3. Confirm the `suppression` consumer is keeping up ([`SphericonOutboxLagHigh`](#sphericonoutboxlaghigh));
@@ -263,9 +263,9 @@ reviews accounts above roughly this rate, and mailbox providers start filtering.
 **Check.**
 
 1. Which Workspace and which broadcast? Use the Workspace dashboard
-   ([ADR 0011](https://github.com/mokevnin/sphericon/blob/main/docs/adr/0011-deliverability-rate-metrics.md)).
+   ([ADR 0011](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0011-deliverability-rate-metrics.md)).
 2. Is the unsubscribe link working? The one-click unsubscribe headers
-   ([ADR 0012](https://github.com/mokevnin/sphericon/blob/main/docs/adr/0012-bulk-sender-compliance-one-click-unsubscribe.md))
+   ([ADR 0012](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0012-bulk-sender-compliance-one-click-unsubscribe.md))
    must be present and the link reachable, or people use the spam button instead.
 3. Is the list opted in? Mail to people who never asked draws complaints.
 

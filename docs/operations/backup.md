@@ -79,7 +79,7 @@ a schedule (for example monthly) and after any change to the backup setup.
      -e ENCRYPTION_KEY="$ENCRYPTION_KEY" \
      -e APP_URL="https://restore-drill.example.com" \
      -e SMTP_HOST=mailpit.internal -e SMTP_PORT=1025 \
-     ghcr.io/mokevnin/sphericon:<version>
+     ghcr.io/getsphericon/sphericon:<version>
    ```
 
 3. Check that `GET /readyz` returns `200`, sign in, and open a workspace. Confirm the contact
@@ -106,7 +106,7 @@ three behaviours follow from the architecture:
 - **Mail sent after the backup point can be sent again.** Each email sphericon sends is recorded
   as an Outbound message before the provider is called, and the idempotency key that prevents
   duplicate sends lives in that same database row
-  ([ADR 0015](https://github.com/mokevnin/sphericon/blob/main/docs/adr/0015-outbound-send-single-chokepoint.md)). A message sent after the backup
+  ([ADR 0015](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0015-outbound-send-single-chokepoint.md)). A message sent after the backup
   point has no row in the restored database, so its send is not recognized as already done
   and a still-pending job or automation step can send it again. Delivery to the provider is
   at-least-once by design.

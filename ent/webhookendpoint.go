@@ -10,8 +10,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/mokevnin/sphericon/ent/webhookendpoint"
-	"github.com/mokevnin/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // WebhookEndpoint is the model entity for the WebhookEndpoint schema.

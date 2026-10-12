@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/mokevnin/sphericon/ent/integration"
-	"github.com/mokevnin/sphericon/internal/messaging/ses"
-	"github.com/mokevnin/sphericon/internal/messaging/smtp"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/messaging/ses"
+	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

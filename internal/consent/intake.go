@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/automation"
-	"github.com/mokevnin/sphericon/ent/contact"
-	"github.com/mokevnin/sphericon/ent/suppression"
-	"github.com/mokevnin/sphericon/ent/unsubscribe"
-	"github.com/mokevnin/sphericon/internal/eligibility"
-	"github.com/mokevnin/sphericon/internal/events"
-	"github.com/mokevnin/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
 // Intake: consent changes made by an authenticated caller (the SPA, an API token,

@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/mokevnin/sphericon/ent"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/convert"
-	"github.com/mokevnin/sphericon/internal/pagination"
-	"github.com/mokevnin/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/ent"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/samber/lo"
 )
 

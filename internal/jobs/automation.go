@@ -9,15 +9,15 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/riverqueue/river"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/automation"
-	"github.com/mokevnin/sphericon/ent/automationrun"
-	"github.com/mokevnin/sphericon/ent/outboundmessage"
-	"github.com/mokevnin/sphericon/internal/automations"
-	"github.com/mokevnin/sphericon/internal/eligibility"
-	"github.com/mokevnin/sphericon/internal/jobkind"
-	"github.com/mokevnin/sphericon/internal/outbound"
-	"github.com/mokevnin/sphericon/internal/tags"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/tags"
 )
 
 // --- trigger evaluation: enroll contacts into matching automations ---

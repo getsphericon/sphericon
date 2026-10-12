@@ -8,14 +8,14 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/mokevnin/sphericon/ent"
-	externalapi "github.com/mokevnin/sphericon/gen/external"
-	"github.com/mokevnin/sphericon/internal/api/auth"
-	"github.com/mokevnin/sphericon/internal/contacts"
-	"github.com/mokevnin/sphericon/internal/convert"
-	"github.com/mokevnin/sphericon/internal/erasure"
-	"github.com/mokevnin/sphericon/internal/eventlog"
-	"github.com/mokevnin/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/ent"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/erasure"
+	"github.com/getsphericon/sphericon/internal/eventlog"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 func (h *Handlers) ContactsList(ctx context.Context, params externalapi.ContactsListParams) (externalapi.ContactsListRes, error) {

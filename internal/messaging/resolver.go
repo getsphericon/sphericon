@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mokevnin/sphericon/ent"
-	"github.com/mokevnin/sphericon/ent/integration"
-	"github.com/mokevnin/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 // ErrNoProvider is returned when a workspace has no enabled default provider for

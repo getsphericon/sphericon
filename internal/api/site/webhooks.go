@@ -8,11 +8,11 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/mokevnin/sphericon/ent"
-	siteapi "github.com/mokevnin/sphericon/gen/site"
-	"github.com/mokevnin/sphericon/internal/i18n"
-	"github.com/mokevnin/sphericon/internal/pagination"
-	"github.com/mokevnin/sphericon/internal/webhooks"
+	"github.com/getsphericon/sphericon/ent"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
 // webhookResource maps the endpoint with its decrypted signing secret, which the
