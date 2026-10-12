@@ -433,7 +433,6 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "source_id", Type: field.TypeString, Unique: true, Nullable: true},
-		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "visitor_id", Type: field.TypeString, Nullable: true},
 		{Name: "subject_id", Type: field.TypeString, Nullable: true},
 		{Name: "email", Type: field.TypeString, Nullable: true},
@@ -441,6 +440,7 @@ var (
 		{Name: "action", Type: field.TypeString},
 		{Name: "properties", Type: field.TypeJSON, Nullable: true},
 		{Name: "occurred_at", Type: field.TypeTime, Nullable: true},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// EventsTable holds the schema information for the "events" table.
@@ -449,6 +449,12 @@ var (
 		Columns:    EventsColumns,
 		PrimaryKey: []*schema.Column{EventsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "events_contacts_events",
+				Columns:    []*schema.Column{EventsColumns[11]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
 			{
 				Symbol:     "events_workspaces_events",
 				Columns:    []*schema.Column{EventsColumns[12]},
@@ -460,12 +466,12 @@ var (
 			{
 				Name:    "event_workspace_id_contact_id_action",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[12], EventsColumns[4], EventsColumns[9]},
+				Columns: []*schema.Column{EventsColumns[12], EventsColumns[11], EventsColumns[8]},
 			},
 			{
 				Name:    "event_workspace_id_visitor_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[12], EventsColumns[5]},
+				Columns: []*schema.Column{EventsColumns[12], EventsColumns[4]},
 			},
 			{
 				Name:    "events_created_at_analytical_idx",
@@ -1167,7 +1173,8 @@ func init() {
 	EmailTemplatesTable.Annotation = &entsql.Annotation{
 		Table: "email_templates",
 	}
-	EventsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	EventsTable.ForeignKeys[0].RefTable = ContactsTable
+	EventsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	EventsTable.Annotation = &entsql.Annotation{
 		Table: "events",
 	}

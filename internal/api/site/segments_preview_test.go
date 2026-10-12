@@ -30,9 +30,9 @@ func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
-	def := `{"combinator":"and","rules":[{"field":"custom:plan","operator":"=","value":"preview-pro"}]}`
+	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"preview-pro"}]}`
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Definition: siteapi.NewOptNilString(def),
+		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
@@ -53,9 +53,9 @@ func TestSiteSegmentsPreviewEventCondition(t *testing.T) {
 		SetAction("signed_up").SetOccurredAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
 
-	def := `{"combinator":"and","rules":[{"field":"event:signed_up","operator":"performed","value":"30"}]}`
+	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:signed_up","operator":"performed","value":"30"}]}`
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Definition: siteapi.NewOptNilString(def),
+		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
@@ -69,7 +69,7 @@ func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
 	ctx := context.Background()
 
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Definition: siteapi.NewOptNilString(`{"rules":[{"field":"nope","operator":"=","value":"x"}]}`),
+		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)),
 	}, siteapi.SiteSegmentsPreviewParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsPreviewUnprocessableEntity{}, out)
@@ -82,7 +82,7 @@ func TestSiteSegmentsCreateRejectsInvalidRuleDefinition(t *testing.T) {
 
 	out, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
 		Name:       "Bad rule",
-		Definition: `{"rules":[{"field":"email","operator":"weird","value":"x"}]}`,
+		Definition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`),
 	}, siteapi.SiteSegmentsCreateParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, out)
@@ -92,7 +92,7 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	bad := `{"rules":[{"field":"email","operator":"weird","value":"x"}]}`
+	bad := testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
 
 	// Create rejects a bad definition.
 	created, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
@@ -101,7 +101,7 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, created)
 
-	updated, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Definition: siteapi.NewOptString(bad)},
+	updated, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Definition: siteapi.NewOptSiteSegmentRuleGroup(bad)},
 		siteapi.SiteSegmentsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsUpdateUnprocessableEntity{}, updated)
@@ -121,7 +121,7 @@ func (r rawBody) Do(req *http.Request) (*http.Response, error) {
 }
 
 // A Segment is always a rule: the contract types definition as a non-nullable
-// string, so the server rejects an explicit JSON null at the edge (400 from the
+// rule group, so the server rejects an explicit JSON null at the edge (400 from the
 // generated request validation) and leaves the stored rule untouched. An absent
 // key keeps the stored rule.
 func TestSiteSegmentsUpdateContractRejectsNullDefinition(t *testing.T) {

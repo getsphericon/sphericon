@@ -1173,9 +1173,9 @@ export type SiteCreateSegmentInput = {
    */
   name: string;
   /**
-   * Segment definition: the rule query (react-querybuilder JSON); an empty rule group matches all contacts
+   * Segment definition: the rule group; an empty group matches all contacts
    */
-  definition: string;
+  definition: SiteSegmentRuleGroup;
 };
 
 /**
@@ -1705,9 +1705,9 @@ export type SiteOAuthDecisionResult = {
  */
 export type SitePreviewSegmentInput = {
   /**
-   * Rule definition (react-querybuilder JSON); empty means all contacts
+   * Rule definition; absent means all contacts
    */
-  definition?: string | null;
+  definition?: SiteSegmentRuleGroup;
 };
 
 /**
@@ -1857,6 +1857,41 @@ export type SiteSecondFactorStatus = {
 };
 
 /**
+ * How a segment group combines its rules
+ */
+export const SiteSegmentCombinator = { AND: 'and', OR: 'or' } as const;
+
+/**
+ * How a segment group combines its rules
+ */
+export type SiteSegmentCombinator = typeof SiteSegmentCombinator[keyof typeof SiteSegmentCombinator];
+
+/**
+ * What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and
+ * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
+ * notPerformed; the tag field takes has and doesNotHave.
+ */
+export const SiteSegmentOperator = {
+  EQ: 'eq',
+  NEQ: 'neq',
+  CONTAINS: 'contains',
+  BEGINS_WITH: 'beginsWith',
+  NULL: 'null',
+  NOT_NULL: 'notNull',
+  PERFORMED: 'performed',
+  NOT_PERFORMED: 'notPerformed',
+  HAS: 'has',
+  DOES_NOT_HAVE: 'doesNotHave'
+} as const;
+
+/**
+ * What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and
+ * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
+ * notPerformed; the tag field takes has and doesNotHave.
+ */
+export type SiteSegmentOperator = typeof SiteSegmentOperator[keyof typeof SiteSegmentOperator];
+
+/**
  * Segment resource used by the site UI
  */
 export type SiteSegmentResource = {
@@ -1869,9 +1904,9 @@ export type SiteSegmentResource = {
    */
   name: string;
   /**
-   * Segment definition: the rule query (react-querybuilder JSON); an empty rule group matches all contacts
+   * Segment definition: the rule group; an empty group matches all contacts
    */
-  definition?: string;
+  definition?: SiteSegmentRuleGroup;
   /**
    * Creation timestamp
    */
@@ -1881,6 +1916,56 @@ export type SiteSegmentResource = {
    */
   updatedAt: Timestamp;
 };
+
+/**
+ * One condition of a segment: a field, an operator and a value
+ */
+export type SiteSegmentRule = {
+  kind: 'rule';
+  /**
+   * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
+   * time_zone), "tag", "custom:<key>" for a custom field of the workspace, or "event:<action>"
+   */
+  field: string;
+  /**
+   * How the field is tested
+   */
+  operator: SiteSegmentOperator;
+  /**
+   * The value to test against: a tag name, a day window for events ("" = ever), blank for
+   * null and notNull
+   */
+  value?: string;
+};
+
+/**
+ * A group of rules combined with and/or, optionally negated. An empty group matches every
+ * contact (an empty negated group matches none).
+ */
+export type SiteSegmentRuleGroup = {
+  kind: 'group';
+  /**
+   * How the rules combine
+   */
+  combinator: SiteSegmentCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's rules and nested groups
+   */
+  rules: Array<SiteSegmentRuleNode>;
+};
+
+/**
+ * A rule or a nested group inside a segment group, discriminated by `kind`.
+ */
+export type SiteSegmentRuleNode = ({
+  kind: 'rule';
+} & SiteSegmentRule) | ({
+  kind: 'group';
+} & SiteSegmentRuleGroup);
 
 /**
  * Where an effective Send rate limit comes from
@@ -2338,9 +2423,9 @@ export type SiteUpdateSegmentInput = {
    */
   name?: string;
   /**
-   * Segment definition: the rule query (react-querybuilder JSON); an empty rule group matches all contacts
+   * Segment definition: the rule group; an empty group matches all contacts
    */
-  definition?: string;
+  definition?: SiteSegmentRuleGroup;
 };
 
 /**

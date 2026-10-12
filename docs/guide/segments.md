@@ -10,7 +10,8 @@ look at:
 
 - **Attributes**: email, name, time zone and the other core fields.
 - **Custom fields**: any field your tracking or import created, with the operators its type
-  supports.
+  supports. A rule that names a field your workspace does not have is rejected when you save
+  the segment.
 - **Tags**: whether the contact has a tag or not.
 - **Events**: whether the contact did, or did not do, something, optionally within the last
   N days. Because delivery facts are events, you can target on `email.opened` or `email.clicked`
@@ -29,12 +30,22 @@ contact; a segment decides who to target; and the opt-out rules described in
 
 ## Segments through the API
 
-The definition is the rule query as JSON (the format used by react-querybuilder). An empty rule
-group matches every contact.
+The definition is a rule group: a `combinator` (`and` or `or`), an optional `not`, and `rules`,
+each a rule or a nested group, told apart by `kind`. A rule has a `field`, an `operator` and a
+`value`. An empty group matches every contact.
+
+| Field                 | Operators                                                | Value                          |
+| --------------------- | -------------------------------------------------------- | ------------------------------ |
+| `email`, `phone`, ... | `eq`, `neq`, `contains`, `beginsWith`, `null`, `notNull` | the text to compare            |
+| `custom:<key>`        | `eq`, `neq`, `contains`, `notNull`                       | the value to compare           |
+| `tag`                 | `has`, `doesNotHave`                                     | the tag name                   |
+| `event:<action>`      | `performed`, `notPerformed`                              | a window in days, blank = ever |
 
 ```sh
 curl https://sphericon.example.com/api/segments/preview \
   -H "Authorization: Bearer $SPHERICON_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"definition":"{\"combinator\":\"and\",\"rules\":[]}"}'
+  -d '{"definition":{"kind":"group","combinator":"and","rules":[
+        {"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"},
+        {"kind":"rule","field":"event:signed_up","operator":"performed","value":"30"}]}}'
 ```

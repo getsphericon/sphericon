@@ -65,6 +65,10 @@ func (Contact) Edges() []ent.Edge {
 		edge.To("visitors", Visitor.Type),
 		// Presence-only labels (GLOSSARY: Tag), many-to-many via contact_tags.
 		edge.To("tags", Tag.Type),
+		// The Contact's Events. The FK is nullable and SET NULL: an Event outlives its
+		// Contact (GLOSSARY: Event), so deleting the Contact only unlinks them.
+		edge.To("events", Event.Type).
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 

@@ -53,9 +53,11 @@ type ContactEdges struct {
 	Visitors []*Visitor `json:"visitors,omitempty"`
 	// Tags holds the value of the tags edge.
 	Tags []*Tag `json:"tags,omitempty"`
+	// Events holds the value of the events edge.
+	Events []*Event `json:"events,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -85,6 +87,15 @@ func (e ContactEdges) TagsOrErr() ([]*Tag, error) {
 		return e.Tags, nil
 	}
 	return nil, &NotLoadedError{edge: "tags"}
+}
+
+// EventsOrErr returns the Events value or an error if the edge
+// was not loaded in eager-loading.
+func (e ContactEdges) EventsOrErr() ([]*Event, error) {
+	if e.loadedTypes[3] {
+		return e.Events, nil
+	}
+	return nil, &NotLoadedError{edge: "events"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -215,6 +226,11 @@ func (_m *Contact) QueryVisitors() *VisitorQuery {
 // QueryTags queries the "tags" edge of the Contact entity.
 func (_m *Contact) QueryTags() *TagQuery {
 	return NewContactClient(_m.config).QueryTags(_m)
+}
+
+// QueryEvents queries the "events" edge of the Contact entity.
+func (_m *Contact) QueryEvents() *EventQuery {
+	return NewContactClient(_m.config).QueryEvents(_m)
 }
 
 // Update returns a builder for updating this Contact.

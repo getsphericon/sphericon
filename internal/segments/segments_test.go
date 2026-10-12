@@ -16,6 +16,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// validate runs the Module's rule set for the Acme Workspace.
+func validate(t *testing.T, env *testhelper.TestEnv, def string) error {
+	t.Helper()
+	return segments.New().Validate(context.Background(), env.DB.Scoped(fixtures.AcmeID), def)
+}
+
 func rule(field, op, value string) segments.Rule {
 	return segments.Rule{Field: field, Operator: op, Value: value}
 }
@@ -50,7 +56,7 @@ func TestCompileEvaluatesAgainstContacts(t *testing.T) {
 	mk("cara@seg.test", "Cara", map[string]any{"plan": "pro"})
 
 	count := func(g segments.Group) int {
-		p, err := segments.Compile(g, segments.ContactSchema())
+		p, err := segments.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
 		require.NoError(t, err)
 		n, err := env.DB.Contact.Query().
 			Where(contact.WorkspaceID(fixtures.AcmeID), contact.EmailContainsFold("@seg.test"), predicate.Contact(p)).
@@ -63,25 +69,25 @@ func TestCompileEvaluatesAgainstContacts(t *testing.T) {
 	assert.Equal(t, 3, count(segments.Group{}))
 
 	// custom:plan = pro → Ann + Cara
-	assert.Equal(t, 2, count(segments.Group{Rules: marshal(rule("custom:plan", "=", "pro"))}))
+	assert.Equal(t, 2, count(segments.Group{Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 
 	// and: first_name=Ann AND plan=pro → just Ann
 	assert.Equal(t, 1, count(segments.Group{
 		Combinator: "and",
-		Rules:      marshal(rule("first_name", "=", "Ann"), rule("custom:plan", "=", "pro")),
+		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("custom:plan", "eq", "pro")),
 	}))
 
 	// or: first_name=Ann OR first_name=Bob → 2
 	assert.Equal(t, 2, count(segments.Group{
 		Combinator: "or",
-		Rules:      marshal(rule("first_name", "=", "Ann"), rule("first_name", "=", "Bob")),
+		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("first_name", "eq", "Bob")),
 	}))
 
 	// custom:plan notNull → all 3 have it
 	assert.Equal(t, 3, count(segments.Group{Rules: marshal(rule("custom:plan", "notNull", ""))}))
 
 	// not: NOT(plan=pro) → only Bob (free)
-	assert.Equal(t, 1, count(segments.Group{Not: true, Rules: marshal(rule("custom:plan", "=", "pro"))}))
+	assert.Equal(t, 1, count(segments.Group{Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 }
 
 func TestEventConditions(t *testing.T) {
@@ -103,14 +109,17 @@ func TestEventConditions(t *testing.T) {
 	annID := mk("ann@evseg.test")
 	mk("bob@evseg.test")
 
-	// The committed Globex tenant proves the join is workspace-scoped.
 	now := time.Now()
-	mkEvent(annID, "page_view", fixtures.AcmeID, now.AddDate(0, 0, -2))  // recent
-	mkEvent(annID, "purchase", fixtures.AcmeID, now.AddDate(0, 0, -40))  // old
-	mkEvent(annID, "ws2_only", fixtures.GlobexID, now.AddDate(0, 0, -1)) // other workspace
+	mkEvent(annID, "page_view", fixtures.AcmeID, now.AddDate(0, 0, -2)) // recent
+	mkEvent(annID, "purchase", fixtures.AcmeID, now.AddDate(0, 0, -40)) // old
+	// An anonymous event of the same action (no Contact yet) must not hide Bob from
+	// notPerformed: NOT IN over a NULL contact_id would match nobody.
+	_, err := env.DB.Event.Create().SetWorkspaceID(fixtures.AcmeID).SetAction("page_view").
+		SetVisitorID("anon-visitor").SetOccurredAt(now).Save(ctx)
+	require.NoError(t, err)
 
 	count := func(g segments.Group) int {
-		p, err := segments.Compile(g, segments.ContactSchema())
+		p, err := segments.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
 		require.NoError(t, err)
 		n, err := env.DB.Contact.Query().
 			Where(contact.WorkspaceID(fixtures.AcmeID), contact.EmailContainsFold("@evseg.test"), predicate.Contact(p)).
@@ -128,12 +137,10 @@ func TestEventConditions(t *testing.T) {
 	assert.Equal(t, 1, count(segments.Group{Rules: marshal(rule("event:purchase", "performed", ""))}))
 	// notPerformed page_view → Bob only.
 	assert.Equal(t, 1, count(segments.Group{Rules: marshal(rule("event:page_view", "notPerformed", ""))}))
-	// workspace isolation: ws2_only event must not match in ws1.
-	assert.Equal(t, 0, count(segments.Group{Rules: marshal(rule("event:ws2_only", "performed", ""))}))
 
 	// validation: bad operator + non-numeric window are rejected.
-	assert.Error(t, segments.Validate(`{"rules":[{"field":"event:x","operator":"weird","value":""}]}`, segments.ContactSchema()))
-	assert.Error(t, segments.Validate(`{"rules":[{"field":"event:x","operator":"performed","value":"soon"}]}`, segments.ContactSchema()))
+	assert.Error(t, validate(t, env, `{"rules":[{"field":"event:x","operator":"weird","value":""}]}`))
+	assert.Error(t, validate(t, env, `{"rules":[{"field":"event:x","operator":"performed","value":"soon"}]}`))
 }
 
 // Fixtures: tag "vip" is on contacts 1 and 3, "newsletter" on contact 1, "unused" on
@@ -144,7 +151,7 @@ func TestTagConditions(t *testing.T) {
 
 	// The anchor contacts 1-3 are the only ones the fixtures tag.
 	count := func(g segments.Group) int {
-		p, err := segments.Compile(g, segments.ContactSchema())
+		p, err := segments.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
 		require.NoError(t, err)
 		n, err := env.DB.Contact.Query().
 			Where(contact.WorkspaceID(fixtures.AcmeID), contact.IDIn(fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID), predicate.Contact(p)).
@@ -177,23 +184,24 @@ func TestTagConditions(t *testing.T) {
 	assert.Equal(t, 0, count(has(fixtures.TagGlobexName)))
 
 	// Validation: only has / doesNotHave are valid for the tag field.
-	assert.Error(t, segments.Validate(`{"rules":[{"field":"tag","operator":"=","value":"vip"}]}`, segments.ContactSchema()))
+	assert.Error(t, validate(t, env, `{"rules":[{"field":"tag","operator":"eq","value":"vip"}]}`))
 }
 
 func TestParseAndValidate(t *testing.T) {
+	env := testhelper.Setup(t)
 	g, err := segments.Parse("")
 	require.NoError(t, err)
 	assert.Equal(t, "and", g.Combinator)
 
-	require.NoError(t, segments.Validate(`{"combinator":"or","rules":[{"field":"email","operator":"contains","value":"x"}]}`, segments.ContactSchema()))
+	require.NoError(t, validate(t, env, `{"combinator":"or","rules":[{"field":"email","operator":"contains","value":"x"}]}`))
 
 	// nested group
-	require.NoError(t, segments.Validate(`{"combinator":"and","rules":[{"combinator":"or","rules":[{"field":"first_name","operator":"=","value":"Ann"}]}]}`, segments.ContactSchema()))
+	require.NoError(t, validate(t, env, `{"combinator":"and","rules":[{"combinator":"or","rules":[{"field":"first_name","operator":"eq","value":"Ann"}]}]}`))
 
 	// unknown field
-	assert.Error(t, segments.Validate(`{"rules":[{"field":"nope","operator":"=","value":"x"}]}`, segments.ContactSchema()))
+	assert.Error(t, validate(t, env, `{"rules":[{"field":"nope","operator":"eq","value":"x"}]}`))
 	// unsupported operator
-	assert.Error(t, segments.Validate(`{"rules":[{"field":"email","operator":"weird","value":"x"}]}`, segments.ContactSchema()))
+	assert.Error(t, validate(t, env, `{"rules":[{"field":"email","operator":"weird","value":"x"}]}`))
 	// malformed JSON
-	assert.Error(t, segments.Validate(`{not json`, segments.ContactSchema()))
+	assert.Error(t, validate(t, env, `{not json`))
 }

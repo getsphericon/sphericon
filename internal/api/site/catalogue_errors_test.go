@@ -153,10 +153,10 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	known := idStr(fixtures.SegmentProPlanID)
 	missing := idStr(99999)
 
-	r1, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Definition: "{}"}, siteapi.SiteSegmentsCreateParams{Slug: foreign})
+	r1, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Definition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)}, siteapi.SiteSegmentsCreateParams{Slug: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateNotFound{}, r1)
-	r2, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Definition: "not json"}, siteapi.SiteSegmentsCreateParams{Slug: acme})
+	r2, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Definition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)}, siteapi.SiteSegmentsCreateParams{Slug: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, r2)
 
@@ -185,7 +185,7 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	u3, err := c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{Slug: acme, ID: missing})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsUpdateNotFound{}, u3)
-	u4, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Definition: siteapi.NewOptString("not json")}, siteapi.SiteSegmentsUpdateParams{Slug: acme, ID: known})
+	u4, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))}, siteapi.SiteSegmentsUpdateParams{Slug: acme, ID: known})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsUpdateUnprocessableEntity{}, u4)
 	u5, err := c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{Slug: acme, ID: known})
