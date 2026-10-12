@@ -103,14 +103,16 @@ model SiteInvitationLookupResult {
   hasAccount: boolean;
 }
 
-/** Accept an invite. name + password are required unless the invited address has a
- * Verified User (answer 422 otherwise); ignored for a Verified User. */
+/** Accept an invite. For an address with no User or an Unverified User, name + password
+ * are required (422 otherwise). For a Verified User the body is not read: the session of
+ * that same User is the proof. */
 model SiteAcceptInvitationInput {
   name?: string;
   password?: string;
 }
 
-// Public, session-less flow opened from the invite link. Not workspace-scoped.
+// Opened from the invite link. Not workspace-scoped. Lookup is session-less; accept
+// takes an optional session cookie, required (and matched) only for a Verified User.
 @route("/invitations")
 @tag("Site Invitations")
 namespace SitePublicInvitations {
@@ -125,12 +127,16 @@ namespace SitePublicInvitations {
       }
     | NotFoundProblem;
 
-  /** Accept an invite: create or attach the User and create the Membership */
-  @useAuth(NoAuth)
+  /** Accept an invite: create or complete the User, or attach the signed-in Verified
+   * User, and create the Membership. 401 without a session and 403 for another User's
+   * session when the address has a Verified User. */
+  @useAuth(ApiKeyAuth<ApiKeyLocation.cookie, "JWT"> | NoAuth)
   @post
   @route("/{token}/accept")
   op accept(@path token: string, @body body: SiteAcceptInvitationInput):
     | OkResponse
+    | UnauthorizedProblem
+    | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;

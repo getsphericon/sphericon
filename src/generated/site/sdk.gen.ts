@@ -207,7 +207,9 @@ export const sitePublicInvitationsLookup = <ThrowOnError extends boolean = false
 });
 
 /**
- * Accept an invite: create or attach the User and create the Membership
+ * Accept an invite: create or complete the User, or attach the signed-in Verified
+ * User, and create the Membership. 401 without a session and 403 for another User's
+ * session when the address has a Verified User.
  */
 export const sitePublicInvitationsAccept = <ThrowOnError extends boolean = false>(options: Options<SitePublicInvitationsAcceptData, ThrowOnError>): RequestResult<SitePublicInvitationsAcceptResponses, SitePublicInvitationsAcceptErrors, ThrowOnError> => (options.client ?? client).post<SitePublicInvitationsAcceptResponses, SitePublicInvitationsAcceptErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -215,6 +217,11 @@ export const sitePublicInvitationsAccept = <ThrowOnError extends boolean = false
     path: zSitePublicInvitationsAcceptPath,
     query: z.never().optional()
   }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'JWT',
+      type: 'apiKey'
+    }],
   url: '/invitations/{token}/accept',
   ...options,
   headers: {

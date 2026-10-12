@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 import {
   handleSitePublicInvitationsAccept,
   handleSitePublicInvitationsLookup,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteInvitationLookupResult } from '../../generated/site/types.gen.ts'
 import { acceptInvitationRoute, loginRoute } from '../../router.tsx'
@@ -45,9 +46,10 @@ test('a new user supplies a name and password to accept', async () => {
   await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: loginRoute.to }])
 })
 
-test('an existing account joins with an empty body and no credential fields', async () => {
+test('a signed-in Verified User joins with an empty body and no credential fields', async () => {
   const bodies: unknown[] = []
   worker.use(
+    handleSiteWorkspacesList({ body: [] }),
     handleSitePublicInvitationsLookup({ body: invite(true) }),
     handleSitePublicInvitationsAccept(async ({ request }) => {
       bodies.push(await request.json())
@@ -63,8 +65,27 @@ test('an existing account joins with an empty body and no credential fields', as
   await expect.poll(() => bodies).toEqual([{}])
 })
 
+test('a signed-out Verified User is sent to sign in and back to the accept page', async () => {
+  worker.use(
+    handleSitePublicInvitationsLookup({ body: invite(true) }),
+    handleSiteWorkspacesList(() => problem(401)),
+  )
+  const { screen, navigate } = await renderWithRouter(<AcceptInvitationPage />, MOUNT)
+
+  await expect.element(screen.getByLabelText(/^Password/)).not.toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('button', { name: 'Join workspace' }))
+    .not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Sign in' }).click()
+
+  await expect
+    .poll(() => navigate.mock.calls)
+    .toContainEqual([{ to: loginRoute.to, search: { redirect: expect.stringContaining('inv-1') } }])
+})
+
 test('an accept failure shows the API error and stays on the page', async () => {
   worker.use(
+    handleSiteWorkspacesList({ body: [] }),
     handleSitePublicInvitationsLookup({ body: invite(true) }),
     handleSitePublicInvitationsAccept(() => problem(410, { detail: 'Invitation revoked' })),
   )

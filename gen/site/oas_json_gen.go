@@ -18177,6 +18177,44 @@ func (s *SitePublicConfirmationsPerformGone) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SitePublicInvitationsAcceptForbidden as json.
+func (s *SitePublicInvitationsAcceptForbidden) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SitePublicInvitationsAcceptForbidden from json.
+func (s *SitePublicInvitationsAcceptForbidden) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SitePublicInvitationsAcceptForbidden to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SitePublicInvitationsAcceptForbidden(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SitePublicInvitationsAcceptForbidden) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SitePublicInvitationsAcceptForbidden) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SitePublicInvitationsAcceptNotFound as json.
 func (s *SitePublicInvitationsAcceptNotFound) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
@@ -18211,6 +18249,44 @@ func (s *SitePublicInvitationsAcceptNotFound) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SitePublicInvitationsAcceptNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SitePublicInvitationsAcceptUnauthorized as json.
+func (s *SitePublicInvitationsAcceptUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SitePublicInvitationsAcceptUnauthorized from json.
+func (s *SitePublicInvitationsAcceptUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SitePublicInvitationsAcceptUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SitePublicInvitationsAcceptUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SitePublicInvitationsAcceptUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SitePublicInvitationsAcceptUnauthorized) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

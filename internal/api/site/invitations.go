@@ -181,8 +181,9 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 }
 
 // SitePublicInvitationsAccept turns an invite into a Membership: it attaches an
-// existing User or creates one (name + password), then joins them to the
-// workspace. Link possession is the authorization.
+// Verified User (their own session) or sets up the account (name + password), then
+// joins them to the workspace. Link possession authorizes an address with no Verified
+// User; a Verified User's address also needs that User's session.
 func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi.SiteAcceptInvitationInput, params siteapi.SitePublicInvitationsAcceptParams) (siteapi.SitePublicInvitationsAcceptRes, error) {
 	inv, err := h.validInvitation(ctx, params.Token)
 	if ent.IsNotFound(err) {
@@ -193,9 +194,28 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		return nil, err
 	}
 
-	name, _ := req.Name.Get()
-	name = strings.TrimSpace(name)
-	password, _ := req.Password.Get()
+	// A Verified User's own session is the proof of the address (ADR 0030): no session
+	// is 401, another User's is 403, and no name or password is read.
+	verified, err := h.accounts.HasVerifiedAccount(ctx, inv.Email)
+	if err != nil {
+		return nil, err
+	}
+	name, password := "", ""
+	if verified {
+		a := auth.GetSiteAuth(ctx)
+		if a == nil {
+			v := siteapi.SitePublicInvitationsAcceptUnauthorized(problem(http.StatusUnauthorized, "sign in to accept this invitation"))
+			return &v, nil
+		}
+		if !strings.EqualFold(a.Email, inv.Email) {
+			v := siteapi.SitePublicInvitationsAcceptForbidden(problem(http.StatusForbidden, "this invitation is for another account"))
+			return &v, nil
+		}
+	} else {
+		n, _ := req.Name.Get()
+		name = strings.TrimSpace(n)
+		password, _ = req.Password.Get()
+	}
 
 	err = h.accounts.AcceptInvitation(ctx, inv, name, password)
 	if errors.Is(err, accounts.ErrCredentialsRequired) {

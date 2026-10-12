@@ -762,7 +762,7 @@
     "/invitations/{token}/accept": {
       "post": {
         "operationId": "SitePublicInvitations_accept",
-        "description": "Accept an invite: create or attach the User and create the Membership",
+        "description": "Accept an invite: create or complete the User, or attach the signed-in Verified\nUser, and create the Membership. 401 without a session and 403 for another User's\nsession when the address has a Verified User.",
         "parameters": [
           {
             "name": "token",
@@ -776,6 +776,26 @@
         "responses": {
           "200": {
             "description": "The request has succeeded."
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "404": {
             "description": "RFC 7807 not found response",
@@ -853,7 +873,12 @@
             }
           }
         },
-        "security": [{}]
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {}
+        ]
       }
     },
     "/me": {
@@ -7412,7 +7437,7 @@
             "type": "string"
           }
         },
-        "description": "Accept an invite. name + password are required unless the invited address has a\nVerified User (answer 422 otherwise); ignored for a Verified User."
+        "description": "Accept an invite. For an address with no User or an Unverified User, name + password\nare required (422 otherwise). For a Verified User the body is not read: the session of\nthat same User is the proof."
       },
       "SiteAccountLinkResource": {
         "type": "object",

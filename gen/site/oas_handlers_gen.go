@@ -9809,7 +9809,9 @@ func (s *Server) handleSitePublicConfirmationsPerformRequest(args [1]string, arg
 
 // handleSitePublicInvitationsAcceptRequest handles SitePublicInvitations_accept operation.
 //
-// Accept an invite: create or attach the User and create the Membership.
+// Accept an invite: create or complete the User, or attach the signed-in Verified User, and create the
+// Membership. 401 without a session and 403 for another User's session when the address has a Verified
+// User.
 //
 // POST /invitations/{token}/accept
 func (s *Server) handleSitePublicInvitationsAcceptRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -9883,6 +9885,51 @@ func (s *Server) handleSitePublicInvitationsAcceptRequest(args [1]string, argsEs
 			ID:   "SitePublicInvitations_accept",
 		}
 	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, SitePublicInvitationsAcceptOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+				{},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
 	params, err := decodeSitePublicInvitationsAcceptParams(args, argsEscaped, r)
 	if err != nil {
 		err = &ogenerrors.DecodeParamsError{
