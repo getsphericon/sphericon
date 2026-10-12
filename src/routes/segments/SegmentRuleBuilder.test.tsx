@@ -6,9 +6,11 @@ import {
   handleSiteEventsActions,
   handleSiteSegmentsPreview,
 } from '../../generated/site/msw.gen.ts'
+import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
+import { emptyGroup } from './rules.ts'
 import { SegmentRuleBuilder } from './SegmentRuleBuilder.tsx'
 
 function serve(previewBodies: unknown[] = []) {
@@ -30,8 +32,11 @@ function serve(previewBodies: unknown[] = []) {
 test('sends the current rule to the audience preview', async () => {
   const previews: unknown[] = []
   serve(previews)
-  const value =
-    '{"combinator":"and","rules":[{"field":"email","operator":"contains","value":"@x"}]}'
+  const value: SiteSegmentRuleGroup = {
+    kind: 'group',
+    combinator: 'and',
+    rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
+  }
   const { screen } = await renderWithRouter(
     <SegmentRuleBuilder slug="test" value={value} onChange={() => {}} />,
   )
@@ -43,37 +48,19 @@ test('sends the current rule to the audience preview', async () => {
   await expect.element(screen.getByText('3 matching contacts')).toBeInTheDocument()
 })
 
-test('adding a rule emits the new rule group as JSON', async () => {
+test('adding a rule emits the typed rule group', async () => {
   serve()
-  const onChange = vi.fn<(json: string) => void>()
+  const onChange = vi.fn<(group: SiteSegmentRuleGroup) => void>()
   const { screen } = await renderWithRouter(
-    <SegmentRuleBuilder slug="test" value="" onChange={onChange} />,
+    <SegmentRuleBuilder slug="test" value={emptyGroup} onChange={onChange} />,
   )
 
   await screen.getByRole('button', { name: /Rule/ }).first().click()
 
   await expect.poll(() => onChange.mock.calls.length).toBeGreaterThan(0)
-  const [json] = onChange.mock.calls[0] ?? []
-  expect(JSON.parse(String(json))).toMatchObject({
+  expect(onChange.mock.calls[0]?.[0]).toMatchObject({
+    kind: 'group',
     combinator: 'and',
-    rules: [{ field: 'subject_id' }],
+    rules: [{ kind: 'rule', field: 'subject_id', operator: 'eq' }],
   })
-})
-
-test('an unparsable or non-rule definition falls back to an empty rule group', async () => {
-  serve()
-  const { screen } = await renderWithRouter(
-    <SegmentRuleBuilder slug="test" value="not json" onChange={() => {}} />,
-  )
-
-  await expect.element(screen.getByRole('button', { name: 'Preview audience' })).toBeInTheDocument()
-})
-
-test('a JSON value that is not a rule group falls back to an empty rule group', async () => {
-  serve()
-  const { screen } = await renderWithRouter(
-    <SegmentRuleBuilder slug="test" value='{"foo":1}' onChange={() => {}} />,
-  )
-
-  await expect.element(screen.getByRole('button', { name: 'Preview audience' })).toBeInTheDocument()
 })

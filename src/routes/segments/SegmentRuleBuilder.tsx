@@ -3,35 +3,40 @@ import { QueryBuilderMantine } from '@react-querybuilder/mantine'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  type Field,
-  isRuleGroupType,
-  type Operator,
-  QueryBuilder,
-  type RuleGroupType,
-} from 'react-querybuilder'
+import { type Field, type Operator, QueryBuilder } from 'react-querybuilder'
 
 import {
   siteCustomFieldsListOptions,
   siteEventsActionsOptions,
   siteSegmentsPreviewMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { SiteSegmentOperator, type SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
+import { toGroup, toQuery } from './rules.ts'
 
-// Operators limited to what the backend segment engine compiles.
-const operators: Operator[] = [
-  { name: '=', label: 'is' },
-  { name: '!=', label: 'is not' },
-  { name: 'contains', label: 'contains' },
-  { name: 'beginsWith', label: 'begins with' },
-  { name: 'null', label: 'is empty' },
-  { name: 'notNull', label: 'is set' },
+// What the backend segment engine compiles for each kind of field.
+const textOperators: Operator[] = [
+  { name: SiteSegmentOperator.EQ, label: 'is' },
+  { name: SiteSegmentOperator.NEQ, label: 'is not' },
+  { name: SiteSegmentOperator.CONTAINS, label: 'contains' },
+  { name: SiteSegmentOperator.BEGINS_WITH, label: 'begins with' },
+  { name: SiteSegmentOperator.NULL, label: 'is empty' },
+  { name: SiteSegmentOperator.NOT_NULL, label: 'is set' },
+]
+
+// A custom field is a key of a JSON column: it can be compared, or tested for membership
+// of an array, but not for a prefix or for being empty.
+const customFieldOperators: Operator[] = [
+  { name: SiteSegmentOperator.EQ, label: 'is' },
+  { name: SiteSegmentOperator.NEQ, label: 'is not' },
+  { name: SiteSegmentOperator.CONTAINS, label: 'contains' },
+  { name: SiteSegmentOperator.NOT_NULL, label: 'is set' },
 ]
 
 // Event conditions get their own operator set (per-field overrides the global one).
 // The value is a day window: blank = ever.
 const eventOperators: Operator[] = [
-  { name: 'performed', label: 'performed in last (days)' },
-  { name: 'notPerformed', label: 'not performed in last (days)' },
+  { name: SiteSegmentOperator.PERFORMED, label: 'performed in last (days)' },
+  { name: SiteSegmentOperator.NOT_PERFORMED, label: 'not performed in last (days)' },
 ]
 
 const contactFields: Field[] = [
@@ -43,31 +48,18 @@ const contactFields: Field[] = [
   { name: 'time_zone', label: 'Time zone' },
 ]
 
-const emptyQuery: RuleGroupType = { combinator: 'and', rules: [] }
-
-function parseQuery(def: string): RuleGroupType {
-  if (!def.trim()) return emptyQuery
-  try {
-    const parsed: unknown = JSON.parse(def)
-    return isRuleGroupType(parsed) ? parsed : emptyQuery
-  } catch {
-    return emptyQuery
-  }
-}
-
 interface SegmentRuleBuilderProps {
   slug: string
-  value: string
-  onChange: (json: string) => void
+  value: SiteSegmentRuleGroup
+  onChange: (group: SiteSegmentRuleGroup) => void
 }
 
 // SegmentRuleBuilder is the visual rule editor (react-querybuilder + the official
-// Mantine compat package — no hand-rolled condition rows, no custom CSS). It emits
-// the react-querybuilder RuleGroupType JSON the backend engine consumes directly,
-// and offers a live preview of how many active contacts match.
+// Mantine compat package — no hand-rolled condition rows, no custom CSS). It edits the
+// API's typed rule group and offers a live preview of how many active contacts match.
 export function SegmentRuleBuilder({ slug, value, onChange }: SegmentRuleBuilderProps) {
   const { t } = useTranslation()
-  const query = useMemo(() => parseQuery(value), [value])
+  const query = useMemo(() => toQuery(value), [value])
   const preview = useMutation(siteSegmentsPreviewMutation())
 
   // The workspace's distinct event actions become behavioral fields
@@ -80,13 +72,14 @@ export function SegmentRuleBuilder({ slug, value, onChange }: SegmentRuleBuilder
     const customFields = (customFieldsQuery.data?.items ?? []).map<Field>((f) => ({
       name: `custom:${f.key}`,
       label: f.name,
+      operators: customFieldOperators,
       inputType: f.type === 'number' ? 'number' : 'text',
     }))
     const eventFields = (actionsQuery.data?.actions ?? []).map<Field>((action) => ({
       name: `event:${action}`,
       label: `Did "${action}"`,
       operators: eventOperators,
-      defaultOperator: 'performed',
+      defaultOperator: SiteSegmentOperator.PERFORMED,
       inputType: 'number',
     }))
     return [...contactFields, ...customFields, ...eventFields]
@@ -97,10 +90,10 @@ export function SegmentRuleBuilder({ slug, value, onChange }: SegmentRuleBuilder
       <QueryBuilderMantine>
         <QueryBuilder
           fields={fields}
-          operators={operators}
+          operators={textOperators}
           query={query}
           enableMountQueryChange={false}
-          onQueryChange={(q) => onChange(JSON.stringify(q))}
+          onQueryChange={(q) => onChange(toGroup(q))}
         />
       </QueryBuilderMantine>
       <Group>

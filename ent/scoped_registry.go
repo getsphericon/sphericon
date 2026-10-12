@@ -578,6 +578,12 @@ func ScopedEntities() []ScopedEntity {
 						return s.Contact().UpdateOneID(id).AddTagIDs(target).Exec(ctx)
 					},
 				},
+				{
+					Name: "events", Target: "Event",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Contact().UpdateOneID(id).AddEventIDs(target).Exec(ctx)
+					},
+				},
 			},
 		},
 		{
@@ -693,7 +699,7 @@ func ScopedEntities() []ScopedEntity {
 					b.SetSourceID(*src.SourceID + "-replanted")
 				}
 				if src.ContactID != nil {
-					b.SetContactID(*src.ContactID)
+					b.SetContactID(remap("Contact", *src.ContactID))
 				}
 				if src.VisitorID != nil {
 					b.SetVisitorID(*src.VisitorID)
@@ -720,7 +726,14 @@ func ScopedEntities() []ScopedEntity {
 				}
 				return created.WorkspaceID, nil
 			},
-			Refs: []ScopedRef{},
+			Refs: []ScopedRef{
+				{
+					Name: "contact", Target: "Contact",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Event().UpdateOneID(id).SetContactID(target).Exec(ctx)
+					},
+				},
+			},
 		},
 		{
 			Name:    "Hold",

@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 )
@@ -43,13 +44,12 @@ func (Event) Fields() []ent.Field {
 			Nillable().
 			Unique(),
 		// The authoritative link to the Contact, resolved by stable identity at ingest
-		// (never by email). Plain column, deliberately NOT an FK: Events are immutable
-		// and append-only and must outlive the mutable Contact. Null for anonymous
+		// (never by email). A nullable FK with ON DELETE SET NULL: Events are immutable
+		// and append-only and outlive the Contact they were about. Null for anonymous
 		// events before Identify; backfilled (stitched) onto the Contact at Identify.
 		field.Int64("contact_id").
 			Optional().
-			Nillable().
-			Annotations(ScopedRef{Unchecked: true}),
+			Nillable(),
 		// The anonymous device this event came from. Kept so pre-Identify anonymous
 		// events can be stitched onto a Contact by visitor_id when Identify arrives.
 		field.String("visitor_id").
@@ -72,6 +72,17 @@ func (Event) Fields() []ent.Field {
 		field.Time("occurred_at").
 			Optional().
 			Nillable(),
+	}
+}
+
+func (Event) Edges() []ent.Edge {
+	return []ent.Edge{
+		// The Contact the Event is about; backs the has-event segment conditions
+		// (contact.HasEventsWith).
+		edge.From("contact", Contact.Type).
+			Ref("events").
+			Field("contact_id").
+			Unique(),
 	}
 }
 

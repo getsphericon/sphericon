@@ -2623,6 +2623,52 @@ func (o OptSiteAuditActorKind) Or(d SiteAuditActorKind) SiteAuditActorKind {
 	return d
 }
 
+// NewOptSiteSegmentRuleGroup returns new OptSiteSegmentRuleGroup with value set to v.
+func NewOptSiteSegmentRuleGroup(v SiteSegmentRuleGroup) OptSiteSegmentRuleGroup {
+	return OptSiteSegmentRuleGroup{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteSegmentRuleGroup is optional SiteSegmentRuleGroup.
+type OptSiteSegmentRuleGroup struct {
+	Value SiteSegmentRuleGroup
+	Set   bool
+}
+
+// IsSet returns true if OptSiteSegmentRuleGroup was set.
+func (o OptSiteSegmentRuleGroup) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteSegmentRuleGroup) Reset() {
+	var v SiteSegmentRuleGroup
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteSegmentRuleGroup) SetTo(v SiteSegmentRuleGroup) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteSegmentRuleGroup) Get() (v SiteSegmentRuleGroup, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteSegmentRuleGroup) Or(d SiteSegmentRuleGroup) SiteSegmentRuleGroup {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteSuppressionChannel returns new OptSiteSuppressionChannel with value set to v.
 func NewOptSiteSuppressionChannel(v SiteSuppressionChannel) OptSiteSuppressionChannel {
 	return OptSiteSuppressionChannel{
@@ -5798,9 +5844,8 @@ func (*SiteCreateInvitationResponse) siteInvitationsCreateRes() {}
 type SiteCreateSegmentInput struct {
 	// Segment name.
 	Name string `json:"name"`
-	// Segment definition: the rule query (react-querybuilder JSON); an empty rule group matches all
-	// contacts.
-	Definition string `json:"definition"`
+	// Segment definition: the rule group; an empty group matches all contacts.
+	Definition SiteSegmentRuleGroup `json:"definition"`
 }
 
 // GetName returns the value of Name.
@@ -5809,7 +5854,7 @@ func (s *SiteCreateSegmentInput) GetName() string {
 }
 
 // GetDefinition returns the value of Definition.
-func (s *SiteCreateSegmentInput) GetDefinition() string {
+func (s *SiteCreateSegmentInput) GetDefinition() SiteSegmentRuleGroup {
 	return s.Definition
 }
 
@@ -5819,7 +5864,7 @@ func (s *SiteCreateSegmentInput) SetName(val string) {
 }
 
 // SetDefinition sets the value of Definition.
-func (s *SiteCreateSegmentInput) SetDefinition(val string) {
+func (s *SiteCreateSegmentInput) SetDefinition(val SiteSegmentRuleGroup) {
 	s.Definition = val
 }
 
@@ -7778,17 +7823,17 @@ func (*SiteOAuthDescribeNotFound) siteOAuthDescribeRes() {}
 // Request body for previewing a rule definition's audience.
 // Ref: #/components/schemas/SitePreviewSegmentInput
 type SitePreviewSegmentInput struct {
-	// Rule definition (react-querybuilder JSON); empty means all contacts.
-	Definition OptNilString `json:"definition"`
+	// Rule definition; absent means all contacts.
+	Definition OptSiteSegmentRuleGroup `json:"definition"`
 }
 
 // GetDefinition returns the value of Definition.
-func (s *SitePreviewSegmentInput) GetDefinition() OptNilString {
+func (s *SitePreviewSegmentInput) GetDefinition() OptSiteSegmentRuleGroup {
 	return s.Definition
 }
 
 // SetDefinition sets the value of Definition.
-func (s *SitePreviewSegmentInput) SetDefinition(val OptNilString) {
+func (s *SitePreviewSegmentInput) SetDefinition(val OptSiteSegmentRuleGroup) {
 	s.Definition = val
 }
 
@@ -8272,6 +8317,150 @@ func (s *SiteSecondFactorStatus) SetRecoveryCodesRemaining(val int32) {
 	s.RecoveryCodesRemaining = val
 }
 
+// How a segment group combines its rules.
+// Ref: #/components/schemas/SiteSegmentCombinator
+type SiteSegmentCombinator string
+
+const (
+	SiteSegmentCombinatorAnd SiteSegmentCombinator = "and"
+	SiteSegmentCombinatorOr  SiteSegmentCombinator = "or"
+)
+
+// AllValues returns all SiteSegmentCombinator values.
+func (SiteSegmentCombinator) AllValues() []SiteSegmentCombinator {
+	return []SiteSegmentCombinator{
+		SiteSegmentCombinatorAnd,
+		SiteSegmentCombinatorOr,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSegmentCombinator) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSegmentCombinatorAnd:
+		return []byte(s), nil
+	case SiteSegmentCombinatorOr:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSegmentCombinator) UnmarshalText(data []byte) error {
+	switch SiteSegmentCombinator(data) {
+	case SiteSegmentCombinatorAnd:
+		*s = SiteSegmentCombinatorAnd
+		return nil
+	case SiteSegmentCombinatorOr:
+		*s = SiteSegmentCombinatorOr
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a segment rule tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull; a
+// custom field takes eq, neq, contains and notNull; an event takes performed and notPerformed; the tag
+// field takes has and doesNotHave.
+// Ref: #/components/schemas/SiteSegmentOperator
+type SiteSegmentOperator string
+
+const (
+	SiteSegmentOperatorEq           SiteSegmentOperator = "eq"
+	SiteSegmentOperatorNeq          SiteSegmentOperator = "neq"
+	SiteSegmentOperatorContains     SiteSegmentOperator = "contains"
+	SiteSegmentOperatorBeginsWith   SiteSegmentOperator = "beginsWith"
+	SiteSegmentOperatorNull         SiteSegmentOperator = "null"
+	SiteSegmentOperatorNotNull      SiteSegmentOperator = "notNull"
+	SiteSegmentOperatorPerformed    SiteSegmentOperator = "performed"
+	SiteSegmentOperatorNotPerformed SiteSegmentOperator = "notPerformed"
+	SiteSegmentOperatorHas          SiteSegmentOperator = "has"
+	SiteSegmentOperatorDoesNotHave  SiteSegmentOperator = "doesNotHave"
+)
+
+// AllValues returns all SiteSegmentOperator values.
+func (SiteSegmentOperator) AllValues() []SiteSegmentOperator {
+	return []SiteSegmentOperator{
+		SiteSegmentOperatorEq,
+		SiteSegmentOperatorNeq,
+		SiteSegmentOperatorContains,
+		SiteSegmentOperatorBeginsWith,
+		SiteSegmentOperatorNull,
+		SiteSegmentOperatorNotNull,
+		SiteSegmentOperatorPerformed,
+		SiteSegmentOperatorNotPerformed,
+		SiteSegmentOperatorHas,
+		SiteSegmentOperatorDoesNotHave,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSegmentOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSegmentOperatorEq:
+		return []byte(s), nil
+	case SiteSegmentOperatorNeq:
+		return []byte(s), nil
+	case SiteSegmentOperatorContains:
+		return []byte(s), nil
+	case SiteSegmentOperatorBeginsWith:
+		return []byte(s), nil
+	case SiteSegmentOperatorNull:
+		return []byte(s), nil
+	case SiteSegmentOperatorNotNull:
+		return []byte(s), nil
+	case SiteSegmentOperatorPerformed:
+		return []byte(s), nil
+	case SiteSegmentOperatorNotPerformed:
+		return []byte(s), nil
+	case SiteSegmentOperatorHas:
+		return []byte(s), nil
+	case SiteSegmentOperatorDoesNotHave:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSegmentOperator) UnmarshalText(data []byte) error {
+	switch SiteSegmentOperator(data) {
+	case SiteSegmentOperatorEq:
+		*s = SiteSegmentOperatorEq
+		return nil
+	case SiteSegmentOperatorNeq:
+		*s = SiteSegmentOperatorNeq
+		return nil
+	case SiteSegmentOperatorContains:
+		*s = SiteSegmentOperatorContains
+		return nil
+	case SiteSegmentOperatorBeginsWith:
+		*s = SiteSegmentOperatorBeginsWith
+		return nil
+	case SiteSegmentOperatorNull:
+		*s = SiteSegmentOperatorNull
+		return nil
+	case SiteSegmentOperatorNotNull:
+		*s = SiteSegmentOperatorNotNull
+		return nil
+	case SiteSegmentOperatorPerformed:
+		*s = SiteSegmentOperatorPerformed
+		return nil
+	case SiteSegmentOperatorNotPerformed:
+		*s = SiteSegmentOperatorNotPerformed
+		return nil
+	case SiteSegmentOperatorHas:
+		*s = SiteSegmentOperatorHas
+		return nil
+	case SiteSegmentOperatorDoesNotHave:
+		*s = SiteSegmentOperatorDoesNotHave
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Segment resource used by the site UI.
 // Ref: #/components/schemas/SiteSegmentResource
 type SiteSegmentResource struct {
@@ -8279,9 +8468,8 @@ type SiteSegmentResource struct {
 	ID EntityId `json:"id"`
 	// Segment name.
 	Name string `json:"name"`
-	// Segment definition: the rule query (react-querybuilder JSON); an empty rule group matches all
-	// contacts.
-	Definition OptString `json:"definition"`
+	// Segment definition: the rule group; an empty group matches all contacts.
+	Definition OptSiteSegmentRuleGroup `json:"definition"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -8299,7 +8487,7 @@ func (s *SiteSegmentResource) GetName() string {
 }
 
 // GetDefinition returns the value of Definition.
-func (s *SiteSegmentResource) GetDefinition() OptString {
+func (s *SiteSegmentResource) GetDefinition() OptSiteSegmentRuleGroup {
 	return s.Definition
 }
 
@@ -8324,7 +8512,7 @@ func (s *SiteSegmentResource) SetName(val string) {
 }
 
 // SetDefinition sets the value of Definition.
-func (s *SiteSegmentResource) SetDefinition(val OptString) {
+func (s *SiteSegmentResource) SetDefinition(val OptSiteSegmentRuleGroup) {
 	s.Definition = val
 }
 
@@ -8341,6 +8529,266 @@ func (s *SiteSegmentResource) SetUpdatedAt(val Timestamp) {
 func (*SiteSegmentResource) siteSegmentsCreateRes() {}
 func (*SiteSegmentResource) siteSegmentsGetRes()    {}
 func (*SiteSegmentResource) siteSegmentsUpdateRes() {}
+
+// One condition of a segment: a field, an operator and a value.
+// Ref: #/components/schemas/SiteSegmentRule
+type SiteSegmentRule struct {
+	Kind SiteSegmentRuleKind `json:"kind"`
+	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone),
+	// "tag", "custom:" for a custom field of the workspace, or "event:".
+	Field string `json:"field"`
+	// How the field is tested.
+	Operator SiteSegmentOperator `json:"operator"`
+	// The value to test against: a tag name, a day window for events ("" = ever), blank for null and
+	// notNull.
+	Value OptString `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteSegmentRule) GetKind() SiteSegmentRuleKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *SiteSegmentRule) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *SiteSegmentRule) GetOperator() SiteSegmentOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *SiteSegmentRule) GetValue() OptString {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteSegmentRule) SetKind(val SiteSegmentRuleKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *SiteSegmentRule) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *SiteSegmentRule) SetOperator(val SiteSegmentOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *SiteSegmentRule) SetValue(val OptString) {
+	s.Value = val
+}
+
+// A group of rules combined with and/or, optionally negated. An empty group matches every contact (an
+// empty negated group matches none).
+// Ref: #/components/schemas/SiteSegmentRuleGroup
+type SiteSegmentRuleGroup struct {
+	Kind SiteSegmentRuleGroupKind `json:"kind"`
+	// How the rules combine.
+	Combinator SiteSegmentCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's rules and nested groups.
+	Rules []SiteSegmentRuleNode `json:"rules"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteSegmentRuleGroup) GetKind() SiteSegmentRuleGroupKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *SiteSegmentRuleGroup) GetCombinator() SiteSegmentCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *SiteSegmentRuleGroup) GetNot() OptBool {
+	return s.Not
+}
+
+// GetRules returns the value of Rules.
+func (s *SiteSegmentRuleGroup) GetRules() []SiteSegmentRuleNode {
+	return s.Rules
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteSegmentRuleGroup) SetKind(val SiteSegmentRuleGroupKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *SiteSegmentRuleGroup) SetCombinator(val SiteSegmentCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *SiteSegmentRuleGroup) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetRules sets the value of Rules.
+func (s *SiteSegmentRuleGroup) SetRules(val []SiteSegmentRuleNode) {
+	s.Rules = val
+}
+
+type SiteSegmentRuleGroupKind string
+
+const (
+	SiteSegmentRuleGroupKindGroup SiteSegmentRuleGroupKind = "group"
+)
+
+// AllValues returns all SiteSegmentRuleGroupKind values.
+func (SiteSegmentRuleGroupKind) AllValues() []SiteSegmentRuleGroupKind {
+	return []SiteSegmentRuleGroupKind{
+		SiteSegmentRuleGroupKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSegmentRuleGroupKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSegmentRuleGroupKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSegmentRuleGroupKind) UnmarshalText(data []byte) error {
+	switch SiteSegmentRuleGroupKind(data) {
+	case SiteSegmentRuleGroupKindGroup:
+		*s = SiteSegmentRuleGroupKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SiteSegmentRuleKind string
+
+const (
+	SiteSegmentRuleKindRule SiteSegmentRuleKind = "rule"
+)
+
+// AllValues returns all SiteSegmentRuleKind values.
+func (SiteSegmentRuleKind) AllValues() []SiteSegmentRuleKind {
+	return []SiteSegmentRuleKind{
+		SiteSegmentRuleKindRule,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSegmentRuleKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSegmentRuleKindRule:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSegmentRuleKind) UnmarshalText(data []byte) error {
+	switch SiteSegmentRuleKind(data) {
+	case SiteSegmentRuleKindRule:
+		*s = SiteSegmentRuleKindRule
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A rule or a nested group inside a segment group, discriminated by `kind`.
+// Ref: #/components/schemas/SiteSegmentRuleNode
+type SiteSegmentRuleNode struct {
+	OneOf SiteSegmentRuleNodeSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *SiteSegmentRuleNode) GetOneOf() SiteSegmentRuleNodeSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *SiteSegmentRuleNode) SetOneOf(val SiteSegmentRuleNodeSum) {
+	s.OneOf = val
+}
+
+// SiteSegmentRuleNodeSum represents sum type.
+type SiteSegmentRuleNodeSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                 SiteSegmentRuleNodeSumType
+	SiteSegmentRule      SiteSegmentRule
+	SiteSegmentRuleGroup SiteSegmentRuleGroup
+}
+
+// SiteSegmentRuleNodeSumType is oneOf type of SiteSegmentRuleNodeSum.
+type SiteSegmentRuleNodeSumType string
+
+// Possible values for SiteSegmentRuleNodeSumType.
+const (
+	SiteSegmentRuleSiteSegmentRuleNodeSum      SiteSegmentRuleNodeSumType = "rule"
+	SiteSegmentRuleGroupSiteSegmentRuleNodeSum SiteSegmentRuleNodeSumType = "group"
+)
+
+// IsSiteSegmentRule reports whether SiteSegmentRuleNodeSum is SiteSegmentRule.
+func (s SiteSegmentRuleNodeSum) IsSiteSegmentRule() bool {
+	return s.Type == SiteSegmentRuleSiteSegmentRuleNodeSum
+}
+
+// IsSiteSegmentRuleGroup reports whether SiteSegmentRuleNodeSum is SiteSegmentRuleGroup.
+func (s SiteSegmentRuleNodeSum) IsSiteSegmentRuleGroup() bool {
+	return s.Type == SiteSegmentRuleGroupSiteSegmentRuleNodeSum
+}
+
+// SetSiteSegmentRule sets SiteSegmentRuleNodeSum to SiteSegmentRule.
+func (s *SiteSegmentRuleNodeSum) SetSiteSegmentRule(v SiteSegmentRule) {
+	s.Type = SiteSegmentRuleSiteSegmentRuleNodeSum
+	s.SiteSegmentRule = v
+}
+
+// GetSiteSegmentRule returns SiteSegmentRule and true boolean if SiteSegmentRuleNodeSum is SiteSegmentRule.
+func (s SiteSegmentRuleNodeSum) GetSiteSegmentRule() (v SiteSegmentRule, ok bool) {
+	if !s.IsSiteSegmentRule() {
+		return v, false
+	}
+	return s.SiteSegmentRule, true
+}
+
+// NewSiteSegmentRuleSiteSegmentRuleNodeSum returns new SiteSegmentRuleNodeSum from SiteSegmentRule.
+func NewSiteSegmentRuleSiteSegmentRuleNodeSum(v SiteSegmentRule) SiteSegmentRuleNodeSum {
+	var s SiteSegmentRuleNodeSum
+	s.SetSiteSegmentRule(v)
+	return s
+}
+
+// SetSiteSegmentRuleGroup sets SiteSegmentRuleNodeSum to SiteSegmentRuleGroup.
+func (s *SiteSegmentRuleNodeSum) SetSiteSegmentRuleGroup(v SiteSegmentRuleGroup) {
+	s.Type = SiteSegmentRuleGroupSiteSegmentRuleNodeSum
+	s.SiteSegmentRuleGroup = v
+}
+
+// GetSiteSegmentRuleGroup returns SiteSegmentRuleGroup and true boolean if SiteSegmentRuleNodeSum is SiteSegmentRuleGroup.
+func (s SiteSegmentRuleNodeSum) GetSiteSegmentRuleGroup() (v SiteSegmentRuleGroup, ok bool) {
+	if !s.IsSiteSegmentRuleGroup() {
+		return v, false
+	}
+	return s.SiteSegmentRuleGroup, true
+}
+
+// NewSiteSegmentRuleGroupSiteSegmentRuleNodeSum returns new SiteSegmentRuleNodeSum from SiteSegmentRuleGroup.
+func NewSiteSegmentRuleGroupSiteSegmentRuleNodeSum(v SiteSegmentRuleGroup) SiteSegmentRuleNodeSum {
+	var s SiteSegmentRuleNodeSum
+	s.SetSiteSegmentRuleGroup(v)
+	return s
+}
 
 type SiteSegmentsCreateNotFound ProblemDetails
 
@@ -10684,9 +11132,8 @@ func (s *SiteUpdateMembershipInput) SetRole(val SiteMembershipRole) {
 type SiteUpdateSegmentInput struct {
 	// Segment name.
 	Name OptString `json:"name"`
-	// Segment definition: the rule query (react-querybuilder JSON); an empty rule group matches all
-	// contacts.
-	Definition OptString `json:"definition"`
+	// Segment definition: the rule group; an empty group matches all contacts.
+	Definition OptSiteSegmentRuleGroup `json:"definition"`
 }
 
 // GetName returns the value of Name.
@@ -10695,7 +11142,7 @@ func (s *SiteUpdateSegmentInput) GetName() OptString {
 }
 
 // GetDefinition returns the value of Definition.
-func (s *SiteUpdateSegmentInput) GetDefinition() OptString {
+func (s *SiteUpdateSegmentInput) GetDefinition() OptSiteSegmentRuleGroup {
 	return s.Definition
 }
 
@@ -10705,7 +11152,7 @@ func (s *SiteUpdateSegmentInput) SetName(val OptString) {
 }
 
 // SetDefinition sets the value of Definition.
-func (s *SiteUpdateSegmentInput) SetDefinition(val OptString) {
+func (s *SiteUpdateSegmentInput) SetDefinition(val OptSiteSegmentRuleGroup) {
 	s.Definition = val
 }
 

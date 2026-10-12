@@ -11,16 +11,16 @@ import { zSiteCreateSegmentInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { segmentsEditRoute } from '../../router.tsx'
+import { definitionCodec, emptyGroup } from './rules.ts'
 import { SegmentForm } from './SegmentForm.tsx'
 
 // A Segment is always a rule: a stored segment without a definition loads as the empty
 // rule group (matches all contacts); the contract has no null definition.
-const EMPTY_RULE = '{"combinator":"and","rules":[]}'
 
 const segmentSchema = resourceFormSchema(
   z.object({
     name: zSiteCreateSegmentInput.shape.name,
-    definition: z.string().default(EMPTY_RULE),
+    definition: definitionCodec.default(emptyGroup),
   }),
 )
 

@@ -1,18 +1,28 @@
 import { Button, Group, Input, Stack, TextInput } from '@mantine/core'
 import { useNavigate, useParams } from '@tanstack/react-router'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
+import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { segmentsRoute } from '../../router.tsx'
+import { definitionCodec, emptyGroup } from './rules.ts'
 import { SegmentRuleBuilder } from './SegmentRuleBuilder.tsx'
 
-// A Segment is always a rule, so the payload carries a definition string.
-export type SegmentPayload = { name: string; definition: string }
+// A Segment is always a rule, so the payload carries a rule group.
+export type SegmentPayload = { name: string; definition: SiteSegmentRuleGroup }
 
 export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<SegmentPayload>) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { slug } = useParams({ strict: false })
+  const definition = form.values.definition
+  // The form holds the rule group as JSON text; a blank or unreadable text is the empty group.
+  const group = useMemo(() => {
+    const parsed = definitionCodec.safeParse(definition)
+    return parsed.success ? parsed.data : emptyGroup
+  }, [definition])
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
@@ -29,8 +39,8 @@ export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<Seg
           >
             <SegmentRuleBuilder
               slug={slug}
-              value={form.values.definition ?? ''}
-              onChange={(json) => form.setFieldValue('definition', json)}
+              value={group}
+              onChange={(next) => form.setFieldValue('definition', z.encode(definitionCodec, next))}
             />
           </Input.Wrapper>
         ) : null}

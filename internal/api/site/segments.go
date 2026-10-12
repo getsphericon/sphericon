@@ -51,9 +51,13 @@ func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCrea
 		return nil, err
 	}
 
+	def, err := segments.Encode(&req.Definition)
+	if err != nil {
+		return nil, err
+	}
 	s, err := h.segments.Create(ctx, ws, segments.CreateInput{
 		Name:       req.Name,
-		Definition: &req.Definition,
+		Definition: &def,
 	})
 	if errors.Is(err, segments.ErrInvalidDefinition) {
 		v := siteapi.SiteSegmentsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
@@ -108,9 +112,13 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 		v := siteapi.SiteSegmentsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
 		return &v, nil
 	}
-	in := segments.UpdateInput{
-		Name:       convert.StringPtr(req.Name),
-		Definition: convert.StringPtr(req.Definition),
+	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
+	if group, ok := req.Definition.Get(); ok {
+		def, err := segments.Encode(&group)
+		if err != nil {
+			return nil, err
+		}
+		in.Definition = &def
 	}
 	s, err := h.segments.Update(ctx, ws, id, in)
 	if errors.Is(err, segments.ErrInvalidDefinition) {
@@ -168,8 +176,10 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 	}
 
 	def := ""
-	if v := convert.StringPtr(req.Definition); v != nil {
-		def = *v
+	if group, ok := req.Definition.Get(); ok {
+		if def, err = segments.Encode(&group); err != nil {
+			return nil, err
+		}
 	}
 	count, err := h.segments.Preview(ctx, ws, def)
 	if errors.Is(err, segments.ErrInvalidDefinition) {
