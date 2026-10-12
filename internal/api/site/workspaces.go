@@ -6,12 +6,15 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
@@ -30,22 +33,32 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 
 	resources := make([]siteapi.SiteWorkspaceResource, len(items))
 	for i, m := range items {
-		resources[i] = h.workspaceResource(m)
+		if resources[i], err = h.workspaceResource(ctx, h.accounts.ScopeOf(m), m); err != nil {
+			return nil, err
+		}
 	}
 	return resources, nil
 }
 
 // workspaceResource is the Membership's Workspace as the Membership's User sees it,
-// with their grace end under the Two-factor requirement (ADR 0020). The Membership's
+// with their grace end under the Two-factor requirement (ADR 0020) and the Operator
+// holds active now (ADR 0009), read through s, the Workspace's scope. The Membership's
 // User and Workspace edges must be loaded.
-func (h *Handlers) workspaceResource(m *ent.Membership) siteapi.SiteWorkspaceResource {
+func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {
 	r := mapper.WorkspaceToResource(m.Edges.Workspace)
 	r.Role = siteapi.SiteMembershipRole(m.Role)
 	r.AccountLinkAvailable = h.accountLink != nil && m.Role == membership.RoleOwner
 	if end, ok := secondfactor.Deadline(m); ok {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}
-	return r
+	active, err := holds.Active(ctx, s, h.now())
+	if err != nil {
+		return r, err
+	}
+	r.Holds = lo.Map(active, func(hold *ent.Hold, _ int) siteapi.SiteWorkspaceHold {
+		return siteapi.SiteWorkspaceHold{ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt)}
+	})
+	return r, nil
 }
 
 // SiteWorkspacesAccountLink mints the Owner's Account link token. Without the
@@ -113,7 +126,10 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 			slog.WarnContext(ctx, "second factor required email not enqueued", "error", merr, "workspace_id", s.WorkspaceID())
 		}
 	}
-	r := h.workspaceResource(withWorkspace(m, w))
+	r, err := h.workspaceResource(ctx, s, withWorkspace(m, w))
+	if err != nil {
+		return nil, err
+	}
 	return &r, nil
 }
 
@@ -150,6 +166,9 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 	if err != nil {
 		return nil, err
 	}
-	resource := h.workspaceResource(withWorkspace(m, w))
+	resource, err := h.workspaceResource(ctx, s, withWorkspace(m, w))
+	if err != nil {
+		return nil, err
+	}
 	return &resource, nil
 }

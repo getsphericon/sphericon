@@ -1,4 +1,5 @@
-import { Alert, Group, Select } from '@mantine/core'
+import { Alert, Group, Select, Text } from '@mantine/core'
+import { IconPlayerPause } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -12,7 +13,7 @@ import {
 } from '../components/SecondFactorNotice.tsx'
 import { UserMenu } from '../components/UserMenu.tsx'
 import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
+import type { SiteWorkspaceHold, SiteWorkspaceResource } from '../generated/site/types.gen.ts'
 import { overviewRoute, workspaceRoute } from '../router.tsx'
 import { isSecondFactorRequiredError } from '../utils/apiErrors.ts'
 import { DashboardShell } from './DashboardShell.tsx'
@@ -56,6 +57,29 @@ function SuspensionBanner({ reason }: { reason: string | null | undefined }) {
   )
 }
 
+// HoldBanner tells every member that outbound sending is held by an Operator hold
+// (ADR 0009) and shows each setter's message as given. It is deliberately not the
+// suspension banner: another color and icon, another title, and no reason of its own.
+function HoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
+  const { t } = useTranslation()
+  return (
+    <Alert
+      color="yellow"
+      variant="outline"
+      icon={<IconPlayerPause />}
+      title={t(($) => $.workspaceHold.title)}
+      mb="md"
+    >
+      <Text size="sm">{t(($) => $.workspaceHold.description)}</Text>
+      {holds.map((hold) => (
+        <Text key={`${hold.reasonCode}-${hold.since}-${hold.message}`} size="sm" fw={500} mt="xs">
+          {hold.message}
+        </Text>
+      ))}
+    </Alert>
+  )
+}
+
 // useSecondFactorRefused reports whether any query of the Workspace was refused
 // with 403 second_factor_required since the Workspace list last loaded (listedAt):
 // the server's word that the grace is over, even when this browser's clock says
@@ -95,6 +119,7 @@ export function WorkspaceLayout() {
       banner={
         <>
           {current?.suspendedAt ? <SuspensionBanner reason={current.suspensionReason} /> : null}
+          {current?.holds.length ? <HoldBanner holds={current.holds} /> : null}
           {standing.kind === 'grace' ? <SecondFactorGraceBanner endsAt={standing.endsAt} /> : null}
         </>
       }

@@ -900,6 +900,10 @@ export default interface Resources {
       "successTitle": "Email verified",
       "verifying": "Verifying your email…"
     },
+    "workspaceHold": {
+      "description": "Outbound email is on hold for this workspace. Scheduled broadcasts and automations wait and continue on their own when the hold lifts. You can still sign in and view your data.",
+      "title": "Sending is on hold"
+    },
     "workspaceSuspension": {
       "description": "Outbound email sending is suspended for this workspace. Scheduled broadcasts and automations are paused and resume when the suspension is lifted. You can still sign in and view your data. To appeal, contact your sphericon administrator.",
       "reason": "Reason: {{reason}}",

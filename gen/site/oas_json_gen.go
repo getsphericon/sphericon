@@ -28579,6 +28579,134 @@ func (s *SiteWebhooksUpdateUnprocessableEntity) UnmarshalJSON(data []byte) error
 }
 
 // Encode implements json.Marshaler.
+func (s *SiteWorkspaceHold) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteWorkspaceHold) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("reasonCode")
+		e.Str(s.ReasonCode)
+	}
+	{
+		e.FieldStart("message")
+		e.Str(s.Message)
+	}
+	{
+		e.FieldStart("since")
+		s.Since.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteWorkspaceHold = [3]string{
+	0: "reasonCode",
+	1: "message",
+	2: "since",
+}
+
+// Decode decodes SiteWorkspaceHold from json.
+func (s *SiteWorkspaceHold) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteWorkspaceHold to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "reasonCode":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.ReasonCode = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"reasonCode\"")
+			}
+		case "message":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Message = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"message\"")
+			}
+		case "since":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Since.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"since\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteWorkspaceHold")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteWorkspaceHold) {
+					name = jsonFieldsNameOfSiteWorkspaceHold[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteWorkspaceHold) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteWorkspaceHold) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SiteWorkspaceResource) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -28628,6 +28756,14 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("holds")
+		e.ArrStart()
+		for _, elem := range s.Holds {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
 		if s.SecondFactorRequiredAt.Set {
 			e.FieldStart("secondFactorRequiredAt")
 			s.SecondFactorRequiredAt.Encode(e)
@@ -28649,7 +28785,7 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceResource = [13]string{
+var jsonFieldsNameOfSiteWorkspaceResource = [14]string{
 	0:  "id",
 	1:  "name",
 	2:  "slug",
@@ -28659,10 +28795,11 @@ var jsonFieldsNameOfSiteWorkspaceResource = [13]string{
 	6:  "role",
 	7:  "suspendedAt",
 	8:  "suspensionReason",
-	9:  "secondFactorRequiredAt",
-	10: "secondFactorGraceEndsAt",
-	11: "accountLinkAvailable",
-	12: "createdAt",
+	9:  "holds",
+	10: "secondFactorRequiredAt",
+	11: "secondFactorGraceEndsAt",
+	12: "accountLinkAvailable",
+	13: "createdAt",
 }
 
 // Decode decodes SiteWorkspaceResource from json.
@@ -28774,6 +28911,24 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"suspensionReason\"")
 			}
+		case "holds":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				s.Holds = make([]SiteWorkspaceHold, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SiteWorkspaceHold
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Holds = append(s.Holds, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"holds\"")
+			}
 		case "secondFactorRequiredAt":
 			if err := func() error {
 				s.SecondFactorRequiredAt.Reset()
@@ -28795,7 +28950,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"secondFactorGraceEndsAt\"")
 			}
 		case "accountLinkAvailable":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				v, err := d.Bool()
 				s.AccountLinkAvailable = bool(v)
@@ -28807,7 +28962,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accountLinkAvailable\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -28827,7 +28982,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b01111111,
-		0b00011000,
+		0b00110010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
