@@ -51,11 +51,18 @@ func (a *Accounts) Scope(ctx context.Context, userID int64, slug string) (*ent.S
 	if err != nil {
 		return nil, nil, err
 	}
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(userID, 10)}
+	return a.ScopeOf(m), m, nil
+}
+
+// ScopeOf is the scoped client of a loaded Membership's Workspace, acting as its User
+// (the User edge, when loaded, names the actor). It is Scope without the lookup, for a
+// caller that already holds the Membership.
+func (a *Accounts) ScopeOf(m *ent.Membership) *ent.Scoped {
+	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(m.UserID, 10)}
 	if u := m.Edges.User; u != nil {
 		actor.Name = u.Name
 	}
-	return a.bus.Act(a.ent.Scoped(m.WorkspaceID), actor), m, nil
+	return a.bus.Act(a.ent.Scoped(m.WorkspaceID), actor)
 }
 
 // BootstrapScope is the scoped client of the oldest Workspace, for the bootstrap

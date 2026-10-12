@@ -10196,6 +10196,29 @@
         },
         "description": "Webhook endpoint resource used by the site UI"
       },
+      "SiteWorkspaceHold": {
+        "type": "object",
+        "required": ["reasonCode", "message", "since"],
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "description": "Machine reason code the setter gave"
+          },
+          "message": {
+            "type": "string",
+            "description": "The setter's message for the Owner, to show as given"
+          },
+          "since": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the hold was set"
+          }
+        },
+        "description": "An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's\nmembers see it. It is not a suspension: it is set from outside, carries its own\nmessage, and lifts by itself at its expiry."
+      },
       "SiteWorkspaceResource": {
         "type": "object",
         "required": [
@@ -10206,6 +10229,7 @@
           "ingestKey",
           "postalAddress",
           "role",
+          "holds",
           "accountLinkAvailable",
           "createdAt"
         ],
@@ -10260,6 +10284,13 @@
             "type": "string",
             "nullable": true,
             "description": "Why sending was suspended, shown to the owner; present only while suspended."
+          },
+          "holds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteWorkspaceHold"
+            },
+            "description": "The Operator holds active now, oldest key first; empty while nothing holds sending.\nAny one freezes every send surface, like a suspension, but a lapsed hold is never\nlisted."
           },
           "secondFactorRequiredAt": {
             "type": "string",

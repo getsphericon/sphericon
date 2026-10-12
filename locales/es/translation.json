@@ -918,6 +918,10 @@
     "successTitle": "Correo verificado",
     "verifying": "Verificando tu correo…"
   },
+  "workspaceHold": {
+    "description": "El envío de correos salientes está retenido para este espacio de trabajo. Los envíos programados y las automatizaciones esperan y continúan solos cuando se levante la retención. Aún puede iniciar sesión y consultar sus datos.",
+    "title": "El envío está retenido"
+  },
   "workspaceSuspension": {
     "description": "El envío de correos salientes está suspendido para este espacio de trabajo. Los envíos programados y las automatizaciones están en pausa y se reanudarán cuando se levante la suspensión. Aún puede iniciar sesión y consultar sus datos. Para apelar, póngase en contacto con su administrador de sphericon.",
     "reason": "Motivo: {{reason}}",

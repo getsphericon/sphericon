@@ -11142,6 +11142,49 @@ type SiteWebhooksUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteWebhooksUpdateUnprocessableEntity) siteWebhooksUpdateRes() {}
 
+// An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's members see it.
+// It is not a suspension: it is set from outside, carries its own message, and lifts by itself at its
+// expiry.
+// Ref: #/components/schemas/SiteWorkspaceHold
+type SiteWorkspaceHold struct {
+	// Machine reason code the setter gave.
+	ReasonCode string `json:"reasonCode"`
+	// The setter's message for the Owner, to show as given.
+	Message string `json:"message"`
+	// When the hold was set.
+	Since Timestamp `json:"since"`
+}
+
+// GetReasonCode returns the value of ReasonCode.
+func (s *SiteWorkspaceHold) GetReasonCode() string {
+	return s.ReasonCode
+}
+
+// GetMessage returns the value of Message.
+func (s *SiteWorkspaceHold) GetMessage() string {
+	return s.Message
+}
+
+// GetSince returns the value of Since.
+func (s *SiteWorkspaceHold) GetSince() Timestamp {
+	return s.Since
+}
+
+// SetReasonCode sets the value of ReasonCode.
+func (s *SiteWorkspaceHold) SetReasonCode(val string) {
+	s.ReasonCode = val
+}
+
+// SetMessage sets the value of Message.
+func (s *SiteWorkspaceHold) SetMessage(val string) {
+	s.Message = val
+}
+
+// SetSince sets the value of Since.
+func (s *SiteWorkspaceHold) SetSince(val Timestamp) {
+	s.Since = val
+}
+
 // Workspace the current user belongs to.
 // Ref: #/components/schemas/SiteWorkspaceResource
 type SiteWorkspaceResource struct {
@@ -11167,6 +11210,9 @@ type SiteWorkspaceResource struct {
 	SuspendedAt OptNilTimestamp `json:"suspendedAt"`
 	// Why sending was suspended, shown to the owner; present only while suspended.
 	SuspensionReason OptNilString `json:"suspensionReason"`
+	// The Operator holds active now, oldest key first; empty while nothing holds sending. Any one freezes
+	// every send surface, like a suspension, but a lapsed hold is never listed.
+	Holds []SiteWorkspaceHold `json:"holds"`
 	// When an Owner or Admin switched on the Two-factor requirement (ADR 0020); absent while every member
 	// may work without a Second factor.
 	SecondFactorRequiredAt OptNilTimestamp `json:"secondFactorRequiredAt"`
@@ -11225,6 +11271,11 @@ func (s *SiteWorkspaceResource) GetSuspendedAt() OptNilTimestamp {
 // GetSuspensionReason returns the value of SuspensionReason.
 func (s *SiteWorkspaceResource) GetSuspensionReason() OptNilString {
 	return s.SuspensionReason
+}
+
+// GetHolds returns the value of Holds.
+func (s *SiteWorkspaceResource) GetHolds() []SiteWorkspaceHold {
+	return s.Holds
 }
 
 // GetSecondFactorRequiredAt returns the value of SecondFactorRequiredAt.
@@ -11290,6 +11341,11 @@ func (s *SiteWorkspaceResource) SetSuspendedAt(val OptNilTimestamp) {
 // SetSuspensionReason sets the value of SuspensionReason.
 func (s *SiteWorkspaceResource) SetSuspensionReason(val OptNilString) {
 	s.SuspensionReason = val
+}
+
+// SetHolds sets the value of Holds.
+func (s *SiteWorkspaceResource) SetHolds(val []SiteWorkspaceHold) {
+	s.Holds = val
 }
 
 // SetSecondFactorRequiredAt sets the value of SecondFactorRequiredAt.

@@ -21,6 +21,7 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
   ingestKey: 'ik',
   postalAddress: '',
   accountLinkAvailable: false,
+  holds: [],
   role: 'member',
   createdAt: NOW,
   ...over,
