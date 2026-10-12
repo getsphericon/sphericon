@@ -41,13 +41,14 @@ type UpdateInput struct {
 	Definition *string
 }
 
-// Validate checks a definition against the Contact schema. An empty definition is
-// valid. This is the single rule set behind Create, Update, Preview and Count.
-func (s *Module) Validate(def string) error {
+// Validate checks a definition against the Contact attributes and the Workspace's Custom
+// field catalogue. An empty definition is valid. This is the single rule set behind
+// Create, Update, Preview and Count.
+func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, def string) error {
 	if def == "" {
 		return nil
 	}
-	if err := ValidateContactDefinition(def); err != nil {
+	if _, err := ContactPredicate(ctx, ws, def); err != nil {
 		return fmt.Errorf("%w: %s", ErrInvalidDefinition, err.Error())
 	}
 	return nil
@@ -56,7 +57,7 @@ func (s *Module) Validate(def string) error {
 // Create validates the definition and stores the Segment.
 func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*ent.Segment, error) {
 	if in.Definition != nil {
-		if err := s.Validate(*in.Definition); err != nil {
+		if err := s.Validate(ctx, ws, *in.Definition); err != nil {
 			return nil, err
 		}
 	}
@@ -69,7 +70,7 @@ func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*e
 // Update validates a changed definition exactly as Create does, then applies the change.
 func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in UpdateInput) (*ent.Segment, error) {
 	if in.Definition != nil {
-		if err := s.Validate(*in.Definition); err != nil {
+		if err := s.Validate(ctx, ws, *in.Definition); err != nil {
 			return nil, err
 		}
 	}
@@ -85,10 +86,7 @@ func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in Update
 
 // Preview counts the Contacts in the Workspace that match an unsaved definition.
 func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, def string) (int, error) {
-	if err := s.Validate(def); err != nil {
-		return 0, err
-	}
-	pred, err := ContactPredicate(def)
+	pred, err := ContactPredicate(ctx, ws, def)
 	if err != nil {
 		return 0, fmt.Errorf("%w: %s", ErrInvalidDefinition, err.Error())
 	}

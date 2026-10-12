@@ -28,8 +28,6 @@ func New(name, addr string, handler http.Handler) *Server {
 		Addr:              addr,
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		IdleTimeout:       120 * time.Second,
 	}}
 }
 

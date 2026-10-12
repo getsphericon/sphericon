@@ -115,8 +115,13 @@ func (e *Edition) Service(bus *events.Bus) interface {
 // honours holds only with the `operator` license, so an unlicensed instance never
 // freezes on a row it could not have written.
 func (e *Edition) Freezer() outbound.Freezer {
-	return holds.Freezer{Now: e.now, Enabled: func() bool { return e.lic.Has(licensekey.FeatureOperator) }}
+	return holds.Freezer{Now: e.now, Enabled: e.HoldsHonoured}
 }
+
+// HoldsHonoured reports whether Operator holds are honoured at all (the `operator`
+// license): the send path's Freezer and every read of a hold shown to a Workspace
+// agree on it.
+func (e *Edition) HoldsHonoured() bool { return e.lic.Has(licensekey.FeatureOperator) }
 
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),
 // which removes nothing without the retention license, and the usage job (ADR 0009),

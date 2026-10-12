@@ -60,12 +60,14 @@ func New(address, seed, issuer string) (*Link, error) {
 	return &Link{address: address, issuer: issuer, key: key, kid: kid, jwks: set}, nil
 }
 
-// FromConfig builds the installation's Link, or nil when it is not configured.
-func FromConfig(cfg *config.Config) (*Link, error) {
+// FromConfig builds the installation's Link. configured is false, with no Link and no
+// error, when no address is set.
+func FromConfig(cfg *config.Config) (link *Link, configured bool, err error) {
 	if cfg.AccountLinkURL == "" {
-		return nil, nil //nolint:nilnil // nil is the "not configured" state
+		return nil, false, nil
 	}
-	return New(cfg.AccountLinkURL, cfg.AccountLinkSigningKey, cfg.AppURL)
+	link, err = New(cfg.AccountLinkURL, cfg.AccountLinkSigningKey, cfg.AppURL)
+	return link, err == nil, err
 }
 
 // Address is the external page the link opens.

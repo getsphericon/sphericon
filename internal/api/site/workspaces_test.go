@@ -87,7 +87,7 @@ func TestSiteWorkspacesListExposesSuspension(t *testing.T) {
 func TestSiteWorkspacesListExposesActiveOperatorHolds(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	const message = "Sending is paused <b>for now</b>."
+	const message = "Sending is paused for now."
 	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
 		SetKey("k1").SetReasonCode("review").SetMessage(message).SetSetBy("service-a").
 		SetExpiresAt(time.Now().Add(time.Hour)).Save(ctx)
@@ -96,6 +96,7 @@ func TestSiteWorkspacesListExposesActiveOperatorHolds(t *testing.T) {
 	for _, email := range []string{fixtures.OwnerJohnEmail, fixtures.MemberMaryEmail} {
 		acme := workspaceOf(t, env.SiteActor(t, email), fixtures.AcmeSlug)
 		require.Len(t, acme.Holds, 1, "the lapsed fixture hold is not listed")
+		assert.Equal(t, "k1", acme.Holds[0].Key)
 		assert.Equal(t, "review", acme.Holds[0].ReasonCode)
 		assert.Equal(t, message, acme.Holds[0].Message)
 		assert.False(t, time.Time(acme.Holds[0].Since).IsZero())
@@ -114,4 +115,15 @@ func TestSiteWorkspacesListShowsNoHoldsForAnUnaffectedWorkspace(t *testing.T) {
 		SetExpiresAt(time.Now().Add(time.Hour)).Save(context.Background())
 	require.NoError(t, err)
 	assert.Empty(t, workspaceOf(t, c, fixtures.AcmeSlug).Holds, "another Workspace's hold does not leak")
+}
+
+// Holds are honoured only with the `operator` license, on the send path and in what a
+// Workspace is shown alike: an unlicensed instance lists none.
+func TestSiteWorkspacesListShowsNoHoldsWithoutTheOperatorLicense(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithoutLicense())
+	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
+		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").
+		SetExpiresAt(time.Now().Add(time.Hour)).Save(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug).Holds)
 }

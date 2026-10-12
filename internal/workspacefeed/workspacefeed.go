@@ -5,14 +5,18 @@
 // (ee/operator), so what a caller saved as its cursor always names a place in the
 // order of changes.
 //
-// It is an ent hook installed on every client that is built (db.NewEntClient, the event
-// bus's transaction client), so no write path can forget it. The hook reads Memberships
-// of any Workspace to find the one a change belongs to, which is why this package is on
-// the closed list of raw-client packages in AGENTS.md.
+// Two ent hooks keep it so no write path can forget it. Hook runs on every transaction
+// client (the event bus's): the change and its position commit together, in the order
+// the positions were taken. Guard runs on the plain client (db.NewEntClient) and refuses
+// a change to the feed outside a transaction, where the position would be a separate
+// statement that a crash loses and a concurrent change commits out of order. The hook
+// reads Memberships of any Workspace to find the one a change belongs to, which is why
+// this package is on the closed list of raw-client packages in AGENTS.md.
 package workspacefeed
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -28,8 +32,51 @@ import (
 // and a reader that passed a position cannot miss a Workspace committed below it.
 const lockKey = 7_204_001
 
-// Hook is the ent hook to install on a client (Client.Use). It is a no-op for every
-// mutation that cannot change what the feed reports.
+// ErrNeedsTransaction is what Guard returns for a change to the feed made on a client
+// that is not bound to a transaction.
+var ErrNeedsTransaction = errors.New("workspace feed change outside a transaction")
+
+// Guard is the ent hook for a client that is not bound to a transaction: it refuses
+// every mutation that Hook would give a position to. Such a change goes through the
+// event bus's transaction (events.Bus.WithinTx).
+func Guard(next ent.Mutator) ent.Mutator {
+	return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+		if changesFeed(m) {
+			return nil, ErrNeedsTransaction
+		}
+		return next.Mutate(ctx, m)
+	})
+}
+
+// changesFeed reports whether m can change what the feed reports, before looking at
+// any row: Hook narrows it to the Workspaces an owner change actually touches.
+func changesFeed(m ent.Mutation) bool {
+	switch mu := m.(type) {
+	case *entclient.WorkspaceMutation:
+		return mu.Op().Is(ent.OpCreate)
+	case *entclient.MembershipMutation:
+		if mu.Op().Is(ent.OpCreate) {
+			role, ok := mu.Role()
+			return ok && role == membership.RoleOwner
+		}
+		if mu.Op().Is(ent.OpUpdate | ent.OpUpdateOne) {
+			_, changesRole := mu.Role()
+			return changesRole
+		}
+		return mu.Op().Is(ent.OpDelete | ent.OpDeleteOne)
+	case *entclient.UserMutation:
+		if !mu.Op().Is(ent.OpUpdate | ent.OpUpdateOne) {
+			return false
+		}
+		_, email := mu.Email()
+		_, verified := mu.EmailVerifiedAt()
+		return email || verified || mu.EmailVerifiedAtCleared()
+	}
+	return false
+}
+
+// Hook is the ent hook to install on a client bound to a transaction (Client.Use). It
+// is a no-op for every mutation that cannot change what the feed reports.
 func Hook(next ent.Mutator) ent.Mutator {
 	return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
 		switch mu := m.(type) {

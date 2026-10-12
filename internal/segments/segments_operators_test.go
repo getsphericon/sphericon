@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -17,18 +16,27 @@ import (
 // opsEmails returns the emails of this test's contacts (suffix @ops.test) matching g.
 func opsEmails(t *testing.T, env *testhelper.TestEnv, g segments.Group) []string {
 	t.Helper()
-	p, err := segments.Compile(g, segments.ContactSchema())
+	ctx := context.Background()
+	p, err := segments.Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
 	require.NoError(t, err)
 	got, err := env.DB.Contact.Query().
-		Where(contact.WorkspaceID(fixtures.AcmeID), contact.EmailContainsFold("@ops.test"), predicate.Contact(p)).
+		Where(contact.WorkspaceID(fixtures.AcmeID), contact.EmailContainsFold("@ops.test"), p).
 		Order(contact.ByEmail()).
-		All(context.Background())
+		All(ctx)
 	require.NoError(t, err)
 	out := make([]string, len(got))
 	for i, c := range got {
 		out[i] = *c.Email
 	}
 	return out
+}
+
+// declare adds keys to the Acme Custom field catalogue (a rule may only name a declared key).
+func declare(t *testing.T, env *testhelper.TestEnv, keys ...string) {
+	t.Helper()
+	for _, key := range keys {
+		require.NoError(t, env.DB.Scoped(fixtures.AcmeID).CustomField().Create().SetKey(key).SetName(key).Exec(context.Background()))
+	}
 }
 
 func opsGroup(entries ...any) segments.Group {
@@ -55,8 +63,8 @@ func TestPlainColumnOperators(t *testing.T) {
 		rule segments.Rule
 		want []string
 	}{
-		"equals":      {rule("first_name", "=", "Anna"), []string{"anna@ops.test"}},
-		"not equals":  {rule("first_name", "!=", "Anna"), []string{"andy@ops.test", "bella@ops.test"}},
+		"equals":      {rule("first_name", "eq", "Anna"), []string{"anna@ops.test"}},
+		"not equals":  {rule("first_name", "neq", "Anna"), []string{"andy@ops.test", "bella@ops.test"}},
 		"contains":    {rule("first_name", "contains", "ELL"), []string{"bella@ops.test"}},
 		"begins with": {rule("email", "beginsWith", "an"), []string{"andy@ops.test", "anna@ops.test"}},
 		"null":        {rule("phone", "null", ""), []string{"andy@ops.test"}},
@@ -69,6 +77,7 @@ func TestPlainColumnOperators(t *testing.T) {
 func TestCustomFieldOperators(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
+	declare(t, env, "tags")
 	for email, custom := range map[string]map[string]any{
 		"one@ops.test":   {"plan": "pro", "tags": []any{"alpha", "beta"}},
 		"two@ops.test":   {"plan": "free"},
@@ -78,12 +87,51 @@ func TestCustomFieldOperators(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	assert.Equal(t, []string{"one@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "=", "pro"))))
-	assert.Equal(t, []string{"two@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "!=", "pro"))))
+	assert.Equal(t, []string{"one@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "eq", "pro"))))
+	assert.Equal(t, []string{"two@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "neq", "pro"))))
 	assert.Equal(t, []string{"one@ops.test", "two@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:plan", "notNull", ""))))
 	// "contains" on a JSON column is membership of a JSON array, not substring.
 	assert.Equal(t, []string{"one@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:tags", "contains", "beta"))))
 	assert.Empty(t, opsEmails(t, env, opsGroup(rule("custom:tags", "contains", "gamma"))))
+}
+
+// The key of a custom-field rule is data, never SQL: quotes in it are matched literally
+// and an injection payload is just a key nobody has.
+func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	declare(t, env, "it's")
+	_, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("quote@ops.test").
+		SetCustomFields(map[string]any{"it's": "here"}).Save(ctx)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"quote@ops.test"}, opsEmails(t, env, opsGroup(rule("custom:it's", "eq", "here"))))
+
+	// Even a declared key that looks like SQL is data: the catalogue accepts any key
+	// ingest created, and it only ever reaches the query as a bound argument.
+	payload := "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a"
+	declare(t, env, payload)
+	for _, op := range []string{"eq", "neq", "contains", "notNull"} {
+		assert.Empty(t, opsEmails(t, env, opsGroup(rule("custom:"+payload, op, "a"))), op)
+	}
+}
+
+func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := segments.New()
+	ws := env.DB.Scoped(fixtures.AcmeID)
+
+	for name, key := range map[string]string{
+		"never declared":                 "nobody_declared_this",
+		"declared by another Workspace":  fixtures.CustomFieldGlobexKey,
+		"injection that nobody declared": "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a",
+	} {
+		def, err := json.Marshal(opsGroup(rule("custom:"+key, "eq", "a")))
+		require.NoError(t, err)
+		_, err = m.Preview(context.Background(), ws, string(def))
+		require.ErrorIs(t, err, segments.ErrInvalidDefinition, name)
+		assert.Contains(t, err.Error(), "unknown custom field", name)
+	}
 }
 
 func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
@@ -96,29 +144,25 @@ func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
 	assert.Empty(t, opsEmails(t, env, segments.Group{Combinator: "and", Not: true}), "an empty negated group matches no one")
 }
 
-func TestCompileRefusesWhatTheSchemaDoesNotAllow(t *testing.T) {
-	schema := segments.ContactSchema()
-	bare := segments.Schema{Columns: map[string]string{"email": "email"}}
+func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
+	env := testhelper.Setup(t)
 	for name, tc := range map[string]struct {
-		schema segments.Schema
-		rule   segments.Rule
-		msg    string
+		rule segments.Rule
+		msg  string
 	}{
-		"unknown column":                {schema, rule("password", "=", "x"), "unknown field"},
-		"unsupported plain operator":    {schema, rule("email", "regex", "x"), "unsupported operator"},
-		"event without action":          {schema, rule("event:", "performed", ""), "unknown field"},
-		"event field without schema":    {bare, rule("event:signup", "performed", ""), "unknown field"},
-		"unsupported event operator":    {schema, rule("event:signup", "=", ""), "for event field"},
-		"bad event window":              {schema, rule("event:signup", "performed", "abc"), "event window"},
-		"negative event window":         {schema, rule("event:signup", "performed", "-3"), "event window"},
-		"unsupported tag operator":      {schema, rule("tag", "=", "vip"), "for tag field"},
-		"blank tag name":                {schema, rule("tag", "has", "   "), "tag name is required"},
-		"unsupported json operator":     {schema, rule("custom:plan", "beginsWith", "p"), "for json field"},
-		"json prefix without a path":    {schema, rule("custom:", "=", "x"), "unknown field"},
-		"tag field without tag schema":  {bare, rule("tag", "has", "vip"), "unknown field"},
-		"plain operator on json column": {schema, rule("custom:plan", "null", ""), "for json field"},
+		"unknown column":                {rule("password", "eq", "x"), "unknown field"},
+		"unsupported plain operator":    {rule("email", "regex", "x"), "unsupported operator"},
+		"event without action":          {rule("event:", "performed", ""), "unknown field"},
+		"unsupported event operator":    {rule("event:signup", "eq", ""), "for event field"},
+		"bad event window":              {rule("event:signup", "performed", "abc"), "event window"},
+		"negative event window":         {rule("event:signup", "performed", "-3"), "event window"},
+		"unsupported tag operator":      {rule("tag", "eq", "vip"), "for tag field"},
+		"blank tag name":                {rule("tag", "has", "   "), "tag name is required"},
+		"unsupported json operator":     {rule("custom:plan", "beginsWith", "p"), "for json field"},
+		"json prefix without a key":     {rule("custom:", "eq", "x"), "unknown field"},
+		"plain operator on json column": {rule("custom:plan", "null", ""), "for json field"},
 	} {
-		_, err := segments.Compile(opsGroup(tc.rule), tc.schema)
+		_, err := segments.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
@@ -126,39 +170,45 @@ func TestCompileRefusesWhatTheSchemaDoesNotAllow(t *testing.T) {
 }
 
 func TestCompileRefusesMalformedEntries(t *testing.T) {
-	schema := segments.ContactSchema()
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	// A rules[] entry that is not an object at all.
-	_, err := segments.Compile(segments.Group{Rules: []json.RawMessage{json.RawMessage(`42`)}}, schema)
+	_, err := segments.Compile(ctx, ws, segments.Group{Rules: []json.RawMessage{json.RawMessage(`42`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// A nested group whose own rules are not a list.
-	_, err = segments.Compile(segments.Group{Rules: []json.RawMessage{json.RawMessage(`{"combinator":"or","rules":"nope"}`)}}, schema)
+	_, err = segments.Compile(ctx, ws, segments.Group{Rules: []json.RawMessage{json.RawMessage(`{"combinator":"or","rules":"nope"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed group")
 
 	// A leaf whose value is not a string.
-	_, err = segments.Compile(segments.Group{Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"=","value":{"a":1}}`)}}, schema)
+	_, err = segments.Compile(ctx, ws, segments.Group{Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":{"a":1}}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// An error deep in a nested group is reported with its path.
-	nested := opsGroup(opsGroup(rule("password", "=", "x")))
-	_, err = segments.Compile(nested, schema)
+	nested := opsGroup(opsGroup(rule("password", "eq", "x")))
+	_, err = segments.Compile(ctx, ws, nested)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rule 0: rule 0: unknown field")
 }
 
 func TestContactPredicateRefusesInvalidDefinitions(t *testing.T) {
-	_, err := segments.ContactPredicate("{not json")
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	ws := env.DB.Scoped(fixtures.AcmeID)
+
+	_, err := segments.ContactPredicate(ctx, ws, "{not json")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid segment definition")
 
-	_, err = segments.ContactPredicate(`{"combinator":"and","rules":[{"field":"nope","operator":"=","value":"x"}]}`)
+	_, err = segments.ContactPredicate(ctx, ws, `{"combinator":"and","rules":[{"field":"nope","operator":"eq","value":"x"}]}`)
 	require.Error(t, err)
 
-	p, err := segments.ContactPredicate("")
+	p, err := segments.ContactPredicate(ctx, ws, "")
 	require.NoError(t, err)
 	assert.NotNil(t, p, "a blank definition matches everyone")
 }

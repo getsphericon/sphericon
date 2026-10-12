@@ -286,7 +286,7 @@ func PlanBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module
 		if seg.Definition != nil {
 			def = *seg.Definition
 		}
-		pred, err := segments.ContactPredicate(def)
+		pred, err := segments.ContactPredicate(ctx, s, def)
 		if err != nil {
 			_ = s.Broadcast().UpdateOneID(b.ID).SetStatus(broadcast.StatusFailed).Exec(ctx)
 			return nil, fmt.Errorf("segment %d definition: %w", seg.ID, err)

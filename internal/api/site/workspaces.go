@@ -51,14 +51,26 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	if end, ok := secondfactor.Deadline(m); ok {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}
-	active, err := holds.Active(ctx, s, h.now())
+	active, err := h.activeHolds(ctx, s, m.Edges.Workspace)
 	if err != nil {
 		return r, err
 	}
 	r.Holds = lo.Map(active, func(hold *ent.Hold, _ int) siteapi.SiteWorkspaceHold {
-		return siteapi.SiteWorkspaceHold{ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt)}
+		return siteapi.SiteWorkspaceHold{Key: hold.Key, ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt)}
 	})
 	return r, nil
+}
+
+// activeHolds is the holds the send path honours now: none without the `operator`
+// license. A Workspace loaded with its holds edge is read from it; otherwise one query.
+func (h *Handlers) activeHolds(ctx context.Context, s *ent.Scoped, w *ent.Workspace) ([]*ent.Hold, error) {
+	if h.holdsHonoured != nil && !h.holdsHonoured() {
+		return nil, nil
+	}
+	if loaded, err := w.Edges.HoldsOrErr(); err == nil {
+		return holds.Live(loaded, h.now()), nil
+	}
+	return holds.Active(ctx, s, h.now())
 }
 
 // SiteWorkspacesAccountLink mints the Owner's Account link token. Without the

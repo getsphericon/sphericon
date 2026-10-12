@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -178,6 +179,11 @@ func (_c *EventCreate) SetWorkspace(v *Workspace) *EventCreate {
 	return _c.SetWorkspaceID(v.ID)
 }
 
+// SetContact sets the "contact" edge to the Contact entity.
+func (_c *EventCreate) SetContact(v *Contact) *EventCreate {
+	return _c.SetContactID(v.ID)
+}
+
 // Mutation returns the EventMutation object of the builder.
 func (_c *EventCreate) Mutation() *EventMutation {
 	return _c.mutation
@@ -290,10 +296,6 @@ func (_c *EventCreate) createSpec() (*Event, *sqlgraph.CreateSpec) {
 		_spec.SetField(event.FieldSourceID, field.TypeString, value)
 		_node.SourceID = &value
 	}
-	if value, ok := _c.mutation.ContactID(); ok {
-		_spec.SetField(event.FieldContactID, field.TypeInt64, value)
-		_node.ContactID = &value
-	}
 	if value, ok := _c.mutation.VisitorID(); ok {
 		_spec.SetField(event.FieldVisitorID, field.TypeString, value)
 		_node.VisitorID = &value
@@ -337,6 +339,23 @@ func (_c *EventCreate) createSpec() (*Event, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.WorkspaceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ContactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   event.ContactTable,
+			Columns: []string{event.ContactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ContactID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -442,12 +461,6 @@ func (u *EventUpsert) SetContactID(v int64) *EventUpsert {
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *EventUpsert) UpdateContactID() *EventUpsert {
 	u.SetExcluded(event.FieldContactID)
-	return u
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *EventUpsert) AddContactID(v int64) *EventUpsert {
-	u.Add(event.FieldContactID, v)
 	return u
 }
 
@@ -681,13 +694,6 @@ func (u *EventUpsertOne) ClearSourceID() *EventUpsertOne {
 func (u *EventUpsertOne) SetContactID(v int64) *EventUpsertOne {
 	return u.Update(func(s *EventUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *EventUpsertOne) AddContactID(v int64) *EventUpsertOne {
-	return u.Update(func(s *EventUpsert) {
-		s.AddContactID(v)
 	})
 }
 
@@ -1115,13 +1121,6 @@ func (u *EventUpsertBulk) ClearSourceID() *EventUpsertBulk {
 func (u *EventUpsertBulk) SetContactID(v int64) *EventUpsertBulk {
 	return u.Update(func(s *EventUpsert) {
 		s.SetContactID(v)
-	})
-}
-
-// AddContactID adds v to the "contact_id" field.
-func (u *EventUpsertBulk) AddContactID(v int64) *EventUpsertBulk {
-	return u.Update(func(s *EventUpsert) {
-		s.AddContactID(v)
 	})
 }
 

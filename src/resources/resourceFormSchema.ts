@@ -1,6 +1,7 @@
 import * as z from 'zod'
 
-// Form state is raw strings, keyed by the edited field names.
+// Form state is raw strings, keyed by the edited field names. A structured field (a Segment's
+// rule group) is held as its JSON text and decoded by a codec on the field's own schema.
 export type FormValues = Record<string, string>
 
 // What the form layer hands to the API schema: a string, or the API's "no value" markers.
@@ -36,8 +37,11 @@ function formCodec(blankOf: (field: string) => string | null | undefined) {
 //   - toValues: loaded resource -> form values.
 // Pick the edited fields from the generated schema (`zSiteUpdateContactInput.pick({ email: true })`);
 // anything not picked never round-trips into a payload.
-// What a loaded resource must offer: each edited field as a string, null or absent.
-export type ResourceValues<TPayload> = { [K in keyof TPayload]?: string | null | undefined }
+// What a loaded resource must offer: each edited field as a string, a structured value, null or
+// absent.
+export type ResourceValues<TPayload> = {
+  [K in keyof TPayload]?: string | object | null | undefined
+}
 
 export type ResourceFormSchema<TPayload> = {
   // Form values with every field blank.
@@ -71,7 +75,8 @@ export function resourceFormSchema<TSchema extends StringFieldsSchema>(
         Object.fromEntries(
           fields.map((field) => {
             const value = values.get(field)
-            return [field, typeof value === 'string' ? value : null]
+            if (typeof value === 'string') return [field, value]
+            return [field, value === undefined || value === null ? null : JSON.stringify(value)]
           }),
         ),
       )

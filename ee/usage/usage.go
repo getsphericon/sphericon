@@ -19,7 +19,6 @@ package usage
 import (
 	"context"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -177,24 +176,17 @@ type WorkspaceUsage struct {
 // period, by Workspace id. It reads the stored rows and never recounts.
 func List(ctx context.Context, client *ent.Client, period time.Time, p pagination.Params) (pagination.Page[WorkspaceUsage], error) {
 	period = PeriodOf(period)
-	workspaceIDs := func(ctx context.Context) ([]int64, error) {
-		var ids []int64
-		err := client.Usage.Query().Where(entusage.PeriodStart(period)).
-			Unique(true).Select(entusage.FieldWorkspaceID).Scan(ctx, &ids)
-		return ids, err
+	distinct := func() *ent.UsageQuery {
+		return client.Usage.Query().Where(entusage.PeriodStart(period)).Unique(true)
 	}
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) {
-			ids, err := workspaceIDs(ctx)
-			return len(ids), err
-		},
+		distinct().Select(entusage.FieldWorkspaceID).Count,
 		func(ctx context.Context, limit, offset int) ([]WorkspaceUsage, error) {
-			ids, err := workspaceIDs(ctx)
-			if err != nil {
+			var ids []int64
+			if err := distinct().Order(ent.Asc(entusage.FieldWorkspaceID)).Limit(limit).Offset(offset).
+				Select(entusage.FieldWorkspaceID).Scan(ctx, &ids); err != nil {
 				return nil, err
 			}
-			slices.Sort(ids)
-			ids = ids[min(offset, len(ids)):min(offset+limit, len(ids))]
 			rows, err := client.Usage.Query().
 				Where(entusage.PeriodStart(period), entusage.WorkspaceIDIn(ids...)).
 				Order(ent.Asc(entusage.FieldWorkspaceID), ent.Asc(entusage.FieldMetric)).

@@ -58,8 +58,9 @@ _Avoid_: Alias, merge, reconcile
 **Event**:
 An immutable, append-only record that something happened (an `action`, optional properties,
 at a time). Attached to a Contact by **stable identity resolved at ingest** — not by email —
-and carries denormalized identity snapshot fields for debugging. Never FK-constrained to the
-mutable Contact. The raw material behind behavioral segmentation. sphericon's own delivery and
+and carries denormalized identity snapshot fields for debugging. The link is a nullable
+foreign key that is set to null when the Contact is deleted: an Event outlives the mutable
+Contact, it never blocks or follows its deletion. The raw material behind behavioral segmentation. sphericon's own delivery and
 engagement facts (`email.sent`, `email.opened`, `email.clicked`) are Events too — reserved,
 system-generated actions — so engagement is segmentable through the very same machinery as
 customer-tracked actions, with no parallel event stream.
