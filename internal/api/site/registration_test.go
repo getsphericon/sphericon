@@ -258,3 +258,55 @@ func TestWithTheGateOnAPasswordInTheRegistrationIsNeverStored(t *testing.T) {
 	assert.Nil(t, u.EmailVerifiedAt)
 	assert.Equal(t, http.StatusForbidden, loginStatus(t, env, "grace@example.com", "attacker-chosen-1"))
 }
+
+// An Unverified User who lost the verification mail can recover through a password
+// reset: the reset link reaches the same inbox, so it proves the address too (ADR 0030).
+func TestPasswordResetProvesTheAddressOfAnUnverifiedUser(t *testing.T) {
+	env := testhelper.Setup(t)
+	register(t, env, "Grace Hopper", "grace@example.com")
+	c := env.SiteAnonymous(t)
+
+	forgot, err := c.SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: "grace@example.com"})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteAuthForgotPasswordAccepted{}, forgot)
+	_, body := lastSystemEmail(t, env)
+
+	res, err := c.SiteAuthResetPassword(t.Context(),
+		&siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "grace-password-2"})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, res)
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 3, "verification, reset, then the welcome that follows the proof")
+	assert.Contains(t, msgs[2].Subject, "Welcome")
+
+	rec := postLogin(t, env, "grace@example.com", "grace-password-2")
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	spaces, err := env.SiteWithToken(t, sessionCookie(rec.Result()).Value).SiteWorkspacesList(t.Context())
+	require.NoError(t, err)
+	require.Len(t, spaces, 1)
+	assert.Equal(t, "grace-hopper", spaces[0].Slug)
+}
+
+// The reset of a Verified User is only a password change: no second Workspace, no welcome.
+func TestPasswordResetOfAVerifiedUserCreatesNoWorkspaceAndSendsNoWelcome(t *testing.T) {
+	env := testhelper.Setup(t)
+	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1")
+	c := env.SiteAnonymous(t)
+	_, err := c.SiteAuthForgotPassword(t.Context(), &siteapi.SiteForgotPasswordInput{Email: "grace@example.com"})
+	require.NoError(t, err)
+	_, body := lastSystemEmail(t, env)
+	before := len(env.SystemMail.Messages())
+
+	res, err := c.SiteAuthResetPassword(t.Context(),
+		&siteapi.SiteResetPasswordInput{Token: tokenFromEmail(t, body), Password: "grace-password-2"})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, res)
+
+	assert.Len(t, env.SystemMail.Messages(), before)
+	rec := postLogin(t, env, "grace@example.com", "grace-password-2")
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	spaces, err := env.SiteWithToken(t, sessionCookie(rec.Result()).Value).SiteWorkspacesList(t.Context())
+	require.NoError(t, err)
+	assert.Len(t, spaces, 1)
+}
