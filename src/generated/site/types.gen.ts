@@ -2463,6 +2463,10 @@ export type SiteWebhookEndpointResource = {
  */
 export type SiteWorkspaceHold = {
   /**
+   * The setter's key, unique per Workspace
+   */
+  key: string;
+  /**
    * Machine reason code the setter gave
    */
   reasonCode: string;

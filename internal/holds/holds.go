@@ -11,6 +11,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -23,6 +25,12 @@ func Active(ctx context.Context, s *ent.Scoped, now time.Time) ([]*ent.Hold, err
 		Where(enthold.ExpiresAtGT(now)).
 		Order(enthold.ByKey()).
 		All(ctx)
+}
+
+// Live keeps the holds of rows that are active at now, in their order. It is Active
+// over rows already loaded, for a read that loads the holds of many Workspaces at once.
+func Live(rows []*ent.Hold, now time.Time) []*ent.Hold {
+	return lo.Filter(rows, func(h *ent.Hold, _ int) bool { return h.ExpiresAt.After(now) })
 }
 
 // Freezer answers the send path's "may this Workspace send now" from the active holds

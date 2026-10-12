@@ -10198,8 +10198,12 @@
       },
       "SiteWorkspaceHold": {
         "type": "object",
-        "required": ["reasonCode", "message", "since"],
+        "required": ["key", "reasonCode", "message", "since"],
         "properties": {
+          "key": {
+            "type": "string",
+            "description": "The setter's key, unique per Workspace"
+          },
           "reasonCode": {
             "type": "string",
             "description": "Machine reason code the setter gave"

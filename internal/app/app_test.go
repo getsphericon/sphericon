@@ -265,12 +265,18 @@ func ownedWorkspace(t *testing.T, a *App, slug, ownerEmail string) {
 	client, err := invokeEnt(a)
 	require.NoError(t, err)
 
-	ws := client.Workspace.Create().SetName("App Test").SetSlug(slug).
-		SetCollectKey("ck_" + slug).SetIngestKey("ik_" + slug).SaveX(ctx)
-	u := client.User.Create().SetName("Owner").SetEmail(ownerEmail).SaveX(ctx)
-	client.Membership.Create().SetUserID(u.ID).SetWorkspaceID(ws.ID).SetRole(membership.RoleOwner).ExecX(ctx)
 	database, err := invokeSQL(a)
 	require.NoError(t, err)
+	var ws *ent.Workspace
+	var u *ent.User
+	// The Workspace feed takes a position only inside a transaction.
+	require.NoError(t, events.New(database).WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		ws = tx.Workspace.Create().SetName("App Test").SetSlug(slug).
+			SetCollectKey("ck_" + slug).SetIngestKey("ik_" + slug).SaveX(ctx)
+		u = tx.User.Create().SetName("Owner").SetEmail(ownerEmail).SaveX(ctx)
+		tx.Membership.Create().SetUserID(u.ID).SetWorkspaceID(ws.ID).SetRole(membership.RoleOwner).ExecX(ctx)
+		return nil
+	}))
 	t.Cleanup(func() {
 		// The app commits for real: its audit.entry outbox rows name a Workspace that
 		// is deleted below, and would break every later package that drains the outbox.

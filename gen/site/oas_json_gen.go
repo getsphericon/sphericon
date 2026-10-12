@@ -28588,6 +28588,10 @@ func (s *SiteWorkspaceHold) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *SiteWorkspaceHold) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("key")
+		e.Str(s.Key)
+	}
+	{
 		e.FieldStart("reasonCode")
 		e.Str(s.ReasonCode)
 	}
@@ -28601,10 +28605,11 @@ func (s *SiteWorkspaceHold) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceHold = [3]string{
-	0: "reasonCode",
-	1: "message",
-	2: "since",
+var jsonFieldsNameOfSiteWorkspaceHold = [4]string{
+	0: "key",
+	1: "reasonCode",
+	2: "message",
+	3: "since",
 }
 
 // Decode decodes SiteWorkspaceHold from json.
@@ -28616,8 +28621,20 @@ func (s *SiteWorkspaceHold) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "reasonCode":
+		case "key":
 			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Key = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "reasonCode":
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.ReasonCode = string(v)
@@ -28629,7 +28646,7 @@ func (s *SiteWorkspaceHold) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"reasonCode\"")
 			}
 		case "message":
-			requiredBitSet[0] |= 1 << 1
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.Message = string(v)
@@ -28641,7 +28658,7 @@ func (s *SiteWorkspaceHold) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"message\"")
 			}
 		case "since":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				if err := s.Since.Decode(d); err != nil {
 					return err
@@ -28660,7 +28677,7 @@ func (s *SiteWorkspaceHold) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

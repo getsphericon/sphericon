@@ -1356,13 +1356,13 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	if err != nil {
 		return apisite.Deps{}, err
 	}
-	accountLink, err := accountlink.FromConfig(cfg)
+	accountLink, _, err := accountlink.FromConfig(cfg)
 	if err != nil {
 		return apisite.Deps{}, err
 	}
 	return apisite.Deps{
-		AccountLink: accountLink,
-		Accounts:    acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured,
+		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Automations: auto,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, Integrations: integ,
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Analytics: an,

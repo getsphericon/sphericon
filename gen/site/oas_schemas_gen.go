@@ -11147,12 +11147,19 @@ func (*SiteWebhooksUpdateUnprocessableEntity) siteWebhooksUpdateRes() {}
 // expiry.
 // Ref: #/components/schemas/SiteWorkspaceHold
 type SiteWorkspaceHold struct {
+	// The setter's key, unique per Workspace.
+	Key string `json:"key"`
 	// Machine reason code the setter gave.
 	ReasonCode string `json:"reasonCode"`
 	// The setter's message for the Owner, to show as given.
 	Message string `json:"message"`
 	// When the hold was set.
 	Since Timestamp `json:"since"`
+}
+
+// GetKey returns the value of Key.
+func (s *SiteWorkspaceHold) GetKey() string {
+	return s.Key
 }
 
 // GetReasonCode returns the value of ReasonCode.
@@ -11168,6 +11175,11 @@ func (s *SiteWorkspaceHold) GetMessage() string {
 // GetSince returns the value of Since.
 func (s *SiteWorkspaceHold) GetSince() Timestamp {
 	return s.Since
+}
+
+// SetKey sets the value of Key.
+func (s *SiteWorkspaceHold) SetKey(val string) {
+	s.Key = val
 }
 
 // SetReasonCode sets the value of ReasonCode.

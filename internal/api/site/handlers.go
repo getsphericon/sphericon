@@ -96,6 +96,7 @@ type Handlers struct {
 	secondFactor   *secondfactor.Module
 	now            func() time.Time
 	accountLink    *accountlink.Link
+	holdsHonoured  func() bool
 	// challenges signs the login challenge on the env clock (ADR 0020).
 	challenges *authtoken.Signer
 }
@@ -155,6 +156,9 @@ type Deps struct {
 	// AccountLink mints the Owner's Account link token; nil when the installation is
 	// not configured for it, which leaves the operation answering 404.
 	AccountLink *accountlink.Link
+	// HoldsHonoured reports whether Operator holds are shown to Owners: the same
+	// license gate the send path applies (ADR 0009). Nil is always.
+	HoldsHonoured func() bool
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -167,7 +171,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink,
+		oauth: d.OAuth, audit: d.Audit, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }

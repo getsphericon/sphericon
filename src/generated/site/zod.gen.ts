@@ -1248,6 +1248,7 @@ export const zSiteWebhookEndpointResource = z.object({
  * message, and lifts by itself at its expiry.
  */
 export const zSiteWorkspaceHold = z.object({
+  key: z.string(),
   reasonCode: z.string(),
   message: z.string(),
   since: zTimestamp

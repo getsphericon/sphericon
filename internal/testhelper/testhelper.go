@@ -259,7 +259,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	txDB.SetMaxOpenConns(1)
 	t.Cleanup(func() { _ = txDB.Close() }) // rollback
 
-	client := db.NewEntClient(txDB)
+	client := db.NewEntClientOnTx(txDB)
 	// Bus over the same txdb connection: WithinTx opens a nested (savepoint)
 	// transaction, so producer writes + outbox inserts roll back with the test.
 	bus := events.New(txDB)
@@ -332,11 +332,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
 	operatorHandler, err := server.NewOperatorAPI(edition.Operator(bus, systemMail))
 	require.NoError(t, err, "build operator API")
-	accountLink, err := accountlink.FromConfig(&cfg)
+	accountLink, _, err := accountlink.FromConfig(&cfg)
 	require.NoError(t, err, "build account link")
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
-		AccountLink: accountLink,
-		Accounts:    acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured,
+		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, Integrations: integrationsModule,

@@ -7,6 +7,9 @@ namespace Sphericon;
  * members see it. It is not a suspension: it is set from outside, carries its own
  * message, and lifts by itself at its expiry. */
 model SiteWorkspaceHold {
+  /** The setter's key, unique per Workspace */
+  key: string;
+
   /** Machine reason code the setter gave */
   reasonCode: string;
 

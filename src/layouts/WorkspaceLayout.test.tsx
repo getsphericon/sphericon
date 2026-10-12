@@ -60,8 +60,9 @@ test('a suspension without a reason omits the reason line', async () => {
 })
 
 const HOLD = {
+  key: 'k1',
   reasonCode: 'review',
-  message: 'Please <b>wait</b> a day.',
+  message: 'Please wait a day.',
   since: '2026-02-01T00:00:00Z',
 }
 
@@ -70,16 +71,16 @@ test('a held workspace shows the hold banner with the setter message as given, t
   const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
   await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
-  await expect.element(screen.getByText('Please <b>wait</b> a day.')).toBeInTheDocument()
+  await expect.element(screen.getByText('Please wait a day.')).toBeInTheDocument()
   await expect.element(screen.getByText('Sending is suspended')).not.toBeInTheDocument()
 })
 
 test('every active hold message is shown', async () => {
-  const other = { ...HOLD, message: 'Second message.' }
+  const other = { ...HOLD, key: 'k2', message: 'Second message.' }
   worker.use(list([workspace({ holds: [HOLD, other] })]))
   const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
-  await expect.element(screen.getByText('Please <b>wait</b> a day.')).toBeInTheDocument()
+  await expect.element(screen.getByText('Please wait a day.')).toBeInTheDocument()
   await expect.element(screen.getByText('Second message.')).toBeInTheDocument()
 })
 

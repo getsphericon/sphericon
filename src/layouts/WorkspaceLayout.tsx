@@ -72,7 +72,7 @@ function HoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
     >
       <Text size="sm">{t(($) => $.workspaceHold.description)}</Text>
       {holds.map((hold) => (
-        <Text key={`${hold.reasonCode}-${hold.since}-${hold.message}`} size="sm" fw={500} mt="xs">
+        <Text key={hold.key} size="sm" fw={500} mt="xs">
           {hold.message}
         </Text>
       ))}

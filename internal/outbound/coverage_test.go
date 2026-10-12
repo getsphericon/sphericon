@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -163,6 +164,42 @@ func TestFreezersHoldAfterTheCoreSuspensionCheck(t *testing.T) {
 	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:frozen", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Sent, res.Outcome, "the same Request goes out once the freeze lifts")
+}
+
+// Send and Preflight read one gate: with the real holds.Freezer they agree on an
+// active hold, a lapsed one and a hold the license does not honour.
+func TestSendAndPreflightAgreeOnAnOperatorHold(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	honoured := true
+	m := newModule(env, outbound.WithFreezers(holds.Freezer{Enabled: func() bool { return honoured }}))
+	create := func(key string, expires time.Time) {
+		_, err := s.Hold().Create().SetKey(key).SetReasonCode("review").SetMessage("held").
+			SetSetBy("service-a").SetExpiresAt(expires).Save(ctx)
+		require.NoError(t, err)
+	}
+	agree := func(key, want string) {
+		t.Helper()
+		hold, err := m.Preflight(ctx, s, "")
+		require.NoError(t, err)
+		res, err := m.Send(ctx, s, transactional(key, "a@example.com"))
+		require.NoError(t, err)
+		assert.Equal(t, want, hold, "Preflight")
+		if want == "" {
+			assert.Equal(t, outbound.Sent, res.Outcome, "Send")
+		} else {
+			assert.Equal(t, outbound.Held, res.Outcome, "Send")
+			assert.Equal(t, want, res.Reason, "Send")
+		}
+	}
+
+	create("lapsed", time.Now().Add(-time.Hour))
+	agree("tx:lapsed", "")
+	create("active", time.Now().Add(time.Hour))
+	agree("tx:active", outbound.HoldOperator)
+	honoured = false
+	agree("tx:unlicensed", "")
 }
 
 func TestSuspensionIsCheckedBeforeFreezers(t *testing.T) {

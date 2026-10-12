@@ -145,7 +145,8 @@ Frontend tests: `mise run test:watch`.
 - **DI**: `samber/do` container. `internal/app/app.go` `register()` wires every singleton
   (config, sql.DB, ent client, email sender, pubsub, the `http.Handler`). Add new
   dependencies there via `do.Provide`.
-- **HTTP**: `internal/server/server.go` `New()` mounts the four ogen servers and the
+- **HTTP**: `internal/server/server.go` `New()` mounts the four public ogen servers (the fifth,
+  `/service`, is served by `NewInternal` on the internal listener) and the
   public endpoints onto a stdlib `http.ServeMux`, then wraps it with hand-rolled middleware
   (recoverer, requestID, timeout, CORS). Errors render as RFC 7807 `application/problem+json`.
 - **Five API surfaces**, each with its own TypeSpec spec, ogen server, handler package,
