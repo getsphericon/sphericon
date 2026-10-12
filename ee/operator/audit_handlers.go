@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	"github.com/getsphericon/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // OperatorWorkspaceAuditList is a page of one Workspace's Audit log, newest first. An
@@ -56,6 +57,11 @@ func auditEntryResource(e *ent.AuditEntry) operatorapi.OperatorAuditEntryResourc
 		RequestId:  nilableString(v.RequestID),
 		IP:         nilableString(v.IP),
 		UserAgent:  nilableString(v.UserAgent),
+	}
+	// The console is the platform's own view: a Service credential is named here, as a
+	// customer's read of the same entry shows "sphericon staff".
+	if e.ActorKind == events.ActorService {
+		res.Actor = operatorapi.OperatorAuditActor{Kind: operatorapi.OperatorAuditActorKindService, ID: nilableString(e.ActorID), Name: nilableString(e.ActorName)}
 	}
 	if v.Diff != nil {
 		res.Diff = operatorapi.NewOptNilOperatorAuditEntryResourceDiff(v.Diff)

@@ -80,6 +80,8 @@ func (s OperatorAuditActorKind) Validate() error {
 		return nil
 	case "operator":
 		return nil
+	case "service":
+		return nil
 	case "system":
 		return nil
 	default:

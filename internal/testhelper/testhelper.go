@@ -153,6 +153,10 @@ type TestEnv struct {
 	SQLDB  *sql.DB     // the same txdb connection the ent client and bus ride
 	Bus    *events.Bus // domain-event bus over SQLDB (nested savepoint per WithinTx)
 	Server http.Handler
+	// Internal is the handler of the internal listener (ADR 0026), built like the
+	// composition root builds it: the service endpoints and nothing else. Nil on an
+	// unlicensed instance, where no listener would be bound.
+	Internal http.Handler
 	// Tracker is the instance the server and the sender share: mint tracking,
 	// unsubscribe and confirmation tokens with it, never with a second one.
 	Tracker *tracking.Tracker
@@ -337,9 +341,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Clock:        st.now,
 	}, external, mcpHandler, operatorHandler)
 	require.NoError(t, err, "build server")
+	internalHandler, err := server.NewInternal(&cfg, edition.Service())
+	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{
-		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
+		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
 		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor, Operators: edition.Operators,
 	}
 }

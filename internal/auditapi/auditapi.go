@@ -80,9 +80,9 @@ func ViewOf(e *ent.AuditEntry) View {
 		IP:         e.IP,
 		UserAgent:  e.UserAgent,
 	}
-	if e.ActorKind == events.ActorOperator {
+	if events.IsStaff(e.ActorKind) {
 		label := events.OperatorLabel
-		v.ActorID, v.ActorName = nil, &label
+		v.ActorKind, v.ActorID, v.ActorName = events.ActorOperator, nil, &label
 	}
 	if len(e.Diff) > 0 {
 		v.Diff = make(map[string]jx.Raw, len(e.Diff))

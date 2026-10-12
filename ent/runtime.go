@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -635,6 +636,37 @@ func init() {
 	sendingdomainDescVerified := sendingdomainFields[5].Descriptor()
 	// sendingdomain.DefaultVerified holds the default value on creation for the verified field.
 	sendingdomain.DefaultVerified = sendingdomainDescVerified.Default.(bool)
+	servicecredentialMixin := schema.ServiceCredential{}.Mixin()
+	servicecredentialMixinFields0 := servicecredentialMixin[0].Fields()
+	_ = servicecredentialMixinFields0
+	servicecredentialFields := schema.ServiceCredential{}.Fields()
+	_ = servicecredentialFields
+	// servicecredentialDescCreatedAt is the schema descriptor for created_at field.
+	servicecredentialDescCreatedAt := servicecredentialMixinFields0[0].Descriptor()
+	// servicecredential.DefaultCreatedAt holds the default value on creation for the created_at field.
+	servicecredential.DefaultCreatedAt = servicecredentialDescCreatedAt.Default.(func() time.Time)
+	// servicecredentialDescUpdatedAt is the schema descriptor for updated_at field.
+	servicecredentialDescUpdatedAt := servicecredentialMixinFields0[1].Descriptor()
+	// servicecredential.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	servicecredential.DefaultUpdatedAt = servicecredentialDescUpdatedAt.Default.(func() time.Time)
+	// servicecredential.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	servicecredential.UpdateDefaultUpdatedAt = servicecredentialDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// servicecredentialDescName is the schema descriptor for name field.
+	servicecredentialDescName := servicecredentialFields[1].Descriptor()
+	// servicecredential.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	servicecredential.NameValidator = servicecredentialDescName.Validators[0].(func(string) error)
+	// servicecredentialDescPrefix is the schema descriptor for prefix field.
+	servicecredentialDescPrefix := servicecredentialFields[2].Descriptor()
+	// servicecredential.PrefixValidator is a validator for the "prefix" field. It is called by the builders before save.
+	servicecredential.PrefixValidator = servicecredentialDescPrefix.Validators[0].(func(string) error)
+	// servicecredentialDescSecretHash is the schema descriptor for secret_hash field.
+	servicecredentialDescSecretHash := servicecredentialFields[3].Descriptor()
+	// servicecredential.SecretHashValidator is a validator for the "secret_hash" field. It is called by the builders before save.
+	servicecredential.SecretHashValidator = servicecredentialDescSecretHash.Validators[0].(func(string) error)
+	// servicecredentialDescScopes is the schema descriptor for scopes field.
+	servicecredentialDescScopes := servicecredentialFields[4].Descriptor()
+	// servicecredential.DefaultScopes holds the default value on creation for the scopes field.
+	servicecredential.DefaultScopes = servicecredentialDescScopes.Default.([]string)
 	suppressionMixin := schema.Suppression{}.Mixin()
 	suppressionMixinFields0 := suppressionMixin[0].Fields()
 	_ = suppressionMixinFields0

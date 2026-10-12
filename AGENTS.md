@@ -22,11 +22,12 @@ hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `internal/api/{site,external}/resources` packages and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock — regenerate instead.
 
 ```
-typespec/{site,external,collect,operator}   ──tsp compile──▶  openapi/*.openapi.json
+typespec/{site,external,collect,operator,service}   ──tsp compile──▶  openapi/*.openapi.json
   openapi/site      ──ogen──▶ gen/site       (Go server)   ──openapi-ts──▶ src/generated/site (TS client + react-query + zod)
   openapi/external  ──ogen──▶ gen/external    (Go server)
   openapi/collect   ──ogen──▶ gen/collect     (Go server)  ──openapi-ts──▶ packages/analytics/src/generated/collect (types only)
   openapi/operator  ──ogen──▶ gen/operator    (Go server)  ──openapi-ts──▶ src/generated/operator (TS client + react-query + zod)
+  openapi/service   ──ogen──▶ gen/service     (Go server, internal listener only)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go
@@ -147,13 +148,20 @@ Frontend tests: `mise run test:watch`.
 - **HTTP**: `internal/server/server.go` `New()` mounts the four ogen servers and the
   public endpoints onto a stdlib `http.ServeMux`, then wraps it with hand-rolled middleware
   (recoverer, requestID, timeout, CORS). Errors render as RFC 7807 `application/problem+json`.
-- **Four API surfaces**, each with its own TypeSpec spec, ogen server, handler package,
+- **Five API surfaces**, each with its own TypeSpec spec, ogen server, handler package,
   and auth scheme:
   - `/site/*` — frontend SPA API. Auth: **JWT cookie** (issued by the `login` operation through `auth.Sessions`, ADR 0020). Handlers in `internal/api/site`.
   - `/api/*` — external/public API. Auth: **Bearer api-token** (workspace-scoped). Handlers in `internal/api/external`.
   - `/collect/*` — tracking ingestion from customer sites. Auth: **x-collect-key** header. Handlers in `internal/api/collect`.
   - `/operator/*` — platform staff (the **Operator**, ADR 0026), Enterprise (license feature `operator`; unlicensed = 404).
     Auth: its own **JWT cookie** (`OPERATOR_JWT`, `OPERATOR_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/operator`.
+  - `/service/*` — the service endpoints of the Operator surface, called by a platform service with a
+    **Service credential** (ADR 0026): **Bearer** `omsc_…`, limited to scopes (`usage:read`,
+    `workspaces:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
+    the internal listener** (`INTERNAL_ADDR`, opt-in, ADR 0018 style): the public mux answers 404 for it.
+    Handlers and security handler in `ee/operator` (`service.go`); every operation names its scopes in
+    `ServiceOperationScopes` (no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
+    `env.IssueServiceCredential`.
 - Auth security handlers live in `internal/api/auth/auth.go`. External requests carry a
   `*TokenAuth` (scopes + the Workspace's `*ent.Scoped`) in context — query through
   `auth.TokenScoped(ctx)` (see "Workspace scoping" below).

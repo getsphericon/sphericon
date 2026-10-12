@@ -152,7 +152,7 @@ var credentialColumns = []struct{ column, suffix string }{
 
 // credentialCall matches a quoted-string hashing or sealing call:
 // {{argonHash "plaintext"}}, {{encrypt "secret"}}, {{recoveryCodeHash "code"}}.
-var credentialCall = regexp.MustCompile(`^\{\{\s*(?:argonHash|bcryptHash|encrypt|recoveryCodeHash)\s+("(?:[^"\\]|\\.)*")\s*\}\}$`)
+var credentialCall = regexp.MustCompile(`^\{\{\s*(?:argonHash|bcryptHash|serviceSecretHash|encrypt|recoveryCodeHash)\s+("(?:[^"\\]|\\.)*")\s*\}\}$`)
 
 // annotationName extracts the fixture name from a line or line comment.
 func annotationName(text string) (string, bool) {

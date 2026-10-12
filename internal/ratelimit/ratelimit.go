@@ -52,6 +52,9 @@ const (
 	PolicyCollectIP = "collect-ip"
 	// PolicyForgotIP is the per-IP cap on forgot-password requests.
 	PolicyForgotIP = "forgot-password-ip"
+	// PolicyService is the budget of the internal listener's service endpoints per
+	// Service credential.
+	PolicyService = "service"
 )
 
 const (
@@ -183,6 +186,7 @@ type Limiter struct {
 	loginIP    *Policy
 	collect    *Policy
 	collectIP  *Policy
+	service    *Policy
 	forgotIP   *Policy
 }
 
@@ -197,6 +201,7 @@ func New(limits config.RateLimits) *Limiter {
 		loginIP:    NewPolicy(PolicyLoginIP, limits.LoginIP, window),
 		collect:    NewPolicy(PolicyCollect, limits.Collect, window),
 		collectIP:  NewPolicy(PolicyCollectIP, limits.CollectIP, window),
+		service:    NewPolicy(PolicyService, limits.ServicePerMinute, window),
 		forgotIP:   NewPolicy(PolicyForgotIP, limits.ForgotIP, time.Hour),
 	}
 }
@@ -245,6 +250,15 @@ func (e *Exchange) ChargeCollect(workspaceID int64) error {
 		return nil
 	}
 	return e.limiter.collect.Reject(e.w, e.r, strconv.FormatInt(workspaceID, 10))
+}
+
+// ChargeService counts the request against the Service credential's budget. Like the
+// other charges it counts at most once per HTTP request.
+func (e *Exchange) ChargeService(credentialID int64) error {
+	if e == nil || !e.charged.CompareAndSwap(false, true) {
+		return nil
+	}
+	return e.limiter.service.Reject(e.w, e.r, strconv.FormatInt(credentialID, 10))
 }
 
 // AuthBlocked refuses before a credential is even checked when the client address

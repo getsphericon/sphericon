@@ -844,6 +844,25 @@ var (
 			},
 		},
 	}
+	// ServiceCredentialsColumns holds the columns for the "service_credentials" table.
+	ServiceCredentialsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "name", Type: field.TypeString},
+		{Name: "prefix", Type: field.TypeString, Unique: true},
+		{Name: "secret_hash", Type: field.TypeString},
+		{Name: "scopes", Type: field.TypeJSON},
+		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
+	}
+	// ServiceCredentialsTable holds the schema information for the "service_credentials" table.
+	ServiceCredentialsTable = &schema.Table{
+		Name:       "service_credentials",
+		Columns:    ServiceCredentialsColumns,
+		PrimaryKey: []*schema.Column{ServiceCredentialsColumns[0]},
+	}
 	// SuppressionsColumns holds the columns for the "suppressions" table.
 	SuppressionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1110,6 +1129,7 @@ var (
 		SegmentsTable,
 		SendLimitersTable,
 		SendingDomainsTable,
+		ServiceCredentialsTable,
 		SuppressionsTable,
 		TagsTable,
 		UnsubscribesTable,
@@ -1215,6 +1235,9 @@ func init() {
 	SendingDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SendingDomainsTable.Annotation = &entsql.Annotation{
 		Table: "sending_domains",
+	}
+	ServiceCredentialsTable.Annotation = &entsql.Annotation{
+		Table: "service_credentials",
 	}
 	SuppressionsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SuppressionsTable.Annotation = &entsql.Annotation{

@@ -58,6 +58,8 @@ type Tx struct {
 	SendLimiter *SendLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
+	// ServiceCredential is the client for interacting with the ServiceCredential builders.
+	ServiceCredential *ServiceCredentialClient
 	// Suppression is the client for interacting with the Suppression builders.
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
@@ -226,6 +228,7 @@ func (tx *Tx) init() {
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendLimiter = NewSendLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
+	tx.ServiceCredential = NewServiceCredentialClient(tx.config)
 	tx.Suppression = NewSuppressionClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Unsubscribe = NewUnsubscribeClient(tx.config)

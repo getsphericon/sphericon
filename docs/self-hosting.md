@@ -27,6 +27,7 @@ the binary). `APP_ENV` selects the environment (`development` by default; set it
 | `MCP_URL`                                                           | no                                  | _(empty: `APP_URL`)_           | Public origin of a dedicated MCP host, e.g. `https://mcp.example.com`. The MCP resource is then `${MCP_URL}/mcp` while the OAuth issuer and consent screen stay on `APP_URL`. Leave empty on a single host.                                                                                                    |
 | `PORT`                                                              | no                                  | `3000`                         | HTTP listen port.                                                                                                                                                                                                                                                                                              |
 | `METRICS_ADDR`                                                      | no                                  | — (off)                        | `host:port` for the opt-in Prometheus listener. Must differ from `PORT`; see [Prometheus metrics](#prometheus-metrics).                                                                                                                                                                                        |
+| `INTERNAL_ADDR`                                                     | no                                  | — (off)                        | `host:port` for the opt-in internal listener that serves the Service credential endpoints of the Operator surface (needs the `operator` license). Must differ from `PORT` and `METRICS_ADDR`; see [Service credentials](#service-credentials).                                                                 |
 | `AUTO_MIGRATE`                                                      | no                                  | `false`                        | Apply embedded migrations on startup. Convenient for single-replica; see below.                                                                                                                                                                                                                                |
 | `CORS_ORIGINS`                                                      | no                                  | —                              | Comma/space-separated origins allowed credentialed CORS on the cookie-authenticated API (`/site`, `/auth`). Empty means same-origin only, which is what the bundled SPA needs; the bearer-token APIs are unaffected.                                                                                           |
 | `MAX_BODY_BYTES`                                                    | no                                  | `1048576`                      | Largest accepted request body (bytes) on every surface except `/collect`; larger bodies get `413`.                                                                                                                                                                                                             |
@@ -40,6 +41,7 @@ the binary). `APP_ENV` selects the environment (`development` by default; set it
 | `RATE_LIMIT_LOGIN_FAILURES`                                         | no                                  | `5`                            | Failed logins per account within 15 minutes before login answers `429` with `Retry-After` and a doubling delay (1 s up to 15 min, no lockout), even for a correct password; `0` disables.                                                                                                                      |
 | `RATE_LIMIT_LOGIN_IP_PER_MINUTE`                                    | no                                  | `20`                           | Login requests per minute per client IP; over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                                                       |
 | `RATE_LIMIT_COLLECT_PER_MINUTE`                                     | no                                  | `6000`                         | Requests per minute per Workspace on `/collect` (its own budget, apart from `/api`); over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                           |
+| `RATE_LIMIT_SERVICE_PER_MINUTE`                                     | no                                  | `600`                          | Requests per minute per Service credential on the internal listener; over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                           |
 | `RATE_LIMIT_COLLECT_IP_PER_MINUTE`                                  | no                                  | `300`                          | Requests per minute per client IP on `/collect`; over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                                               |
 | `RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR`                   | no                                  | `3`                            | Password-reset mails sent per address per hour; over it forgot-password still answers `202` and sends nothing (the answer never reveals whether the account exists); `0` disables.                                                                                                                             |
 | `RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR`                            | no                                  | `10`                           | Forgot-password requests per client IP per hour; over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                                               |
@@ -229,6 +231,36 @@ run more than one replica.
 
 Wire `/healthz` to liveness and `/readyz` to readiness probes (Kubernetes, load
 balancers, the Docker `HEALTHCHECK`).
+
+## Service credentials
+
+A service can call the Operator surface without a human login, with a **Service credential**
+(ADR 0026). It needs the `operator` license feature; without it nothing is served and the commands
+refuse.
+
+The service endpoints are served only by a separate internal listener, never on the public port.
+It is off by default: set `INTERNAL_ADDR` (`host:port`, for example `127.0.0.1:3400` or
+`0.0.0.0:3400` in a container) to bind it, and publish that port only to the calling service, never
+through the public ingress. An empty `INTERNAL_ADDR` means no listener and no route for the endpoints
+anywhere. An address using the same port as `PORT` or `METRICS_ADDR`, a malformed one, or one already
+in use fails startup. The endpoints live under `/service` on that listener.
+
+A credential is created, rotated and revoked only from the command line; no endpoint can mint or
+change one. It carries a name and one or more scopes (`usage:read`, `workspaces:read`,
+`holds:write`) and an optional expiry. Its value is shown once and only a hash is stored.
+
+```sh
+sphericon service-credential create --expires-in 8760h service-a usage:read,workspaces:read
+sphericon service-credential rotate 7      # a second credential with the same name and scopes
+sphericon service-credential revoke 7      # once the service has switched over
+sphericon service-credential list service-a
+```
+
+A service may hold two active credentials at once, so a rotation needs no downtime. `list` shows each
+credential's state, expiry and when it was last used. The service presents the value as
+`Authorization: Bearer <value>`; a revoked or expired credential, and one used outside its scopes, is
+refused. Every write made under a credential is recorded in the Audit log under its name. `GET
+/service/identity` answers with the credential's own name, scopes and expiry.
 
 ## Prometheus metrics
 

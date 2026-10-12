@@ -285,6 +285,18 @@ func (f SendingDomainFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SendingDomainMutation", m)
 }
 
+// The ServiceCredentialFunc type is an adapter to allow the use of ordinary
+// function as ServiceCredential mutator.
+type ServiceCredentialFunc func(context.Context, *ent.ServiceCredentialMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ServiceCredentialFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ServiceCredentialMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ServiceCredentialMutation", m)
+}
+
 // The SuppressionFunc type is an adapter to allow the use of ordinary
 // function as Suppression mutator.
 type SuppressionFunc func(context.Context, *ent.SuppressionMutation) (ent.Value, error)

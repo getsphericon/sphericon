@@ -518,6 +518,18 @@ materializes live Events the same way a Broadcast recipient's rollup materialize
 the Events are truth, the snapshot is the closed, reproducible figure.
 _Avoid_: Meter, counter, quota (quota is an allowance, not a measurement)
 
+**Service credential**:
+A machine identity of the Operator surface, next to the human Operator and not a User: a bearer value
+that lets a service call the service endpoints without a login, held by no Workspace and no
+Membership. It carries a name, a set of scopes (read usage, read Workspaces, write holds) and an
+optional expiry, and records when it was last used. Created, rotated and revoked only by the
+`sphericon service-credential` command (no endpoint can mint or change one); the value is shown once
+and only a hash is stored. A service may hold two active credentials at once so a rotation has no
+downtime. The service endpoints are served only by a separate internal listener, never on the public
+port. Its writes are recorded in the Audit log under its name, which customers see only as
+"sphericon staff".
+_Avoid_: API key, API token (that is a Workspace's), service account, Operator
+
 **Live usage**:
 The same per-(Workspace, metric) figures for the Usage period still open: not final, with the
 time it was last computed. Read from a worker or cache, never a recount on read, and counting

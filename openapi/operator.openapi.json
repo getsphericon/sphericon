@@ -668,7 +668,7 @@
                 "$ref": "#/components/schemas/OperatorAuditActorKind"
               }
             ],
-            "description": "The kind of actor; an operator carries no id and the name \"sphericon staff\""
+            "description": "The kind of actor; an operator carries no id and the name \"sphericon staff\"; a service is a Service credential, named as the Operator who issued it chose"
           },
           "id": {
             "type": "string",
@@ -685,7 +685,7 @@
       },
       "OperatorAuditActorKind": {
         "type": "string",
-        "enum": ["user", "api_token", "operator", "system"],
+        "enum": ["user", "api_token", "operator", "service", "system"],
         "description": "Who performed an audited change, as the Workspace's own team sees it"
       },
       "OperatorAuditEntryList": {

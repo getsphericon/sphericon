@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -98,6 +99,8 @@ type Client struct {
 	SendLimiter *SendLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
+	// ServiceCredential is the client for interacting with the ServiceCredential builders.
+	ServiceCredential *ServiceCredentialClient
 	// Suppression is the client for interacting with the Suppression builders.
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
@@ -146,6 +149,7 @@ func (c *Client) init() {
 	c.Segment = NewSegmentClient(c.config)
 	c.SendLimiter = NewSendLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
+	c.ServiceCredential = NewServiceCredentialClient(c.config)
 	c.Suppression = NewSuppressionClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Unsubscribe = NewUnsubscribeClient(c.config)
@@ -268,6 +272,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
 		SendingDomain:      NewSendingDomainClient(cfg),
+		ServiceCredential:  NewServiceCredentialClient(cfg),
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
@@ -317,6 +322,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
 		SendingDomain:      NewSendingDomainClient(cfg),
+		ServiceCredential:  NewServiceCredentialClient(cfg),
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
@@ -357,8 +363,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
-		c.Segment, c.SendLimiter, c.SendingDomain, c.Suppression, c.Tag, c.Unsubscribe,
-		c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.Suppression,
+		c.Tag, c.Unsubscribe, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -372,8 +378,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.RecoveryCode,
-		c.Segment, c.SendLimiter, c.SendingDomain, c.Suppression, c.Tag, c.Unsubscribe,
-		c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.Suppression,
+		c.Tag, c.Unsubscribe, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -428,6 +434,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SendLimiter.mutate(ctx, m)
 	case *SendingDomainMutation:
 		return c.SendingDomain.mutate(ctx, m)
+	case *ServiceCredentialMutation:
+		return c.ServiceCredential.mutate(ctx, m)
 	case *SuppressionMutation:
 		return c.Suppression.mutate(ctx, m)
 	case *TagMutation:
@@ -4002,6 +4010,139 @@ func (c *SendingDomainClient) mutate(ctx context.Context, m *SendingDomainMutati
 	}
 }
 
+// ServiceCredentialClient is a client for the ServiceCredential schema.
+type ServiceCredentialClient struct {
+	config
+}
+
+// NewServiceCredentialClient returns a client for the ServiceCredential from the given config.
+func NewServiceCredentialClient(c config) *ServiceCredentialClient {
+	return &ServiceCredentialClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `servicecredential.Hooks(f(g(h())))`.
+func (c *ServiceCredentialClient) Use(hooks ...Hook) {
+	c.hooks.ServiceCredential = append(c.hooks.ServiceCredential, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `servicecredential.Intercept(f(g(h())))`.
+func (c *ServiceCredentialClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ServiceCredential = append(c.inters.ServiceCredential, interceptors...)
+}
+
+// Create returns a builder for creating a ServiceCredential entity.
+func (c *ServiceCredentialClient) Create() *ServiceCredentialCreate {
+	mutation := newServiceCredentialMutation(c.config, OpCreate)
+	return &ServiceCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ServiceCredential entities.
+func (c *ServiceCredentialClient) CreateBulk(builders ...*ServiceCredentialCreate) *ServiceCredentialCreateBulk {
+	return &ServiceCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ServiceCredentialClient) MapCreateBulk(slice any, setFunc func(*ServiceCredentialCreate, int)) *ServiceCredentialCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ServiceCredentialCreateBulk{err: fmt.Errorf("calling to ServiceCredentialClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ServiceCredentialCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ServiceCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ServiceCredential.
+func (c *ServiceCredentialClient) Update() *ServiceCredentialUpdate {
+	mutation := newServiceCredentialMutation(c.config, OpUpdate)
+	return &ServiceCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ServiceCredentialClient) UpdateOne(_m *ServiceCredential) *ServiceCredentialUpdateOne {
+	mutation := newServiceCredentialMutation(c.config, OpUpdateOne, withServiceCredential(_m))
+	return &ServiceCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ServiceCredentialClient) UpdateOneID(id int64) *ServiceCredentialUpdateOne {
+	mutation := newServiceCredentialMutation(c.config, OpUpdateOne, withServiceCredentialID(id))
+	return &ServiceCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ServiceCredential.
+func (c *ServiceCredentialClient) Delete() *ServiceCredentialDelete {
+	mutation := newServiceCredentialMutation(c.config, OpDelete)
+	return &ServiceCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ServiceCredentialClient) DeleteOne(_m *ServiceCredential) *ServiceCredentialDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ServiceCredentialClient) DeleteOneID(id int64) *ServiceCredentialDeleteOne {
+	builder := c.Delete().Where(servicecredential.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ServiceCredentialDeleteOne{builder}
+}
+
+// Query returns a query builder for ServiceCredential.
+func (c *ServiceCredentialClient) Query() *ServiceCredentialQuery {
+	return &ServiceCredentialQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeServiceCredential},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ServiceCredential entity by its id.
+func (c *ServiceCredentialClient) Get(ctx context.Context, id int64) (*ServiceCredential, error) {
+	return c.Query().Where(servicecredential.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ServiceCredentialClient) GetX(ctx context.Context, id int64) *ServiceCredential {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ServiceCredentialClient) Hooks() []Hook {
+	return c.hooks.ServiceCredential
+}
+
+// Interceptors returns the client interceptors.
+func (c *ServiceCredentialClient) Interceptors() []Interceptor {
+	return c.inters.ServiceCredential
+}
+
+func (c *ServiceCredentialClient) mutate(ctx context.Context, m *ServiceCredentialMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ServiceCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ServiceCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ServiceCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ServiceCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ServiceCredential mutation op: %q", m.Op())
+	}
+}
+
 // SuppressionClient is a client for the Suppression schema.
 type SuppressionClient struct {
 	config
@@ -5468,15 +5609,15 @@ type (
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
 		Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
 		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
-		Suppression, Tag, Unsubscribe, User, Visitor, WebhookEndpoint,
-		Workspace []ent.Hook
+		ServiceCredential, Suppression, Tag, Unsubscribe, User, Visitor,
+		WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
 		Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
 		OutboundMessage, RecoveryCode, Segment, SendLimiter, SendingDomain,
-		Suppression, Tag, Unsubscribe, User, Visitor, WebhookEndpoint,
-		Workspace []ent.Interceptor
+		ServiceCredential, Suppression, Tag, Unsubscribe, User, Visitor,
+		WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
