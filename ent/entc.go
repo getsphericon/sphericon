@@ -4,6 +4,7 @@ package main
 
 import (
 	"log"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -154,6 +155,8 @@ type audit struct {
 	NameField *gen.Field
 	NamesOnly bool
 	NameIsURL bool
+	// Always lists field names an update's diff carries even when unchanged.
+	Always []string
 }
 
 func auditOf(n *gen.Type) *audit {
@@ -165,6 +168,14 @@ func auditOf(n *gen.Type) *audit {
 	a.Action, _ = ann["Action"].(string)
 	a.NamesOnly, _ = ann["NamesOnly"].(bool)
 	a.NameIsURL, _ = ann["NameIsURL"].(bool)
+	always, _ := ann["Always"].([]any)
+	for _, v := range always {
+		name, _ := v.(string)
+		if !slices.ContainsFunc(n.Fields, func(f *gen.Field) bool { return f.Name == name }) {
+			log.Fatalf("%s: schema.Audited.Always names an unknown field %q", n.Name, name)
+		}
+		a.Always = append(a.Always, name)
+	}
 	if a.Action == "" {
 		log.Fatalf("%s: schema.Audited needs an Action", n.Name)
 	}

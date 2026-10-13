@@ -43,7 +43,9 @@ func TestAServiceReadsOneWorkspacesLiveUsageWithItsInFlightSends(t *testing.T) {
 	h := newHarness(t)
 	now := time.Now().UTC()
 	h.env.RefreshUsage(t, now)
-	before := figureOf(t, readWorkspaceUsage(t, h.env.ServiceClient(t, primary), "1", serviceapi.OptString{}), serviceapi.UsageMetricEmailsSent)
+	first := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), "1", serviceapi.OptString{})
+	before := figureOf(t, first, serviceapi.UsageMetricEmailsSent)
+	inFlightBefore := figureOf(t, first, serviceapi.UsageMetricInFlightSends)
 
 	require.NoError(t, h.env.DB.Scoped(fixtures.AcmeID).OutboundMessage().Create().
 		SetKind(outboundmessage.KindBroadcast).SetIdempotencyKey("usage-one:inflight").
@@ -56,8 +58,9 @@ func TestAServiceReadsOneWorkspacesLiveUsageWithItsInFlightSends(t *testing.T) {
 	sent := figureOf(t, got, serviceapi.UsageMetricEmailsSent)
 	assert.False(t, sent.Final)
 	assert.WithinDuration(t, now, time.Time(sent.ComputedAt), time.Minute)
-	assert.Equal(t, before.Value+1, sent.Value, "the in-flight send is counted")
-	assert.Len(t, got.Figures, 2, "one figure per metric, nothing about price or plan")
+	assert.Equal(t, before.Value, sent.Value, "the in-flight send is not counted as sent")
+	assert.Equal(t, inFlightBefore.Value+1, figureOf(t, got, serviceapi.UsageMetricInFlightSends).Value)
+	assert.Len(t, got.Figures, 3, "one figure per metric, nothing about price or plan")
 }
 
 func TestAServiceReadsOneWorkspacesClosedPeriodAsFinalSnapshots(t *testing.T) {

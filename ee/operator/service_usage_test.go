@@ -17,20 +17,20 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
 
-// usageOf is the emails_sent figure of a Workspace in a page of the usage read.
-func usageOf(t *testing.T, page *serviceapi.ServiceUsageListOK, workspaceID string) serviceapi.UsageFigure {
+// usageOf is the figure of a metric of a Workspace in a page of the usage read.
+func usageOf(t *testing.T, page *serviceapi.ServiceUsageListOK, workspaceID string, metric serviceapi.UsageMetric) serviceapi.UsageFigure {
 	t.Helper()
 	for _, w := range page.Items {
 		if w.WorkspaceId != serviceapi.EntityId(workspaceID) {
 			continue
 		}
 		for _, f := range w.Figures {
-			if f.Metric == serviceapi.UsageMetricEmailsSent {
+			if f.Metric == metric {
 				return f
 			}
 		}
 	}
-	require.Failf(t, "no figure", "workspace %s has no emails_sent figure", workspaceID)
+	require.Failf(t, "no figure", "workspace %s has no %s figure", workspaceID, metric)
 	return serviceapi.UsageFigure{}
 }
 
@@ -53,10 +53,10 @@ func TestAServiceReadsLiveUsageOfTheCurrentPeriodByDefault(t *testing.T) {
 
 	page := readUsage(t, h.env.ServiceClient(t, primary), serviceapi.ServiceUsageListParams{})
 
-	acme := usageOf(t, page, "1")
+	acme := usageOf(t, page, "1", serviceapi.UsageMetricEmailsSent)
 	assert.False(t, acme.Final)
 	assert.WithinDuration(t, now, time.Time(acme.ComputedAt), time.Minute)
-	assert.Positive(t, acme.Value, "the in-flight send is counted")
+	assert.Positive(t, usageOf(t, page, "1", serviceapi.UsageMetricInFlightSends).Value, "the in-flight send is its own figure")
 	assert.Equal(t, usage.PeriodOf(now).Format("2006-01"), page.Items[0].Period)
 }
 
@@ -69,7 +69,7 @@ func TestAServiceReadsAClosedPeriodAsFinalSnapshots(t *testing.T) {
 	})
 
 	require.NotEmpty(t, page.Items)
-	assert.True(t, usageOf(t, page, "1").Final)
+	assert.True(t, usageOf(t, page, "1", serviceapi.UsageMetricEmailsSent).Final)
 	assert.Equal(t, "2027-01", page.Items[0].Period)
 }
 

@@ -2965,6 +2965,8 @@ func (s *UsageMetric) Decode(d *jx.Decoder) error {
 	switch UsageMetric(v) {
 	case UsageMetricEmailsSent:
 		*s = UsageMetricEmailsSent
+	case UsageMetricInFlightSends:
+		*s = UsageMetricInFlightSends
 	case UsageMetricContacts:
 		*s = UsageMetricContacts
 	default:

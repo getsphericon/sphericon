@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -20,11 +21,8 @@ const periodLayout = "2006-01"
 func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceapi.ServiceUsageListParams) (serviceapi.ServiceUsageListRes, error) {
 	period, ok := requestedPeriod(params.Period)
 	if !ok {
-		return &serviceapi.ServiceUsageListBadRequest{
-			Status: serviceapi.NewOptInt32(400),
-			Title:  serviceapi.NewOptString("Bad Request"),
-			Detail: serviceapi.NewOptString(badPeriodDetail),
-		}, nil
+		p := serviceapi.ServiceUsageListBadRequest(badPeriodProblem())
+		return &p, nil
 	}
 	page, err := usage.List(ctx, h.module.ent, period, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
@@ -43,7 +41,14 @@ func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceap
 	}, nil
 }
 
-const badPeriodDetail = "period must be a month written YYYY-MM"
+// badPeriodProblem is the 400 answered for a period that is not a month written YYYY-MM.
+func badPeriodProblem() serviceapi.ProblemDetails {
+	return serviceapi.ProblemDetails{
+		Status: serviceapi.NewOptInt32(http.StatusBadRequest),
+		Title:  serviceapi.NewOptString(http.StatusText(http.StatusBadRequest)),
+		Detail: serviceapi.NewOptString("period must be a month written YYYY-MM"),
+	}
+}
 
 // requestedPeriod is the Usage period a request names, the current one when absent;
 // false when it is not a month written YYYY-MM.
@@ -62,11 +67,8 @@ func requestedPeriod(v serviceapi.OptString) (time.Time, bool) {
 func (h *ServiceHandlers) ServiceWorkspaceUsageGet(ctx context.Context, params serviceapi.ServiceWorkspaceUsageGetParams) (serviceapi.ServiceWorkspaceUsageGetRes, error) {
 	period, ok := requestedPeriod(params.Period)
 	if !ok {
-		return &serviceapi.ServiceWorkspaceUsageGetBadRequest{
-			Status: serviceapi.NewOptInt32(400),
-			Title:  serviceapi.NewOptString("Bad Request"),
-			Detail: serviceapi.NewOptString(badPeriodDetail),
-		}, nil
+		p := serviceapi.ServiceWorkspaceUsageGetBadRequest(badPeriodProblem())
+		return &p, nil
 	}
 	id, ok := parseWorkspaceID(params.WorkspaceId)
 	if !ok {

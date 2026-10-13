@@ -156,6 +156,7 @@
     "waitNodeDescription": "Пауза перед следующим шагом.",
     "waitSecondsLabel": "Ожидание (секунды)"
   },
+  "billingBadge": "Оплата",
   "broadcasts": {
     "addBroadcast": "Новая рассылка",
     "audienceAll": "Все активные контакты",
@@ -334,7 +335,6 @@
         "actor": "Кто",
         "actorSystem": "Система",
         "actorToken": "API-токен №{{id}}",
-        "billingActivity": "Платёжное событие",
         "empty": "Записей об изменениях нет",
         "loadError": "Не удалось загрузить журнал аудита",
         "loadMore": "Загрузить ещё",
@@ -345,7 +345,6 @@
       "back": "Все рабочие пространства",
       "detailsTitle": "Сведения",
       "holds": {
-        "billing": "Оплата",
         "empty": "Нет активных блокировок.",
         "expires": "Истекает",
         "key": "Ключ",
@@ -679,7 +678,6 @@
       "actorSystem": "Система",
       "actorToken": "API-токен №{{id}}",
       "apply": "Применить",
-      "billingActivity": "Платёжное событие",
       "changedMarker": "изменено",
       "changeHistory": "История изменений",
       "collapse": "Скрыть изменения",
