@@ -540,8 +540,8 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 // no User or an Unverified User (ADR 0030) the name and password are required
 // (ErrCredentialsRequired otherwise): the link proves control of the address, so the
 // User is created, or the Unverified User's row completed (name and password set,
-// Verified email stamped, session epoch bumped), and nothing the registrant set
-// survives; if the address was verified meanwhile that is ErrAlreadyVerified. A
+// Verified email stamped, session epoch bumped, `user.email_verify` audited), and
+// nothing the registrant set survives; if the address was verified meanwhile that is ErrAlreadyVerified. A
 // Verified User is attached as is. The Membership is created (a
 // duplicate is not an error), the Invitation marked accepted and the acceptance
 // audited, all in one transaction.
@@ -552,6 +552,7 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 		if uerr != nil && !ent.IsNotFound(uerr) {
 			return uerr
 		}
+		provedByInvitation := false
 		if uerr == nil && u.EmailVerifiedAt != nil {
 			// A Verified User's own session is the proof of the address (ADR 0030).
 			if sessionEmail == "" {
@@ -582,6 +583,7 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 			if uerr != nil {
 				return uerr
 			}
+			provedByInvitation = true
 		}
 
 		ts := tx.Scoped(inv.WorkspaceID)
@@ -594,6 +596,12 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 
 		if err := ts.Invitation().UpdateOneID(inv.ID).SetAcceptedAt(time.Now()).Exec(ctx); err != nil {
 			return err
+		}
+		if provedByInvitation {
+			actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
+			if err := RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserEmailVerify, nil, inv.WorkspaceID); err != nil {
+				return err
+			}
 		}
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: inv.WorkspaceID,
