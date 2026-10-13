@@ -70,13 +70,13 @@ namespace SiteUser {
     | UnprocessableEntityProblem;
 
   /** Request an email change; sends a confirmation link to the new address.
-   * Requires the current password. 409 if the new address is already in use. */
+   * Requires the current password. A taken address answers 202 like a free one: its
+   * owner gets a notice by mail instead of the link (ADR 0031). */
   @post
   @route("/email-change")
   op emailChange(@body body: SiteEmailChangeInput):
     | AcceptedResponse
     | ForbiddenProblem
-    | ConflictProblem
     | UnprocessableEntityProblem;
 
   /** Sign out everywhere: end every session of the user, on every device,

@@ -63,9 +63,16 @@ func (i *Inline) EnqueueEmailVerification(ctx context.Context, email, token stri
 	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowEmailVerify, Email: email, Token: token, Discard: !send})
 }
 
-// EnqueueEmailChangeConfirm sends the confirm-new-email email now.
-func (i *Inline) EnqueueEmailChangeConfirm(ctx context.Context, email, token string) error {
-	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowEmailChange, Email: email, Token: token})
+// EnqueueEmailChangeConfirm sends the confirm-new-email email now, or only builds it
+// when send is false.
+func (i *Inline) EnqueueEmailChangeConfirm(ctx context.Context, email, token string, send bool) error {
+	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowEmailChange, Email: email, Token: token, Discard: !send})
+}
+
+// EnqueueAddressTakenNotice sends the tokenless Taken-address notice now, or only
+// builds it when send is false.
+func (i *Inline) EnqueueAddressTakenNotice(ctx context.Context, email string, send bool) error {
+	return SendAuthMail(ctx, i.systemSender, i.appURL, SendAuthMailArgs{Flow: flowAddressTaken, Email: email, Discard: !send})
 }
 
 // EnqueueSendingDomainVerify re-checks the domain's DKIM DNS now, notifying the

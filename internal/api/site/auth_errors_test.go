@@ -87,7 +87,7 @@ func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 	t.Run("confirm email change rejects garbage", func(t *testing.T) {
 		res, err := c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: "garbage"}, siteapi.SiteAuthConfirmEmailChangeParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteAuthConfirmEmailChangeBadRequest{}, res)
+		assert.IsType(t, &siteapi.ProblemDetails{}, res)
 	})
 
 	t.Run("confirm email change rejects a token without a new address", func(t *testing.T) {
@@ -95,15 +95,15 @@ func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 		require.NoError(t, err)
 		res, err := c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: tok}, siteapi.SiteAuthConfirmEmailChangeParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteAuthConfirmEmailChangeBadRequest{}, res)
+		assert.IsType(t, &siteapi.ProblemDetails{}, res)
 	})
 
-	t.Run("confirm email change conflicts when the address was taken meanwhile", func(t *testing.T) {
+	t.Run("confirm email change never says the address is in use", func(t *testing.T) {
 		tok, err := s.Mint(authtoken.PurposeEmailChange, john.ID, john.Email, time.Hour, map[string]string{"new": fixtures.MemberMaryEmail})
 		require.NoError(t, err)
 		res, err := c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: tok}, siteapi.SiteAuthConfirmEmailChangeParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteAuthConfirmEmailChangeConflict{}, res)
+		assert.IsType(t, &siteapi.ProblemDetails{}, res, "to the confirmer a Taken address is an invalid link (ADR 0031)")
 		after, err := env.DB.User.Get(ctx, john.ID)
 		require.NoError(t, err)
 		assert.Equal(t, fixtures.OwnerJohnEmail, after.Email)

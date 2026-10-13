@@ -52,8 +52,9 @@ type RateLimits struct {
 	// ServicePerMinute caps the internal listener's service endpoints per Service
 	// credential per minute.
 	ServicePerMinute int
-	// ForgotAddress is how many password-reset mails one address may be sent per
-	// hour. Over it the request is still answered 202 and nothing is sent.
+	// ForgotAddress is how many mails one address may be sent per hour by each of
+	// forgot-password, registration and an email-change request (ADR 0031). Over it
+	// the request is still answered 202 and nothing is sent.
 	ForgotAddress int
 	// ForgotIP caps forgot-password requests per client IP per hour (429 over it).
 	ForgotIP int

@@ -40,7 +40,7 @@ func (AuthAttempt) Fields() []ent.Field {
 			NotEmpty().
 			Immutable(),
 		field.Enum("kind").
-			Values("login", "operator_login", "password_reset").
+			Values("login", "operator_login", "password_reset", "register", "email_change").
 			Immutable(),
 		// Failures since the window opened.
 		field.Int("failures").

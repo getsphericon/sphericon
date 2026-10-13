@@ -111,7 +111,7 @@ func TestClientEnqueuesEveryJobKind(t *testing.T) {
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "new@example.com", "New"))
 	require.NoError(t, e.client.EnqueuePasswordReset(ctx, "a@example.com", "tok", true))
 	require.NoError(t, e.client.EnqueueEmailVerification(ctx, "a@example.com", "tok", true))
-	require.NoError(t, e.client.EnqueueEmailChangeConfirm(ctx, "a@example.com", "tok"))
+	require.NoError(t, e.client.EnqueueEmailChangeConfirm(ctx, "a@example.com", "tok", true))
 	require.NoError(t, e.client.EnqueueMemberInvite(ctx, "a@example.com", "https://x/invite", "Acme", "Jane"))
 	require.NoError(t, e.client.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))
 	require.NoError(t, e.client.EnqueueSecondFactorRequired(ctx, fixtures.UmbrellaID))
@@ -196,6 +196,22 @@ func TestAuthMailWorker(t *testing.T) {
 
 	require.Error(t, w.Work(context.Background(), job(jobs.SendAuthMailArgs{Flow: "nope", Email: "a@example.com"})))
 	require.Error(t, jobs.NewAuthMailWorker(nil, "").Work(context.Background(), job(jobs.SendAuthMailArgs{Flow: "password_reset"})))
+}
+
+// The Taken-address notice (ADR 0031) carries no token: only the sign-in and the
+// forgot-password pages, so it can never be a way into the account.
+func TestAuthMailWorkerAddressTakenNoticeCarriesNoToken(t *testing.T) {
+	env := testhelper.Setup(t)
+	w := jobs.NewAuthMailWorker(env.SystemMail, "https://app.example/")
+
+	require.NoError(t, w.Work(context.Background(), job(jobs.SendAuthMailArgs{Flow: "address_taken", Email: "owner@example.com"})))
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 1)
+	assert.Equal(t, "owner@example.com", msgs[0].To)
+	assert.NotContains(t, msgs[0].Text, "token")
+	assert.Contains(t, msgs[0].Text, "https://app.example/login")
+	assert.Contains(t, msgs[0].Text, "https://app.example/forgot-password")
 }
 
 // A Discard job does the whole job (builds the mail) but sends nothing: forgot-password

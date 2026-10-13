@@ -454,6 +454,12 @@ password is set only through a link that proves the address, so whoever proves i
 sets it.
 _Avoid_: Confirmed email, activated account
 
+**Taken address**:
+An email that already belongs to a User. Nobody but its owner may learn that it is taken: a
+request that would hit it gets the same answer as one that would not, and the owner is told by
+mail. The one exception is an install that turned email verification off.
+_Avoid_: Duplicate email, existing account
+
 **Unverified User**:
 A User whose email is not yet a Verified email: a registration awaiting its verify link. It
 cannot log in, owns nothing and is not attached to any Workspace. A daily job deletes one that
@@ -524,12 +530,6 @@ for every Workspace and owned by the core: the core closes a period before any r
 figures as final.
 _Avoid_: Cycle, anniversary period
 
-**Billing period**:
-The Usage period, read from the billing side: the calendar month in UTC over which an external
-billing service invoices a Workspace. It is not a separate period and has no anniversary
-variant: the core owns one period for every Workspace.
-_Avoid_: Billing cycle, invoice period
-
 **Usage snapshot**:
 A per-(Workspace, Usage period, metric) materialized aggregate of activity, finalized (made
 immutable) at period close. Distinct from the raw Events it is computed from, which stay the
@@ -557,8 +557,8 @@ _Avoid_: API key, API token (that is a Workspace's), service account, Operator
 
 **Live usage**:
 The same per-(Workspace, metric) figures for the Usage period still open: not final, with the
-time it was last computed. Read from a worker or cache, never a recount on read, and reporting
-sends still in flight as a separate figure (never added to emails sent). It is what lets a reader notice a limit being approached before the period
+time it was last computed. Read from a worker or cache, never a recount on read, and counting
+sends still in flight. It is what lets a reader notice a limit being approached before the period
 closes; the Usage snapshot remains the only final figure.
 _Avoid_: Current usage, real-time usage
 
@@ -573,13 +573,6 @@ question ("may this Workspace send now?") answered by several independent freeze
 Messages are **held, not failed**: they wait and go out when the hold lifts. Every change records
 the Operator that made it.
 _Avoid_: Suspension (that is the reputation freeze), ban, lockout
-
-**Billing hold**:
-An Operator hold whose reason code is `non_payment` or `free_plan_cap`: sending is paused for a
-money reason, not for abuse. It freezes sending exactly like any Operator hold and is lifted the
-same way; it is only told apart, so the Workspace Owner is shown a payment problem and a way to
-resolve it, and the Audit log reads its changes as billing activity.
-_Avoid_: Payment suspension (suspension is the reputation freeze)
 
 **Account link**:
 A link in the app, shown only to a Workspace Owner and only when the installation is configured

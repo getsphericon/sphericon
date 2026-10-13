@@ -31,12 +31,12 @@ test('registers with trimmed name and email only, then asks to check the email',
 })
 
 test('shows the API error and stays on the form when registration fails', async () => {
-  worker.use(handleSiteAuthRegister(() => problem(409, { detail: 'Email already taken' })))
+  worker.use(handleSiteAuthRegister(() => problem(422, { detail: 'Name is required' })))
   const { screen } = await renderWithRouter(<RegisterPage />)
 
   await fillAndSubmit(screen)
 
-  await expect.element(screen.getByText('Email already taken')).toBeInTheDocument()
+  await expect.element(screen.getByText('Name is required')).toBeInTheDocument()
   await expect.element(screen.getByText('Registration failed')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument()
 })

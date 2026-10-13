@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/credentials"
@@ -97,9 +98,9 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 }
 
 // SiteUserEmailChange requests a change of the login email. It verifies the
-// current password, rejects an address already in use, and emails a
-// confirmation link to the NEW address — the change only takes effect once that
-// link is confirmed (SiteAuthConfirmEmailChange). Returns 202.
+// current password, and emails a confirmation link to the NEW address (or, when that
+// address is Taken, a notice to its owner: the answer is the same) — the change only
+// takes effect once that link is confirmed (SiteAuthConfirmEmailChange). Returns 202.
 func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEmailChangeInput) (siteapi.SiteUserEmailChangeRes, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
@@ -134,15 +135,17 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 		return &v, nil
 	}
 
-	// Reject an address already taken. The confirm step re-checks under the unique
-	// index, so this is an early, friendly 409 rather than the sole guard.
-	taken, err := h.accounts.EmailTaken(ctx, newEmail)
+	// Whether the new address is Taken is never told to the requester (ADR 0031): every
+	// request takes a slot of the address's budget, mints a token and queues exactly one
+	// mail job to that address. Free, it is the confirm link; Taken, it is a tokenless
+	// notice to its owner. A job with no mail due (budget spent) is a no-send one.
+	granted, err := h.attempts.Take(ctx, accounts.KindEmailChange, newEmail)
 	if err != nil {
 		return nil, err
 	}
-	if taken {
-		v := siteapi.SiteUserEmailChangeConflict(problem(http.StatusConflict, i18n.T("errors.email_in_use", nil)))
-		return &v, nil
+	taken, err := h.accounts.EmailTaken(ctx, newEmail)
+	if err != nil {
+		return nil, err
 	}
 
 	// Bind to the current email so the token is single-use (invalid once swapped);
@@ -151,7 +154,11 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	if err != nil {
 		return nil, err
 	}
-	_ = h.sysmail.EnqueueEmailChangeConfirm(ctx, newEmail, token)
+	if taken {
+		_ = h.sysmail.EnqueueAddressTakenNotice(ctx, newEmail, granted)
+	} else {
+		_ = h.sysmail.EnqueueEmailChangeConfirm(ctx, newEmail, token, granted)
+	}
 
 	return &siteapi.SiteUserEmailChangeAccepted{}, nil
 }
