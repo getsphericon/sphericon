@@ -15,7 +15,7 @@ var _ Handler = UnimplementedHandler{}
 
 // ServiceHoldsClear implements ServiceHolds_clear operation.
 //
-// Clear a hold by its key. Idempotent: clearing a missing hold succeeds.
+// Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.
 //
 // DELETE /workspaces/{workspaceId}/holds/{key}
 func (UnimplementedHandler) ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (r ServiceHoldsClearRes, _ error) {
@@ -34,7 +34,8 @@ func (UnimplementedHandler) ServiceHoldsList(ctx context.Context, params Service
 // ServiceHoldsSet implements ServiceHolds_set operation.
 //
 // Set a hold under a key, or renew it by setting it again with a later expiry. Idempotent: setting the
-// same hold twice changes nothing.
+// same hold twice changes nothing and says so (`changed` false); renewing with a different expiry is a
+// change.
 //
 // PUT /workspaces/{workspaceId}/holds/{key}
 func (UnimplementedHandler) ServiceHoldsSet(ctx context.Context, req *HoldInput, params ServiceHoldsSetParams) (r ServiceHoldsSetRes, _ error) {

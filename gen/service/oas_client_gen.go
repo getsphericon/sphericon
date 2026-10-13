@@ -31,7 +31,7 @@ func trimTrailingSlashes(u *url.URL) {
 type Invoker interface {
 	// ServiceHoldsClear invokes ServiceHolds_clear operation.
 	//
-	// Clear a hold by its key. Idempotent: clearing a missing hold succeeds.
+	// Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.
 	//
 	// DELETE /workspaces/{workspaceId}/holds/{key}
 	ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (ServiceHoldsClearRes, error)
@@ -44,7 +44,8 @@ type Invoker interface {
 	// ServiceHoldsSet invokes ServiceHolds_set operation.
 	//
 	// Set a hold under a key, or renew it by setting it again with a later expiry. Idempotent: setting the
-	// same hold twice changes nothing.
+	// same hold twice changes nothing and says so (`changed` false); renewing with a different expiry is a
+	// change.
 	//
 	// PUT /workspaces/{workspaceId}/holds/{key}
 	ServiceHoldsSet(ctx context.Context, request *HoldInput, params ServiceHoldsSetParams) (ServiceHoldsSetRes, error)
@@ -122,7 +123,7 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 
 // ServiceHoldsClear invokes ServiceHolds_clear operation.
 //
-// Clear a hold by its key. Idempotent: clearing a missing hold succeeds.
+// Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.
 //
 // DELETE /workspaces/{workspaceId}/holds/{key}
 func (c *Client) ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (ServiceHoldsClearRes, error) {
@@ -411,7 +412,8 @@ func (c *Client) sendServiceHoldsList(ctx context.Context, params ServiceHoldsLi
 // ServiceHoldsSet invokes ServiceHolds_set operation.
 //
 // Set a hold under a key, or renew it by setting it again with a later expiry. Idempotent: setting the
-// same hold twice changes nothing.
+// same hold twice changes nothing and says so (`changed` false); renewing with a different expiry is a
+// change.
 //
 // PUT /workspaces/{workspaceId}/holds/{key}
 func (c *Client) ServiceHoldsSet(ctx context.Context, request *HoldInput, params ServiceHoldsSetParams) (ServiceHoldsSetRes, error) {
