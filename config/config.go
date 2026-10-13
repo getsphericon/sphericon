@@ -127,6 +127,11 @@ type Config struct {
 	// production-only behaviour locally — e.g. the sending-domain DKIM re-check
 	// trusts seeded domains instead of hitting real DNS (ADR 0010).
 	IsDev bool
+	// SMTPAllowPrivateHosts lets a Workspace's SMTP Integration point at a loopback or
+	// private address and any port (SMTP_ALLOW_PRIVATE_HOSTS). Off in production by
+	// default, so a tenant cannot use the server to reach internal hosts; on in
+	// development and tests, where the relay is a local Mailpit.
+	SMTPAllowPrivateHosts bool
 
 	// Locale is the instance-wide UI/email language (a SaaS deployment runs per
 	// country). One of the supported locales; anything else is coerced to "en".
@@ -295,10 +300,11 @@ func Load(envName string) (*Config, error) {
 			ConnMaxLifetime: v.GetDuration("DB_CONN_MAX_LIFETIME"),
 			PGXMaxConns:     v.GetInt32("PGX_MAX_CONNS"),
 		},
-		OutboxFloor:     time.Duration(v.GetInt("OUTBOX_RETENTION_FLOOR_DAYS")) * 24 * time.Hour,
-		EventsRetention: time.Duration(v.GetInt("EVENTS_RETENTION_DAYS")) * 24 * time.Hour,
-		IsDev:           isDevEnv(envName),
-		Locale:          i18n.Normalize(v.GetString("APP_LOCALE")),
+		OutboxFloor:           time.Duration(v.GetInt("OUTBOX_RETENTION_FLOOR_DAYS")) * 24 * time.Hour,
+		EventsRetention:       time.Duration(v.GetInt("EVENTS_RETENTION_DAYS")) * 24 * time.Hour,
+		IsDev:                 isDevEnv(envName),
+		SMTPAllowPrivateHosts: smtpAllowPrivateHosts(v, envName),
+		Locale:                i18n.Normalize(v.GetString("APP_LOCALE")),
 
 		RequireEmailVerification: strings.TrimSpace(v.GetString("REQUIRE_EMAIL_VERIFICATION")) != "false",
 		LogLevel:                 v.GetString("LOG_LEVEL"),
@@ -531,4 +537,13 @@ func envFiles(rootDir, envName string) []string {
 	}
 	files = append(files, filepath.Join(rootDir, ".env."+envName+".local"))
 	return files
+}
+
+// smtpAllowPrivateHosts reads SMTP_ALLOW_PRIVATE_HOSTS; unset, it follows the environment:
+// allowed in development, tests and the e2e suite (a local Mailpit), refused in production.
+func smtpAllowPrivateHosts(v *viper.Viper, envName string) bool {
+	if v.IsSet("SMTP_ALLOW_PRIVATE_HOSTS") {
+		return v.GetBool("SMTP_ALLOW_PRIVATE_HOSTS")
+	}
+	return isDevEnv(envName) || isE2E(envName)
 }

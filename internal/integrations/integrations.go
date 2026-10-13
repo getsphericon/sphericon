@@ -351,10 +351,14 @@ func configError(err error) *ValidationError {
 	return &ValidationError{Field: "config", Message: err.Error()}
 }
 
-// mergeSecrets carries forward stored secrets that the client did not resupply. Secrets
-// are redacted on read, so a config update re-sends blank secret fields; an empty secret
-// therefore means "keep the stored value", not "clear it". The provider kind is
-// guaranteed to match (checked before this is called).
+// mergeSecrets carries forward a stored secret that the client did not resupply. Secrets
+// are redacted on read, so a config update re-sends a blank secret field: blank means
+// "keep the stored value", not "clear it". A stored secret is only ever sent to the place
+// and as the identity it was saved for, so it is kept only while that destination is
+// unchanged (SMTP: host, port, username; SES: region, endpoint, access key id). Pointing
+// the Integration elsewhere with a blank secret is a refusal, never a silent carry-over:
+// the caller must supply the secret again. The provider kind is guaranteed to match
+// (checked before this is called).
 func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, error) {
 	switch provider {
 	case integration.ProviderSMTP:
@@ -365,7 +369,10 @@ func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, err
 		if err := json.Unmarshal(prev, &p); err != nil {
 			return nil, err
 		}
-		if n.Password == "" {
+		if n.Password == "" && p.Password != "" {
+			if n.Host != p.Host || n.Port != p.Port || n.Username != p.Username {
+				return nil, secretRequired()
+			}
 			n.Password = p.Password
 		}
 		return json.Marshal(n)
@@ -377,12 +384,19 @@ func mergeSecrets(provider integration.Provider, next, prev []byte) ([]byte, err
 		if err := json.Unmarshal(prev, &p); err != nil {
 			return nil, err
 		}
-		if n.SecretAccessKey == "" {
+		if n.SecretAccessKey == "" && p.SecretAccessKey != "" {
+			if n.Region != p.Region || n.Endpoint != p.Endpoint || n.AccessKeyID != p.AccessKeyID {
+				return nil, secretRequired()
+			}
 			n.SecretAccessKey = p.SecretAccessKey
 		}
 		return json.Marshal(n)
 	}
 	return next, nil
+}
+
+func secretRequired() *ValidationError {
+	return &ValidationError{Field: "config", Message: i18n.T("errors.integration_secret_required", nil)}
 }
 
 // RedactedConfig is the read-side provider config: no password, no secret key.

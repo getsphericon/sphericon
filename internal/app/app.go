@@ -686,8 +686,12 @@ func register(injector do.Injector, env string, o options) {
 	// rebuilt per consumer. The provider catalog (registry of email providers),
 	// the Tink cipher (credential encryption; fails fast at boot on a bad key),
 	// and the workspace→sender resolver built from them.
-	do.Provide(injector, func(do.Injector) (*messaging.Catalog, error) {
-		return registry.Default(), nil
+	do.Provide(injector, func(i do.Injector) (*messaging.Catalog, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		return registry.New(cfg.SMTPAllowPrivateHosts), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*secrets.Cipher, error) {
@@ -715,11 +719,9 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		catalog, err := do.Invoke[*messaging.Catalog](i)
-		if err != nil {
-			return nil, err
-		}
-		sender, err := buildSystemSender(cfg, catalog)
+		// The platform's own SMTP relay is operator-configured, not tenant input, so it may
+		// be a private host even where Workspace Integrations may not.
+		sender, err := buildSystemSender(cfg, registry.Default())
 		if err != nil {
 			return nil, err
 		}

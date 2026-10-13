@@ -344,3 +344,23 @@ func TestConfigLoadE2EProfileIgnoresInternalAddr(t *testing.T) {
 		t.Fatalf("e2e InternalAddr = %q, want empty so runs never collide on a port", cfg.InternalAddr)
 	}
 }
+
+func TestConfigLoadSMTPAllowPrivateHostsFollowsTheEnvironmentUnlessSet(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	cfg, err := Load("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.SMTPAllowPrivateHosts {
+		t.Fatal("a non-production environment allows private SMTP hosts by default")
+	}
+
+	t.Setenv("SMTP_ALLOW_PRIVATE_HOSTS", "false")
+	cfg, err = Load("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.SMTPAllowPrivateHosts {
+		t.Fatal("an explicit false must win over the environment default")
+	}
+}

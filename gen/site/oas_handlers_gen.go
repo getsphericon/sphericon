@@ -7094,7 +7094,7 @@ func (s *Server) handleSiteEventsListRequest(args [1]string, argsEscaped bool, w
 
 // handleSiteIntegrationsCreateRequest handles SiteIntegrations_create operation.
 //
-// Create an integration.
+// Create an integration. Owners and admins only.
 //
 // POST /workspaces/{slug}/integrations
 func (s *Server) handleSiteIntegrationsCreateRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -7296,7 +7296,7 @@ func (s *Server) handleSiteIntegrationsCreateRequest(args [1]string, argsEscaped
 
 // handleSiteIntegrationsDeleteRequest handles SiteIntegrations_delete operation.
 //
-// Delete an integration.
+// Delete an integration. Owners and admins only.
 //
 // DELETE /workspaces/{slug}/integrations/{id}
 func (s *Server) handleSiteIntegrationsDeleteRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -7865,7 +7865,7 @@ func (s *Server) handleSiteIntegrationsListRequest(args [1]string, argsEscaped b
 
 // handleSiteIntegrationsUpdateRequest handles SiteIntegrations_update operation.
 //
-// Update an integration.
+// Update an integration. Owners and admins only.
 //
 // PUT /workspaces/{slug}/integrations/{id}
 func (s *Server) handleSiteIntegrationsUpdateRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

@@ -1346,7 +1346,7 @@ export const siteIntegrationsListOptions = (options: Options<SiteIntegrationsLis
 });
 
 /**
- * Create an integration
+ * Create an integration. Owners and admins only.
  */
 export const siteIntegrationsCreateMutation = (options?: Partial<Options<SiteIntegrationsCreateData>>): UseMutationOptions<SiteIntegrationsCreateResponse, SiteIntegrationsCreateError, Options<SiteIntegrationsCreateData>> => {
   const mutationOptions: UseMutationOptions<SiteIntegrationsCreateResponse, SiteIntegrationsCreateError, Options<SiteIntegrationsCreateData>> = {
@@ -1363,7 +1363,7 @@ export const siteIntegrationsCreateMutation = (options?: Partial<Options<SiteInt
 };
 
 /**
- * Delete an integration
+ * Delete an integration. Owners and admins only.
  */
 export const siteIntegrationsDeleteMutation = (options?: Partial<Options<SiteIntegrationsDeleteData>>): UseMutationOptions<SiteIntegrationsDeleteResponse, SiteIntegrationsDeleteError, Options<SiteIntegrationsDeleteData>> => {
   const mutationOptions: UseMutationOptions<SiteIntegrationsDeleteResponse, SiteIntegrationsDeleteError, Options<SiteIntegrationsDeleteData>> = {
@@ -1398,7 +1398,7 @@ export const siteIntegrationsGetOptions = (options: Options<SiteIntegrationsGetD
 });
 
 /**
- * Update an integration
+ * Update an integration. Owners and admins only.
  */
 export const siteIntegrationsUpdateMutation = (options?: Partial<Options<SiteIntegrationsUpdateData>>): UseMutationOptions<SiteIntegrationsUpdateResponse, SiteIntegrationsUpdateError, Options<SiteIntegrationsUpdateData>> => {
   const mutationOptions: UseMutationOptions<SiteIntegrationsUpdateResponse, SiteIntegrationsUpdateError, Options<SiteIntegrationsUpdateData>> = {

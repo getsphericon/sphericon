@@ -38,6 +38,14 @@ func CanManageTokens(role membership.Role) bool {
 	return role == membership.RoleOwner || role == membership.RoleAdmin
 }
 
+// CanManageIntegrations reports whether role may create, edit or delete a sending-provider
+// Integration. It holds the Workspace's SMTP password or SES secret key and decides where
+// mail is sent with it, so it is an owner/admin action. Reading one (secrets redacted) is
+// open to every member.
+func CanManageIntegrations(role membership.Role) bool {
+	return role == membership.RoleOwner || role == membership.RoleAdmin
+}
+
 // CanErase reports whether role may erase a Contact (ADR 0021), an irreversible action
 // for the accountable roles.
 func CanErase(role membership.Role) bool {

@@ -10,10 +10,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 )
 
-// Default returns a catalog with all built-in providers registered.
-func Default() *messaging.Catalog {
+// New returns a catalog with all built-in providers registered. allowPrivateSMTP lets an
+// SMTP config name a private or loopback host and any port; Workspace Integrations are
+// customer input, so production passes false (see smtp.NewDescriptor).
+func New(allowPrivateSMTP bool) *messaging.Catalog {
 	return messaging.NewCatalog(
-		smtp.Descriptor(),
+		smtp.NewDescriptor(allowPrivateSMTP),
 		ses.Descriptor(),
 	)
 }
+
+// Default is the catalog for destinations the operator configured (the platform's own
+// mail) and for tests: SMTP may reach private hosts.
+func Default() *messaging.Catalog { return New(true) }

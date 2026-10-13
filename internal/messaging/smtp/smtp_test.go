@@ -140,7 +140,7 @@ func build(t *testing.T, cfg smtp.Config) messaging.EmailSender {
 	t.Helper()
 	raw := fmt.Sprintf(`{"host":%q,"port":%d,"username":%q,"password":%q,"from":%q,"fromName":%q}`,
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
-	built, err := smtp.Descriptor().Build([]byte(raw), nil)
+	built, err := smtp.NewDescriptor(true).Build([]byte(raw), nil)
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
 	require.True(t, ok)
@@ -301,4 +301,21 @@ func TestDescriptorValidate(t *testing.T) {
 func TestBuildRejectsMalformedConfig(t *testing.T) {
 	_, err := smtp.Descriptor().Build([]byte(`{`), nil)
 	assert.ErrorContains(t, err, "invalid config")
+}
+
+func TestDescriptorRefusesNonMailPortsUnlessPrivateAllowed(t *testing.T) {
+	cfg := []byte(`{"host":"smtp.example.com","port":6379,"from":"a@b.com"}`)
+	assert.ErrorContains(t, smtp.Descriptor().Validate(cfg), "port must be one of")
+	assert.NoError(t, smtp.NewDescriptor(true).Validate(cfg))
+}
+
+func TestSendRefusesAPrivateHostUnlessAllowed(t *testing.T) {
+	srv := newTestServer(t.Context(), t, false)
+	raw := fmt.Sprintf(`{"host":"127.0.0.1","port":%d,"username":"u","password":"p","from":"a@b.com"}`, srv.port)
+	built, err := smtp.Descriptor().Build([]byte(raw), nil)
+	require.NoError(t, err)
+
+	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "r@example.com", Subject: "s", Text: "t"})
+	assert.ErrorContains(t, err, "non-public address")
+	assert.Empty(t, srv.captured())
 }

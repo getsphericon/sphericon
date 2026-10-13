@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/wneessen/go-mail"
 
@@ -25,17 +26,28 @@ type Config struct {
 	FromName string `json:"fromName,omitempty"`
 }
 
-// Descriptor registers the SMTP provider with the messaging catalog.
-func Descriptor() messaging.ProviderDescriptor {
+// Descriptor registers the SMTP provider with the messaging catalog, for tenant-supplied
+// config: private hosts and unusual ports are refused (see NewDescriptor).
+func Descriptor() messaging.ProviderDescriptor { return NewDescriptor(false) }
+
+// NewDescriptor registers the SMTP provider. Unless allowPrivate, a config may only name a
+// standard mail port (25, 465, 587, 2525), and the connection is refused at dial time when
+// the host resolves to a loopback, private, link-local or otherwise non-public address, so
+// the stored password cannot be sent to an internal service nor the server used to probe one.
+func NewDescriptor(allowPrivate bool) messaging.ProviderDescriptor {
 	return messaging.ProviderDescriptor{
 		Channel:  messaging.ChannelEmail,
 		Provider: messaging.ProviderSMTP,
-		Validate: validate,
-		Build:    build,
+		Validate: func(raw []byte) error { return validate(raw, allowPrivate) },
+		Build: func(raw []byte, signer messaging.Signer) (any, error) {
+			return build(raw, signer, allowPrivate)
+		},
 	}
 }
 
-func validate(raw []byte) error {
+var mailPorts = []int{25, 465, 587, 2525}
+
+func validate(raw []byte, allowPrivate bool) error {
 	cfg, err := parse(raw)
 	if err != nil {
 		return err
@@ -47,16 +59,18 @@ func validate(raw []byte) error {
 		return fmt.Errorf("smtp: port must be positive")
 	case cfg.From == "":
 		return fmt.Errorf("smtp: from is required")
+	case !allowPrivate && !slices.Contains(mailPorts, cfg.Port):
+		return fmt.Errorf("smtp: port must be one of 25, 465, 587, 2525")
 	}
 	return nil
 }
 
-func build(raw []byte, signer messaging.Signer) (any, error) {
+func build(raw []byte, signer messaging.Signer, allowPrivate bool) (any, error) {
 	cfg, err := parse(raw)
 	if err != nil {
 		return nil, err
 	}
-	return &sender{cfg: cfg, signer: signer}, nil
+	return &sender{cfg: cfg, signer: signer, allowPrivate: allowPrivate}, nil
 }
 
 func parse(raw []byte) (Config, error) {
@@ -68,8 +82,9 @@ func parse(raw []byte) (Config, error) {
 }
 
 type sender struct {
-	cfg    Config
-	signer messaging.Signer
+	cfg          Config
+	signer       messaging.Signer
+	allowPrivate bool
 }
 
 // DefaultFrom reports the integration's configured From (see messaging.DefaultFromer).
@@ -90,6 +105,9 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 	opts := []mail.Option{
 		mail.WithPort(s.cfg.Port),
 		mail.WithTLSPortPolicy(mail.TLSOpportunistic),
+	}
+	if !s.allowPrivate {
+		opts = append(opts, mail.WithDialContextFunc(publicDialer().DialContext))
 	}
 	// Authenticate whenever a credential is set; an empty pair means an open relay.
 	if s.cfg.Username != "" || s.cfg.Password != "" {

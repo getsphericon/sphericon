@@ -2816,6 +2816,14 @@ func (s *SiteIntegrationsCreateConflict) Validate() error {
 	return nil
 }
 
+func (s *SiteIntegrationsCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteIntegrationsCreateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2833,6 +2841,14 @@ func (s *SiteIntegrationsCreateUnprocessableEntity) Validate() error {
 }
 
 func (s *SiteIntegrationsDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteIntegrationsDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2898,6 +2914,14 @@ func (s *SiteIntegrationsUpdateBadRequest) Validate() error {
 }
 
 func (s *SiteIntegrationsUpdateConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteIntegrationsUpdateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

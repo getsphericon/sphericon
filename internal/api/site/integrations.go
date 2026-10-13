@@ -12,10 +12,13 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
+
+const errIntegrationsForbidden = "only owners and admins can manage integrations"
 
 // SiteIntegrationsList returns the workspace's sending-provider integrations
 // with secrets redacted.
@@ -52,15 +55,19 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.Site
 }
 
 // SiteIntegrationsCreate stores a new provider integration; credentials are
-// encrypted at rest and never returned.
+// encrypted at rest and never returned. Owners and admins only.
 func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.SiteCreateIntegrationInput, params siteapi.SiteIntegrationsCreateParams) (siteapi.SiteIntegrationsCreateRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !accounts.CanManageIntegrations(role) {
+		v := siteapi.SiteIntegrationsCreateForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
+		return &v, nil
 	}
 
 	cfg, err := configInput(req.Config)
@@ -132,13 +139,17 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 // keep the stored secret rather than clearing it, since secrets are never echoed
 // back on read — so a partial edit cannot accidentally wipe a credential.
 func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.SiteUpdateIntegrationInput, params siteapi.SiteIntegrationsUpdateParams) (siteapi.SiteIntegrationsUpdateRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !accounts.CanManageIntegrations(role) {
+		v := siteapi.SiteIntegrationsUpdateForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
+		return &v, nil
 	}
 
 	id, err := strconv.ParseInt(string(params.ID), 10, 64)
@@ -187,13 +198,17 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 
 // SiteIntegrationsDelete removes an integration.
 func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.SiteIntegrationsDeleteParams) (siteapi.SiteIntegrationsDeleteRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !accounts.CanManageIntegrations(role) {
+		v := siteapi.SiteIntegrationsDeleteForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
+		return &v, nil
 	}
 
 	id, err := strconv.ParseInt(string(params.ID), 10, 64)

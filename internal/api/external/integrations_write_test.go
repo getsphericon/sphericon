@@ -156,12 +156,14 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, before.ConfigEncrypted, after.ConfigEncrypted, "omitting config keeps the credentials")
 
-	// A blank password inside a supplied config keeps the stored secret; the response
-	// stays redacted either way.
-	cfg := smtpInput("smtp2.example.com")
-	smtpIn := cfg.OneOf.SmtpConfigInput
-	smtpIn.Password = externalapi.OptNilString{}
-	cfg = externalapi.IntegrationConfigInput{OneOf: externalapi.NewSmtpConfigInputIntegrationConfigInputSum(smtpIn)}
+	// A blank password inside a supplied config keeps the stored secret while the host,
+	// port and username are unchanged; the response stays redacted either way.
+	blankPassword := func(host string) externalapi.IntegrationConfigInput {
+		smtpIn := smtpInput(host).OneOf.SmtpConfigInput
+		smtpIn.Password = externalapi.OptNilString{}
+		return externalapi.IntegrationConfigInput{OneOf: externalapi.NewSmtpConfigInputIntegrationConfigInputSum(smtpIn)}
+	}
+	cfg := blankPassword("smtp.example.com")
 	edited, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{
 		Config:       externalapi.NewOptNilIntegrationConfigInput(cfg),
 		MaxPerSecond: externalapi.OptNilMaxPerSecond{Null: true, Set: true},
@@ -171,11 +173,18 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	require.Truef(t, ok, "got %T", edited)
 	got, ok := res.Config.OneOf.GetSmtpConfig()
 	require.True(t, ok)
-	assert.Equal(t, "smtp2.example.com", got.Host)
+	assert.Equal(t, "smtp.example.com", got.Host)
 	assert.True(t, res.MaxPerSecond.Null, "null clears the limit")
 	body, err := json.Marshal(res)
 	require.NoError(t, err)
 	assert.NotContains(t, string(body), smtpSecret)
+
+	// Pointing the Integration at another host without the password is refused: the stored
+	// secret is never sent to a destination it was not saved for.
+	moved, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptNilIntegrationConfigInput(blankPassword("attacker.example"))},
+		externalapi.IntegrationsUpdateParams{ID: created.ID})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, moved)
 
 	// A config of the other provider kind is refused.
 	sesCfg := externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{

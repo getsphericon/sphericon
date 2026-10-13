@@ -3984,7 +3984,7 @@
       },
       "post": {
         "operationId": "SiteIntegrations_create",
-        "description": "Create an integration",
+        "description": "Create an integration. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceParentKey"
@@ -3997,6 +3997,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteIntegrationResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -4093,7 +4103,7 @@
       },
       "put": {
         "operationId": "SiteIntegrations_update",
-        "description": "Update an integration",
+        "description": "Update an integration. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.slug"
@@ -4115,6 +4125,16 @@
           },
           "400": {
             "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4168,7 +4188,7 @@
       },
       "delete": {
         "operationId": "SiteIntegrations_delete",
-        "description": "Delete an integration",
+        "description": "Delete an integration. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.slug"
@@ -4183,6 +4203,16 @@
           },
           "400": {
             "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
             "content": {
               "application/problem+json": {
                 "schema": {
