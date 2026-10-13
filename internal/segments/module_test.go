@@ -41,7 +41,7 @@ func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {
 	m := segments.New()
 	ctx := context.Background()
 
-	def := `{"combinator":"and","rules":[{"field":"email","operator":"contains","value":"x"}]}`
+	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"contains","value":"x"}]}`
 	s, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Good", Definition: ptr(def)})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, s.WorkspaceID)
