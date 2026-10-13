@@ -40,6 +40,7 @@ var operationRolesBearerAuth = map[string][]string{
 	ServiceIdentityGetOperation:       []string{},
 	ServiceUsageListOperation:         []string{},
 	ServiceWorkspaceFeedListOperation: []string{},
+	ServiceWorkspaceUsageGetOperation: []string{},
 }
 
 // GetRolesForBearerAuth returns the required roles for the given operation.

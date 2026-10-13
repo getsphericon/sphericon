@@ -707,3 +707,163 @@ func decodeServiceWorkspaceFeedListParams(args [0]string, argsEscaped bool, r *h
 	}
 	return params, nil
 }
+
+// ServiceWorkspaceUsageGetParams is parameters of ServiceWorkspaceUsage_get operation.
+type ServiceWorkspaceUsageGetParams struct {
+	WorkspaceId EntityId
+	// The Usage period as YYYY-MM (UTC); the current one when absent.
+	Period OptString `json:",omitempty,omitzero"`
+}
+
+func unpackServiceWorkspaceUsageGetParams(packed middleware.Parameters) (params ServiceWorkspaceUsageGetParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(EntityId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "period",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Period = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeServiceWorkspaceUsageGetParams(args [1]string, argsEscaped bool, r *http.Request) (params ServiceWorkspaceUsageGetParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: period.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "period",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPeriodVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPeriodVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Period.SetTo(paramsDotPeriodVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Period.Get(); ok {
+					if err := func() error {
+						if err := (validate.String{
+							MinLength:     0,
+							MinLengthSet:  false,
+							MaxLength:     0,
+							MaxLengthSet:  false,
+							Email:         false,
+							Hostname:      false,
+							Regex:         regexMap["^[0-9]{4}-(0[1-9]|1[0-2])$"],
+							MinNumeric:    0,
+							MinNumericSet: false,
+							MaxNumeric:    0,
+							MaxNumericSet: false,
+						}).Validate(string(value)); err != nil {
+							return errors.Wrap(err, "string")
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "period",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}

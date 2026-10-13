@@ -1,4 +1,4 @@
-import { Alert, Group, Select, Text } from '@mantine/core'
+import { Alert, Anchor, Group, Select, Text } from '@mantine/core'
 import { IconCreditCard, IconPlayerPause } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -66,10 +66,40 @@ function SuspensionBanner({
   )
 }
 
+// BillingLink points an Owner or Admin to the configured billing site, and tells a plain
+// member to ask one of them; with no billing site configured it renders nothing.
+function BillingLink({
+  role,
+  billingUrl,
+}: {
+  role: SiteWorkspaceResource['role']
+  billingUrl: string | null | undefined
+}) {
+  const { t } = useTranslation()
+  if (!billingUrl) return null
+  return role === 'member' ? (
+    <Text size="sm" mt="xs">
+      {t(($) => $.workspaceHold.billingContact)}
+    </Text>
+  ) : (
+    <Anchor size="sm" mt="xs" display="block" href={billingUrl}>
+      {t(($) => $.workspaceHold.billingLink)}
+    </Anchor>
+  )
+}
+
 // HoldBanner tells every member that outbound sending is held by an Operator hold
 // (ADR 0009) and shows each setter's message as given. It is deliberately not the
 // suspension banner: another color and icon, another title, and no reason of its own.
-function HoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
+function HoldBanner({
+  holds,
+  role,
+  billingUrl,
+}: {
+  holds: SiteWorkspaceHold[]
+  role: SiteWorkspaceResource['role']
+  billingUrl: string | null | undefined
+}) {
   const { t } = useTranslation()
   return (
     <Alert
@@ -85,6 +115,7 @@ function HoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
           {hold.message}
         </Text>
       ))}
+      <BillingLink role={role} billingUrl={billingUrl} />
     </Alert>
   )
 }
@@ -93,7 +124,15 @@ function HoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
 // reason (a billing hold, ADR 0009), with the setter's message as given. It is neither
 // the suspension banner nor the generic hold one: its own color, icon and title, so
 // nobody reads a payment problem as an abuse flag.
-function BillingHoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
+function BillingHoldBanner({
+  holds,
+  role,
+  billingUrl,
+}: {
+  holds: SiteWorkspaceHold[]
+  role: SiteWorkspaceResource['role']
+  billingUrl: string | null | undefined
+}) {
   const { t } = useTranslation()
   return (
     <Alert
@@ -109,6 +148,7 @@ function BillingHoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
           {hold.message}
         </Text>
       ))}
+      <BillingLink role={role} billingUrl={billingUrl} />
     </Alert>
   )
 }
@@ -160,8 +200,16 @@ export function WorkspaceLayout() {
               supportEmail={current.supportEmail}
             />
           ) : null}
-          {otherHolds.length ? <HoldBanner holds={otherHolds} /> : null}
-          {billingHolds.length ? <BillingHoldBanner holds={billingHolds} /> : null}
+          {otherHolds.length && current ? (
+            <HoldBanner holds={otherHolds} role={current.role} billingUrl={current.billingUrl} />
+          ) : null}
+          {billingHolds.length && current ? (
+            <BillingHoldBanner
+              holds={billingHolds}
+              role={current.role}
+              billingUrl={current.billingUrl}
+            />
+          ) : null}
           {standing.kind === 'grace' ? <SecondFactorGraceBanner endsAt={standing.endsAt} /> : null}
         </>
       }

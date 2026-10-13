@@ -991,6 +991,8 @@
     "title": "El envío está en pausa por facturación"
   },
   "workspaceHold": {
+    "billingContact": "Para resolverlo, contacte con un propietario o administrador de este espacio de trabajo.",
+    "billingLink": "Ir a facturación",
     "description": "El envío de correos salientes está retenido para este espacio de trabajo. Los envíos programados y las automatizaciones esperan y continúan solos cuando se levante la retención. Aún puede iniciar sesión y consultar sus datos.",
     "title": "El envío está retenido"
   },

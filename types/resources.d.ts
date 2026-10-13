@@ -963,6 +963,8 @@ export default interface Resources {
       "title": "Sending is paused for billing"
     },
     "workspaceHold": {
+      "billingContact": "To resolve it, contact an Owner or Admin of this workspace.",
+      "billingLink": "Go to billing",
       "description": "Outbound email is on hold for this workspace. Scheduled broadcasts and automations wait and continue on their own when the hold lifts. You can still sign in and view your data.",
       "title": "Sending is on hold"
     },

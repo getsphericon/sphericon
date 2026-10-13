@@ -62,3 +62,19 @@ namespace ServiceUsage {
     | ForbiddenProblem
     | TooManyRequestsProblem;
 }
+
+@tag("Service Usage")
+@route("/workspaces/{workspaceId}/usage")
+namespace ServiceWorkspaceUsage {
+  /** The figures of one Workspace for a Usage period: Live usage (not final, counting
+   * sends still in flight) for the open period, Usage snapshots (final) for a closed one.
+   * Never a recount on read. */
+  @get
+  op get(@path workspaceId: EntityId, ...UsagePeriodQuery):
+    | WorkspaceUsageResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | ForbiddenProblem
+    | NotFoundProblem
+    | TooManyRequestsProblem;
+}

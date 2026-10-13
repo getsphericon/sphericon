@@ -10608,6 +10608,11 @@
             "nullable": true,
             "description": "Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance\nconfigured none."
           },
+          "billingUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "The billing site a member under a hold is pointed to (BILLING_URL); absent when the\ninstance configured none, and then no billing text is shown."
+          },
           "holds": {
             "type": "array",
             "items": {

@@ -46,6 +46,7 @@ func (s *ServiceSurface) Server(opts ...serviceapi.ServerOption) (http.Handler, 
 var ServiceOperationScopes = map[serviceapi.OperationName][]Scope{
 	serviceapi.ServiceIdentityGetOperation:       nil,
 	serviceapi.ServiceUsageListOperation:         {ScopeUsageRead},
+	serviceapi.ServiceWorkspaceUsageGetOperation: {ScopeUsageRead},
 	serviceapi.ServiceWorkspaceFeedListOperation: {ScopeWorkspacesRead},
 	serviceapi.ServiceHoldsListOperation:         {ScopeHoldsWrite},
 	serviceapi.ServiceHoldsSetOperation:          {ScopeHoldsWrite},

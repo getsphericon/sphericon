@@ -65,6 +65,17 @@ func TestTheDashboardShowsNoWarningBelowTheFloorOrWhenUnlicensed(t *testing.T) {
 	assert.False(t, overview(t, unlicensed, fixtures.VandelayOwnerArtEmail, fixtures.VandelaySlug).AbuseWarning.Set)
 }
 
+func TestAWorkspaceCarriesTheBillingLinkOnlyWhenConfigured(t *testing.T) {
+	configured := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.BillingURL = "https://billing.sphericon.test" }))
+	unset := testhelper.Setup(t)
+
+	with := workspaceOf(t, configured.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug)
+	without := workspaceOf(t, unset.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug)
+
+	assert.Equal(t, "https://billing.sphericon.test", with.BillingUrl.Value)
+	assert.False(t, without.BillingUrl.Set, "self-hosted installs show no billing link")
+}
+
 func TestASuspendedWorkspaceCarriesTheSupportContactForItsBanner(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.SupportEmail = "support@sphericon.test" }))
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
