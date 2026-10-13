@@ -102,6 +102,24 @@ func (Workspace) Fields() []ent.Field {
 		field.String("suspension_reason").
 			Optional().
 			Nillable(),
+		// When an Operator last lifted a suspension (ADR 0026): the abuse detector counts
+		// only Events after it, so a cleared sender is not frozen again for old data.
+		field.Time("cleared_at").
+			Optional().
+			Nillable(),
+		// Set and cleared only by an Operator: an exempt Workspace is neither warned nor
+		// frozen by the abuse detector (it can still be suspended by hand).
+		field.Bool("abuse_exempt").
+			Default(false),
+		// When the owners were last told of the current warning / of an automatic freeze
+		// (ADR 0026). The warning marker is cleared once the Workspace leaves the
+		// warning tier, which is what makes one email per episode.
+		field.Time("abuse_warning_notified_at").
+			Optional().
+			Nillable(),
+		field.Time("abuse_freeze_notified_at").
+			Optional().
+			Nillable(),
 	}
 }
 

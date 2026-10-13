@@ -4,8 +4,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen.ts';
-import { operatorAuthLogin, operatorAuthLogout, operatorAuthSecondFactor, operatorMeGet, operatorWorkspaceAuditList, operatorWorkspacesGet, operatorWorkspacesList, operatorWorkspacesSuspend, operatorWorkspacesUnsuspend, type Options } from '../sdk.gen.ts';
-import type { OperatorAuthLoginData, OperatorAuthLoginError, OperatorAuthLoginResponse, OperatorAuthLogoutData, OperatorAuthLogoutError, OperatorAuthLogoutResponse, OperatorAuthSecondFactorData, OperatorAuthSecondFactorError, OperatorAuthSecondFactorResponse, OperatorMeGetData, OperatorMeGetError, OperatorMeGetResponse, OperatorWorkspaceAuditListData, OperatorWorkspaceAuditListError, OperatorWorkspaceAuditListResponse, OperatorWorkspacesGetData, OperatorWorkspacesGetError, OperatorWorkspacesGetResponse, OperatorWorkspacesListData, OperatorWorkspacesListError, OperatorWorkspacesListResponse, OperatorWorkspacesSuspendData, OperatorWorkspacesSuspendError, OperatorWorkspacesSuspendResponse, OperatorWorkspacesUnsuspendData, OperatorWorkspacesUnsuspendError, OperatorWorkspacesUnsuspendResponse } from '../types.gen.ts';
+import { operatorAuthLogin, operatorAuthLogout, operatorAuthSecondFactor, operatorMeGet, operatorWorkspaceAuditList, operatorWorkspacesExempt, operatorWorkspacesGet, operatorWorkspacesList, operatorWorkspacesSuspend, operatorWorkspacesUnexempt, operatorWorkspacesUnsuspend, type Options } from '../sdk.gen.ts';
+import type { OperatorAuthLoginData, OperatorAuthLoginError, OperatorAuthLoginResponse, OperatorAuthLogoutData, OperatorAuthLogoutError, OperatorAuthLogoutResponse, OperatorAuthSecondFactorData, OperatorAuthSecondFactorError, OperatorAuthSecondFactorResponse, OperatorMeGetData, OperatorMeGetError, OperatorMeGetResponse, OperatorWorkspaceAuditListData, OperatorWorkspaceAuditListError, OperatorWorkspaceAuditListResponse, OperatorWorkspacesExemptData, OperatorWorkspacesExemptError, OperatorWorkspacesExemptResponse, OperatorWorkspacesGetData, OperatorWorkspacesGetError, OperatorWorkspacesGetResponse, OperatorWorkspacesListData, OperatorWorkspacesListError, OperatorWorkspacesListResponse, OperatorWorkspacesSuspendData, OperatorWorkspacesSuspendError, OperatorWorkspacesSuspendResponse, OperatorWorkspacesUnexemptData, OperatorWorkspacesUnexemptError, OperatorWorkspacesUnexemptResponse, OperatorWorkspacesUnsuspendData, OperatorWorkspacesUnsuspendError, OperatorWorkspacesUnsuspendResponse } from '../types.gen.ts';
 
 /**
  * Check the password. Answers a challenge (or, at first login, a TOTP enrolment)
@@ -258,6 +258,25 @@ export const operatorWorkspaceAuditListInfiniteOptions = (options: Options<Opera
 };
 
 /**
+ * Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor
+ * frozen automatically, but stays listed with its rates and can still be suspended by
+ * hand. Audited. Idempotent.
+ */
+export const operatorWorkspacesExemptMutation = (options?: Partial<Options<OperatorWorkspacesExemptData>>): UseMutationOptions<OperatorWorkspacesExemptResponse, OperatorWorkspacesExemptError, Options<OperatorWorkspacesExemptData>> => {
+  const mutationOptions: UseMutationOptions<OperatorWorkspacesExemptResponse, OperatorWorkspacesExemptError, Options<OperatorWorkspacesExemptData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await operatorWorkspacesExempt({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    }
+  };
+  return mutationOptions;
+};
+
+/**
  * Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the
  * signed-in Operator. Idempotent: an already-suspended Workspace is left as it was.
  */
@@ -265,6 +284,23 @@ export const operatorWorkspacesSuspendMutation = (options?: Partial<Options<Oper
   const mutationOptions: UseMutationOptions<OperatorWorkspacesSuspendResponse, OperatorWorkspacesSuspendError, Options<OperatorWorkspacesSuspendData>> = {
     mutationFn: async (fnOptions) => {
       const { data } = await operatorWorkspacesSuspend({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    }
+  };
+  return mutationOptions;
+};
+
+/**
+ * Police a Workspace by the abuse detector again. Audited. Idempotent.
+ */
+export const operatorWorkspacesUnexemptMutation = (options?: Partial<Options<OperatorWorkspacesUnexemptData>>): UseMutationOptions<OperatorWorkspacesUnexemptResponse, OperatorWorkspacesUnexemptError, Options<OperatorWorkspacesUnexemptData>> => {
+  const mutationOptions: UseMutationOptions<OperatorWorkspacesUnexemptResponse, OperatorWorkspacesUnexemptError, Options<OperatorWorkspacesUnexemptData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await operatorWorkspacesUnexempt({
         ...options,
         ...fnOptions,
         throwOnError: true

@@ -3,8 +3,10 @@ import { beforeEach, expect, test } from 'vitest'
 
 import {
   handleOperatorWorkspaceAuditList,
+  handleOperatorWorkspacesExempt,
   handleOperatorWorkspacesGet,
   handleOperatorWorkspacesSuspend,
+  handleOperatorWorkspacesUnexempt,
   handleOperatorWorkspacesUnsuspend,
 } from '../generated/operator/msw.gen.ts'
 import type { OperatorWorkspaceDetailResource } from '../generated/operator/types.gen.ts'
@@ -33,6 +35,9 @@ const HOOLI: OperatorWorkspaceDetailResource = {
   },
   deliverability: { windowHours: 24, volumeFloor: 1000, sendVolume: 0, domains: [] },
   holds: [],
+  exempt: false,
+  warned: false,
+  abuse: { exempt: false },
 }
 
 const ABOVE_FLOOR = {
@@ -286,4 +291,72 @@ test('a workspace without holds says so', async () => {
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('No active holds.')).toBeInTheDocument()
+})
+
+test('shows the warning the detector computes now and when the owners were last told', async () => {
+  worker.use(
+    handleOperatorWorkspacesGet({
+      body: {
+        ...HOOLI,
+        suspension: null,
+        warned: true,
+        abuse: {
+          exempt: false,
+          warning: { domain: 'mail.hooli.test', metric: 'complaint', rate: 0.0015 },
+          clearedAt: '2026-02-02T00:00:00Z',
+          warningNotifiedAt: '2026-02-03T00:00:00Z',
+        },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect
+    .element(screen.getByText('Complaint rate 0.15% on mail.hooli.test'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('Owners told of freeze')).toBeInTheDocument()
+  await expect.element(screen.getByText('Never', { exact: true })).toBeInTheDocument()
+})
+
+test('exempting asks for confirmation first, then calls the API', async () => {
+  const exempted: string[] = []
+  worker.use(
+    handleOperatorWorkspacesGet({ body: HOOLI }),
+    handleOperatorWorkspacesExempt(({ params }) => {
+      exempted.push(params.workspaceId)
+      return HttpResponse.json({ changed: true, workspace: { ...HOOLI, exempt: true } })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await screen.getByRole('button', { name: 'Exempt from detector' }).click()
+  await expect
+    .element(screen.getByRole('dialog').getByText('Exempt this Workspace?'))
+    .toBeInTheDocument()
+  expect(exempted).toEqual([])
+
+  await screen.getByRole('dialog').getByRole('button', { name: 'Exempt from detector' }).click()
+
+  await expect.poll(() => exempted).toEqual(['5'])
+})
+
+test('an exempt workspace offers to police it again', async () => {
+  const policed: string[] = []
+  worker.use(
+    handleOperatorWorkspacesGet({
+      body: { ...HOOLI, exempt: true, abuse: { exempt: true } },
+    }),
+    handleOperatorWorkspacesUnexempt(({ params }) => {
+      policed.push(params.workspaceId)
+      return HttpResponse.json({ changed: true, workspace: HOOLI })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByText('Exempt', { exact: true })).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Police again' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Police again' }).click()
+
+  await expect.poll(() => policed).toEqual(['5'])
 })

@@ -34,6 +34,22 @@ export const zProblemDetails = z.object({
 });
 
 /**
+ * The metric of a Sending domain that is over a warning limit of the abuse detector
+ */
+export const zSiteAbuseMetric = z.enum(['complaint', 'bounce']);
+
+/**
+ * A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
+ * over the warning limit but under the freeze limit. Computed live from the trailing
+ * 24 hours since any clearance, never stored.
+ */
+export const zSiteAbuseWarning = z.object({
+  domain: z.string(),
+  metric: zSiteAbuseMetric,
+  rate: z.number()
+});
+
+/**
  * Accept an invite. For an address with no User or an Unverified User, name + password
  * are required (422 otherwise). For a Verified User the body is not read: the session of
  * that same User is the proof.
@@ -95,7 +111,8 @@ export const zSiteAnalyticsOverview = z.object({
   contacts: zSiteAnalyticsContacts,
   email: zSiteAnalyticsEmail,
   automations: zSiteAnalyticsAutomations,
-  timeseries: z.array(zSiteAnalyticsPoint)
+  timeseries: z.array(zSiteAnalyticsPoint),
+  abuseWarning: z.exactOptional(zSiteAbuseWarning.nullable())
 });
 
 /**
@@ -1273,6 +1290,7 @@ export const zSiteWorkspaceResource = z.object({
   role: zSiteMembershipRole,
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
   suspensionReason: z.exactOptional(z.string().nullable()),
+  supportEmail: z.exactOptional(z.string().nullable()),
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),

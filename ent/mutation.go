@@ -30491,6 +30491,10 @@ type WorkspaceMutation struct {
 	suspended_by_kind           *workspace.SuspendedByKind
 	suspended_by_id             *string
 	suspension_reason           *string
+	cleared_at                  *time.Time
+	abuse_exempt                *bool
+	abuse_warning_notified_at   *time.Time
+	abuse_freeze_notified_at    *time.Time
 	clearedFields               map[string]struct{}
 	contacts                    map[int64]struct{}
 	removedcontacts             map[int64]struct{}
@@ -31346,6 +31350,189 @@ func (m *WorkspaceMutation) SuspensionReasonCleared() bool {
 func (m *WorkspaceMutation) ResetSuspensionReason() {
 	m.suspension_reason = nil
 	delete(m.clearedFields, workspace.FieldSuspensionReason)
+}
+
+// SetClearedAt sets the "cleared_at" field.
+func (m *WorkspaceMutation) SetClearedAt(t time.Time) {
+	m.cleared_at = &t
+}
+
+// ClearedAt returns the value of the "cleared_at" field in the mutation.
+func (m *WorkspaceMutation) ClearedAt() (r time.Time, exists bool) {
+	v := m.cleared_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClearedAt returns the old "cleared_at" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldClearedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClearedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClearedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClearedAt: %w", err)
+	}
+	return oldValue.ClearedAt, nil
+}
+
+// ClearClearedAt clears the value of the "cleared_at" field.
+func (m *WorkspaceMutation) ClearClearedAt() {
+	m.cleared_at = nil
+	m.clearedFields[workspace.FieldClearedAt] = struct{}{}
+}
+
+// ClearedAtCleared returns if the "cleared_at" field was cleared in this mutation.
+func (m *WorkspaceMutation) ClearedAtCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldClearedAt]
+	return ok
+}
+
+// ResetClearedAt resets all changes to the "cleared_at" field.
+func (m *WorkspaceMutation) ResetClearedAt() {
+	m.cleared_at = nil
+	delete(m.clearedFields, workspace.FieldClearedAt)
+}
+
+// SetAbuseExempt sets the "abuse_exempt" field.
+func (m *WorkspaceMutation) SetAbuseExempt(b bool) {
+	m.abuse_exempt = &b
+}
+
+// AbuseExempt returns the value of the "abuse_exempt" field in the mutation.
+func (m *WorkspaceMutation) AbuseExempt() (r bool, exists bool) {
+	v := m.abuse_exempt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAbuseExempt returns the old "abuse_exempt" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldAbuseExempt(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAbuseExempt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAbuseExempt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAbuseExempt: %w", err)
+	}
+	return oldValue.AbuseExempt, nil
+}
+
+// ResetAbuseExempt resets all changes to the "abuse_exempt" field.
+func (m *WorkspaceMutation) ResetAbuseExempt() {
+	m.abuse_exempt = nil
+}
+
+// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
+func (m *WorkspaceMutation) SetAbuseWarningNotifiedAt(t time.Time) {
+	m.abuse_warning_notified_at = &t
+}
+
+// AbuseWarningNotifiedAt returns the value of the "abuse_warning_notified_at" field in the mutation.
+func (m *WorkspaceMutation) AbuseWarningNotifiedAt() (r time.Time, exists bool) {
+	v := m.abuse_warning_notified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAbuseWarningNotifiedAt returns the old "abuse_warning_notified_at" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldAbuseWarningNotifiedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAbuseWarningNotifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAbuseWarningNotifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAbuseWarningNotifiedAt: %w", err)
+	}
+	return oldValue.AbuseWarningNotifiedAt, nil
+}
+
+// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
+func (m *WorkspaceMutation) ClearAbuseWarningNotifiedAt() {
+	m.abuse_warning_notified_at = nil
+	m.clearedFields[workspace.FieldAbuseWarningNotifiedAt] = struct{}{}
+}
+
+// AbuseWarningNotifiedAtCleared returns if the "abuse_warning_notified_at" field was cleared in this mutation.
+func (m *WorkspaceMutation) AbuseWarningNotifiedAtCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldAbuseWarningNotifiedAt]
+	return ok
+}
+
+// ResetAbuseWarningNotifiedAt resets all changes to the "abuse_warning_notified_at" field.
+func (m *WorkspaceMutation) ResetAbuseWarningNotifiedAt() {
+	m.abuse_warning_notified_at = nil
+	delete(m.clearedFields, workspace.FieldAbuseWarningNotifiedAt)
+}
+
+// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
+func (m *WorkspaceMutation) SetAbuseFreezeNotifiedAt(t time.Time) {
+	m.abuse_freeze_notified_at = &t
+}
+
+// AbuseFreezeNotifiedAt returns the value of the "abuse_freeze_notified_at" field in the mutation.
+func (m *WorkspaceMutation) AbuseFreezeNotifiedAt() (r time.Time, exists bool) {
+	v := m.abuse_freeze_notified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAbuseFreezeNotifiedAt returns the old "abuse_freeze_notified_at" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldAbuseFreezeNotifiedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAbuseFreezeNotifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAbuseFreezeNotifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAbuseFreezeNotifiedAt: %w", err)
+	}
+	return oldValue.AbuseFreezeNotifiedAt, nil
+}
+
+// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
+func (m *WorkspaceMutation) ClearAbuseFreezeNotifiedAt() {
+	m.abuse_freeze_notified_at = nil
+	m.clearedFields[workspace.FieldAbuseFreezeNotifiedAt] = struct{}{}
+}
+
+// AbuseFreezeNotifiedAtCleared returns if the "abuse_freeze_notified_at" field was cleared in this mutation.
+func (m *WorkspaceMutation) AbuseFreezeNotifiedAtCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldAbuseFreezeNotifiedAt]
+	return ok
+}
+
+// ResetAbuseFreezeNotifiedAt resets all changes to the "abuse_freeze_notified_at" field.
+func (m *WorkspaceMutation) ResetAbuseFreezeNotifiedAt() {
+	m.abuse_freeze_notified_at = nil
+	delete(m.clearedFields, workspace.FieldAbuseFreezeNotifiedAt)
 }
 
 // AddContactIDs adds the "contacts" edge to the Contact entity by ids.
@@ -32732,7 +32919,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -32778,6 +32965,18 @@ func (m *WorkspaceMutation) Fields() []string {
 	if m.suspension_reason != nil {
 		fields = append(fields, workspace.FieldSuspensionReason)
 	}
+	if m.cleared_at != nil {
+		fields = append(fields, workspace.FieldClearedAt)
+	}
+	if m.abuse_exempt != nil {
+		fields = append(fields, workspace.FieldAbuseExempt)
+	}
+	if m.abuse_warning_notified_at != nil {
+		fields = append(fields, workspace.FieldAbuseWarningNotifiedAt)
+	}
+	if m.abuse_freeze_notified_at != nil {
+		fields = append(fields, workspace.FieldAbuseFreezeNotifiedAt)
+	}
 	return fields
 }
 
@@ -32816,6 +33015,14 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.SuspendedByID()
 	case workspace.FieldSuspensionReason:
 		return m.SuspensionReason()
+	case workspace.FieldClearedAt:
+		return m.ClearedAt()
+	case workspace.FieldAbuseExempt:
+		return m.AbuseExempt()
+	case workspace.FieldAbuseWarningNotifiedAt:
+		return m.AbuseWarningNotifiedAt()
+	case workspace.FieldAbuseFreezeNotifiedAt:
+		return m.AbuseFreezeNotifiedAt()
 	}
 	return nil, false
 }
@@ -32855,6 +33062,14 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSuspendedByID(ctx)
 	case workspace.FieldSuspensionReason:
 		return m.OldSuspensionReason(ctx)
+	case workspace.FieldClearedAt:
+		return m.OldClearedAt(ctx)
+	case workspace.FieldAbuseExempt:
+		return m.OldAbuseExempt(ctx)
+	case workspace.FieldAbuseWarningNotifiedAt:
+		return m.OldAbuseWarningNotifiedAt(ctx)
+	case workspace.FieldAbuseFreezeNotifiedAt:
+		return m.OldAbuseFreezeNotifiedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Workspace field %s", name)
 }
@@ -32969,6 +33184,34 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSuspensionReason(v)
 		return nil
+	case workspace.FieldClearedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClearedAt(v)
+		return nil
+	case workspace.FieldAbuseExempt:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAbuseExempt(v)
+		return nil
+	case workspace.FieldAbuseWarningNotifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAbuseWarningNotifiedAt(v)
+		return nil
+	case workspace.FieldAbuseFreezeNotifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAbuseFreezeNotifiedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Workspace field %s", name)
 }
@@ -33047,6 +33290,15 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	if m.FieldCleared(workspace.FieldSuspensionReason) {
 		fields = append(fields, workspace.FieldSuspensionReason)
 	}
+	if m.FieldCleared(workspace.FieldClearedAt) {
+		fields = append(fields, workspace.FieldClearedAt)
+	}
+	if m.FieldCleared(workspace.FieldAbuseWarningNotifiedAt) {
+		fields = append(fields, workspace.FieldAbuseWarningNotifiedAt)
+	}
+	if m.FieldCleared(workspace.FieldAbuseFreezeNotifiedAt) {
+		fields = append(fields, workspace.FieldAbuseFreezeNotifiedAt)
+	}
 	return fields
 }
 
@@ -33081,6 +33333,15 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 		return nil
 	case workspace.FieldSuspensionReason:
 		m.ClearSuspensionReason()
+		return nil
+	case workspace.FieldClearedAt:
+		m.ClearClearedAt()
+		return nil
+	case workspace.FieldAbuseWarningNotifiedAt:
+		m.ClearAbuseWarningNotifiedAt()
+		return nil
+	case workspace.FieldAbuseFreezeNotifiedAt:
+		m.ClearAbuseFreezeNotifiedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Workspace nullable field %s", name)
@@ -33134,6 +33395,18 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldSuspensionReason:
 		m.ResetSuspensionReason()
+		return nil
+	case workspace.FieldClearedAt:
+		m.ResetClearedAt()
+		return nil
+	case workspace.FieldAbuseExempt:
+		m.ResetAbuseExempt()
+		return nil
+	case workspace.FieldAbuseWarningNotifiedAt:
+		m.ResetAbuseWarningNotifiedAt()
+		return nil
+	case workspace.FieldAbuseFreezeNotifiedAt:
+		m.ResetAbuseFreezeNotifiedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Workspace field %s", name)

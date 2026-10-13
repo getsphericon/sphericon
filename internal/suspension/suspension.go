@@ -92,7 +92,8 @@ func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, b
 }
 
 // UnsuspendWorkspace lifts a suspension, clearing its attribution, and records
-// `workspace.unsuspend` for the actor `by`. It reports whether the Workspace was
+// `workspace.unsuspend` for the actor `by`. It stamps cleared_at, so the abuse detector
+// (ADR 0026) counts only Events after the clearance. It reports whether the Workspace was
 // suspended. Held sends resume on their own: the jobs that were snoozed ask Outbound
 // send again.
 func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor) (bool, error) {
@@ -107,6 +108,7 @@ func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64,
 			ClearSuspendedByKind().
 			ClearSuspendedByID().
 			ClearSuspensionReason().
+			SetClearedAt(time.Now()).
 			Save(ctx)
 		if err != nil || n == 0 {
 			return err
@@ -117,6 +119,36 @@ func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64,
 	})
 	if err != nil {
 		return false, fmt.Errorf("unsuspend workspace %d: %w", workspaceID, err)
+	}
+	return changed, nil
+}
+
+// SetAbuseExempt exempts a Workspace from the abuse detector, or polices it again
+// (ADR 0026), recorded in its Audit log for the actor `by`. It reports whether the flag
+// changed. Exemption never blocks a manual suspension.
+func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, exempt bool) (bool, error) {
+	if err := by.validate(); err != nil {
+		return false, fmt.Errorf("set abuse exemption: %w", err)
+	}
+	action := events.ActionWorkspaceAbuseUnexempt
+	if exempt {
+		action = events.ActionWorkspaceAbuseExempt
+	}
+	changed := false
+	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		n, err := tx.Workspace.Update().
+			Where(workspace.ID(workspaceID), workspace.AbuseExempt(!exempt)).
+			SetAbuseExempt(exempt).
+			Save(ctx)
+		if err != nil || n == 0 {
+			return err
+		}
+		changed = true
+		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, action,
+			map[string]any{"abuse_exempt": map[string]any{"from": !exempt, "to": exempt}})
+	})
+	if err != nil {
+		return false, fmt.Errorf("set abuse exemption of workspace %d: %w", workspaceID, err)
 	}
 	return changed, nil
 }

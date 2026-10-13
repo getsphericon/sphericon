@@ -51,6 +51,28 @@ test('a suspended workspace shows the banner with the reason', async () => {
   await expect.element(screen.getByText(/Reason: spam/)).toBeInTheDocument()
 })
 
+test('a suspended workspace tells the owner where to appeal', async () => {
+  worker.use(
+    list([
+      workspace({ suspendedAt: '2026-02-01T00:00:00Z', supportEmail: 'support@sphericon.test' }),
+    ]),
+  )
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect
+    .element(screen.getByText(/To appeal, email support@sphericon.test/))
+    .toBeInTheDocument()
+})
+
+test('without a support contact the owner is sent to the administrator', async () => {
+  worker.use(list([workspace({ suspendedAt: '2026-02-01T00:00:00Z' })]))
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect
+    .element(screen.getByText(/To appeal, contact your sphericon administrator/))
+    .toBeInTheDocument()
+})
+
 test('a suspension without a reason omits the reason line', async () => {
   worker.use(list([workspace({ suspendedAt: '2026-02-01T00:00:00Z' })]))
   const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)

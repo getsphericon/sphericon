@@ -204,7 +204,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      `reputation.Rates`); and the service endpoints (a Service credential) scope over the one
      Workspace a call names, after its row is loaded, to set, clear and list its Operator holds
      (`Module.SetHold`, `ClearHold`, `ActiveHolds`; the send path and the site API read them
-     through `holds.Active` / `holds.Freezer`, which hold no raw client).
+     through `holds.Active` / `holds.Freezer`, which hold no raw client); the abuse detector
+     (ADR 0026) scopes over the Workspace being judged, after its row is loaded, to read the
+     rates (`abuse.Watch`, which the console's `Module.WorkspaceAbuse` and the `/site`
+     dashboard's warning also read through the `site.AbuseWatch` seam).
 - **The raw `*ent.Client` is allowed only in:** `internal/accounts` (User, Membership,
   Workspace incl. slug resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
@@ -215,7 +218,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition), `ee/audit` (the Audit log bus
   subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/retention` (the
-  periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/usage` (the periodic
+  periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/abuse` (the hourly
+  abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
+  exempt, then scopes to judge each, and writes its notice markers by id), `ee/usage` (the periodic
   usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `operator` license, that keeps the contacts peak as Contacts change), `ee/operator` (the
   platform Operator, ADR 0026: the Operator table, and the Workspace rows, suspension state and
   rates the console shows as tenant metadata; Workspace data goes through the scopes of

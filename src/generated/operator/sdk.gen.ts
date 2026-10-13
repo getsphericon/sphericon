@@ -5,8 +5,8 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { OperatorAuthLoginData, OperatorAuthLoginErrors, OperatorAuthLoginResponses, OperatorAuthLogoutData, OperatorAuthLogoutErrors, OperatorAuthLogoutResponses, OperatorAuthSecondFactorData, OperatorAuthSecondFactorErrors, OperatorAuthSecondFactorResponses, OperatorMeGetData, OperatorMeGetErrors, OperatorMeGetResponses, OperatorWorkspaceAuditListData, OperatorWorkspaceAuditListErrors, OperatorWorkspaceAuditListResponses, OperatorWorkspacesGetData, OperatorWorkspacesGetErrors, OperatorWorkspacesGetResponses, OperatorWorkspacesListData, OperatorWorkspacesListErrors, OperatorWorkspacesListResponses, OperatorWorkspacesSuspendData, OperatorWorkspacesSuspendErrors, OperatorWorkspacesSuspendResponses, OperatorWorkspacesUnsuspendData, OperatorWorkspacesUnsuspendErrors, OperatorWorkspacesUnsuspendResponses } from './types.gen.ts';
-import { zOperatorAuthLoginBody, zOperatorAuthSecondFactorBody, zOperatorWorkspaceAuditListPath, zOperatorWorkspaceAuditListQuery, zOperatorWorkspacesGetPath, zOperatorWorkspacesListQuery, zOperatorWorkspacesSuspendBody, zOperatorWorkspacesSuspendPath, zOperatorWorkspacesUnsuspendPath } from './zod.gen.ts';
+import type { OperatorAuthLoginData, OperatorAuthLoginErrors, OperatorAuthLoginResponses, OperatorAuthLogoutData, OperatorAuthLogoutErrors, OperatorAuthLogoutResponses, OperatorAuthSecondFactorData, OperatorAuthSecondFactorErrors, OperatorAuthSecondFactorResponses, OperatorMeGetData, OperatorMeGetErrors, OperatorMeGetResponses, OperatorWorkspaceAuditListData, OperatorWorkspaceAuditListErrors, OperatorWorkspaceAuditListResponses, OperatorWorkspacesExemptData, OperatorWorkspacesExemptErrors, OperatorWorkspacesExemptResponses, OperatorWorkspacesGetData, OperatorWorkspacesGetErrors, OperatorWorkspacesGetResponses, OperatorWorkspacesListData, OperatorWorkspacesListErrors, OperatorWorkspacesListResponses, OperatorWorkspacesSuspendData, OperatorWorkspacesSuspendErrors, OperatorWorkspacesSuspendResponses, OperatorWorkspacesUnexemptData, OperatorWorkspacesUnexemptErrors, OperatorWorkspacesUnexemptResponses, OperatorWorkspacesUnsuspendData, OperatorWorkspacesUnsuspendErrors, OperatorWorkspacesUnsuspendResponses } from './types.gen.ts';
+import { zOperatorAuthLoginBody, zOperatorAuthSecondFactorBody, zOperatorWorkspaceAuditListPath, zOperatorWorkspaceAuditListQuery, zOperatorWorkspacesExemptPath, zOperatorWorkspacesGetPath, zOperatorWorkspacesListQuery, zOperatorWorkspacesSuspendBody, zOperatorWorkspacesSuspendPath, zOperatorWorkspacesUnexemptPath, zOperatorWorkspacesUnsuspendPath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -152,6 +152,26 @@ export const operatorWorkspaceAuditList = <ThrowOnError extends boolean = false>
 });
 
 /**
+ * Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor
+ * frozen automatically, but stays listed with its rates and can still be suspended by
+ * hand. Audited. Idempotent.
+ */
+export const operatorWorkspacesExempt = <ThrowOnError extends boolean = false>(options: Options<OperatorWorkspacesExemptData, ThrowOnError>): RequestResult<OperatorWorkspacesExemptResponses, OperatorWorkspacesExemptErrors, ThrowOnError> => (options.client ?? client).post<OperatorWorkspacesExemptResponses, OperatorWorkspacesExemptErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: zOperatorWorkspacesExemptPath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'OPERATOR_JWT',
+      type: 'apiKey'
+    }],
+  url: '/workspaces/{workspaceId}/exempt',
+  ...options
+});
+
+/**
  * Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the
  * signed-in Operator. Idempotent: an already-suspended Workspace is left as it was.
  */
@@ -172,6 +192,24 @@ export const operatorWorkspacesSuspend = <ThrowOnError extends boolean = false>(
     'Content-Type': 'application/json',
     ...options.headers
   }
+});
+
+/**
+ * Police a Workspace by the abuse detector again. Audited. Idempotent.
+ */
+export const operatorWorkspacesUnexempt = <ThrowOnError extends boolean = false>(options: Options<OperatorWorkspacesUnexemptData, ThrowOnError>): RequestResult<OperatorWorkspacesUnexemptResponses, OperatorWorkspacesUnexemptErrors, ThrowOnError> => (options.client ?? client).post<OperatorWorkspacesUnexemptResponses, OperatorWorkspacesUnexemptErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: zOperatorWorkspacesUnexemptPath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'OPERATOR_JWT',
+      type: 'apiKey'
+    }],
+  url: '/workspaces/{workspaceId}/unexempt',
+  ...options
 });
 
 /**

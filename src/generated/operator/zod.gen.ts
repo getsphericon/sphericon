@@ -8,6 +8,20 @@ export const zEmailAddress = z.email();
 export const zEntityId = z.string().regex(/^[0-9]+$/);
 
 /**
+ * Which metric of a Sending domain breached the abuse detector's warning limit
+ */
+export const zOperatorAbuseMetric = z.enum(['complaint', 'bounce']);
+
+/**
+ * A Sending domain in the warning tier (ADR 0026), by the detector's own computation
+ */
+export const zOperatorAbuseWarning = z.object({
+  domain: z.string(),
+  metric: zOperatorAbuseMetric,
+  rate: z.number()
+});
+
+/**
  * Who performed an audited change, as the Workspace's own team sees it
  */
 export const zOperatorAuditActorKind = z.enum([
@@ -139,6 +153,11 @@ export const zOperatorSuspensionActor = z.object({
 });
 
 /**
+ * Which Workspaces the list surfaces for review
+ */
+export const zOperatorWorkspaceReview = z.enum(['warned', 'systemFrozen']);
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum(['second_factor_required', 'email_verification_required']);
@@ -190,6 +209,17 @@ export const zPaymentRequiredProblem = z.object({
 export const zTimeZoneName = z.string();
 
 export const zTimestamp = z.iso.datetime();
+
+/**
+ * A Workspace's standing with the abuse detector (ADR 0026)
+ */
+export const zOperatorAbuse = z.object({
+  exempt: z.boolean(),
+  clearedAt: z.exactOptional(zTimestamp.nullable()),
+  warningNotifiedAt: z.exactOptional(zTimestamp.nullable()),
+  freezeNotifiedAt: z.exactOptional(zTimestamp.nullable()),
+  warning: z.exactOptional(zOperatorAbuseWarning.nullable())
+});
 
 /**
  * One immutable Audit entry of a Workspace. Secrets are never recorded; they appear as changed only.
@@ -244,8 +274,11 @@ export const zOperatorWorkspaceDetailResource = z.object({
   name: z.string(),
   createdAt: zTimestamp,
   suspension: z.exactOptional(zOperatorSuspension.nullable()),
+  exempt: z.boolean(),
+  warned: z.boolean(),
   holds: z.array(zOperatorHold),
-  deliverability: zOperatorDeliverability
+  deliverability: zOperatorDeliverability,
+  abuse: zOperatorAbuse
 });
 
 /**
@@ -257,7 +290,18 @@ export const zOperatorWorkspaceResource = z.object({
   slug: z.string(),
   name: z.string(),
   createdAt: zTimestamp,
-  suspension: z.exactOptional(zOperatorSuspension.nullable())
+  suspension: z.exactOptional(zOperatorSuspension.nullable()),
+  exempt: z.boolean(),
+  warned: z.boolean()
+});
+
+/**
+ * The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether
+ * anything changed
+ */
+export const zOperatorExemptionChange = z.object({
+  changed: z.boolean(),
+  workspace: zOperatorWorkspaceResource
 });
 
 /**
@@ -271,9 +315,14 @@ export const zOperatorSuspensionChange = z.object({
 });
 
 /**
+ * Only Workspaces in this review state
+ */
+export const zOperatorWorkspaceSearchReview = zOperatorWorkspaceReview;
+
+/**
  * Only Workspaces whose slug contains this text (case-insensitive)
  */
-export const zOperatorWorkspaceSearch = z.string();
+export const zOperatorWorkspaceSearchSlug = z.string();
 
 /**
  * Page number (1-based)
@@ -310,6 +359,7 @@ export const zOperatorAuthSecondFactorResponse = zOperatorResource;
 export const zOperatorMeGetResponse = zOperatorResource;
 
 export const zOperatorWorkspacesListQuery = z.object({
+  review: z.exactOptional(zOperatorWorkspaceReview),
   slug: z.exactOptional(z.string()),
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
@@ -349,6 +399,15 @@ export const zOperatorWorkspaceAuditListQuery = z.object({
  */
 export const zOperatorWorkspaceAuditListResponse = zOperatorAuditEntryList;
 
+export const zOperatorWorkspacesExemptPath = z.object({
+  workspaceId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zOperatorWorkspacesExemptResponse = zOperatorExemptionChange;
+
 export const zOperatorWorkspacesSuspendBody = zOperatorSuspendInput;
 
 export const zOperatorWorkspacesSuspendPath = z.object({
@@ -359,6 +418,15 @@ export const zOperatorWorkspacesSuspendPath = z.object({
  * The request has succeeded.
  */
 export const zOperatorWorkspacesSuspendResponse = zOperatorSuspensionChange;
+
+export const zOperatorWorkspacesUnexemptPath = z.object({
+  workspaceId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zOperatorWorkspacesUnexemptResponse = zOperatorExemptionChange;
 
 export const zOperatorWorkspacesUnsuspendPath = z.object({
   workspaceId: zEntityId

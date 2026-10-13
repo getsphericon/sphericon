@@ -22,7 +22,7 @@ func TestNotifyWorkspaceSuspendedEmailsOwners(t *testing.T) {
 	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaint rate above 0.3%")
 	require.NoError(t, err)
 
-	require.NoError(t, jobs.NotifyWorkspaceSuspended(ctx, env.DB, env.SystemMail, fixtures.AcmeID))
+	require.NoError(t, jobs.NotifyWorkspaceSuspended(ctx, env.DB, env.SystemMail, "", fixtures.AcmeID))
 
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1)
@@ -42,7 +42,7 @@ func TestNotifyWorkspaceSuspendedShowsStaffForOperatorAndCLI(t *testing.T) {
 			_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, by, "abuse report")
 			require.NoError(t, err)
 
-			require.NoError(t, jobs.NotifyWorkspaceSuspended(ctx, env.DB, env.SystemMail, fixtures.AcmeID))
+			require.NoError(t, jobs.NotifyWorkspaceSuspended(ctx, env.DB, env.SystemMail, "", fixtures.AcmeID))
 
 			msgs := env.SystemMail.Messages()
 			require.Len(t, msgs, 1)
@@ -54,5 +54,5 @@ func TestNotifyWorkspaceSuspendedShowsStaffForOperatorAndCLI(t *testing.T) {
 
 func TestNotifyWorkspaceSuspendedNilSenderIsNoop(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, jobs.NotifyWorkspaceSuspended(context.Background(), env.DB, nil, fixtures.AcmeID))
+	require.NoError(t, jobs.NotifyWorkspaceSuspended(context.Background(), env.DB, nil, "", fixtures.AcmeID))
 }

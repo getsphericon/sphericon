@@ -60,6 +60,8 @@ type Converter interface {
 	// The active holds are read through the Workspace's scope, which the mapper cannot
 	// see: the handler attaches them.
 	// goverter:ignore Holds
+	// The support contact is instance configuration, attached by the handler.
+	// goverter:ignore SupportEmail
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 

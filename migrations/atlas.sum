@@ -1,4 +1,4 @@
-h1:IRvj5c5zEg5bkR/TeD2cGvPeEKs8M49RYedtFXr3PcA=
+h1:mDa0VAb1sKgU1FNgX+fQ+/ClP+SWe70ky5GnuErfTSU=
 20260630101109_init.sql h1:Pgj3WXyEdlsbabERn8ue309EON5bAyWNV1X8O9IkKos=
 20260630175449_send_eligibility_model.sql h1:vEOs/vQyOdwj2FK2h5B0795pY2DVs3jbv3IpH5A/njw=
 20260630204007_transactional_email.sql h1:sotbb1MKWbZO2UzTf7TruRuFpMaXirns67+ithjM1Lc=
@@ -38,3 +38,4 @@ h1:IRvj5c5zEg5bkR/TeD2cGvPeEKs8M49RYedtFXr3PcA=
 20261012154103_workspace_feed_position.sql h1:DXdPBjr6tz8fijIiCccZGPryIc0s8SpWctM/InB4ZR0=
 20261012155935_holds.sql h1:glL+V9qt8trp/RuLG8DNG7m4YTjfrlr/VwTikcPY4tM=
 20261012181931_contacts_identified_index.sql h1:svk/PExdQjdVPk5Glmpkyr5weBgZNm7G4GuYuNHA9Gk=
+20261013120333_abuse_detector.sql h1:K8ILM0AVUd9A5Kgv3l7+hcCMM04yZZgTRW/pLUdtFUg=

@@ -47,6 +47,14 @@ type Workspace struct {
 	SuspendedByID *string `json:"suspended_by_id,omitempty"`
 	// SuspensionReason holds the value of the "suspension_reason" field.
 	SuspensionReason *string `json:"suspension_reason,omitempty"`
+	// ClearedAt holds the value of the "cleared_at" field.
+	ClearedAt *time.Time `json:"cleared_at,omitempty"`
+	// AbuseExempt holds the value of the "abuse_exempt" field.
+	AbuseExempt bool `json:"abuse_exempt,omitempty"`
+	// AbuseWarningNotifiedAt holds the value of the "abuse_warning_notified_at" field.
+	AbuseWarningNotifiedAt *time.Time `json:"abuse_warning_notified_at,omitempty"`
+	// AbuseFreezeNotifiedAt holds the value of the "abuse_freeze_notified_at" field.
+	AbuseFreezeNotifiedAt *time.Time `json:"abuse_freeze_notified_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the WorkspaceQuery when eager-loading is set.
 	Edges        WorkspaceEdges `json:"edges"`
@@ -340,13 +348,13 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case workspace.FieldRequireConfirmedOptIn:
+		case workspace.FieldRequireConfirmedOptIn, workspace.FieldAbuseExempt:
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
 		case workspace.FieldName, workspace.FieldSlug, workspace.FieldCollectKey, workspace.FieldIngestKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
-		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldSuspendedAt:
+		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -464,6 +472,33 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SuspensionReason = new(string)
 				*_m.SuspensionReason = value.String
+			}
+		case workspace.FieldClearedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field cleared_at", values[i])
+			} else if value.Valid {
+				_m.ClearedAt = new(time.Time)
+				*_m.ClearedAt = value.Time
+			}
+		case workspace.FieldAbuseExempt:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field abuse_exempt", values[i])
+			} else if value.Valid {
+				_m.AbuseExempt = value.Bool
+			}
+		case workspace.FieldAbuseWarningNotifiedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field abuse_warning_notified_at", values[i])
+			} else if value.Valid {
+				_m.AbuseWarningNotifiedAt = new(time.Time)
+				*_m.AbuseWarningNotifiedAt = value.Time
+			}
+		case workspace.FieldAbuseFreezeNotifiedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field abuse_freeze_notified_at", values[i])
+			} else if value.Valid {
+				_m.AbuseFreezeNotifiedAt = new(time.Time)
+				*_m.AbuseFreezeNotifiedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -679,6 +714,24 @@ func (_m *Workspace) String() string {
 	if v := _m.SuspensionReason; v != nil {
 		builder.WriteString("suspension_reason=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ClearedAt; v != nil {
+		builder.WriteString("cleared_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("abuse_exempt=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AbuseExempt))
+	builder.WriteString(", ")
+	if v := _m.AbuseWarningNotifiedAt; v != nil {
+		builder.WriteString("abuse_warning_notified_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.AbuseFreezeNotifiedAt; v != nil {
+		builder.WriteString("abuse_freeze_notified_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')
 	return builder.String()

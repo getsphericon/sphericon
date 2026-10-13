@@ -1,5 +1,14 @@
 import { AreaChart, DonutChart } from '@mantine/charts'
-import { Group, Loader, SegmentedControl, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import {
+  Alert,
+  Group,
+  Loader,
+  SegmentedControl,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -12,6 +21,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
 import { overviewRoute } from '../../router.tsx'
+import { formatPercent } from '../../utils/percent.ts'
 
 const RANGES: SiteAnalyticsRange[] = ['7d', '30d', '90d']
 
@@ -30,6 +40,8 @@ export function OverviewPage() {
   const analyticsQuery = useQuery(
     siteAnalyticsOverviewOptions({ path: { slug: slug }, query: { range } }),
   )
+
+  const abuseWarning = analyticsQuery.data?.abuseWarning
 
   return (
     <Stack>
@@ -50,6 +62,16 @@ export function OverviewPage() {
           title={t(($) => $.analytics.loadError)}
           fallback={t(($) => $.analytics.loadError)}
         />
+      )}
+
+      {abuseWarning && (
+        <Alert color="yellow" title={t(($) => $.analytics.abuseWarning.title)}>
+          {t(($) => $.analytics.abuseWarning.description, {
+            metric: t(($) => $.analytics.abuseWarning.metrics[abuseWarning.metric]),
+            rate: formatPercent(abuseWarning.rate),
+            domain: abuseWarning.domain,
+          })}
+        </Alert>
       )}
 
       {analyticsQuery.data && (

@@ -364,3 +364,35 @@ func TestConfigLoadSMTPAllowPrivateHostsFollowsTheEnvironmentUnlessSet(t *testin
 		t.Fatal("an explicit false must win over the environment default")
 	}
 }
+
+func TestConfigLoadAbuseLimitsDefaultToTheADR(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	cfg, err := Load("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AbuseVolumeFloor != 1000 || cfg.AbuseWarnComplaintPercent != 0.1 || cfg.AbuseWarnBouncePercent != 5 ||
+		cfg.AbuseFreezeComplaintPercent != 0.3 || cfg.AbuseFreezeBouncePercent != 10 {
+		t.Fatalf("limits = %+v", cfg)
+	}
+}
+
+func TestConfigLoadRejectsAbuseLimitsThatCannotWork(t *testing.T) {
+	for name, env := range map[string]map[string]string{
+		"zero floor":                  {"ABUSE_VOLUME_FLOOR": "0"},
+		"warning at the freeze":       {"ABUSE_WARN_COMPLAINT_PERCENT": "0.3"},
+		"bounce warning above freeze": {"ABUSE_WARN_BOUNCE_PERCENT": "11"},
+		"freeze above 100":            {"ABUSE_FREEZE_BOUNCE_PERCENT": "101"},
+		"zero warning":                {"ABUSE_WARN_BOUNCE_PERCENT": "0"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("DATABASE_URL", "postgres://x")
+			for k, v := range env {
+				t.Setenv(k, v)
+			}
+			if _, err := Load("test"); err == nil {
+				t.Fatal("want an error")
+			}
+		})
+	}
+}

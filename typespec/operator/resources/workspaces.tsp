@@ -43,6 +43,45 @@ model OperatorWorkspaceResource {
 
   /** Present only while sending is suspended */
   suspension?: OperatorSuspension | null;
+
+  /** Exempt from the abuse detector (set by an Operator) */
+  exempt: boolean;
+
+  /** The owners were warned and the Workspace has not left the warning tier since */
+  warned: boolean;
+}
+
+/** Which metric of a Sending domain breached the abuse detector's warning limit */
+enum OperatorAbuseMetric {
+  complaint,
+  bounce,
+}
+
+/** A Sending domain in the warning tier (ADR 0026), by the detector's own computation */
+model OperatorAbuseWarning {
+  domain: string;
+  metric: OperatorAbuseMetric;
+
+  /** The rate, 0–1 */
+  rate: float64;
+}
+
+/** A Workspace's standing with the abuse detector (ADR 0026) */
+model OperatorAbuse {
+  /** Exempt from the detector: neither warned nor frozen automatically */
+  exempt: boolean;
+
+  /** When an Operator last lifted a suspension; the detector counts only Events after it */
+  clearedAt?: Timestamp | null;
+
+  /** When the owners were told of the current warning; absent outside an episode */
+  warningNotifiedAt?: Timestamp | null;
+
+  /** When the owners were last told of a suspension */
+  freezeNotifiedAt?: Timestamp | null;
+
+  /** Present while the Workspace is in the warning tier, computed now */
+  warning?: OperatorAbuseWarning | null;
 }
 
 /** A rate as the (numerator, denominator, rate) triple (ADR 0011) */
@@ -118,10 +157,23 @@ model OperatorWorkspaceDetailResource {
   holds: OperatorHold[];
 
   deliverability: OperatorDeliverability;
+  abuse: OperatorAbuse;
+}
+
+/** Which Workspaces the list surfaces for review */
+enum OperatorWorkspaceReview {
+  /** The owners were warned and are still in the warning tier */
+  warned,
+
+  /** Suspended by the abuse detector (actor `system`) */
+  systemFrozen,
 }
 
 /** Search filter of the Workspace list */
 model OperatorWorkspaceSearch {
+  /** Only Workspaces in this review state */
+  @query review?: OperatorWorkspaceReview;
+
   /** Only Workspaces whose slug contains this text (case-insensitive) */
   @query slug?: string;
 }
@@ -131,6 +183,13 @@ model OperatorSuspendInput {
   /** The reason, required: the Workspace owner is told why sending stopped */
   @minLength(1)
   reason: string;
+}
+
+/** The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether
+ * anything changed */
+model OperatorExemptionChange {
+  changed: boolean;
+  workspace: OperatorWorkspaceResource;
 }
 
 /** The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether
@@ -174,6 +233,24 @@ namespace OperatorWorkspaces {
   @post
   op unsuspend(@path workspaceId: EntityId):
     | OperatorSuspensionChange
+    | UnauthorizedProblem
+    | NotFoundProblem;
+
+  /** Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor
+   * frozen automatically, but stays listed with its rates and can still be suspended by
+   * hand. Audited. Idempotent. */
+  @route("/{workspaceId}/exempt")
+  @post
+  op exempt(@path workspaceId: EntityId):
+    | OperatorExemptionChange
+    | UnauthorizedProblem
+    | NotFoundProblem;
+
+  /** Police a Workspace by the abuse detector again. Audited. Idempotent. */
+  @route("/{workspaceId}/unexempt")
+  @post
+  op unexempt(@path workspaceId: EntityId):
+    | OperatorExemptionChange
     | UnauthorizedProblem
     | NotFoundProblem;
 }

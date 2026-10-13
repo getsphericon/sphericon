@@ -62,6 +62,8 @@ const (
 	ActionWorkspaceUpdate             = "workspace.update"
 	ActionWorkspaceSuspend            = "workspace.suspend"
 	ActionWorkspaceUnsuspend          = "workspace.unsuspend"
+	ActionWorkspaceAbuseExempt        = "workspace.abuse_exempt"
+	ActionWorkspaceAbuseUnexempt      = "workspace.abuse_unexempt"
 	ActionContactImport               = "contact.import"
 	ActionAuditLogExport              = "audit_log.export"
 )
@@ -84,6 +86,8 @@ var ExplicitAuditActions = []string{
 	ActionWorkspaceUpdate,
 	ActionWorkspaceSuspend,
 	ActionWorkspaceUnsuspend,
+	ActionWorkspaceAbuseExempt,
+	ActionWorkspaceAbuseUnexempt,
 	ActionContactImport,
 	ActionAuditLogExport,
 }

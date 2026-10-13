@@ -16,6 +16,7 @@ import (
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
+	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/operator"
 	"github.com/getsphericon/sphericon/ent"
@@ -513,7 +514,11 @@ func (a *App) SuspendWorkspace(ctx context.Context, slug string, by suspension.A
 	if err != nil {
 		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
 	}
-	if err := jobs.NotifyWorkspaceSuspended(ctx, client.Client, sys.EmailSender, id); err != nil {
+	cfg, err := do.Invoke[*config.Config](a.injector)
+	if err != nil {
+		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
+	}
+	if err := jobs.NotifyWorkspaceSuspended(ctx, client.Client, sys.EmailSender, cfg.SupportEmail, id); err != nil {
 		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
 	}
 	return true, nil
@@ -769,7 +774,9 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 		edition, err := ee.New(client.Client, lic, cipher, cfg.JWTSecret, operator.Config{
-			Secret: cfg.OperatorJWTSecret, SessionTTL: cfg.OperatorSessionTTL, HoldMaxExpiry: cfg.OperatorHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
+			Abuse:        abuse.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
+			SupportEmail: cfg.SupportEmail,
+			Secret:       cfg.OperatorJWTSecret, SessionTTL: cfg.OperatorSessionTTL, HoldMaxExpiry: cfg.OperatorHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
 		})
 		if err != nil {
 			return nil, err
@@ -890,8 +897,12 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
 		jc, err := jobs.NewClient(pool.Pool, client.Client, database.DB, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL,
-			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention}, edition.Jobs())
+			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention}, edition.Jobs(bus.Bus, sys.EmailSender))
 		if err != nil {
 			return nil, err
 		}
@@ -1373,7 +1384,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		return apisite.Deps{}, err
 	}
 	return apisite.Deps{
-		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured,
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Automations: auto,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, Integrations: integ,

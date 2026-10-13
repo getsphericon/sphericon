@@ -230,7 +230,7 @@ func TestOwnerNotificationsSurfaceSenderErrors(t *testing.T) {
 	env.SystemMail.SetErr(errors.New("smtp down"))
 
 	require.Error(t, jobs.NotifySendingDomainUnverified(ctx, env.DB, env.SystemMail, fixtures.SendingDomainVerifiedID))
-	require.Error(t, jobs.NotifyWorkspaceSuspended(ctx, env.DB, env.SystemMail, fixtures.AcmeID))
+	require.Error(t, jobs.NotifyWorkspaceSuspended(ctx, env.DB, env.SystemMail, "", fixtures.AcmeID))
 	require.Error(t, jobs.NotifySendingDomainUnverified(ctx, env.DB, env.SystemMail, 424242), "unknown domain")
 }
 

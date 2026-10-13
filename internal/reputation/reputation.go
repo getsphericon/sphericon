@@ -44,6 +44,17 @@ type DomainRates struct {
 	Bounce Rate
 }
 
+// Window is the span the rates are over: events from Since up to, not including, Until.
+type Window struct {
+	Since, Until time.Time
+}
+
+// Trailing is the window of the given length ending now.
+func Trailing(d time.Duration) Window {
+	now := time.Now()
+	return Window{Since: now.Add(-d), Until: now}
+}
+
 // Module reads the rates.
 type Module struct{}
 
@@ -52,9 +63,8 @@ func New() *Module {
 	return &Module{}
 }
 
-// Rates returns the rates of every Sending domain of the workspace over the trailing
-// window ending now. A domain with no traffic is still listed, with undefined rates.
-func (m *Module) Rates(ctx context.Context, s *ent.Scoped, window time.Duration) ([]DomainRates, error) {
+// Rates returns the rates of every Sending domain of the workspace over the window. A domain with no traffic is still listed, with undefined rates.
+func (m *Module) Rates(ctx context.Context, s *ent.Scoped, w Window) ([]DomainRates, error) {
 	domains, err := s.SendingDomain().Query().
 		Order(ent.Asc(sendingdomain.FieldID)).
 		All(ctx)
@@ -62,13 +72,12 @@ func (m *Module) Rates(ctx context.Context, s *ent.Scoped, window time.Duration)
 		return nil, err
 	}
 
-	since := time.Now().Add(-window)
 	out := make([]DomainRates, 0, len(domains))
 	for _, d := range domains {
 		count := func(action string, extra ...predicate.Event) (int, error) {
 			preds := append([]predicate.Event{
 				event.Action(action),
-				inWindow(since), onDomain(d.Domain),
+				inWindow(w), onDomain(d.Domain),
 			}, extra...)
 			return s.Event().Query().Where(preds...).Count(ctx)
 		}
@@ -94,11 +103,14 @@ func (m *Module) Rates(ctx context.Context, s *ent.Scoped, window time.Duration)
 }
 
 // inWindow selects Events by their own occurrence time (falling back to ingest time).
-func inWindow(since time.Time) predicate.Event {
+func inWindow(w Window) predicate.Event {
 	return func(s *sql.Selector) {
+		at := "COALESCE(" + s.C(event.FieldOccurredAt) + ", " + s.C(event.FieldCreatedAt) + ")"
 		s.Where(sql.P(func(b *sql.Builder) {
-			b.WriteString("COALESCE(" + s.C(event.FieldOccurredAt) + ", " + s.C(event.FieldCreatedAt) + ")")
-			b.WriteOp(sql.OpGTE).Arg(since)
+			b.WriteString(at)
+			b.WriteOp(sql.OpGTE).Arg(w.Since)
+			b.WriteString(" AND " + at)
+			b.WriteOp(sql.OpLT).Arg(w.Until)
 		}))
 	}
 }

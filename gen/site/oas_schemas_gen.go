@@ -1577,6 +1577,74 @@ func (o OptNilInt32) Or(d int32) int32 {
 	return d
 }
 
+// NewOptNilSiteAbuseWarning returns new OptNilSiteAbuseWarning with value set to v.
+func NewOptNilSiteAbuseWarning(v SiteAbuseWarning) OptNilSiteAbuseWarning {
+	return OptNilSiteAbuseWarning{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSiteAbuseWarning is optional nullable SiteAbuseWarning.
+type OptNilSiteAbuseWarning struct {
+	Value SiteAbuseWarning
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSiteAbuseWarning was set.
+func (o OptNilSiteAbuseWarning) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSiteAbuseWarning) Reset() {
+	var v SiteAbuseWarning
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSiteAbuseWarning) SetTo(v SiteAbuseWarning) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSiteAbuseWarning) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSiteAbuseWarning) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SiteAbuseWarning
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSiteAbuseWarning) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSiteAbuseWarning) Get() (v SiteAbuseWarning, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSiteAbuseWarning) Or(d SiteAbuseWarning) SiteAbuseWarning {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilSiteAuditEntryResourceDiff returns new OptNilSiteAuditEntryResourceDiff with value set to v.
 func NewOptNilSiteAuditEntryResourceDiff(v SiteAuditEntryResourceDiff) OptNilSiteAuditEntryResourceDiff {
 	return OptNilSiteAuditEntryResourceDiff{
@@ -3084,6 +3152,92 @@ func (*ProblemDetailsHeaders) siteSecondFactorDisableRes()                 {}
 func (*ProblemDetailsHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
 
+// The metric of a Sending domain that is over a warning limit of the abuse detector.
+// Ref: #/components/schemas/SiteAbuseMetric
+type SiteAbuseMetric string
+
+const (
+	SiteAbuseMetricComplaint SiteAbuseMetric = "complaint"
+	SiteAbuseMetricBounce    SiteAbuseMetric = "bounce"
+)
+
+// AllValues returns all SiteAbuseMetric values.
+func (SiteAbuseMetric) AllValues() []SiteAbuseMetric {
+	return []SiteAbuseMetric{
+		SiteAbuseMetricComplaint,
+		SiteAbuseMetricBounce,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAbuseMetric) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAbuseMetricComplaint:
+		return []byte(s), nil
+	case SiteAbuseMetricBounce:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAbuseMetric) UnmarshalText(data []byte) error {
+	switch SiteAbuseMetric(data) {
+	case SiteAbuseMetricComplaint:
+		*s = SiteAbuseMetricComplaint
+		return nil
+	case SiteAbuseMetricBounce:
+		*s = SiteAbuseMetricBounce
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is over the warning
+// limit but under the freeze limit. Computed live from the trailing 24 hours since any clearance,
+// never stored.
+// Ref: #/components/schemas/SiteAbuseWarning
+type SiteAbuseWarning struct {
+	// The Sending domain over the limit.
+	Domain string `json:"domain"`
+	// Which rate is over.
+	Metric SiteAbuseMetric `json:"metric"`
+	// The rate, 0–1.
+	Rate float64 `json:"rate"`
+}
+
+// GetDomain returns the value of Domain.
+func (s *SiteAbuseWarning) GetDomain() string {
+	return s.Domain
+}
+
+// GetMetric returns the value of Metric.
+func (s *SiteAbuseWarning) GetMetric() SiteAbuseMetric {
+	return s.Metric
+}
+
+// GetRate returns the value of Rate.
+func (s *SiteAbuseWarning) GetRate() float64 {
+	return s.Rate
+}
+
+// SetDomain sets the value of Domain.
+func (s *SiteAbuseWarning) SetDomain(val string) {
+	s.Domain = val
+}
+
+// SetMetric sets the value of Metric.
+func (s *SiteAbuseWarning) SetMetric(val SiteAbuseMetric) {
+	s.Metric = val
+}
+
+// SetRate sets the value of Rate.
+func (s *SiteAbuseWarning) SetRate(val float64) {
+	s.Rate = val
+}
+
 // Accept an invite. For an address with no User or an Unverified User, name + password are required
 // (422 otherwise). For a Verified User the body is not read: the session of that same User is the
 // proof.
@@ -3350,6 +3504,9 @@ type SiteAnalyticsOverview struct {
 	Automations SiteAnalyticsAutomations `json:"automations"`
 	// Daily engagement series, oldest first, one point per day in the range.
 	Timeseries []SiteAnalyticsPoint `json:"timeseries"`
+	// Present while the Workspace is in the abuse detector's warning tier; absent otherwise and without
+	// the `operator` license.
+	AbuseWarning OptNilSiteAbuseWarning `json:"abuseWarning"`
 }
 
 // GetContacts returns the value of Contacts.
@@ -3372,6 +3529,11 @@ func (s *SiteAnalyticsOverview) GetTimeseries() []SiteAnalyticsPoint {
 	return s.Timeseries
 }
 
+// GetAbuseWarning returns the value of AbuseWarning.
+func (s *SiteAnalyticsOverview) GetAbuseWarning() OptNilSiteAbuseWarning {
+	return s.AbuseWarning
+}
+
 // SetContacts sets the value of Contacts.
 func (s *SiteAnalyticsOverview) SetContacts(val SiteAnalyticsContacts) {
 	s.Contacts = val
@@ -3390,6 +3552,11 @@ func (s *SiteAnalyticsOverview) SetAutomations(val SiteAnalyticsAutomations) {
 // SetTimeseries sets the value of Timeseries.
 func (s *SiteAnalyticsOverview) SetTimeseries(val []SiteAnalyticsPoint) {
 	s.Timeseries = val
+}
+
+// SetAbuseWarning sets the value of AbuseWarning.
+func (s *SiteAnalyticsOverview) SetAbuseWarning(val OptNilSiteAbuseWarning) {
+	s.AbuseWarning = val
 }
 
 func (*SiteAnalyticsOverview) siteAnalyticsOverviewRes() {}
@@ -11695,6 +11862,8 @@ type SiteWorkspaceResource struct {
 	SuspendedAt OptNilTimestamp `json:"suspendedAt"`
 	// Why sending was suspended, shown to the owner; present only while suspended.
 	SuspensionReason OptNilString `json:"suspensionReason"`
+	// Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance configured none.
+	SupportEmail OptNilString `json:"supportEmail"`
 	// The Operator holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
@@ -11756,6 +11925,11 @@ func (s *SiteWorkspaceResource) GetSuspendedAt() OptNilTimestamp {
 // GetSuspensionReason returns the value of SuspensionReason.
 func (s *SiteWorkspaceResource) GetSuspensionReason() OptNilString {
 	return s.SuspensionReason
+}
+
+// GetSupportEmail returns the value of SupportEmail.
+func (s *SiteWorkspaceResource) GetSupportEmail() OptNilString {
+	return s.SupportEmail
 }
 
 // GetHolds returns the value of Holds.
@@ -11826,6 +12000,11 @@ func (s *SiteWorkspaceResource) SetSuspendedAt(val OptNilTimestamp) {
 // SetSuspensionReason sets the value of SuspensionReason.
 func (s *SiteWorkspaceResource) SetSuspensionReason(val OptNilString) {
 	s.SuspensionReason = val
+}
+
+// SetSupportEmail sets the value of SupportEmail.
+func (s *SiteWorkspaceResource) SetSupportEmail(val OptNilString) {
+	s.SupportEmail = val
 }
 
 // SetHolds sets the value of Holds.

@@ -463,6 +463,26 @@ const (
 	InvitationGlobexEmail = "invited@globex.test"
 	// InvitationGlobexID is from fixtures/invitations.
 	InvitationGlobexID = 900
+	// KramericaCollectKey is from fixtures/workspaces.
+	KramericaCollectKey = "omck_test_kramerica_collect_key"
+	// KramericaID is from fixtures/workspaces.
+	KramericaID = 8
+	// KramericaIngestKey is from fixtures/workspaces.
+	KramericaIngestKey = "omik_test_kramerica_ingest_key"
+	// KramericaName is from fixtures/workspaces.
+	KramericaName = "Kramerica"
+	// KramericaNewmanMembershipID is from fixtures/memberships.
+	KramericaNewmanMembershipID = 16
+	// KramericaOwnerNewmanEmail is from fixtures/users.
+	KramericaOwnerNewmanEmail = "newman@kramerica.test"
+	// KramericaOwnerNewmanID is from fixtures/users.
+	KramericaOwnerNewmanID = 14
+	// KramericaOwnerNewmanName is from fixtures/users.
+	KramericaOwnerNewmanName = "Newman"
+	// KramericaOwnerNewmanPassword is from fixtures/users.
+	KramericaOwnerNewmanPassword = "newman-test-password"
+	// KramericaSlug is from fixtures/workspaces.
+	KramericaSlug = "kramerica"
 	// MemberMaryEmail is from fixtures/users.
 	MemberMaryEmail = "mary@acme.test"
 	// MemberMaryID is from fixtures/users.
@@ -583,6 +603,10 @@ const (
 	SendingDomainInitechDomain = "mail.initech.test"
 	// SendingDomainInitechID is from fixtures/sending_domains.
 	SendingDomainInitechID = 300
+	// SendingDomainKramericaDomain is from fixtures/sending_domains.
+	SendingDomainKramericaDomain = "mail.kramerica.test"
+	// SendingDomainKramericaID is from fixtures/sending_domains.
+	SendingDomainKramericaID = 420
 	// SendingDomainSoylentDomain is from fixtures/sending_domains.
 	SendingDomainSoylentDomain = "mail.soylent.test"
 	// SendingDomainSoylentID is from fixtures/sending_domains.
@@ -595,6 +619,14 @@ const (
 	SendingDomainUnverifiedDomain = "news.acme.com"
 	// SendingDomainUnverifiedID is from fixtures/sending_domains.
 	SendingDomainUnverifiedID = 2
+	// SendingDomainVandelayDomain is from fixtures/sending_domains.
+	SendingDomainVandelayDomain = "mail.vandelay.test"
+	// SendingDomainVandelayID is from fixtures/sending_domains.
+	SendingDomainVandelayID = 410
+	// SendingDomainVandelayNewsDomain is from fixtures/sending_domains.
+	SendingDomainVandelayNewsDomain = "news.vandelay.test"
+	// SendingDomainVandelayNewsID is from fixtures/sending_domains.
+	SendingDomainVandelayNewsID = 411
 	// SendingDomainVerifiedDomain is from fixtures/sending_domains.
 	SendingDomainVerifiedDomain = "mail.acme.com"
 	// SendingDomainVerifiedID is from fixtures/sending_domains.
@@ -731,6 +763,36 @@ const (
 	UnsubscribeGlobexDestination = "pat@globex.test"
 	// UnsubscribeGlobexID is from fixtures/unsubscribes.
 	UnsubscribeGlobexID = 900
+	// VandelayArtMembershipID is from fixtures/memberships.
+	VandelayArtMembershipID = 14
+	// VandelayCollectKey is from fixtures/workspaces.
+	VandelayCollectKey = "omck_test_vandelay_collect_key"
+	// VandelayCosmoMembershipID is from fixtures/memberships.
+	VandelayCosmoMembershipID = 15
+	// VandelayID is from fixtures/workspaces.
+	VandelayID = 7
+	// VandelayIngestKey is from fixtures/workspaces.
+	VandelayIngestKey = "omik_test_vandelay_ingest_key"
+	// VandelayName is from fixtures/workspaces.
+	VandelayName = "Vandelay"
+	// VandelayOwnerArtEmail is from fixtures/users.
+	VandelayOwnerArtEmail = "art@vandelay.test"
+	// VandelayOwnerArtID is from fixtures/users.
+	VandelayOwnerArtID = 12
+	// VandelayOwnerArtName is from fixtures/users.
+	VandelayOwnerArtName = "Art"
+	// VandelayOwnerArtPassword is from fixtures/users.
+	VandelayOwnerArtPassword = "art-test-password"
+	// VandelayOwnerCosmoEmail is from fixtures/users.
+	VandelayOwnerCosmoEmail = "cosmo@vandelay.test"
+	// VandelayOwnerCosmoID is from fixtures/users.
+	VandelayOwnerCosmoID = 13
+	// VandelayOwnerCosmoName is from fixtures/users.
+	VandelayOwnerCosmoName = "Cosmo"
+	// VandelayOwnerCosmoPassword is from fixtures/users.
+	VandelayOwnerCosmoPassword = "cosmo-test-password"
+	// VandelaySlug is from fixtures/workspaces.
+	VandelaySlug = "vandelay"
 	// VisitorAnonymousID is from fixtures/visitors.
 	VisitorAnonymousID = 301
 	// VisitorErasableID is from fixtures/visitors.

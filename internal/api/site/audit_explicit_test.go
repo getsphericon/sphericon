@@ -261,6 +261,10 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42")) // workspace.unsuspend
 	require.NoError(t, err)
+	_, err = suspension.SetAbuseExempt(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), true) // workspace.abuse_exempt
+	require.NoError(t, err)
+	_, err = suspension.SetAbuseExempt(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), false) // workspace.abuse_unexempt
+	require.NoError(t, err)
 
 	_, err = env.ExternalAnchor(t).ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{ // contact.import
 		Contacts: []externalapi.UpsertContactInput{{Email: externalapi.NewOptNilEmailAddress("explicit.import@example.org")}}})

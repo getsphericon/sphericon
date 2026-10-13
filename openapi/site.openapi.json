@@ -7512,6 +7512,35 @@
         },
         "description": "RFC 7807 Problem Details"
       },
+      "SiteAbuseMetric": {
+        "type": "string",
+        "enum": ["complaint", "bounce"],
+        "description": "The metric of a Sending domain that is over a warning limit of the abuse detector"
+      },
+      "SiteAbuseWarning": {
+        "type": "object",
+        "required": ["domain", "metric", "rate"],
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The Sending domain over the limit"
+          },
+          "metric": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAbuseMetric"
+              }
+            ],
+            "description": "Which rate is over"
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "description": "The rate, 0–1"
+          }
+        },
+        "description": "A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is\nover the warning limit but under the freeze limit. Computed live from the trailing\n24 hours since any clearance, never stored."
+      },
       "SiteAcceptInvitationInput": {
         "type": "object",
         "properties": {
@@ -7664,6 +7693,16 @@
               "$ref": "#/components/schemas/SiteAnalyticsPoint"
             },
             "description": "Daily engagement series, oldest first, one point per day in the range"
+          },
+          "abuseWarning": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAbuseWarning"
+              }
+            ],
+            "nullable": true,
+            "description": "Present while the Workspace is in the abuse detector's warning tier; absent\notherwise and without the `operator` license"
           }
         },
         "description": "Workspace analytics overview powering the dashboard"
@@ -10555,6 +10594,11 @@
             "type": "string",
             "nullable": true,
             "description": "Why sending was suspended, shown to the owner; present only while suspended."
+          },
+          "supportEmail": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance\nconfigured none."
           },
           "holds": {
             "type": "array",

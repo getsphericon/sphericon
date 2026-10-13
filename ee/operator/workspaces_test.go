@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent/event"
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -22,7 +22,7 @@ import (
 // (never Contacts, content, Events or the Workspace's secret keys).
 func requireMetadataOnly(t *testing.T, w map[string]any) {
 	t.Helper()
-	allowed := []string{"id", "slug", "name", "createdAt", "suspension", "deliverability", "holds"}
+	allowed := []string{"id", "slug", "name", "createdAt", "suspension", "deliverability", "holds", "exempt", "warned", "abuse"}
 	for k := range w {
 		assert.Contains(t, allowed, k)
 	}
@@ -69,8 +69,8 @@ func TestTheWorkspaceListShowsEveryWorkspaceNewestFirst(t *testing.T) {
 
 	page := h.listWorkspaces(t, c, operatorapi.OperatorWorkspacesListParams{})
 
-	assert.Equal(t, []string{"soylent", "hooli", "umbrella", "initech", "globex", "acme"}, slugs(page.Items))
-	assert.EqualValues(t, 6, page.TotalItems)
+	assert.Equal(t, []string{"kramerica", "vandelay", "soylent", "hooli", "umbrella", "initech", "globex", "acme"}, slugs(page.Items))
+	assert.EqualValues(t, 8, page.TotalItems)
 	assert.EqualValues(t, 1, page.TotalPages)
 	assert.EqualValues(t, 1, page.Page)
 }
@@ -83,9 +83,9 @@ func TestTheWorkspaceListIsPaginated(t *testing.T) {
 		Page: operatorapi.NewOptInt32(2), PageSize: operatorapi.NewOptInt32(2),
 	})
 
-	assert.Equal(t, []string{"umbrella", "initech"}, slugs(second.Items))
-	assert.EqualValues(t, 6, second.TotalItems)
-	assert.EqualValues(t, 3, second.TotalPages)
+	assert.Equal(t, []string{"soylent", "hooli"}, slugs(second.Items))
+	assert.EqualValues(t, 8, second.TotalItems)
+	assert.EqualValues(t, 4, second.TotalPages)
 	assert.EqualValues(t, 2, second.PageSize)
 }
 
@@ -249,7 +249,7 @@ func TestTheSendVolumeIsTheCountOfSentEventsInTheWindow(t *testing.T) {
 	inWindow := func() int {
 		return s.Event().Query().Where(
 			event.Action(events.NameEmailSent),
-			event.OccurredAtGTE(time.Now().Add(-operator.RateWindow)),
+			event.OccurredAtGTE(time.Now().Add(-abuse.Window)),
 		).CountX(ctx)
 	}
 	require.Equal(t, 8, inWindow(), "the fixtures hold 8 sends in the window")
@@ -260,7 +260,7 @@ func TestTheSendVolumeIsTheCountOfSentEventsInTheWindow(t *testing.T) {
 		SetOccurredAt(time.Now().Add(-time.Hour)).Exec(ctx))
 	require.NoError(t, s.Event().Create().SetAction(events.NameEmailSent).SetEmail("old@example.com").
 		SetProperties(map[string]any{"sendingDomain": fixtures.SendingDomainSoylentDomain}).
-		SetOccurredAt(time.Now().Add(-operator.RateWindow-time.Hour)).Exec(ctx))
+		SetOccurredAt(time.Now().Add(-abuse.Window-time.Hour)).Exec(ctx))
 
 	assert.Equal(t, 9, inWindow())
 	assert.EqualValues(t, 9, soylentDeliverabilityAs(t, h, c).SendVolume, "a new send counts, one past the window does not")

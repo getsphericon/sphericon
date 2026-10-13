@@ -83,6 +83,153 @@ func (o NilFloat64) Or(d float64) float64 {
 	return d
 }
 
+// A Workspace's standing with the abuse detector (ADR 0026).
+// Ref: #/components/schemas/OperatorAbuse
+type OperatorAbuse struct {
+	// Exempt from the detector: neither warned nor frozen automatically.
+	Exempt bool `json:"exempt"`
+	// When an Operator last lifted a suspension; the detector counts only Events after it.
+	ClearedAt OptNilTimestamp `json:"clearedAt"`
+	// When the owners were told of the current warning; absent outside an episode.
+	WarningNotifiedAt OptNilTimestamp `json:"warningNotifiedAt"`
+	// When the owners were last told of a suspension.
+	FreezeNotifiedAt OptNilTimestamp `json:"freezeNotifiedAt"`
+	// Present while the Workspace is in the warning tier, computed now.
+	Warning OptNilOperatorAbuseWarning `json:"warning"`
+}
+
+// GetExempt returns the value of Exempt.
+func (s *OperatorAbuse) GetExempt() bool {
+	return s.Exempt
+}
+
+// GetClearedAt returns the value of ClearedAt.
+func (s *OperatorAbuse) GetClearedAt() OptNilTimestamp {
+	return s.ClearedAt
+}
+
+// GetWarningNotifiedAt returns the value of WarningNotifiedAt.
+func (s *OperatorAbuse) GetWarningNotifiedAt() OptNilTimestamp {
+	return s.WarningNotifiedAt
+}
+
+// GetFreezeNotifiedAt returns the value of FreezeNotifiedAt.
+func (s *OperatorAbuse) GetFreezeNotifiedAt() OptNilTimestamp {
+	return s.FreezeNotifiedAt
+}
+
+// GetWarning returns the value of Warning.
+func (s *OperatorAbuse) GetWarning() OptNilOperatorAbuseWarning {
+	return s.Warning
+}
+
+// SetExempt sets the value of Exempt.
+func (s *OperatorAbuse) SetExempt(val bool) {
+	s.Exempt = val
+}
+
+// SetClearedAt sets the value of ClearedAt.
+func (s *OperatorAbuse) SetClearedAt(val OptNilTimestamp) {
+	s.ClearedAt = val
+}
+
+// SetWarningNotifiedAt sets the value of WarningNotifiedAt.
+func (s *OperatorAbuse) SetWarningNotifiedAt(val OptNilTimestamp) {
+	s.WarningNotifiedAt = val
+}
+
+// SetFreezeNotifiedAt sets the value of FreezeNotifiedAt.
+func (s *OperatorAbuse) SetFreezeNotifiedAt(val OptNilTimestamp) {
+	s.FreezeNotifiedAt = val
+}
+
+// SetWarning sets the value of Warning.
+func (s *OperatorAbuse) SetWarning(val OptNilOperatorAbuseWarning) {
+	s.Warning = val
+}
+
+// Which metric of a Sending domain breached the abuse detector's warning limit.
+// Ref: #/components/schemas/OperatorAbuseMetric
+type OperatorAbuseMetric string
+
+const (
+	OperatorAbuseMetricComplaint OperatorAbuseMetric = "complaint"
+	OperatorAbuseMetricBounce    OperatorAbuseMetric = "bounce"
+)
+
+// AllValues returns all OperatorAbuseMetric values.
+func (OperatorAbuseMetric) AllValues() []OperatorAbuseMetric {
+	return []OperatorAbuseMetric{
+		OperatorAbuseMetricComplaint,
+		OperatorAbuseMetricBounce,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s OperatorAbuseMetric) MarshalText() ([]byte, error) {
+	switch s {
+	case OperatorAbuseMetricComplaint:
+		return []byte(s), nil
+	case OperatorAbuseMetricBounce:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *OperatorAbuseMetric) UnmarshalText(data []byte) error {
+	switch OperatorAbuseMetric(data) {
+	case OperatorAbuseMetricComplaint:
+		*s = OperatorAbuseMetricComplaint
+		return nil
+	case OperatorAbuseMetricBounce:
+		*s = OperatorAbuseMetricBounce
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Sending domain in the warning tier (ADR 0026), by the detector's own computation.
+// Ref: #/components/schemas/OperatorAbuseWarning
+type OperatorAbuseWarning struct {
+	Domain string              `json:"domain"`
+	Metric OperatorAbuseMetric `json:"metric"`
+	// The rate, 0–1.
+	Rate float64 `json:"rate"`
+}
+
+// GetDomain returns the value of Domain.
+func (s *OperatorAbuseWarning) GetDomain() string {
+	return s.Domain
+}
+
+// GetMetric returns the value of Metric.
+func (s *OperatorAbuseWarning) GetMetric() OperatorAbuseMetric {
+	return s.Metric
+}
+
+// GetRate returns the value of Rate.
+func (s *OperatorAbuseWarning) GetRate() float64 {
+	return s.Rate
+}
+
+// SetDomain sets the value of Domain.
+func (s *OperatorAbuseWarning) SetDomain(val string) {
+	s.Domain = val
+}
+
+// SetMetric sets the value of Metric.
+func (s *OperatorAbuseWarning) SetMetric(val OperatorAbuseMetric) {
+	s.Metric = val
+}
+
+// SetRate sets the value of Rate.
+func (s *OperatorAbuseWarning) SetRate(val float64) {
+	s.Rate = val
+}
+
 // The actor of an Audit entry.
 // Ref: #/components/schemas/OperatorAuditActor
 type OperatorAuditActor struct {
@@ -549,6 +696,36 @@ func (s *OperatorEnrolment) SetURI(val string) {
 func (s *OperatorEnrolment) SetQrCode(val string) {
 	s.QrCode = val
 }
+
+// The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether anything changed.
+// Ref: #/components/schemas/OperatorExemptionChange
+type OperatorExemptionChange struct {
+	Changed   bool                      `json:"changed"`
+	Workspace OperatorWorkspaceResource `json:"workspace"`
+}
+
+// GetChanged returns the value of Changed.
+func (s *OperatorExemptionChange) GetChanged() bool {
+	return s.Changed
+}
+
+// GetWorkspace returns the value of Workspace.
+func (s *OperatorExemptionChange) GetWorkspace() OperatorWorkspaceResource {
+	return s.Workspace
+}
+
+// SetChanged sets the value of Changed.
+func (s *OperatorExemptionChange) SetChanged(val bool) {
+	s.Changed = val
+}
+
+// SetWorkspace sets the value of Workspace.
+func (s *OperatorExemptionChange) SetWorkspace(val OperatorWorkspaceResource) {
+	s.Workspace = val
+}
+
+func (*OperatorExemptionChange) operatorWorkspacesExemptRes()   {}
+func (*OperatorExemptionChange) operatorWorkspacesUnexemptRes() {}
 
 // An active Operator hold on a Workspace, as the console shows it (read only).
 // Ref: #/components/schemas/OperatorHold
@@ -1062,9 +1239,14 @@ type OperatorWorkspaceDetailResource struct {
 	CreatedAt Timestamp `json:"createdAt"`
 	// Present only while sending is suspended.
 	Suspension OptNilOperatorSuspension `json:"suspension"`
+	// Exempt from the abuse detector (set by an Operator).
+	Exempt bool `json:"exempt"`
+	// The owners were warned and the Workspace has not left the warning tier since.
+	Warned bool `json:"warned"`
 	// Active Operator holds by key; a lapsed hold is not listed.
 	Holds          []OperatorHold         `json:"holds"`
 	Deliverability OperatorDeliverability `json:"deliverability"`
+	Abuse          OperatorAbuse          `json:"abuse"`
 }
 
 // GetID returns the value of ID.
@@ -1092,6 +1274,16 @@ func (s *OperatorWorkspaceDetailResource) GetSuspension() OptNilOperatorSuspensi
 	return s.Suspension
 }
 
+// GetExempt returns the value of Exempt.
+func (s *OperatorWorkspaceDetailResource) GetExempt() bool {
+	return s.Exempt
+}
+
+// GetWarned returns the value of Warned.
+func (s *OperatorWorkspaceDetailResource) GetWarned() bool {
+	return s.Warned
+}
+
 // GetHolds returns the value of Holds.
 func (s *OperatorWorkspaceDetailResource) GetHolds() []OperatorHold {
 	return s.Holds
@@ -1100,6 +1292,11 @@ func (s *OperatorWorkspaceDetailResource) GetHolds() []OperatorHold {
 // GetDeliverability returns the value of Deliverability.
 func (s *OperatorWorkspaceDetailResource) GetDeliverability() OperatorDeliverability {
 	return s.Deliverability
+}
+
+// GetAbuse returns the value of Abuse.
+func (s *OperatorWorkspaceDetailResource) GetAbuse() OperatorAbuse {
+	return s.Abuse
 }
 
 // SetID sets the value of ID.
@@ -1127,6 +1324,16 @@ func (s *OperatorWorkspaceDetailResource) SetSuspension(val OptNilOperatorSuspen
 	s.Suspension = val
 }
 
+// SetExempt sets the value of Exempt.
+func (s *OperatorWorkspaceDetailResource) SetExempt(val bool) {
+	s.Exempt = val
+}
+
+// SetWarned sets the value of Warned.
+func (s *OperatorWorkspaceDetailResource) SetWarned(val bool) {
+	s.Warned = val
+}
+
 // SetHolds sets the value of Holds.
 func (s *OperatorWorkspaceDetailResource) SetHolds(val []OperatorHold) {
 	s.Holds = val
@@ -1135,6 +1342,11 @@ func (s *OperatorWorkspaceDetailResource) SetHolds(val []OperatorHold) {
 // SetDeliverability sets the value of Deliverability.
 func (s *OperatorWorkspaceDetailResource) SetDeliverability(val OperatorDeliverability) {
 	s.Deliverability = val
+}
+
+// SetAbuse sets the value of Abuse.
+func (s *OperatorWorkspaceDetailResource) SetAbuse(val OperatorAbuse) {
+	s.Abuse = val
 }
 
 func (*OperatorWorkspaceDetailResource) operatorWorkspacesGetRes() {}
@@ -1151,6 +1363,10 @@ type OperatorWorkspaceResource struct {
 	CreatedAt Timestamp `json:"createdAt"`
 	// Present only while sending is suspended.
 	Suspension OptNilOperatorSuspension `json:"suspension"`
+	// Exempt from the abuse detector (set by an Operator).
+	Exempt bool `json:"exempt"`
+	// The owners were warned and the Workspace has not left the warning tier since.
+	Warned bool `json:"warned"`
 }
 
 // GetID returns the value of ID.
@@ -1178,6 +1394,16 @@ func (s *OperatorWorkspaceResource) GetSuspension() OptNilOperatorSuspension {
 	return s.Suspension
 }
 
+// GetExempt returns the value of Exempt.
+func (s *OperatorWorkspaceResource) GetExempt() bool {
+	return s.Exempt
+}
+
+// GetWarned returns the value of Warned.
+func (s *OperatorWorkspaceResource) GetWarned() bool {
+	return s.Warned
+}
+
 // SetID sets the value of ID.
 func (s *OperatorWorkspaceResource) SetID(val EntityId) {
 	s.ID = val
@@ -1202,6 +1428,67 @@ func (s *OperatorWorkspaceResource) SetCreatedAt(val Timestamp) {
 func (s *OperatorWorkspaceResource) SetSuspension(val OptNilOperatorSuspension) {
 	s.Suspension = val
 }
+
+// SetExempt sets the value of Exempt.
+func (s *OperatorWorkspaceResource) SetExempt(val bool) {
+	s.Exempt = val
+}
+
+// SetWarned sets the value of Warned.
+func (s *OperatorWorkspaceResource) SetWarned(val bool) {
+	s.Warned = val
+}
+
+// Which Workspaces the list surfaces for review.
+// Ref: #/components/schemas/OperatorWorkspaceReview
+type OperatorWorkspaceReview string
+
+const (
+	OperatorWorkspaceReviewWarned       OperatorWorkspaceReview = "warned"
+	OperatorWorkspaceReviewSystemFrozen OperatorWorkspaceReview = "systemFrozen"
+)
+
+// AllValues returns all OperatorWorkspaceReview values.
+func (OperatorWorkspaceReview) AllValues() []OperatorWorkspaceReview {
+	return []OperatorWorkspaceReview{
+		OperatorWorkspaceReviewWarned,
+		OperatorWorkspaceReviewSystemFrozen,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s OperatorWorkspaceReview) MarshalText() ([]byte, error) {
+	switch s {
+	case OperatorWorkspaceReviewWarned:
+		return []byte(s), nil
+	case OperatorWorkspaceReviewSystemFrozen:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *OperatorWorkspaceReview) UnmarshalText(data []byte) error {
+	switch OperatorWorkspaceReview(data) {
+	case OperatorWorkspaceReviewWarned:
+		*s = OperatorWorkspaceReviewWarned
+		return nil
+	case OperatorWorkspaceReviewSystemFrozen:
+		*s = OperatorWorkspaceReviewSystemFrozen
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type OperatorWorkspacesExemptNotFound ProblemDetails
+
+func (*OperatorWorkspacesExemptNotFound) operatorWorkspacesExemptRes() {}
+
+type OperatorWorkspacesExemptUnauthorized ProblemDetails
+
+func (*OperatorWorkspacesExemptUnauthorized) operatorWorkspacesExemptRes() {}
 
 type OperatorWorkspacesGetNotFound ProblemDetails
 
@@ -1289,6 +1576,14 @@ type OperatorWorkspacesSuspendUnprocessableEntity ProblemDetails
 
 func (*OperatorWorkspacesSuspendUnprocessableEntity) operatorWorkspacesSuspendRes() {}
 
+type OperatorWorkspacesUnexemptNotFound ProblemDetails
+
+func (*OperatorWorkspacesUnexemptNotFound) operatorWorkspacesUnexemptRes() {}
+
+type OperatorWorkspacesUnexemptUnauthorized ProblemDetails
+
+func (*OperatorWorkspacesUnexemptUnauthorized) operatorWorkspacesUnexemptRes() {}
+
 type OperatorWorkspacesUnsuspendNotFound ProblemDetails
 
 func (*OperatorWorkspacesUnsuspendNotFound) operatorWorkspacesUnsuspendRes() {}
@@ -1337,6 +1632,74 @@ func (o OptInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilOperatorAbuseWarning returns new OptNilOperatorAbuseWarning with value set to v.
+func NewOptNilOperatorAbuseWarning(v OperatorAbuseWarning) OptNilOperatorAbuseWarning {
+	return OptNilOperatorAbuseWarning{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilOperatorAbuseWarning is optional nullable OperatorAbuseWarning.
+type OptNilOperatorAbuseWarning struct {
+	Value OperatorAbuseWarning
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilOperatorAbuseWarning was set.
+func (o OptNilOperatorAbuseWarning) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilOperatorAbuseWarning) Reset() {
+	var v OperatorAbuseWarning
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilOperatorAbuseWarning) SetTo(v OperatorAbuseWarning) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilOperatorAbuseWarning) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilOperatorAbuseWarning) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v OperatorAbuseWarning
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilOperatorAbuseWarning) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilOperatorAbuseWarning) Get() (v OperatorAbuseWarning, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilOperatorAbuseWarning) Or(d OperatorAbuseWarning) OperatorAbuseWarning {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -1547,6 +1910,74 @@ func (o OptNilString) Or(d string) string {
 	return d
 }
 
+// NewOptNilTimestamp returns new OptNilTimestamp with value set to v.
+func NewOptNilTimestamp(v Timestamp) OptNilTimestamp {
+	return OptNilTimestamp{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilTimestamp is optional nullable Timestamp.
+type OptNilTimestamp struct {
+	Value Timestamp
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilTimestamp was set.
+func (o OptNilTimestamp) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilTimestamp) Reset() {
+	var v Timestamp
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilTimestamp) SetTo(v Timestamp) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilTimestamp) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilTimestamp) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v Timestamp
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilTimestamp) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilTimestamp) Get() (v Timestamp, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilTimestamp) Or(d Timestamp) Timestamp {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptOperatorEnrolment returns new OptOperatorEnrolment with value set to v.
 func NewOptOperatorEnrolment(v OperatorEnrolment) OptOperatorEnrolment {
 	return OptOperatorEnrolment{
@@ -1587,6 +2018,52 @@ func (o OptOperatorEnrolment) Get() (v OperatorEnrolment, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptOperatorEnrolment) Or(d OperatorEnrolment) OperatorEnrolment {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptOperatorWorkspaceReview returns new OptOperatorWorkspaceReview with value set to v.
+func NewOptOperatorWorkspaceReview(v OperatorWorkspaceReview) OptOperatorWorkspaceReview {
+	return OptOperatorWorkspaceReview{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptOperatorWorkspaceReview is optional OperatorWorkspaceReview.
+type OptOperatorWorkspaceReview struct {
+	Value OperatorWorkspaceReview
+	Set   bool
+}
+
+// IsSet returns true if OptOperatorWorkspaceReview was set.
+func (o OptOperatorWorkspaceReview) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptOperatorWorkspaceReview) Reset() {
+	var v OperatorWorkspaceReview
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptOperatorWorkspaceReview) SetTo(v OperatorWorkspaceReview) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptOperatorWorkspaceReview) Get() (v OperatorWorkspaceReview, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptOperatorWorkspaceReview) Or(d OperatorWorkspaceReview) OperatorWorkspaceReview {
 	if v, ok := o.Get(); ok {
 		return v
 	}

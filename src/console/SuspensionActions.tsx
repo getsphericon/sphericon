@@ -8,17 +8,22 @@ import { useTranslation } from 'react-i18next'
 import {
   operatorWorkspacesGetQueryKey,
   operatorWorkspacesListQueryKey,
+  operatorWorkspacesExemptMutation,
   operatorWorkspacesSuspendMutation,
+  operatorWorkspacesUnexemptMutation,
   operatorWorkspacesUnsuspendMutation,
 } from '../generated/operator/@tanstack/react-query.gen.ts'
-import type { OperatorSuspensionChange } from '../generated/operator/types.gen.ts'
+import type {
+  OperatorExemptionChange,
+  OperatorSuspensionChange,
+} from '../generated/operator/types.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 
 // Both actions answer 200 with whether anything changed, so a no-op says so instead of
 // looking like a success.
 function useChangeNotice(changedMessage: string, unchangedMessage: string) {
   const { t } = useTranslation()
-  return (change: OperatorSuspensionChange) => {
+  return (change: OperatorSuspensionChange | OperatorExemptionChange) => {
     notifications.show(
       change.changed
         ? {
@@ -151,5 +156,58 @@ export function SuspensionActions({
         <SuspendForm workspaceId={workspaceId} onClose={close} />
       </Modal>
     </>
+  )
+}
+
+// Exempt a Workspace from the abuse detector, or police it again (ADR 0026). An exempt
+// Workspace is neither warned nor frozen automatically but can still be suspended by hand.
+export function ExemptionAction({ workspaceId, exempt }: { workspaceId: string; exempt: boolean }) {
+  const { t } = useTranslation()
+  const notifyUnchanged = useChangeNotice(
+    exempt
+      ? t(($) => $.console.workspace.abuse.unexemptDone)
+      : t(($) => $.console.workspace.abuse.exemptDone),
+    t(($) => $.console.workspace.abuse.unchanged),
+  )
+  const exemptMutation = useResourceMutation({
+    mutation: operatorWorkspacesExemptMutation(),
+    invalidate: useInvalidate(workspaceId),
+    errorTitle: t(($) => $.console.workspace.abuse.error),
+    onDone: notifyUnchanged,
+  })
+  const unexemptMutation = useResourceMutation({
+    mutation: operatorWorkspacesUnexemptMutation(),
+    invalidate: useInvalidate(workspaceId),
+    errorTitle: t(($) => $.console.workspace.abuse.error),
+    onDone: notifyUnchanged,
+  })
+  const mutation = exempt ? unexemptMutation : exemptMutation
+
+  return (
+    <Button
+      variant="light"
+      loading={mutation.isPending}
+      onClick={() =>
+        modals.openConfirmModal({
+          title: exempt
+            ? t(($) => $.console.workspace.abuse.unexemptTitle)
+            : t(($) => $.console.workspace.abuse.exemptTitle),
+          children: exempt
+            ? t(($) => $.console.workspace.abuse.unexemptDescription)
+            : t(($) => $.console.workspace.abuse.exemptDescription),
+          labels: {
+            cancel: t(($) => $.console.workspace.suspend.cancel),
+            confirm: exempt
+              ? t(($) => $.console.workspace.abuse.unexemptButton)
+              : t(($) => $.console.workspace.abuse.exemptButton),
+          },
+          onConfirm: () => mutation.mutate({ path: { workspaceId } }),
+        })
+      }
+    >
+      {exempt
+        ? t(($) => $.console.workspace.abuse.unexemptButton)
+        : t(($) => $.console.workspace.abuse.exemptButton)}
+    </Button>
   )
 }

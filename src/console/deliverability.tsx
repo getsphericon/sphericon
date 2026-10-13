@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { OperatorDeliverability, OperatorRate } from '../generated/operator/types.gen.ts'
 import { resolveLocale } from '../i18n.ts'
+import { formatPercent } from '../utils/percent.ts'
 
 // A rate as its percentage over its "<numerator> / <denominator>" counts: the counts always
 // show, and the percentage is replaced by the floor notice while the rate is undefined
@@ -17,12 +18,7 @@ function RateCell({ rate, floor }: { rate: OperatorRate; floor: number }) {
           {t(($) => $.console.workspace.rates.belowFloor, { floor })}
         </Text>
       ) : (
-        <Text size="sm">
-          {new Intl.NumberFormat(resolveLocale(), {
-            style: 'percent',
-            maximumFractionDigits: 2,
-          }).format(rate.rate)}
-        </Text>
+        <Text size="sm">{formatPercent(rate.rate)}</Text>
       )}
       <Text size="xs" c="dimmed">
         {`${rate.numerator} / ${rate.denominator}`}

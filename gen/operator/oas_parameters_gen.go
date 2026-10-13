@@ -204,6 +204,86 @@ func decodeOperatorWorkspaceAuditListParams(args [1]string, argsEscaped bool, r 
 	return params, nil
 }
 
+// OperatorWorkspacesExemptParams is parameters of OperatorWorkspaces_exempt operation.
+type OperatorWorkspacesExemptParams struct {
+	WorkspaceId EntityId
+}
+
+func unpackOperatorWorkspacesExemptParams(packed middleware.Parameters) (params OperatorWorkspacesExemptParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeOperatorWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http.Request) (params OperatorWorkspacesExemptParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // OperatorWorkspacesGetParams is parameters of OperatorWorkspaces_get operation.
 type OperatorWorkspacesGetParams struct {
 	WorkspaceId EntityId
@@ -286,6 +366,8 @@ func decodeOperatorWorkspacesGetParams(args [1]string, argsEscaped bool, r *http
 
 // OperatorWorkspacesListParams is parameters of OperatorWorkspaces_list operation.
 type OperatorWorkspacesListParams struct {
+	// Only Workspaces in this review state.
+	Review OptOperatorWorkspaceReview `json:",omitempty,omitzero"`
 	// Only Workspaces whose slug contains this text (case-insensitive).
 	Slug OptString `json:",omitempty,omitzero"`
 	// Page number (1-based).
@@ -295,6 +377,15 @@ type OperatorWorkspacesListParams struct {
 }
 
 func unpackOperatorWorkspacesListParams(packed middleware.Parameters) (params OperatorWorkspacesListParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "review",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Review = v.(OptOperatorWorkspaceReview)
+		}
+	}
 	{
 		key := middleware.ParameterKey{
 			Name: "slug",
@@ -327,6 +418,62 @@ func unpackOperatorWorkspacesListParams(packed middleware.Parameters) (params Op
 
 func decodeOperatorWorkspacesListParams(args [0]string, argsEscaped bool, r *http.Request) (params OperatorWorkspacesListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: review.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "review",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotReviewVal OperatorWorkspaceReview
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotReviewVal = OperatorWorkspaceReview(c)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Review.SetTo(paramsDotReviewVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Review.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "review",
+			In:   "query",
+			Err:  err,
+		}
+	}
 	// Decode query: slug.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
@@ -480,6 +627,86 @@ func unpackOperatorWorkspacesSuspendParams(packed middleware.Parameters) (params
 }
 
 func decodeOperatorWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *http.Request) (params OperatorWorkspacesSuspendParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// OperatorWorkspacesUnexemptParams is parameters of OperatorWorkspaces_unexempt operation.
+type OperatorWorkspacesUnexemptParams struct {
+	WorkspaceId EntityId
+}
+
+func unpackOperatorWorkspacesUnexemptParams(packed middleware.Parameters) (params OperatorWorkspacesUnexemptParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeOperatorWorkspacesUnexemptParams(args [1]string, argsEscaped bool, r *http.Request) (params OperatorWorkspacesUnexemptParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]

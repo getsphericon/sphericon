@@ -914,4 +914,8 @@ func init() {
 	workspaceDescFeedPosition := workspaceFields[9].Descriptor()
 	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
+	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
+	workspaceDescAbuseExempt := workspaceFields[15].Descriptor()
+	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
+	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 }

@@ -93,7 +93,7 @@ func TestTheOwnerNoticeNamesSystemOrSphericonStaffAsTheActor(t *testing.T) {
 			h := newHarness(t)
 			h.suspendAs(t, tc.by)
 
-			require.NoError(t, jobs.NotifyWorkspaceSuspended(t.Context(), h.env.DB, h.env.SystemMail, fixtures.AcmeID))
+			require.NoError(t, jobs.NotifyWorkspaceSuspended(t.Context(), h.env.DB, h.env.SystemMail, "", fixtures.AcmeID))
 
 			msgs := h.env.SystemMail.Messages()
 			require.Len(t, msgs, 1)

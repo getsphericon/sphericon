@@ -7,12 +7,14 @@
 package ee
 
 import (
+	"context"
 	"net/http"
 	"time"
 
 	entgo "entgo.io/ent"
 	"github.com/riverqueue/river"
 
+	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/audit"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/operator"
@@ -21,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
+	"github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -44,6 +47,7 @@ type Edition struct {
 	Operators *operator.Module
 
 	operatorSessions *operator.Sessions
+	abuseCfg         abuse.Config
 	now              func() time.Time
 }
 
@@ -60,6 +64,7 @@ func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, si
 		Consumers: []events.Consumer{audit.Consumer(client, lic)},
 		Operators: operator.NewModule(client, lic, auditLog, cipher, operatorCfg),
 	}
+	e.abuseCfg = abuse.Config{Limits: operatorCfg.Abuse, SupportEmail: operatorCfg.SupportEmail}
 	e.now = operatorCfg.Clock
 	if e.now == nil {
 		e.now = time.Now
@@ -123,16 +128,39 @@ func (e *Edition) Freezer() outbound.Freezer {
 // agree on it.
 func (e *Edition) HoldsHonoured() bool { return e.lic.Has(licensekey.FeatureOperator) }
 
+// Abuse is the abuse detector (ADR 0026): the pass the hourly job runs, and the read of
+// a Workspace's standing. It suspends through the core mechanism, so it takes the event
+// bus, and tells owners through the system (platform) sender. Unlicensed it does nothing.
+func (e *Edition) Abuse(bus *events.Bus, sender messaging.EmailSender) *abuse.Detector {
+	return abuse.New(e.client, e.lic, bus, sender, e.abuseCfg)
+}
+
+// AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
+// without the `operator` license.
+func (e *Edition) AbuseWatch() site.AbuseWatch { return siteWatch{e.Operators.Watch()} }
+
+type siteWatch struct{ watch *abuse.Watch }
+
+func (w siteWatch) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (*site.AbuseWarning, error) {
+	b, err := w.watch.Warning(ctx, s, ws, now)
+	if err != nil || b.Tier == abuse.TierNone {
+		return nil, err
+	}
+	return &site.AbuseWarning{Domain: b.Domain, Metric: string(b.Metric), Rate: b.Rate()}, nil
+}
+
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),
-// which removes nothing without the retention license, and the usage job (ADR 0009),
-// which materializes nothing without the operator license.
-func (e *Edition) Jobs() jobs.Extension {
+// which removes nothing without the retention license, the usage job (ADR 0009) and the
+// abuse detector (ADR 0026), which do nothing without the operator license.
+func (e *Edition) Jobs(bus *events.Bus, sender messaging.EmailSender) jobs.Extension {
+	detector := e.Abuse(bus, sender)
 	return jobs.Extension{
 		Workers: func(w *river.Workers) {
 			river.AddWorker(w, retention.NewWorker(e.client, e.lic))
 			river.AddWorker(w, usage.NewWorker(e.client, e.lic))
+			river.AddWorker(w, abuse.NewWorker(detector))
 		},
-		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic()},
+		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic(), abuse.Periodic()},
 	}
 }
 

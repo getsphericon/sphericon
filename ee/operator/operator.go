@@ -27,6 +27,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 
+	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/audit"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
@@ -95,9 +96,12 @@ type Config struct {
 	// the operator license (Validate): a missing counter would leave the login
 	// unthrottled.
 	Attempts *accounts.Attempts
-	// VolumeFloor is the fewest sends in the rate window (per Sending domain) for a
-	// rate to be defined (ADR 0026); zero is DefaultVolumeFloor.
-	VolumeFloor int
+	// Abuse are the abuse detector's limits (ADR 0026); the console shows rates under
+	// the same volume floor the detector judges by. Zero is abuse.DefaultLimits.
+	Abuse abuse.Limits
+	// SupportEmail is the support contact an owner is given with a suspension notice
+	// (SUPPORT_EMAIL).
+	SupportEmail string
 	// HoldMaxExpiry is how far ahead an Operator hold's expiry may be set
 	// (OPERATOR_HOLD_MAX_EXPIRY); zero is DefaultHoldMaxExpiry.
 	HoldMaxExpiry time.Duration
@@ -130,7 +134,8 @@ type Module struct {
 	challenges *authtoken.Signer
 	attempts   *accounts.Attempts
 	now        func() time.Time
-	floor      int
+	watch      *abuse.Watch
+	support    string
 	holdMax    time.Duration
 }
 
@@ -140,19 +145,19 @@ func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log,
 	if now == nil {
 		now = time.Now
 	}
-	floor := cfg.VolumeFloor
-	if floor <= 0 {
-		floor = DefaultVolumeFloor
-	}
 	holdMax := cfg.HoldMaxExpiry
 	if holdMax <= 0 {
 		holdMax = DefaultHoldMaxExpiry
 	}
 	return &Module{
-		ent: client, lic: lic, audit: auditLog, cipher: cipher, attempts: cfg.Attempts, now: now, floor: floor, holdMax: holdMax,
+		ent: client, lic: lic, audit: auditLog, cipher: cipher, attempts: cfg.Attempts, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), support: cfg.SupportEmail, holdMax: holdMax,
 		challenges: authtoken.New(cfg.Secret).WithClock(now),
 	}
 }
+
+// Watch is the abuse detector's read of a Workspace's standing, with the limits this
+// module shows rates under.
+func (m *Module) Watch() *abuse.Watch { return m.watch }
 
 func (m *Module) licensed() error {
 	if !m.lic.Has(licensekey.FeatureOperator) {

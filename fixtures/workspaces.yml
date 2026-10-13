@@ -62,3 +62,21 @@
   ingest_key: omik_test_soylent_ingest_key
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Seventh tenant (Vandelay) - the abuse detector's subject (ADR 0026): two owners and two
+# verified Sending domains, with no traffic of its own; tests lay the Events down through ent.
+- id: 7 # fixture: Vandelay
+  name: Vandelay
+  slug: vandelay
+  collect_key: omck_test_vandelay_collect_key
+  ingest_key: omik_test_vandelay_ingest_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Eighth tenant (Kramerica) - exempt from the abuse detector by an Operator (ADR 0026).
+- id: 8 # fixture: Kramerica
+  name: Kramerica
+  slug: kramerica
+  collect_key: omck_test_kramerica_collect_key
+  ingest_key: omik_test_kramerica_ingest_key
+  abuse_exempt: true
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

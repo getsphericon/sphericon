@@ -37,9 +37,11 @@ var operationRolesApiKeyAuth = map[string][]string{
 	OperatorAuthLogoutOperation:          []string{},
 	OperatorMeGetOperation:               []string{},
 	OperatorWorkspaceAuditListOperation:  []string{},
+	OperatorWorkspacesExemptOperation:    []string{},
 	OperatorWorkspacesGetOperation:       []string{},
 	OperatorWorkspacesListOperation:      []string{},
 	OperatorWorkspacesSuspendOperation:   []string{},
+	OperatorWorkspacesUnexemptOperation:  []string{},
 	OperatorWorkspacesUnsuspendOperation: []string{},
 }
 
