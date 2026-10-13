@@ -80,11 +80,10 @@ var textFields = map[string]textField{
 // Parse decodes a definition string into a Group. A blank definition is a valid
 // "match everyone" group.
 func Parse(def string) (Group, error) {
-	g := Group{Kind: kindGroup, Combinator: "and"}
 	if strings.TrimSpace(def) == "" {
-		return g, nil
+		return Group{Kind: kindGroup, Combinator: "and"}, nil
 	}
-	g = Group{}
+	var g Group
 	if err := json.Unmarshal([]byte(def), &g); err != nil {
 		return g, fmt.Errorf("invalid segment definition: %w", err)
 	}

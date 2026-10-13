@@ -594,18 +594,18 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 			return merr
 		}
 
+		actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
 		if err := ts.Invitation().UpdateOneID(inv.ID).SetAcceptedAt(time.Now()).Exec(ctx); err != nil {
 			return err
 		}
 		if provedByInvitation {
-			actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
 			if err := RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserEmailVerify, nil, inv.WorkspaceID); err != nil {
 				return err
 			}
 		}
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: inv.WorkspaceID,
-			Actor:       events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name},
+			Actor:       actor,
 			Action:      events.ActionInvitationAccept,
 			TargetType:  invitation.Label,
 			TargetID:    strconv.FormatInt(inv.ID, 10),

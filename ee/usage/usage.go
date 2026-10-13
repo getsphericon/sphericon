@@ -106,6 +106,9 @@ func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, n
 	current := PeriodOf(now)
 	var errs []error
 	for _, ws := range workspaces {
+		if err := ctx.Err(); err != nil {
+			return errors.Join(append(errs, err)...)
+		}
 		if err := refreshWorkspace(ctx, client.Scoped(ws.ID), PeriodOf(ws.CreatedAt), current, now); err != nil {
 			errs = append(errs, fmt.Errorf("usage of workspace %d: %w", ws.ID, err))
 		}

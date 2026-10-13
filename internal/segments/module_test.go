@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	badDefinition = `{"rules":[{"field":"email","operator":"weird","value":"x"}]}`
+	badDefinition = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"weird","value":"x"}]}`
 )
 
 func ptr[T any](v T) *T { return &v }

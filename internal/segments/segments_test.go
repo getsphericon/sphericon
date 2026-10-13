@@ -141,8 +141,8 @@ func TestEventConditions(t *testing.T) {
 	assert.Equal(t, 1, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:page_view", "notPerformed", ""))}))
 
 	// validation: bad operator + non-numeric window are rejected.
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"event:x","operator":"weird","value":""}]}`))
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"event:x","operator":"performed","value":"soon"}]}`))
+	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:x","operator":"weird","value":""}]}`))
+	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:x","operator":"performed","value":"soon"}]}`))
 }
 
 // Fixtures: tag "vip" is on contacts 1 and 3, "newsletter" on contact 1, "unused" on
@@ -187,7 +187,7 @@ func TestTagConditions(t *testing.T) {
 	assert.Equal(t, 0, count(has(fixtures.TagGlobexName)))
 
 	// Validation: only has / doesNotHave are valid for the tag field.
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"tag","operator":"eq","value":"vip"}]}`))
+	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"eq","value":"vip"}]}`))
 }
 
 func TestParseAndValidate(t *testing.T) {
