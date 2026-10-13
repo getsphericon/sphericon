@@ -202,6 +202,31 @@ func TestConfigLoadEventsRetention(t *testing.T) {
 	}
 }
 
+func TestConfigLoadUnverifiedUserRetention(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	cfg, err := Load("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.UnverifiedUserRetention != 7*24*time.Hour {
+		t.Fatalf("default UnverifiedUserRetention = %v, want 7 days", cfg.UnverifiedUserRetention)
+	}
+
+	t.Setenv("UNVERIFIED_USER_RETENTION_DAYS", "0")
+	cfg, err = Load("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.UnverifiedUserRetention != 0 {
+		t.Fatalf("UnverifiedUserRetention = %v, want 0 (disabled)", cfg.UnverifiedUserRetention)
+	}
+
+	t.Setenv("UNVERIFIED_USER_RETENTION_DAYS", "-1")
+	if _, err := Load("test"); err == nil {
+		t.Fatal("a negative retention must be rejected")
+	}
+}
+
 func TestConfigLoadMetricsAddr(t *testing.T) {
 	cases := []struct {
 		name    string

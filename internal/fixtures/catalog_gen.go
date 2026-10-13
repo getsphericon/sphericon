@@ -327,6 +327,12 @@ const (
 	FreshLoginAttemptEmail = "fresh@attempts.test"
 	// FreshLoginAttemptID is from fixtures/auth_attempts.
 	FreshLoginAttemptID = 101
+	// FreshUnverifiedUserEmail is from fixtures/users.
+	FreshUnverifiedUserEmail = "fresh@unverified.test"
+	// FreshUnverifiedUserID is from fixtures/users.
+	FreshUnverifiedUserID = 17
+	// FreshUnverifiedUserName is from fixtures/users.
+	FreshUnverifiedUserName = "Fresh"
 	// GhostLoginAttemptEmail is from fixtures/auth_attempts.
 	GhostLoginAttemptEmail = "ghost@attempts.test"
 	// GhostLoginAttemptID is from fixtures/auth_attempts.
@@ -463,6 +469,10 @@ const (
 	InvitationGlobexEmail = "invited@globex.test"
 	// InvitationGlobexID is from fixtures/invitations.
 	InvitationGlobexID = 900
+	// InvitationStaleUnverifiedEmail is from fixtures/invitations.
+	InvitationStaleUnverifiedEmail = "stale@unverified.test"
+	// InvitationStaleUnverifiedID is from fixtures/invitations.
+	InvitationStaleUnverifiedID = 901
 	// KramericaCollectKey is from fixtures/workspaces.
 	KramericaCollectKey = "omck_test_kramerica_collect_key"
 	// KramericaID is from fixtures/workspaces.
@@ -685,6 +695,18 @@ const (
 	StaleLoginAttemptEmail = "stale@attempts.test"
 	// StaleLoginAttemptID is from fixtures/auth_attempts.
 	StaleLoginAttemptID = 100
+	// StaleUnverifiedMemberEmail is from fixtures/users.
+	StaleUnverifiedMemberEmail = "stale-member@unverified.test"
+	// StaleUnverifiedMemberID is from fixtures/users.
+	StaleUnverifiedMemberID = 16
+	// StaleUnverifiedMemberName is from fixtures/users.
+	StaleUnverifiedMemberName = "Stale Member"
+	// StaleUnverifiedUserEmail is from fixtures/users.
+	StaleUnverifiedUserEmail = "stale@unverified.test"
+	// StaleUnverifiedUserID is from fixtures/users.
+	StaleUnverifiedUserID = 15
+	// StaleUnverifiedUserName is from fixtures/users.
+	StaleUnverifiedUserName = "Stale"
 	// SuppressionErasableDestination is from fixtures/suppressions.
 	SuppressionErasableDestination = "erin@initech.test"
 	// SuppressionErasableID is from fixtures/suppressions.

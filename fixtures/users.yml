@@ -114,3 +114,22 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
+# Unverified Users (ADR 0030), a registration whose verify link was never used: no password,
+# no Verified email. StaleUnverified registered 30 days ago and is what the prune job removes
+# at the 7-day window; StaleUnverifiedMember is as old but holds a Membership (added by its
+# test); FreshUnverified registered a day ago.
+- id: 15 # fixture: StaleUnverifiedUser
+  name: Stale
+  email: stale@unverified.test
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 16 # fixture: StaleUnverifiedMember
+  name: Stale Member
+  email: stale-member@unverified.test
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 17 # fixture: FreshUnverifiedUser
+  name: Fresh
+  email: fresh@unverified.test
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

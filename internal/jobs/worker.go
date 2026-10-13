@@ -61,6 +61,9 @@ type Retention struct {
 	OutboxFloor time.Duration
 	// Events is the age past which analytical Events are deleted (0 disables).
 	Events time.Duration
+	// UnverifiedUsers is the age past which an Unverified User with no Membership is
+	// deleted (0 disables; ADR 0030).
+	UnverifiedUsers time.Duration
 }
 
 // NewClient builds the river client with all workers registered. Workers carry
@@ -96,6 +99,7 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, db *sql.DB, mod *outbo
 	river.AddWorker(workers, &PurgeAuthAttemptsWorker{ent: entClient})
 	river.AddWorker(workers, &PruneOutboxWorker{db: db, floor: retention.OutboxFloor})
 	river.AddWorker(workers, &PruneEventsWorker{db: db, retention: retention.Events})
+	river.AddWorker(workers, &PruneUnverifiedUsersWorker{ent: entClient, retention: retention.UnverifiedUsers})
 
 	var extraPeriodic []*river.PeriodicJob
 	for _, e := range ext {
@@ -185,6 +189,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				dailyAtUTC{hour: eventsRetentionHourUTC},
 				func() (river.JobArgs, *river.InsertOpts) {
 					return PruneEventsArgs{}, nil
+				},
+				nil,
+			),
+			// Delete stale Unverified Users daily at 04:00 UTC (ADR 0030).
+			river.NewPeriodicJob(
+				dailyAtUTC{hour: unverifiedUsersHourUTC},
+				func() (river.JobArgs, *river.InsertOpts) {
+					return PruneUnverifiedUsersArgs{}, nil
 				},
 				nil,
 			),

@@ -55,6 +55,10 @@ func NewPruneOutboxWorker(db *sql.DB, floor time.Duration) *PruneOutboxWorker {
 	return &PruneOutboxWorker{db: db, floor: floor}
 }
 
+func NewPruneUnverifiedUsersWorker(client *ent.Client, retention time.Duration) *PruneUnverifiedUsersWorker {
+	return &PruneUnverifiedUsersWorker{ent: client, retention: retention}
+}
+
 func NewPruneEventsWorker(db *sql.DB, retention time.Duration) *PruneEventsWorker {
 	return &PruneEventsWorker{db: db, retention: retention}
 }
