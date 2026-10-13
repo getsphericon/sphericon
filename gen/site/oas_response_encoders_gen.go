@@ -334,21 +334,9 @@ func encodeSiteAuthConfirmEmailChangeResponse(response SiteAuthConfirmEmailChang
 
 		return nil
 
-	case *SiteAuthConfirmEmailChangeBadRequest:
+	case *ProblemDetails:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteAuthConfirmEmailChangeConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -4936,18 +4924,6 @@ func encodeSiteUserEmailChangeResponse(response SiteUserEmailChangeRes, w http.R
 	case *SiteUserEmailChangeForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteUserEmailChangeConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

@@ -8,7 +8,7 @@ import * as z from 'zod';
  */
 export const zContactExportJson = z.record(z.string(), z.unknown());
 
-export const zEmailAddress = z.email();
+export const zEmailAddress = z.email().max(320);
 
 export const zEntityId = z.string().regex(/^[0-9]+$/);
 
@@ -347,8 +347,7 @@ export const zSiteCreateInvitationInput = z.object({
  */
 export const zSiteInvitationLookupResult = z.object({
   workspaceName: z.string(),
-  email: zEmailAddress,
-  hasAccount: z.boolean()
+  email: zEmailAddress
 });
 
 /**

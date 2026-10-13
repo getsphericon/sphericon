@@ -36,7 +36,7 @@ func TestAnInvitationToAnUnverifiedAddressIsLikeOneToANewAddress(t *testing.T) {
 	require.NoError(t, err)
 	found, ok := lookup.(*siteapi.SiteInvitationLookupResult)
 	require.Truef(t, ok, "got %T", lookup)
-	assert.False(t, found.HasAccount, "an Unverified User is not an account")
+	assert.Equal(t, "victim@example.com", string(found.Email))
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
 		&siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})

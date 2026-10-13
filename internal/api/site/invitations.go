@@ -168,15 +168,9 @@ func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params sitea
 		return nil, err
 	}
 
-	hasAccount, err := h.accounts.HasVerifiedAccount(ctx, inv.Email)
-	if err != nil {
-		return nil, err
-	}
-
 	return &siteapi.SiteInvitationLookupResult{
 		WorkspaceName: inv.Edges.Workspace.Name,
 		Email:         siteapi.EmailAddress(inv.Email),
-		HasAccount:    hasAccount,
 	}, nil
 }
 

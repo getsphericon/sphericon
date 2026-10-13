@@ -119,7 +119,7 @@ test('a billing hold change in the audit log names the credential and shows bill
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('billing-plane')).toBeInTheDocument()
-  await expect.element(screen.getByText('Billing activity')).toBeInTheDocument()
+  await expect.element(screen.getByText('Billing', { exact: true })).toBeInTheDocument()
 })
 
 test('an empty audit log says so', async () => {

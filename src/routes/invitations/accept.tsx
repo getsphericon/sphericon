@@ -1,4 +1,14 @@
-import { Alert, Button, Loader, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
+import {
+  Alert,
+  Button,
+  Divider,
+  Loader,
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -25,10 +35,12 @@ export function AcceptInvitationPage() {
     retry: false,
   })
 
-  // A Verified User accepts with their own session: probe it once the lookup says so.
+  // The lookup says nothing about whether the address has an account (ADR 0031), so the
+  // page offers both ways in: set up an account, or join with the session of the account
+  // that already holds the address. Probe the session to know which of the two to show.
   const session = useQuery({
     ...siteWorkspacesListOptions(),
-    enabled: lookup.data?.hasAccount === true,
+    enabled: lookup.isSuccess,
     retry: false,
   })
 
@@ -36,16 +48,16 @@ export function AcceptInvitationPage() {
 
   const mutation = useMutation({
     ...sitePublicInvitationsAcceptMutation(),
-    onSuccess: () => {
-      const signedIn = lookup.data?.hasAccount === true
+    onSuccess: (_data, variables) => {
+      const joined = Object.keys(variables.body ?? {}).length === 0
       notifications.show({
         color: 'teal',
         title: t(($) => $.acceptInvitation.successTitle),
-        message: signedIn
+        message: joined
           ? t(($) => $.acceptInvitation.joinedMessage)
           : t(($) => $.acceptInvitation.successMessage),
       })
-      void navigate({ to: signedIn ? indexRoute.to : loginRoute.to })
+      void navigate({ to: joined ? indexRoute.to : loginRoute.to })
     },
     onError: (error) => {
       notifications.show({
@@ -79,13 +91,12 @@ export function AcceptInvitationPage() {
   }
 
   const invite = lookup.data
-  const needsAccount = !invite.hasAccount
-  const needsSignIn = invite.hasAccount && session.isError
+  const signedIn = session.isSuccess
 
   const handleSubmit = (values: { name: string; password: string }) => {
     mutation.mutate({
       path: { token },
-      body: needsAccount ? { name: values.name.trim(), password: values.password } : {},
+      body: { name: values.name.trim(), password: values.password },
     })
   }
 
@@ -97,41 +108,41 @@ export function AcceptInvitationPage() {
         {invite.email}
       </Text>
 
-      {needsSignIn ? (
+      <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>
-          <Alert color="blue">{t(($) => $.acceptInvitation.signInRequired)}</Alert>
-          <Button
-            onClick={() =>
-              void navigate({ to: loginRoute.to, search: { redirect: location.href } })
-            }
-          >
-            {t(($) => $.acceptInvitation.signInButton)}
+          <TextInput
+            label={t(($) => $.acceptInvitation.nameLabel)}
+            required
+            {...form.getInputProps('name')}
+          />
+          <PasswordInput
+            label={t(($) => $.acceptInvitation.passwordLabel)}
+            autoComplete="new-password"
+            required
+            {...form.getInputProps('password')}
+          />
+          <Button type="submit" loading={mutation.isPending}>
+            {t(($) => $.acceptInvitation.acceptButton)}
           </Button>
         </Stack>
+      </form>
+
+      <Divider label={t(($) => $.acceptInvitation.haveAccount)} labelPosition="center" />
+      {signedIn ? (
+        <Button
+          variant="default"
+          loading={mutation.isPending}
+          onClick={() => mutation.mutate({ path: { token }, body: {} })}
+        >
+          {t(($) => $.acceptInvitation.acceptExistingButton)}
+        </Button>
       ) : (
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Stack>
-            {needsAccount ? (
-              <>
-                <TextInput
-                  label={t(($) => $.acceptInvitation.nameLabel)}
-                  required
-                  {...form.getInputProps('name')}
-                />
-                <PasswordInput
-                  label={t(($) => $.acceptInvitation.passwordLabel)}
-                  required
-                  {...form.getInputProps('password')}
-                />
-              </>
-            ) : null}
-            <Button type="submit" loading={mutation.isPending}>
-              {needsAccount
-                ? t(($) => $.acceptInvitation.acceptButton)
-                : t(($) => $.acceptInvitation.acceptExistingButton)}
-            </Button>
-          </Stack>
-        </form>
+        <Button
+          variant="default"
+          onClick={() => void navigate({ to: loginRoute.to, search: { redirect: location.href } })}
+        >
+          {t(($) => $.acceptInvitation.signInButton)}
+        </Button>
       )}
     </Stack>
   )

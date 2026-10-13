@@ -294,7 +294,7 @@ test('a billing hold change is shown as billing activity, attributed to spherico
     <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
   )
 
-  await expect.element(screen.getByText('Billing activity')).toBeInTheDocument()
+  await expect.element(screen.getByText('Billing', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByRole('cell', { name: 'sphericon staff' })).toBeInTheDocument()
 })
 

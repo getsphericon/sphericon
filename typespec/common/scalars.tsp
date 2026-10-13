@@ -1,6 +1,7 @@
 namespace Sphericon;
 
 @format("email")
+@maxLength(320)
 scalar EmailAddress extends string;
 
 @format("date-time")

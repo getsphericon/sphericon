@@ -2495,8 +2495,8 @@ func (s EmailAddress) Validate() error {
 	if err := (validate.String{
 		MinLength:     0,
 		MinLengthSet:  false,
-		MaxLength:     0,
-		MaxLengthSet:  false,
+		MaxLength:     320,
+		MaxLengthSet:  true,
 		Email:         true,
 		Hostname:      false,
 		Regex:         nil,

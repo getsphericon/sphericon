@@ -6757,82 +6757,6 @@ func (s *SiteAuditTarget) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes SiteAuthConfirmEmailChangeBadRequest as json.
-func (s *SiteAuthConfirmEmailChangeBadRequest) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes SiteAuthConfirmEmailChangeBadRequest from json.
-func (s *SiteAuthConfirmEmailChangeBadRequest) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SiteAuthConfirmEmailChangeBadRequest to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = SiteAuthConfirmEmailChangeBadRequest(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SiteAuthConfirmEmailChangeBadRequest) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SiteAuthConfirmEmailChangeBadRequest) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes SiteAuthConfirmEmailChangeConflict as json.
-func (s *SiteAuthConfirmEmailChangeConflict) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes SiteAuthConfirmEmailChangeConflict from json.
-func (s *SiteAuthConfirmEmailChangeConflict) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SiteAuthConfirmEmailChangeConflict to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = SiteAuthConfirmEmailChangeConflict(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SiteAuthConfirmEmailChangeConflict) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SiteAuthConfirmEmailChangeConflict) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode encodes SiteAuthLoginForbidden as json.
 func (s *SiteAuthLoginForbidden) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
@@ -16013,16 +15937,11 @@ func (s *SiteInvitationLookupResult) encodeFields(e *jx.Encoder) {
 		e.FieldStart("email")
 		s.Email.Encode(e)
 	}
-	{
-		e.FieldStart("hasAccount")
-		e.Bool(s.HasAccount)
-	}
 }
 
-var jsonFieldsNameOfSiteInvitationLookupResult = [3]string{
+var jsonFieldsNameOfSiteInvitationLookupResult = [2]string{
 	0: "workspaceName",
 	1: "email",
-	2: "hasAccount",
 }
 
 // Decode decodes SiteInvitationLookupResult from json.
@@ -16056,18 +15975,6 @@ func (s *SiteInvitationLookupResult) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"email\"")
 			}
-		case "hasAccount":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Bool()
-				s.HasAccount = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"hasAccount\"")
-			}
 		default:
 			return d.Skip()
 		}
@@ -16078,7 +15985,7 @@ func (s *SiteInvitationLookupResult) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -28443,44 +28350,6 @@ func (s *SiteUpdateWorkspaceInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteUpdateWorkspaceInput) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes SiteUserEmailChangeConflict as json.
-func (s *SiteUserEmailChangeConflict) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes SiteUserEmailChangeConflict from json.
-func (s *SiteUserEmailChangeConflict) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SiteUserEmailChangeConflict to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = SiteUserEmailChangeConflict(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SiteUserEmailChangeConflict) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SiteUserEmailChangeConflict) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

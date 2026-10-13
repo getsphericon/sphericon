@@ -3044,6 +3044,7 @@ func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 }
 
 func (*ProblemDetails) siteAnalyticsOverviewRes()         {}
+func (*ProblemDetails) siteAuthConfirmEmailChangeRes()    {}
 func (*ProblemDetails) siteAuthResetPasswordRes()         {}
 func (*ProblemDetails) siteAuthSecondFactorRes()          {}
 func (*ProblemDetails) siteAuthVerifyEmailRes()           {}
@@ -4195,14 +4196,6 @@ func (s *SiteAuditTarget) SetID(val OptNilString) {
 func (s *SiteAuditTarget) SetName(val OptNilString) {
 	s.Name = val
 }
-
-type SiteAuthConfirmEmailChangeBadRequest ProblemDetails
-
-func (*SiteAuthConfirmEmailChangeBadRequest) siteAuthConfirmEmailChangeRes() {}
-
-type SiteAuthConfirmEmailChangeConflict ProblemDetails
-
-func (*SiteAuthConfirmEmailChangeConflict) siteAuthConfirmEmailChangeRes() {}
 
 // SiteAuthConfirmEmailChangeOK is response for SiteAuthConfirmEmailChange operation.
 type SiteAuthConfirmEmailChangeOK struct {
@@ -7359,9 +7352,6 @@ type SiteInvitationLookupResult struct {
 	WorkspaceName string `json:"workspaceName"`
 	// The address the invite was sent to.
 	Email EmailAddress `json:"email"`
-	// True only when that email has a Verified User; an address with no User or an Unverified User needs a
-	// name and a password to accept.
-	HasAccount bool `json:"hasAccount"`
 }
 
 // GetWorkspaceName returns the value of WorkspaceName.
@@ -7374,11 +7364,6 @@ func (s *SiteInvitationLookupResult) GetEmail() EmailAddress {
 	return s.Email
 }
 
-// GetHasAccount returns the value of HasAccount.
-func (s *SiteInvitationLookupResult) GetHasAccount() bool {
-	return s.HasAccount
-}
-
 // SetWorkspaceName sets the value of WorkspaceName.
 func (s *SiteInvitationLookupResult) SetWorkspaceName(val string) {
 	s.WorkspaceName = val
@@ -7387,11 +7372,6 @@ func (s *SiteInvitationLookupResult) SetWorkspaceName(val string) {
 // SetEmail sets the value of Email.
 func (s *SiteInvitationLookupResult) SetEmail(val EmailAddress) {
 	s.Email = val
-}
-
-// SetHasAccount sets the value of HasAccount.
-func (s *SiteInvitationLookupResult) SetHasAccount(val bool) {
-	s.HasAccount = val
 }
 
 func (*SiteInvitationLookupResult) sitePublicInvitationsLookupRes() {}
@@ -11427,10 +11407,6 @@ func (s *SiteUpdateWorkspaceInput) SetPostalAddress(val OptString) {
 type SiteUserEmailChangeAccepted struct{}
 
 func (*SiteUserEmailChangeAccepted) siteUserEmailChangeRes() {}
-
-type SiteUserEmailChangeConflict ProblemDetails
-
-func (*SiteUserEmailChangeConflict) siteUserEmailChangeRes() {}
 
 type SiteUserEmailChangeForbidden ProblemDetails
 

@@ -42,6 +42,11 @@ type Metric string
 // Automation and Transactional, never a suppressed, held or failed message.
 const EmailsSent Metric = "emails_sent"
 
+// InFlightSends is the number of sends claimed and not yet answered. It is Live usage
+// only, kept apart from EmailsSent so an unanswered send is never billed as sent; it is 0
+// in a Usage snapshot.
+const InFlightSends Metric = "in_flight_sends"
+
 // Period is one Usage period: the calendar month in UTC, [Start, End).
 type Period struct{ Start, End time.Time }
 
@@ -54,7 +59,7 @@ func PeriodOf(t time.Time) time.Time {
 func periodFrom(start time.Time) Period { return Period{Start: start, End: start.AddDate(0, 1, 0)} }
 
 // measurer computes one metric of a Workspace over a period. open is true for the
-// period still running (Live usage, which counts sends still in flight); prior is the
+// period still running; prior is the
 // row already stored for it, or nil.
 type measurer func(ctx context.Context, s *ent.Scoped, p Period, open bool, prior *ent.Usage) (int64, error)
 
@@ -63,27 +68,33 @@ var metrics = []struct {
 	measure measurer
 }{
 	{EmailsSent, measureEmailsSent},
+	{InFlightSends, measureInFlightSends},
 	{Contacts, measureContacts},
 }
 
 // measureEmailsSent counts the Outbound messages the provider accepted in the period,
 // by the time they were accepted: a send accepted after the period ended belongs to the
-// next one, so the figure of a closed period is the same whenever it is computed. The
-// open period also counts sends claimed but not yet answered.
-func measureEmailsSent(ctx context.Context, s *ent.Scoped, p Period, open bool, _ *ent.Usage) (int64, error) {
-	sent := outboundmessage.And(
+// next one, so the figure of a closed period is the same whenever it is computed. Sends
+// still in flight are never in it: they are the separate InFlightSends figure.
+func measureEmailsSent(ctx context.Context, s *ent.Scoped, p Period, _ bool, _ *ent.Usage) (int64, error) {
+	n, err := s.OutboundMessage().Query().Where(
 		outboundmessage.StatusEQ(outboundmessage.StatusSent),
 		outboundmessage.SentAtGTE(p.Start), outboundmessage.SentAtLT(p.End),
-	)
-	where := sent
-	if open {
-		inFlight := outboundmessage.And(
-			outboundmessage.StatusEQ(outboundmessage.StatusPending),
-			outboundmessage.ClaimedAtGTE(p.Start), outboundmessage.ClaimedAtLT(p.End),
-		)
-		where = outboundmessage.Or(sent, inFlight)
+	).Count(ctx)
+	return int64(n), err
+}
+
+// measureInFlightSends counts the sends claimed in the open period and not yet answered.
+// A closed period has none: what was still in flight at the close is counted by
+// EmailsSent in the period it is accepted in.
+func measureInFlightSends(ctx context.Context, s *ent.Scoped, p Period, open bool, _ *ent.Usage) (int64, error) {
+	if !open {
+		return 0, nil
 	}
-	n, err := s.OutboundMessage().Query().Where(where).Count(ctx)
+	n, err := s.OutboundMessage().Query().Where(
+		outboundmessage.StatusEQ(outboundmessage.StatusPending),
+		outboundmessage.ClaimedAtGTE(p.Start), outboundmessage.ClaimedAtLT(p.End),
+	).Count(ctx)
 	return int64(n), err
 }
 

@@ -22,6 +22,8 @@ const (
 	KindLogin         = authattempt.KindLogin
 	KindOperatorLogin = authattempt.KindOperatorLogin
 	KindPasswordReset = authattempt.KindPasswordReset
+	KindRegister      = authattempt.KindRegister
+	KindEmailChange   = authattempt.KindEmailChange
 )
 
 // Rule is the throttle of one Kind (ADR 0025): after Threshold failures within
@@ -75,6 +77,10 @@ func WithRateLimits(limits config.RateLimits) AttemptsOption {
 		a.rules[KindLogin] = LoginRule(limits.LoginFailures)
 		a.rules[KindOperatorLogin] = LoginRule(limits.LoginFailures)
 		a.rules[KindPasswordReset] = ResetRule(limits.ForgotAddress)
+		// The notice to the owner of a Taken address (ADR 0031) shares the reset budget:
+		// one limit for every mail a stranger can make us send to an address.
+		a.rules[KindRegister] = ResetRule(limits.ForgotAddress)
+		a.rules[KindEmailChange] = ResetRule(limits.ForgotAddress)
 	}
 }
 
@@ -86,6 +92,8 @@ func NewAttempts(client *ent.Client, opts ...AttemptsOption) *Attempts {
 		KindLogin:         LoginRule(0),
 		KindOperatorLogin: LoginRule(0),
 		KindPasswordReset: ResetRule(0),
+		KindRegister:      ResetRule(0),
+		KindEmailChange:   ResetRule(0),
 	}}
 	for _, opt := range opts {
 		opt(a)

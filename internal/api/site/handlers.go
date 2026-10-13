@@ -58,7 +58,10 @@ type SystemMailEnqueuer interface {
 	// for every address.
 	EnqueuePasswordReset(ctx context.Context, email, token string, send bool) error
 	EnqueueEmailVerification(ctx context.Context, email, token string, send bool) error
-	EnqueueEmailChangeConfirm(ctx context.Context, email, token string) error
+	EnqueueEmailChangeConfirm(ctx context.Context, email, token string, send bool) error
+	// EnqueueAddressTakenNotice queues the tokenless notice to the owner of a Taken
+	// address (ADR 0031). With send false the job is queued but its mail is dropped.
+	EnqueueAddressTakenNotice(ctx context.Context, email string, send bool) error
 	// EnqueueMemberInvite sends the workspace invite email. It is best-effort:
 	// the invite also returns a copy-link, so a missing/failed mailer (common on
 	// self-hosted with no SMTP) must not fail the invite.

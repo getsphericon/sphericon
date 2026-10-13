@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/getsphericon/sphericon/config"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -111,20 +112,45 @@ func TestEmailChangeRequiresCurrentPassword(t *testing.T) {
 	assert.Empty(t, env.SystemMail.Messages())
 }
 
-func TestEmailChangeRejectsTakenAddress(t *testing.T) {
+// ADR 0031: asking for a Taken address answers 202 like a free one; the owner gets a
+// tokenless notice and the requester no confirm link.
+func TestEmailChangeToATakenAddressAnswersLikeAFreeOneAndNoticesItsOwner(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-
-	// Register a second user so its address is taken.
-	register(t, env, "Jane", "jane@example.com")
-
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	res, err := c.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{
-		NewEmail:        "jane@example.com",
-		CurrentPassword: fixtures.OwnerJohnPassword,
-	})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteUserEmailChangeConflict{}, res)
+
+	for _, target := range []string{"free@example.com", fixtures.MemberMaryEmail} {
+		res, err := c.SiteUserEmailChange(ctx, &siteapi.SiteEmailChangeInput{
+			NewEmail:        siteapi.EmailAddress(target),
+			CurrentPassword: fixtures.OwnerJohnPassword,
+		})
+		require.NoError(t, err)
+		assert.IsType(t, &siteapi.SiteUserEmailChangeAccepted{}, res, target)
+	}
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 2, "one mail job per request")
+	assert.Equal(t, "free@example.com", msgs[0].To)
+	assert.Contains(t, msgs[0].Text, "token=")
+	assert.Equal(t, fixtures.MemberMaryEmail, msgs[1].To)
+	assert.NotContains(t, msgs[1].Text, "token=", "a notice must never carry a token")
+}
+
+func TestEmailChangeStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
+	const limit = 3
+	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{ForgotAddress: limit}))
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	for range limit + 2 {
+		res, err := c.SiteUserEmailChange(context.Background(), &siteapi.SiteEmailChangeInput{
+			NewEmail:        fixtures.MemberMaryEmail,
+			CurrentPassword: fixtures.OwnerJohnPassword,
+		})
+		require.NoError(t, err)
+		assert.IsType(t, &siteapi.SiteUserEmailChangeAccepted{}, res)
+	}
+
+	assert.Len(t, env.SystemMail.Messages(), limit)
 }
 
 func TestEmailChangeConfirmSwapsEmail(t *testing.T) {

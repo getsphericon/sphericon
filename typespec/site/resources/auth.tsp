@@ -78,9 +78,12 @@ model SiteConfirmEmailChangeInput {
 namespace SiteAuth {
   /** Create an Unverified User (ADR 0030): no password, no session, no Workspace.
    * A verification email with the link to the set-password screen is on its way
-   * (202). A taken address answers 409. With `REQUIRE_EMAIL_VERIFICATION=false` the
-   * request must carry a password (422 otherwise) and creates a Verified User with
-   * its first Workspace at once (202, no session: the User signs in next). */
+   * (202), and 202 is the answer for every address, taken or not (ADR 0031): the
+   * owner of a taken address gets a notice by mail instead. With
+   * `REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the
+   * request must carry a password (422 otherwise), creates a Verified User with its
+   * first Workspace at once (202, no session: the User signs in next), and a taken
+   * address answers 409. */
   @useAuth(NoAuth)
   @post
   @route("/register")
@@ -209,6 +212,5 @@ namespace SiteAuth {
         /** The confirming session reissued, set when the request carried one */
         @header("Set-Cookie") setCookie?: string;
       }
-    | BadRequestProblem
-    | ConflictProblem;
+    | BadRequestProblem;
 }

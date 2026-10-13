@@ -454,6 +454,12 @@ password is set only through a link that proves the address, so whoever proves i
 sets it.
 _Avoid_: Confirmed email, activated account
 
+**Taken address**:
+An email that already belongs to a User. Nobody but its owner may learn that it is taken: a
+request that would hit it gets the same answer as one that would not, and the owner is told by
+mail. The one exception is an install that turned email verification off.
+_Avoid_: Duplicate email, existing account
+
 **Unverified User**:
 A User whose email is not yet a Verified email: a registration awaiting its verify link. It
 cannot log in, owns nothing and is not attached to any Workspace. A daily job deletes one that

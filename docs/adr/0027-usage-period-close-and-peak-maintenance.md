@@ -21,8 +21,9 @@ invisible to a self-hosted install.
 - **`emails_sent` is recomputed from the Outbound messages the provider accepted**, by the time
   they were accepted (`sent_at`), so the figure of a closed period is the same whenever it is
   computed: a message accepted at 23:59 UTC and one at 00:01 UTC land in different periods, and a
-  send claimed before midnight but accepted after it belongs to the next. The open period also
-  counts sends claimed and not yet answered (in flight), never added to a final figure.
+  send claimed before midnight but accepted after it belongs to the next. Sends claimed and not yet
+  answered (in flight) are never in it: the open period reports them as their own `in_flight_sends`
+  figure (0 in a snapshot), so an unanswered send is not billed as sent.
 - **`contacts` is a peak, so it cannot be recomputed**: an ent hook, installed on every client
   (the long-lived one and the bus's transaction client) only with the `operator` license, raises
   the open period's peak in the same transaction as the Contact change that identifies, gives an

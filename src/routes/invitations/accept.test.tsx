@@ -16,16 +16,13 @@ import { AcceptInvitationPage } from './accept.tsx'
 
 const MOUNT = routeMount(acceptInvitationRoute, { token: 'inv-1' })
 
-const invite = (hasAccount: boolean): SiteInvitationLookupResult => ({
-  workspaceName: 'Acme',
-  email: 'ada@example.com',
-  hasAccount,
-})
+const invite: SiteInvitationLookupResult = { workspaceName: 'Acme', email: 'ada@example.com' }
 
-test('a new user supplies a name and password to accept', async () => {
+test('a signed-out invitee supplies a name and password to accept', async () => {
   const bodies: unknown[] = []
   worker.use(
-    handleSitePublicInvitationsLookup({ body: invite(false) }),
+    handleSiteWorkspacesList(() => problem(401)),
+    handleSitePublicInvitationsLookup({ body: invite }),
     handleSitePublicInvitationsAccept(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json({})
@@ -46,11 +43,11 @@ test('a new user supplies a name and password to accept', async () => {
   await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: loginRoute.to }])
 })
 
-test('a signed-in Verified User joins with an empty body and no credential fields', async () => {
+test('a signed-in invitee can join with an empty body', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteWorkspacesList({ body: [] }),
-    handleSitePublicInvitationsLookup({ body: invite(true) }),
+    handleSitePublicInvitationsLookup({ body: invite }),
     handleSitePublicInvitationsAccept(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json({})
@@ -58,21 +55,19 @@ test('a signed-in Verified User joins with an empty body and no credential field
   )
   const { screen } = await renderWithRouter(<AcceptInvitationPage />, MOUNT)
 
-  await expect.element(screen.getByLabelText(/^Password/)).not.toBeInTheDocument()
   await screen.getByRole('button', { name: 'Join workspace' }).click()
 
   await expect.element(screen.getByText('Invitation accepted')).toBeInTheDocument()
   await expect.poll(() => bodies).toEqual([{}])
 })
 
-test('a signed-out Verified User is sent to sign in and back to the accept page', async () => {
+test('a signed-out invitee with an account is sent to sign in and back to the accept page', async () => {
   worker.use(
-    handleSitePublicInvitationsLookup({ body: invite(true) }),
+    handleSitePublicInvitationsLookup({ body: invite }),
     handleSiteWorkspacesList(() => problem(401)),
   )
   const { screen, navigate } = await renderWithRouter(<AcceptInvitationPage />, MOUNT)
 
-  await expect.element(screen.getByLabelText(/^Password/)).not.toBeInTheDocument()
   await expect
     .element(screen.getByRole('button', { name: 'Join workspace' }))
     .not.toBeInTheDocument()
@@ -86,7 +81,7 @@ test('a signed-out Verified User is sent to sign in and back to the accept page'
 test('an accept failure shows the API error and stays on the page', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [] }),
-    handleSitePublicInvitationsLookup({ body: invite(true) }),
+    handleSitePublicInvitationsLookup({ body: invite }),
     handleSitePublicInvitationsAccept(() => problem(410, { detail: 'Invitation revoked' })),
   )
   const { screen, navigate } = await renderWithRouter(<AcceptInvitationPage />, MOUNT)

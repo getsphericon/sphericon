@@ -556,8 +556,8 @@ func (s EmailAddress) Validate() error {
 	if err := (validate.String{
 		MinLength:     0,
 		MinLengthSet:  false,
-		MaxLength:     0,
-		MaxLengthSet:  false,
+		MaxLength:     320,
+		MaxLengthSet:  true,
 		Email:         true,
 		Hostname:      false,
 		Regex:         nil,
@@ -1101,22 +1101,6 @@ func (s *SiteAuditSetRetentionPaymentRequired) Validate() error {
 }
 
 func (s *SiteAuditSetRetentionUnprocessableEntity) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteAuthConfirmEmailChangeBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteAuthConfirmEmailChangeConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5610,14 +5594,6 @@ func (s *SiteUpdateSegmentInput) Validate() error {
 	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s *SiteUserEmailChangeConflict) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
 	}
 	return nil
 }

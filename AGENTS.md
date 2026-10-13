@@ -207,7 +207,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      through `holds.Active` / `holds.Freezer`, which hold no raw client); the abuse detector
      (ADR 0026) scopes over the Workspace being judged, after its row is loaded, to read the
      rates (`abuse.Watch`, which the console's `Module.WorkspaceAbuse` and the `/site`
-     dashboard's warning also read through the `site.AbuseWatch` seam).
+     dashboard's warning also read through the `site.AbuseWatch` seam); and the service usage
+     read (`Module.WorkspaceUsage`, `ee/operator/service_usage.go`), scoped over the one
+     Workspace a call names, after its row is loaded, to read its stored Usage figures.
 - **The raw `*ent.Client` is allowed only in:** `internal/accounts` (User, Membership,
   Workspace incl. slug resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,

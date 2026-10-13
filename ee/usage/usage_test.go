@@ -101,7 +101,7 @@ func TestEmailsSentCountsOnePerRecipientOverAllSurfacesAndNeverASkippedOrFailedO
 	assert.True(t, f.Final)
 }
 
-func TestLiveUsageOfTheOpenPeriodCountsSendsStillInFlight(t *testing.T) {
+func TestLiveUsageReportsSendsStillInFlightApartFromEmailsSent(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := at(2027, time.February, 10, 12)
 	message(t, env, "sent", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.February, 2, 9))
@@ -110,9 +110,12 @@ func TestLiveUsageOfTheOpenPeriodCountsSendsStillInFlight(t *testing.T) {
 	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureOperator), now))
 
 	f := figure(t, env, feb)
-	assert.EqualValues(t, 2, f.Value)
+	assert.EqualValues(t, 1, f.Value, "an in-flight send is not yet sent")
 	assert.False(t, f.Final)
 	assert.True(t, f.ComputedAt.Equal(now), "computed_at is the time of the refresh")
+	inFlight := figureOf(t, env, feb, usage.InFlightSends)
+	assert.EqualValues(t, 1, inFlight.Value)
+	assert.False(t, inFlight.Final)
 }
 
 func TestLiveUsageIsRefreshedAndNeverRecountedOnRead(t *testing.T) {

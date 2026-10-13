@@ -663,7 +663,7 @@
     "/workspaces/{workspaceId}/usage": {
       "get": {
         "operationId": "ServiceWorkspaceUsage_get",
-        "description": "The figures of one Workspace for a Usage period: Live usage (not final, counting\nsends still in flight) for the open period, Usage snapshots (final) for a closed one.\nNever a recount on read.",
+        "description": "The figures of one Workspace for a Usage period: Live usage (not final, with the\nin-flight sends as their own figure) for the open period, Usage snapshots (final) for a closed one.\nNever a recount on read.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -833,6 +833,7 @@
       },
       "EmailAddress": {
         "type": "string",
+        "maxLength": 320,
         "format": "email"
       },
       "EntityId": {
@@ -1211,7 +1212,7 @@
       },
       "UsageMetric": {
         "type": "string",
-        "enum": ["emails_sent", "contacts"],
+        "enum": ["emails_sent", "in_flight_sends", "contacts"],
         "description": "A metric of Usage"
       },
       "WorkspaceUsageResource": {

@@ -6,6 +6,7 @@ export default interface Resources {
       "acceptExistingButton": "Join workspace",
       "errorMessage": "We couldn't accept this invitation. The link may have expired.",
       "errorTitle": "Could not accept invitation",
+      "haveAccount": "Already have an account?",
       "intro": "You've been invited to join {{workspace}} on sphericon.",
       "invalid": "This invitation is invalid or has expired.",
       "joinedMessage": "You've joined the workspace.",
@@ -13,7 +14,6 @@ export default interface Resources {
       "nameLabel": "Your name",
       "passwordLabel": "Password",
       "signInButton": "Sign in",
-      "signInRequired": "Sign in to the account for this address to accept the invitation.",
       "successMessage": "You've joined the workspace. Please sign in.",
       "successTitle": "Invitation accepted",
       "title": "Accept invitation"
@@ -158,6 +158,7 @@ export default interface Resources {
       "waitNodeDescription": "Pause before the next step.",
       "waitSecondsLabel": "Wait (seconds)"
     },
+    "billingBadge": "Billing",
     "broadcasts": {
       "addBroadcast": "New broadcast",
       "audienceAll": "All active contacts",
@@ -320,7 +321,6 @@ export default interface Resources {
           "actor": "By",
           "actorSystem": "System",
           "actorToken": "API token #{{id}}",
-          "billingActivity": "Billing activity",
           "empty": "No recorded changes",
           "loadError": "Could not load the audit log",
           "loadMore": "Load more",
@@ -331,7 +331,6 @@ export default interface Resources {
         "back": "All workspaces",
         "detailsTitle": "Details",
         "holds": {
-          "billing": "Billing",
           "empty": "No active holds.",
           "expires": "Expires",
           "key": "Key",
@@ -542,7 +541,7 @@ export default interface Resources {
       "verifiedBadge": "Verified"
     },
     "registration": {
-      "checkEmailBody": "We sent a link to {{email}}. Follow it to confirm your address and choose your password.",
+      "checkEmailBody": "If {{email}} can be registered, we sent it a link. Follow it to confirm your address and choose your password. If you already have an account, sign in instead.",
       "checkEmailTitle": "Check your email",
       "createdBody": "Your account is ready. Sign in with your email and password.",
       "createdTitle": "Account created",
@@ -641,7 +640,6 @@ export default interface Resources {
         "actorSystem": "System",
         "actorToken": "API token #{{id}}",
         "apply": "Apply filters",
-        "billingActivity": "Billing activity",
         "changeHistory": "Change history",
         "changedMarker": "changed",
         "collapse": "Hide changes",

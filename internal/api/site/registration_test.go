@@ -63,7 +63,7 @@ func TestRegisteringCreatesAnUnverifiedUserWithNothingElse(t *testing.T) {
 	assert.Zero(t, memberships, "no Workspace yet")
 }
 
-func TestRegisteringValidatesNameAndEmailAndRefusesATakenAddress(t *testing.T) {
+func TestRegisteringValidatesNameAndEmail(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
@@ -77,10 +77,6 @@ func TestRegisteringValidatesNameAndEmailAndRefusesATakenAddress(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, exists, "a rejected registration creates no user")
 
-	dup, err := c.SiteAuthRegister(t.Context(), &siteapi.SiteRegisterInput{Name: "John again", Email: fixtures.OwnerJohnEmail})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteAuthRegisterConflict{}, dup)
-	assert.Empty(t, env.SystemMail.Messages())
 }
 
 func TestLoginRefusesAnUnverifiedUserWithATypedAnswerAndNoSession(t *testing.T) {
@@ -395,4 +391,71 @@ func TestPasswordResetEndsEveryEarlierSession(t *testing.T) {
 	require.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, res)
 
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, earlier))
+}
+
+// registerQuiet drives the public registration without assuming what it answers.
+func registerQuiet(t *testing.T, env *testhelper.TestEnv, name, email string) siteapi.SiteAuthRegisterRes {
+	t.Helper()
+	res, err := env.SiteAnonymous(t).SiteAuthRegister(t.Context(),
+		&siteapi.SiteRegisterInput{Name: name, Email: siteapi.EmailAddress(email)})
+	require.NoError(t, err)
+	return res
+}
+
+// ADR 0031: a registration answers the same for a new, an Unverified and a Verified address.
+func TestRegisteringAnswersTheSameForEveryKindOfAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	register(t, env, "Grace Hopper", "grace@example.com")
+
+	for _, email := range []string{"new@example.com", "grace@example.com", fixtures.OwnerJohnEmail} {
+		assert.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, registerQuiet(t, env, "Someone", email), email)
+	}
+}
+
+func TestRegisteringAVerifiedAddressMailsTheOwnerATokenlessNoticeAndChangesNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	before, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
+	require.NoError(t, err)
+
+	registerQuiet(t, env, "Mallory", fixtures.OwnerJohnEmail)
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 1)
+	assert.Equal(t, fixtures.OwnerJohnEmail, msgs[0].To)
+	assert.Contains(t, msgs[0].Subject, "Someone tried")
+	assert.NotContains(t, msgs[0].Text, "token=", "a notice must never carry a token")
+	assert.Contains(t, msgs[0].Text, "/login")
+	assert.Contains(t, msgs[0].Text, "/forgot-password")
+	after, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
+	require.NoError(t, err)
+	assert.Equal(t, before.Name, after.Name)
+	assert.Equal(t, before.PasswordHash, after.PasswordHash)
+}
+
+func TestRegisteringAnUnverifiedAddressAgainMailsAFreshLinkAndKeepsTheName(t *testing.T) {
+	env := testhelper.Setup(t)
+	first := register(t, env, "Grace Hopper", "grace@example.com")
+
+	registerQuiet(t, env, "Mallory", "grace@example.com")
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 2)
+	assert.Equal(t, "grace@example.com", msgs[1].To)
+	assert.Contains(t, msgs[1].Subject, "Verify")
+	u, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Only(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, "Grace Hopper", u.Name)
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, first, "grace-password-1"),
+		"the earlier link still works: the token is bound to the unset password")
+}
+
+func TestRegisteringStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
+	const limit = 3
+	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{ForgotAddress: limit}))
+
+	for range limit + 2 {
+		assert.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, registerQuiet(t, env, "Mallory", fixtures.OwnerJohnEmail))
+	}
+
+	assert.Len(t, env.SystemMail.Messages(), limit, "the owner is not mail-bombed")
 }

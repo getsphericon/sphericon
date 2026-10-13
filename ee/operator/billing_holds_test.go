@@ -60,6 +60,7 @@ func TestTheConsoleAndTheOwnerTellABillingHoldFromAnotherHold(t *testing.T) {
 func TestABillingHoldInTheAuditLogIsBillingActivityUnderTheCredential(t *testing.T) {
 	h := newHarness(t)
 	h.setHoldFor(t, "billing", "non_payment", time.Hour)
+	h.setHoldFor(t, "billing", "non_payment", 2*time.Hour)
 	h.setHoldFor(t, "other", "review", time.Hour)
 	h.clearHold(t, "billing")
 	h.env.DeliverToEE(t)
@@ -74,7 +75,7 @@ func TestABillingHoldInTheAuditLogIsBillingActivityUnderTheCredential(t *testing
 			consoleOther = append(consoleOther, e)
 		}
 	}
-	require.Len(t, consoleBilling, 2, "set and lift")
+	require.Len(t, consoleBilling, 3, "set, renewal and lift")
 	for _, e := range consoleBilling {
 		assert.True(t, e.Billing)
 		assert.Equal(t, fixtures.ServiceCredentialPrimaryName, e.Actor.Name.Value)
@@ -95,5 +96,5 @@ func TestABillingHoldInTheAuditLogIsBillingActivityUnderTheCredential(t *testing
 			assert.False(t, e.Billing)
 		}
 	}
-	assert.Equal(t, 2, seen)
+	assert.Equal(t, 3, seen)
 }

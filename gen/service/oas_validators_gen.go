@@ -14,8 +14,8 @@ func (s EmailAddress) Validate() error {
 	if err := (validate.String{
 		MinLength:     0,
 		MinLengthSet:  false,
-		MaxLength:     0,
-		MaxLengthSet:  false,
+		MaxLength:     320,
+		MaxLengthSet:  true,
 		Email:         true,
 		Hostname:      false,
 		Regex:         nil,
@@ -614,6 +614,8 @@ func (s *UsageFigure) Validate() error {
 func (s UsageMetric) Validate() error {
 	switch s {
 	case "emails_sent":
+		return nil
+	case "in_flight_sends":
 		return nil
 	case "contacts":
 		return nil

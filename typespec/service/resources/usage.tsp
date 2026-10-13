@@ -9,6 +9,10 @@ enum UsageMetric {
   /** Emails sent: one per recipient across Broadcast, Automation and Transactional */
   emailsSent: "emails_sent",
 
+  /** In-flight sends: emails claimed and not yet answered by the provider. Live usage only,
+   * never part of `emailsSent`; always 0 in a Usage snapshot. */
+  inFlightSends: "in_flight_sends",
+
   /** Contacts: the peak number of identified Contacts (those with an email Destination) reached
    * during the Usage period */
   contacts: "contacts",
@@ -66,8 +70,8 @@ namespace ServiceUsage {
 @tag("Service Usage")
 @route("/workspaces/{workspaceId}/usage")
 namespace ServiceWorkspaceUsage {
-  /** The figures of one Workspace for a Usage period: Live usage (not final, counting
-   * sends still in flight) for the open period, Usage snapshots (final) for a closed one.
+  /** The figures of one Workspace for a Usage period: Live usage (not final, with the
+   * in-flight sends as their own figure) for the open period, Usage snapshots (final) for a closed one.
    * Never a recount on read. */
   @get
   op get(@path workspaceId: EntityId, ...UsagePeriodQuery):

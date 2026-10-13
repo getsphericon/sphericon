@@ -4,6 +4,7 @@
     "acceptExistingButton": "Unirse al espacio de trabajo",
     "errorMessage": "No pudimos aceptar esta invitación. Es posible que el enlace haya caducado.",
     "errorTitle": "No se pudo aceptar la invitación",
+    "haveAccount": "¿Ya tienes una cuenta?",
     "intro": "Te han invitado a unirte a {{workspace}} en sphericon.",
     "invalid": "Esta invitación no es válida o ha caducado.",
     "joinedMessage": "Te has unido al espacio de trabajo.",
@@ -11,7 +12,6 @@
     "nameLabel": "Tu nombre",
     "passwordLabel": "Contraseña",
     "signInButton": "Iniciar sesión",
-    "signInRequired": "Inicia sesión en la cuenta de esta dirección para aceptar la invitación.",
     "successMessage": "Te has unido al espacio de trabajo. Inicia sesión.",
     "successTitle": "Invitación aceptada",
     "title": "Aceptar invitación"
@@ -156,6 +156,7 @@
     "waitNodeDescription": "Pausa antes del siguiente paso.",
     "waitSecondsLabel": "Esperar (segundos)"
   },
+  "billingBadge": "Facturación",
   "broadcasts": {
     "addBroadcast": "Nueva campaña",
     "audienceAll": "Todos los contactos activos",
@@ -330,7 +331,6 @@
         "actor": "Por",
         "actorSystem": "Sistema",
         "actorToken": "Token de API n.º {{id}}",
-        "billingActivity": "Actividad de facturación",
         "empty": "No hay cambios registrados",
         "loadError": "No se pudo cargar el registro de auditoría",
         "loadMore": "Cargar más",
@@ -341,7 +341,6 @@
       "back": "Todos los espacios de trabajo",
       "detailsTitle": "Detalles",
       "holds": {
-        "billing": "Facturación",
         "empty": "Sin retenciones activas.",
         "expires": "Caduca",
         "key": "Clave",
@@ -564,7 +563,7 @@
     "verifiedBadge": "Verificado"
   },
   "registration": {
-    "checkEmailBody": "Enviamos un enlace a {{email}}. Sigue el enlace para confirmar tu dirección y elegir tu contraseña.",
+    "checkEmailBody": "Si {{email}} puede registrarse, le enviamos un enlace. Síguelo para confirmar tu dirección y elegir tu contraseña. Si ya tienes una cuenta, inicia sesión.",
     "checkEmailTitle": "Revisa tu correo",
     "createdBody": "Tu cuenta está lista. Inicia sesión con tu correo y contraseña.",
     "createdTitle": "Cuenta creada",
@@ -669,7 +668,6 @@
       "actorSystem": "Sistema",
       "actorToken": "Token de API n.º {{id}}",
       "apply": "Aplicar filtros",
-      "billingActivity": "Actividad de facturación",
       "changedMarker": "modificado",
       "changeHistory": "Historial de cambios",
       "collapse": "Ocultar cambios",

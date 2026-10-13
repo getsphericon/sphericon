@@ -99,9 +99,11 @@ type Invoker interface {
 	// SiteAuthRegister invokes SiteAuth_register operation.
 	//
 	// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
-	// with the link to the set-password screen is on its way (202). A taken address answers 409. With
-	// `REQUIRE_EMAIL_VERIFICATION=false` the request must carry a password (422 otherwise) and creates a
-	// Verified User with its first Workspace at once (202, no session: the User signs in next).
+	// with the link to the set-password screen is on its way (202), and 202 is the answer for every
+	// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
+	// `REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must carry a
+	// password (422 otherwise), creates a Verified User with its first Workspace at once (202, no session:
+	// the User signs in next), and a taken address answers 409.
 	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error)
@@ -604,7 +606,8 @@ type Invoker interface {
 	// SiteUserEmailChange invokes SiteUser_emailChange operation.
 	//
 	// Request an email change; sends a confirmation link to the new address. Requires the current
-	// password. 409 if the new address is already in use.
+	// password. A taken address answers 202 like a free one: its owner gets a notice by mail instead of
+	// the link (ADR 0031).
 	//
 	// POST /me/email-change
 	SiteUserEmailChange(ctx context.Context, request *SiteEmailChangeInput) (SiteUserEmailChangeRes, error)
@@ -2137,9 +2140,11 @@ func (c *Client) sendSiteAuthLogout(ctx context.Context) (res *SiteAuthLogoutNoC
 // SiteAuthRegister invokes SiteAuth_register operation.
 //
 // Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
-// with the link to the set-password screen is on its way (202). A taken address answers 409. With
-// `REQUIRE_EMAIL_VERIFICATION=false` the request must carry a password (422 otherwise) and creates a
-// Verified User with its first Workspace at once (202, no session: the User signs in next).
+// with the link to the set-password screen is on its way (202), and 202 is the answer for every
+// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
+// `REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must carry a
+// password (422 otherwise), creates a Verified User with its first Workspace at once (202, no session:
+// the User signs in next), and a taken address answers 409.
 //
 // POST /auth/register
 func (c *Client) SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error) {
@@ -13526,7 +13531,8 @@ func (c *Client) sendSiteTransactionalEmailsList(ctx context.Context, params Sit
 // SiteUserEmailChange invokes SiteUser_emailChange operation.
 //
 // Request an email change; sends a confirmation link to the new address. Requires the current
-// password. 409 if the new address is already in use.
+// password. A taken address answers 202 like a free one: its owner gets a notice by mail instead of
+// the link (ADR 0031).
 //
 // POST /me/email-change
 func (c *Client) SiteUserEmailChange(ctx context.Context, request *SiteEmailChangeInput) (SiteUserEmailChangeRes, error) {

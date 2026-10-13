@@ -1566,11 +1566,6 @@ export type SiteInvitationLookupResult = {
    * The address the invite was sent to
    */
   email: EmailAddress;
-  /**
-   * True only when that email has a Verified User; an address with no User or an
-   * Unverified User needs a name and a password to accept
-   */
-  hasAccount: boolean;
 };
 
 /**
@@ -2971,10 +2966,6 @@ export type SiteAuthConfirmEmailChangeErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
 };
 
 export type SiteAuthConfirmEmailChangeError = SiteAuthConfirmEmailChangeErrors[keyof SiteAuthConfirmEmailChangeErrors];
@@ -3351,10 +3342,6 @@ export type SiteUserEmailChangeErrors = {
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
