@@ -29926,6 +29926,12 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.BillingUrl.Set {
+			e.FieldStart("billingUrl")
+			s.BillingUrl.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("holds")
 		e.ArrStart()
 		for _, elem := range s.Holds {
@@ -29955,7 +29961,7 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceResource = [15]string{
+var jsonFieldsNameOfSiteWorkspaceResource = [16]string{
 	0:  "id",
 	1:  "name",
 	2:  "slug",
@@ -29966,11 +29972,12 @@ var jsonFieldsNameOfSiteWorkspaceResource = [15]string{
 	7:  "suspendedAt",
 	8:  "suspensionReason",
 	9:  "supportEmail",
-	10: "holds",
-	11: "secondFactorRequiredAt",
-	12: "secondFactorGraceEndsAt",
-	13: "accountLinkAvailable",
-	14: "createdAt",
+	10: "billingUrl",
+	11: "holds",
+	12: "secondFactorRequiredAt",
+	13: "secondFactorGraceEndsAt",
+	14: "accountLinkAvailable",
+	15: "createdAt",
 }
 
 // Decode decodes SiteWorkspaceResource from json.
@@ -30092,8 +30099,18 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"supportEmail\"")
 			}
+		case "billingUrl":
+			if err := func() error {
+				s.BillingUrl.Reset()
+				if err := s.BillingUrl.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"billingUrl\"")
+			}
 		case "holds":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				s.Holds = make([]SiteWorkspaceHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -30131,7 +30148,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"secondFactorGraceEndsAt\"")
 			}
 		case "accountLinkAvailable":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				v, err := d.Bool()
 				s.AccountLinkAvailable = bool(v)
@@ -30143,7 +30160,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accountLinkAvailable\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -30163,7 +30180,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b01111111,
-		0b01100100,
+		0b11001000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

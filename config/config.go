@@ -123,9 +123,12 @@ type Config struct {
 	// SupportEmail is the support contact shown with a suspension and in the owner notices
 	// (SUPPORT_EMAIL): where an owner appeals. Empty shows none.
 	SupportEmail string
-	AutoMigrate  bool
-	BodyLimits   BodyLimits
-	RateLimits   RateLimits
+	// BillingURL is the billing site a Workspace member under a hold is pointed to
+	// (BILLING_URL). Empty (the self-host default) shows no link and no billing text.
+	BillingURL  string
+	AutoMigrate bool
+	BodyLimits  BodyLimits
+	RateLimits  RateLimits
 	// OutboxFloor is the minimum age of a domain-event outbox row before the
 	// prune job may delete it (OUTBOX_RETENTION_FLOOR_DAYS, default 7; ADR 0019).
 	OutboxFloor time.Duration
@@ -295,6 +298,7 @@ func Load(envName string) (*Config, error) {
 		AbuseFreezeComplaintPercent: v.GetFloat64("ABUSE_FREEZE_COMPLAINT_PERCENT"),
 		AbuseFreezeBouncePercent:    v.GetFloat64("ABUSE_FREEZE_BOUNCE_PERCENT"),
 		SupportEmail:                strings.TrimSpace(v.GetString("SUPPORT_EMAIL")),
+		BillingURL:                  strings.TrimSpace(v.GetString("BILLING_URL")),
 		AutoMigrate:                 v.GetBool("AUTO_MIGRATE"),
 
 		BodyLimits: BodyLimits{
