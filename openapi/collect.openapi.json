@@ -232,10 +232,14 @@
         "required": ["visitorId", "action"],
         "properties": {
           "visitorId": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
           },
           "action": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
           },
           "properties": {
             "type": "object",
@@ -261,7 +265,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CollectEventInput"
-            }
+            },
+            "maxItems": 100
           }
         }
       },
@@ -270,7 +275,9 @@
         "required": ["visitorId"],
         "properties": {
           "visitorId": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
           },
           "email": {
             "type": "string",
@@ -283,11 +290,13 @@
           },
           "phone": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 32
           },
           "subjectId": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 255
           },
           "traits": {
             "type": "object",
@@ -318,6 +327,7 @@
       },
       "EmailAddress": {
         "type": "string",
+        "maxLength": 320,
         "format": "email"
       },
       "EntityId": {

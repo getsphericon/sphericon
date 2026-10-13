@@ -3,7 +3,7 @@
 
 import * as z from 'zod';
 
-export const zEmailAddress = z.email();
+export const zEmailAddress = z.email().max(320);
 
 export const zEntityId = z.string().regex(/^[0-9]+$/);
 
