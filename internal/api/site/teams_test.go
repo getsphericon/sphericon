@@ -76,7 +76,6 @@ func TestSiteInvitationAcceptNewUser(t *testing.T) {
 	found, ok := lookup.(*siteapi.SiteInvitationLookupResult)
 	require.Truef(t, ok, "got %T", lookup)
 	assert.Equal(t, "Acme", found.WorkspaceName)
-	assert.False(t, found.HasAccount)
 
 	accept, err := c.SitePublicInvitationsAccept(ctx,
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("New Bie"), Password: siteapi.NewOptString("s3cret-pass")},

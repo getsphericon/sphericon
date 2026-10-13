@@ -293,13 +293,6 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(email)).Exist(ctx)
 }
 
-// HasVerifiedAccount reports whether the email belongs to a Verified User: the only
-// kind of account an Invitation may attach to. An Unverified User is not an account
-// (ADR 0030): it holds no password and is handled like a new address.
-func (a *Accounts) HasVerifiedAccount(ctx context.Context, email string) (bool, error) {
-	return a.ent.User.Query().Where(user.Email(email), user.EmailVerifiedAtNotNil()).Exist(ctx)
-}
-
 // Register creates an Unverified User (ADR 0030): a name and an email, no password,
 // no Membership. The unique index on the email refuses a taken address (see
 // db.IsUniqueViolation).

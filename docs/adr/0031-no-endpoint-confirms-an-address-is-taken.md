@@ -18,6 +18,13 @@ owner is told by mail instead.
 - **The invitation lookup** no longer returns `hasAccount`. The accept page offers both paths
   (sign in, create account) and the server enforces ADR 0030's rule: a Verified User's address is
   accepted only with that User's own session.
+- **The accept step still refuses** a Verified address without that User's own session (401, "sign in")
+  and a session of another account (403): the link holder can learn, one submit later, that the
+  address has an account. That cannot be avoided, since joining a Verified User's address needs its
+  session, and the holder of the link is the one invited.
+- **Budgets:** the notice and the verify mail share the forgot-password per-address budget
+  (`RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR`), taken under a Kind of its own for
+  registration and for email change, so a stranger cannot mail-bomb an owner through either.
 - **The exception** is `REQUIRE_EMAIL_VERIFICATION=false`: the password arrives with the request and
   no mail is sent, so registration keeps answering 409. An operator who turns the gate off accepts
   that enumeration.

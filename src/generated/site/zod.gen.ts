@@ -347,8 +347,7 @@ export const zSiteCreateInvitationInput = z.object({
  */
 export const zSiteInvitationLookupResult = z.object({
   workspaceName: z.string(),
-  email: zEmailAddress,
-  hasAccount: z.boolean()
+  email: zEmailAddress
 });
 
 /**

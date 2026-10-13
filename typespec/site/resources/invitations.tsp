@@ -97,10 +97,6 @@ model SiteInvitationLookupResult {
 
   /** The address the invite was sent to */
   email: EmailAddress;
-
-  /** True only when that email has a Verified User; an address with no User or an
-   * Unverified User needs a name and a password to accept */
-  hasAccount: boolean;
 }
 
 /** Accept an invite. For an address with no User or an Unverified User, name + password

@@ -18,6 +18,9 @@ const (
 	flowPasswordReset = "password_reset"
 	flowEmailVerify   = "email_verify"
 	flowEmailChange   = "email_change"
+	// flowAddressTaken is the notice to the owner of a Taken address (ADR 0031): it
+	// carries no token, only the sign-in and forgot-password pages.
+	flowAddressTaken = "address_taken"
 )
 
 // SendAuthMailArgs is the river payload for a self-service account email. Flow
@@ -64,6 +67,9 @@ func SendAuthMail(ctx context.Context, sender messaging.EmailSender, appURL stri
 
 // buildAuthMail renders an account email without sending it.
 func buildAuthMail(appURL string, args SendAuthMailArgs) (messaging.EmailMessage, error) {
+	if args.Flow == flowAddressTaken {
+		return buildAddressTakenMail(appURL, args.Email), nil
+	}
 	subjectID, path, introID := authMailCopy(args.Flow)
 	if path == "" {
 		return messaging.EmailMessage{}, fmt.Errorf("send auth mail: unknown flow %q", args.Flow)
@@ -71,6 +77,18 @@ func buildAuthMail(appURL string, args SendAuthMailArgs) (messaging.EmailMessage
 	link := strings.TrimRight(appURL, "/") + path + "?token=" + url.QueryEscape(args.Token)
 	body := fmt.Sprintf("%s\n\n%s\n\n%s\n", i18n.T(introID, nil), link, i18n.T("email.auth.footer", nil))
 	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(subjectID, nil), Text: body}, nil
+}
+
+// buildAddressTakenMail renders the notice a registration or an email change to a
+// Taken address sends its owner. It carries no token, so it can never be a way in.
+func buildAddressTakenMail(appURL, to string) messaging.EmailMessage {
+	base := strings.TrimRight(appURL, "/")
+	body := fmt.Sprintf("%s\n\n%s %s\n%s %s\n\n%s\n",
+		i18n.T("email.address_taken.intro", nil),
+		i18n.T("email.address_taken.sign_in", nil), base+"/login",
+		i18n.T("email.address_taken.reset", nil), base+"/forgot-password",
+		i18n.T("email.auth.footer", nil))
+	return messaging.EmailMessage{To: to, Subject: i18n.T("email.address_taken.subject", nil), Text: body}
 }
 
 // authMailCopy returns the subject message id, SPA path, and intro message id
@@ -103,9 +121,17 @@ func (c *Client) EnqueueEmailVerification(ctx context.Context, email, token stri
 }
 
 // EnqueueEmailChangeConfirm schedules the confirm-new-email email (sent to the
-// requested new address).
-func (c *Client) EnqueueEmailChangeConfirm(ctx context.Context, email, token string) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowEmailChange, Email: email, Token: token})
+// requested new address). With send false the job is queued all the same but its
+// worker drops the mail.
+func (c *Client) EnqueueEmailChangeConfirm(ctx context.Context, email, token string, send bool) error {
+	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowEmailChange, Email: email, Token: token, Discard: !send})
+}
+
+// EnqueueAddressTakenNotice schedules the tokenless notice to the owner of a Taken
+// address. With send false the job is queued all the same but its worker drops the
+// mail, so a request's work does not depend on whether the address was taken.
+func (c *Client) EnqueueAddressTakenNotice(ctx context.Context, email string, send bool) error {
+	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowAddressTaken, Email: email, Discard: !send})
 }
 
 func (c *Client) enqueue(ctx context.Context, args SendAuthMailArgs) error {

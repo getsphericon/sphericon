@@ -117,16 +117,6 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "RFC 7807 conflict response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           }
         },
         "tags": ["Site Auth"],
@@ -341,7 +331,7 @@
     "/auth/register": {
       "post": {
         "operationId": "SiteAuth_register",
-        "description": "Create an Unverified User (ADR 0030): no password, no session, no Workspace.\nA verification email with the link to the set-password screen is on its way\n(202). A taken address answers 409. With `REQUIRE_EMAIL_VERIFICATION=false` the\nrequest must carry a password (422 otherwise) and creates a Verified User with\nits first Workspace at once (202, no session: the User signs in next).",
+        "description": "Create an Unverified User (ADR 0030): no password, no session, no Workspace.\nA verification email with the link to the set-password screen is on its way\n(202), and 202 is the answer for every address, taken or not (ADR 0031): the\nowner of a taken address gets a notice by mail instead. With\n`REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the\nrequest must carry a password (422 otherwise), creates a Verified User with its\nfirst Workspace at once (202, no session: the User signs in next), and a taken\naddress answers 409.",
         "parameters": [],
         "responses": {
           "202": {
@@ -1029,7 +1019,7 @@
     "/me/email-change": {
       "post": {
         "operationId": "SiteUser_emailChange",
-        "description": "Request an email change; sends a confirmation link to the new address.\nRequires the current password. 409 if the new address is already in use.",
+        "description": "Request an email change; sends a confirmation link to the new address.\nRequires the current password. A taken address answers 202 like a free one: its\nowner gets a notice by mail instead of the link (ADR 0031).",
         "parameters": [],
         "responses": {
           "202": {
@@ -1037,16 +1027,6 @@
           },
           "403": {
             "description": "RFC 7807 forbidden response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9075,7 +9055,7 @@
       },
       "SiteInvitationLookupResult": {
         "type": "object",
-        "required": ["workspaceName", "email", "hasAccount"],
+        "required": ["workspaceName", "email"],
         "properties": {
           "workspaceName": {
             "type": "string",
@@ -9088,10 +9068,6 @@
               }
             ],
             "description": "The address the invite was sent to"
-          },
-          "hasAccount": {
-            "type": "boolean",
-            "description": "True only when that email has a Verified User; an address with no User or an\nUnverified User needs a name and a password to accept"
           }
         },
         "description": "What an invite link reveals before acceptance, for rendering the accept page"

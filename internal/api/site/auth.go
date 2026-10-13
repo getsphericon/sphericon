@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -49,18 +50,40 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 		return h.registerVerified(ctx, name, email, req.Password.Or(""))
 	}
 
-	u, err := h.accounts.Register(ctx, name, email)
-	if db.IsUniqueViolation(err) {
-		return emailTaken(), nil
+	// Every request does the same work whatever the address is (ADR 0031): take a slot
+	// of its budget, create the User or find the one that holds the address, mint a
+	// token and queue exactly one mail job. Only what the job carries differs, and a
+	// job with no mail due is a no-send one, so neither the answer nor its timing says
+	// whether the address was Taken.
+	granted, err := h.attempts.Take(ctx, accounts.KindRegister, email)
+	if err != nil {
+		return nil, err
+	}
+	u, err := h.accounts.UserByEmail(ctx, email)
+	if ent.IsNotFound(err) {
+		u, err = h.accounts.Register(ctx, name, email)
+		if db.IsUniqueViolation(err) {
+			// Two registrations of one new address raced: the loser finds the winner's row
+			// and follows the same path, so a race is not an answer of its own.
+			u, err = h.accounts.UserByEmail(ctx, email)
+		}
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	// The token is bound to the (still empty) password hash, so it works once: setting
-	// the password ends it. Best-effort send; a lost mail is asked for again.
-	if token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, u.ID, u.PasswordHash, verifyTokenTTL, map[string]string{"email": u.Email}); err == nil {
-		_ = h.sysmail.EnqueueEmailVerification(ctx, u.Email, token, true)
+	// The token is bound to the User's password hash (empty while Unverified), so it
+	// works once: setting the password ends it. A Verified User's hash is a real one,
+	// and its notice carries no token at all. Best-effort send; a lost mail is asked
+	// for again.
+	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, u.ID, u.PasswordHash, verifyTokenTTL, map[string]string{"email": u.Email})
+	if err != nil {
+		return nil, err
+	}
+	if u.EmailVerifiedAt != nil {
+		_ = h.sysmail.EnqueueAddressTakenNotice(ctx, u.Email, granted)
+	} else {
+		_ = h.sysmail.EnqueueEmailVerification(ctx, u.Email, token, granted)
 	}
 	return &siteapi.SiteAuthRegisterAccepted{}, nil
 }

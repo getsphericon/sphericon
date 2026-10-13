@@ -138,12 +138,12 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.SiteConfirmEmailChangeInput, params siteapi.SiteAuthConfirmEmailChangeParams) (siteapi.SiteAuthConfirmEmailChangeRes, error) {
 	uid, extra, err := h.tokens.Parse(req.Token, authtoken.PurposeEmailChange, h.currentEmailBinding(ctx))
 	if err != nil {
-		v := siteapi.SiteAuthConfirmEmailChangeBadRequest(problem(http.StatusBadRequest, i18n.T("errors.confirm_link_invalid", nil)))
+		v := problem(http.StatusBadRequest, i18n.T("errors.confirm_link_invalid", nil))
 		return &v, nil
 	}
 	newEmail := strings.TrimSpace(extra["new"])
 	if newEmail == "" {
-		v := siteapi.SiteAuthConfirmEmailChangeBadRequest(problem(http.StatusBadRequest, i18n.T("errors.confirm_link_bad", nil)))
+		v := problem(http.StatusBadRequest, i18n.T("errors.confirm_link_bad", nil))
 		return &v, nil
 	}
 	// Checked before the change: the epoch bump ends this session too.
@@ -152,10 +152,11 @@ func (h *Handlers) SiteAuthConfirmEmailChange(ctx context.Context, req *siteapi.
 		return nil, err
 	}
 	// The new address was proven by clicking this link, so it is verified. The
-	// unique index also guards the race if the address was taken meanwhile.
+	// unique index guards the race if the address was taken meanwhile.
 	err = h.accounts.ChangeEmail(ctx, uid, newEmail)
 	if db.IsUniqueViolation(err) {
-		v := siteapi.SiteAuthConfirmEmailChangeConflict(problem(http.StatusConflict, i18n.T("errors.email_in_use", nil)))
+		// Never "in use" (ADR 0031): to the confirmer a Taken address is an invalid link.
+		v := problem(http.StatusBadRequest, i18n.T("errors.confirm_link_invalid", nil))
 		return &v, nil
 	}
 	if err != nil {
