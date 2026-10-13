@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -79,4 +80,29 @@ func TestPreHijackingAnAttackerWhoRegisteredTheInviteesAddressGainsNothing(t *te
 		slugs[i] = s.Slug
 	}
 	assert.Contains(t, slugs, fixtures.AcmeSlug)
+}
+
+// An Invitation that proves an address is a Verified email like a registration link
+// does, so the Operator reading the Audit log sees who proved what (ADR 0030).
+func TestAcceptingAnInvitationThatVerifiesTheAddressIsAuditedAsEmailVerified(t *testing.T) {
+	for name, prepare := range map[string]func(*testing.T, *testhelper.TestEnv){
+		"new address":        func(*testing.T, *testhelper.TestEnv) {},
+		"unverified address": func(t *testing.T, env *testhelper.TestEnv) { register(t, env, "Squatter", "invitee@example.com") },
+	} {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			prepare(t, env)
+			token := inviteToAcme(t, env, "invitee@example.com")
+
+			res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+				&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Invitee"), Password: siteapi.NewOptString("invitee-password-1")},
+				siteapi.SitePublicInvitationsAcceptParams{Token: token})
+			require.NoError(t, err)
+			require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
+
+			got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserEmailVerify)
+			require.Len(t, got, 1)
+			assert.Equal(t, "Invitee", got[0].Actor.Name.Value)
+		})
+	}
 }

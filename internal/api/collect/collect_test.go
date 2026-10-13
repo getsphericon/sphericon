@@ -136,7 +136,7 @@ func TestCollectIdentifyStitchesAnonymousEvents(t *testing.T) {
 	// End-to-end: the stitched event makes the Contact match an event-condition
 	// segment (which joins Contact↔Event on contact_id, per ADR 0002).
 	pred, err := segments.ContactPredicate(ctx, env.DB.Scoped(fixtures.AcmeID),
-		`{"combinator":"and","rules":[{"field":"event:page_view","operator":"performed","value":""}]}`,
+		`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:page_view","operator":"performed","value":""}]}`,
 	)
 	require.NoError(t, err)
 	n, err := env.DB.Contact.Query().Where(contact.IDEQ(ct.ID), pred).Count(ctx)

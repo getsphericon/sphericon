@@ -1,6 +1,7 @@
-// Package segments compiles a Segment's rule query (the react-querybuilder JSON the UI
-// emits) into a Contact predicate: a group {combinator: and|or, not, rules[]} whose
-// entries are nested groups or leaves {field, operator, value}.
+// Package segments compiles a Segment's rule query (the typed tree of the API contract,
+// ADR 0029) into a Contact predicate: a group {kind: "group", combinator: and|or, not,
+// rules[]} whose entries are nested groups or leaves {kind: "rule", field, operator,
+// value}, told apart by `kind`.
 //
 // A leaf is built from ent's generated predicates wherever one exists: the core
 // attributes (contact.EmailEQ …), Tags (contact.HasTagsWith) and Events
@@ -38,16 +39,23 @@ const (
 	tagField = "tag"
 )
 
-// Group is a react-querybuilder RuleGroupType. Each rules[] entry is decoded
-// lazily because it is either a nested Group or a leaf Rule.
+const (
+	kindGroup = "group"
+	kindRule  = "rule"
+)
+
+// Group is a group of the rule tree. Each rules[] entry is decoded lazily because it
+// is either a nested Group or a leaf Rule, as its `kind` says.
 type Group struct {
+	Kind       string            `json:"kind"`
 	Combinator string            `json:"combinator"`
 	Not        bool              `json:"not,omitempty"`
 	Rules      []json.RawMessage `json:"rules"`
 }
 
-// Rule is a react-querybuilder leaf rule.
+// Rule is a leaf rule of the tree.
 type Rule struct {
+	Kind     string `json:"kind"`
 	Field    string `json:"field"`
 	Operator string `json:"operator"`
 	Value    string `json:"value"`
@@ -72,10 +80,10 @@ var textFields = map[string]textField{
 // Parse decodes a definition string into a Group. A blank definition is a valid
 // "match everyone" group.
 func Parse(def string) (Group, error) {
-	g := Group{Combinator: "and"}
 	if strings.TrimSpace(def) == "" {
-		return g, nil
+		return Group{Kind: kindGroup, Combinator: "and"}, nil
 	}
+	var g Group
 	if err := json.Unmarshal([]byte(def), &g); err != nil {
 		return g, fmt.Errorf("invalid segment definition: %w", err)
 	}
@@ -108,6 +116,12 @@ type compiler struct {
 }
 
 func (c *compiler) group(g Group) (predicate.Contact, error) {
+	if g.Kind != kindGroup {
+		return nil, fmt.Errorf("unknown group kind %q", g.Kind)
+	}
+	if g.Combinator != "and" && g.Combinator != "or" {
+		return nil, fmt.Errorf("unknown combinator %q", g.Combinator)
+	}
 	preds := make([]predicate.Contact, 0, len(g.Rules))
 	for i, raw := range g.Rules {
 		p, err := c.entry(raw)
@@ -125,7 +139,7 @@ func (c *compiler) group(g Group) (predicate.Contact, error) {
 	}
 
 	p := contact.And(preds...)
-	if strings.EqualFold(g.Combinator, "or") {
+	if g.Combinator == "or" {
 		p = contact.Or(preds...)
 	}
 	if g.Not {
@@ -134,28 +148,30 @@ func (c *compiler) group(g Group) (predicate.Contact, error) {
 	return p, nil
 }
 
-// entry decodes a rules[] entry: a nested group when it carries a combinator (or has
-// no field), a leaf rule otherwise.
+// entry decodes a rules[] entry by its `kind`: a nested group or a leaf rule.
 func (c *compiler) entry(raw json.RawMessage) (predicate.Contact, error) {
 	var probe struct {
-		Combinator string `json:"combinator"`
-		Field      string `json:"field"`
+		Kind string `json:"kind"`
 	}
 	if err := json.Unmarshal(raw, &probe); err != nil {
 		return nil, fmt.Errorf("malformed rule: %w", err)
 	}
-	if probe.Combinator != "" || probe.Field == "" {
+	switch probe.Kind {
+	case kindGroup:
 		var g Group
 		if err := json.Unmarshal(raw, &g); err != nil {
 			return nil, fmt.Errorf("malformed group: %w", err)
 		}
 		return c.group(g)
+	case kindRule:
+		var r Rule
+		if err := json.Unmarshal(raw, &r); err != nil {
+			return nil, fmt.Errorf("malformed rule: %w", err)
+		}
+		return c.rule(r)
+	default:
+		return nil, fmt.Errorf("unknown rule kind %q", probe.Kind)
 	}
-	var r Rule
-	if err := json.Unmarshal(raw, &r); err != nil {
-		return nil, fmt.Errorf("malformed rule: %w", err)
-	}
-	return c.rule(r)
 }
 
 func (c *compiler) rule(r Rule) (predicate.Contact, error) {

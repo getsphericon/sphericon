@@ -23,7 +23,7 @@ func validate(t *testing.T, env *testhelper.TestEnv, def string) error {
 }
 
 func rule(field, op, value string) segments.Rule {
-	return segments.Rule{Field: field, Operator: op, Value: value}
+	return segments.Rule{Kind: "rule", Field: field, Operator: op, Value: value}
 }
 
 // marshal encodes leaf rules (or nested groups) into the raw rules[] entries.
@@ -66,28 +66,30 @@ func TestCompileEvaluatesAgainstContacts(t *testing.T) {
 	}
 
 	// Empty group matches everyone (within the @seg.test scope: all 3).
-	assert.Equal(t, 3, count(segments.Group{}))
+	assert.Equal(t, 3, count(segments.Group{Kind: "group", Combinator: "and"}))
 
 	// custom:plan = pro → Ann + Cara
-	assert.Equal(t, 2, count(segments.Group{Rules: marshal(rule("custom:plan", "eq", "pro"))}))
+	assert.Equal(t, 2, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 
 	// and: first_name=Ann AND plan=pro → just Ann
 	assert.Equal(t, 1, count(segments.Group{
+		Kind:       "group",
 		Combinator: "and",
 		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("custom:plan", "eq", "pro")),
 	}))
 
 	// or: first_name=Ann OR first_name=Bob → 2
 	assert.Equal(t, 2, count(segments.Group{
+		Kind:       "group",
 		Combinator: "or",
 		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("first_name", "eq", "Bob")),
 	}))
 
 	// custom:plan notNull → all 3 have it
-	assert.Equal(t, 3, count(segments.Group{Rules: marshal(rule("custom:plan", "notNull", ""))}))
+	assert.Equal(t, 3, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("custom:plan", "notNull", ""))}))
 
 	// not: NOT(plan=pro) → only Bob (free)
-	assert.Equal(t, 1, count(segments.Group{Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
+	assert.Equal(t, 1, count(segments.Group{Kind: "group", Combinator: "and", Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 }
 
 func TestEventConditions(t *testing.T) {
@@ -129,18 +131,18 @@ func TestEventConditions(t *testing.T) {
 	}
 
 	// performed ever → only Ann did page_view.
-	assert.Equal(t, 1, count(segments.Group{Rules: marshal(rule("event:page_view", "performed", ""))}))
+	assert.Equal(t, 1, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:page_view", "performed", ""))}))
 	// performed within 7 days → Ann's page_view (2d ago) qualifies.
-	assert.Equal(t, 1, count(segments.Group{Rules: marshal(rule("event:page_view", "performed", "7"))}))
+	assert.Equal(t, 1, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:page_view", "performed", "7"))}))
 	// purchase within 7 days → none (Ann's is 40d ago); ever → Ann.
-	assert.Equal(t, 0, count(segments.Group{Rules: marshal(rule("event:purchase", "performed", "7"))}))
-	assert.Equal(t, 1, count(segments.Group{Rules: marshal(rule("event:purchase", "performed", ""))}))
+	assert.Equal(t, 0, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:purchase", "performed", "7"))}))
+	assert.Equal(t, 1, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:purchase", "performed", ""))}))
 	// notPerformed page_view → Bob only.
-	assert.Equal(t, 1, count(segments.Group{Rules: marshal(rule("event:page_view", "notPerformed", ""))}))
+	assert.Equal(t, 1, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:page_view", "notPerformed", ""))}))
 
 	// validation: bad operator + non-numeric window are rejected.
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"event:x","operator":"weird","value":""}]}`))
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"event:x","operator":"performed","value":"soon"}]}`))
+	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:x","operator":"weird","value":""}]}`))
+	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:x","operator":"performed","value":"soon"}]}`))
 }
 
 // Fixtures: tag "vip" is on contacts 1 and 3, "newsletter" on contact 1, "unused" on
@@ -160,17 +162,18 @@ func TestTagConditions(t *testing.T) {
 		return n
 	}
 	has := func(name string) segments.Group {
-		return segments.Group{Rules: marshal(rule("tag", "has", name))}
+		return segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("tag", "has", name))}
 	}
 
 	assert.Equal(t, 2, count(has("vip")))
 	assert.Equal(t, 1, count(has("newsletter")))
 	assert.Equal(t, 0, count(has("unused")), "an existing Tag nobody has matches no one")
 	assert.Equal(t, 0, count(has("never-created")))
-	assert.Equal(t, 1, count(segments.Group{Rules: marshal(rule("tag", "doesNotHave", "vip"))}), "contact 2")
+	assert.Equal(t, 1, count(segments.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("tag", "doesNotHave", "vip"))}), "contact 2")
 
 	// Composes with other rules: vip AND newsletter -> contact 1 only.
 	assert.Equal(t, 1, count(segments.Group{
+		Kind:       "group",
 		Combinator: "and",
 		Rules:      marshal(rule("tag", "has", "vip"), rule("tag", "has", "newsletter")),
 	}))
@@ -184,7 +187,7 @@ func TestTagConditions(t *testing.T) {
 	assert.Equal(t, 0, count(has(fixtures.TagGlobexName)))
 
 	// Validation: only has / doesNotHave are valid for the tag field.
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"tag","operator":"eq","value":"vip"}]}`))
+	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"eq","value":"vip"}]}`))
 }
 
 func TestParseAndValidate(t *testing.T) {
@@ -193,15 +196,15 @@ func TestParseAndValidate(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "and", g.Combinator)
 
-	require.NoError(t, validate(t, env, `{"combinator":"or","rules":[{"field":"email","operator":"contains","value":"x"}]}`))
+	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"email","operator":"contains","value":"x"}]}`))
 
 	// nested group
-	require.NoError(t, validate(t, env, `{"combinator":"and","rules":[{"combinator":"or","rules":[{"field":"first_name","operator":"eq","value":"Ann"}]}]}`))
+	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"first_name","operator":"eq","value":"Ann"}]}]}`))
 
 	// unknown field
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"nope","operator":"eq","value":"x"}]}`))
+	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))
 	// unsupported operator
-	assert.Error(t, validate(t, env, `{"rules":[{"field":"email","operator":"weird","value":"x"}]}`))
+	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"weird","value":"x"}]}`))
 	// malformed JSON
 	assert.Error(t, validate(t, env, `{not json`))
 }

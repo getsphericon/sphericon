@@ -40,7 +40,7 @@ func declare(t *testing.T, env *testhelper.TestEnv, keys ...string) {
 }
 
 func opsGroup(entries ...any) segments.Group {
-	return segments.Group{Combinator: "and", Rules: marshal(entries...)}
+	return segments.Group{Kind: "group", Combinator: "and", Rules: marshal(entries...)}
 }
 
 func TestPlainColumnOperators(t *testing.T) {
@@ -140,8 +140,8 @@ func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
 	_, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("only@ops.test").Save(ctx)
 	require.NoError(t, err)
 
-	assert.Equal(t, []string{"only@ops.test"}, opsEmails(t, env, segments.Group{Combinator: "and"}))
-	assert.Empty(t, opsEmails(t, env, segments.Group{Combinator: "and", Not: true}), "an empty negated group matches no one")
+	assert.Equal(t, []string{"only@ops.test"}, opsEmails(t, env, segments.Group{Kind: "group", Combinator: "and"}))
+	assert.Empty(t, opsEmails(t, env, segments.Group{Kind: "group", Combinator: "and", Not: true}), "an empty negated group matches no one")
 }
 
 func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
@@ -175,19 +175,29 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	// A rules[] entry that is not an object at all.
-	_, err := segments.Compile(ctx, ws, segments.Group{Rules: []json.RawMessage{json.RawMessage(`42`)}})
+	_, err := segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`42`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// A nested group whose own rules are not a list.
-	_, err = segments.Compile(ctx, ws, segments.Group{Rules: []json.RawMessage{json.RawMessage(`{"combinator":"or","rules":"nope"}`)}})
+	_, err = segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed group")
 
 	// A leaf whose value is not a string.
-	_, err = segments.Compile(ctx, ws, segments.Group{Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":{"a":1}}`)}})
+	_, err = segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
+
+	// An entry whose kind is missing or unknown is refused, not guessed from its fields.
+	_, err = segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "and", Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown rule kind")
+
+	// An unknown combinator is refused, not read as "and".
+	_, err = segments.Compile(ctx, ws, segments.Group{Kind: "group", Combinator: "xor"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown combinator")
 
 	// An error deep in a nested group is reported with its path.
 	nested := opsGroup(opsGroup(rule("password", "eq", "x")))
@@ -205,7 +215,7 @@ func TestContactPredicateRefusesInvalidDefinitions(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid segment definition")
 
-	_, err = segments.ContactPredicate(ctx, ws, `{"combinator":"and","rules":[{"field":"nope","operator":"eq","value":"x"}]}`)
+	_, err = segments.ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
 	require.Error(t, err)
 
 	p, err := segments.ContactPredicate(ctx, ws, "")

@@ -18,6 +18,7 @@ package usage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -100,7 +101,8 @@ func measureInFlightSends(ctx context.Context, s *ent.Scoped, p Period, open boo
 // Refresh closes every elapsed Usage period that is not closed yet and refreshes the
 // Live usage of the open one, for every Workspace, as of now. It is a pure function of
 // now and the stored data: running it twice or late gives the same rows, and a closed
-// figure is never rewritten. Without the operator license it does nothing.
+// figure is never rewritten. A Workspace that fails does not stop the others: every
+// failure is joined into the returned error. Without the operator license it does nothing.
 func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, now time.Time) error {
 	if !lic.Has(licensekey.FeatureOperator) {
 		return nil
@@ -113,12 +115,16 @@ func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, n
 		return fmt.Errorf("list workspaces: %w", err)
 	}
 	current := PeriodOf(now)
+	var errs []error
 	for _, ws := range workspaces {
+		if err := ctx.Err(); err != nil {
+			return errors.Join(append(errs, err)...)
+		}
 		if err := refreshWorkspace(ctx, client.Scoped(ws.ID), PeriodOf(ws.CreatedAt), current, now); err != nil {
-			return fmt.Errorf("usage of workspace %d: %w", ws.ID, err)
+			errs = append(errs, fmt.Errorf("usage of workspace %d: %w", ws.ID, err))
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 func refreshWorkspace(ctx context.Context, s *ent.Scoped, first, current, now time.Time) error {
