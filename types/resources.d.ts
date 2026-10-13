@@ -320,6 +320,7 @@ export default interface Resources {
           "actor": "By",
           "actorSystem": "System",
           "actorToken": "API token #{{id}}",
+          "billingActivity": "Billing activity",
           "empty": "No recorded changes",
           "loadError": "Could not load the audit log",
           "loadMore": "Load more",
@@ -330,6 +331,7 @@ export default interface Resources {
         "back": "All workspaces",
         "detailsTitle": "Details",
         "holds": {
+          "billing": "Billing",
           "empty": "No active holds.",
           "expires": "Expires",
           "key": "Key",
@@ -639,6 +641,7 @@ export default interface Resources {
         "actorSystem": "System",
         "actorToken": "API token #{{id}}",
         "apply": "Apply filters",
+        "billingActivity": "Billing activity",
         "changeHistory": "Change history",
         "changedMarker": "changed",
         "collapse": "Hide changes",
@@ -955,7 +958,13 @@ export default interface Resources {
       "successTitle": "Email verified",
       "title": "Set your password"
     },
+    "workspaceBillingHold": {
+      "description": "Outbound email is paused for this workspace because of a billing issue, not because of abuse. Scheduled broadcasts and automations wait and continue on their own once it is resolved. You can still sign in and view your data.",
+      "title": "Sending is paused for billing"
+    },
     "workspaceHold": {
+      "billingContact": "To resolve it, contact an Owner or Admin of this workspace.",
+      "billingLink": "Go to billing",
       "description": "Outbound email is on hold for this workspace. Scheduled broadcasts and automations wait and continue on their own when the hold lifts. You can still sign in and view your data.",
       "title": "Sending is on hold"
     },

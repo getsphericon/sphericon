@@ -10,7 +10,7 @@ import (
 type Handler interface {
 	// ServiceHoldsClear implements ServiceHolds_clear operation.
 	//
-	// Clear a hold by its key. Idempotent: clearing a missing hold succeeds.
+	// Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.
 	//
 	// DELETE /workspaces/{workspaceId}/holds/{key}
 	ServiceHoldsClear(ctx context.Context, params ServiceHoldsClearParams) (ServiceHoldsClearRes, error)
@@ -23,7 +23,8 @@ type Handler interface {
 	// ServiceHoldsSet implements ServiceHolds_set operation.
 	//
 	// Set a hold under a key, or renew it by setting it again with a later expiry. Idempotent: setting the
-	// same hold twice changes nothing.
+	// same hold twice changes nothing and says so (`changed` false); renewing with a different expiry is a
+	// change.
 	//
 	// PUT /workspaces/{workspaceId}/holds/{key}
 	ServiceHoldsSet(ctx context.Context, req *HoldInput, params ServiceHoldsSetParams) (ServiceHoldsSetRes, error)
@@ -49,6 +50,13 @@ type Handler interface {
 	//
 	// GET /workspaces/changes
 	ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (ServiceWorkspaceFeedListRes, error)
+	// ServiceWorkspaceUsageGet implements ServiceWorkspaceUsage_get operation.
+	//
+	// The figures of one Workspace for a Usage period: Live usage (not final, counting sends still in
+	// flight) for the open period, Usage snapshots (final) for a closed one. Never a recount on read.
+	//
+	// GET /workspaces/{workspaceId}/usage
+	ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (ServiceWorkspaceUsageGetRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

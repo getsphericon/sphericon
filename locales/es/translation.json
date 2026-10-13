@@ -330,6 +330,7 @@
         "actor": "Por",
         "actorSystem": "Sistema",
         "actorToken": "Token de API n.º {{id}}",
+        "billingActivity": "Actividad de facturación",
         "empty": "No hay cambios registrados",
         "loadError": "No se pudo cargar el registro de auditoría",
         "loadMore": "Cargar más",
@@ -340,6 +341,7 @@
       "back": "Todos los espacios de trabajo",
       "detailsTitle": "Detalles",
       "holds": {
+        "billing": "Facturación",
         "empty": "Sin retenciones activas.",
         "expires": "Caduca",
         "key": "Clave",
@@ -667,6 +669,7 @@
       "actorSystem": "Sistema",
       "actorToken": "Token de API n.º {{id}}",
       "apply": "Aplicar filtros",
+      "billingActivity": "Actividad de facturación",
       "changedMarker": "modificado",
       "changeHistory": "Historial de cambios",
       "collapse": "Ocultar cambios",
@@ -983,7 +986,13 @@
     "successTitle": "Correo verificado",
     "title": "Establece tu contraseña"
   },
+  "workspaceBillingHold": {
+    "description": "El correo saliente de este espacio de trabajo está en pausa por un problema de facturación, no por abuso. Las difusiones programadas y las automatizaciones esperan y continúan solas cuando se resuelva. Aún puede iniciar sesión y ver sus datos.",
+    "title": "El envío está en pausa por facturación"
+  },
   "workspaceHold": {
+    "billingContact": "Para resolverlo, contacte con un propietario o administrador de este espacio de trabajo.",
+    "billingLink": "Ir a facturación",
     "description": "El envío de correos salientes está retenido para este espacio de trabajo. Los envíos programados y las automatizaciones esperan y continúan solos cuando se levante la retención. Aún puede iniciar sesión y consultar sus datos.",
     "title": "El envío está retenido"
   },

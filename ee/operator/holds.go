@@ -43,20 +43,20 @@ type HoldInput struct {
 //
 // The service endpoints scope over the one Workspace the call names, after its row is
 // loaded (AGENTS.md, Workspace scoping, list item 7).
-func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string, in HoldInput) (*ent.Hold, error) {
+func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string, in HoldInput) (*ent.Hold, bool, error) {
 	if err := m.licensed(); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	now := m.now()
 	if !in.ExpiresAt.After(now) {
-		return nil, ErrHoldExpiryInPast
+		return nil, false, ErrHoldExpiryInPast
 	}
 	if in.ExpiresAt.After(now.Add(m.holdMax)) {
-		return nil, &HoldTooLongError{Max: m.holdMax}
+		return nil, false, &HoldTooLongError{Max: m.holdMax}
 	}
 	s, err := m.holdScope(ctx, bus, cred, workspaceID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	// A concurrent first set of the same key loses the unique index once; the retry
 	// then finds the row and renews it.
@@ -71,40 +71,51 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 			if ent.IsConstraintError(err) {
 				continue
 			}
-			return created, err
+			return created, err == nil, err
 		case err != nil:
-			return nil, err
+			return nil, false, err
 		}
-		return s.Hold().UpdateOneID(existing.ID).
+		if sameHold(existing, in) {
+			return existing, false, nil
+		}
+		updated, err := s.Hold().UpdateOneID(existing.ID).
 			SetReasonCode(in.ReasonCode).SetMessage(in.Message).
 			SetExpiresAt(in.ExpiresAt).SetSetBy(cred.Name).
 			Save(ctx)
+		return updated, err == nil, err
 	}
-	return nil, errors.New("operator: could not set the hold: it kept changing under us")
+	return nil, false, errors.New("operator: could not set the hold: it kept changing under us")
+}
+
+// sameHold reports whether the stored hold already says what in says. Timestamps are
+// compared at the database's microsecond precision.
+func sameHold(h *ent.Hold, in HoldInput) bool {
+	return h.ReasonCode == in.ReasonCode && h.Message == in.Message &&
+		h.ExpiresAt.Truncate(time.Microsecond).Equal(in.ExpiresAt.Truncate(time.Microsecond))
 }
 
 // ClearHold removes the hold under key. Clearing a missing hold succeeds. It is recorded
 // in the Audit log under the credential's name. ent.IsNotFound for an unknown Workspace.
-func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string) error {
+func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string) (bool, error) {
 	if err := m.licensed(); err != nil {
-		return err
+		return false, err
 	}
 	s, err := m.holdScope(ctx, bus, cred, workspaceID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	existing, err := s.Hold().Query().Where(enthold.Key(key)).Only(ctx)
 	if ent.IsNotFound(err) {
-		return nil
+		return false, nil
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
 	err = s.Hold().DeleteOneID(existing.ID).Exec(ctx)
 	if ent.IsNotFound(err) {
-		return nil
+		return false, nil
 	}
-	return err
+	return err == nil, err
 }
 
 // ActiveHolds lists the holds of a Workspace that are active now, by key. ent.IsNotFound
@@ -156,7 +167,7 @@ func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.H
 		p := serviceapi.ServiceHoldsSetNotFound(workspaceNotFoundProblem())
 		return &p, nil
 	}
-	row, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, HoldInput{
+	row, changed, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, HoldInput{
 		ReasonCode: req.ReasonCode, Message: req.Message, ExpiresAt: time.Time(req.ExpiresAt),
 	})
 	var tooLong *HoldTooLongError
@@ -174,8 +185,7 @@ func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.H
 	case err != nil:
 		return nil, err
 	}
-	res := holdResource(row)
-	return &res, nil
+	return &serviceapi.HoldSetResult{Changed: changed, Hold: holdResource(row)}, nil
 }
 
 // ServiceHoldsClear clears a hold; a missing one is cleared already.
@@ -185,7 +195,7 @@ func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params servicea
 		p := serviceapi.ServiceHoldsClearNotFound(workspaceNotFoundProblem())
 		return &p, nil
 	}
-	err := h.module.ClearHold(ctx, h.bus, CurrentService(ctx), id, params.Key)
+	changed, err := h.module.ClearHold(ctx, h.bus, CurrentService(ctx), id, params.Key)
 	if ent.IsNotFound(err) {
 		p := serviceapi.ServiceHoldsClearNotFound(workspaceNotFoundProblem())
 		return &p, nil
@@ -193,7 +203,7 @@ func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params servicea
 	if err != nil {
 		return nil, err
 	}
-	return &serviceapi.ServiceHoldsClearNoContent{}, nil
+	return &serviceapi.HoldClearResult{Changed: changed}, nil
 }
 
 func holdResource(r *ent.Hold) serviceapi.HoldResource {

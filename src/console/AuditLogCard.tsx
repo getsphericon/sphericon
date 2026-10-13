@@ -1,4 +1,4 @@
-import { Button, Card, Loader, Stack, Table, Text, Title } from '@mantine/core'
+import { Badge, Button, Card, Group, Loader, Stack, Table, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -88,7 +88,16 @@ function AuditPage({
                 <Table.Td>
                   <ActorLabel entry={entry} />
                 </Table.Td>
-                <Table.Td>{entry.action}</Table.Td>
+                <Table.Td>
+                  <Group gap="xs" wrap="nowrap">
+                    {entry.action}
+                    {entry.billing ? (
+                      <Badge color="orange" variant="light">
+                        {t(($) => $.console.workspace.auditLog.billingActivity)}
+                      </Badge>
+                    ) : null}
+                  </Group>
+                </Table.Td>
                 <Table.Td>{targetLabel(entry)}</Table.Td>
               </Table.Tr>
             ))}

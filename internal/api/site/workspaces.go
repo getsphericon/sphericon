@@ -50,6 +50,9 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	if m.Edges.Workspace.SuspendedAt != nil && h.supportEmail != "" {
 		r.SupportEmail = siteapi.NewOptNilString(h.supportEmail)
 	}
+	if h.billingURL != "" {
+		r.BillingUrl = siteapi.NewOptNilString(h.billingURL)
+	}
 	r.AccountLinkAvailable = h.accountLink != nil && m.Role == membership.RoleOwner
 	if end, ok := secondfactor.Deadline(m); ok {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
@@ -59,7 +62,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 		return r, err
 	}
 	r.Holds = lo.Map(active, func(hold *ent.Hold, _ int) siteapi.SiteWorkspaceHold {
-		return siteapi.SiteWorkspaceHold{Key: hold.Key, ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt)}
+		return siteapi.SiteWorkspaceHold{Key: hold.Key, ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt), Billing: holds.IsBilling(hold.ReasonCode)}
 	})
 	return r, nil
 }

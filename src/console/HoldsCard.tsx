@@ -1,4 +1,4 @@
-import { Card, Stack, Table, Text, Title } from '@mantine/core'
+import { Badge, Card, Group, Stack, Table, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import type { OperatorHold } from '../generated/operator/types.gen.ts'
@@ -34,7 +34,18 @@ export function HoldsCard({ holds }: { holds: OperatorHold[] }) {
                 {holds.map((hold) => (
                   <Table.Tr key={hold.key}>
                     <Table.Td>{hold.key}</Table.Td>
-                    <Table.Td>{hold.reasonCode}</Table.Td>
+                    <Table.Td>
+                      <Group gap="xs" wrap="nowrap">
+                        <Text span size="sm">
+                          {hold.reasonCode}
+                        </Text>
+                        {hold.billing ? (
+                          <Badge color="orange" variant="light">
+                            {t(($) => $.console.workspace.holds.billing)}
+                          </Badge>
+                        ) : null}
+                      </Group>
+                    </Table.Td>
                     <Table.Td>{hold.message}</Table.Td>
                     <Table.Td>{formatDateTime(hold.createdAt)}</Table.Td>
                     <Table.Td>{formatDateTime(hold.expiresAt)}</Table.Td>

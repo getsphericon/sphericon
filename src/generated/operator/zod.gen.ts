@@ -229,6 +229,7 @@ export const zOperatorAuditEntryResource = z.object({
   occurredAt: zTimestamp,
   actor: zOperatorAuditActor,
   action: z.string(),
+  billing: z.boolean(),
   target: zOperatorAuditTarget,
   diff: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   requestId: z.exactOptional(z.string().nullable()),
@@ -253,7 +254,8 @@ export const zOperatorHold = z.object({
   message: z.string(),
   createdAt: zTimestamp,
   expiresAt: zTimestamp,
-  setBy: z.string()
+  setBy: z.string(),
+  billing: z.boolean()
 });
 
 /**

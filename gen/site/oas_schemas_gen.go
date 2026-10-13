@@ -3910,6 +3910,9 @@ type SiteAuditEntryResource struct {
 	Actor SiteAuditActor `json:"actor"`
 	// What was done, as `<entity>.<verb>`.
 	Action string `json:"action"`
+	// True when the change set, renewed or lifted a billing hold (reason code `non_payment` or
+	// `free_plan_cap`): shown as billing activity.
+	Billing bool `json:"billing"`
 	// What it was done to.
 	Target SiteAuditTarget `json:"target"`
 	// Before/after of the changed fields; secrets appear as changed only.
@@ -3940,6 +3943,11 @@ func (s *SiteAuditEntryResource) GetActor() SiteAuditActor {
 // GetAction returns the value of Action.
 func (s *SiteAuditEntryResource) GetAction() string {
 	return s.Action
+}
+
+// GetBilling returns the value of Billing.
+func (s *SiteAuditEntryResource) GetBilling() bool {
+	return s.Billing
 }
 
 // GetTarget returns the value of Target.
@@ -3985,6 +3993,11 @@ func (s *SiteAuditEntryResource) SetActor(val SiteAuditActor) {
 // SetAction sets the value of Action.
 func (s *SiteAuditEntryResource) SetAction(val string) {
 	s.Action = val
+}
+
+// SetBilling sets the value of Billing.
+func (s *SiteAuditEntryResource) SetBilling(val bool) {
+	s.Billing = val
 }
 
 // SetTarget sets the value of Target.
@@ -11795,6 +11808,9 @@ type SiteWorkspaceHold struct {
 	Message string `json:"message"`
 	// When the hold was set.
 	Since Timestamp `json:"since"`
+	// True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a
+	// money reason, not for abuse.
+	Billing bool `json:"billing"`
 }
 
 // GetKey returns the value of Key.
@@ -11817,6 +11833,11 @@ func (s *SiteWorkspaceHold) GetSince() Timestamp {
 	return s.Since
 }
 
+// GetBilling returns the value of Billing.
+func (s *SiteWorkspaceHold) GetBilling() bool {
+	return s.Billing
+}
+
 // SetKey sets the value of Key.
 func (s *SiteWorkspaceHold) SetKey(val string) {
 	s.Key = val
@@ -11835,6 +11856,11 @@ func (s *SiteWorkspaceHold) SetMessage(val string) {
 // SetSince sets the value of Since.
 func (s *SiteWorkspaceHold) SetSince(val Timestamp) {
 	s.Since = val
+}
+
+// SetBilling sets the value of Billing.
+func (s *SiteWorkspaceHold) SetBilling(val bool) {
+	s.Billing = val
 }
 
 // Workspace the current user belongs to.
@@ -11864,6 +11890,9 @@ type SiteWorkspaceResource struct {
 	SuspensionReason OptNilString `json:"suspensionReason"`
 	// Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance configured none.
 	SupportEmail OptNilString `json:"supportEmail"`
+	// The billing site a member under a hold is pointed to (BILLING_URL); absent when the instance
+	// configured none, and then no billing text is shown.
+	BillingUrl OptNilString `json:"billingUrl"`
 	// The Operator holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
@@ -11930,6 +11959,11 @@ func (s *SiteWorkspaceResource) GetSuspensionReason() OptNilString {
 // GetSupportEmail returns the value of SupportEmail.
 func (s *SiteWorkspaceResource) GetSupportEmail() OptNilString {
 	return s.SupportEmail
+}
+
+// GetBillingUrl returns the value of BillingUrl.
+func (s *SiteWorkspaceResource) GetBillingUrl() OptNilString {
+	return s.BillingUrl
 }
 
 // GetHolds returns the value of Holds.
@@ -12005,6 +12039,11 @@ func (s *SiteWorkspaceResource) SetSuspensionReason(val OptNilString) {
 // SetSupportEmail sets the value of SupportEmail.
 func (s *SiteWorkspaceResource) SetSupportEmail(val OptNilString) {
 	s.SupportEmail = val
+}
+
+// SetBillingUrl sets the value of BillingUrl.
+func (s *SiteWorkspaceResource) SetBillingUrl(val OptNilString) {
+	s.BillingUrl = val
 }
 
 // SetHolds sets the value of Holds.

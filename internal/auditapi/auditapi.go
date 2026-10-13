@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/holds"
 )
 
 const (
@@ -55,6 +56,10 @@ type View struct {
 	ActorID    *string
 	ActorName  *string
 	Action     string
+	// Billing is true for a change of a billing hold (holds.IsBilling), which the
+	// customer reads as billing activity. A renewal that leaves the reason code as it
+	// was carries none in its diff and reads as a plain hold change.
+	Billing    bool
 	TargetType string
 	TargetID   *string
 	TargetName *string
@@ -84,6 +89,7 @@ func ViewOf(e *ent.AuditEntry) View {
 		label := events.OperatorLabel
 		v.ActorKind, v.ActorID, v.ActorName = events.ActorOperator, nil, &label
 	}
+	v.Billing = isBillingHoldChange(e)
 	if len(e.Diff) > 0 {
 		v.Diff = make(map[string]jx.Raw, len(e.Diff))
 		for k, val := range e.Diff {
@@ -93,4 +99,22 @@ func ViewOf(e *ent.AuditEntry) View {
 		}
 	}
 	return v
+}
+
+// isBillingHoldChange reads the reason code a hold change set or removed from its diff:
+// a create and a delete carry every field, an update only the changed ones.
+func isBillingHoldChange(e *ent.AuditEntry) bool {
+	if e.TargetType != "hold" {
+		return false
+	}
+	change, ok := e.Diff["reason_code"].(map[string]any)
+	if !ok {
+		return false
+	}
+	for _, side := range []string{"from", "to"} {
+		if code, ok := change[side].(string); ok && holds.IsBilling(code) {
+			return true
+		}
+	}
+	return false
 }

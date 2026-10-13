@@ -133,7 +133,16 @@ function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
         <Table.Td>
           <ActorLabel entry={entry} />
         </Table.Td>
-        <Table.Td>{entry.action}</Table.Td>
+        <Table.Td>
+          <Group gap="xs" wrap="nowrap">
+            {entry.action}
+            {entry.billing ? (
+              <Badge color="orange" variant="light">
+                {t(($) => $.settings.auditLog.billingActivity)}
+              </Badge>
+            ) : null}
+          </Group>
+        </Table.Td>
         <Table.Td>
           <TargetLabel entry={entry} />
         </Table.Td>

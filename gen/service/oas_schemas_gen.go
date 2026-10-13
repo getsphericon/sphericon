@@ -37,6 +37,25 @@ type EmailAddress string
 
 type EntityId string
 
+// The outcome of clearing a hold.
+// Ref: #/components/schemas/HoldClearResult
+type HoldClearResult struct {
+	// False when no such hold was set and nothing changed, so a retry is visibly harmless.
+	Changed bool `json:"changed"`
+}
+
+// GetChanged returns the value of Changed.
+func (s *HoldClearResult) GetChanged() bool {
+	return s.Changed
+}
+
+// SetChanged sets the value of Changed.
+func (s *HoldClearResult) SetChanged(val bool) {
+	s.Changed = val
+}
+
+func (*HoldClearResult) serviceHoldsClearRes() {}
+
 // Setting or renewing a hold.
 // Ref: #/components/schemas/HoldInput
 type HoldInput struct {
@@ -185,7 +204,36 @@ func (s *HoldResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*HoldResource) serviceHoldsSetRes() {}
+// The outcome of setting a hold.
+// Ref: #/components/schemas/HoldSetResult
+type HoldSetResult struct {
+	// False when the hold was already set exactly so and nothing changed, so a retry is visibly harmless.
+	Changed bool `json:"changed"`
+	// The hold as it is stored now.
+	Hold HoldResource `json:"hold"`
+}
+
+// GetChanged returns the value of Changed.
+func (s *HoldSetResult) GetChanged() bool {
+	return s.Changed
+}
+
+// GetHold returns the value of Hold.
+func (s *HoldSetResult) GetHold() HoldResource {
+	return s.Hold
+}
+
+// SetChanged sets the value of Changed.
+func (s *HoldSetResult) SetChanged(val bool) {
+	s.Changed = val
+}
+
+// SetHold sets the value of Hold.
+func (s *HoldSetResult) SetHold(val HoldResource) {
+	s.Hold = val
+}
+
+func (*HoldSetResult) serviceHoldsSetRes() {}
 
 // NewOptInt32 returns new OptInt32 with value set to v.
 func NewOptInt32(v int32) OptInt32 {
@@ -744,11 +792,7 @@ func (*ProblemDetailsHeaders) serviceHoldsSetRes()          {}
 func (*ProblemDetailsHeaders) serviceIdentityGetRes()       {}
 func (*ProblemDetailsHeaders) serviceUsageListRes()         {}
 func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes() {}
-
-// ServiceHoldsClearNoContent is response for ServiceHoldsClear operation.
-type ServiceHoldsClearNoContent struct{}
-
-func (*ServiceHoldsClearNoContent) serviceHoldsClearRes() {}
+func (*ProblemDetailsHeaders) serviceWorkspaceUsageGetRes() {}
 
 type ServiceHoldsClearNotFound ProblemDetails
 
@@ -1109,6 +1153,22 @@ func (s *ServiceWorkspaceResource) SetOwners(val []ServiceWorkspaceOwner) {
 	s.Owners = val
 }
 
+type ServiceWorkspaceUsageGetBadRequest ProblemDetails
+
+func (*ServiceWorkspaceUsageGetBadRequest) serviceWorkspaceUsageGetRes() {}
+
+type ServiceWorkspaceUsageGetForbidden ProblemDetails
+
+func (*ServiceWorkspaceUsageGetForbidden) serviceWorkspaceUsageGetRes() {}
+
+type ServiceWorkspaceUsageGetNotFound ProblemDetails
+
+func (*ServiceWorkspaceUsageGetNotFound) serviceWorkspaceUsageGetRes() {}
+
+type ServiceWorkspaceUsageGetUnauthorized ProblemDetails
+
+func (*ServiceWorkspaceUsageGetUnauthorized) serviceWorkspaceUsageGetRes() {}
+
 type Timestamp time.Time
 
 // One metric's figure for a Workspace over a Usage period.
@@ -1247,3 +1307,5 @@ func (s *WorkspaceUsageResource) SetPeriod(val string) {
 func (s *WorkspaceUsageResource) SetFigures(val []UsageFigure) {
 	s.Figures = val
 }
+
+func (*WorkspaceUsageResource) serviceWorkspaceUsageGetRes() {}

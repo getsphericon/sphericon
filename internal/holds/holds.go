@@ -19,6 +19,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
+// The reason codes that mark a hold as a billing hold (ADR 0009): sending is paused for
+// a money reason. Nothing else about the hold differs; the code is the whole marker.
+const (
+	ReasonNonPayment  = "non_payment"
+	ReasonFreePlanCap = "free_plan_cap"
+)
+
+// IsBilling reports whether a hold's reason code marks it a billing hold. Every surface
+// that tells a billing hold apart (the owner banner, the Audit log, the console) asks here.
+func IsBilling(reasonCode string) bool {
+	return reasonCode == ReasonNonPayment || reasonCode == ReasonFreePlanCap
+}
+
 // ActiveAt is the one rule for an active hold: its expiry is after now. Every read
 // goes through it, in SQL here and in Go in Live.
 func ActiveAt(now time.Time) predicate.Hold { return enthold.ExpiresAtGT(now) }
