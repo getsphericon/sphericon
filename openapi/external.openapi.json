@@ -9381,6 +9381,7 @@
       },
       "EmailAddress": {
         "type": "string",
+        "maxLength": 320,
         "format": "email"
       },
       "EntityId": {
