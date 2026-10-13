@@ -215,7 +215,7 @@ func TestContactPredicateRefusesInvalidDefinitions(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid segment definition")
 
-	_, err = segments.ContactPredicate(ctx, ws, `{"combinator":"and","rules":[{"field":"nope","operator":"eq","value":"x"}]}`)
+	_, err = segments.ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
 	require.Error(t, err)
 
 	p, err := segments.ContactPredicate(ctx, ws, "")
