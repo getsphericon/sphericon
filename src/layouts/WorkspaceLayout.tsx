@@ -1,5 +1,5 @@
 import { Alert, Group, Select, Text } from '@mantine/core'
-import { IconPlayerPause } from '@tabler/icons-react'
+import { IconCreditCard, IconPlayerPause } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -89,6 +89,30 @@ function HoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
   )
 }
 
+// BillingHoldBanner tells every member that outbound sending is paused for a money
+// reason (a billing hold, ADR 0009), with the setter's message as given. It is neither
+// the suspension banner nor the generic hold one: its own color, icon and title, so
+// nobody reads a payment problem as an abuse flag.
+function BillingHoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
+  const { t } = useTranslation()
+  return (
+    <Alert
+      color="orange"
+      variant="outline"
+      icon={<IconCreditCard />}
+      title={t(($) => $.workspaceBillingHold.title)}
+      mb="md"
+    >
+      <Text size="sm">{t(($) => $.workspaceBillingHold.description)}</Text>
+      {holds.map((hold) => (
+        <Text key={hold.key} size="sm" fw={500} mt="xs">
+          {hold.message}
+        </Text>
+      ))}
+    </Alert>
+  )
+}
+
 // useSecondFactorRefused reports whether any query of the Workspace was refused
 // with 403 second_factor_required since the Workspace list last loaded (listedAt):
 // the server's word that the grace is over, even when this browser's clock says
@@ -118,6 +142,9 @@ export function WorkspaceLayout() {
   const workspacesQuery = useQuery(siteWorkspacesListOptions())
   const workspaces = workspacesQuery.data ?? []
   const current = workspaces.find((w) => w.slug === slug)
+  const holds = current?.holds ?? []
+  const billingHolds = holds.filter((hold) => hold.billing)
+  const otherHolds = holds.filter((hold) => !hold.billing)
   const [now] = useState(() => Date.now())
   const refused = useSecondFactorRefused(slug, workspacesQuery.dataUpdatedAt)
   const standing = refused ? { kind: 'blocked' as const } : secondFactorStanding(current, now)
@@ -133,7 +160,8 @@ export function WorkspaceLayout() {
               supportEmail={current.supportEmail}
             />
           ) : null}
-          {current?.holds.length ? <HoldBanner holds={current.holds} /> : null}
+          {otherHolds.length ? <HoldBanner holds={otherHolds} /> : null}
+          {billingHolds.length ? <BillingHoldBanner holds={billingHolds} /> : null}
           {standing.kind === 'grace' ? <SecondFactorGraceBanner endsAt={standing.endsAt} /> : null}
         </>
       }

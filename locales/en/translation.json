@@ -326,6 +326,7 @@
         "actor": "By",
         "actorSystem": "System",
         "actorToken": "API token #{{id}}",
+        "billingActivity": "Billing activity",
         "empty": "No recorded changes",
         "loadError": "Could not load the audit log",
         "loadMore": "Load more",
@@ -336,6 +337,7 @@
       "back": "All workspaces",
       "detailsTitle": "Details",
       "holds": {
+        "billing": "Billing",
         "empty": "No active holds.",
         "expires": "Expires",
         "key": "Key",
@@ -657,6 +659,7 @@
       "actorSystem": "System",
       "actorToken": "API token #{{id}}",
       "apply": "Apply filters",
+      "billingActivity": "Billing activity",
       "changedMarker": "changed",
       "changeHistory": "Change history",
       "collapse": "Hide changes",
@@ -972,6 +975,10 @@
     "successBody": "Your email is confirmed and your password is set. You can sign in now.",
     "successTitle": "Email verified",
     "title": "Set your password"
+  },
+  "workspaceBillingHold": {
+    "description": "Outbound email is paused for this workspace because of a billing issue, not because of abuse. Scheduled broadcasts and automations wait and continue on their own once it is resolved. You can still sign in and view your data.",
+    "title": "Sending is paused for billing"
   },
   "workspaceHold": {
     "description": "Outbound email is on hold for this workspace. Scheduled broadcasts and automations wait and continue on their own when the hold lifts. You can still sign in and view your data.",

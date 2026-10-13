@@ -28,8 +28,14 @@ func (h *harness) holdClient(t *testing.T) *serviceapi.Client {
 // setHold sets key on Acme expiring in d from the harness clock.
 func (h *harness) setHold(t *testing.T, key string, d time.Duration) serviceapi.ServiceHoldsSetRes {
 	t.Helper()
+	return h.setHoldFor(t, key, "review", d)
+}
+
+// setHoldFor is setHold under a stated reason code.
+func (h *harness) setHoldFor(t *testing.T, key, reasonCode string, d time.Duration) serviceapi.ServiceHoldsSetRes {
+	t.Helper()
 	res, err := h.holdClient(t).ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
-		ReasonCode: "review", Message: "Sending is paused for now.", ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(d)),
+		ReasonCode: reasonCode, Message: "Sending is paused for now.", ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(d)),
 	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: acme, Key: key})
 	require.NoError(t, err)
 	return res

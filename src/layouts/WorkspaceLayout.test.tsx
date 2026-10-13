@@ -86,6 +86,15 @@ const HOLD = {
   reasonCode: 'review',
   message: 'Please wait a day.',
   since: '2026-02-01T00:00:00Z',
+  billing: false,
+}
+
+const BILLING_HOLD = {
+  key: 'bill',
+  reasonCode: 'non_payment',
+  message: 'Your invoice is overdue.',
+  since: '2026-02-01T00:00:00Z',
+  billing: true,
 }
 
 test('a held workspace shows the hold banner with the setter message as given, to a member', async () => {
@@ -120,6 +129,29 @@ test('a workspace held and suspended shows both banners', async () => {
 
   await expect.element(screen.getByText('Sending is suspended')).toBeInTheDocument()
   await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
+})
+
+test('a billing hold shows its own banner, not the generic hold or the suspension one', async () => {
+  worker.use(list([workspace({ role: 'member', holds: [BILLING_HOLD] })]))
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect.element(screen.getByText('Sending is paused for billing')).toBeInTheDocument()
+  await expect.element(screen.getByText('Your invoice is overdue.')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is on hold')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is suspended')).not.toBeInTheDocument()
+})
+
+test('a billing hold beside another hold and a suspension shows all three banners', async () => {
+  worker.use(
+    list([workspace({ suspendedAt: '2026-02-01T00:00:00Z', holds: [HOLD, BILLING_HOLD] })]),
+  )
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect.element(screen.getByText('Sending is suspended')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is paused for billing')).toBeInTheDocument()
+  await expect.element(screen.getByText('Please wait a day.')).toBeInTheDocument()
+  await expect.element(screen.getByText('Your invoice is overdue.')).toBeInTheDocument()
 })
 
 test('an unaffected workspace shows no hold banner', async () => {

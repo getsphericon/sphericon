@@ -5727,6 +5727,10 @@ func (s *SiteAuditEntryResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.Action)
 	}
 	{
+		e.FieldStart("billing")
+		e.Bool(s.Billing)
+	}
+	{
 		e.FieldStart("target")
 		s.Target.Encode(e)
 	}
@@ -5756,16 +5760,17 @@ func (s *SiteAuditEntryResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteAuditEntryResource = [9]string{
+var jsonFieldsNameOfSiteAuditEntryResource = [10]string{
 	0: "id",
 	1: "occurredAt",
 	2: "actor",
 	3: "action",
-	4: "target",
-	5: "diff",
-	6: "requestId",
-	7: "ip",
-	8: "userAgent",
+	4: "billing",
+	5: "target",
+	6: "diff",
+	7: "requestId",
+	8: "ip",
+	9: "userAgent",
 }
 
 // Decode decodes SiteAuditEntryResource from json.
@@ -5819,8 +5824,20 @@ func (s *SiteAuditEntryResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"action\"")
 			}
-		case "target":
+		case "billing":
 			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.Billing = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"billing\"")
+			}
+		case "target":
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				if err := s.Target.Decode(d); err != nil {
 					return err
@@ -5879,7 +5896,7 @@ func (s *SiteAuditEntryResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b00011111,
+		0b00111111,
 		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -29750,13 +29767,18 @@ func (s *SiteWorkspaceHold) encodeFields(e *jx.Encoder) {
 		e.FieldStart("since")
 		s.Since.Encode(e)
 	}
+	{
+		e.FieldStart("billing")
+		e.Bool(s.Billing)
+	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceHold = [4]string{
+var jsonFieldsNameOfSiteWorkspaceHold = [5]string{
 	0: "key",
 	1: "reasonCode",
 	2: "message",
 	3: "since",
+	4: "billing",
 }
 
 // Decode decodes SiteWorkspaceHold from json.
@@ -29814,6 +29836,18 @@ func (s *SiteWorkspaceHold) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"since\"")
 			}
+		case "billing":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.Billing = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"billing\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -29824,7 +29858,7 @@ func (s *SiteWorkspaceHold) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

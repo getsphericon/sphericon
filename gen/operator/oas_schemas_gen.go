@@ -377,6 +377,9 @@ type OperatorAuditEntryResource struct {
 	Actor OperatorAuditActor `json:"actor"`
 	// What was done, as `<entity>.<verb>`.
 	Action string `json:"action"`
+	// True when the change set, renewed or lifted a billing hold (reason code `non_payment` or
+	// `free_plan_cap`).
+	Billing bool `json:"billing"`
 	// What it was done to.
 	Target OperatorAuditTarget `json:"target"`
 	// Before/after of the changed fields.
@@ -407,6 +410,11 @@ func (s *OperatorAuditEntryResource) GetActor() OperatorAuditActor {
 // GetAction returns the value of Action.
 func (s *OperatorAuditEntryResource) GetAction() string {
 	return s.Action
+}
+
+// GetBilling returns the value of Billing.
+func (s *OperatorAuditEntryResource) GetBilling() bool {
+	return s.Billing
 }
 
 // GetTarget returns the value of Target.
@@ -452,6 +460,11 @@ func (s *OperatorAuditEntryResource) SetActor(val OperatorAuditActor) {
 // SetAction sets the value of Action.
 func (s *OperatorAuditEntryResource) SetAction(val string) {
 	s.Action = val
+}
+
+// SetBilling sets the value of Billing.
+func (s *OperatorAuditEntryResource) SetBilling(val bool) {
+	s.Billing = val
 }
 
 // SetTarget sets the value of Target.
@@ -742,6 +755,8 @@ type OperatorHold struct {
 	ExpiresAt Timestamp `json:"expiresAt"`
 	// Who set it: the name of its Service credential.
 	SetBy string `json:"setBy"`
+	// True for a billing hold (reason code `non_payment` or `free_plan_cap`).
+	Billing bool `json:"billing"`
 }
 
 // GetKey returns the value of Key.
@@ -774,6 +789,11 @@ func (s *OperatorHold) GetSetBy() string {
 	return s.SetBy
 }
 
+// GetBilling returns the value of Billing.
+func (s *OperatorHold) GetBilling() bool {
+	return s.Billing
+}
+
 // SetKey sets the value of Key.
 func (s *OperatorHold) SetKey(val string) {
 	s.Key = val
@@ -802,6 +822,11 @@ func (s *OperatorHold) SetExpiresAt(val Timestamp) {
 // SetSetBy sets the value of SetBy.
 func (s *OperatorHold) SetSetBy(val string) {
 	s.SetBy = val
+}
+
+// SetBilling sets the value of Billing.
+func (s *OperatorHold) SetBilling(val bool) {
+	s.Billing = val
 }
 
 // Sign in with an email and password. The email is a plain string: a malformed address must answer

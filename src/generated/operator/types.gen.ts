@@ -144,6 +144,10 @@ export type OperatorAuditEntryResource = {
    */
   action: string;
   /**
+   * True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`)
+   */
+  billing: boolean;
+  /**
    * What it was done to
    */
   target: OperatorAuditTarget;
@@ -285,6 +289,10 @@ export type OperatorHold = {
    * Who set it: the name of its Service credential
    */
   setBy: string;
+  /**
+   * True for a billing hold (reason code `non_payment` or `free_plan_cap`)
+   */
+  billing: boolean;
 };
 
 /**

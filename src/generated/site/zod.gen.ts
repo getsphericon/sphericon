@@ -995,6 +995,7 @@ export const zSiteAuditEntryResource = z.object({
   occurredAt: zTimestamp,
   actor: zSiteAuditActor,
   action: z.string(),
+  billing: z.boolean(),
   target: zSiteAuditTarget,
   diff: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   requestId: z.exactOptional(z.string().nullable()),
@@ -1274,7 +1275,8 @@ export const zSiteWorkspaceHold = z.object({
   key: z.string(),
   reasonCode: z.string(),
   message: z.string(),
-  since: zTimestamp
+  since: zTimestamp,
+  billing: z.boolean()
 });
 
 /**
