@@ -556,6 +556,38 @@ func (s *ServiceWorkspaceResource) Validate() error {
 	return nil
 }
 
+func (s *ServiceWorkspaceUsageGetBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ServiceWorkspaceUsageGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ServiceWorkspaceUsageGetNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ServiceWorkspaceUsageGetUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *UsageFigure) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
