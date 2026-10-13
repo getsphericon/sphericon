@@ -82,6 +82,26 @@ model SiteAnalyticsPoint {
   clicked: int32;
 }
 
+/** The metric of a Sending domain that is over a warning limit of the abuse detector */
+enum SiteAbuseMetric {
+  complaint,
+  bounce,
+}
+
+/** A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
+ * over the warning limit but under the freeze limit. Computed live from the trailing
+ * 24 hours since any clearance, never stored. */
+model SiteAbuseWarning {
+  /** The Sending domain over the limit */
+  domain: string;
+
+  /** Which rate is over */
+  metric: SiteAbuseMetric;
+
+  /** The rate, 0–1 */
+  rate: float64;
+}
+
 /** Workspace analytics overview powering the dashboard */
 model SiteAnalyticsOverview {
   contacts: SiteAnalyticsContacts;
@@ -90,6 +110,10 @@ model SiteAnalyticsOverview {
 
   /** Daily engagement series, oldest first, one point per day in the range */
   timeseries: SiteAnalyticsPoint[];
+
+  /** Present while the Workspace is in the abuse detector's warning tier; absent
+   * otherwise and without the `operator` license */
+  abuseWarning?: SiteAbuseWarning | null;
 }
 
 // Not a CRUD resource — a single workspace-scoped aggregate with no key, so it

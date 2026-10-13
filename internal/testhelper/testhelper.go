@@ -20,6 +20,7 @@ import (
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
+	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/operator"
 	"github.com/getsphericon/sphericon/ent"
@@ -289,9 +290,13 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	attempts := accounts.NewAttempts(client,
 		accounts.WithClock(st.now),
 		accounts.WithRateLimits(cfg.RateLimits))
+	limits := abuse.DefaultLimits()
+	if st.volumeFloor > 0 {
+		limits.VolumeFloor = st.volumeFloor
+	}
 	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, operator.Config{
 		Secret: newOperatorSecret(), SessionTTL: cfg.OperatorSessionTTL, HoldMaxExpiry: cfg.OperatorHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
-		Attempts: attempts, VolumeFloor: st.volumeFloor,
+		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail,
 	})
 	require.NoError(t, err, "build edition")
 	// The Edition's ent hooks, on the client and on every transaction the bus opens.
@@ -335,7 +340,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	accountLink, _, err := accountlink.FromConfig(&cfg)
 	require.NoError(t, err, "build account link")
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
-		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured,
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,

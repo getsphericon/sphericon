@@ -422,7 +422,9 @@ _Avoid_: Admin panel, back office
 **Abuse detector**:
 The automated actor (`system`) that watches each Workspace's **Complaint rate** and **Bounce
 rate** and freezes sending through **Workspace suspension** when they cross a limit, above a
-minimum send volume. A lower limit only **warns** the owner and freezes nothing. It counts only
+minimum send volume. A lower limit only **warns** the owner and freezes nothing: the warning is
+computed from the rates, never stored, and the owners get one email per tier per episode (an
+episode ends when the Workspace leaves the tier). It counts only
 events after the last time a suspension was cleared, never reverses a suspension itself (only an
 Operator does), and skips a Workspace an Operator has exempted. A SaaS/platform concept.
 _Avoid_: Spam filter, auto-ban

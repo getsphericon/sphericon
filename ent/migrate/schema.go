@@ -1158,6 +1158,10 @@ var (
 		{Name: "suspended_by_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"system", "cli", "operator"}},
 		{Name: "suspended_by_id", Type: field.TypeString, Nullable: true},
 		{Name: "suspension_reason", Type: field.TypeString, Nullable: true},
+		{Name: "cleared_at", Type: field.TypeTime, Nullable: true},
+		{Name: "abuse_exempt", Type: field.TypeBool, Default: false},
+		{Name: "abuse_warning_notified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "abuse_freeze_notified_at", Type: field.TypeTime, Nullable: true},
 	}
 	// WorkspacesTable holds the schema information for the "workspaces" table.
 	WorkspacesTable = &schema.Table{

@@ -298,6 +298,80 @@ func (_u *WorkspaceUpdate) ClearSuspensionReason() *WorkspaceUpdate {
 	return _u
 }
 
+// SetClearedAt sets the "cleared_at" field.
+func (_u *WorkspaceUpdate) SetClearedAt(v time.Time) *WorkspaceUpdate {
+	_u.mutation.SetClearedAt(v)
+	return _u
+}
+
+// SetNillableClearedAt sets the "cleared_at" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableClearedAt(v *time.Time) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetClearedAt(*v)
+	}
+	return _u
+}
+
+// ClearClearedAt clears the value of the "cleared_at" field.
+func (_u *WorkspaceUpdate) ClearClearedAt() *WorkspaceUpdate {
+	_u.mutation.ClearClearedAt()
+	return _u
+}
+
+// SetAbuseExempt sets the "abuse_exempt" field.
+func (_u *WorkspaceUpdate) SetAbuseExempt(v bool) *WorkspaceUpdate {
+	_u.mutation.SetAbuseExempt(v)
+	return _u
+}
+
+// SetNillableAbuseExempt sets the "abuse_exempt" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableAbuseExempt(v *bool) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetAbuseExempt(*v)
+	}
+	return _u
+}
+
+// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
+func (_u *WorkspaceUpdate) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpdate {
+	_u.mutation.SetAbuseWarningNotifiedAt(v)
+	return _u
+}
+
+// SetNillableAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableAbuseWarningNotifiedAt(v *time.Time) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetAbuseWarningNotifiedAt(*v)
+	}
+	return _u
+}
+
+// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
+func (_u *WorkspaceUpdate) ClearAbuseWarningNotifiedAt() *WorkspaceUpdate {
+	_u.mutation.ClearAbuseWarningNotifiedAt()
+	return _u
+}
+
+// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
+func (_u *WorkspaceUpdate) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpdate {
+	_u.mutation.SetAbuseFreezeNotifiedAt(v)
+	return _u
+}
+
+// SetNillableAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableAbuseFreezeNotifiedAt(v *time.Time) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetAbuseFreezeNotifiedAt(*v)
+	}
+	return _u
+}
+
+// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
+func (_u *WorkspaceUpdate) ClearAbuseFreezeNotifiedAt() *WorkspaceUpdate {
+	_u.mutation.ClearAbuseFreezeNotifiedAt()
+	return _u
+}
+
 // AddContactIDs adds the "contacts" edge to the Contact entity by IDs.
 func (_u *WorkspaceUpdate) AddContactIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddContactIDs(ids...)
@@ -1360,6 +1434,27 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SuspensionReasonCleared() {
 		_spec.ClearField(workspace.FieldSuspensionReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.ClearedAt(); ok {
+		_spec.SetField(workspace.FieldClearedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ClearedAtCleared() {
+		_spec.ClearField(workspace.FieldClearedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AbuseExempt(); ok {
+		_spec.SetField(workspace.FieldAbuseExempt, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AbuseWarningNotifiedAt(); ok {
+		_spec.SetField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime, value)
+	}
+	if _u.mutation.AbuseWarningNotifiedAtCleared() {
+		_spec.ClearField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AbuseFreezeNotifiedAt(); ok {
+		_spec.SetField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime, value)
+	}
+	if _u.mutation.AbuseFreezeNotifiedAtCleared() {
+		_spec.ClearField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime)
 	}
 	if _u.mutation.ContactsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -2752,6 +2847,80 @@ func (_u *WorkspaceUpdateOne) ClearSuspensionReason() *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetClearedAt sets the "cleared_at" field.
+func (_u *WorkspaceUpdateOne) SetClearedAt(v time.Time) *WorkspaceUpdateOne {
+	_u.mutation.SetClearedAt(v)
+	return _u
+}
+
+// SetNillableClearedAt sets the "cleared_at" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableClearedAt(v *time.Time) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetClearedAt(*v)
+	}
+	return _u
+}
+
+// ClearClearedAt clears the value of the "cleared_at" field.
+func (_u *WorkspaceUpdateOne) ClearClearedAt() *WorkspaceUpdateOne {
+	_u.mutation.ClearClearedAt()
+	return _u
+}
+
+// SetAbuseExempt sets the "abuse_exempt" field.
+func (_u *WorkspaceUpdateOne) SetAbuseExempt(v bool) *WorkspaceUpdateOne {
+	_u.mutation.SetAbuseExempt(v)
+	return _u
+}
+
+// SetNillableAbuseExempt sets the "abuse_exempt" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableAbuseExempt(v *bool) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetAbuseExempt(*v)
+	}
+	return _u
+}
+
+// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
+func (_u *WorkspaceUpdateOne) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpdateOne {
+	_u.mutation.SetAbuseWarningNotifiedAt(v)
+	return _u
+}
+
+// SetNillableAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableAbuseWarningNotifiedAt(v *time.Time) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetAbuseWarningNotifiedAt(*v)
+	}
+	return _u
+}
+
+// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
+func (_u *WorkspaceUpdateOne) ClearAbuseWarningNotifiedAt() *WorkspaceUpdateOne {
+	_u.mutation.ClearAbuseWarningNotifiedAt()
+	return _u
+}
+
+// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
+func (_u *WorkspaceUpdateOne) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpdateOne {
+	_u.mutation.SetAbuseFreezeNotifiedAt(v)
+	return _u
+}
+
+// SetNillableAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableAbuseFreezeNotifiedAt(v *time.Time) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetAbuseFreezeNotifiedAt(*v)
+	}
+	return _u
+}
+
+// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
+func (_u *WorkspaceUpdateOne) ClearAbuseFreezeNotifiedAt() *WorkspaceUpdateOne {
+	_u.mutation.ClearAbuseFreezeNotifiedAt()
+	return _u
+}
+
 // AddContactIDs adds the "contacts" edge to the Contact entity by IDs.
 func (_u *WorkspaceUpdateOne) AddContactIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddContactIDs(ids...)
@@ -3844,6 +4013,27 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.SuspensionReasonCleared() {
 		_spec.ClearField(workspace.FieldSuspensionReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.ClearedAt(); ok {
+		_spec.SetField(workspace.FieldClearedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ClearedAtCleared() {
+		_spec.ClearField(workspace.FieldClearedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AbuseExempt(); ok {
+		_spec.SetField(workspace.FieldAbuseExempt, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AbuseWarningNotifiedAt(); ok {
+		_spec.SetField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime, value)
+	}
+	if _u.mutation.AbuseWarningNotifiedAtCleared() {
+		_spec.ClearField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AbuseFreezeNotifiedAt(); ok {
+		_spec.SetField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime, value)
+	}
+	if _u.mutation.AbuseFreezeNotifiedAtCleared() {
+		_spec.ClearField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime)
 	}
 	if _u.mutation.ContactsCleared() {
 		edge := &sqlgraph.EdgeSpec{

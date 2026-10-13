@@ -71,6 +71,14 @@
     "transactionalEmailsLoadErrorTitle": "Error al cargar los correos transaccionales"
   },
   "analytics": {
+    "abuseWarning": {
+      "description": "La tasa de {{metric}} de {{domain}} en las últimas 24 horas es {{rate}} y supera el límite de aviso. Depure su lista: si sigue subiendo, el envío de este espacio de trabajo se suspenderá automáticamente.",
+      "metrics": {
+        "bounce": "rebotes",
+        "complaint": "quejas"
+      },
+      "title": "La reputación de envío requiere atención"
+    },
     "automations": {
       "active": "Activas",
       "runsActive": "Ejecuciones activas",
@@ -285,6 +293,32 @@
       "workspaces": "Espacios de trabajo"
     },
     "workspace": {
+      "abuse": {
+        "clearedAt": "Última reactivación",
+        "error": "No se pudo cambiar la exención",
+        "exempt": "Exento",
+        "exemptButton": "Eximir del detector",
+        "exemptDescription": "El detector no avisará ni bloqueará este espacio de trabajo. Aún puede suspenderlo a mano y sus tasas siguen visibles aquí.",
+        "exemptDone": "El espacio de trabajo está exento del detector.",
+        "exemptTitle": "¿Eximir este espacio de trabajo?",
+        "freezeNotifiedAt": "Propietarios informados del bloqueo",
+        "metrics": {
+          "bounce": "Rebotes",
+          "complaint": "Quejas"
+        },
+        "never": "Nunca",
+        "noWarning": "Ninguno",
+        "policed": "Vigilado",
+        "title": "Detector de abusos",
+        "unchanged": "El espacio de trabajo ya estaba en ese estado.",
+        "unexemptButton": "Vigilar de nuevo",
+        "unexemptDescription": "El detector volverá a avisar y bloquear este espacio de trabajo según sus tasas.",
+        "unexemptDone": "El detector vuelve a vigilar el espacio de trabajo.",
+        "unexemptTitle": "¿Vigilar de nuevo este espacio de trabajo?",
+        "warning": "Aviso",
+        "warningDetail": "{{metric}}: {{rate}} en {{domain}}",
+        "warningNotifiedAt": "Propietarios avisados"
+      },
       "actorOperator": "Operador {{id}}",
       "actors": {
         "cli": "Línea de comandos",
@@ -361,14 +395,22 @@
       "active": "Activo",
       "createdAt": "Creado",
       "empty": "No se encontraron espacios de trabajo",
+      "exempt": "Exento",
       "loadError": "No se pudieron cargar los espacios de trabajo",
       "name": "Nombre",
+      "review": {
+        "all": "Todos los espacios",
+        "label": "Revisión",
+        "systemFrozen": "Bloqueados por el detector",
+        "warned": "Avisados"
+      },
       "searchLabel": "Buscar por slug",
       "searchPlaceholder": "Buscar por slug",
       "slug": "Slug",
       "status": "Estado",
       "suspended": "Suspendido",
-      "title": "Espacios de trabajo"
+      "title": "Espacios de trabajo",
+      "warned": "Avisado"
     }
   },
   "contacts": {
@@ -946,7 +988,9 @@
     "title": "El envío está retenido"
   },
   "workspaceSuspension": {
-    "description": "El envío de correos salientes está suspendido para este espacio de trabajo. Los envíos programados y las automatizaciones están en pausa y se reanudarán cuando se levante la suspensión. Aún puede iniciar sesión y consultar sus datos. Para apelar, póngase en contacto con su administrador de sphericon.",
+    "appealAdmin": "Para apelar, póngase en contacto con su administrador de sphericon.",
+    "appealSupport": "Para apelar, escriba a {{email}}.",
+    "description": "El envío de correos salientes está suspendido para este espacio de trabajo. Los envíos programados y las automatizaciones están en pausa y se reanudarán cuando se levante la suspensión. Aún puede iniciar sesión y consultar sus datos.",
     "reason": "Motivo: {{reason}}",
     "title": "El envío está suspendido"
   }

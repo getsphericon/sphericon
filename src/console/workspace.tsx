@@ -7,13 +7,14 @@ import { useTranslation } from 'react-i18next'
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { ButtonLink } from '../components/RouterLink.tsx'
 import { operatorWorkspacesGetOptions } from '../generated/operator/@tanstack/react-query.gen.ts'
-import type { OperatorSuspension } from '../generated/operator/types.gen.ts'
+import type { OperatorAbuse, OperatorSuspension } from '../generated/operator/types.gen.ts'
 import { consoleHomeRoute, consoleWorkspaceRoute } from '../router.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
+import { formatPercent } from '../utils/percent.ts'
 import { AuditLogCard } from './AuditLogCard.tsx'
 import { DeliverabilityCard } from './deliverability.tsx'
 import { HoldsCard } from './HoldsCard.tsx'
-import { SuspensionActions } from './SuspensionActions.tsx'
+import { ExemptionAction, SuspensionActions } from './SuspensionActions.tsx'
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -75,6 +76,54 @@ function SuspensionCard({
   )
 }
 
+// The Workspace's standing with the abuse detector (ADR 0026): whether it is exempt, the
+// warning it is in right now (computed live), and when the owners were last told.
+function AbuseCard({ workspaceId, abuse }: { workspaceId: string; abuse: OperatorAbuse }) {
+  const { t } = useTranslation()
+  const never = t(($) => $.console.workspace.abuse.never)
+  const warning = abuse.warning
+
+  return (
+    <Card withBorder>
+      <Group justify="space-between" mb="sm">
+        <Title order={4}>{t(($) => $.console.workspace.abuse.title)}</Title>
+        {abuse.exempt ? (
+          <Badge color="grape" variant="light">
+            {t(($) => $.console.workspace.abuse.exempt)}
+          </Badge>
+        ) : (
+          <Badge color="gray" variant="light">
+            {t(($) => $.console.workspace.abuse.policed)}
+          </Badge>
+        )}
+      </Group>
+      <Stack gap="xs">
+        <Field label={t(($) => $.console.workspace.abuse.warning)}>
+          {warning
+            ? t(($) => $.console.workspace.abuse.warningDetail, {
+                metric: t(($) => $.console.workspace.abuse.metrics[warning.metric]),
+                rate: formatPercent(warning.rate),
+                domain: warning.domain,
+              })
+            : t(($) => $.console.workspace.abuse.noWarning)}
+        </Field>
+        <Field label={t(($) => $.console.workspace.abuse.clearedAt)}>
+          {abuse.clearedAt ? formatDateTime(abuse.clearedAt) : never}
+        </Field>
+        <Field label={t(($) => $.console.workspace.abuse.warningNotifiedAt)}>
+          {abuse.warningNotifiedAt ? formatDateTime(abuse.warningNotifiedAt) : never}
+        </Field>
+        <Field label={t(($) => $.console.workspace.abuse.freezeNotifiedAt)}>
+          {abuse.freezeNotifiedAt ? formatDateTime(abuse.freezeNotifiedAt) : never}
+        </Field>
+      </Stack>
+      <Group mt="md">
+        <ExemptionAction workspaceId={workspaceId} exempt={abuse.exempt} />
+      </Group>
+    </Card>
+  )
+}
+
 // One Workspace: metadata and suspension state, as stacked cards so a later slice
 // (rates, Audit log, suspend actions) adds a card without reshaping the page.
 export function ConsoleWorkspacePage() {
@@ -118,6 +167,7 @@ export function ConsoleWorkspacePage() {
             </Stack>
           </Card>
           <SuspensionCard workspaceId={workspace.id} suspension={workspace.suspension} />
+          <AbuseCard workspaceId={workspace.id} abuse={workspace.abuse} />
           <HoldsCard holds={workspace.holds} />
           <DeliverabilityCard deliverability={workspace.deliverability} />
           <AuditLogCard workspaceId={workspace.id} />

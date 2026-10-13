@@ -91,6 +91,8 @@ type Handlers struct {
 	automations    *automations.Module
 	oauth          *oauthserver.Service
 	audit          AuditLog
+	abuseWatch     AbuseWatch
+	supportEmail   string
 	analytics      *analytics.Module
 	sessions       *auth.Sessions
 	secondFactor   *secondfactor.Module
@@ -116,6 +118,23 @@ type AuditLog interface {
 	ExportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter, w io.Writer) error
 	// RetentionLicensed reports whether the retention window may be set (ADR 0014).
 	RetentionLicensed() bool
+}
+
+// AbuseWarning is a Sending domain in the abuse detector's warning tier (ADR 0026).
+type AbuseWarning struct {
+	Domain string
+	// Metric is "complaint" or "bounce".
+	Metric string
+	// Rate is 0–1.
+	Rate float64
+}
+
+// AbuseWatch is the read seam of the Enterprise abuse detector (ADR 0026), implemented
+// by ee. Core knows only this interface; nil, or an unlicensed instance, shows no warning.
+type AbuseWatch interface {
+	// Warning is the Workspace's warning at now, or nil when it is in no warning tier
+	// (exempt and suspended Workspaces are never in one).
+	Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (*AbuseWarning, error)
 }
 
 // Deps is everything the /site handlers are built from. The domain modules are
@@ -146,7 +165,10 @@ type Deps struct {
 	Tracker        *tracking.Tracker
 	AppURL         string
 	Audit          AuditLog
-	Analytics      *analytics.Module
+	AbuseWatch     AbuseWatch
+	// SupportEmail is where a suspended Workspace's owner appeals (SUPPORT_EMAIL).
+	SupportEmail string
+	Analytics    *analytics.Module
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SESSION_TTL.
 	Sessions *auth.Sessions
@@ -178,7 +200,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }

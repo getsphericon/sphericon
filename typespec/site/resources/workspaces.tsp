@@ -56,6 +56,10 @@ model SiteWorkspaceResource {
   /** Why sending was suspended, shown to the owner; present only while suspended. */
   suspensionReason?: string | null;
 
+  /** Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance
+   * configured none. */
+  supportEmail?: string | null;
+
   /** The Operator holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed. */

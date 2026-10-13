@@ -45,6 +45,14 @@ const (
 	FieldSuspendedByID = "suspended_by_id"
 	// FieldSuspensionReason holds the string denoting the suspension_reason field in the database.
 	FieldSuspensionReason = "suspension_reason"
+	// FieldClearedAt holds the string denoting the cleared_at field in the database.
+	FieldClearedAt = "cleared_at"
+	// FieldAbuseExempt holds the string denoting the abuse_exempt field in the database.
+	FieldAbuseExempt = "abuse_exempt"
+	// FieldAbuseWarningNotifiedAt holds the string denoting the abuse_warning_notified_at field in the database.
+	FieldAbuseWarningNotifiedAt = "abuse_warning_notified_at"
+	// FieldAbuseFreezeNotifiedAt holds the string denoting the abuse_freeze_notified_at field in the database.
+	FieldAbuseFreezeNotifiedAt = "abuse_freeze_notified_at"
 	// EdgeContacts holds the string denoting the contacts edge name in mutations.
 	EdgeContacts = "contacts"
 	// EdgeCustomFields holds the string denoting the custom_fields edge name in mutations.
@@ -292,6 +300,10 @@ var Columns = []string{
 	FieldSuspendedByKind,
 	FieldSuspendedByID,
 	FieldSuspensionReason,
+	FieldClearedAt,
+	FieldAbuseExempt,
+	FieldAbuseWarningNotifiedAt,
+	FieldAbuseFreezeNotifiedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -327,6 +339,8 @@ var (
 	RetentionDaysValidator func(int) error
 	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
 	DefaultFeedPosition int64
+	// DefaultAbuseExempt holds the default value on creation for the "abuse_exempt" field.
+	DefaultAbuseExempt bool
 )
 
 // SuspendedByKind defines the type for the "suspended_by_kind" enum field.
@@ -434,6 +448,26 @@ func BySuspendedByID(opts ...sql.OrderTermOption) OrderOption {
 // BySuspensionReason orders the results by the suspension_reason field.
 func BySuspensionReason(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSuspensionReason, opts...).ToFunc()
+}
+
+// ByClearedAt orders the results by the cleared_at field.
+func ByClearedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClearedAt, opts...).ToFunc()
+}
+
+// ByAbuseExempt orders the results by the abuse_exempt field.
+func ByAbuseExempt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAbuseExempt, opts...).ToFunc()
+}
+
+// ByAbuseWarningNotifiedAt orders the results by the abuse_warning_notified_at field.
+func ByAbuseWarningNotifiedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAbuseWarningNotifiedAt, opts...).ToFunc()
+}
+
+// ByAbuseFreezeNotifiedAt orders the results by the abuse_freeze_notified_at field.
+func ByAbuseFreezeNotifiedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAbuseFreezeNotifiedAt, opts...).ToFunc()
 }
 
 // ByContactsCount orders the results by contacts count.

@@ -13,7 +13,15 @@ import { ConsoleWorkspacesPage } from './workspaces.tsx'
 const HOME = routeMount(consoleHomeRoute)
 
 function workspace(over: Partial<OperatorWorkspaceResource> = {}): OperatorWorkspaceResource {
-  return { id: '1', slug: 'acme', name: 'Acme', createdAt: '2026-01-01T00:00:00Z', ...over }
+  return {
+    id: '1',
+    slug: 'acme',
+    name: 'Acme',
+    createdAt: '2026-01-01T00:00:00Z',
+    exempt: false,
+    warned: false,
+    ...over,
+  }
 }
 
 const page = (items: OperatorWorkspaceResource[]) => ({
@@ -63,6 +71,38 @@ test('searching sends the slug to the API', async () => {
   await screen.getByLabelText('Search by slug').fill('hoo')
 
   await expect.poll(() => slugs).toContain('hoo')
+})
+
+test('a warned and an exempt workspace say so next to their state', async () => {
+  worker.use(
+    handleOperatorWorkspacesList({
+      body: page([
+        workspace({ id: '2', slug: 'globex', name: 'Globex', warned: true }),
+        workspace({ id: '8', slug: 'kramerica', name: 'Kramerica', exempt: true }),
+      ]),
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
+
+  await expect.element(screen.getByText('Warned', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Exempt', { exact: true })).toBeInTheDocument()
+})
+
+test('choosing a review state sends it to the API', async () => {
+  const reviews: (string | null)[] = []
+  worker.use(
+    handleOperatorWorkspacesList(({ request }) => {
+      reviews.push(new URL(request.url).searchParams.get('review'))
+      return HttpResponse.json(page([workspace()]))
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
+
+  await screen.getByRole('combobox', { name: 'Review' }).click()
+  await screen.getByRole('option', { name: 'Frozen by the detector' }).click()
+
+  await expect.poll(() => reviews).toContain('systemFrozen')
 })
 
 test('opening a row navigates to the workspace', async () => {

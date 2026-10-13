@@ -85,3 +85,34 @@
   workspace_id: 6
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# The abuse detector's Workspaces (ADR 0026): Vandelay's two verified domains and Kramerica's one.
+- id: 410 # fixture: SendingDomainVandelay
+  domain: mail.vandelay.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "vandelay-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=vandelay'
+  verified: true
+  verified_at: '2026-01-01 00:00:00'
+  workspace_id: 7
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 411 # fixture: SendingDomainVandelayNews
+  domain: news.vandelay.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "vandelay-news-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=vandelaynews'
+  verified: true
+  verified_at: '2026-01-01 00:00:00'
+  workspace_id: 7
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 420 # fixture: SendingDomainKramerica
+  domain: mail.kramerica.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "kramerica-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=kramerica'
+  verified: true
+  verified_at: '2026-01-01 00:00:00'
+  workspace_id: 8
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

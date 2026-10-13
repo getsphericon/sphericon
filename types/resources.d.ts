@@ -73,6 +73,14 @@ export default interface Resources {
       "transactionalEmailsLoadErrorTitle": "Failed to load transactional emails"
     },
     "analytics": {
+      "abuseWarning": {
+        "description": "The {{metric}} rate on {{domain}} is {{rate}} over the last 24 hours, over the warning limit. Clean your list: if it keeps rising, sending for this workspace is suspended automatically.",
+        "metrics": {
+          "bounce": "bounce",
+          "complaint": "complaint"
+        },
+        "title": "Your sending reputation needs attention"
+      },
       "automations": {
         "active": "Active",
         "runsActive": "Active runs",
@@ -275,6 +283,32 @@ export default interface Resources {
         "workspaces": "Workspaces"
       },
       "workspace": {
+        "abuse": {
+          "clearedAt": "Last cleared",
+          "error": "Could not change the exemption",
+          "exempt": "Exempt",
+          "exemptButton": "Exempt from detector",
+          "exemptDescription": "The detector will neither warn nor freeze this Workspace. You can still suspend it by hand, and its rates stay visible here.",
+          "exemptDone": "The Workspace is exempt from the detector.",
+          "exemptTitle": "Exempt this Workspace?",
+          "freezeNotifiedAt": "Owners told of freeze",
+          "metrics": {
+            "bounce": "Bounce",
+            "complaint": "Complaint"
+          },
+          "never": "Never",
+          "noWarning": "None",
+          "policed": "Policed",
+          "title": "Abuse detector",
+          "unchanged": "The Workspace was already in that state.",
+          "unexemptButton": "Police again",
+          "unexemptDescription": "The detector will warn and freeze this Workspace by its rates again.",
+          "unexemptDone": "The Workspace is policed by the detector again.",
+          "unexemptTitle": "Police this Workspace again?",
+          "warning": "Warning",
+          "warningDetail": "{{metric}} rate {{rate}} on {{domain}}",
+          "warningNotifiedAt": "Owners warned"
+        },
         "actorOperator": "Operator {{id}}",
         "actors": {
           "cli": "Command line",
@@ -351,14 +385,22 @@ export default interface Resources {
         "active": "Active",
         "createdAt": "Created",
         "empty": "No workspaces found",
+        "exempt": "Exempt",
         "loadError": "Could not load workspaces",
         "name": "Name",
+        "review": {
+          "all": "All Workspaces",
+          "label": "Review",
+          "systemFrozen": "Frozen by the detector",
+          "warned": "Warned"
+        },
         "searchLabel": "Search by slug",
         "searchPlaceholder": "Search by slug",
         "slug": "Slug",
         "status": "Status",
         "suspended": "Suspended",
-        "title": "Workspaces"
+        "title": "Workspaces",
+        "warned": "Warned"
       }
     },
     "contacts": {
@@ -918,7 +960,9 @@ export default interface Resources {
       "title": "Sending is on hold"
     },
     "workspaceSuspension": {
-      "description": "Outbound email sending is suspended for this workspace. Scheduled broadcasts and automations are paused and resume when the suspension is lifted. You can still sign in and view your data. To appeal, contact your sphericon administrator.",
+      "appealAdmin": "To appeal, contact your sphericon administrator.",
+      "appealSupport": "To appeal, email {{email}}.",
+      "description": "Outbound email sending is suspended for this workspace. Scheduled broadcasts and automations are paused and resume when the suspension is lifted. You can still sign in and view your data.",
       "reason": "Reason: {{reason}}",
       "title": "Sending is suspended"
     }

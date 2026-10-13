@@ -43,6 +43,14 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/audit-entries
 	OperatorWorkspaceAuditList(ctx context.Context, params OperatorWorkspaceAuditListParams) (OperatorWorkspaceAuditListRes, error)
+	// OperatorWorkspacesExempt implements OperatorWorkspaces_exempt operation.
+	//
+	// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
+	// automatically, but stays listed with its rates and can still be suspended by hand. Audited.
+	// Idempotent.
+	//
+	// POST /workspaces/{workspaceId}/exempt
+	OperatorWorkspacesExempt(ctx context.Context, params OperatorWorkspacesExemptParams) (OperatorWorkspacesExemptRes, error)
 	// OperatorWorkspacesGet implements OperatorWorkspaces_get operation.
 	//
 	// One Workspace's metadata, suspension state, rates and send volume.
@@ -62,6 +70,12 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/suspend
 	OperatorWorkspacesSuspend(ctx context.Context, req *OperatorSuspendInput, params OperatorWorkspacesSuspendParams) (OperatorWorkspacesSuspendRes, error)
+	// OperatorWorkspacesUnexempt implements OperatorWorkspaces_unexempt operation.
+	//
+	// Police a Workspace by the abuse detector again. Audited. Idempotent.
+	//
+	// POST /workspaces/{workspaceId}/unexempt
+	OperatorWorkspacesUnexempt(ctx context.Context, params OperatorWorkspacesUnexemptParams) (OperatorWorkspacesUnexemptRes, error)
 	// OperatorWorkspacesUnsuspend implements OperatorWorkspaces_unsuspend operation.
 	//
 	// Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is not suspended is

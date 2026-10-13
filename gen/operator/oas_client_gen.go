@@ -64,6 +64,14 @@ type Invoker interface {
 	//
 	// GET /workspaces/{workspaceId}/audit-entries
 	OperatorWorkspaceAuditList(ctx context.Context, params OperatorWorkspaceAuditListParams) (OperatorWorkspaceAuditListRes, error)
+	// OperatorWorkspacesExempt invokes OperatorWorkspaces_exempt operation.
+	//
+	// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
+	// automatically, but stays listed with its rates and can still be suspended by hand. Audited.
+	// Idempotent.
+	//
+	// POST /workspaces/{workspaceId}/exempt
+	OperatorWorkspacesExempt(ctx context.Context, params OperatorWorkspacesExemptParams) (OperatorWorkspacesExemptRes, error)
 	// OperatorWorkspacesGet invokes OperatorWorkspaces_get operation.
 	//
 	// One Workspace's metadata, suspension state, rates and send volume.
@@ -83,6 +91,12 @@ type Invoker interface {
 	//
 	// POST /workspaces/{workspaceId}/suspend
 	OperatorWorkspacesSuspend(ctx context.Context, request *OperatorSuspendInput, params OperatorWorkspacesSuspendParams) (OperatorWorkspacesSuspendRes, error)
+	// OperatorWorkspacesUnexempt invokes OperatorWorkspaces_unexempt operation.
+	//
+	// Police a Workspace by the abuse detector again. Audited. Idempotent.
+	//
+	// POST /workspaces/{workspaceId}/unexempt
+	OperatorWorkspacesUnexempt(ctx context.Context, params OperatorWorkspacesUnexemptParams) (OperatorWorkspacesUnexemptRes, error)
 	// OperatorWorkspacesUnsuspend invokes OperatorWorkspaces_unsuspend operation.
 	//
 	// Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is not suspended is
@@ -703,6 +717,143 @@ func (c *Client) sendOperatorWorkspaceAuditList(ctx context.Context, params Oper
 	return result, nil
 }
 
+// OperatorWorkspacesExempt invokes OperatorWorkspaces_exempt operation.
+//
+// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
+// automatically, but stays listed with its rates and can still be suspended by hand. Audited.
+// Idempotent.
+//
+// POST /workspaces/{workspaceId}/exempt
+func (c *Client) OperatorWorkspacesExempt(ctx context.Context, params OperatorWorkspacesExemptParams) (OperatorWorkspacesExemptRes, error) {
+	res, err := c.sendOperatorWorkspacesExempt(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendOperatorWorkspacesExempt(ctx context.Context, params OperatorWorkspacesExemptParams) (res OperatorWorkspacesExemptRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("OperatorWorkspaces_exempt"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/exempt"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, OperatorWorkspacesExemptOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/exempt"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, OperatorWorkspacesExemptOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeOperatorWorkspacesExemptResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // OperatorWorkspacesGet invokes OperatorWorkspaces_get operation.
 //
 // One Workspace's metadata, suspension state, rates and send volume.
@@ -890,6 +1041,23 @@ func (c *Client) sendOperatorWorkspacesList(ctx context.Context, params Operator
 
 	stage = "EncodeQueryParams"
 	q := uri.NewQueryEncoder()
+	{
+		// Encode "review" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "review",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Review.Get(); ok {
+				return e.EncodeValue(conv.StringToString(string(val)))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
 	{
 		// Encode "slug" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
@@ -1137,6 +1305,141 @@ func (c *Client) sendOperatorWorkspacesSuspend(ctx context.Context, request *Ope
 
 	stage = "DecodeResponse"
 	result, err := decodeOperatorWorkspacesSuspendResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// OperatorWorkspacesUnexempt invokes OperatorWorkspaces_unexempt operation.
+//
+// Police a Workspace by the abuse detector again. Audited. Idempotent.
+//
+// POST /workspaces/{workspaceId}/unexempt
+func (c *Client) OperatorWorkspacesUnexempt(ctx context.Context, params OperatorWorkspacesUnexemptParams) (OperatorWorkspacesUnexemptRes, error) {
+	res, err := c.sendOperatorWorkspacesUnexempt(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendOperatorWorkspacesUnexempt(ctx context.Context, params OperatorWorkspacesUnexemptParams) (res OperatorWorkspacesUnexemptRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("OperatorWorkspaces_unexempt"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/unexempt"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, OperatorWorkspacesUnexemptOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/unexempt"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, OperatorWorkspacesUnexemptOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeOperatorWorkspacesUnexemptResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

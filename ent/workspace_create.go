@@ -225,6 +225,62 @@ func (_c *WorkspaceCreate) SetNillableSuspensionReason(v *string) *WorkspaceCrea
 	return _c
 }
 
+// SetClearedAt sets the "cleared_at" field.
+func (_c *WorkspaceCreate) SetClearedAt(v time.Time) *WorkspaceCreate {
+	_c.mutation.SetClearedAt(v)
+	return _c
+}
+
+// SetNillableClearedAt sets the "cleared_at" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableClearedAt(v *time.Time) *WorkspaceCreate {
+	if v != nil {
+		_c.SetClearedAt(*v)
+	}
+	return _c
+}
+
+// SetAbuseExempt sets the "abuse_exempt" field.
+func (_c *WorkspaceCreate) SetAbuseExempt(v bool) *WorkspaceCreate {
+	_c.mutation.SetAbuseExempt(v)
+	return _c
+}
+
+// SetNillableAbuseExempt sets the "abuse_exempt" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableAbuseExempt(v *bool) *WorkspaceCreate {
+	if v != nil {
+		_c.SetAbuseExempt(*v)
+	}
+	return _c
+}
+
+// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
+func (_c *WorkspaceCreate) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceCreate {
+	_c.mutation.SetAbuseWarningNotifiedAt(v)
+	return _c
+}
+
+// SetNillableAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableAbuseWarningNotifiedAt(v *time.Time) *WorkspaceCreate {
+	if v != nil {
+		_c.SetAbuseWarningNotifiedAt(*v)
+	}
+	return _c
+}
+
+// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
+func (_c *WorkspaceCreate) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceCreate {
+	_c.mutation.SetAbuseFreezeNotifiedAt(v)
+	return _c
+}
+
+// SetNillableAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableAbuseFreezeNotifiedAt(v *time.Time) *WorkspaceCreate {
+	if v != nil {
+		_c.SetAbuseFreezeNotifiedAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *WorkspaceCreate) SetID(v int64) *WorkspaceCreate {
 	_c.mutation.SetID(v)
@@ -661,6 +717,10 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultFeedPosition
 		_c.mutation.SetFeedPosition(v)
 	}
+	if _, ok := _c.mutation.AbuseExempt(); !ok {
+		v := workspace.DefaultAbuseExempt
+		_c.mutation.SetAbuseExempt(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -718,6 +778,9 @@ func (_c *WorkspaceCreate) check() error {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
 			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.AbuseExempt(); !ok {
+		return &ValidationError{Name: "abuse_exempt", err: errors.New(`ent: missing required field "Workspace.abuse_exempt"`)}
 	}
 	return nil
 }
@@ -811,6 +874,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SuspensionReason(); ok {
 		_spec.SetField(workspace.FieldSuspensionReason, field.TypeString, value)
 		_node.SuspensionReason = &value
+	}
+	if value, ok := _c.mutation.ClearedAt(); ok {
+		_spec.SetField(workspace.FieldClearedAt, field.TypeTime, value)
+		_node.ClearedAt = &value
+	}
+	if value, ok := _c.mutation.AbuseExempt(); ok {
+		_spec.SetField(workspace.FieldAbuseExempt, field.TypeBool, value)
+		_node.AbuseExempt = value
+	}
+	if value, ok := _c.mutation.AbuseWarningNotifiedAt(); ok {
+		_spec.SetField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime, value)
+		_node.AbuseWarningNotifiedAt = &value
+	}
+	if value, ok := _c.mutation.AbuseFreezeNotifiedAt(); ok {
+		_spec.SetField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime, value)
+		_node.AbuseFreezeNotifiedAt = &value
 	}
 	if nodes := _c.mutation.ContactsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1486,6 +1565,72 @@ func (u *WorkspaceUpsert) ClearSuspensionReason() *WorkspaceUpsert {
 	return u
 }
 
+// SetClearedAt sets the "cleared_at" field.
+func (u *WorkspaceUpsert) SetClearedAt(v time.Time) *WorkspaceUpsert {
+	u.Set(workspace.FieldClearedAt, v)
+	return u
+}
+
+// UpdateClearedAt sets the "cleared_at" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateClearedAt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldClearedAt)
+	return u
+}
+
+// ClearClearedAt clears the value of the "cleared_at" field.
+func (u *WorkspaceUpsert) ClearClearedAt() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldClearedAt)
+	return u
+}
+
+// SetAbuseExempt sets the "abuse_exempt" field.
+func (u *WorkspaceUpsert) SetAbuseExempt(v bool) *WorkspaceUpsert {
+	u.Set(workspace.FieldAbuseExempt, v)
+	return u
+}
+
+// UpdateAbuseExempt sets the "abuse_exempt" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateAbuseExempt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldAbuseExempt)
+	return u
+}
+
+// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
+func (u *WorkspaceUpsert) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpsert {
+	u.Set(workspace.FieldAbuseWarningNotifiedAt, v)
+	return u
+}
+
+// UpdateAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateAbuseWarningNotifiedAt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldAbuseWarningNotifiedAt)
+	return u
+}
+
+// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
+func (u *WorkspaceUpsert) ClearAbuseWarningNotifiedAt() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldAbuseWarningNotifiedAt)
+	return u
+}
+
+// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
+func (u *WorkspaceUpsert) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpsert {
+	u.Set(workspace.FieldAbuseFreezeNotifiedAt, v)
+	return u
+}
+
+// UpdateAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateAbuseFreezeNotifiedAt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldAbuseFreezeNotifiedAt)
+	return u
+}
+
+// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
+func (u *WorkspaceUpsert) ClearAbuseFreezeNotifiedAt() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldAbuseFreezeNotifiedAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -1793,6 +1938,83 @@ func (u *WorkspaceUpsertOne) UpdateSuspensionReason() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearSuspensionReason() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearSuspensionReason()
+	})
+}
+
+// SetClearedAt sets the "cleared_at" field.
+func (u *WorkspaceUpsertOne) SetClearedAt(v time.Time) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetClearedAt(v)
+	})
+}
+
+// UpdateClearedAt sets the "cleared_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateClearedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateClearedAt()
+	})
+}
+
+// ClearClearedAt clears the value of the "cleared_at" field.
+func (u *WorkspaceUpsertOne) ClearClearedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearClearedAt()
+	})
+}
+
+// SetAbuseExempt sets the "abuse_exempt" field.
+func (u *WorkspaceUpsertOne) SetAbuseExempt(v bool) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetAbuseExempt(v)
+	})
+}
+
+// UpdateAbuseExempt sets the "abuse_exempt" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateAbuseExempt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateAbuseExempt()
+	})
+}
+
+// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
+func (u *WorkspaceUpsertOne) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetAbuseWarningNotifiedAt(v)
+	})
+}
+
+// UpdateAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateAbuseWarningNotifiedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateAbuseWarningNotifiedAt()
+	})
+}
+
+// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
+func (u *WorkspaceUpsertOne) ClearAbuseWarningNotifiedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearAbuseWarningNotifiedAt()
+	})
+}
+
+// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
+func (u *WorkspaceUpsertOne) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetAbuseFreezeNotifiedAt(v)
+	})
+}
+
+// UpdateAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateAbuseFreezeNotifiedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateAbuseFreezeNotifiedAt()
+	})
+}
+
+// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
+func (u *WorkspaceUpsertOne) ClearAbuseFreezeNotifiedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearAbuseFreezeNotifiedAt()
 	})
 }
 
@@ -2269,6 +2491,83 @@ func (u *WorkspaceUpsertBulk) UpdateSuspensionReason() *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) ClearSuspensionReason() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearSuspensionReason()
+	})
+}
+
+// SetClearedAt sets the "cleared_at" field.
+func (u *WorkspaceUpsertBulk) SetClearedAt(v time.Time) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetClearedAt(v)
+	})
+}
+
+// UpdateClearedAt sets the "cleared_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateClearedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateClearedAt()
+	})
+}
+
+// ClearClearedAt clears the value of the "cleared_at" field.
+func (u *WorkspaceUpsertBulk) ClearClearedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearClearedAt()
+	})
+}
+
+// SetAbuseExempt sets the "abuse_exempt" field.
+func (u *WorkspaceUpsertBulk) SetAbuseExempt(v bool) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetAbuseExempt(v)
+	})
+}
+
+// UpdateAbuseExempt sets the "abuse_exempt" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateAbuseExempt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateAbuseExempt()
+	})
+}
+
+// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
+func (u *WorkspaceUpsertBulk) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetAbuseWarningNotifiedAt(v)
+	})
+}
+
+// UpdateAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateAbuseWarningNotifiedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateAbuseWarningNotifiedAt()
+	})
+}
+
+// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
+func (u *WorkspaceUpsertBulk) ClearAbuseWarningNotifiedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearAbuseWarningNotifiedAt()
+	})
+}
+
+// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
+func (u *WorkspaceUpsertBulk) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetAbuseFreezeNotifiedAt(v)
+	})
+}
+
+// UpdateAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateAbuseFreezeNotifiedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateAbuseFreezeNotifiedAt()
+	})
+}
+
+// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
+func (u *WorkspaceUpsertBulk) ClearAbuseFreezeNotifiedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearAbuseFreezeNotifiedAt()
 	})
 }
 

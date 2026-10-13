@@ -56,7 +56,7 @@ func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalap
 		return &res, nil
 	}
 
-	rates, err := h.reputation.Rates(ctx, auth.TokenScoped(ctx), time.Duration(days)*24*time.Hour)
+	rates, err := h.reputation.Rates(ctx, auth.TokenScoped(ctx), reputation.Trailing(time.Duration(days)*24*time.Hour))
 	if err != nil {
 		return nil, err
 	}

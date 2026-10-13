@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/getsphericon/sphericon/ee/abuse"
 	"slices"
 	"strconv"
 	"testing"
@@ -223,4 +224,10 @@ func (env *TestEnv) ClearOutboxCursors(t *testing.T) {
 	t.Helper()
 	_, err := env.SQLDB.ExecContext(t.Context(), `DELETE FROM watermill_offsets_domain_events`)
 	require.NoError(t, err)
+}
+
+// Abuse is the abuse detector as the composition root builds it (ADR 0026), over the
+// env's bus and platform sender; a pass is Run(ctx, now).
+func (env *TestEnv) Abuse() *abuse.Detector {
+	return env.edition.Abuse(env.Bus, env.SystemMail)
 }

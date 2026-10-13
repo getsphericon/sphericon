@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
@@ -144,7 +145,7 @@ func unauthorized(detail string) *problem {
 // OperatorWorkspacesList is a page of Workspaces, newest first, narrowed by a slug
 // search. Metadata only: no Contacts, content or Events.
 func (h *Handlers) OperatorWorkspacesList(ctx context.Context, params operatorapi.OperatorWorkspacesListParams) (operatorapi.OperatorWorkspacesListRes, error) {
-	page, err := h.module.ListWorkspaces(ctx, strings.TrimSpace(params.Slug.Value), pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.module.ListWorkspaces(ctx, review(params.Review), strings.TrimSpace(params.Slug.Value), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
@@ -161,6 +162,17 @@ func (h *Handlers) OperatorWorkspacesList(ctx context.Context, params operatorap
 	}, nil
 }
 
+func review(p operatorapi.OptOperatorWorkspaceReview) Review {
+	switch p.Value {
+	case operatorapi.OperatorWorkspaceReviewWarned:
+		return ReviewWarned
+	case operatorapi.OperatorWorkspaceReviewSystemFrozen:
+		return ReviewSystemFrozen
+	default:
+		return ReviewNone
+	}
+}
+
 // OperatorWorkspacesGet is one Workspace's metadata and suspension state.
 func (h *Handlers) OperatorWorkspacesGet(ctx context.Context, params operatorapi.OperatorWorkspacesGetParams) (operatorapi.OperatorWorkspacesGetRes, error) {
 	id, ok := workspaceID(params.WorkspaceId)
@@ -174,7 +186,7 @@ func (h *Handlers) OperatorWorkspacesGet(ctx context.Context, params operatorapi
 	if err != nil {
 		return nil, err
 	}
-	d, err := h.module.WorkspaceDeliverability(ctx, id)
+	d, err := h.module.WorkspaceDeliverability(ctx, w)
 	if err != nil {
 		return nil, err
 	}
@@ -182,13 +194,17 @@ func (h *Handlers) OperatorWorkspacesGet(ctx context.Context, params operatorapi
 	if err != nil {
 		return nil, err
 	}
-	res := workspaceDetail(w, d, active)
+	breach, err := h.module.WorkspaceAbuse(ctx, w)
+	if err != nil {
+		return nil, err
+	}
+	res := workspaceDetail(w, d, active, breach)
 	return &res, nil
 }
 
 // workspaceDetail is the detail page's view: the metadata of workspaceResource plus
 // the deliverability counts and the active holds.
-func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold) operatorapi.OperatorWorkspaceDetailResource {
+func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold, warning abuse.Breach) operatorapi.OperatorWorkspaceDetailResource {
 	holds := make([]operatorapi.OperatorHold, len(active))
 	for i, r := range active {
 		holds[i] = operatorapi.OperatorHold{
@@ -207,7 +223,8 @@ func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold) ope
 		})
 	}
 	return operatorapi.OperatorWorkspaceDetailResource{
-		ID: base.ID, Slug: base.Slug, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Holds: holds,
+		ID: base.ID, Slug: base.Slug, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Exempt: base.Exempt, Warned: base.Warned, Holds: holds,
+		Abuse: abuseResource(w, warning),
 		Deliverability: operatorapi.OperatorDeliverability{
 			WindowHours: int32(d.Window / time.Hour),
 			VolumeFloor: int32(d.VolumeFloor),
@@ -215,6 +232,28 @@ func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold) ope
 			Domains:     domains,
 		},
 	}
+}
+
+func abuseResource(w *ent.Workspace, warning abuse.Breach) operatorapi.OperatorAbuse {
+	res := operatorapi.OperatorAbuse{
+		Exempt:            w.AbuseExempt,
+		ClearedAt:         optNilTimestamp(w.ClearedAt),
+		WarningNotifiedAt: optNilTimestamp(w.AbuseWarningNotifiedAt),
+		FreezeNotifiedAt:  optNilTimestamp(w.AbuseFreezeNotifiedAt),
+	}
+	if warning.Tier != abuse.TierNone {
+		res.Warning = operatorapi.NewOptNilOperatorAbuseWarning(operatorapi.OperatorAbuseWarning{
+			Domain: warning.Domain, Metric: operatorapi.OperatorAbuseMetric(warning.Metric), Rate: warning.Rate(),
+		})
+	}
+	return res
+}
+
+func optNilTimestamp(t *time.Time) operatorapi.OptNilTimestamp {
+	if t == nil {
+		return operatorapi.OptNilTimestamp{}
+	}
+	return operatorapi.NewOptNilTimestamp(operatorapi.Timestamp(*t))
 }
 
 func rateResource(r Rate) operatorapi.OperatorRate {
@@ -296,6 +335,49 @@ func (h *Handlers) OperatorWorkspacesUnsuspend(ctx context.Context, params opera
 	return change(w, changed), nil
 }
 
+// OperatorWorkspacesExempt exempts a Workspace from the abuse detector as the signed-in
+// Operator.
+func (h *Handlers) OperatorWorkspacesExempt(ctx context.Context, params operatorapi.OperatorWorkspacesExemptParams) (operatorapi.OperatorWorkspacesExemptRes, error) {
+	w, changed, notFound, err := h.setExempt(ctx, params.WorkspaceId, true)
+	if notFound {
+		p := operatorapi.OperatorWorkspacesExemptNotFound(notFoundProblem())
+		return &p, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return exemptionChange(w, changed), nil
+}
+
+// OperatorWorkspacesUnexempt puts a Workspace back under the abuse detector.
+func (h *Handlers) OperatorWorkspacesUnexempt(ctx context.Context, params operatorapi.OperatorWorkspacesUnexemptParams) (operatorapi.OperatorWorkspacesUnexemptRes, error) {
+	w, changed, notFound, err := h.setExempt(ctx, params.WorkspaceId, false)
+	if notFound {
+		p := operatorapi.OperatorWorkspacesUnexemptNotFound(notFoundProblem())
+		return &p, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return exemptionChange(w, changed), nil
+}
+
+func (h *Handlers) setExempt(ctx context.Context, wsID operatorapi.EntityId, exempt bool) (w *ent.Workspace, changed, notFound bool, err error) {
+	id, ok := workspaceID(wsID)
+	if !ok {
+		return nil, false, true, nil
+	}
+	w, changed, err = h.module.SetAbuseExempt(ctx, h.bus, id, Current(ctx), exempt)
+	if ent.IsNotFound(err) {
+		return nil, false, true, nil
+	}
+	return w, changed, false, err
+}
+
+func exemptionChange(w *ent.Workspace, changed bool) *operatorapi.OperatorExemptionChange {
+	return &operatorapi.OperatorExemptionChange{Changed: changed, Workspace: workspaceResource(w)}
+}
+
 // workspaceResource is the console's view of a Workspace: metadata and suspension
 // state only. The Operator sees the real actor id, which a customer never does.
 func workspaceResource(w *ent.Workspace) operatorapi.OperatorWorkspaceResource {
@@ -304,6 +386,8 @@ func workspaceResource(w *ent.Workspace) operatorapi.OperatorWorkspaceResource {
 		Slug:      w.Slug,
 		Name:      w.Name,
 		CreatedAt: operatorapi.Timestamp(w.CreatedAt),
+		Exempt:    w.AbuseExempt,
+		Warned:    w.AbuseWarningNotifiedAt != nil,
 	}
 	if w.SuspendedAt == nil {
 		return res

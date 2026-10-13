@@ -21,6 +21,10 @@ type OperatorWorkspaceAuditListRes interface {
 	operatorWorkspaceAuditListRes()
 }
 
+type OperatorWorkspacesExemptRes interface {
+	operatorWorkspacesExemptRes()
+}
+
 type OperatorWorkspacesGetRes interface {
 	operatorWorkspacesGetRes()
 }
@@ -31,6 +35,10 @@ type OperatorWorkspacesListRes interface {
 
 type OperatorWorkspacesSuspendRes interface {
 	operatorWorkspacesSuspendRes()
+}
+
+type OperatorWorkspacesUnexemptRes interface {
+	operatorWorkspacesUnexemptRes()
 }
 
 type OperatorWorkspacesUnsuspendRes interface {

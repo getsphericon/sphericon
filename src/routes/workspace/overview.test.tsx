@@ -100,3 +100,38 @@ test('a workspace without contacts shows the empty hint instead of the chart', a
 
   await expect.element(screen.getByText('No contacts yet')).toBeInTheDocument()
 })
+
+test('a workspace in the warning tier sees which rate is over the limit', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: {
+        ...overview,
+        abuseWarning: { domain: 'mail.acme.test', metric: 'complaint', rate: 0.0015 },
+      },
+    }),
+    handleSiteWorkspacesList({ body: [] }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByText('Your sending reputation needs attention'))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/complaint rate on mail.acme.test is 0.15%/))
+    .toBeInTheDocument()
+})
+
+test('no warning shows no alert', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({ body: overview }),
+    handleSiteWorkspacesList({ body: [] }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('Your sending reputation needs attention'))
+    .not.toBeInTheDocument()
+})

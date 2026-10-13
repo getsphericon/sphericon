@@ -63,6 +63,17 @@ func (UnimplementedHandler) OperatorWorkspaceAuditList(ctx context.Context, para
 	return r, ht.ErrNotImplemented
 }
 
+// OperatorWorkspacesExempt implements OperatorWorkspaces_exempt operation.
+//
+// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
+// automatically, but stays listed with its rates and can still be suspended by hand. Audited.
+// Idempotent.
+//
+// POST /workspaces/{workspaceId}/exempt
+func (UnimplementedHandler) OperatorWorkspacesExempt(ctx context.Context, params OperatorWorkspacesExemptParams) (r OperatorWorkspacesExemptRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // OperatorWorkspacesGet implements OperatorWorkspaces_get operation.
 //
 // One Workspace's metadata, suspension state, rates and send volume.
@@ -88,6 +99,15 @@ func (UnimplementedHandler) OperatorWorkspacesList(ctx context.Context, params O
 //
 // POST /workspaces/{workspaceId}/suspend
 func (UnimplementedHandler) OperatorWorkspacesSuspend(ctx context.Context, req *OperatorSuspendInput, params OperatorWorkspacesSuspendParams) (r OperatorWorkspacesSuspendRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// OperatorWorkspacesUnexempt implements OperatorWorkspaces_unexempt operation.
+//
+// Police a Workspace by the abuse detector again. Audited. Idempotent.
+//
+// POST /workspaces/{workspaceId}/unexempt
+func (UnimplementedHandler) OperatorWorkspacesUnexempt(ctx context.Context, params OperatorWorkspacesUnexemptParams) (r OperatorWorkspacesUnexemptRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/riverqueue/river"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -62,4 +63,14 @@ func TestTheOperatorLoginCounterIsRequiredWithTheOperatorLicense(t *testing.T) {
 	_, err := ee.New(nil, lic, nil, siteSecret, operator.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour})
 
 	require.Error(t, err, "a missing counter must not silently leave the login unthrottled")
+}
+
+func TestTheEditionRegistersTheAbuseDetectorNextToTheOtherJobs(t *testing.T) {
+	e, err := ee.New(nil, licenseFor(t, licensekey.FeatureOperator), nil, siteSecret, operator.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
+	require.NoError(t, err)
+
+	jobs := e.Jobs(nil, nil)
+
+	assert.Len(t, jobs.PeriodicJobs, 3, "retention, usage and the abuse detector")
+	assert.NotPanics(t, func() { jobs.Workers(river.NewWorkers()) })
 }

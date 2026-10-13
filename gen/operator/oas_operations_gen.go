@@ -11,8 +11,10 @@ const (
 	OperatorAuthSecondFactorOperation    OperationName = "OperatorAuthSecondFactor"
 	OperatorMeGetOperation               OperationName = "OperatorMeGet"
 	OperatorWorkspaceAuditListOperation  OperationName = "OperatorWorkspaceAuditList"
+	OperatorWorkspacesExemptOperation    OperationName = "OperatorWorkspacesExempt"
 	OperatorWorkspacesGetOperation       OperationName = "OperatorWorkspacesGet"
 	OperatorWorkspacesListOperation      OperationName = "OperatorWorkspacesList"
 	OperatorWorkspacesSuspendOperation   OperationName = "OperatorWorkspacesSuspend"
+	OperatorWorkspacesUnexemptOperation  OperationName = "OperatorWorkspacesUnexempt"
 	OperatorWorkspacesUnsuspendOperation OperationName = "OperatorWorkspacesUnsuspend"
 )

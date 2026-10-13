@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -41,7 +42,7 @@ func (m *Module) SuspendWorkspace(ctx context.Context, bus *events.Bus, sender m
 		return nil, false, err
 	}
 	if changed {
-		if err := jobs.NotifyWorkspaceSuspended(ctx, m.ent, sender, id); err != nil {
+		if err := jobs.NotifyWorkspaceSuspended(ctx, m.ent, sender, m.support, id); err != nil {
 			slog.ErrorContext(ctx, "workspace suspended, but the owner notice could not be sent", "workspace_id", id, "error", err)
 		}
 	}
@@ -66,15 +67,6 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, bus *events.Bus, id int
 	return ws, changed, err
 }
 
-const (
-	// RateWindow is the trailing window of the console's rates and send volume, the
-	// detector's own (ADR 0026).
-	RateWindow = 24 * time.Hour
-	// DefaultVolumeFloor is the fewest sends in RateWindow for a rate to be defined
-	// (ADR 0026).
-	DefaultVolumeFloor = 1000
-)
-
 // Rate is a numerator over a denominator; Rate is nil (undefined) below the volume
 // floor.
 type Rate = reputation.Rate
@@ -88,7 +80,7 @@ type DomainRates struct {
 }
 
 // Deliverability is a Workspace's rates per Sending domain and its send volume over
-// RateWindow.
+// abuse.Window.
 type Deliverability struct {
 	Window      time.Duration
 	VolumeFloor int
@@ -98,11 +90,22 @@ type Deliverability struct {
 	Domains    []DomainRates
 }
 
+// Review narrows the Workspace list to the ones the abuse detector surfaces (ADR 0026).
+type Review string
+
+const (
+	ReviewNone Review = ""
+	// ReviewWarned: the owners were warned and the Workspace is still in the warning tier.
+	ReviewWarned Review = "warned"
+	// ReviewSystemFrozen: suspended by the detector (actor `system`).
+	ReviewSystemFrozen Review = "system_frozen"
+)
+
 // ListWorkspaces is one page of every Workspace, newest first, optionally only those
-// whose slug contains slug (case-insensitive). It reads the Workspace rows themselves
+// in a review state and those whose slug contains slug (case-insensitive). It reads the Workspace rows themselves
 // through the raw client: the Operator console shows tenant metadata only, never a
 // Workspace's Contacts, content or Events, so no Workspace-scoped query is made.
-func (m *Module) ListWorkspaces(ctx context.Context, slug string, p pagination.Params) (pagination.Page[*ent.Workspace], error) {
+func (m *Module) ListWorkspaces(ctx context.Context, review Review, slug string, p pagination.Params) (pagination.Page[*ent.Workspace], error) {
 	if err := m.licensed(); err != nil {
 		return pagination.Page[*ent.Workspace]{}, err
 	}
@@ -110,6 +113,12 @@ func (m *Module) ListWorkspaces(ctx context.Context, slug string, p pagination.P
 		q := m.ent.Workspace.Query()
 		if slug != "" {
 			q = q.Where(entworkspace.SlugContainsFold(slug))
+		}
+		switch review {
+		case ReviewWarned:
+			q = q.Where(entworkspace.AbuseWarningNotifiedAtNotNil(), entworkspace.SuspendedAtIsNil(), entworkspace.AbuseExempt(false))
+		case ReviewSystemFrozen:
+			q = q.Where(entworkspace.SuspendedByKindEQ(entworkspace.SuspendedByKindSystem))
 		}
 		return q
 	}
@@ -139,23 +148,53 @@ func (m *Module) GetWorkspace(ctx context.Context, id int64) (*ent.Workspace, er
 // the reputation module defines as the count of the domain's email.sent Events in the
 // window: it is exactly the messages sent in the window from the Workspace's Sending
 // domains (a send naming no Sending domain of the Workspace belongs to no rate).
-func (m *Module) WorkspaceDeliverability(ctx context.Context, id int64) (Deliverability, error) {
+func (m *Module) WorkspaceDeliverability(ctx context.Context, w *ent.Workspace) (Deliverability, error) {
 	if err := m.licensed(); err != nil {
 		return Deliverability{}, err
 	}
-	rates, err := reputation.New().Rates(ctx, m.ent.Scoped(id), RateWindow)
+	floor := m.watch.Limits().VolumeFloor
+	rates, err := reputation.New().Rates(ctx, m.ent.Scoped(w.ID), abuse.WindowFor(w, m.now()))
 	if err != nil {
 		return Deliverability{}, err
 	}
-	out := Deliverability{Window: RateWindow, VolumeFloor: m.floor, Domains: make([]DomainRates, 0, len(rates))}
+	out := Deliverability{Window: abuse.Window, VolumeFloor: floor, Domains: make([]DomainRates, 0, len(rates))}
 	for _, r := range rates {
 		sent := r.Bounce.Denominator
 		out.SendVolume += sent
 		d := DomainRates{SendingDomainID: r.Domain.ID, Domain: r.Domain.Domain, Complaint: r.Complaint, Bounce: r.Bounce}
-		if sent < m.floor {
+		if sent < floor {
 			d.Complaint.Rate, d.Bounce.Rate = nil, nil
 		}
 		out.Domains = append(out.Domains, d)
 	}
 	return out, nil
+}
+
+// SetAbuseExempt exempts the Workspace from the abuse detector, or polices it again, as
+// the Operator (ADR 0026), through the same core mechanism, audited. It reports whether
+// the flag changed. The Workspace stays listed with its rates and can still be suspended
+// by hand.
+func (m *Module) SetAbuseExempt(ctx context.Context, bus *events.Bus, id int64, by *ent.Operator, exempt bool) (*ent.Workspace, bool, error) {
+	if err := m.licensed(); err != nil {
+		return nil, false, err
+	}
+	if _, err := m.ent.Workspace.Get(ctx, id); err != nil {
+		return nil, false, err
+	}
+	changed, err := suspension.SetAbuseExempt(ctx, bus, id, suspension.Operator(strconv.FormatInt(by.ID, 10)), exempt)
+	if err != nil {
+		return nil, false, err
+	}
+	ws, err := m.ent.Workspace.Get(ctx, id)
+	return ws, changed, err
+}
+
+// WorkspaceAbuse is the Workspace's warning now, by the detector's own computation:
+// none while it is exempt, suspended or unlicensed. The detector reads through a
+// Workspace scope, built here over the Workspace being looked at (like the rates).
+func (m *Module) WorkspaceAbuse(ctx context.Context, w *ent.Workspace) (abuse.Breach, error) {
+	if err := m.licensed(); err != nil {
+		return abuse.Breach{}, err
+	}
+	return m.watch.Warning(ctx, m.ent.Scoped(w.ID), w, m.now())
 }

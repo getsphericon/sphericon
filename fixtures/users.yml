@@ -92,3 +92,25 @@
   created_at: '2026-03-05 00:00:00'
   updated_at: '2026-03-05 00:00:00'
   email_verified_at: '2026-03-05 00:00:00'
+# Vandelay's two owners (the abuse detector tells every one of them) and Kramerica's owner.
+- id: 12 # fixture: VandelayOwnerArt
+  name: Art
+  email: art@vandelay.test
+  password_hash: '{{argonHash "art-test-password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 13 # fixture: VandelayOwnerCosmo
+  name: Cosmo
+  email: cosmo@vandelay.test
+  password_hash: '{{argonHash "cosmo-test-password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 14 # fixture: KramericaOwnerNewman
+  name: Newman
+  email: newman@kramerica.test
+  password_hash: '{{argonHash "newman-test-password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'

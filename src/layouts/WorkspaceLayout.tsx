@@ -47,12 +47,21 @@ function WorkspaceSwitcher({
 
 // SuspensionBanner tells the owner that outbound sending is frozen and why (ADR 0007).
 // Login, reads and tracking keep working, so it is a notice, not a lockout.
-function SuspensionBanner({ reason }: { reason: string | null | undefined }) {
+function SuspensionBanner({
+  reason,
+  supportEmail,
+}: {
+  reason: string | null | undefined
+  supportEmail: string | null | undefined
+}) {
   const { t } = useTranslation()
   return (
     <Alert color="red" title={t(($) => $.workspaceSuspension.title)} mb="md">
       {t(($) => $.workspaceSuspension.description)}
-      {reason ? ` ${t(($) => $.workspaceSuspension.reason, { reason })}` : ''}
+      {reason ? ` ${t(($) => $.workspaceSuspension.reason, { reason })}` : ''}{' '}
+      {supportEmail
+        ? t(($) => $.workspaceSuspension.appealSupport, { email: supportEmail })
+        : t(($) => $.workspaceSuspension.appealAdmin)}
     </Alert>
   )
 }
@@ -118,7 +127,12 @@ export function WorkspaceLayout() {
       sidebar={<AppNavbar slug={slug} />}
       banner={
         <>
-          {current?.suspendedAt ? <SuspensionBanner reason={current.suspensionReason} /> : null}
+          {current?.suspendedAt ? (
+            <SuspensionBanner
+              reason={current.suspensionReason}
+              supportEmail={current.supportEmail}
+            />
+          ) : null}
           {current?.holds.length ? <HoldBanner holds={current.holds} /> : null}
           {standing.kind === 'grace' ? <SecondFactorGraceBanner endsAt={standing.endsAt} /> : null}
         </>

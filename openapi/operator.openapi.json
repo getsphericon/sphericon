@@ -263,7 +263,10 @@
         "description": "List all Workspaces, newest first, optionally narrowed by a slug search",
         "parameters": [
           {
-            "$ref": "#/components/parameters/OperatorWorkspaceSearch"
+            "$ref": "#/components/parameters/OperatorWorkspaceSearch.review"
+          },
+          {
+            "$ref": "#/components/parameters/OperatorWorkspaceSearch.slug"
           },
           {
             "$ref": "#/components/parameters/PageQuery.page"
@@ -458,6 +461,55 @@
         "tags": ["Operator Workspaces"]
       }
     },
+    "/workspaces/{workspaceId}/exempt": {
+      "post": {
+        "operationId": "OperatorWorkspaces_exempt",
+        "description": "Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor\nfrozen automatically, but stays listed with its rates and can still be suspended by\nhand. Audited. Idempotent.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorExemptionChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Workspaces"]
+      }
+    },
     "/workspaces/{workspaceId}/suspend": {
       "post": {
         "operationId": "OperatorWorkspaces_suspend",
@@ -527,6 +579,55 @@
         }
       }
     },
+    "/workspaces/{workspaceId}/unexempt": {
+      "post": {
+        "operationId": "OperatorWorkspaces_unexempt",
+        "description": "Police a Workspace by the abuse detector again. Audited. Idempotent.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorExemptionChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Operator Workspaces"]
+      }
+    },
     "/workspaces/{workspaceId}/unsuspend": {
       "post": {
         "operationId": "OperatorWorkspaces_unsuspend",
@@ -584,7 +685,17 @@
   ],
   "components": {
     "parameters": {
-      "OperatorWorkspaceSearch": {
+      "OperatorWorkspaceSearch.review": {
+        "name": "review",
+        "in": "query",
+        "required": false,
+        "description": "Only Workspaces in this review state",
+        "schema": {
+          "$ref": "#/components/schemas/OperatorWorkspaceReview"
+        },
+        "explode": false
+      },
+      "OperatorWorkspaceSearch.slug": {
         "name": "slug",
         "in": "query",
         "required": false,
@@ -657,6 +768,80 @@
           }
         },
         "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
+      },
+      "OperatorAbuse": {
+        "type": "object",
+        "required": ["exempt"],
+        "properties": {
+          "exempt": {
+            "type": "boolean",
+            "description": "Exempt from the detector: neither warned nor frozen automatically"
+          },
+          "clearedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When an Operator last lifted a suspension; the detector counts only Events after it"
+          },
+          "warningNotifiedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the owners were told of the current warning; absent outside an episode"
+          },
+          "freezeNotifiedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the owners were last told of a suspension"
+          },
+          "warning": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OperatorAbuseWarning"
+              }
+            ],
+            "nullable": true,
+            "description": "Present while the Workspace is in the warning tier, computed now"
+          }
+        },
+        "description": "A Workspace's standing with the abuse detector (ADR 0026)"
+      },
+      "OperatorAbuseMetric": {
+        "type": "string",
+        "enum": ["complaint", "bounce"],
+        "description": "Which metric of a Sending domain breached the abuse detector's warning limit"
+      },
+      "OperatorAbuseWarning": {
+        "type": "object",
+        "required": ["domain", "metric", "rate"],
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "metric": {
+            "$ref": "#/components/schemas/OperatorAbuseMetric"
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "description": "The rate, 0–1"
+          }
+        },
+        "description": "A Sending domain in the warning tier (ADR 0026), by the detector's own computation"
       },
       "OperatorAuditActor": {
         "type": "object",
@@ -874,6 +1059,19 @@
         },
         "description": "A TOTP secret awaiting its first confirming code"
       },
+      "OperatorExemptionChange": {
+        "type": "object",
+        "required": ["changed", "workspace"],
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          },
+          "workspace": {
+            "$ref": "#/components/schemas/OperatorWorkspaceResource"
+          }
+        },
+        "description": "The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether\nanything changed"
+      },
       "OperatorHold": {
         "type": "object",
         "required": ["key", "reasonCode", "message", "createdAt", "expiresAt", "setBy"],
@@ -1087,7 +1285,17 @@
       },
       "OperatorWorkspaceDetailResource": {
         "type": "object",
-        "required": ["id", "slug", "name", "createdAt", "holds", "deliverability"],
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "createdAt",
+          "exempt",
+          "warned",
+          "holds",
+          "deliverability",
+          "abuse"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -1120,6 +1328,14 @@
             ],
             "nullable": true,
             "description": "Present only while sending is suspended"
+          },
+          "exempt": {
+            "type": "boolean",
+            "description": "Exempt from the abuse detector (set by an Operator)"
+          },
+          "warned": {
+            "type": "boolean",
+            "description": "The owners were warned and the Workspace has not left the warning tier since"
           },
           "holds": {
             "type": "array",
@@ -1130,13 +1346,16 @@
           },
           "deliverability": {
             "$ref": "#/components/schemas/OperatorDeliverability"
+          },
+          "abuse": {
+            "$ref": "#/components/schemas/OperatorAbuse"
           }
         },
         "description": "A Workspace with its deliverability and active holds, as the detail page shows it"
       },
       "OperatorWorkspaceResource": {
         "type": "object",
-        "required": ["id", "slug", "name", "createdAt"],
+        "required": ["id", "slug", "name", "createdAt", "exempt", "warned"],
         "properties": {
           "id": {
             "allOf": [
@@ -1169,9 +1388,22 @@
             ],
             "nullable": true,
             "description": "Present only while sending is suspended"
+          },
+          "exempt": {
+            "type": "boolean",
+            "description": "Exempt from the abuse detector (set by an Operator)"
+          },
+          "warned": {
+            "type": "boolean",
+            "description": "The owners were warned and the Workspace has not left the warning tier since"
           }
         },
         "description": "A Workspace as the Operator console sees it: metadata only, never Contacts,\ncontent or Events (ADR 0026)."
+      },
+      "OperatorWorkspaceReview": {
+        "type": "string",
+        "enum": ["warned", "systemFrozen"],
+        "description": "Which Workspaces the list surfaces for review"
       },
       "PaymentRequiredProblem": {
         "type": "object",

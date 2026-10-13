@@ -113,9 +113,19 @@ type Config struct {
 	// OperatorHoldMaxExpiry is how far ahead a service may set an Operator hold's expiry
 	// (OPERATOR_HOLD_MAX_EXPIRY, default 720h): it is refused beyond it.
 	OperatorHoldMaxExpiry time.Duration
-	AutoMigrate           bool
-	BodyLimits            BodyLimits
-	RateLimits            RateLimits
+	// AbuseVolumeFloor is the fewest sends in the 24-hour window, per Sending domain, for
+	// the abuse detector to judge a rate (ABUSE_VOLUME_FLOOR, default 1000; ADR 0026).
+	AbuseVolumeFloor int
+	// The abuse detector's limits, in percent (ADR 0026): a warning at the first pair, a
+	// freeze at the second. Defaults: warn 0.1% complaints / 5% bounces, freeze 0.3% / 10%.
+	AbuseWarnComplaintPercent, AbuseWarnBouncePercent     float64
+	AbuseFreezeComplaintPercent, AbuseFreezeBouncePercent float64
+	// SupportEmail is the support contact shown with a suspension and in the owner notices
+	// (SUPPORT_EMAIL): where an owner appeals. Empty shows none.
+	SupportEmail string
+	AutoMigrate  bool
+	BodyLimits   BodyLimits
+	RateLimits   RateLimits
 	// OutboxFloor is the minimum age of a domain-event outbox row before the
 	// prune job may delete it (OUTBOX_RETENTION_FLOOR_DAYS, default 7; ADR 0019).
 	OutboxFloor time.Duration
@@ -188,6 +198,11 @@ func Load(envName string) (*Config, error) {
 	v.SetDefault("SESSION_TTL", 24*time.Hour)
 	v.SetDefault("OPERATOR_SESSION_TTL", 4*time.Hour)
 	v.SetDefault("OPERATOR_HOLD_MAX_EXPIRY", 30*24*time.Hour)
+	v.SetDefault("ABUSE_VOLUME_FLOOR", 1000)
+	v.SetDefault("ABUSE_WARN_COMPLAINT_PERCENT", 0.1)
+	v.SetDefault("ABUSE_WARN_BOUNCE_PERCENT", 5.0)
+	v.SetDefault("ABUSE_FREEZE_COMPLAINT_PERCENT", 0.3)
+	v.SetDefault("ABUSE_FREEZE_BOUNCE_PERCENT", 10.0)
 	v.SetDefault("SMTP_PORT", 1025)
 	v.SetDefault("SYSTEM_EMAIL_PROVIDER", "smtp")
 	v.SetDefault("SYSTEM_EMAIL_FROM", "noreply@sphericon.localhost")
@@ -273,7 +288,14 @@ func Load(envName string) (*Config, error) {
 		OperatorJWTSecret:     v.GetString("OPERATOR_JWT_SECRET"),
 		OperatorSessionTTL:    v.GetDuration("OPERATOR_SESSION_TTL"),
 		OperatorHoldMaxExpiry: v.GetDuration("OPERATOR_HOLD_MAX_EXPIRY"),
-		AutoMigrate:           v.GetBool("AUTO_MIGRATE"),
+
+		AbuseVolumeFloor:            v.GetInt("ABUSE_VOLUME_FLOOR"),
+		AbuseWarnComplaintPercent:   v.GetFloat64("ABUSE_WARN_COMPLAINT_PERCENT"),
+		AbuseWarnBouncePercent:      v.GetFloat64("ABUSE_WARN_BOUNCE_PERCENT"),
+		AbuseFreezeComplaintPercent: v.GetFloat64("ABUSE_FREEZE_COMPLAINT_PERCENT"),
+		AbuseFreezeBouncePercent:    v.GetFloat64("ABUSE_FREEZE_BOUNCE_PERCENT"),
+		SupportEmail:                strings.TrimSpace(v.GetString("SUPPORT_EMAIL")),
+		AutoMigrate:                 v.GetBool("AUTO_MIGRATE"),
 
 		BodyLimits: BodyLimits{
 			Default:      v.GetInt64("MAX_BODY_BYTES"),
@@ -357,6 +379,15 @@ func (c *Config) validate(envName string) error {
 	}
 	if c.OperatorHoldMaxExpiry <= 0 {
 		return fmt.Errorf("OPERATOR_HOLD_MAX_EXPIRY must be positive")
+	}
+	if c.AbuseVolumeFloor <= 0 {
+		return fmt.Errorf("ABUSE_VOLUME_FLOOR must be positive")
+	}
+	if !(0 < c.AbuseWarnComplaintPercent && c.AbuseWarnComplaintPercent < c.AbuseFreezeComplaintPercent && c.AbuseFreezeComplaintPercent <= 100) {
+		return fmt.Errorf("ABUSE_WARN_COMPLAINT_PERCENT must be above 0 and below ABUSE_FREEZE_COMPLAINT_PERCENT, which is at most 100")
+	}
+	if !(0 < c.AbuseWarnBouncePercent && c.AbuseWarnBouncePercent < c.AbuseFreezeBouncePercent && c.AbuseFreezeBouncePercent <= 100) {
+		return fmt.Errorf("ABUSE_WARN_BOUNCE_PERCENT must be above 0 and below ABUSE_FREEZE_BOUNCE_PERCENT, which is at most 100")
 	}
 	if (c.AccountLinkURL == "") != (c.AccountLinkSigningKey == "") {
 		return fmt.Errorf("ACCOUNT_LINK_URL and ACCOUNT_LINK_SIGNING_KEY must be set together")

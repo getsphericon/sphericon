@@ -31,6 +31,54 @@ export type GoneProblem = {
 };
 
 /**
+ * A Workspace's standing with the abuse detector (ADR 0026)
+ */
+export type OperatorAbuse = {
+  /**
+   * Exempt from the detector: neither warned nor frozen automatically
+   */
+  exempt: boolean;
+  /**
+   * When an Operator last lifted a suspension; the detector counts only Events after it
+   */
+  clearedAt?: Timestamp | null;
+  /**
+   * When the owners were told of the current warning; absent outside an episode
+   */
+  warningNotifiedAt?: Timestamp | null;
+  /**
+   * When the owners were last told of a suspension
+   */
+  freezeNotifiedAt?: Timestamp | null;
+  /**
+   * Present while the Workspace is in the warning tier, computed now
+   */
+  warning?: OperatorAbuseWarning | null;
+};
+
+/**
+ * Which metric of a Sending domain breached the abuse detector's warning limit
+ */
+export const OperatorAbuseMetric = { COMPLAINT: 'complaint', BOUNCE: 'bounce' } as const;
+
+/**
+ * Which metric of a Sending domain breached the abuse detector's warning limit
+ */
+export type OperatorAbuseMetric = typeof OperatorAbuseMetric[keyof typeof OperatorAbuseMetric];
+
+/**
+ * A Sending domain in the warning tier (ADR 0026), by the detector's own computation
+ */
+export type OperatorAbuseWarning = {
+  domain: string;
+  metric: OperatorAbuseMetric;
+  /**
+   * The rate, 0–1
+   */
+  rate: number;
+};
+
+/**
  * The actor of an Audit entry
  */
 export type OperatorAuditActor = {
@@ -198,6 +246,15 @@ export type OperatorEnrolment = {
    * PNG data URI of the URI
    */
   qrCode: string;
+};
+
+/**
+ * The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether
+ * anything changed
+ */
+export type OperatorExemptionChange = {
+  changed: boolean;
+  workspace: OperatorWorkspaceResource;
 };
 
 /**
@@ -394,10 +451,19 @@ export type OperatorWorkspaceDetailResource = {
    */
   suspension?: OperatorSuspension | null;
   /**
+   * Exempt from the abuse detector (set by an Operator)
+   */
+  exempt: boolean;
+  /**
+   * The owners were warned and the Workspace has not left the warning tier since
+   */
+  warned: boolean;
+  /**
    * Active Operator holds by key; a lapsed hold is not listed
    */
   holds: Array<OperatorHold>;
   deliverability: OperatorDeliverability;
+  abuse: OperatorAbuse;
 };
 
 /**
@@ -419,7 +485,25 @@ export type OperatorWorkspaceResource = {
    * Present only while sending is suspended
    */
   suspension?: OperatorSuspension | null;
+  /**
+   * Exempt from the abuse detector (set by an Operator)
+   */
+  exempt: boolean;
+  /**
+   * The owners were warned and the Workspace has not left the warning tier since
+   */
+  warned: boolean;
 };
+
+/**
+ * Which Workspaces the list surfaces for review
+ */
+export const OperatorWorkspaceReview = { WARNED: 'warned', SYSTEM_FROZEN: 'systemFrozen' } as const;
+
+/**
+ * Which Workspaces the list surfaces for review
+ */
+export type OperatorWorkspaceReview = typeof OperatorWorkspaceReview[keyof typeof OperatorWorkspaceReview];
 
 /**
  * RFC 7807 payment required response: the feature needs an Enterprise license
@@ -493,9 +577,14 @@ export type TimeZoneName = string;
 export type Timestamp = string;
 
 /**
+ * Only Workspaces in this review state
+ */
+export type OperatorWorkspaceSearchReview = OperatorWorkspaceReview;
+
+/**
  * Only Workspaces whose slug contains this text (case-insensitive)
  */
-export type OperatorWorkspaceSearch = string;
+export type OperatorWorkspaceSearchSlug = string;
 
 /**
  * Page number (1-based)
@@ -619,6 +708,10 @@ export type OperatorWorkspacesListData = {
   body?: never;
   path?: never;
   query?: {
+    /**
+     * Only Workspaces in this review state
+     */
+    review?: OperatorWorkspaceReview;
     /**
      * Only Workspaces whose slug contains this text (case-insensitive)
      */
@@ -749,6 +842,37 @@ export type OperatorWorkspaceAuditListResponses = {
 
 export type OperatorWorkspaceAuditListResponse = OperatorWorkspaceAuditListResponses[keyof OperatorWorkspaceAuditListResponses];
 
+export type OperatorWorkspacesExemptData = {
+  body?: never;
+  path: {
+    workspaceId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/exempt';
+};
+
+export type OperatorWorkspacesExemptErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type OperatorWorkspacesExemptError = OperatorWorkspacesExemptErrors[keyof OperatorWorkspacesExemptErrors];
+
+export type OperatorWorkspacesExemptResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: OperatorExemptionChange;
+};
+
+export type OperatorWorkspacesExemptResponse = OperatorWorkspacesExemptResponses[keyof OperatorWorkspacesExemptResponses];
+
 export type OperatorWorkspacesSuspendData = {
   body: OperatorSuspendInput;
   path: {
@@ -783,6 +907,37 @@ export type OperatorWorkspacesSuspendResponses = {
 };
 
 export type OperatorWorkspacesSuspendResponse = OperatorWorkspacesSuspendResponses[keyof OperatorWorkspacesSuspendResponses];
+
+export type OperatorWorkspacesUnexemptData = {
+  body?: never;
+  path: {
+    workspaceId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/unexempt';
+};
+
+export type OperatorWorkspacesUnexemptErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type OperatorWorkspacesUnexemptError = OperatorWorkspacesUnexemptErrors[keyof OperatorWorkspacesUnexemptErrors];
+
+export type OperatorWorkspacesUnexemptResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: OperatorExemptionChange;
+};
+
+export type OperatorWorkspacesUnexemptResponse = OperatorWorkspacesUnexemptResponses[keyof OperatorWorkspacesUnexemptResponses];
 
 export type OperatorWorkspacesUnsuspendData = {
   body?: never;

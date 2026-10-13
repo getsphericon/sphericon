@@ -47,6 +47,9 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {
 	r := mapper.WorkspaceToResource(m.Edges.Workspace)
 	r.Role = siteapi.SiteMembershipRole(m.Role)
+	if m.Edges.Workspace.SuspendedAt != nil && h.supportEmail != "" {
+		r.SupportEmail = siteapi.NewOptNilString(h.supportEmail)
+	}
 	r.AccountLinkAvailable = h.accountLink != nil && m.Role == membership.RoleOwner
 	if end, ok := secondfactor.Deadline(m); ok {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))

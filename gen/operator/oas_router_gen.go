@@ -17,7 +17,7 @@ var (
 	rn5AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn13AllowedHeaders = map[string]string{
+	rn14AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 )
@@ -299,6 +299,33 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								return
 							}
 
+						case 'e': // Prefix: "exempt"
+
+							if l := len("exempt"); len(elem) >= l && elem[0:l] == "exempt" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "POST":
+									s.handleOperatorWorkspacesExemptRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
 						case 's': // Prefix: "suspend"
 
 							if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
@@ -317,7 +344,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								default:
 									s.notAllowed(w, r, notAllowedParams{
 										allowedMethods: "POST",
-										allowedHeaders: rn13AllowedHeaders,
+										allowedHeaders: rn14AllowedHeaders,
 										acceptPost:     "application/json",
 										acceptPatch:    "",
 									})
@@ -326,31 +353,72 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								return
 							}
 
-						case 'u': // Prefix: "unsuspend"
+						case 'u': // Prefix: "un"
 
-							if l := len("unsuspend"); len(elem) >= l && elem[0:l] == "unsuspend" {
+							if l := len("un"); len(elem) >= l && elem[0:l] == "un" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
 							if len(elem) == 0 {
-								// Leaf node.
-								switch r.Method {
-								case "POST":
-									s.handleOperatorWorkspacesUnsuspendRequest([1]string{
-										args[0],
-									}, elemIsEscaped, w, r)
-								default:
-									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "POST",
-										allowedHeaders: nil,
-										acceptPost:     "",
-										acceptPatch:    "",
-									})
+								break
+							}
+							switch elem[0] {
+							case 'e': // Prefix: "exempt"
+
+								if l := len("exempt"); len(elem) >= l && elem[0:l] == "exempt" {
+									elem = elem[l:]
+								} else {
+									break
 								}
 
-								return
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleOperatorWorkspacesUnexemptRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 's': // Prefix: "suspend"
+
+								if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleOperatorWorkspacesUnsuspendRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
 							}
 
 						}
@@ -681,6 +749,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								}
 							}
 
+						case 'e': // Prefix: "exempt"
+
+							if l := len("exempt"); len(elem) >= l && elem[0:l] == "exempt" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "POST":
+									r.name = OperatorWorkspacesExemptOperation
+									r.summary = ""
+									r.operationID = "OperatorWorkspaces_exempt"
+									r.operationGroup = ""
+									r.pathPattern = "/workspaces/{workspaceId}/exempt"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
 						case 's': // Prefix: "suspend"
 
 							if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
@@ -706,29 +799,68 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								}
 							}
 
-						case 'u': // Prefix: "unsuspend"
+						case 'u': // Prefix: "un"
 
-							if l := len("unsuspend"); len(elem) >= l && elem[0:l] == "unsuspend" {
+							if l := len("un"); len(elem) >= l && elem[0:l] == "un" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
 							if len(elem) == 0 {
-								// Leaf node.
-								switch method {
-								case "POST":
-									r.name = OperatorWorkspacesUnsuspendOperation
-									r.summary = ""
-									r.operationID = "OperatorWorkspaces_unsuspend"
-									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{workspaceId}/unsuspend"
-									r.args = args
-									r.count = 1
-									return r, true
-								default:
-									return
+								break
+							}
+							switch elem[0] {
+							case 'e': // Prefix: "exempt"
+
+								if l := len("exempt"); len(elem) >= l && elem[0:l] == "exempt" {
+									elem = elem[l:]
+								} else {
+									break
 								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = OperatorWorkspacesUnexemptOperation
+										r.summary = ""
+										r.operationID = "OperatorWorkspaces_unexempt"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/unexempt"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 's': // Prefix: "suspend"
+
+								if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = OperatorWorkspacesUnsuspendOperation
+										r.summary = ""
+										r.operationID = "OperatorWorkspaces_unsuspend"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/unsuspend"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
 							}
 
 						}

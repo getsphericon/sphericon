@@ -439,6 +439,36 @@ export type ProblemDetails = {
 };
 
 /**
+ * The metric of a Sending domain that is over a warning limit of the abuse detector
+ */
+export const SiteAbuseMetric = { COMPLAINT: 'complaint', BOUNCE: 'bounce' } as const;
+
+/**
+ * The metric of a Sending domain that is over a warning limit of the abuse detector
+ */
+export type SiteAbuseMetric = typeof SiteAbuseMetric[keyof typeof SiteAbuseMetric];
+
+/**
+ * A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
+ * over the warning limit but under the freeze limit. Computed live from the trailing
+ * 24 hours since any clearance, never stored.
+ */
+export type SiteAbuseWarning = {
+  /**
+   * The Sending domain over the limit
+   */
+  domain: string;
+  /**
+   * Which rate is over
+   */
+  metric: SiteAbuseMetric;
+  /**
+   * The rate, 0–1
+   */
+  rate: number;
+};
+
+/**
  * Accept an invite. For an address with no User or an Unverified User, name + password
  * are required (422 otherwise). For a Verified User the body is not read: the session of
  * that same User is the proof.
@@ -556,6 +586,11 @@ export type SiteAnalyticsOverview = {
    * Daily engagement series, oldest first, one point per day in the range
    */
   timeseries: Array<SiteAnalyticsPoint>;
+  /**
+   * Present while the Workspace is in the abuse detector's warning tier; absent
+   * otherwise and without the `operator` license
+   */
+  abuseWarning?: SiteAbuseWarning | null;
 };
 
 /**
@@ -2622,6 +2657,11 @@ export type SiteWorkspaceResource = {
    * Why sending was suspended, shown to the owner; present only while suspended.
    */
   suspensionReason?: string | null;
+  /**
+   * Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance
+   * configured none.
+   */
+  supportEmail?: string | null;
   /**
    * The Operator holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never

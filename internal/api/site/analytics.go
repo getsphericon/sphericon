@@ -37,6 +37,10 @@ func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
+	warning, err := h.abuseWarning(ctx, s)
+	if err != nil {
+		return nil, err
+	}
 	series := make([]siteapi.SiteAnalyticsPoint, len(ov.Series))
 	for i, p := range ov.Series {
 		series[i] = siteapi.SiteAnalyticsPoint{Date: p.Date, Sent: int32(p.Sent), Opened: int32(p.Opened), Clicked: int32(p.Clicked)}
@@ -54,6 +58,26 @@ func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.Sit
 			Total: int32(ov.Automations.Total), Active: int32(ov.Automations.Active),
 			RunsActive: int32(ov.Automations.RunsActive), RunsCompleted: int32(ov.Automations.RunsCompleted),
 		},
-		Timeseries: series,
+		Timeseries:   series,
+		AbuseWarning: warning,
 	}, nil
+}
+
+// abuseWarning is the Workspace's place in the abuse detector's warning tier, computed
+// live (ADR 0026); unset without the detector.
+func (h *Handlers) abuseWarning(ctx context.Context, s *ent.Scoped) (siteapi.OptNilSiteAbuseWarning, error) {
+	if h.abuseWatch == nil {
+		return siteapi.OptNilSiteAbuseWarning{}, nil
+	}
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return siteapi.OptNilSiteAbuseWarning{}, err
+	}
+	w, err := h.abuseWatch.Warning(ctx, s, ws, h.now())
+	if err != nil || w == nil {
+		return siteapi.OptNilSiteAbuseWarning{}, err
+	}
+	return siteapi.NewOptNilSiteAbuseWarning(siteapi.SiteAbuseWarning{
+		Domain: w.Domain, Metric: siteapi.SiteAbuseMetric(w.Metric), Rate: w.Rate,
+	}), nil
 }
