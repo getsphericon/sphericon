@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.1.3](https://github.com/getsphericon/sphericon/compare/v0.1.2...v0.1.3) (2026-10-13)
+
+
+### Features
+
+* **accounts:** invitation for a Verified User requires their session (ADR 0030) ([d51cbfd](https://github.com/getsphericon/sphericon/commit/d51cbfd46eea5d3af2b4fc89b3c72be97baa94b6))
+* **auth:** add the require-email-verification switch for installs without mail ([0e79086](https://github.com/getsphericon/sphericon/commit/0e79086d8909af998ef6334fc18daa1d9a05a5c4))
+* **auth:** no endpoint confirms that an address is taken ([#272](https://github.com/getsphericon/sphericon/issues/272)) ([955f923](https://github.com/getsphericon/sphericon/commit/955f9235a86449d02b65830d8932ffb6af5ef45f))
+* **auth:** password reset proves the address of an Unverified User (ADR 0030) ([cacc015](https://github.com/getsphericon/sphericon/commit/cacc015dc828336f9b76300307709c14a980e660))
+* **auth:** register without a password, verify by link, gate login (ADR 0030) ([238c70c](https://github.com/getsphericon/sphericon/commit/238c70c27d66032e8646b8aff1b11d9b9ae63804))
+* **auth:** resend the verification link from the login refusal (ADR 0030) ([0b28e8d](https://github.com/getsphericon/sphericon/commit/0b28e8deb00548199e6ee36d79cfb216c6fa6612))
+* **billing:** core metering, Live usage and Billing hold for the billing plane (ADR 0027) ([ed42025](https://github.com/getsphericon/sphericon/commit/ed4202557d33ef74279cac1356c7353de9ed2b85))
+* **billing:** core metering, Live usage and Billing hold for the billing plane (ADR 0027) ([#257](https://github.com/getsphericon/sphericon/issues/257)) ([ed42025](https://github.com/getsphericon/sphericon/commit/ed4202557d33ef74279cac1356c7353de9ed2b85))
+* **collect:** bound batch size and field lengths in the /collect contract ([#261](https://github.com/getsphericon/sphericon/issues/261)) ([bc3e747](https://github.com/getsphericon/sphericon/commit/bc3e7474f2dedb9a2a9eabfc75e93c61a8ec717a)), closes [#94](https://github.com/getsphericon/sphericon/issues/94)
+* **infra:** verify test recipients in SES while the account is in the sandbox ([6595d9e](https://github.com/getsphericon/sphericon/commit/6595d9e4e4d1d505044864d950e3142e82a6567a))
+* **jobs:** prune stale Unverified Users ([#258](https://github.com/getsphericon/sphericon/issues/258)) ([aed31c2](https://github.com/getsphericon/sphericon/commit/aed31c24e0bedc7690132d3f35c1cae00f3fbe69))
+* **operator:** abuse detector with warn and freeze tiers (ADR 0026) ([#251](https://github.com/getsphericon/sphericon/issues/251)) ([999b014](https://github.com/getsphericon/sphericon/commit/999b014186338128dfa39097fcf5da752ce3a93f)), closes [#193](https://github.com/getsphericon/sphericon/issues/193)
+* **operator:** billing holds distinguished in banner, Audit log and console ([e109b21](https://github.com/getsphericon/sphericon/commit/e109b211fea84ae33b1ab64413afb07ce4476d3e))
+* **operator:** hold set and clear report whether they changed anything ([d0dcd83](https://github.com/getsphericon/sphericon/commit/d0dcd8374a2436cdbf8efea6c53153d1bbfa9d49))
+* **operator:** read one Workspace's usage on the service surface ([e6e1d39](https://github.com/getsphericon/sphericon/commit/e6e1d395d7910e0b212a095b4c68d6f0a42de7f2))
+* **site:** billing link on the hold banner, set by BILLING_URL ([a71e08c](https://github.com/getsphericon/sphericon/commit/a71e08c2e65171e58aa6a698cdffefdada6de4cf))
+* usage metering and operator holds on the Operator surface ([#236](https://github.com/getsphericon/sphericon/issues/236)) ([f512684](https://github.com/getsphericon/sphericon/commit/f512684d0957506046581432a6cc1cc3588697b9)), closes [#224](https://github.com/getsphericon/sphericon/issues/224)
+
+
+### Bug Fixes
+
+* **accounts:** audit the Verified email an accepted Invitation proves ([bd00e28](https://github.com/getsphericon/sphericon/commit/bd00e282a541cff034609ecd6091d4361b00c936))
+* **accounts:** invitation to an unverified address needs name and password (ADR 0030) ([c2c66f3](https://github.com/getsphericon/sphericon/commit/c2c66f3a0a7a5fbb7e93d22d67b096a0f03e026b))
+* email verification gates access, closing account pre-hijacking ([#248](https://github.com/getsphericon/sphericon/issues/248)) ([ab47c31](https://github.com/getsphericon/sphericon/commit/ab47c3171ceea5a4813333d9d41077a4e4c9387a))
+* **emailrender:** refuse Liquid include and render tags ([#238](https://github.com/getsphericon/sphericon/issues/238)) ([44fa0ae](https://github.com/getsphericon/sphericon/commit/44fa0aedd2baec8c066cf228b3eb7985f18f7b73))
+* **integrations:** stop members redirecting stored SMTP/SES credentials ([#250](https://github.com/getsphericon/sphericon/issues/250)) ([567df4a](https://github.com/getsphericon/sphericon/commit/567df4af4f0e9d1eddcf74532a70d444c47ae5a4))
+* make email verification atomic and the invitation session check authoritative ([18c6663](https://github.com/getsphericon/sphericon/commit/18c6663a7dc1ed572bfa8baaba7c1ad306147162))
+* review findings on billing (in-flight sends, billing audit detection, banner) ([#259](https://github.com/getsphericon/sphericon/issues/259)) ([561e439](https://github.com/getsphericon/sphericon/commit/561e4395ccbaf96779a5c030547976984af80d26))
+* **segments:** bind custom field keys and compile rules to generated ent predicates ([#237](https://github.com/getsphericon/sphericon/issues/237)) ([639dd3b](https://github.com/getsphericon/sphericon/commit/639dd3b63a460ea9dcb7b6c61f6b8e994d31fc55))
+* **segments:** the compiler tells rules from groups by kind, not by their fields ([74209ad](https://github.com/getsphericon/sphericon/commit/74209adacc929e91b37847cc844377ebf77ab18b))
+* **server:** rely on the global body cap in the hooks handler and pin the /mcp 413 ([#260](https://github.com/getsphericon/sphericon/issues/260)) ([19e8e22](https://github.com/getsphericon/sphericon/commit/19e8e22c2dfb863b8d29b147dfba802e4aa4d1a3))
+* usage close isolation, invitation audit and strict segment kind ([6943e64](https://github.com/getsphericon/sphericon/commit/6943e6470c25d58f6813b8640bc4f29ed5b75f68))
+* **usage:** bound the service listener, cheapen the contacts peak and share the hold expiry rule ([#249](https://github.com/getsphericon/sphericon/issues/249)) ([43e9389](https://github.com/getsphericon/sphericon/commit/43e93891313bcd35275f376b1534b8b151f9d2cb))
+* **usage:** one failing Workspace no longer stops the others from closing ([2724896](https://github.com/getsphericon/sphericon/commit/2724896c2929b444c62be0c8df018405043875d4))
+
 ## [0.1.2](https://github.com/getsphericon/sphericon/compare/v0.1.1...v0.1.2) (2026-10-11)
 
 ### Features
