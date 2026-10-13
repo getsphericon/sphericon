@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,9 +20,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/webhook"
 	sns "github.com/robbiet480/go.sns"
 )
-
-// maxHookBody caps an inbound provider notification body.
-const maxHookBody = 1 << 20 // 1 MiB
 
 // hooksHandler serves inbound provider webhooks, routed by the workspace's secret
 // ingest key: POST /hooks/{key}/{provider}. Each provider has its own adapter
@@ -84,8 +82,13 @@ func (h *sesHook) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, maxHookBody))
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		var tooBig *http.MaxBytesError
+		if errors.As(err, &tooBig) {
+			writeProblem(w, http.StatusRequestEntityTooLarge, tooBig.Error())
+			return
+		}
 		writeProblem(w, http.StatusBadRequest, "read body")
 		return
 	}
