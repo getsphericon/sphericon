@@ -86,7 +86,7 @@ func (h *sesHook) handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			writeProblem(w, http.StatusRequestEntityTooLarge, "body too large")
+			writeProblem(w, http.StatusRequestEntityTooLarge, tooBig.Error())
 			return
 		}
 		writeProblem(w, http.StatusBadRequest, "read body")
