@@ -1,7 +1,9 @@
 package usage_test
 
 import (
+	"context"
 	"crypto/ed25519"
+	"errors"
 	"testing"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/usage"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -203,4 +206,29 @@ func TestListPagesEveryWorkspaceByIdAndDefaultsNothingItselfToARowlessPeriod(t *
 	assert.Less(t, first.Items[0].WorkspaceID, second.Items[0].WorkspaceID)
 	assert.GreaterOrEqual(t, first.TotalItems, 4, "every Workspace has a figure")
 	assert.Equal(t, feb, first.Items[0].Period)
+}
+
+func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
+	env := testhelper.Setup(t)
+	boom := errors.New("boom")
+	env.DB.Usage.Use(func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if id, ok := m.(interface{ WorkspaceID() (int64, bool) }); ok {
+				if ws, set := id.WorkspaceID(); set && ws == fixtures.AcmeID {
+					return nil, boom
+				}
+			}
+			return next.Mutate(ctx, m)
+		})
+	})
+
+	err := usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureOperator), feb.Add(time.Hour))
+
+	require.ErrorIs(t, err, boom, "the failure is still reported")
+	page, listErr := usage.List(t.Context(), env.DB, feb, pagination.Params{Page: 1, PageSize: pagination.MaxPageSize})
+	require.NoError(t, listErr)
+	assert.NotEmpty(t, page.Items, "Workspaces after the failing one are still refreshed")
+	for _, w := range page.Items {
+		assert.NotEqual(t, int64(fixtures.AcmeID), w.WorkspaceID)
+	}
 }
