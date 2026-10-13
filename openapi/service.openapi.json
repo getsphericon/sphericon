@@ -443,7 +443,7 @@
     "/workspaces/{workspaceId}/holds/{key}": {
       "put": {
         "operationId": "ServiceHolds_set",
-        "description": "Set a hold under a key, or renew it by setting it again with a later expiry.\nIdempotent: setting the same hold twice changes nothing.",
+        "description": "Set a hold under a key, or renew it by setting it again with a later expiry.\nIdempotent: setting the same hold twice changes nothing and says so (`changed` false);\nrenewing with a different expiry is a change.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -468,7 +468,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HoldResource"
+                  "$ref": "#/components/schemas/HoldSetResult"
                 }
               }
             }
@@ -562,7 +562,7 @@
       },
       "delete": {
         "operationId": "ServiceHolds_clear",
-        "description": "Clear a hold by its key. Idempotent: clearing a missing hold succeeds.",
+        "description": "Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -582,8 +582,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldClearResult"
+                }
+              }
+            }
           },
           "401": {
             "description": "RFC 7807 unauthorized response",
@@ -726,6 +733,17 @@
         },
         "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
       },
+      "HoldClearResult": {
+        "type": "object",
+        "required": ["changed"],
+        "properties": {
+          "changed": {
+            "type": "boolean",
+            "description": "False when no such hold was set and nothing changed, so a retry is visibly harmless"
+          }
+        },
+        "description": "The outcome of clearing a hold"
+      },
       "HoldInput": {
         "type": "object",
         "required": ["reasonCode", "message", "expiresAt"],
@@ -821,6 +839,25 @@
           }
         },
         "description": "An Operator hold: one reversible freeze of a Workspace's outbound sending (ADR 0009)"
+      },
+      "HoldSetResult": {
+        "type": "object",
+        "required": ["changed", "hold"],
+        "properties": {
+          "changed": {
+            "type": "boolean",
+            "description": "False when the hold was already set exactly so and nothing changed, so a retry is visibly harmless"
+          },
+          "hold": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HoldResource"
+              }
+            ],
+            "description": "The hold as it is stored now"
+          }
+        },
+        "description": "The outcome of setting a hold"
       },
       "PaymentRequiredProblem": {
         "type": "object",
