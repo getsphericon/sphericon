@@ -32,4 +32,6 @@ misconfiguration must not silently disable the protection.
   verified, not at sign-up.
 - Registering, and the invite lookup's `hasAccount`, still reveal whether an address is taken;
   that enumeration is out of scope here.
-- Unverified Users hold their address until pruned; a periodic prune is a separate change.
+- Unverified Users hold their address until pruned: a daily job deletes those with no Membership
+  older than `UNVERIFIED_USER_RETENTION_DAYS` (default 7, `0` disables). A pending Invitation to
+  a pruned address is untouched; accepting it follows the new-address path.
