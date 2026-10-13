@@ -43,7 +43,6 @@
   "errors.verify_link_stale": "ссылка подтверждения больше недействительна",
   "errors.confirm_link_invalid": "ссылка подтверждения недействительна или устарела",
   "errors.confirm_link_bad": "недействительная ссылка подтверждения",
-  "errors.email_in_use": "этот email уже используется",
   "errors.name_empty": "имя не должно быть пустым",
   "errors.sending_domain_invalid": "некорректное доменное имя",
   "errors.dkim_selector_invalid": "некорректный селектор DKIM",

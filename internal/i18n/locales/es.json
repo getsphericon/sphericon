@@ -43,7 +43,6 @@
   "errors.verify_link_stale": "el enlace de verificación ya no es válido",
   "errors.confirm_link_invalid": "el enlace de confirmación no es válido o ha caducado",
   "errors.confirm_link_bad": "enlace de confirmación no válido",
-  "errors.email_in_use": "ese email ya está en uso",
   "errors.name_empty": "el nombre no puede estar vacío",
   "errors.sending_domain_invalid": "no es un nombre de dominio válido",
   "errors.dkim_selector_invalid": "no es un selector DKIM válido",

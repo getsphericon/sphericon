@@ -43,7 +43,6 @@
   "errors.verify_link_stale": "verification link no longer valid",
   "errors.confirm_link_invalid": "invalid or expired confirmation link",
   "errors.confirm_link_bad": "invalid confirmation link",
-  "errors.email_in_use": "that email is already in use",
   "errors.name_empty": "name must not be empty",
   "errors.sending_domain_invalid": "not a valid domain name",
   "errors.dkim_selector_invalid": "not a valid DKIM selector",
