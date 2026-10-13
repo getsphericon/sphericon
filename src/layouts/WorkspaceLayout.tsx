@@ -1,4 +1,4 @@
-import { Alert, Group, Select, Text } from '@mantine/core'
+import { Alert, Anchor, Group, Select, Text } from '@mantine/core'
 import { IconPlayerPause } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -69,7 +69,15 @@ function SuspensionBanner({
 // HoldBanner tells every member that outbound sending is held by an Operator hold
 // (ADR 0009) and shows each setter's message as given. It is deliberately not the
 // suspension banner: another color and icon, another title, and no reason of its own.
-function HoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
+function HoldBanner({
+  holds,
+  role,
+  billingUrl,
+}: {
+  holds: SiteWorkspaceHold[]
+  role: SiteWorkspaceResource['role']
+  billingUrl: string | null | undefined
+}) {
   const { t } = useTranslation()
   return (
     <Alert
@@ -85,6 +93,17 @@ function HoldBanner({ holds }: { holds: SiteWorkspaceHold[] }) {
           {hold.message}
         </Text>
       ))}
+      {billingUrl ? (
+        role === 'member' ? (
+          <Text size="sm" mt="xs">
+            {t(($) => $.workspaceHold.billingContact)}
+          </Text>
+        ) : (
+          <Anchor size="sm" mt="xs" display="block" href={billingUrl}>
+            {t(($) => $.workspaceHold.billingLink)}
+          </Anchor>
+        )
+      ) : null}
     </Alert>
   )
 }
@@ -133,7 +152,9 @@ export function WorkspaceLayout() {
               supportEmail={current.supportEmail}
             />
           ) : null}
-          {current?.holds.length ? <HoldBanner holds={current.holds} /> : null}
+          {current?.holds.length ? (
+            <HoldBanner holds={current.holds} role={current.role} billingUrl={current.billingUrl} />
+          ) : null}
           {standing.kind === 'grace' ? <SecondFactorGraceBanner endsAt={standing.endsAt} /> : null}
         </>
       }

@@ -340,7 +340,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	accountLink, _, err := accountlink.FromConfig(&cfg)
 	require.NoError(t, err, "build account link")
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
-		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail,
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,

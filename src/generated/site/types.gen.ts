@@ -2663,6 +2663,11 @@ export type SiteWorkspaceResource = {
    */
   supportEmail?: string | null;
   /**
+   * The billing site a member under a hold is pointed to (BILLING_URL); absent when the
+   * instance configured none, and then no billing text is shown.
+   */
+  billingUrl?: string | null;
+  /**
    * The Operator holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed.

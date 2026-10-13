@@ -62,6 +62,8 @@ type Converter interface {
 	// goverter:ignore Holds
 	// The support contact is instance configuration, attached by the handler.
 	// goverter:ignore SupportEmail
+	// The billing link is instance configuration, attached by the handler.
+	// goverter:ignore BillingUrl
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 

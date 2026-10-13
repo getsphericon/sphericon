@@ -99,6 +99,7 @@ type Handlers struct {
 	now            func() time.Time
 	accountLink    *accountlink.Link
 	holdsHonoured  func() bool
+	billingURL     string
 	// requireVerification is the email verification gate (ADR 0030): off only on an
 	// install that set REQUIRE_EMAIL_VERIFICATION=false.
 	requireVerification bool
@@ -168,7 +169,9 @@ type Deps struct {
 	AbuseWatch     AbuseWatch
 	// SupportEmail is where a suspended Workspace's owner appeals (SUPPORT_EMAIL).
 	SupportEmail string
-	Analytics    *analytics.Module
+	// BillingURL is the billing site a member under a hold is pointed to (BILLING_URL).
+	BillingURL string
+	Analytics  *analytics.Module
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SESSION_TTL.
 	Sessions *auth.Sessions
@@ -200,7 +203,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, billingURL: d.BillingURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }

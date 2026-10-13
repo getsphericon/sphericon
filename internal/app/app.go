@@ -1384,7 +1384,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		return apisite.Deps{}, err
 	}
 	return apisite.Deps{
-		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail,
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Automations: auto,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, Integrations: integ,

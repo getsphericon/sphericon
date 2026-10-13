@@ -11864,6 +11864,9 @@ type SiteWorkspaceResource struct {
 	SuspensionReason OptNilString `json:"suspensionReason"`
 	// Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance configured none.
 	SupportEmail OptNilString `json:"supportEmail"`
+	// The billing site a member under a hold is pointed to (BILLING_URL); absent when the instance
+	// configured none, and then no billing text is shown.
+	BillingUrl OptNilString `json:"billingUrl"`
 	// The Operator holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
@@ -11930,6 +11933,11 @@ func (s *SiteWorkspaceResource) GetSuspensionReason() OptNilString {
 // GetSupportEmail returns the value of SupportEmail.
 func (s *SiteWorkspaceResource) GetSupportEmail() OptNilString {
 	return s.SupportEmail
+}
+
+// GetBillingUrl returns the value of BillingUrl.
+func (s *SiteWorkspaceResource) GetBillingUrl() OptNilString {
+	return s.BillingUrl
 }
 
 // GetHolds returns the value of Holds.
@@ -12005,6 +12013,11 @@ func (s *SiteWorkspaceResource) SetSuspensionReason(val OptNilString) {
 // SetSupportEmail sets the value of SupportEmail.
 func (s *SiteWorkspaceResource) SetSupportEmail(val OptNilString) {
 	s.SupportEmail = val
+}
+
+// SetBillingUrl sets the value of BillingUrl.
+func (s *SiteWorkspaceResource) SetBillingUrl(val OptNilString) {
+	s.BillingUrl = val
 }
 
 // SetHolds sets the value of Holds.
