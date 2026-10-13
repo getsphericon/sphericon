@@ -43,6 +43,21 @@ model HoldInput {
   expiresAt: Timestamp;
 }
 
+/** The outcome of setting a hold */
+model HoldSetResult {
+  /** False when the hold was already set exactly so and nothing changed, so a retry is visibly harmless */
+  changed: boolean;
+
+  /** The hold as it is stored now */
+  hold: HoldResource;
+}
+
+/** The outcome of clearing a hold */
+model HoldClearResult {
+  /** False when no such hold was set and nothing changed, so a retry is visibly harmless */
+  changed: boolean;
+}
+
 /** The active holds of a Workspace */
 model HoldList {
   items: HoldResource[];
@@ -60,7 +75,8 @@ namespace ServiceHolds {
     | TooManyRequestsProblem;
 
   /** Set a hold under a key, or renew it by setting it again with a later expiry.
-   * Idempotent: setting the same hold twice changes nothing. */
+   * Idempotent: setting the same hold twice changes nothing and says so (`changed` false);
+   * renewing with a different expiry is a change. */
   @route("/{key}")
   @put
   op set(
@@ -68,17 +84,17 @@ namespace ServiceHolds {
     @path key: string,
     @body body: HoldInput,
   ):
-    | HoldResource
+    | HoldSetResult
     | UnauthorizedProblem
     | NotFoundProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;
 
-  /** Clear a hold by its key. Idempotent: clearing a missing hold succeeds. */
+  /** Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false. */
   @route("/{key}")
   @delete
   op clear(@path workspaceId: EntityId, @path key: string):
-    | NoContentResponse
+    | HoldClearResult
     | UnauthorizedProblem
     | NotFoundProblem
     | TooManyRequestsProblem;

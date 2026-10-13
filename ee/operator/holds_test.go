@@ -35,11 +35,21 @@ func (h *harness) setHold(t *testing.T, key string, d time.Duration) serviceapi.
 	return res
 }
 
-func (h *harness) clearHold(t *testing.T, key string) {
+// setHoldResult is setHold for a call that is expected to succeed.
+func (h *harness) setHoldResult(t *testing.T, key string, d time.Duration) *serviceapi.HoldSetResult {
+	t.Helper()
+	res, ok := h.setHold(t, key, d).(*serviceapi.HoldSetResult)
+	require.Truef(t, ok, "got %T", res)
+	return res
+}
+
+func (h *harness) clearHold(t *testing.T, key string) bool {
 	t.Helper()
 	res, err := h.holdClient(t).ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: acme, Key: key})
 	require.NoError(t, err)
-	require.IsType(t, &serviceapi.ServiceHoldsClearNoContent{}, res)
+	cleared, ok := res.(*serviceapi.HoldClearResult)
+	require.Truef(t, ok, "got %T", res)
+	return cleared.Changed
 }
 
 func (h *harness) listHolds(t *testing.T) []serviceapi.HoldResource {
@@ -61,8 +71,7 @@ func (h *harness) requireHeld(t *testing.T, to string) {
 func TestAHoldFreezesSendingAndClearingItResumes(t *testing.T) {
 	h := newHarness(t)
 
-	set, ok := h.setHold(t, "k1", time.Hour).(*serviceapi.HoldResource)
-	require.True(t, ok)
+	set := h.setHoldResult(t, "k1", time.Hour).Hold
 	assert.Equal(t, "k1", set.Key)
 	assert.Equal(t, "review", set.ReasonCode)
 	assert.Equal(t, "Sending is paused for now.", set.Message)
@@ -138,7 +147,7 @@ func TestAHoldNeedsAFutureExpiryWithinTheMaximum(t *testing.T) {
 	}
 	assert.Zero(t, h.env.DB.Hold.Query().Where(enthold.Key("k")).CountX(t.Context()), "a refused hold stores nothing")
 
-	_, ok := h.setHold(t, "k", 30*24*time.Hour).(*serviceapi.HoldResource)
+	_, ok := h.setHold(t, "k", 30*24*time.Hour).(*serviceapi.HoldSetResult)
 	assert.True(t, ok, "the maximum itself is accepted")
 }
 
@@ -146,7 +155,7 @@ func TestTheMaximumExpiryIsConfigurable(t *testing.T) {
 	h := newHarness(t, testhelper.WithConfig(func(c *config.Config) { c.OperatorHoldMaxExpiry = 2 * time.Hour }))
 
 	assert.IsType(t, &serviceapi.ServiceHoldsSetUnprocessableEntity{}, h.setHold(t, "k", 3*time.Hour))
-	assert.IsType(t, &serviceapi.HoldResource{}, h.setHold(t, "k", time.Hour))
+	assert.IsType(t, &serviceapi.HoldSetResult{}, h.setHold(t, "k", time.Hour))
 }
 
 func TestHoldsOfAnUnknownWorkspaceAreNotFound(t *testing.T) {
@@ -186,10 +195,12 @@ func TestHoldEndpointsAreAbsentFromThePublicPort(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestEverySetRenewalAndClearIsRecordedUnderTheCredentialsName(t *testing.T) {
+func TestEveryChangingSetRenewalAndClearIsRecordedUnderTheCredentialsName(t *testing.T) {
 	h := newHarness(t)
 	h.setHold(t, "audited", time.Hour)
+	h.setHold(t, "audited", time.Hour)
 	h.setHold(t, "audited", 2*time.Hour)
+	h.clearHold(t, "audited")
 	h.clearHold(t, "audited")
 	h.env.DeliverToEE(t)
 
