@@ -53,6 +53,7 @@ func auditEntryResource(e *ent.AuditEntry) operatorapi.OperatorAuditEntryResourc
 		OccurredAt: operatorapi.Timestamp(v.OccurredAt),
 		Actor:      operatorapi.OperatorAuditActor{Kind: operatorapi.OperatorAuditActorKind(v.ActorKind), ID: nilableString(v.ActorID), Name: nilableString(v.ActorName)},
 		Action:     v.Action,
+		Billing:    v.Billing,
 		Target:     operatorapi.OperatorAuditTarget{Type: v.TargetType, ID: nilableString(v.TargetID), Name: nilableString(v.TargetName)},
 		RequestId:  nilableString(v.RequestID),
 		IP:         nilableString(v.IP),

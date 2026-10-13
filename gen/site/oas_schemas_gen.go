@@ -3910,6 +3910,9 @@ type SiteAuditEntryResource struct {
 	Actor SiteAuditActor `json:"actor"`
 	// What was done, as `<entity>.<verb>`.
 	Action string `json:"action"`
+	// True when the change set, renewed or lifted a billing hold (reason code `non_payment` or
+	// `free_plan_cap`): shown as billing activity.
+	Billing bool `json:"billing"`
 	// What it was done to.
 	Target SiteAuditTarget `json:"target"`
 	// Before/after of the changed fields; secrets appear as changed only.
@@ -3940,6 +3943,11 @@ func (s *SiteAuditEntryResource) GetActor() SiteAuditActor {
 // GetAction returns the value of Action.
 func (s *SiteAuditEntryResource) GetAction() string {
 	return s.Action
+}
+
+// GetBilling returns the value of Billing.
+func (s *SiteAuditEntryResource) GetBilling() bool {
+	return s.Billing
 }
 
 // GetTarget returns the value of Target.
@@ -3985,6 +3993,11 @@ func (s *SiteAuditEntryResource) SetActor(val SiteAuditActor) {
 // SetAction sets the value of Action.
 func (s *SiteAuditEntryResource) SetAction(val string) {
 	s.Action = val
+}
+
+// SetBilling sets the value of Billing.
+func (s *SiteAuditEntryResource) SetBilling(val bool) {
+	s.Billing = val
 }
 
 // SetTarget sets the value of Target.
@@ -11795,6 +11808,9 @@ type SiteWorkspaceHold struct {
 	Message string `json:"message"`
 	// When the hold was set.
 	Since Timestamp `json:"since"`
+	// True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a
+	// money reason, not for abuse.
+	Billing bool `json:"billing"`
 }
 
 // GetKey returns the value of Key.
@@ -11817,6 +11833,11 @@ func (s *SiteWorkspaceHold) GetSince() Timestamp {
 	return s.Since
 }
 
+// GetBilling returns the value of Billing.
+func (s *SiteWorkspaceHold) GetBilling() bool {
+	return s.Billing
+}
+
 // SetKey sets the value of Key.
 func (s *SiteWorkspaceHold) SetKey(val string) {
 	s.Key = val
@@ -11835,6 +11856,11 @@ func (s *SiteWorkspaceHold) SetMessage(val string) {
 // SetSince sets the value of Since.
 func (s *SiteWorkspaceHold) SetSince(val Timestamp) {
 	s.Since = val
+}
+
+// SetBilling sets the value of Billing.
+func (s *SiteWorkspaceHold) SetBilling(val bool) {
+	s.Billing = val
 }
 
 // Workspace the current user belongs to.

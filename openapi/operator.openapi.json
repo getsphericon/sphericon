@@ -893,7 +893,7 @@
       },
       "OperatorAuditEntryResource": {
         "type": "object",
-        "required": ["id", "occurredAt", "actor", "action", "target"],
+        "required": ["id", "occurredAt", "actor", "action", "billing", "target"],
         "properties": {
           "id": {
             "allOf": [
@@ -922,6 +922,10 @@
           "action": {
             "type": "string",
             "description": "What was done, as `<entity>.<verb>`"
+          },
+          "billing": {
+            "type": "boolean",
+            "description": "True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`)"
           },
           "target": {
             "allOf": [
@@ -1074,7 +1078,7 @@
       },
       "OperatorHold": {
         "type": "object",
-        "required": ["key", "reasonCode", "message", "createdAt", "expiresAt", "setBy"],
+        "required": ["key", "reasonCode", "message", "createdAt", "expiresAt", "setBy", "billing"],
         "properties": {
           "key": {
             "type": "string",
@@ -1107,6 +1111,10 @@
           "setBy": {
             "type": "string",
             "description": "Who set it: the name of its Service credential"
+          },
+          "billing": {
+            "type": "boolean",
+            "description": "True for a billing hold (reason code `non_payment` or `free_plan_cap`)"
           }
         },
         "description": "An active Operator hold on a Workspace, as the console shows it (read only)"

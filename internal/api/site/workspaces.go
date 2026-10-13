@@ -62,7 +62,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 		return r, err
 	}
 	r.Holds = lo.Map(active, func(hold *ent.Hold, _ int) siteapi.SiteWorkspaceHold {
-		return siteapi.SiteWorkspaceHold{Key: hold.Key, ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt)}
+		return siteapi.SiteWorkspaceHold{Key: hold.Key, ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt), Billing: holds.IsBilling(hold.ReasonCode)}
 	})
 	return r, nil
 }

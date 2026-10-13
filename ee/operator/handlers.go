@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -205,11 +206,11 @@ func (h *Handlers) OperatorWorkspacesGet(ctx context.Context, params operatorapi
 // workspaceDetail is the detail page's view: the metadata of workspaceResource plus
 // the deliverability counts and the active holds.
 func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold, warning abuse.Breach) operatorapi.OperatorWorkspaceDetailResource {
-	holds := make([]operatorapi.OperatorHold, len(active))
+	shown := make([]operatorapi.OperatorHold, len(active))
 	for i, r := range active {
-		holds[i] = operatorapi.OperatorHold{
+		shown[i] = operatorapi.OperatorHold{
 			Key: r.Key, ReasonCode: r.ReasonCode, Message: r.Message, SetBy: r.SetBy,
-			CreatedAt: operatorapi.Timestamp(r.CreatedAt), ExpiresAt: operatorapi.Timestamp(r.ExpiresAt),
+			CreatedAt: operatorapi.Timestamp(r.CreatedAt), ExpiresAt: operatorapi.Timestamp(r.ExpiresAt), Billing: holds.IsBilling(r.ReasonCode),
 		}
 	}
 	base := workspaceResource(w)
@@ -223,7 +224,7 @@ func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold, war
 		})
 	}
 	return operatorapi.OperatorWorkspaceDetailResource{
-		ID: base.ID, Slug: base.Slug, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Exempt: base.Exempt, Warned: base.Warned, Holds: holds,
+		ID: base.ID, Slug: base.Slug, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Exempt: base.Exempt, Warned: base.Warned, Holds: shown,
 		Abuse: abuseResource(w, warning),
 		Deliverability: operatorapi.OperatorDeliverability{
 			WindowHours: int32(d.Window / time.Hour),

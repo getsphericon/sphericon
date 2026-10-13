@@ -98,6 +98,30 @@ test('lists the audit log with an Operator shown as sphericon staff, and loads m
   await expect.element(screen.getByText('Peter')).toBeInTheDocument()
 })
 
+test('a billing hold change in the audit log names the credential and shows billing activity', async () => {
+  worker.use(
+    handleOperatorWorkspacesGet({ body: HOOLI }),
+    handleOperatorWorkspaceAuditList({
+      body: {
+        items: [
+          {
+            id: '3',
+            occurredAt: '2026-02-01T00:00:00Z',
+            actor: { kind: 'service', id: '4', name: 'billing-plane' },
+            action: 'hold.create',
+            billing: true,
+            target: { type: 'hold', name: 'billing' },
+          },
+        ],
+      },
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByText('billing-plane')).toBeInTheDocument()
+  await expect.element(screen.getByText('Billing activity')).toBeInTheDocument()
+})
+
 test('an empty audit log says so', async () => {
   worker.use(handleOperatorWorkspacesGet({ body: HOOLI }))
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
@@ -272,6 +296,16 @@ test('lists the active holds with key, reason code, message, since, expiry and s
             createdAt: '2026-03-01T00:00:00Z',
             expiresAt: '2026-03-08T00:00:00Z',
             setBy: 'service-a',
+            billing: false,
+          },
+          {
+            key: 'k2',
+            reasonCode: 'non_payment',
+            message: 'Invoice overdue.',
+            createdAt: '2026-03-01T00:00:00Z',
+            expiresAt: '2026-03-08T00:00:00Z',
+            setBy: 'billing-plane',
+            billing: true,
           },
         ],
       },
@@ -284,6 +318,8 @@ test('lists the active holds with key, reason code, message, since, expiry and s
   await expect.element(screen.getByText('review', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Sending is paused for now.')).toBeInTheDocument()
   await expect.element(screen.getByText('service-a', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('non_payment', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Billing', { exact: true })).toBeInTheDocument()
 })
 
 test('a workspace without holds says so', async () => {
