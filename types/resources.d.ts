@@ -158,6 +158,7 @@ export default interface Resources {
       "waitNodeDescription": "Pause before the next step.",
       "waitSecondsLabel": "Wait (seconds)"
     },
+    "billingBadge": "Billing",
     "broadcasts": {
       "addBroadcast": "New broadcast",
       "audienceAll": "All active contacts",
@@ -320,7 +321,6 @@ export default interface Resources {
           "actor": "By",
           "actorSystem": "System",
           "actorToken": "API token #{{id}}",
-          "billingActivity": "Billing activity",
           "empty": "No recorded changes",
           "loadError": "Could not load the audit log",
           "loadMore": "Load more",
@@ -331,7 +331,6 @@ export default interface Resources {
         "back": "All workspaces",
         "detailsTitle": "Details",
         "holds": {
-          "billing": "Billing",
           "empty": "No active holds.",
           "expires": "Expires",
           "key": "Key",
@@ -641,7 +640,6 @@ export default interface Resources {
         "actorSystem": "System",
         "actorToken": "API token #{{id}}",
         "apply": "Apply filters",
-        "billingActivity": "Billing activity",
         "changeHistory": "Change history",
         "changedMarker": "changed",
         "collapse": "Hide changes",

@@ -75,8 +75,9 @@ func (UnimplementedHandler) ServiceWorkspaceFeedList(ctx context.Context, params
 
 // ServiceWorkspaceUsageGet implements ServiceWorkspaceUsage_get operation.
 //
-// The figures of one Workspace for a Usage period: Live usage (not final, counting sends still in
-// flight) for the open period, Usage snapshots (final) for a closed one. Never a recount on read.
+// The figures of one Workspace for a Usage period: Live usage (not final, with the in-flight sends as
+// their own figure) for the open period, Usage snapshots (final) for a closed one. Never a recount on
+// read.
 //
 // GET /workspaces/{workspaceId}/usage
 func (UnimplementedHandler) ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (r ServiceWorkspaceUsageGetRes, _ error) {

@@ -1,9 +1,10 @@
-import { Badge, Button, Card, Group, Loader, Stack, Table, Text, Title } from '@mantine/core'
+import { Button, Card, Group, Loader, Stack, Table, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { BillingBadge } from '../components/BillingBadge.tsx'
 import { operatorWorkspaceAuditListOptions } from '../generated/operator/@tanstack/react-query.gen.ts'
 import type { OperatorAuditEntryResource } from '../generated/operator/types.gen.ts'
 import { formatDateTime } from '../utils/datetime.ts'
@@ -91,11 +92,7 @@ function AuditPage({
                 <Table.Td>
                   <Group gap="xs" wrap="nowrap">
                     {entry.action}
-                    {entry.billing ? (
-                      <Badge color="orange" variant="light">
-                        {t(($) => $.console.workspace.auditLog.billingActivity)}
-                      </Badge>
-                    ) : null}
+                    {entry.billing ? <BillingBadge /> : null}
                   </Group>
                 </Table.Td>
                 <Table.Td>{targetLabel(entry)}</Table.Td>

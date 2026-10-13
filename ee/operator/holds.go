@@ -36,6 +36,13 @@ type HoldInput struct {
 	ExpiresAt  time.Time
 }
 
+// HoldChange is the outcome of setting or clearing a hold: the hold concerned (nil when
+// a clear found none) and whether the call changed anything.
+type HoldChange struct {
+	Hold    *ent.Hold
+	Changed bool
+}
+
 // SetHold sets the hold under key on a Workspace, or renews it when it exists: one call
 // does both and repeating it is harmless. It is recorded in the Audit log under the
 // credential's name. The expiry is required to be ahead of now and no further than the
@@ -43,20 +50,20 @@ type HoldInput struct {
 //
 // The service endpoints scope over the one Workspace the call names, after its row is
 // loaded (AGENTS.md, Workspace scoping, list item 7).
-func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string, in HoldInput) (*ent.Hold, bool, error) {
+func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string, in HoldInput) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
-		return nil, false, err
+		return HoldChange{}, err
 	}
 	now := m.now()
 	if !in.ExpiresAt.After(now) {
-		return nil, false, ErrHoldExpiryInPast
+		return HoldChange{}, ErrHoldExpiryInPast
 	}
 	if in.ExpiresAt.After(now.Add(m.holdMax)) {
-		return nil, false, &HoldTooLongError{Max: m.holdMax}
+		return HoldChange{}, &HoldTooLongError{Max: m.holdMax}
 	}
 	s, err := m.holdScope(ctx, bus, cred, workspaceID)
 	if err != nil {
-		return nil, false, err
+		return HoldChange{}, err
 	}
 	// A concurrent first set of the same key loses the unique index once; the retry
 	// then finds the row and renews it.
@@ -71,20 +78,20 @@ func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.Service
 			if ent.IsConstraintError(err) {
 				continue
 			}
-			return created, err == nil, err
+			return HoldChange{Hold: created, Changed: err == nil}, err
 		case err != nil:
-			return nil, false, err
+			return HoldChange{}, err
 		}
 		if sameHold(existing, in) {
-			return existing, false, nil
+			return HoldChange{Hold: existing}, nil
 		}
 		updated, err := s.Hold().UpdateOneID(existing.ID).
 			SetReasonCode(in.ReasonCode).SetMessage(in.Message).
 			SetExpiresAt(in.ExpiresAt).SetSetBy(cred.Name).
 			Save(ctx)
-		return updated, err == nil, err
+		return HoldChange{Hold: updated, Changed: err == nil}, err
 	}
-	return nil, false, errors.New("operator: could not set the hold: it kept changing under us")
+	return HoldChange{}, errors.New("operator: could not set the hold: it kept changing under us")
 }
 
 // sameHold reports whether the stored hold already says what in says. Timestamps are
@@ -96,26 +103,26 @@ func sameHold(h *ent.Hold, in HoldInput) bool {
 
 // ClearHold removes the hold under key. Clearing a missing hold succeeds. It is recorded
 // in the Audit log under the credential's name. ent.IsNotFound for an unknown Workspace.
-func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string) (bool, error) {
+func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
-		return false, err
+		return HoldChange{}, err
 	}
 	s, err := m.holdScope(ctx, bus, cred, workspaceID)
 	if err != nil {
-		return false, err
+		return HoldChange{}, err
 	}
 	existing, err := s.Hold().Query().Where(enthold.Key(key)).Only(ctx)
 	if ent.IsNotFound(err) {
-		return false, nil
+		return HoldChange{}, nil
 	}
 	if err != nil {
-		return false, err
+		return HoldChange{}, err
 	}
 	err = s.Hold().DeleteOneID(existing.ID).Exec(ctx)
 	if ent.IsNotFound(err) {
-		return false, nil
+		return HoldChange{}, nil
 	}
-	return err == nil, err
+	return HoldChange{Hold: existing, Changed: err == nil}, err
 }
 
 // ActiveHolds lists the holds of a Workspace that are active now, by key. ent.IsNotFound
@@ -167,7 +174,7 @@ func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.H
 		p := serviceapi.ServiceHoldsSetNotFound(workspaceNotFoundProblem())
 		return &p, nil
 	}
-	row, changed, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, HoldInput{
+	change, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, HoldInput{
 		ReasonCode: req.ReasonCode, Message: req.Message, ExpiresAt: time.Time(req.ExpiresAt),
 	})
 	var tooLong *HoldTooLongError
@@ -185,7 +192,7 @@ func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.H
 	case err != nil:
 		return nil, err
 	}
-	return &serviceapi.HoldSetResult{Changed: changed, Hold: holdResource(row)}, nil
+	return &serviceapi.HoldSetResult{Changed: change.Changed, Hold: holdResource(change.Hold)}, nil
 }
 
 // ServiceHoldsClear clears a hold; a missing one is cleared already.
@@ -195,7 +202,7 @@ func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params servicea
 		p := serviceapi.ServiceHoldsClearNotFound(workspaceNotFoundProblem())
 		return &p, nil
 	}
-	changed, err := h.module.ClearHold(ctx, h.bus, CurrentService(ctx), id, params.Key)
+	change, err := h.module.ClearHold(ctx, h.bus, CurrentService(ctx), id, params.Key)
 	if ent.IsNotFound(err) {
 		p := serviceapi.ServiceHoldsClearNotFound(workspaceNotFoundProblem())
 		return &p, nil
@@ -203,7 +210,7 @@ func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params servicea
 	if err != nil {
 		return nil, err
 	}
-	return &serviceapi.HoldClearResult{Changed: changed}, nil
+	return &serviceapi.HoldClearResult{Changed: change.Changed}, nil
 }
 
 func holdResource(r *ent.Hold) serviceapi.HoldResource {

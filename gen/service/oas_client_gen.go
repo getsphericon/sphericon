@@ -73,8 +73,9 @@ type Invoker interface {
 	ServiceWorkspaceFeedList(ctx context.Context, params ServiceWorkspaceFeedListParams) (ServiceWorkspaceFeedListRes, error)
 	// ServiceWorkspaceUsageGet invokes ServiceWorkspaceUsage_get operation.
 	//
-	// The figures of one Workspace for a Usage period: Live usage (not final, counting sends still in
-	// flight) for the open period, Usage snapshots (final) for a closed one. Never a recount on read.
+	// The figures of one Workspace for a Usage period: Live usage (not final, with the in-flight sends as
+	// their own figure) for the open period, Usage snapshots (final) for a closed one. Never a recount on
+	// read.
 	//
 	// GET /workspaces/{workspaceId}/usage
 	ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (ServiceWorkspaceUsageGetRes, error)
@@ -1005,8 +1006,9 @@ func (c *Client) sendServiceWorkspaceFeedList(ctx context.Context, params Servic
 
 // ServiceWorkspaceUsageGet invokes ServiceWorkspaceUsage_get operation.
 //
-// The figures of one Workspace for a Usage period: Live usage (not final, counting sends still in
-// flight) for the open period, Usage snapshots (final) for a closed one. Never a recount on read.
+// The figures of one Workspace for a Usage period: Live usage (not final, with the in-flight sends as
+// their own figure) for the open period, Usage snapshots (final) for a closed one. Never a recount on
+// read.
 //
 // GET /workspaces/{workspaceId}/usage
 func (c *Client) ServiceWorkspaceUsageGet(ctx context.Context, params ServiceWorkspaceUsageGetParams) (ServiceWorkspaceUsageGetRes, error) {

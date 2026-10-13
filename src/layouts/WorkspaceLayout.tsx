@@ -88,67 +88,43 @@ function BillingLink({
   )
 }
 
-// HoldBanner tells every member that outbound sending is held by an Operator hold
-// (ADR 0009) and shows each setter's message as given. It is deliberately not the
-// suspension banner: another color and icon, another title, and no reason of its own.
+// HoldBanner tells every member that outbound sending is held (ADR 0009) and shows each
+// setter's message as given. It is deliberately not the suspension banner: another color
+// and icon, another title. A billing hold (paid-for, not abuse) has its own color, icon
+// and title so nobody reads a payment problem as an abuse flag, and only it points to
+// the billing site.
 function HoldBanner({
+  variant,
   holds,
   role,
   billingUrl,
 }: {
+  variant: 'generic' | 'billing'
   holds: SiteWorkspaceHold[]
   role: SiteWorkspaceResource['role']
   billingUrl: string | null | undefined
 }) {
   const { t } = useTranslation()
+  const billing = variant === 'billing'
   return (
     <Alert
-      color="yellow"
+      color={billing ? 'orange' : 'yellow'}
       variant="outline"
-      icon={<IconPlayerPause />}
-      title={t(($) => $.workspaceHold.title)}
+      icon={billing ? <IconCreditCard /> : <IconPlayerPause />}
+      title={billing ? t(($) => $.workspaceBillingHold.title) : t(($) => $.workspaceHold.title)}
       mb="md"
     >
-      <Text size="sm">{t(($) => $.workspaceHold.description)}</Text>
+      <Text size="sm">
+        {billing
+          ? t(($) => $.workspaceBillingHold.description)
+          : t(($) => $.workspaceHold.description)}
+      </Text>
       {holds.map((hold) => (
         <Text key={hold.key} size="sm" fw={500} mt="xs">
           {hold.message}
         </Text>
       ))}
-      <BillingLink role={role} billingUrl={billingUrl} />
-    </Alert>
-  )
-}
-
-// BillingHoldBanner tells every member that outbound sending is paused for a money
-// reason (a billing hold, ADR 0009), with the setter's message as given. It is neither
-// the suspension banner nor the generic hold one: its own color, icon and title, so
-// nobody reads a payment problem as an abuse flag.
-function BillingHoldBanner({
-  holds,
-  role,
-  billingUrl,
-}: {
-  holds: SiteWorkspaceHold[]
-  role: SiteWorkspaceResource['role']
-  billingUrl: string | null | undefined
-}) {
-  const { t } = useTranslation()
-  return (
-    <Alert
-      color="orange"
-      variant="outline"
-      icon={<IconCreditCard />}
-      title={t(($) => $.workspaceBillingHold.title)}
-      mb="md"
-    >
-      <Text size="sm">{t(($) => $.workspaceBillingHold.description)}</Text>
-      {holds.map((hold) => (
-        <Text key={hold.key} size="sm" fw={500} mt="xs">
-          {hold.message}
-        </Text>
-      ))}
-      <BillingLink role={role} billingUrl={billingUrl} />
+      {billing ? <BillingLink role={role} billingUrl={billingUrl} /> : null}
     </Alert>
   )
 }
@@ -201,10 +177,16 @@ export function WorkspaceLayout() {
             />
           ) : null}
           {otherHolds.length && current ? (
-            <HoldBanner holds={otherHolds} role={current.role} billingUrl={current.billingUrl} />
+            <HoldBanner
+              variant="generic"
+              holds={otherHolds}
+              role={current.role}
+              billingUrl={current.billingUrl}
+            />
           ) : null}
           {billingHolds.length && current ? (
-            <BillingHoldBanner
+            <HoldBanner
+              variant="billing"
               holds={billingHolds}
               role={current.role}
               billingUrl={current.billingUrl}

@@ -41,7 +41,7 @@ func TestEveryWorkspaceIsClosedWithinAnHourOfMidnightUTC(t *testing.T) {
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, page.TotalItems, 4, "every fixture Workspace has January figures")
 	for _, w := range page.Items {
-		require.Len(t, w.Figures, 2, "workspace %d has both metrics", w.WorkspaceID)
+		require.Len(t, w.Figures, 3, "workspace %d has every metric", w.WorkspaceID)
 		for _, f := range w.Figures {
 			assert.True(t, f.Final, "workspace %d %s is final", w.WorkspaceID, f.Metric)
 		}

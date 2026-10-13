@@ -6,6 +6,7 @@ package auditapi
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -56,9 +57,8 @@ type View struct {
 	ActorID    *string
 	ActorName  *string
 	Action     string
-	// Billing is true for a change of a billing hold (holds.IsBilling), which the
-	// customer reads as billing activity. A renewal that leaves the reason code as it
-	// was carries none in its diff and reads as a plain hold change.
+	// Billing is true for a change of a billing hold (holds.IsBilling): its set, renewal
+	// and lift alike, since a hold's audit diff always carries its reason code.
 	Billing    bool
 	TargetType string
 	TargetID   *string
@@ -93,6 +93,9 @@ func ViewOf(e *ent.AuditEntry) View {
 	if len(e.Diff) > 0 {
 		v.Diff = make(map[string]jx.Raw, len(e.Diff))
 		for k, val := range e.Diff {
+			if unchanged(val) {
+				continue
+			}
 			if raw, err := json.Marshal(val); err == nil {
 				v.Diff[k] = jx.Raw(raw)
 			}
@@ -101,8 +104,21 @@ func ViewOf(e *ent.AuditEntry) View {
 	return v
 }
 
-// isBillingHoldChange reads the reason code a hold change set or removed from its diff:
-// a create and a delete carry every field, an update only the changed ones.
+// unchanged reports a diff entry recorded only to classify the entry (schema.Audited
+// Always): its before and after are equal, so a reader is not shown it as a change.
+func unchanged(v any) bool {
+	change, ok := v.(map[string]any)
+	if !ok {
+		return false
+	}
+	from, hasFrom := change["from"]
+	to, hasTo := change["to"]
+	return hasFrom && hasTo && reflect.DeepEqual(from, to)
+}
+
+// isBillingHoldChange reads the reason code a hold change set, renewed or removed from
+// its diff: a create and a delete carry every field and an update always carries the
+// reason code (schema.Audited Always on Hold), changed or not.
 func isBillingHoldChange(e *ent.AuditEntry) bool {
 	if e.TargetType != "hold" {
 		return false

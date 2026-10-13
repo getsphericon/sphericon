@@ -1229,14 +1229,16 @@ func (s *UsageFigure) SetComputedAt(val Timestamp) {
 type UsageMetric string
 
 const (
-	UsageMetricEmailsSent UsageMetric = "emails_sent"
-	UsageMetricContacts   UsageMetric = "contacts"
+	UsageMetricEmailsSent    UsageMetric = "emails_sent"
+	UsageMetricInFlightSends UsageMetric = "in_flight_sends"
+	UsageMetricContacts      UsageMetric = "contacts"
 )
 
 // AllValues returns all UsageMetric values.
 func (UsageMetric) AllValues() []UsageMetric {
 	return []UsageMetric{
 		UsageMetricEmailsSent,
+		UsageMetricInFlightSends,
 		UsageMetricContacts,
 	}
 }
@@ -1245,6 +1247,8 @@ func (UsageMetric) AllValues() []UsageMetric {
 func (s UsageMetric) MarshalText() ([]byte, error) {
 	switch s {
 	case UsageMetricEmailsSent:
+		return []byte(s), nil
+	case UsageMetricInFlightSends:
 		return []byte(s), nil
 	case UsageMetricContacts:
 		return []byte(s), nil
@@ -1258,6 +1262,9 @@ func (s *UsageMetric) UnmarshalText(data []byte) error {
 	switch UsageMetric(data) {
 	case UsageMetricEmailsSent:
 		*s = UsageMetricEmailsSent
+		return nil
+	case UsageMetricInFlightSends:
+		*s = UsageMetricInFlightSends
 		return nil
 	case UsageMetricContacts:
 		*s = UsageMetricContacts

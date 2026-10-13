@@ -191,6 +191,9 @@ func auditChange{{ $N }}(verb string, before, after *{{ $N }}) AuditChange {
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, {{ $N }}AuditSensitive),
 	}
+	{{- range $name := $A.Always }}
+	auditKeep(change.Diff, b, a, "{{ $name }}")
+	{{- end }}
 	{{- if $A.NameField }}
 	{{- if $A.NameIsURL }}
 	change.TargetName = auditURLName(fmt.Sprint(derefAudit(target.{{ $A.NameField.StructField }})))
@@ -215,6 +218,16 @@ func (b *{{ $N }}CreateBulk) auditRebind(c *Client) {
 }
 {{- end }}
 {{ end }}
+
+// auditKeep makes an update's diff carry the field even when it did not change.
+func auditKeep(diff, before, after map[string]any, name string) {
+	if before == nil || after == nil {
+		return
+	}
+	if _, ok := diff[name]; !ok {
+		diff[name] = map[string]any{"from": before[name], "to": after[name]}
+	}
+}
 
 // auditURLName reduces a URL to scheme, host and path for an entry's name snapshot: a
 // query string, a fragment and userinfo may carry a secret. An unparsable value yields

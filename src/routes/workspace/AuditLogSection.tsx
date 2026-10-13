@@ -23,6 +23,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { BillingBadge } from '../../components/BillingBadge.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteAuditExportOptions,
@@ -136,11 +137,7 @@ function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
         <Table.Td>
           <Group gap="xs" wrap="nowrap">
             {entry.action}
-            {entry.billing ? (
-              <Badge color="orange" variant="light">
-                {t(($) => $.settings.auditLog.billingActivity)}
-              </Badge>
-            ) : null}
+            {entry.billing ? <BillingBadge /> : null}
           </Group>
         </Table.Td>
         <Table.Td>
