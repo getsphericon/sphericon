@@ -499,6 +499,7 @@ func auditChangeHold(verb string, before, after *Hold) AuditChange {
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, HoldAuditSensitive),
 	}
+	auditKeep(change.Diff, b, a, "reason_code")
 	change.TargetName = fmt.Sprint(derefAudit(target.Key))
 	return change
 }
@@ -784,6 +785,16 @@ func (b *WebhookEndpointCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
 		x.auditRebind(c)
+	}
+}
+
+// auditKeep makes an update's diff carry the field even when it did not change.
+func auditKeep(diff, before, after map[string]any, name string) {
+	if before == nil || after == nil {
+		return
+	}
+	if _, ok := diff[name]; !ok {
+		diff[name] = map[string]any{"from": before[name], "to": after[name]}
 	}
 }
 

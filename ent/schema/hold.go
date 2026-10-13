@@ -20,7 +20,7 @@ type Hold struct {
 func (Hold) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "holds"},
-		Audited{Action: "hold", NameField: "key"},
+		Audited{Action: "hold", NameField: "key", Always: []string{"reason_code"}},
 	}
 }
 

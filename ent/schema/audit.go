@@ -20,6 +20,10 @@ type Audited struct {
 	// and delete alike (a Contact: its values are personal data, so an immutable log must
 	// never hold them and erasing a Contact needs no rewrite of the log).
 	NamesOnly bool
+	// Always lists fields an update's diff carries even when they did not change, as
+	// {from: v, to: v}: they say what kind of thing the entry is about (a Hold's reason
+	// code), so a reader can classify an update that touched only another field.
+	Always []string
 }
 
 func (Audited) Name() string { return "Audited" }

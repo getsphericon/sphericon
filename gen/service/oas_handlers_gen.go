@@ -1183,8 +1183,9 @@ func (s *Server) handleServiceWorkspaceFeedListRequest(args [0]string, argsEscap
 
 // handleServiceWorkspaceUsageGetRequest handles ServiceWorkspaceUsage_get operation.
 //
-// The figures of one Workspace for a Usage period: Live usage (not final, counting sends still in
-// flight) for the open period, Usage snapshots (final) for a closed one. Never a recount on read.
+// The figures of one Workspace for a Usage period: Live usage (not final, with the in-flight sends as
+// their own figure) for the open period, Usage snapshots (final) for a closed one. Never a recount on
+// read.
 //
 // GET /workspaces/{workspaceId}/usage
 func (s *Server) handleServiceWorkspaceUsageGetRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

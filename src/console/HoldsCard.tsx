@@ -1,6 +1,7 @@
-import { Badge, Card, Group, Stack, Table, Text, Title } from '@mantine/core'
+import { Card, Group, Stack, Table, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
+import { BillingBadge } from '../components/BillingBadge.tsx'
 import type { OperatorHold } from '../generated/operator/types.gen.ts'
 import { formatDateTime } from '../utils/datetime.ts'
 
@@ -39,11 +40,7 @@ export function HoldsCard({ holds }: { holds: OperatorHold[] }) {
                         <Text span size="sm">
                           {hold.reasonCode}
                         </Text>
-                        {hold.billing ? (
-                          <Badge color="orange" variant="light">
-                            {t(($) => $.console.workspace.holds.billing)}
-                          </Badge>
-                        ) : null}
+                        {hold.billing ? <BillingBadge /> : null}
                       </Group>
                     </Table.Td>
                     <Table.Td>{hold.message}</Table.Td>

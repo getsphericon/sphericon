@@ -156,6 +156,7 @@
     "waitNodeDescription": "Pausa antes del siguiente paso.",
     "waitSecondsLabel": "Esperar (segundos)"
   },
+  "billingBadge": "Facturación",
   "broadcasts": {
     "addBroadcast": "Nueva campaña",
     "audienceAll": "Todos los contactos activos",
@@ -330,7 +331,6 @@
         "actor": "Por",
         "actorSystem": "Sistema",
         "actorToken": "Token de API n.º {{id}}",
-        "billingActivity": "Actividad de facturación",
         "empty": "No hay cambios registrados",
         "loadError": "No se pudo cargar el registro de auditoría",
         "loadMore": "Cargar más",
@@ -341,7 +341,6 @@
       "back": "Todos los espacios de trabajo",
       "detailsTitle": "Detalles",
       "holds": {
-        "billing": "Facturación",
         "empty": "Sin retenciones activas.",
         "expires": "Caduca",
         "key": "Clave",
@@ -669,7 +668,6 @@
       "actorSystem": "Sistema",
       "actorToken": "Token de API n.º {{id}}",
       "apply": "Aplicar filtros",
-      "billingActivity": "Actividad de facturación",
       "changedMarker": "modificado",
       "changeHistory": "Historial de cambios",
       "collapse": "Ocultar cambios",

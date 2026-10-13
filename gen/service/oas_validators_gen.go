@@ -615,6 +615,8 @@ func (s UsageMetric) Validate() error {
 	switch s {
 	case "emails_sent":
 		return nil
+	case "in_flight_sends":
+		return nil
 	case "contacts":
 		return nil
 	default:

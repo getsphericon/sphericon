@@ -157,9 +157,9 @@ test('a billing hold beside another hold and a suspension shows all three banner
 const BILLING_URL = 'https://billing.sphericon.test/acme'
 
 test.each(['owner', 'admin'] as const)(
-  'a held workspace links the %s to the configured billing site',
+  'a billing hold links the %s to the configured billing site',
   async (role) => {
-    worker.use(list([workspace({ role, holds: [HOLD], billingUrl: BILLING_URL })]))
+    worker.use(list([workspace({ role, holds: [BILLING_HOLD], billingUrl: BILLING_URL })]))
     const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
     await expect
@@ -169,24 +169,38 @@ test.each(['owner', 'admin'] as const)(
   },
 )
 
-test('a held workspace tells a plain member to contact an Owner or Admin, without a link', async () => {
-  worker.use(list([workspace({ role: 'member', holds: [HOLD], billingUrl: BILLING_URL })]))
+test('a billing hold tells a plain member to contact an Owner or Admin, without a link', async () => {
+  worker.use(list([workspace({ role: 'member', holds: [BILLING_HOLD], billingUrl: BILLING_URL })]))
   const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
   await expect.element(screen.getByText(/contact an Owner or Admin/)).toBeInTheDocument()
   await expect.element(screen.getByRole('link', { name: 'Go to billing' })).not.toBeInTheDocument()
 })
 
-test('with no billing site configured a hold shows no billing link and no billing text', async () => {
-  worker.use(list([workspace({ role: 'owner', holds: [HOLD] })]))
+test('with no billing site configured a billing hold shows no billing link and no billing text', async () => {
+  worker.use(list([workspace({ role: 'owner', holds: [BILLING_HOLD] })]))
   const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
-  await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is paused for billing')).toBeInTheDocument()
   await expect.element(screen.getByRole('link', { name: 'Go to billing' })).not.toBeInTheDocument()
   await expect.element(screen.getByText(/contact an Owner or Admin/)).not.toBeInTheDocument()
 })
 
-test('the billing link rides only the hold banner, not the suspension notice or a free workspace', async () => {
+test.each(['owner', 'member'] as const)(
+  'a generic hold shows no billing link or billing text to a %s',
+  async (role) => {
+    worker.use(list([workspace({ role, holds: [HOLD], billingUrl: BILLING_URL })]))
+    const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+    await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
+    await expect
+      .element(screen.getByRole('link', { name: 'Go to billing' }))
+      .not.toBeInTheDocument()
+    await expect.element(screen.getByText(/contact an Owner or Admin/)).not.toBeInTheDocument()
+  },
+)
+
+test('the billing link rides only a billing hold, not the suspension notice', async () => {
   worker.use(
     list([
       workspace({ role: 'owner', suspendedAt: '2026-02-01T00:00:00Z', billingUrl: BILLING_URL }),
