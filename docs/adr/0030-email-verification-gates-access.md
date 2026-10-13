@@ -30,8 +30,8 @@ misconfiguration must not silently disable the protection.
 
 - Registration creates the first Workspace and sends the welcome email when the address is
   verified, not at sign-up.
-- Registering, and the invite lookup's `hasAccount`, still reveal whether an address is taken;
-  that enumeration is out of scope here.
+- Registering and the invite lookup's `hasAccount` used to reveal whether an address is taken;
+  ADR 0031 closes that.
 - Unverified Users hold their address until pruned: a daily job deletes those with no Membership
   older than `UNVERIFIED_USER_RETENTION_DAYS` (default 7, `0` disables). A pending Invitation to
   a pruned address is untouched; accepting it follows the new-address path.
