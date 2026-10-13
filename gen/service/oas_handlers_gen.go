@@ -35,7 +35,7 @@ func (c *codeRecorder) Unwrap() http.ResponseWriter {
 
 // handleServiceHoldsClearRequest handles ServiceHolds_clear operation.
 //
-// Clear a hold by its key. Idempotent: clearing a missing hold succeeds.
+// Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false.
 //
 // DELETE /workspaces/{workspaceId}/holds/{key}
 func (s *Server) handleServiceHoldsClearRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -414,7 +414,8 @@ func (s *Server) handleServiceHoldsListRequest(args [1]string, argsEscaped bool,
 // handleServiceHoldsSetRequest handles ServiceHolds_set operation.
 //
 // Set a hold under a key, or renew it by setting it again with a later expiry. Idempotent: setting the
-// same hold twice changes nothing.
+// same hold twice changes nothing and says so (`changed` false); renewing with a different expiry is a
+// change.
 //
 // PUT /workspaces/{workspaceId}/holds/{key}
 func (s *Server) handleServiceHoldsSetRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

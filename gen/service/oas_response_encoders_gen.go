@@ -14,8 +14,15 @@ import (
 
 func encodeServiceHoldsClearResponse(response ServiceHoldsClearRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *ServiceHoldsClearNoContent:
-		w.WriteHeader(204)
+	case *HoldClearResult:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -223,7 +230,7 @@ func encodeServiceHoldsListResponse(response ServiceHoldsListRes, w http.Respons
 
 func encodeServiceHoldsSetResponse(response ServiceHoldsSetRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *HoldResource:
+	case *HoldSetResult:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 
