@@ -744,6 +744,7 @@ func (*ProblemDetailsHeaders) serviceHoldsSetRes()          {}
 func (*ProblemDetailsHeaders) serviceIdentityGetRes()       {}
 func (*ProblemDetailsHeaders) serviceUsageListRes()         {}
 func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes() {}
+func (*ProblemDetailsHeaders) serviceWorkspaceUsageGetRes() {}
 
 // ServiceHoldsClearNoContent is response for ServiceHoldsClear operation.
 type ServiceHoldsClearNoContent struct{}
@@ -1109,6 +1110,22 @@ func (s *ServiceWorkspaceResource) SetOwners(val []ServiceWorkspaceOwner) {
 	s.Owners = val
 }
 
+type ServiceWorkspaceUsageGetBadRequest ProblemDetails
+
+func (*ServiceWorkspaceUsageGetBadRequest) serviceWorkspaceUsageGetRes() {}
+
+type ServiceWorkspaceUsageGetForbidden ProblemDetails
+
+func (*ServiceWorkspaceUsageGetForbidden) serviceWorkspaceUsageGetRes() {}
+
+type ServiceWorkspaceUsageGetNotFound ProblemDetails
+
+func (*ServiceWorkspaceUsageGetNotFound) serviceWorkspaceUsageGetRes() {}
+
+type ServiceWorkspaceUsageGetUnauthorized ProblemDetails
+
+func (*ServiceWorkspaceUsageGetUnauthorized) serviceWorkspaceUsageGetRes() {}
+
 type Timestamp time.Time
 
 // One metric's figure for a Workspace over a Usage period.
@@ -1247,3 +1264,5 @@ func (s *WorkspaceUsageResource) SetPeriod(val string) {
 func (s *WorkspaceUsageResource) SetFigures(val []UsageFigure) {
 	s.Figures = val
 }
+
+func (*WorkspaceUsageResource) serviceWorkspaceUsageGetRes() {}

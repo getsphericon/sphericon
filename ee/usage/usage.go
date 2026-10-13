@@ -206,6 +206,24 @@ func List(ctx context.Context, client *ent.Client, period time.Time, p paginatio
 		})
 }
 
+// Get is the stored figures of one Workspace for the period, by metric. It reads the
+// stored rows and never recounts; a Workspace with none yet has no figures.
+func Get(ctx context.Context, s *ent.Scoped, period time.Time) (WorkspaceUsage, error) {
+	period = PeriodOf(period)
+	rows, err := s.Usage().Query().
+		Where(entusage.PeriodStart(period)).
+		Order(ent.Asc(entusage.FieldMetric)).
+		All(ctx)
+	if err != nil {
+		return WorkspaceUsage{}, err
+	}
+	out := WorkspaceUsage{WorkspaceID: s.WorkspaceID(), Period: period}
+	for _, r := range rows {
+		out.Figures = append(out.Figures, Figure{Metric: Metric(r.Metric), Value: r.Value, Final: r.Final, ComputedAt: r.ComputedAt})
+	}
+	return out, nil
+}
+
 // Args is the periodic usage job.
 type Args struct{}
 

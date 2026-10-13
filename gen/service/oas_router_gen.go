@@ -27,6 +27,9 @@ var (
 		"DELETE": "Authorization",
 		"PUT":    "Authorization,Content-Type",
 	}
+	rn11AllowedHeaders = map[string]string{
+		"GET": "Authorization",
+	}
 )
 
 func (s *Server) cutPrefix(path string) (string, bool) {
@@ -182,66 +185,107 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 				switch elem[0] {
-				case '/': // Prefix: "/holds"
+				case '/': // Prefix: "/"
 
-					if l := len("/holds"); len(elem) >= l && elem[0:l] == "/holds" {
+					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 						elem = elem[l:]
 					} else {
 						break
 					}
 
 					if len(elem) == 0 {
-						switch r.Method {
-						case "GET":
-							s.handleServiceHoldsListRequest([1]string{
-								args[0],
-							}, elemIsEscaped, w, r)
-						default:
-							s.notAllowed(w, r, notAllowedParams{
-								allowedMethods: "GET",
-								allowedHeaders: rn5AllowedHeaders,
-								acceptPost:     "",
-								acceptPatch:    "",
-							})
-						}
-
-						return
+						break
 					}
 					switch elem[0] {
-					case '/': // Prefix: "/"
+					case 'h': // Prefix: "holds"
 
-						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+						if l := len("holds"); len(elem) >= l && elem[0:l] == "holds" {
 							elem = elem[l:]
 						} else {
 							break
 						}
 
-						// Param: "key"
-						// Leaf parameter, slashes are prohibited
-						idx := strings.IndexByte(elem, '/')
-						if idx >= 0 {
+						if len(elem) == 0 {
+							switch r.Method {
+							case "GET":
+								s.handleServiceHoldsListRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: rn5AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "key"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[1] = elem
+							elem = ""
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "DELETE":
+									s.handleServiceHoldsClearRequest([2]string{
+										args[0],
+										args[1],
+									}, elemIsEscaped, w, r)
+								case "PUT":
+									s.handleServiceHoldsSetRequest([2]string{
+										args[0],
+										args[1],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "DELETE,PUT",
+										allowedHeaders: rn4AllowedHeaders,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					case 'u': // Prefix: "usage"
+
+						if l := len("usage"); len(elem) >= l && elem[0:l] == "usage" {
+							elem = elem[l:]
+						} else {
 							break
 						}
-						args[1] = elem
-						elem = ""
 
 						if len(elem) == 0 {
 							// Leaf node.
 							switch r.Method {
-							case "DELETE":
-								s.handleServiceHoldsClearRequest([2]string{
+							case "GET":
+								s.handleServiceWorkspaceUsageGetRequest([1]string{
 									args[0],
-									args[1],
-								}, elemIsEscaped, w, r)
-							case "PUT":
-								s.handleServiceHoldsSetRequest([2]string{
-									args[0],
-									args[1],
 								}, elemIsEscaped, w, r)
 							default:
 								s.notAllowed(w, r, notAllowedParams{
-									allowedMethods: "DELETE,PUT",
-									allowedHeaders: rn4AllowedHeaders,
+									allowedMethods: "GET",
+									allowedHeaders: rn11AllowedHeaders,
 									acceptPost:     "",
 									acceptPatch:    "",
 								})
@@ -456,67 +500,106 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					break
 				}
 				switch elem[0] {
-				case '/': // Prefix: "/holds"
+				case '/': // Prefix: "/"
 
-					if l := len("/holds"); len(elem) >= l && elem[0:l] == "/holds" {
+					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 						elem = elem[l:]
 					} else {
 						break
 					}
 
 					if len(elem) == 0 {
-						switch method {
-						case "GET":
-							r.name = ServiceHoldsListOperation
-							r.summary = ""
-							r.operationID = "ServiceHolds_list"
-							r.operationGroup = ""
-							r.pathPattern = "/workspaces/{workspaceId}/holds"
-							r.args = args
-							r.count = 1
-							return r, true
-						default:
-							return
-						}
+						break
 					}
 					switch elem[0] {
-					case '/': // Prefix: "/"
+					case 'h': // Prefix: "holds"
 
-						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+						if l := len("holds"); len(elem) >= l && elem[0:l] == "holds" {
 							elem = elem[l:]
 						} else {
 							break
 						}
 
-						// Param: "key"
-						// Leaf parameter, slashes are prohibited
-						idx := strings.IndexByte(elem, '/')
-						if idx >= 0 {
+						if len(elem) == 0 {
+							switch method {
+							case "GET":
+								r.name = ServiceHoldsListOperation
+								r.summary = ""
+								r.operationID = "ServiceHolds_list"
+								r.operationGroup = ""
+								r.pathPattern = "/workspaces/{workspaceId}/holds"
+								r.args = args
+								r.count = 1
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "key"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[1] = elem
+							elem = ""
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "DELETE":
+									r.name = ServiceHoldsClearOperation
+									r.summary = ""
+									r.operationID = "ServiceHolds_clear"
+									r.operationGroup = ""
+									r.pathPattern = "/workspaces/{workspaceId}/holds/{key}"
+									r.args = args
+									r.count = 2
+									return r, true
+								case "PUT":
+									r.name = ServiceHoldsSetOperation
+									r.summary = ""
+									r.operationID = "ServiceHolds_set"
+									r.operationGroup = ""
+									r.pathPattern = "/workspaces/{workspaceId}/holds/{key}"
+									r.args = args
+									r.count = 2
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					case 'u': // Prefix: "usage"
+
+						if l := len("usage"); len(elem) >= l && elem[0:l] == "usage" {
+							elem = elem[l:]
+						} else {
 							break
 						}
-						args[1] = elem
-						elem = ""
 
 						if len(elem) == 0 {
 							// Leaf node.
 							switch method {
-							case "DELETE":
-								r.name = ServiceHoldsClearOperation
+							case "GET":
+								r.name = ServiceWorkspaceUsageGetOperation
 								r.summary = ""
-								r.operationID = "ServiceHolds_clear"
+								r.operationID = "ServiceWorkspaceUsage_get"
 								r.operationGroup = ""
-								r.pathPattern = "/workspaces/{workspaceId}/holds/{key}"
+								r.pathPattern = "/workspaces/{workspaceId}/usage"
 								r.args = args
-								r.count = 2
-								return r, true
-							case "PUT":
-								r.name = ServiceHoldsSetOperation
-								r.summary = ""
-								r.operationID = "ServiceHolds_set"
-								r.operationGroup = ""
-								r.pathPattern = "/workspaces/{workspaceId}/holds/{key}"
-								r.args = args
-								r.count = 2
+								r.count = 1
 								return r, true
 							default:
 								return

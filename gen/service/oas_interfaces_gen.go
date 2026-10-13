@@ -24,3 +24,7 @@ type ServiceUsageListRes interface {
 type ServiceWorkspaceFeedListRes interface {
 	serviceWorkspaceFeedListRes()
 }
+
+type ServiceWorkspaceUsageGetRes interface {
+	serviceWorkspaceUsageGetRes()
+}
