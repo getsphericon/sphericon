@@ -36,7 +36,8 @@ func (User) Fields() []ent.Field {
 			Sensitive().
 			Optional(),
 		// When the user confirmed ownership of their email (nullable = unverified).
-		// Verification is soft: login is not gated on it; the UI surfaces a banner.
+		// Login is gated on it (ADR 0030): a User without it is an Unverified User, deleted
+		// by the prune job once it is stale and holds no Membership.
 		field.Time("email_verified_at").
 			Optional().
 			Nillable(),

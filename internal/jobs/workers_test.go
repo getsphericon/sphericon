@@ -63,7 +63,7 @@ func newRiverEnv(t *testing.T) *riverEnv {
 	require.NoError(t, err)
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs))
-	client, err := jobs.NewClient(pool, env.DB, env.SQLDB, mod, cipher, env.SystemMail, nil, registry.Default(), cfg.AppURL, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention})
+	client, err := jobs.NewClient(pool, env.DB, env.SQLDB, mod, cipher, env.SystemMail, nil, registry.Default(), cfg.AppURL, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
 	require.NoError(t, err)
 	e := &riverEnv{TestEnv: env, pool: pool, client: client, cipher: cipher, cfg: cfg, sender: fs}
 	e.clearQueue(t)
