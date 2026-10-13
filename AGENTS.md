@@ -325,6 +325,13 @@ and Caddy already does the `/api` rewrite and the path routing in one file.
   `Merge branch …`; the header fits 120 characters and each body line 100.
 - A new environment variable gets one row in the env table of `docs/self-hosting.md`, the only
   table (`mise run check:env`); the README links to it.
+- **Agent guidance lives in this file, not in personal agent memory.** The repo has several
+  developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
+  memory.
+- **Clean up after a merge.** Once a PR is merged, remove its worktree and delete its local and
+  remote branch (`git worktree remove <path>`, `git branch -D <branch>`,
+  `git push origin --delete <branch>`) right away, without asking. Only the worktree and branch
+  made for that PR.
 - ADR numbers are unique (`mise run check:adr`). Take the next free number when you add an ADR,
   and re-check after merging `main`: parallel branches pick the same one.
 - After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the generated output.
