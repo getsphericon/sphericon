@@ -13,8 +13,16 @@ const (
 	prefixAlphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
 	prefixLen      = 12
 	secretLen      = 40
-	bcryptCost     = 12
 )
+
+// tokenHashCost is the bcrypt cost of a newly hashed token secret. Verification reads the cost
+// from the stored hash, so changing it never invalidates a hash made earlier.
+var tokenHashCost = 12
+
+// UseMinTokenHashCost lowers the cost of every secret hashed from now on to bcrypt's minimum.
+// Only tests call it: at cost 12 each created token takes about 0.3s, which dominates a suite
+// that creates one per request.
+func UseMinTokenHashCost() { tokenHashCost = bcrypt.MinCost }
 
 var tokenRe = regexp.MustCompile(`^omtk_([a-z0-9]+)_([A-Za-z0-9_-]+)$`)
 
@@ -62,7 +70,7 @@ func GenerateIngestKey() (string, error) {
 }
 
 func HashTokenSecret(secret string) (string, error) {
-	h, err := bcrypt.GenerateFromPassword([]byte(secret), bcryptCost)
+	h, err := bcrypt.GenerateFromPassword([]byte(secret), tokenHashCost)
 	if err != nil {
 		return "", err
 	}
