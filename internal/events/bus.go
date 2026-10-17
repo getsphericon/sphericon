@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/ThreeDotsLabs/watermill"
-	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v2/pkg/sql"
+	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v4/pkg/sql"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/workspacefeed"
@@ -89,7 +89,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 
 	// watermill-sql forbids AutoInitializeSchema on a tx handle (a CREATE TABLE
 	// would implicitly commit). The outbox table is created up front by InitSchema.
-	wm, err := watermillsql.NewPublisher(sqlTx, watermillsql.PublisherConfig{
+	wm, err := watermillsql.NewPublisher(watermillsql.TxFromStdSQL(sqlTx), watermillsql.PublisherConfig{
 		SchemaAdapter:        outboxSchema,
 		AutoInitializeSchema: false,
 	}, b.logger)
@@ -202,7 +202,18 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 // a steady stream of dead tuples; the offsets table is a handful of rows updated
 // on every ack. Vacuuming both at a low dead-tuple ratio keeps bloat small.
 func InitSchema(ctx context.Context, db *sql.DB) error {
-	queries := append(outboxSchema.SchemaInitializingQueries(TopicDomainEvents), outboxOffsets.SchemaInitializingQueries(TopicDomainEvents)...)
+	schemaQueries, err := outboxSchema.SchemaInitializingQueries(watermillsql.SchemaInitializingQueriesParams{Topic: TopicDomainEvents})
+	if err != nil {
+		return fmt.Errorf("outbox schema queries: %w", err)
+	}
+	offsetsQueries, err := outboxOffsets.SchemaInitializingQueries(watermillsql.OffsetsSchemaInitializingQueriesParams{Topic: TopicDomainEvents})
+	if err != nil {
+		return fmt.Errorf("outbox offsets schema queries: %w", err)
+	}
+	queries := make([]string, 0, len(schemaQueries)+len(offsetsQueries)+2)
+	for _, q := range append(schemaQueries, offsetsQueries...) {
+		queries = append(queries, q.Query)
+	}
 	queries = append(queries,
 		fmt.Sprintf(`ALTER TABLE %s SET (autovacuum_vacuum_scale_factor = 0.01, autovacuum_vacuum_threshold = 1000, autovacuum_analyze_scale_factor = 0.02)`, outboxTable()),
 		fmt.Sprintf(`ALTER TABLE %s SET (autovacuum_vacuum_scale_factor = 0, autovacuum_vacuum_threshold = 50, autovacuum_analyze_scale_factor = 0, autovacuum_analyze_threshold = 50)`, offsetsTable()),
