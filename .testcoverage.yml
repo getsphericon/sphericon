@@ -1,0 +1,17 @@
+# go-test-coverage config (mise run test:cover). The profile is taken over cmd/,
+# internal/ and ee/ with -coverpkg, so a package is credited for what every test in
+# the repo runs through it, not only its own tests.
+profile: cover.out
+threshold:
+  # The floor the suite holds; raise it when coverage rises, never lower it.
+  # Measured 87.4 when it was introduced; the floor leaves room below.
+  total: 85
+exclude:
+  paths:
+    # Generated code: ogen servers, goverter converters, moq mocks, fixture catalog.
+    - ^github\.com/getsphericon/sphericon/gen/
+    - ^github\.com/getsphericon/sphericon/ent/
+    - _gen\.go$
+    - _gen_test\.go$
+    # The test harness is test code, not product code.
+    - ^github\.com/getsphericon/sphericon/internal/testhelper/

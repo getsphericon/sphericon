@@ -193,6 +193,15 @@ env = { APP_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 usage = 'arg "[go_test_args]" var=#true default="./..." help="packages and flags for go test"'
 run = 'eval "set -- $usage_go_test_args"; go test -p 1 -shuffle=on "$@"'
 
+["test:cover"]
+description = "Go tests with coverage over cmd/ and internal/ (ee/ too), failing under the total in .testcoverage.yml"
+depends = ["db:up"]
+env = { APP_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
+run = [
+  "go test -p 1 -shuffle=on ./... -coverpkg=./cmd/...,./internal/...,./ee/... -coverprofile=cover.out -covermode=atomic",
+  "go tool go-test-coverage --config=.testcoverage.yml",
+]
+
 ["test:e2e"]
 description = "End-to-end suite (ADR 0024): rebuilds the dedicated e2e DB, starts its own Mailpit, boots the app in-process; pass `go test` flags after `--`; HOLD=true keeps the stack up after the run for inspection"
 depends = ["db:up"]
@@ -376,12 +385,12 @@ run = [
 ]
 
 ["check:be"]
-description = "golangci-lint, govulncheck and go.mod tidiness"
-run = [
-  "golangci-lint run --allow-serial-runners ./...",
-  "go tool govulncheck ./...",
-  "go mod tidy -diff",
-]
+description = "golangci-lint (incl. the gofmt formatter) and go.mod tidiness"
+run = ["golangci-lint run --allow-serial-runners ./...", "go mod tidy -diff"]
+
+["check:vulns"]
+description = "No call to a known-vulnerable dependency or stdlib function (network: the vulnerability database). Not part of check: a new advisory fails it with no change on our side, so the nightly workflow runs it"
+run = "go tool govulncheck ./..."
 
 ["check:ast"]
 description = "Project-specific syntax rules (sgconfig.yml, ast-grep/): tests, then scan"

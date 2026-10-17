@@ -59,6 +59,18 @@ local linters = new Mapping {
 steps = linters
 
 hooks {
+    // Whole-project checks that need the full program (tsc, golangci-lint, go.mod
+    // tidiness); too slow per commit, so they gate the push instead.
+    ["pre-push"] {
+        steps {
+            ["check-fe"] {
+                check = "mise run check:fe"
+            }
+            ["check-be"] {
+                check = "mise run check:be"
+            }
+        }
+    }
     // Conventional Commits drive release-please; CI re-checks the pushed range.
     ["commit-msg"] {
         steps {
