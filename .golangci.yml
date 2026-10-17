@@ -3,6 +3,10 @@ run:
   # Lint the end-to-end suite too (e2e/ is behind this build tag, ADR 0024).
   build-tags:
     - e2e
+formatters:
+  enable:
+    - gofmt
+
 linters:
   default: standard
   enable:

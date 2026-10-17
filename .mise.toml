@@ -24,9 +24,11 @@ jq = "latest"
 shellcheck = "latest"
 terraform = "latest"
 
-# Install the git hooks (hk.pkl) once the toolchain is in place.
+# Install the git hooks (hk.pkl) once the toolchain is in place. `--mise` runs hk through
+# `mise x`, so a hook needs no shim on PATH. hk's version must match the package:// import
+# at the top of hk.pkl: bump both together.
 [hooks]
-postinstall = "hk install"
+postinstall = "hk install --mise"
 
 # Keep dependencies in sync when the lockfiles change (checked on the shell prompt).
 [[watch_files]]

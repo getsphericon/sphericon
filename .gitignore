@@ -84,6 +84,7 @@ internal/server/assets/spa/
 
 # compiled Go binaries / goreleaser output
 bin/
+cover.out
 /dist-release/
 
 # personal mise overrides
