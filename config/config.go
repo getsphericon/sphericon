@@ -168,8 +168,8 @@ type Config struct {
 	LogFormat string
 
 	// OtelServiceName is the service.name reported on OTel traces/metrics. The
-	// OTLP export target itself comes from the standard OTEL_EXPORTER_OTLP_* env
-	// vars (read by the SDK).
+	// export destinations come from the declarative config file OTEL_CONFIG_FILE
+	// names (read by otelconf in internal/telemetry).
 	OtelServiceName string
 
 	// MetricsAddr (host:port) is where the opt-in Prometheus listener binds. Empty

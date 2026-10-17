@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 
@@ -16,13 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-var otlpEnvKeys = []string{
-	"OTEL_EXPORTER_OTLP_ENDPOINT",
-	"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-	"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
-}
-
-// isolate restores the process-wide state Setup mutates and clears the OTLP env.
+// isolate restores the process-wide state Setup mutates and clears OTEL_CONFIG_FILE.
 func isolate(t *testing.T) {
 	t.Helper()
 	testhelper.IsolateOtel(t)
@@ -50,23 +46,10 @@ func TestMetricsHandlerIsA503StubBeforeSetup(t *testing.T) {
 	assert.Contains(t, body, "telemetry not configured")
 }
 
-func TestOTLPEnabled(t *testing.T) {
-	isolate(t)
-	assert.False(t, otlpEnabled())
-
-	for _, k := range otlpEnvKeys {
-		t.Run(k, func(t *testing.T) {
-			t.Setenv(k, "http://collector:4318")
-			assert.True(t, otlpEnabled())
-		})
-	}
-}
-
-// Without an OTLP endpoint Setup serves Prometheus metrics, tags the resource
-// and leaves the tracer provider alone.
+// Without a config file Setup serves Prometheus metrics, tags the resource
+// and leaves the tracer provider a no-op.
 func TestSetupPullOnly(t *testing.T) {
 	isolate(t)
-	tpBefore := otel.GetTracerProvider()
 
 	stop, err := Setup(context.Background(), &config.Config{OtelServiceName: "sphericon-test"}, "test", BuildInfo{Version: "v1", Commit: "abc"})
 	require.NoError(t, err)
@@ -79,13 +62,14 @@ func TestSetupPullOnly(t *testing.T) {
 	assert.Contains(t, body, `service_version="v1"`)
 	assert.Contains(t, body, `service_commit="abc"`)
 
-	assert.Same(t, tpBefore, otel.GetTracerProvider(), "no tracer provider is registered without OTLP")
+	_, span := otel.Tracer("test").Start(context.Background(), "work")
+	assert.False(t, span.SpanContext().IsValid(), "the tracer provider is a no-op without a config file")
 	assert.Contains(t, otel.GetTextMapPropagator().Fields(), "traceparent")
 
 	require.NoError(t, stop(context.Background()))
 }
 
-// With an OTLP endpoint configured, traces and metrics push to it and shutdown
+// With OTEL_CONFIG_FILE naming an OTLP exporter, traces and metrics push to it and shutdown
 // flushes both.
 func TestSetupWithOTLPPush(t *testing.T) {
 	isolate(t)
@@ -97,14 +81,30 @@ func TestSetupWithOTLPPush(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	t.Cleanup(collector.Close)
-	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", collector.URL)
+	file := filepath.Join(t.TempDir(), "otel.yaml")
+	require.NoError(t, os.WriteFile(file, []byte(`file_format: "1.0"
+tracer_provider:
+  processors:
+    - simple:
+        exporter:
+          otlp_http:
+            endpoint: `+collector.URL+`/v1/traces
+meter_provider:
+  readers:
+    - periodic:
+        interval: 100000
+        exporter:
+          otlp_http:
+            endpoint: `+collector.URL+`/v1/metrics
+`), 0o600))
+	t.Setenv("OTEL_CONFIG_FILE", file)
 
 	ctx := context.Background()
 	stop, err := Setup(ctx, &config.Config{OtelServiceName: "sphericon-test"}, "test", BuildInfo{})
 	require.NoError(t, err)
 
 	_, span := otel.Tracer("test").Start(ctx, "work")
-	assert.True(t, span.SpanContext().IsValid(), "a real tracer provider is installed when OTLP is on")
+	assert.True(t, span.SpanContext().IsValid(), "a real tracer provider is installed by the config file")
 	span.End()
 
 	require.NoError(t, stop(ctx))
