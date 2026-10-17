@@ -281,7 +281,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `internal/jobs` uses river (Postgres-backed queue). Email via `internal/messaging`
   (per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
   (wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
-  bytes for SES `SendRawEmail`.
+  bytes for SES v2 `SendEmail` (raw content).
 - The tracker snippet (`/t.js`) is the `@sphericon/analytics` IIFE bundle, built and embedded:
   `mise run build:tracker` copies `packages/analytics/dist/t.js` into `internal/server/assets/`.
 

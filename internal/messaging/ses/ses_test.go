@@ -3,11 +3,11 @@ package ses_test
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,26 +17,39 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 )
 
-// sesAPI is an httptest stand-in for the SES query API; the provider's
+// sesAPI is an httptest stand-in for the SES v2 REST API; the provider's
 // Config.Endpoint override points the real aws-sdk client at it.
 type sesAPI struct {
 	srv  *httptest.Server
-	form url.Values
+	path string
+	body map[string]any
 	auth string
 	hits int
 }
 
 func newSESAPI(t *testing.T, status int, body string) *sesAPI {
+	return newSESAPIWithErrorType(t, status, "", body)
+}
+
+// newSESAPIWithErrorType answers with the x-amzn-ErrorType header the v2 REST
+// protocol uses to name an error.
+func newSESAPIWithErrorType(t *testing.T, status int, errorType, body string) *sesAPI {
 	t.Helper()
 	api := &sesAPI{}
 	api.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		api.hits++
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		api.form, err = url.ParseQuery(string(raw))
-		require.NoError(t, err)
+		api.body = nil
+		if len(raw) > 0 {
+			require.NoError(t, json.Unmarshal(raw, &api.body))
+		}
+		api.path = r.URL.Path
 		api.auth = r.Header.Get("Authorization")
-		w.Header().Set("Content-Type", "text/xml")
+		w.Header().Set("Content-Type", "application/json")
+		if errorType != "" {
+			w.Header().Set("X-Amzn-ErrorType", errorType)
+		}
 		w.WriteHeader(status)
 		_, _ = io.WriteString(w, body)
 	}))
@@ -44,18 +57,12 @@ func newSESAPI(t *testing.T, status int, body string) *sesAPI {
 	return api
 }
 
-const okBody = `<SendRawEmailResponse xmlns="http://ses.amazonaws.com/doc/2010-12-01/">
-<SendRawEmailResult><MessageId>ses-msg-42</MessageId></SendRawEmailResult>
-<ResponseMetadata><RequestId>req-1</RequestId></ResponseMetadata></SendRawEmailResponse>`
+const okBody = `{"MessageId":"ses-msg-42"}`
 
-const rejectedBody = `<ErrorResponse xmlns="http://ses.amazonaws.com/doc/2010-12-01/">
-<Error><Type>Sender</Type><Code>MessageRejected</Code><Message>identity not verified</Message></Error>
-<RequestId>req-2</RequestId></ErrorResponse>`
+const rejectedBody = `{"message":"identity not verified"}`
 
 func throttledBody(message string) string {
-	return `<ErrorResponse xmlns="http://ses.amazonaws.com/doc/2010-12-01/">
-<Error><Type>Sender</Type><Code>Throttling</Code><Message>` + message + `</Message></Error>
-<RequestId>req-3</RequestId></ErrorResponse>`
+	return `{"message":"` + message + `"}`
 }
 
 func build(t *testing.T, endpoint string) messaging.EmailSender {
@@ -68,7 +75,7 @@ func build(t *testing.T, endpoint string) messaging.EmailSender {
 	return sender
 }
 
-func TestSendRawEmail(t *testing.T) {
+func TestSendRawContent(t *testing.T) {
 	api := newSESAPI(t, http.StatusOK, okBody)
 	sender := build(t, api.srv.URL)
 
@@ -78,13 +85,14 @@ func TestSendRawEmail(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "ses-msg-42", receipt.MessageID)
 
-	assert.Equal(t, "SendRawEmail", api.form.Get("Action"))
-	assert.Equal(t, "noreply@acme.com", api.form.Get("Source"), "envelope Source falls back to the integration From")
-	assert.Equal(t, "rcpt@example.com", api.form.Get("Destinations.member.1"))
+	assert.Equal(t, "/v2/email/outbound-emails", api.path)
+	assert.Equal(t, "noreply@acme.com", api.body["FromEmailAddress"], "envelope sender falls back to the integration From")
+	assert.Equal(t, []any{"rcpt@example.com"}, api.body["Destination"].(map[string]any)["ToAddresses"])
 	assert.Contains(t, api.auth, "AKIATEST/", "request is SigV4-signed with the configured key")
 	assert.Contains(t, api.auth, "/eu-west-1/ses/")
 
-	mime, err := base64.StdEncoding.DecodeString(api.form.Get("RawMessage.Data"))
+	data := api.body["Content"].(map[string]any)["Raw"].(map[string]any)["Data"].(string)
+	mime, err := base64.StdEncoding.DecodeString(data)
 	require.NoError(t, err)
 	assert.Contains(t, string(mime), "Subject: Hello")
 	assert.Contains(t, string(mime), "\"Acme\" <noreply@acme.com>")
@@ -99,7 +107,7 @@ func TestSendMessageFromOverridesDefault(t *testing.T) {
 		From: "news@acme.com", To: "rcpt@example.com", Subject: "s", Text: "x",
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "news@acme.com", api.form.Get("Source"))
+	assert.Equal(t, "news@acme.com", api.body["FromEmailAddress"])
 }
 
 func TestSendErrors(t *testing.T) {
@@ -114,27 +122,27 @@ func TestSendErrors(t *testing.T) {
 	})
 
 	t.Run("API rejection is wrapped", func(t *testing.T) {
-		api := newSESAPI(t, http.StatusBadRequest, rejectedBody)
+		api := newSESAPIWithErrorType(t, http.StatusBadRequest, "MessageRejected", rejectedBody)
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
 		assert.ErrorContains(t, err, "ses: send")
 		assert.ErrorContains(t, err, "MessageRejected")
 	})
 
 	t.Run("a Throttling reply is classified as too fast", func(t *testing.T) {
-		api := newSESAPI(t, http.StatusBadRequest, throttledBody("Maximum sending rate exceeded."))
+		api := newSESAPIWithErrorType(t, http.StatusTooManyRequests, "TooManyRequestsException", throttledBody("Maximum sending rate exceeded."))
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
 		assert.ErrorIs(t, err, messaging.ErrBusy)
 		assert.NotErrorIs(t, err, messaging.ErrQuotaExceeded)
 	})
 
 	t.Run("daily quota is classified as quota exceeded", func(t *testing.T) {
-		api := newSESAPI(t, http.StatusBadRequest, throttledBody("Daily message quota exceeded."))
+		api := newSESAPIWithErrorType(t, http.StatusTooManyRequests, "TooManyRequestsException", throttledBody("Daily message quota exceeded."))
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
 		assert.ErrorIs(t, err, messaging.ErrQuotaExceeded)
 	})
 
 	t.Run("a rejected message is not busy", func(t *testing.T) {
-		api := newSESAPI(t, http.StatusBadRequest, rejectedBody)
+		api := newSESAPIWithErrorType(t, http.StatusBadRequest, "MessageRejected", rejectedBody)
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
 		assert.NotErrorIs(t, err, messaging.ErrBusy)
 		assert.NotErrorIs(t, err, messaging.ErrQuotaExceeded)
@@ -192,9 +200,7 @@ func TestBuildRejectsMalformedConfig(t *testing.T) {
 }
 
 func quotaBody(max24h, rate string) string {
-	return `<GetSendQuotaResponse xmlns="http://ses.amazonaws.com/doc/2010-12-01/">
-<GetSendQuotaResult><Max24HourSend>` + max24h + `</Max24HourSend><MaxSendRate>` + rate + `</MaxSendRate><SentLast24Hours>7.0</SentLast24Hours></GetSendQuotaResult>
-<ResponseMetadata><RequestId>req-4</RequestId></ResponseMetadata></GetSendQuotaResponse>`
+	return `{"SendQuota":{"Max24HourSend":` + max24h + `,"MaxSendRate":` + rate + `,"SentLast24Hours":7.0}}`
 }
 
 func quotaReader(t *testing.T, endpoint string) messaging.QuotaReader {
@@ -211,7 +217,7 @@ func TestSendQuota(t *testing.T) {
 		api := newSESAPI(t, http.StatusOK, quotaBody("50000.0", "14.0"))
 		got, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, "GetSendQuota", api.form.Get("Action"))
+		assert.Equal(t, "/v2/email/account", api.path)
 		require.NotNil(t, got.PerSecond)
 		require.NotNil(t, got.PerDay)
 		assert.Equal(t, 14, *got.PerSecond)
@@ -234,9 +240,7 @@ func TestSendQuota(t *testing.T) {
 	})
 
 	t.Run("a denied lookup is an error", func(t *testing.T) {
-		api := newSESAPI(t, http.StatusForbidden, `<ErrorResponse xmlns="http://ses.amazonaws.com/doc/2010-12-01/">
-<Error><Type>Sender</Type><Code>AccessDenied</Code><Message>not authorized to perform ses:GetSendQuota</Message></Error>
-<RequestId>req-5</RequestId></ErrorResponse>`)
+		api := newSESAPIWithErrorType(t, http.StatusForbidden, "AccessDeniedException", `{"message":"not authorized to perform ses:GetAccount"}`)
 		_, err := quotaReader(t, api.srv.URL).SendQuota(ctx)
 		assert.ErrorContains(t, err, "ses: get send quota")
 	})

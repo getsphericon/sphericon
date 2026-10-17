@@ -716,7 +716,7 @@ export default interface Resources {
           "perSecond": "Max per second",
           "perSecondShort": "Per second",
           "quotaUnavailableTitle": "{{name}}: the provider's send quota could not be read",
-          "quotaUnavailableWarning": "Without the provider quota, only the limit you set applies (or none). Grant the ses:GetSendQuota permission to the access key; it is retried hourly and when you save the provider. Sending is not affected.",
+          "quotaUnavailableWarning": "Without the provider quota, only the limit you set applies (or none). Grant the ses:GetAccount permission to the access key; it is retried hourly and when you save the provider. Sending is not affected.",
           "save": "Save limits",
           "saveError": "Failed to save limits",
           "saved": "Limits saved",

@@ -44,12 +44,12 @@ resource "aws_iam_user" "ses" {
 
 data "aws_iam_policy_document" "ses_send" {
   statement {
-    actions   = ["ses:SendRawEmail"]
+    actions   = ["ses:SendEmail"]
     resources = [aws_sesv2_email_identity.this.arn]
   }
   # The provider reads the send quota (it has no resource-level permission).
   statement {
-    actions   = ["ses:GetSendQuota"]
+    actions   = ["ses:GetAccount"]
     resources = ["*"]
   }
 }
