@@ -12,12 +12,12 @@ We add a **Send rate limit** to the **Integration** (GLOSSARY) and a new reversi
 ## Decisions
 
 - **The ceiling lives on the Integration**, because the provider account is what actually limits: `max per second`
-  and `max per rolling 24 hours`. Defaults come from the provider where it reports them (SES `GetSendQuota`); an
+  and `max per rolling 24 hours`. Defaults come from the provider where it reports them (SES `GetAccount`); an
   operator-set value overrides; SMTP has no default (unlimited) because the remote limit is unknown. An Integration
   belongs to one Workspace, so one Workspace's backlog cannot slow another's.
-- **Provider quota refresh.** SES `GetSendQuota` is read when the Integration is saved and then hourly by the
+- **Provider quota refresh.** SES `GetAccount` is read when the Integration is saved and then hourly by the
   existing periodic job, because SES quotas grow as an account matures. If the call fails (missing
-  `ses:GetSendQuota` permission, an SES-compatible service such as Postbox), the manual value applies, or the
+  `ses:GetAccount` permission, an SES-compatible service such as Postbox), the manual value applies, or the
   Integration is unlimited, with a warning; a failed call never blocks sending. A failure after an earlier success
   keeps the last known provider values (a transient blip must not lift a ceiling), and only raises the warning.
   The save enqueues the lookup as a job, so the save's own response does not carry its result: the provider ceiling

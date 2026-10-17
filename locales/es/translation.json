@@ -744,7 +744,7 @@
         "perSecond": "Máximo por segundo",
         "perSecondShort": "Por segundo",
         "quotaUnavailableTitle": "{{name}}: no se pudo leer la cuota de envío del proveedor",
-        "quotaUnavailableWarning": "Sin la cuota del proveedor, solo se aplica el límite que usted definió (o ninguno). Conceda el permiso ses:GetSendQuota a la clave de acceso; se reintenta cada hora y al guardar el proveedor. El envío no se bloquea.",
+        "quotaUnavailableWarning": "Sin la cuota del proveedor, solo se aplica el límite que usted definió (o ninguno). Conceda el permiso ses:GetAccount a la clave de acceso; se reintenta cada hora y al guardar el proveedor. El envío no se bloquea.",
         "save": "Guardar límites",
         "saved": "Límites guardados",
         "saveError": "No se pudieron guardar los límites",

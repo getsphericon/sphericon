@@ -10,14 +10,7 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-// otlpEnvKeys are the variables that switch telemetry.Setup into OTLP push mode.
-var otlpEnvKeys = []string{
-	"OTEL_EXPORTER_OTLP_ENDPOINT",
-	"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-	"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
-}
-
-// IsolateOtel clears the OTLP env and restores the process-wide OTel globals when
+// IsolateOtel clears the OTel config file variable and restores the process-wide OTel globals when
 // the test ends, so a test may call telemetry.Setup without leaking providers.
 func IsolateOtel(t *testing.T) {
 	t.Helper()
@@ -29,9 +22,7 @@ func IsolateOtel(t *testing.T) {
 		otel.SetMeterProvider(prevMP)
 		otel.SetTextMapPropagator(prevProp)
 	})
-	for _, k := range otlpEnvKeys {
-		t.Setenv(k, "")
-	}
+	t.Setenv("OTEL_CONFIG_FILE", "")
 }
 
 // InstallOtel isolates the OTel globals (IsolateOtel), runs setup (telemetry.Setup

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
-	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v2/pkg/sql"
+	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v4/pkg/sql"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -283,7 +283,7 @@ func automationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 // dedicated consumer group (its own offset cursor). InitializeSchema is false —
 // InitSchema creates the message + offsets tables at boot.
 func NewSubscriber(db *sql.DB, consumerGroup string) (message.Subscriber, error) {
-	return watermillsql.NewSubscriber(db, watermillsql.SubscriberConfig{
+	return watermillsql.NewSubscriber(watermillsql.BeginnerFromStdSQL(db), watermillsql.SubscriberConfig{
 		SchemaAdapter:    outboxSchema,
 		OffsetsAdapter:   outboxOffsets,
 		InitializeSchema: false,

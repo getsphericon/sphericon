@@ -1,9 +1,9 @@
 // Package ses implements the Amazon SES email provider. It builds the message
 // with the shared messaging.BuildMIME (same MIME as the smtp provider) and
-// hands the raw bytes to SES SendRawEmail, so any custom headers (List-Unsubscribe,
-// DKIM later) survive intact — SendEmail's structured API would strip them.
+// hands the raw bytes to the SES v2 SendEmail (Content.Raw), so any custom headers
+// (List-Unsubscribe, DKIM later) survive intact — the structured Simple content would strip them.
 //
-// The client is built directly on aws-sdk-go-v2's ses client with an optional
+// The client is built directly on aws-sdk-go-v2's sesv2 client with an optional
 // BaseEndpoint override so the same provider can target AWS SES or an
 // SES-compatible service such as Yandex Cloud Postbox.
 package ses
@@ -19,8 +19,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/ses"
-	"github.com/aws/aws-sdk-go-v2/service/ses/types"
+	"github.com/aws/aws-sdk-go-v2/service/sesv2"
+	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
 
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -133,12 +133,12 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 	if err != nil {
 		return messaging.Receipt{}, err
 	}
-	out, err := client.SendRawEmail(ctx, &ses.SendRawEmailInput{
-		// Source is the envelope sender; the MIME From header carries the display
-		// name. It must match a verified SES identity.
-		Source:       aws.String(msg.From),
-		Destinations: []string{msg.To},
-		RawMessage:   &types.RawMessage{Data: raw.Bytes()},
+	out, err := client.SendEmail(ctx, &sesv2.SendEmailInput{
+		// FromEmailAddress is the envelope sender; the MIME From header carries the
+		// display name. It must match a verified SES identity.
+		FromEmailAddress: aws.String(msg.From),
+		Destination:      &types.Destination{ToAddresses: []string{msg.To}},
+		Content:          &types.EmailContent{Raw: &types.RawMessage{Data: raw.Bytes()}},
 	})
 	if err != nil {
 		if busy := messaging.ClassifyReply(err.Error()); busy != nil {
@@ -151,7 +151,7 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 	return messaging.Receipt{MessageID: aws.ToString(out.MessageId)}, nil
 }
 
-// SendQuota reads the account's send quota (GetSendQuota): MaxSendRate messages per
+// SendQuota reads the account's send quota (GetAccount): MaxSendRate messages per
 // second and Max24HourSend per rolling 24 hours. The API reports whole numbers as
 // floats; a rate below one rounds up to one message per second, and a non-positive
 // value (SES reports -1 for an unbounded account) is no ceiling.
@@ -160,13 +160,16 @@ func (s *sender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 	if err != nil {
 		return messaging.Quota{}, err
 	}
-	out, err := client.GetSendQuota(ctx, &ses.GetSendQuotaInput{})
+	out, err := client.GetAccount(ctx, &sesv2.GetAccountInput{})
 	if err != nil {
 		return messaging.Quota{}, fmt.Errorf("ses: get send quota: %w", err)
 	}
+	if out.SendQuota == nil {
+		return messaging.Quota{}, nil
+	}
 	return messaging.Quota{
-		PerSecond: quotaValue(out.MaxSendRate),
-		PerDay:    quotaValue(out.Max24HourSend),
+		PerSecond: quotaValue(out.SendQuota.MaxSendRate),
+		PerDay:    quotaValue(out.SendQuota.Max24HourSend),
 	}, nil
 }
 
@@ -178,7 +181,7 @@ func quotaValue(v float64) *int {
 	return &n
 }
 
-func (s *sender) client(ctx context.Context) (*ses.Client, error) {
+func (s *sender) client(ctx context.Context) (*sesv2.Client, error) {
 	creds := credentials.NewStaticCredentialsProvider(s.cfg.AccessKeyID, s.cfg.SecretAccessKey, "")
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithCredentialsProvider(creds),
@@ -187,7 +190,7 @@ func (s *sender) client(ctx context.Context) (*ses.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ses: load config: %w", err)
 	}
-	return ses.NewFromConfig(cfg, func(o *ses.Options) {
+	return sesv2.NewFromConfig(cfg, func(o *sesv2.Options) {
 		o.HTTPClient = s.http
 		if s.cfg.Endpoint != "" {
 			o.BaseEndpoint = aws.String(s.cfg.Endpoint)

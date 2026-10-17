@@ -1,4 +1,10 @@
-// Package telemetry wires OpenTelemetry traces and metrics for the process.
+// Package telemetry wires OpenTelemetry traces, metrics and logs for the process.
+//
+// The SDK is built by otelconf from OpenTelemetry's declarative configuration:
+// the operator points OTEL_CONFIG_FILE at a YAML file and decides there which
+// signals go to which destination (any exporter, several at once, sampling,
+// views). Without the file the process exports nothing over OTLP, so there is
+// zero overhead out of the box (and in the test suite).
 //
 // Wiring model mirrors the logging package: Setup installs the global OTel
 // providers (otel.SetTracerProvider / otel.SetMeterProvider / propagator) once
@@ -8,21 +14,16 @@
 // all three API surfaces (site/external/collect) get request spans + HTTP
 // metrics from the globals alone.
 //
-// Metrics are exposed two ways off a single MeterProvider:
-//   - a Prometheus /metrics endpoint (pull) — served only by the opt-in listener
-//     on METRICS_ADDR (see MetricsServer, ADR 0018), never on the public port;
-//   - an OTLP push exporter — enabled only when the standard OTEL_EXPORTER_OTLP_*
-//     env vars point at a collector (dev grafana/otel-lgtm, or any OTLP backend).
-//
-// Traces have no pull model, so they export via OTLP only, gated on the same
-// endpoint env. When no endpoint is set, no tracer provider is registered and
-// ogen keeps its no-op global — zero overhead (e.g. in the test suite, which
-// never calls Setup).
+// Metrics are also exposed as a Prometheus /metrics endpoint (pull), served only
+// by the opt-in listener on METRICS_ADDR (see MetricsServer, ADR 0018), never on
+// the public port. That reader is attached to the same MeterProvider whatever the
+// file says, so a file without a meter_provider section still serves /metrics.
 package telemetry
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -30,16 +31,15 @@ import (
 	promclient "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
+	"go.opentelemetry.io/contrib/otelconf"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
-	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
+
+// configFileEnv names the declarative configuration file, per the OpenTelemetry
+// SDK environment variable specification.
+const configFileEnv = "OTEL_CONFIG_FILE"
 
 // BuildInfo carries the binary's version metadata into the OTel resource so
 // traces/metrics are attributable to a specific build.
@@ -66,12 +66,22 @@ func MetricsHandler() http.Handler { return metricsHandler }
 // shutdown after the HTTP server has stopped so the final batched spans/metrics
 // flush.
 func Setup(ctx context.Context, cfg *config.Config, env string, build BuildInfo) (func(context.Context) error, error) {
-	res := resource.NewSchemaless(
-		attribute.String("service.name", cfg.OtelServiceName),
-		attribute.String("service.version", build.Version),
-		attribute.String("service.commit", build.Commit),
-		attribute.String("deployment.environment", env),
-	)
+	otelCfg, err := loadConfig()
+	if err != nil {
+		return nil, err
+	}
+	addResource(otelCfg, cfg, env, build)
+	if otelCfg.MeterProvider == nil {
+		otelCfg.MeterProvider = &otelconf.MeterProvider{}
+	}
+	// Inbound W3C trace context must be stitched (ogen reads the global propagator)
+	// even when the file names none.
+	if otelCfg.Propagator == nil {
+		otelCfg.Propagator = &otelconf.Propagator{Composite: []otelconf.TextMapPropagator{
+			{Tracecontext: otelconf.TraceContextPropagator{}},
+			{Baggage: otelconf.BaggagePropagator{}},
+		}}
+	}
 
 	// Prometheus reader: always on. A dedicated registry keeps the exposition
 	// independent of the global default registry.
@@ -81,78 +91,78 @@ func Setup(ctx context.Context, cfg *config.Config, env string, build BuildInfo)
 		return nil, err
 	}
 
-	meterOpts := []sdkmetric.Option{
-		sdkmetric.WithResource(res),
-		sdkmetric.WithReader(promReader),
+	sdk, err := newSDK(ctx, *otelCfg, sdkmetric.WithReader(promReader))
+	if err != nil {
+		return nil, fmt.Errorf("initialize OpenTelemetry SDK: %w", err)
 	}
-
-	push := otlpEnabled()
-
-	// OTLP metric push reader (dev otel-lgtm / any OTLP backend), gated so it
-	// never double-counts with the Prometheus scrape in prod.
-	if push {
-		metricExp, err := otlpmetrichttp.New(ctx)
-		if err != nil {
-			return nil, err
-		}
-		meterOpts = append(meterOpts, sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExp)))
-	}
-
-	mp := sdkmetric.NewMeterProvider(meterOpts...)
-	otel.SetMeterProvider(mp)
-
-	// Traces: OTLP only (no pull model). Left as the no-op global when disabled.
-	var tp *sdktrace.TracerProvider
-	if push {
-		spanExp, err := otlptracehttp.New(ctx)
-		if err != nil {
-			return nil, errors.Join(err, mp.Shutdown(ctx))
-		}
-		tp = sdktrace.NewTracerProvider(
-			sdktrace.WithBatcher(spanExp),
-			sdktrace.WithResource(res),
-		)
-		otel.SetTracerProvider(tp)
-	}
-
-	// Propagator must be set for ogen to stitch inbound W3C trace context.
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
-		propagation.TraceContext{},
-		propagation.Baggage{},
-	))
+	otel.SetTracerProvider(sdk.TracerProvider())
+	otel.SetMeterProvider(sdk.MeterProvider())
+	otel.SetTextMapPropagator(sdk.Propagator())
 
 	// Go runtime metrics (GC, goroutines, memory) into the same meter provider.
-	if err := runtime.Start(runtime.WithMeterProvider(mp)); err != nil {
-		return nil, errors.Join(err, shutdown(ctx, tp, mp))
+	if err := runtime.Start(runtime.WithMeterProvider(sdk.MeterProvider())); err != nil {
+		return nil, errors.Join(err, sdk.Shutdown(ctx))
 	}
 
 	metricsHandler = promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
 
 	return func(ctx context.Context) error {
 		metricsHandler = stubMetricsHandler
-		return shutdown(ctx, tp, mp)
+		return sdk.Shutdown(ctx)
 	}, nil
 }
 
-func shutdown(ctx context.Context, tp *sdktrace.TracerProvider, mp *sdkmetric.MeterProvider) error {
-	var err error
-	if tp != nil {
-		err = errors.Join(err, tp.Shutdown(ctx))
+// loadConfig parses the file OTEL_CONFIG_FILE names (environment references in it
+// are resolved by otelconf), or returns an empty configuration when it is unset.
+func loadConfig() (*otelconf.OpenTelemetryConfiguration, error) {
+	path := os.Getenv(configFileEnv)
+	if path == "" {
+		return &otelconf.OpenTelemetryConfiguration{FileFormat: "1.0"}, nil
 	}
-	return errors.Join(err, mp.Shutdown(ctx))
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", configFileEnv, err)
+	}
+	parsed, err := otelconf.ParseYAML(raw)
+	if err != nil {
+		return nil, fmt.Errorf("parse %s: %w", configFileEnv, err)
+	}
+	return parsed, nil
 }
 
-// otlpEnabled reports whether any standard OTLP endpoint env var is set, which
-// gates the OTLP push exporters (traces + metrics).
-func otlpEnabled() bool {
-	for _, k := range []string{
-		"OTEL_EXPORTER_OTLP_ENDPOINT",
-		"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-		"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+// addResource identifies the build on every signal. Attributes the file already
+// sets are the operator's and stay as they are.
+func addResource(otelCfg *otelconf.OpenTelemetryConfiguration, cfg *config.Config, env string, build BuildInfo) {
+	if otelCfg.Resource == nil {
+		otelCfg.Resource = &otelconf.Resource{}
+	}
+	have := map[string]bool{}
+	for _, a := range otelCfg.Resource.Attributes {
+		have[a.Name] = true
+	}
+	for _, a := range []struct{ name, value string }{
+		{"service.name", cfg.OtelServiceName},
+		{"service.version", build.Version},
+		{"service.commit", build.Commit},
+		{"deployment.environment", env},
 	} {
-		if os.Getenv(k) != "" {
-			return true
+		if !have[a.name] {
+			otelCfg.Resource.Attributes = append(otelCfg.Resource.Attributes, otelconf.AttributeNameValue{Name: a.name, Value: a.value})
 		}
 	}
-	return false
+}
+
+// newSDK builds the SDK from the configuration given here. otelconf would re-read
+// OTEL_CONFIG_FILE and let it supersede this configuration (dropping the resource
+// and the Prometheus reader added above), so the variable is hidden for the call.
+func newSDK(ctx context.Context, otelCfg otelconf.OpenTelemetryConfiguration, meterOpts ...sdkmetric.Option) (otelconf.SDK, error) {
+	if path, ok := os.LookupEnv(configFileEnv); ok {
+		_ = os.Unsetenv(configFileEnv)
+		defer func() { _ = os.Setenv(configFileEnv, path) }()
+	}
+	return otelconf.NewSDK(
+		otelconf.WithContext(ctx),
+		otelconf.WithOpenTelemetryConfiguration(otelCfg),
+		otelconf.WithMeterProviderOptions(meterOpts...),
+	)
 }
