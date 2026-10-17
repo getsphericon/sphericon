@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.9
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.9
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.79.1
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/doyensec/safeurl v0.2.5
 	github.com/emersion/go-msgauth v0.7.0
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
@@ -27,6 +28,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gosimple/slug v1.15.0
 	github.com/jackc/pgx/v5 v5.11.0
+	github.com/joho/godotenv v1.5.1
 	github.com/k3a/html2text v1.5.0
 	github.com/lmittmann/tint v1.2.1
 	github.com/modelcontextprotocol/go-sdk v1.8.0
@@ -50,7 +52,6 @@ require (
 	github.com/samber/do/v2 v2.1.0
 	github.com/samber/lo v1.53.0
 	github.com/samber/oops v1.23.2
-	github.com/spf13/viper v1.21.0
 	github.com/standard-webhooks/standard-webhooks/libraries v0.0.1
 	github.com/stretchr/testify v1.12.1
 	github.com/tink-crypto/tink-go/v2 v2.8.0
@@ -99,7 +100,6 @@ require (
 	github.com/dave/jennifer v1.6.0 // indirect
 	github.com/dlclark/regexp2 v1.12.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
-	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-crypt/x v0.4.17 // indirect
 	github.com/go-faster/yaml v0.4.6 // indirect
@@ -107,7 +107,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/inflect v1.0.1 // indirect
 	github.com/go-test/deep v1.0.8 // indirect
-	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
@@ -136,7 +135,6 @@ require (
 	github.com/narqo/go-badge v0.0.0-20230821190521-c9a75c019a59 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/osteele/tuesday v1.1.1 // indirect
-	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_model v0.6.3 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
@@ -144,7 +142,6 @@ require (
 	github.com/riverqueue/river/riverdriver v0.49.0 // indirect
 	github.com/riverqueue/river/rivershared v0.49.0 // indirect
 	github.com/rs/zerolog v1.35.1 // indirect
-	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/samber/go-type-to-string v1.8.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
@@ -152,10 +149,6 @@ require (
 	github.com/shopspring/decimal v1.5.0 // indirect
 	github.com/smartystreets/assertions v1.1.0 // indirect
 	github.com/sony/gobreaker v1.0.0 // indirect
-	github.com/spf13/afero v1.15.0 // indirect
-	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tidwall/gjson v1.20.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.2 // indirect

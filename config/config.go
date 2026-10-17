@@ -2,15 +2,19 @@ package config
 
 import (
 	"fmt"
+	"maps"
 	"net"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/spf13/viper"
+	"github.com/joho/godotenv"
 )
 
 // BodyLimits are the request body caps in bytes. /collect is the public tracking
@@ -195,162 +199,196 @@ type Config struct {
 	SESSecretAccessKey  string
 }
 
+// environment is every variable Load reads, with the defaults that do not depend on
+// the environment name. Those that do (rate limits in the e2e profile, the log
+// format, SMTP_ALLOW_PRIVATE_HOSTS) are seeded into the variable map by seedDefaults.
+type environment struct {
+	DatabaseURL string `env:"DATABASE_URL,required,notEmpty"`
+	Port        string `env:"PORT" envDefault:"3000"`
+	AppURL      string `env:"APP_URL" envDefault:"http://localhost:3000"`
+	MCPURL      string `env:"MCP_URL"`
+
+	CollectSiteKey string        `env:"COLLECT_SITE_KEY"`
+	BootstrapToken string        `env:"BOOTSTRAP_TOKEN"`
+	CORSOrigins    string        `env:"CORS_ORIGINS"`
+	JWTSecret      string        `env:"JWT_SECRET"`
+	SessionTTL     time.Duration `env:"SESSION_TTL" envDefault:"24h"`
+	EncryptionKey  string        `env:"ENCRYPTION_KEY"`
+	LicenseKey     string        `env:"LICENSE_KEY"`
+
+	SMTPHost string `env:"SMTP_HOST"`
+	SMTPPort int    `env:"SMTP_PORT" envDefault:"1025"`
+	SMTPUser string `env:"SMTP_USER"`
+	SMTPPass string `env:"SMTP_PASS"`
+	SMTPFrom string `env:"SMTP_FROM"`
+
+	AccountLinkURL        string `env:"ACCOUNT_LINK_URL"`
+	AccountLinkSigningKey string `env:"ACCOUNT_LINK_SIGNING_KEY"`
+
+	OperatorJWTSecret     string        `env:"OPERATOR_JWT_SECRET"`
+	OperatorSessionTTL    time.Duration `env:"OPERATOR_SESSION_TTL" envDefault:"4h"`
+	OperatorHoldMaxExpiry time.Duration `env:"OPERATOR_HOLD_MAX_EXPIRY" envDefault:"720h"`
+
+	AbuseVolumeFloor            int     `env:"ABUSE_VOLUME_FLOOR" envDefault:"1000"`
+	AbuseWarnComplaintPercent   float64 `env:"ABUSE_WARN_COMPLAINT_PERCENT" envDefault:"0.1"`
+	AbuseWarnBouncePercent      float64 `env:"ABUSE_WARN_BOUNCE_PERCENT" envDefault:"5"`
+	AbuseFreezeComplaintPercent float64 `env:"ABUSE_FREEZE_COMPLAINT_PERCENT" envDefault:"0.3"`
+	AbuseFreezeBouncePercent    float64 `env:"ABUSE_FREEZE_BOUNCE_PERCENT" envDefault:"10"`
+
+	SupportEmail string `env:"SUPPORT_EMAIL"`
+	BillingURL   string `env:"BILLING_URL"`
+	AutoMigrate  bool   `env:"AUTO_MIGRATE"`
+
+	MaxBodyBytes         int64 `env:"MAX_BODY_BYTES" envDefault:"1048576"`
+	CollectMaxBodyBytes  int64 `env:"COLLECT_MAX_BODY_BYTES" envDefault:"512000"`
+	CollectMaxEventBytes int64 `env:"COLLECT_MAX_EVENT_BYTES" envDefault:"32768"`
+
+	RateLimitHuman         int `env:"RATE_LIMIT_HUMAN_PER_MINUTE"`
+	RateLimitAPIBurst      int `env:"RATE_LIMIT_API_BURST_PER_SECOND"`
+	RateLimitAPIPerMinute  int `env:"RATE_LIMIT_API_PER_MINUTE"`
+	RateLimitFailedAuth    int `env:"RATE_LIMIT_FAILED_AUTH_PER_MINUTE"`
+	RateLimitTracking      int `env:"RATE_LIMIT_TRACKING_PER_MINUTE"`
+	RateLimitLoginFailures int `env:"RATE_LIMIT_LOGIN_FAILURES"`
+	RateLimitLoginIP       int `env:"RATE_LIMIT_LOGIN_IP_PER_MINUTE"`
+	RateLimitCollect       int `env:"RATE_LIMIT_COLLECT_PER_MINUTE"`
+	RateLimitCollectIP     int `env:"RATE_LIMIT_COLLECT_IP_PER_MINUTE"`
+	RateLimitService       int `env:"RATE_LIMIT_SERVICE_PER_MINUTE"`
+	RateLimitForgotAddress int `env:"RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR"`
+	RateLimitForgotIP      int `env:"RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR"`
+
+	OutboxFloorDays             int `env:"OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7"`
+	EventsRetentionDays         int `env:"EVENTS_RETENTION_DAYS" envDefault:"400"`
+	UnverifiedUserRetentionDays int `env:"UNVERIFIED_USER_RETENTION_DAYS" envDefault:"7"`
+
+	DBMaxOpenConns    int           `env:"DB_MAX_OPEN_CONNS" envDefault:"15"`
+	DBMaxIdleConns    *int          `env:"DB_MAX_IDLE_CONNS"`
+	DBConnMaxLifetime time.Duration `env:"DB_CONN_MAX_LIFETIME" envDefault:"30m"`
+	PGXMaxConns       int32         `env:"PGX_MAX_CONNS" envDefault:"25"`
+
+	SMTPAllowPrivateHosts    bool   `env:"SMTP_ALLOW_PRIVATE_HOSTS"`
+	Locale                   string `env:"APP_LOCALE" envDefault:"en"`
+	RequireEmailVerification string `env:"REQUIRE_EMAIL_VERIFICATION"`
+
+	LogLevel        string `env:"LOG_LEVEL" envDefault:"info"`
+	LogFormat       string `env:"LOG_FORMAT"`
+	OtelServiceName string `env:"OTEL_SERVICE_NAME" envDefault:"sphericon"`
+	MetricsAddr     string `env:"METRICS_ADDR"`
+	InternalAddr    string `env:"INTERNAL_ADDR"`
+
+	SystemEmailProvider string `env:"SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
+	SystemEmailFrom     string `env:"SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
+	SESRegion           string `env:"SES_REGION"`
+	SESAccessKeyID      string `env:"SES_ACCESS_KEY_ID"`
+	SESSecretAccessKey  string `env:"SES_SECRET_ACCESS_KEY"`
+}
+
+// Load reads the configuration from the process environment layered over the .env
+// files (see envFiles): a variable the process sets wins over every file.
 func Load(envName string) (*Config, error) {
 	_, file, _, _ := runtime.Caller(0)
 	rootDir := filepath.Join(filepath.Dir(file), "..")
 
-	v := viper.New()
-	v.SetDefault("PORT", "3000")
-	v.SetDefault("APP_URL", "http://localhost:3000")
-	v.SetDefault("SESSION_TTL", 24*time.Hour)
-	v.SetDefault("OPERATOR_SESSION_TTL", 4*time.Hour)
-	v.SetDefault("OPERATOR_HOLD_MAX_EXPIRY", 30*24*time.Hour)
-	v.SetDefault("ABUSE_VOLUME_FLOOR", 1000)
-	v.SetDefault("ABUSE_WARN_COMPLAINT_PERCENT", 0.1)
-	v.SetDefault("ABUSE_WARN_BOUNCE_PERCENT", 5.0)
-	v.SetDefault("ABUSE_FREEZE_COMPLAINT_PERCENT", 0.3)
-	v.SetDefault("ABUSE_FREEZE_BOUNCE_PERCENT", 10.0)
-	v.SetDefault("SMTP_PORT", 1025)
-	v.SetDefault("SYSTEM_EMAIL_PROVIDER", "smtp")
-	v.SetDefault("SYSTEM_EMAIL_FROM", "noreply@sphericon.localhost")
-	v.SetDefault("LOG_LEVEL", "info")
-	v.SetDefault("OTEL_SERVICE_NAME", "sphericon")
-	v.SetDefault("APP_LOCALE", "en")
-	v.SetDefault("MAX_BODY_BYTES", 1<<20)
-	v.SetDefault("COLLECT_MAX_BODY_BYTES", 500<<10)
-	v.SetDefault("COLLECT_MAX_EVENT_BYTES", 32<<10)
-	limits := DefaultRateLimits
-	if isE2E(envName) {
-		limits = RateLimits{} // the end-to-end profile polls freely: every budget is disabled
+	vars, err := readEnvFiles(envFiles(rootDir, envName))
+	if err != nil {
+		return nil, err
 	}
-	v.SetDefault("RATE_LIMIT_HUMAN_PER_MINUTE", limits.Human)
-	v.SetDefault("RATE_LIMIT_API_BURST_PER_SECOND", limits.APIBurst)
-	v.SetDefault("RATE_LIMIT_API_PER_MINUTE", limits.APIPerMinute)
-	v.SetDefault("RATE_LIMIT_FAILED_AUTH_PER_MINUTE", limits.FailedAuth)
-	v.SetDefault("RATE_LIMIT_TRACKING_PER_MINUTE", limits.Tracking)
-	v.SetDefault("RATE_LIMIT_LOGIN_FAILURES", limits.LoginFailures)
-	v.SetDefault("RATE_LIMIT_LOGIN_IP_PER_MINUTE", limits.LoginIP)
-	v.SetDefault("RATE_LIMIT_COLLECT_PER_MINUTE", limits.Collect)
-	v.SetDefault("RATE_LIMIT_COLLECT_IP_PER_MINUTE", limits.CollectIP)
-	v.SetDefault("RATE_LIMIT_SERVICE_PER_MINUTE", limits.ServicePerMinute)
-	v.SetDefault("RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR", limits.ForgotAddress)
-	v.SetDefault("RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR", limits.ForgotIP)
-	v.SetDefault("OUTBOX_RETENTION_FLOOR_DAYS", 7)
-	v.SetDefault("EVENTS_RETENTION_DAYS", 400)
-	v.SetDefault("UNVERIFIED_USER_RETENTION_DAYS", 7)
-	v.SetDefault("DB_MAX_OPEN_CONNS", 15)
-	v.SetDefault("DB_CONN_MAX_LIFETIME", 30*time.Minute)
-	v.SetDefault("PGX_MAX_CONNS", 25)
-	// Human-readable logs in dev, structured JSON everywhere else.
-	if isDevEnv(envName) {
-		v.SetDefault("LOG_FORMAT", "text")
-	} else {
-		v.SetDefault("LOG_FORMAT", "json")
-	}
-
-	for _, file := range envFiles(rootDir, envName) {
-		sub := viper.New()
-		sub.SetConfigFile(file)
-		sub.SetConfigType("env")
-		if err := sub.ReadInConfig(); err == nil {
-			if err := v.MergeConfigMap(sub.AllSettings()); err != nil {
-				return nil, fmt.Errorf("merge config %s: %w", file, err)
-			}
+	for _, kv := range os.Environ() {
+		if k, v, ok := strings.Cut(kv, "="); ok && v != "" {
+			vars[k] = v
 		}
 	}
+	seedDefaults(vars, envName)
 
-	v.AutomaticEnv()
-
-	if !v.IsSet("DATABASE_URL") {
-		return nil, fmt.Errorf("DATABASE_URL is required")
+	var e environment
+	if err := env.ParseWithOptions(&e, env.Options{Environment: vars}); err != nil {
+		return nil, fmt.Errorf("read environment: %w", err)
 	}
 
 	// Idle defaults to the open cap so connections are reused, not churned.
-	maxOpen := v.GetInt("DB_MAX_OPEN_CONNS")
-	maxIdle := maxOpen
-	if v.IsSet("DB_MAX_IDLE_CONNS") {
-		maxIdle = v.GetInt("DB_MAX_IDLE_CONNS")
+	maxIdle := e.DBMaxOpenConns
+	if e.DBMaxIdleConns != nil {
+		maxIdle = *e.DBMaxIdleConns
 	}
 
 	cfg := &Config{
-		DatabaseURL:    v.GetString("DATABASE_URL"),
-		Port:           v.GetString("PORT"),
-		CollectSiteKey: v.GetString("COLLECT_SITE_KEY"),
-		BootstrapToken: v.GetString("BOOTSTRAP_TOKEN"),
-		CORSOrigins:    v.GetStringSlice("CORS_ORIGINS"),
-		JWTSecret:      v.GetString("JWT_SECRET"),
-		SessionTTL:     v.GetDuration("SESSION_TTL"),
-		AppURL:         v.GetString("APP_URL"),
-		MCPURL:         v.GetString("MCP_URL"),
-		SMTPHost:       v.GetString("SMTP_HOST"),
-		SMTPPort:       v.GetInt("SMTP_PORT"),
-		SMTPUser:       v.GetString("SMTP_USER"),
-		SMTPPass:       v.GetString("SMTP_PASS"),
-		SMTPFrom:       v.GetString("SMTP_FROM"),
-		EncryptionKey:  v.GetString("ENCRYPTION_KEY"),
-		LicenseKey:     v.GetString("LICENSE_KEY"),
+		DatabaseURL:    e.DatabaseURL,
+		Port:           e.Port,
+		CollectSiteKey: e.CollectSiteKey,
+		BootstrapToken: e.BootstrapToken,
+		CORSOrigins:    strings.FieldsFunc(e.CORSOrigins, func(r rune) bool { return r == ',' || unicode.IsSpace(r) }),
+		JWTSecret:      e.JWTSecret,
+		SessionTTL:     e.SessionTTL,
+		AppURL:         e.AppURL,
+		MCPURL:         e.MCPURL,
+		SMTPHost:       e.SMTPHost,
+		SMTPPort:       e.SMTPPort,
+		SMTPUser:       e.SMTPUser,
+		SMTPPass:       e.SMTPPass,
+		SMTPFrom:       e.SMTPFrom,
+		EncryptionKey:  e.EncryptionKey,
+		LicenseKey:     e.LicenseKey,
 
-		AccountLinkURL:        v.GetString("ACCOUNT_LINK_URL"),
-		AccountLinkSigningKey: v.GetString("ACCOUNT_LINK_SIGNING_KEY"),
+		AccountLinkURL:        e.AccountLinkURL,
+		AccountLinkSigningKey: e.AccountLinkSigningKey,
 
-		OperatorJWTSecret:     v.GetString("OPERATOR_JWT_SECRET"),
-		OperatorSessionTTL:    v.GetDuration("OPERATOR_SESSION_TTL"),
-		OperatorHoldMaxExpiry: v.GetDuration("OPERATOR_HOLD_MAX_EXPIRY"),
+		OperatorJWTSecret:     e.OperatorJWTSecret,
+		OperatorSessionTTL:    e.OperatorSessionTTL,
+		OperatorHoldMaxExpiry: e.OperatorHoldMaxExpiry,
 
-		AbuseVolumeFloor:            v.GetInt("ABUSE_VOLUME_FLOOR"),
-		AbuseWarnComplaintPercent:   v.GetFloat64("ABUSE_WARN_COMPLAINT_PERCENT"),
-		AbuseWarnBouncePercent:      v.GetFloat64("ABUSE_WARN_BOUNCE_PERCENT"),
-		AbuseFreezeComplaintPercent: v.GetFloat64("ABUSE_FREEZE_COMPLAINT_PERCENT"),
-		AbuseFreezeBouncePercent:    v.GetFloat64("ABUSE_FREEZE_BOUNCE_PERCENT"),
-		SupportEmail:                strings.TrimSpace(v.GetString("SUPPORT_EMAIL")),
-		BillingURL:                  strings.TrimSpace(v.GetString("BILLING_URL")),
-		AutoMigrate:                 v.GetBool("AUTO_MIGRATE"),
+		AbuseVolumeFloor:            e.AbuseVolumeFloor,
+		AbuseWarnComplaintPercent:   e.AbuseWarnComplaintPercent,
+		AbuseWarnBouncePercent:      e.AbuseWarnBouncePercent,
+		AbuseFreezeComplaintPercent: e.AbuseFreezeComplaintPercent,
+		AbuseFreezeBouncePercent:    e.AbuseFreezeBouncePercent,
+		SupportEmail:                strings.TrimSpace(e.SupportEmail),
+		BillingURL:                  strings.TrimSpace(e.BillingURL),
+		AutoMigrate:                 e.AutoMigrate,
 
 		BodyLimits: BodyLimits{
-			Default:      v.GetInt64("MAX_BODY_BYTES"),
-			Collect:      v.GetInt64("COLLECT_MAX_BODY_BYTES"),
-			CollectEvent: v.GetInt64("COLLECT_MAX_EVENT_BYTES"),
+			Default:      e.MaxBodyBytes,
+			Collect:      e.CollectMaxBodyBytes,
+			CollectEvent: e.CollectMaxEventBytes,
 		},
 		RateLimits: RateLimits{
-			Human:            v.GetInt("RATE_LIMIT_HUMAN_PER_MINUTE"),
-			APIBurst:         v.GetInt("RATE_LIMIT_API_BURST_PER_SECOND"),
-			APIPerMinute:     v.GetInt("RATE_LIMIT_API_PER_MINUTE"),
-			FailedAuth:       v.GetInt("RATE_LIMIT_FAILED_AUTH_PER_MINUTE"),
-			Tracking:         v.GetInt("RATE_LIMIT_TRACKING_PER_MINUTE"),
-			LoginFailures:    v.GetInt("RATE_LIMIT_LOGIN_FAILURES"),
-			LoginIP:          v.GetInt("RATE_LIMIT_LOGIN_IP_PER_MINUTE"),
-			Collect:          v.GetInt("RATE_LIMIT_COLLECT_PER_MINUTE"),
-			CollectIP:        v.GetInt("RATE_LIMIT_COLLECT_IP_PER_MINUTE"),
-			ServicePerMinute: v.GetInt("RATE_LIMIT_SERVICE_PER_MINUTE"),
-			ForgotAddress:    v.GetInt("RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR"),
-			ForgotIP:         v.GetInt("RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR"),
+			Human:            e.RateLimitHuman,
+			APIBurst:         e.RateLimitAPIBurst,
+			APIPerMinute:     e.RateLimitAPIPerMinute,
+			FailedAuth:       e.RateLimitFailedAuth,
+			Tracking:         e.RateLimitTracking,
+			LoginFailures:    e.RateLimitLoginFailures,
+			LoginIP:          e.RateLimitLoginIP,
+			Collect:          e.RateLimitCollect,
+			CollectIP:        e.RateLimitCollectIP,
+			ServicePerMinute: e.RateLimitService,
+			ForgotAddress:    e.RateLimitForgotAddress,
+			ForgotIP:         e.RateLimitForgotIP,
 		},
 		DBPool: DBPool{
-			MaxOpenConns:    maxOpen,
+			MaxOpenConns:    e.DBMaxOpenConns,
 			MaxIdleConns:    maxIdle,
-			ConnMaxLifetime: v.GetDuration("DB_CONN_MAX_LIFETIME"),
-			PGXMaxConns:     v.GetInt32("PGX_MAX_CONNS"),
+			ConnMaxLifetime: e.DBConnMaxLifetime,
+			PGXMaxConns:     e.PGXMaxConns,
 		},
-		OutboxFloor:             time.Duration(v.GetInt("OUTBOX_RETENTION_FLOOR_DAYS")) * 24 * time.Hour,
-		EventsRetention:         time.Duration(v.GetInt("EVENTS_RETENTION_DAYS")) * 24 * time.Hour,
-		UnverifiedUserRetention: time.Duration(v.GetInt("UNVERIFIED_USER_RETENTION_DAYS")) * 24 * time.Hour,
+		OutboxFloor:             time.Duration(e.OutboxFloorDays) * 24 * time.Hour,
+		EventsRetention:         time.Duration(e.EventsRetentionDays) * 24 * time.Hour,
+		UnverifiedUserRetention: time.Duration(e.UnverifiedUserRetentionDays) * 24 * time.Hour,
 		IsDev:                   isDevEnv(envName),
-		SMTPAllowPrivateHosts:   smtpAllowPrivateHosts(v, envName),
-		Locale:                  i18n.Normalize(v.GetString("APP_LOCALE")),
+		SMTPAllowPrivateHosts:   e.SMTPAllowPrivateHosts,
+		Locale:                  i18n.Normalize(e.Locale),
 
-		RequireEmailVerification: strings.TrimSpace(v.GetString("REQUIRE_EMAIL_VERIFICATION")) != "false",
-		LogLevel:                 v.GetString("LOG_LEVEL"),
-		LogFormat:                v.GetString("LOG_FORMAT"),
+		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
+		LogLevel:                 e.LogLevel,
+		LogFormat:                e.LogFormat,
 
-		OtelServiceName: v.GetString("OTEL_SERVICE_NAME"),
-		MetricsAddr:     v.GetString("METRICS_ADDR"),
-		InternalAddr:    v.GetString("INTERNAL_ADDR"),
+		OtelServiceName: e.OtelServiceName,
+		MetricsAddr:     e.MetricsAddr,
+		InternalAddr:    e.InternalAddr,
 
-		SystemEmailProvider: v.GetString("SYSTEM_EMAIL_PROVIDER"),
-		SystemEmailFrom:     v.GetString("SYSTEM_EMAIL_FROM"),
-		SESRegion:           v.GetString("SES_REGION"),
-		SESAccessKeyID:      v.GetString("SES_ACCESS_KEY_ID"),
-		SESSecretAccessKey:  v.GetString("SES_SECRET_ACCESS_KEY"),
+		SystemEmailProvider: e.SystemEmailProvider,
+		SystemEmailFrom:     e.SystemEmailFrom,
+		SESRegion:           e.SESRegion,
+		SESAccessKeyID:      e.SESAccessKeyID,
+		SESSecretAccessKey:  e.SESSecretAccessKey,
 	}
 
 	if isE2E(envName) {
@@ -364,6 +402,59 @@ func Load(envName string) (*Config, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+// readEnvFiles merges the .env files that exist, later files overriding earlier ones.
+// A missing or unreadable file is skipped, as no file is required.
+func readEnvFiles(files []string) (map[string]string, error) {
+	vars := map[string]string{}
+	for _, file := range files {
+		if _, err := os.Stat(file); err != nil {
+			continue
+		}
+		parsed, err := godotenv.Read(file)
+		if err != nil {
+			return nil, fmt.Errorf("read %s: %w", file, err)
+		}
+		maps.Copy(vars, parsed)
+	}
+	return vars, nil
+}
+
+// seedDefaults fills the variables whose default depends on the environment name,
+// unless the process or a file set them (an empty value counts as unset): the rate
+// limits (all disabled in the e2e profile, which polls freely), the log format
+// (human-readable in development, JSON elsewhere) and SMTP_ALLOW_PRIVATE_HOSTS.
+func seedDefaults(vars map[string]string, envName string) {
+	limits := DefaultRateLimits
+	if isE2E(envName) {
+		limits = RateLimits{}
+	}
+	logFormat := "json"
+	if isDevEnv(envName) {
+		logFormat = "text"
+	}
+	for key, value := range map[string]string{
+		"RATE_LIMIT_HUMAN_PER_MINUTE":                     strconv.Itoa(limits.Human),
+		"RATE_LIMIT_API_BURST_PER_SECOND":                 strconv.Itoa(limits.APIBurst),
+		"RATE_LIMIT_API_PER_MINUTE":                       strconv.Itoa(limits.APIPerMinute),
+		"RATE_LIMIT_FAILED_AUTH_PER_MINUTE":               strconv.Itoa(limits.FailedAuth),
+		"RATE_LIMIT_TRACKING_PER_MINUTE":                  strconv.Itoa(limits.Tracking),
+		"RATE_LIMIT_LOGIN_FAILURES":                       strconv.Itoa(limits.LoginFailures),
+		"RATE_LIMIT_LOGIN_IP_PER_MINUTE":                  strconv.Itoa(limits.LoginIP),
+		"RATE_LIMIT_COLLECT_PER_MINUTE":                   strconv.Itoa(limits.Collect),
+		"RATE_LIMIT_COLLECT_IP_PER_MINUTE":                strconv.Itoa(limits.CollectIP),
+		"RATE_LIMIT_SERVICE_PER_MINUTE":                   strconv.Itoa(limits.ServicePerMinute),
+		"RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR": strconv.Itoa(limits.ForgotAddress),
+		"RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR":          strconv.Itoa(limits.ForgotIP),
+		"LOG_FORMAT":                                      logFormat,
+		// Allowed in development, tests and the e2e suite (a local Mailpit), refused in production.
+		"SMTP_ALLOW_PRIVATE_HOSTS": strconv.FormatBool(isDevEnv(envName) || isE2E(envName)),
+	} {
+		if vars[key] == "" {
+			vars[key] = value
+		}
+	}
 }
 
 // SecureCookies reports whether session cookies carry the Secure attribute: whenever the
@@ -581,13 +672,4 @@ func envFiles(rootDir, envName string) []string {
 	}
 	files = append(files, filepath.Join(rootDir, ".env."+envName+".local"))
 	return files
-}
-
-// smtpAllowPrivateHosts reads SMTP_ALLOW_PRIVATE_HOSTS; unset, it follows the environment:
-// allowed in development, tests and the e2e suite (a local Mailpit), refused in production.
-func smtpAllowPrivateHosts(v *viper.Viper, envName string) bool {
-	if v.IsSet("SMTP_ALLOW_PRIVATE_HOSTS") {
-		return v.GetBool("SMTP_ALLOW_PRIVATE_HOSTS")
-	}
-	return isDevEnv(envName) || isE2E(envName)
 }
