@@ -173,7 +173,7 @@ _how the trigger fires_ moves from a direct call to a bus subscription.
 
 - **P0 (spike) — DONE**: transactional publish (approach A) proven + one
   subscriber end-to-end (`contact.created` → persist `Event`). `internal/events`
-  (Envelope, Bus.WithinTx, persist subscriber, InitSchema); contact-create now
+  (Envelope, Bus.WithinTx, persist subscriber, the outbox migration); contact-create now
   publishes through the bus; tests cover commit/rollback atomicity, the projection
   mapping, and live router delivery.
 - **P1 — DONE (core)**: automation enrollment moved onto the bus (an `automations`
@@ -240,9 +240,10 @@ _how the trigger fires_ moves from a direct call to a bus subscription.
   so each must run under its **own consumer group** (its own offset cursor) to get
   fan-out; a shared group would make them _compete_ for messages.
   `events.RegisterSubscribers` builds one watermill-sql subscriber per consumer.
-- **Outbox schema at boot.** The tx publisher can't self-initialize (a CREATE
-  TABLE would implicitly commit the tx), so `events.InitSchema` creates the
-  message + offsets tables at startup (and once-per-process in the test harness).
+- **Outbox schema in the migrations.** The tx publisher can't self-initialize (a CREATE
+  TABLE would implicitly commit the tx), so a migration
+  (`migrations/*_domain_events_outbox.sql`) creates the message + offsets tables, like the
+  rest of the schema.
 - **Idempotency is still a gap.** Delivery is at-least-once; on crash, `persist`
   could double-write an `Event` row (no dedupe column yet). Acceptable for P0;
   P1 adds a unique source-id column and upsert. Tracked as an open item.

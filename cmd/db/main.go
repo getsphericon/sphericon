@@ -15,15 +15,13 @@ import (
 	"entgo.io/ent/dialect/sql/schema"
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/migrate"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatal("usage: db <create|drop|river-up|generate <name>>")
+		log.Fatal("usage: db <create|drop|river-migration|generate <name>>")
 	}
 
 	envName := os.Getenv("APP_ENV")
@@ -36,18 +34,11 @@ func main() {
 		log.Fatalf("load config: %v", err)
 	}
 
-	// river owns its own schema, migrated out of band from Atlas (which would
-	// otherwise diff it away). This applies river's tables to the target DB.
-	if os.Args[1] == "river-up" {
-		pool, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
-		if err != nil {
-			log.Fatalf("open pool: %v", err)
+	// river-migration writes the goose migration for river's schema (see river.go).
+	if os.Args[1] == "river-migration" {
+		if err := generateRiverMigration("migrations"); err != nil {
+			log.Fatalf("river migration: %v", err)
 		}
-		defer pool.Close()
-		if err := jobs.Migrate(context.Background(), pool); err != nil {
-			log.Fatalf("river migrate: %v", err)
-		}
-		log.Print("river schema applied")
 		return
 	}
 

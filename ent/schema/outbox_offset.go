@@ -10,7 +10,7 @@ import (
 
 // OutboxOffset is one consumer group's cursor into the domain-event outbox, the
 // watermill-sql offsets table of the domain_events topic. Like OutboxMessage it is owned
-// by watermill (internal/events.InitSchema creates it) and skipped by migrations; ent only
+// by watermill (a hand-written migration creates it) and skipped by ent's diff; ent only
 // generates the client. The id is the table's consumer_group.
 type OutboxOffset struct {
 	ent.Schema

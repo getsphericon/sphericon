@@ -57,7 +57,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/go-testfixtures/testfixtures/v3"
-	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mokevnin/pgcleaner"
 	ht "github.com/ogen-go/ogen/http"
@@ -98,10 +97,8 @@ func initBaseline() {
 		// locks. The fixtures go in at the start of every process, not into the template:
 		// their relative dates must be relative to now.
 		cleaner = pgcleaner.New(cfg.DatabaseURL,
-			pgcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, url string) error {
-				built := *cfg
-				built.DatabaseURL = url
-				return migrateSchema(ctx, sqlDB, &built)
+			pgcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, _ string) error {
+				return migrateSchema(ctx, sqlDB)
 			}),
 			pgcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
 				return loadFixtures(ctx, sqlDB, cfg, projectRoot)
@@ -399,38 +396,21 @@ func (c injectClient) Do(r *http.Request) (*http.Response, error) {
 }
 
 // migrateBaseline brings an empty database to the fixture state every test starts from:
-// the schema, then the committed fixtures. A pgtestdb template gets it once per schema
-// change (RealDB). cfg.DatabaseURL must name the database sqlDB is open on.
+// the schema, then the committed fixtures. A pgtestdb template gets it once per change of
+// either (RealDB).
 func migrateBaseline(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projectRoot string) error {
-	if err := migrateSchema(ctx, sqlDB, cfg); err != nil {
+	if err := migrateSchema(ctx, sqlDB); err != nil {
 		return err
 	}
 	return loadFixtures(ctx, sqlDB, cfg, projectRoot)
 }
 
-// migrateSchema creates the ent schema, the domain-event outbox and river's tables in an
-// empty database. The worker databases are cloned from a template that has just this
-// (pgcleaner.WithTemplate). cfg.DatabaseURL must name the database sqlDB is open on.
-func migrateSchema(ctx context.Context, sqlDB *sql.DB, cfg *config.Config) error {
-	if err := db.NewEntClient(sqlDB).Schema.Create(ctx); err != nil {
-		return err
-	}
-
-	// The domain-event outbox topic table is a watermill-sql table, not part
-	// of the ent schema, so create it here too, otherwise the transactional
-	// publisher hits "relation does not exist".
-	if err := events.InitSchema(ctx, sqlDB); err != nil {
-		return err
-	}
-
-	// river's own tables, so Erasure can clear the jobs that name a Contact (the
-	// queue itself stays inline in tests; see JobsOf and EnqueueJob).
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-	return jobs.Migrate(ctx, pool)
+// migrateSchema applies the embedded migrations to an empty database: the same files, the same
+// way (goose), that production gets, so the app schema, river's tables and the domain-event
+// outbox all come from them. The worker databases are cloned from a template that has just
+// this (see initBaseline).
+func migrateSchema(ctx context.Context, sqlDB *sql.DB) error {
+	return db.Migrate(ctx, sqlDB)
 }
 
 // loadFixtures replaces the contents of every fixture table with the committed rows. It

@@ -20,7 +20,7 @@ import (
 // has not consumed anything, so its cursor is the start of the table. The outbox has no
 // published flag, so "past the cursor" is the only definition of pending.
 //
-// created_at is timestamptz (InitSchema converts watermill's plain TIMESTAMP), so the
+// created_at is timestamptz (the migration makes it so, unlike watermill's plain TIMESTAMP), so the
 // difference is absolute, independent of any session TimeZone.
 func outboxLag(ctx context.Context, client *ent.Client, group string, now time.Time) (float64, error) {
 	transactionID, acked := "0", int64(0)

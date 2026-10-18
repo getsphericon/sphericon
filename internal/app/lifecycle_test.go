@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -24,9 +23,6 @@ func lifecycleApp(t *testing.T) (*App, string) {
 	require.NoError(t, err)
 	a, err := New("e2e", WithListener(ln))
 	require.NoError(t, err)
-	pool, err := do.Invoke[*pgxPool](a.injector)
-	require.NoError(t, err)
-	require.NoError(t, jobs.Migrate(context.Background(), pool.Pool), "river's own schema")
 	return a, "http://" + ln.Addr().String()
 }
 

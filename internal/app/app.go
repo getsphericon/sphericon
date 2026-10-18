@@ -803,13 +803,9 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 
-		// Domain events: create the outbox topic schema up front (the tx publisher
-		// can't self-initialize), build the router, and register the consumers. The
-		// automations subscriber enrolls and the webhooks subscriber dispatches via
-		// the river client.
-		if err := events.InitSchema(context.Background(), database.DB); err != nil {
-			return nil, err
-		}
+		// Domain events: build the router and register the consumers (the outbox tables
+		// come from the migrations). The automations subscriber enrolls and the webhooks
+		// subscriber dispatches via the river client.
 		router, err := events.NewRouter()
 		if err != nil {
 			return nil, err
