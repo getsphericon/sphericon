@@ -50,5 +50,6 @@ automation.
 ## Bounces and complaints
 
 Bounce and complaint notifications from an SES-compatible service over SNS are ingested and written to the suppression list, so you
-stop mailing an address after it bounces. The workspace also tracks bounce and complaint rates
+stop mailing an address after it bounces. Only notifications from the SNS topic named on the SES
+integration are accepted; set its **SNS topic ARN** or no bounce is ingested. The workspace also tracks bounce and complaint rates
 per sending domain; read them from `GET /api/sending-domains/rates`.

@@ -465,6 +465,10 @@ const (
 	IntegrationGlobexID = 900
 	// IntegrationGlobexName is from fixtures/integrations.
 	IntegrationGlobexName = "Globex SMTP"
+	// IntegrationGlobexSesNoTopicID is from fixtures/integrations.
+	IntegrationGlobexSesNoTopicID = 901
+	// IntegrationGlobexSesNoTopicName is from fixtures/integrations.
+	IntegrationGlobexSesNoTopicName = "Globex SES (no SNS topic yet)"
 	// InvitationGlobexEmail is from fixtures/invitations.
 	InvitationGlobexEmail = "invited@globex.test"
 	// InvitationGlobexID is from fixtures/invitations.

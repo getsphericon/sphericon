@@ -129,6 +129,7 @@ test('connects an Amazon SES provider', async () => {
   await screen.getByLabelText(/^AWS region/).fill('eu-west-1')
   await screen.getByLabelText(/^Access key ID/).fill('AKIA')
   await screen.getByLabelText(/^Secret access key/).fill('shh')
+  await screen.getByLabelText(/^SNS topic ARN/).fill('arn:aws:sns:eu-west-1:123456789012:ses')
   await screen.getByLabelText(/^From address/).fill('hi@acme.com')
   await screen.getByLabelText(/^From name/).fill('Acme')
   await screen.getByRole('button', { name: 'Connect provider' }).click()
@@ -147,6 +148,7 @@ test('connects an Amazon SES provider', async () => {
           accessKeyId: 'AKIA',
           secretAccessKey: 'shh',
           endpoint: null,
+          snsTopicArn: 'arn:aws:sns:eu-west-1:123456789012:ses',
           from: 'hi@acme.com',
           fromName: 'Acme',
         },

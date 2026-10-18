@@ -74,7 +74,9 @@ Add one or more integrations in **Settings → Integrations**:
 - **SES-compatible API**: Amazon SES, or any service that implements the same API, such as Yandex
   Cloud Postbox. Set the integration's **endpoint** to the service's URL; leave it empty for
   Amazon SES itself. Bounce and complaint notifications delivered over SNS are ingested and turned
-  into suppressions.
+  into suppressions. Set the integration's **SNS topic ARN** to the topic those notifications are
+  published to: a notification from any other topic is refused, and an integration with no topic
+  suppresses nothing.
 
 Credentials are encrypted at rest. Because DKIM signing happens in sphericon itself, switching
 transport does not mean re-verifying your domain.

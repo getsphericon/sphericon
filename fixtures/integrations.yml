@@ -18,7 +18,7 @@
   name: Amazon SES (disabled)
   channel: email
   provider: ses
-  config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAEXAMPLE\",\"from\":\"hello@codebasics.dev\"}" }}'
+  config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAEXAMPLE\",\"from\":\"hello@codebasics.dev\",\"snsTopicArn\":\"arn:aws:sns:eu-west-1:123456789012:acme-ses-events\"}" }}'
   enabled: false
   is_default: false
   workspace_id: 1
@@ -31,6 +31,16 @@
   channel: email
   provider: smtp
   config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@globex.test\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 901 # fixture: IntegrationGlobexSesNoTopic
+  name: Globex SES (no SNS topic yet)
+  channel: email
+  provider: ses
+  config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAGLOBEX\",\"from\":\"hello@globex.test\"}" }}'
   enabled: true
   is_default: false
   workspace_id: 2

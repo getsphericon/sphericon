@@ -12885,6 +12885,12 @@ func (s IntegrationConfigInputSum) encodeFields(e *jx.Encoder) {
 					s.Endpoint.Encode(e)
 				}
 			}
+			{
+				if s.SnsTopicArn.Set {
+					e.FieldStart("snsTopicArn")
+					s.SnsTopicArn.Encode(e)
+				}
+			}
 		}
 	}
 }
@@ -13021,6 +13027,12 @@ func (s IntegrationConfigSum) encodeFields(e *jx.Encoder) {
 				if s.Endpoint.Set {
 					e.FieldStart("endpoint")
 					s.Endpoint.Encode(e)
+				}
+			}
+			{
+				if s.SnsTopicArn.Set {
+					e.FieldStart("snsTopicArn")
+					s.SnsTopicArn.Encode(e)
 				}
 			}
 			{
@@ -20759,6 +20771,12 @@ func (s *SesConfig) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.SnsTopicArn.Set {
+			e.FieldStart("snsTopicArn")
+			s.SnsTopicArn.Encode(e)
+		}
+	}
+	{
 		if s.AccessKeyIdLast4.Set {
 			e.FieldStart("accessKeyIdLast4")
 			s.AccessKeyIdLast4.Encode(e)
@@ -20766,13 +20784,14 @@ func (s *SesConfig) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSesConfig = [6]string{
+var jsonFieldsNameOfSesConfig = [7]string{
 	0: "kind",
 	1: "region",
 	2: "from",
 	3: "fromName",
 	4: "endpoint",
-	5: "accessKeyIdLast4",
+	5: "snsTopicArn",
+	6: "accessKeyIdLast4",
 }
 
 // Decode decodes SesConfig from json.
@@ -20835,6 +20854,16 @@ func (s *SesConfig) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"endpoint\"")
+			}
+		case "snsTopicArn":
+			if err := func() error {
+				s.SnsTopicArn.Reset()
+				if err := s.SnsTopicArn.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"snsTopicArn\"")
 			}
 		case "accessKeyIdLast4":
 			if err := func() error {
@@ -20943,9 +20972,15 @@ func (s *SesConfigInput) encodeFields(e *jx.Encoder) {
 			s.Endpoint.Encode(e)
 		}
 	}
+	{
+		if s.SnsTopicArn.Set {
+			e.FieldStart("snsTopicArn")
+			s.SnsTopicArn.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSesConfigInput = [7]string{
+var jsonFieldsNameOfSesConfigInput = [8]string{
 	0: "kind",
 	1: "region",
 	2: "accessKeyId",
@@ -20953,6 +20988,7 @@ var jsonFieldsNameOfSesConfigInput = [7]string{
 	4: "from",
 	5: "fromName",
 	6: "endpoint",
+	7: "snsTopicArn",
 }
 
 // Decode decodes SesConfigInput from json.
@@ -21039,6 +21075,16 @@ func (s *SesConfigInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"endpoint\"")
+			}
+		case "snsTopicArn":
+			if err := func() error {
+				s.SnsTopicArn.Reset()
+				if err := s.SnsTopicArn.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"snsTopicArn\"")
 			}
 		default:
 			return d.Skip()
