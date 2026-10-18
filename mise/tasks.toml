@@ -259,6 +259,9 @@ run = "pnpm exec tsp compile typespec/staff"
 ["generate:typespec-service"]
 run = "pnpm exec tsp compile typespec/service"
 
+["generate:typespec-telemetry"]
+run = "pnpm exec tsp compile typespec/telemetry"
+
 ["generate:typespec"]
 description = "TypeSpec -> OpenAPI"
 depends = [
@@ -267,6 +270,7 @@ depends = [
   "generate:typespec-collect",
   "generate:typespec-staff",
   "generate:typespec-service",
+  "generate:typespec-telemetry",
 ]
 
 ["generate:openapi"]
@@ -289,6 +293,7 @@ run = [
   "mise/scripts/heavy.sh go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
   "mise/scripts/heavy.sh go tool ogen --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
   "mise/scripts/heavy.sh go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
+  "mise/scripts/heavy.sh go tool ogen --config ogen.telemetry.yml --target gen/telemetry --package telemetryapi --clean openapi/telemetry.openapi.json",
   "mise/scripts/heavy.sh go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources",
 ]
 
