@@ -45,6 +45,14 @@ func main() {
 		return
 	}
 
+	// `server upgrade --from <dir>` installs a downloaded release over this binary (ADR 0034).
+	if len(os.Args) > 1 && os.Args[1] == "upgrade" {
+		if err := runUpgrade(context.Background(), os.Args[2:], os.Stdout); err != nil {
+			fatal("upgrade", err)
+		}
+		return
+	}
+
 	// `server genkey` prints a fresh SPHERICON_ENCRYPTION_KEY, so a binary or image install
 	// can bootstrap without the Go toolchain.
 	if len(os.Args) > 1 && os.Args[1] == "genkey" {
