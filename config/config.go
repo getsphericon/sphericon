@@ -14,6 +14,7 @@ import (
 
 	"github.com/caarlos0/env/v11"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/joho/godotenv"
 )
 
@@ -162,6 +163,10 @@ type Config struct {
 	// default, so a tenant cannot use the server to reach internal hosts; on in
 	// development and tests, where the relay is a local Mailpit.
 	SMTPAllowPrivateHosts bool
+	// OutboundAllow names the internal host:port pairs an outbound call to a third-party URL
+	// (a Webhook endpoint) may reach although the address is private (SPHERICON_OUTBOUND_ALLOW,
+	// ADR 0039). Empty by default and never set in SaaS; a malformed value fails the load.
+	OutboundAllow webhook.Allowlist
 
 	// Locale is the instance-wide UI/email language (a SaaS deployment runs per
 	// country). One of the supported locales; anything else is coerced to "en".
@@ -297,6 +302,7 @@ type environment struct {
 	PGXMaxConns       int32         `env:"SPHERICON_PGX_MAX_CONNS" envDefault:"25"`
 
 	SMTPAllowPrivateHosts    bool   `env:"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS"`
+	OutboundAllow            string `env:"SPHERICON_OUTBOUND_ALLOW"`
 	Locale                   string `env:"SPHERICON_APP_LOCALE" envDefault:"en"`
 	Telemetry                string `env:"SPHERICON_TELEMETRY"`
 	DoNotTrack               string `env:"DO_NOT_TRACK"`
@@ -336,6 +342,11 @@ func Load(envName string) (*Config, error) {
 	var e environment
 	if err := env.ParseWithOptions(&e, env.Options{Environment: vars}); err != nil {
 		return nil, fmt.Errorf("read environment: %w", err)
+	}
+
+	outboundAllow, err := webhook.ParseAllowlist(e.OutboundAllow)
+	if err != nil {
+		return nil, fmt.Errorf("SPHERICON_OUTBOUND_ALLOW: %w", err)
 	}
 
 	// Idle defaults to the open cap so connections are reused, not churned.
@@ -409,6 +420,7 @@ func Load(envName string) (*Config, error) {
 		UnverifiedUserRetention: time.Duration(e.UnverifiedUserRetentionDays) * 24 * time.Hour,
 		IsDev:                   isDevEnv(envName),
 		SMTPAllowPrivateHosts:   e.SMTPAllowPrivateHosts,
+		OutboundAllow:           outboundAllow,
 		Locale:                  i18n.Normalize(e.Locale),
 		Telemetry:               parseExplicitBool(e.Telemetry),
 		DoNotTrack:              strings.TrimSpace(e.DoNotTrack) == "1",

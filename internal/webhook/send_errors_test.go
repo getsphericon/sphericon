@@ -1,11 +1,10 @@
 package webhook_test
 
 import (
-	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,49 +12,39 @@ import (
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
-type doerFunc func(*http.Request) (*http.Response, error)
+func TestSendRejectsAnInvalidSecretWithoutCalling(t *testing.T) {
+	var hits int
+	srv, allow := receiver(t, func(w http.ResponseWriter, _ *http.Request) { hits++; w.WriteHeader(http.StatusOK) })
 
-func (f doerFunc) Do(r *http.Request) (*http.Response, error) { return f(r) }
-
-func TestSendRejectsAnInvalidSecret(t *testing.T) {
-	called := false
-	client := doerFunc(func(*http.Request) (*http.Response, error) {
-		called = true
-		return nil, errors.New("must not be reached")
-	})
-
-	err := webhook.Send(context.Background(), client, "http://example.test/hook", "whsec_%%%not-base64", "contact.created", "evt_1", []byte(`{}`))
+	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, "whsec_%%%not-base64", "contact.created", "evt_1", []byte(`{}`))
 	require.ErrorContains(t, err, "webhook secret")
-	assert.False(t, called, "an unsignable delivery is never attempted")
+	assert.Zero(t, hits, "an unsignable delivery is never attempted")
 }
 
 func TestSendRejectsAnInvalidURL(t *testing.T) {
-	client := doerFunc(func(*http.Request) (*http.Response, error) {
-		return nil, errors.New("must not be reached")
-	})
-	err := webhook.Send(context.Background(), client, "http://bad host/\x7f", testSecret, "contact.created", "evt_1", []byte(`{}`))
+	err := webhook.Send(t.Context(), webhook.NewClient(2*time.Second), "http://bad host/\x7f", testSecret, "contact.created", "evt_1", []byte(`{}`))
 	require.Error(t, err)
-	assert.NotContains(t, err.Error(), "must not be reached")
 }
 
 func TestSendReturnsTransportErrors(t *testing.T) {
-	boom := errors.New("connection reset")
-	client := doerFunc(func(*http.Request) (*http.Response, error) { return nil, boom })
+	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	allow, err := webhook.ParseAllowlist(srv.Listener.Addr().String())
+	require.NoError(t, err)
+	url := srv.URL
+	srv.Close()
 
-	err := webhook.Send(context.Background(), client, "http://example.test/hook", testSecret, "contact.created", "evt_1", []byte(`{}`))
-	assert.ErrorIs(t, err, boom)
+	err = webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), url, testSecret, "contact.created", "evt_1", []byte(`{}`))
+	require.Error(t, err)
 }
 
 func TestSendSetsDeliveryHeaders(t *testing.T) {
 	var got http.Header
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv, allow := receiver(t, func(w http.ResponseWriter, r *http.Request) {
 		got = r.Header.Clone()
 		w.WriteHeader(http.StatusNoContent)
-	}))
-	defer srv.Close()
+	})
 
-	// Plain client: the SSRF-hardened one refuses the loopback test server.
-	err := webhook.Send(context.Background(), srv.Client(), srv.URL, testSecret, "contact.created", "evt_42", []byte(`{}`))
+	err := webhook.Send(t.Context(), webhook.NewClientAllowing(2*time.Second, allow), srv.URL, testSecret, "contact.created", "evt_42", []byte(`{}`))
 	require.NoError(t, err)
 	assert.Equal(t, "application/json", got.Get("Content-Type"))
 	assert.Equal(t, "evt_42", got.Get("webhook-id"))

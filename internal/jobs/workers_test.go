@@ -7,7 +7,9 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"strings"
+	"net/http/httptest"
+	"net/url"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -16,6 +18,7 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertest"
 	"github.com/riverqueue/river/rivertype"
+	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -32,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // riverEnv is a real river client over the test database. The workers read and
@@ -61,7 +65,7 @@ func newRiverEnv(t *testing.T) *riverEnv {
 	require.NoError(t, err)
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs))
-	client, err := jobs.NewClient(pool, env.DB, mod, cipher, env.SystemMail, nil, registry.Default(), cfg.AppURL, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
+	client, err := jobs.NewClient(pool, env.DB, mod, cipher, env.SystemMail, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
 	require.NoError(t, err)
 	e := &riverEnv{TestEnv: env, pool: pool, client: client, cipher: cipher, cfg: cfg, sender: fs}
 	e.clearQueue(t)
@@ -241,26 +245,45 @@ func TestMemberInviteWorker(t *testing.T) {
 	require.Error(t, jobs.NewMemberInviteWorker(nil).Work(context.Background(), job(jobs.SendMemberInviteArgs{})))
 }
 
-// recordingDoer captures webhook deliveries and answers with a fixed status.
-type recordingDoer struct {
+// webhookReceiver is an httptest server the Instance allowlist permits: the real hardened
+// client reaches it, and it records what it got and answers with the status set.
+type webhookReceiver struct {
+	srv    *httptest.Server
+	allow  webhook.Allowlist
 	mu     sync.Mutex
 	status int
-	err    error
-	urls   []string
 	bodies []string
+	verify []error
 }
 
-func (d *recordingDoer) Do(req *http.Request) (*http.Response, error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.err != nil {
-		return nil, d.err
-	}
-	b, _ := io.ReadAll(req.Body)
-	d.urls = append(d.urls, req.URL.String())
-	d.bodies = append(d.bodies, string(b))
-	return &http.Response{StatusCode: d.status, Body: io.NopCloser(strings.NewReader("")), Header: http.Header{}}, nil
+func newWebhookReceiver(t *testing.T) *webhookReceiver {
+	t.Helper()
+	r := &webhookReceiver{status: http.StatusOK}
+	r.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		body, _ := io.ReadAll(req.Body)
+		wh, _ := standardwebhooks.NewWebhook(webhookSecret)
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		r.bodies = append(r.bodies, string(body))
+		r.verify = append(r.verify, wh.Verify(body, req.Header))
+		w.WriteHeader(r.status)
+	}))
+	t.Cleanup(r.srv.Close)
+	u, err := url.Parse(r.srv.URL)
+	require.NoError(t, err)
+	r.allow, err = webhook.ParseAllowlist(u.Host)
+	require.NoError(t, err)
+	return r
 }
+
+func (r *webhookReceiver) received() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return slices.Clone(r.bodies)
+}
+
+// webhookSecret is the signing secret of the WebhookCodebasics fixture.
+const webhookSecret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
 
 func TestDeliverWebhookWorker(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -272,22 +295,35 @@ func TestDeliverWebhookWorker(t *testing.T) {
 	args := func(id int64) jobs.DeliverWebhookArgs {
 		return jobs.DeliverWebhookArgs{EndpointID: id, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{"a":1}`)}
 	}
+	rcv := newWebhookReceiver(t)
+	worker := func(allow webhook.Allowlist) *jobs.DeliverWebhookWorker {
+		return jobs.NewDeliverWebhookWorker(env.DB, cipher, webhook.NewClientAllowing(2*time.Second, allow))
+	}
+	ws := env.DB.Scoped(fixtures.AcmeID)
+	_, err = ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
+	require.NoError(t, err)
 
-	doer := &recordingDoer{status: 200}
-	w := jobs.NewDeliverWebhookWorker(env.DB, cipher, doer)
-	require.NoError(t, w.Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
-	assert.Equal(t, []string{fixtures.WebhookCodebasicsURL}, doer.urls)
-	assert.JSONEq(t, `{"a":1}`, doer.bodies[0])
+	// A delivery reaches the receiver, which verifies the signature with the endpoint secret.
+	require.NoError(t, worker(rcv.allow).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
+	require.Len(t, rcv.received(), 1)
+	assert.JSONEq(t, `{"a":1}`, rcv.received()[0])
+	assert.NoError(t, rcv.verify[0])
 
 	// Deleted or disabled since enqueue: dropped without a request.
-	require.NoError(t, w.Work(ctx, job(args(424242))))
-	require.NoError(t, w.Work(ctx, job(args(101))))
-	assert.Len(t, doer.urls, 1)
+	require.NoError(t, worker(rcv.allow).Work(ctx, job(args(424242))))
+	require.NoError(t, worker(rcv.allow).Work(ctx, job(args(fixtures.WebhookCodebasicsDisabledID))))
+	assert.Len(t, rcv.received(), 1)
 
-	// A non-2xx answer and a transport failure both surface so river retries.
-	require.Error(t, jobs.NewDeliverWebhookWorker(env.DB, cipher, &recordingDoer{status: 500}).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
-	require.Error(t, jobs.NewDeliverWebhookWorker(env.DB, cipher, &recordingDoer{err: errors.New("dial")}).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
+	// A non-2xx answer surfaces so river retries.
+	rcv.mu.Lock()
+	rcv.status = http.StatusInternalServerError
+	rcv.mu.Unlock()
+	require.Error(t, worker(rcv.allow).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
+	assert.Len(t, rcv.received(), 2)
 
+	// With the allowlist unset the loopback receiver is refused and gets nothing.
+	require.Error(t, worker(webhook.Allowlist{}).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
+	assert.Len(t, rcv.received(), 2)
 }
 
 func TestVerifySendingDomainWorker(t *testing.T) {
