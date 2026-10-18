@@ -2,9 +2,9 @@
 // ships to everyone, and an Enterprise feature runs only when a valid offline license
 // key is present. It is unrelated to the hosted offering (ADR 0014).
 //
-// A key is `<payload>.<signature>`, both base64url: the payload is JSON naming the
-// licensed features and an optional expiry, the signature is Ed25519 over the payload
-// bytes. Verification needs only the public key, so nothing secret ships.
+// A key is a JWT signed with Ed25519 (EdDSA): the licensed features are the `features`
+// claim and the optional expiry is the standard `exp`. Verification needs only the
+// public key, so nothing secret ships.
 //
 // Governed by ee/LICENSE, not the AGPL.
 package licensekey
@@ -12,11 +12,11 @@ package licensekey
 import (
 	"crypto/ed25519"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // Feature names one licensed Enterprise capability.
@@ -50,9 +50,9 @@ func (l *License) Has(f Feature) bool {
 	return l != nil && l.features[f]
 }
 
-type payload struct {
-	Features []Feature  `json:"features"`
-	Expires  *time.Time `json:"expires,omitempty"`
+type claims struct {
+	Features []Feature `json:"features"`
+	jwt.RegisteredClaims
 }
 
 // Parse verifies key against pub at time now. An empty key is not an error: it is the
@@ -63,41 +63,28 @@ func Parse(key string, pub ed25519.PublicKey, now time.Time) (*License, error) {
 	if key == "" {
 		return &License{}, nil
 	}
-	body, sig, ok := strings.Cut(key, ".")
-	if !ok {
-		return nil, fmt.Errorf("%w: malformed", ErrInvalid)
+	var c claims
+	if _, err := jwt.ParseWithClaims(key, &c, func(*jwt.Token) (any, error) { return pub, nil },
+		jwt.WithValidMethods([]string{jwt.SigningMethodEdDSA.Alg()}),
+		jwt.WithTimeFunc(func() time.Time { return now }),
+	); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
-	raw, err := base64.RawURLEncoding.DecodeString(body)
-	if err != nil {
-		return nil, fmt.Errorf("%w: malformed", ErrInvalid)
-	}
-	signature, err := base64.RawURLEncoding.DecodeString(sig)
-	if err != nil || !ed25519.Verify(pub, raw, signature) {
-		return nil, fmt.Errorf("%w: bad signature", ErrInvalid)
-	}
-	var p payload
-	if err := json.Unmarshal(raw, &p); err != nil {
-		return nil, fmt.Errorf("%w: malformed", ErrInvalid)
-	}
-	if p.Expires != nil && !now.Before(*p.Expires) {
-		return nil, fmt.Errorf("%w: expired", ErrInvalid)
-	}
-	l := &License{features: make(map[Feature]bool, len(p.Features))}
-	for _, f := range p.Features {
+	l := &License{features: make(map[Feature]bool, len(c.Features))}
+	for _, f := range c.Features {
 		l.features[f] = true
 	}
 	return l, nil
 }
 
-// Issue signs a key for the features with priv. The production private key is not in
-// this repository; tests mint their own key pair.
+// Issue signs a key for the features with priv. A nil expires never lapses. The
+// production private key is not in this repository; tests mint their own key pair.
 func Issue(priv ed25519.PrivateKey, expires *time.Time, features ...Feature) (string, error) {
-	raw, err := json.Marshal(payload{Features: features, Expires: expires})
-	if err != nil {
-		return "", err
+	c := claims{Features: features}
+	if expires != nil {
+		c.ExpiresAt = jwt.NewNumericDate(*expires)
 	}
-	return base64.RawURLEncoding.EncodeToString(raw) + "." +
-		base64.RawURLEncoding.EncodeToString(ed25519.Sign(priv, raw)), nil
+	return jwt.NewWithClaims(jwt.SigningMethodEdDSA, c).SignedString(priv)
 }
 
 func mustDecodeKey(s string) ed25519.PublicKey {
