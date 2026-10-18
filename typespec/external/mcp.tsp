@@ -14,6 +14,9 @@ namespace Sphericon;
 @@extension(Auth.tokensDelete, "x-mcp", #{ hidden: true });
 @@extension(Auth.tokensBootstrap, "x-mcp", #{ hidden: true });
 
+// Regenerating an Integration's hook key breaks a working URL and needs a person (ADR 0037).
+@@extension(Integrations.regenerateKey, "x-mcp", #{ hidden: true });
+
 // The Audit log is never an agent capability (ADR 0016, ADR 0022).
 @@extension(AuditEntries.list, "x-mcp", #{ hidden: true });
 
@@ -28,6 +31,7 @@ namespace Sphericon;
 @@extension(CustomFields.list, "x-mcp", #{ name: "custom_fields_list" });
 @@extension(SendingDomains.list, "x-mcp", #{ name: "sending_domains_list" });
 @@extension(Integrations.list, "x-mcp", #{ name: "integrations_list" });
+@@extension(Presets.list, "x-mcp", #{ name: "presets_list" });
 @@extension(
   SendingDomainRates.list,
   "x-mcp",

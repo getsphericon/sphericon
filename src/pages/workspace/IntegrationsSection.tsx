@@ -33,6 +33,7 @@ import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from './auditFilter.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
+import { InboundModal } from './InboundModal.tsx'
 import { NO_LIMITS, SendLimitFields, toLimit, useSendLimitValidators } from './SendLimitFields.tsx'
 import type { SendLimitValues } from './SendLimitFields.tsx'
 import { SendLimitModal } from './SendLimitModal.tsx'
@@ -116,6 +117,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
     validate: validateLimits,
   })
   const [editing, setEditing] = useState<SiteIntegrationResource | null>(null)
+  const [inbound, setInbound] = useState<SiteIntegrationResource | null>(null)
 
   const createMutation = useResourceMutation({
     mutation: siteIntegrationsCreateMutation(),
@@ -341,6 +343,11 @@ export function IntegrationsSection({ slug }: { slug: string }) {
                     {t(($) => $.settings.integrations.limits.edit)}
                   </Button>
                 ) : null}
+                {canManageIntegrations ? (
+                  <Button size="compact-sm" variant="light" onClick={() => setInbound(record)}>
+                    {t(($) => $.settings.integrations.inbound.open)}
+                  </Button>
+                ) : null}
                 <ChangeHistoryLink
                   slug={slug}
                   targetType={AUDIT_TARGET_INTEGRATION}
@@ -363,6 +370,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
         noRecordsText={t(($) => $.settings.integrations.empty)}
       />
       <SendLimitModal slug={slug} integration={editing} onClose={() => setEditing(null)} />
+      <InboundModal slug={slug} integration={inbound} onClose={() => setInbound(null)} />
     </Card>
   )
 }

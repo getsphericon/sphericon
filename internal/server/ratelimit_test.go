@@ -94,7 +94,7 @@ func TestAZeroLimitNeverThrottles(t *testing.T) {
 
 func TestOperationalEndpointsAreNeverLimited(t *testing.T) {
 	env := testhelper.Setup(t, withHumanLimit(1))
-	for _, path := range []string{"/healthz", "/readyz", "/metrics", "/hooks/" + fixtures.AcmeIngestKey + "/ses"} {
+	for _, path := range []string{"/healthz", "/readyz", "/metrics", "/hooks/" + fixtures.IntegrationAcmeSesIngestKey} {
 		for range 5 {
 			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
 			rec := httptest.NewRecorder()

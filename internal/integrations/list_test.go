@@ -21,8 +21,10 @@ func TestListPagesTheWorkspaceIntegrationsAscendingByID(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, first.Items, 1)
 	assert.Equal(t, int64(fixtures.IntegrationAcmeDefaultID), first.Items[0].ID)
-	assert.Equal(t, 2, first.TotalItems)
-	assert.Equal(t, 2, first.TotalPages)
+	total, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, total, first.TotalItems)
+	assert.Equal(t, total, first.TotalPages, "one Integration a page")
 
 	second, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 2, PageSize: 1})
 	require.NoError(t, err)

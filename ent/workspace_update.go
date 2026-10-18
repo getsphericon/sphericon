@@ -102,20 +102,6 @@ func (_u *WorkspaceUpdate) SetNillableCollectKey(v *string) *WorkspaceUpdate {
 	return _u
 }
 
-// SetIngestKey sets the "ingest_key" field.
-func (_u *WorkspaceUpdate) SetIngestKey(v string) *WorkspaceUpdate {
-	_u.mutation.SetIngestKey(v)
-	return _u
-}
-
-// SetNillableIngestKey sets the "ingest_key" field if the given value is not nil.
-func (_u *WorkspaceUpdate) SetNillableIngestKey(v *string) *WorkspaceUpdate {
-	if v != nil {
-		_u.SetIngestKey(*v)
-	}
-	return _u
-}
-
 // SetRequireConfirmedOptIn sets the "require_confirmed_opt_in" field.
 func (_u *WorkspaceUpdate) SetRequireConfirmedOptIn(v bool) *WorkspaceUpdate {
 	_u.mutation.SetRequireConfirmedOptIn(v)
@@ -1330,11 +1316,6 @@ func (_u *WorkspaceUpdate) check() error {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.IngestKey(); ok {
-		if err := workspace.IngestKeyValidator(v); err != nil {
-			return &ValidationError{Name: "ingest_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.ingest_key": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.RetentionDays(); ok {
 		if err := workspace.RetentionDaysValidator(v); err != nil {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
@@ -1377,9 +1358,6 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.CollectKey(); ok {
 		_spec.SetField(workspace.FieldCollectKey, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.IngestKey(); ok {
-		_spec.SetField(workspace.FieldIngestKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.RequireConfirmedOptIn(); ok {
 		_spec.SetField(workspace.FieldRequireConfirmedOptIn, field.TypeBool, value)
@@ -2651,20 +2629,6 @@ func (_u *WorkspaceUpdateOne) SetNillableCollectKey(v *string) *WorkspaceUpdateO
 	return _u
 }
 
-// SetIngestKey sets the "ingest_key" field.
-func (_u *WorkspaceUpdateOne) SetIngestKey(v string) *WorkspaceUpdateOne {
-	_u.mutation.SetIngestKey(v)
-	return _u
-}
-
-// SetNillableIngestKey sets the "ingest_key" field if the given value is not nil.
-func (_u *WorkspaceUpdateOne) SetNillableIngestKey(v *string) *WorkspaceUpdateOne {
-	if v != nil {
-		_u.SetIngestKey(*v)
-	}
-	return _u
-}
-
 // SetRequireConfirmedOptIn sets the "require_confirmed_opt_in" field.
 func (_u *WorkspaceUpdateOne) SetRequireConfirmedOptIn(v bool) *WorkspaceUpdateOne {
 	_u.mutation.SetRequireConfirmedOptIn(v)
@@ -3892,11 +3856,6 @@ func (_u *WorkspaceUpdateOne) check() error {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.IngestKey(); ok {
-		if err := workspace.IngestKeyValidator(v); err != nil {
-			return &ValidationError{Name: "ingest_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.ingest_key": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.RetentionDays(); ok {
 		if err := workspace.RetentionDaysValidator(v); err != nil {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
@@ -3956,9 +3915,6 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if value, ok := _u.mutation.CollectKey(); ok {
 		_spec.SetField(workspace.FieldCollectKey, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.IngestKey(); ok {
-		_spec.SetField(workspace.FieldIngestKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.RequireConfirmedOptIn(); ok {
 		_spec.SetField(workspace.FieldRequireConfirmedOptIn, field.TypeBool, value)

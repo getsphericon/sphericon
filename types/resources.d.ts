@@ -704,6 +704,31 @@ export default interface Resources {
           "snsTopicArnHint": "The SNS topic your SES bounces and complaints are published to. Notifications from any other topic are ignored; without it nothing is suppressed.",
           "username": "Username"
         },
+        "inbound": {
+          "description": "Where this provider posts bounces and complaints. Choose how its callbacks are verified and read; the secret is stored encrypted and never shown again.",
+          "hideSchema": "Hide the params schema",
+          "hookUrl": "Hook URL",
+          "noPreset": "No inbound callbacks",
+          "open": "Inbound",
+          "params": "Params",
+          "paramsHint": "JSON. A secret shown as ******** or left empty stays unchanged; a new value rotates it and the old one stays valid until you retire it.",
+          "paramsInvalid": "The params must be a JSON object",
+          "preset": "Preset",
+          "regenerate": "Regenerate URL",
+          "regenerateConfirm": "The current hook URL stops working at once. Paste the new URL into the provider.",
+          "regenerateConfirmTitle": "Regenerate the hook URL?",
+          "regenerateError": "Failed to regenerate the hook URL",
+          "regenerated": "Hook URL regenerated",
+          "retire": "Retire old secrets",
+          "retired": "Old secrets retired",
+          "rotating": "A secret is rotating",
+          "rotatingDescription": "{{names}}: the previous value is still accepted beside the new one until you retire it.",
+          "save": "Save",
+          "saveError": "Failed to save the inbound settings",
+          "saved": "Inbound settings saved",
+          "showSchema": "Show the params schema",
+          "title": "Inbound callbacks: {{name}}"
+        },
         "limits": {
           "cancel": "Cancel",
           "description": "Cap how fast this provider sends so a large send does not trip its own limits. Leave a field blank for no limit.",
@@ -802,10 +827,6 @@ export default interface Resources {
         "verify": "Verify",
         "verifyError": "Failed to start verification",
         "verifyQueued": "Verification started"
-      },
-      "sesWebhook": {
-        "description": "Register this URL as the HTTPS subscription for your SES bounce and complaint SNS topic. Bounced and complained addresses are added to the suppression list automatically.",
-        "title": "SES bounce & complaint webhook"
       },
       "suppressions": {
         "create": "Suppress",

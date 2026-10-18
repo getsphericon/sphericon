@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -995,7 +996,21 @@ func register(injector do.Injector, env string, o options) {
 		return erasure.New(bus.Bus), nil
 	})
 
+	// The Presets of the Instance: the built-in ones (the Instance directory of custom
+	// ones is read here too once it is configured, ADR 0037).
+	do.Provide(injector, func(i do.Injector) (*preset.Registry, error) {
+		return preset.Load(nil)
+	})
+
 	do.Provide(injector, func(i do.Injector) (*integrations.Module, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		presets, err := do.Invoke[*preset.Registry](i)
+		if err != nil {
+			return nil, err
+		}
 		bus, err := do.Invoke[*eventsBus](i)
 		if err != nil {
 			return nil, err
@@ -1012,7 +1027,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return integrations.New(bus.Bus, cipher, catalog, jc.Client), nil
+		return integrations.New(bus.Bus, cipher, catalog, jc.Client, presets, cfg.AppURL), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*sendingdomains.Module, error) {

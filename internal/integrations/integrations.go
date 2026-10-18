@@ -17,6 +17,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -24,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -52,10 +54,14 @@ type Module struct {
 	cipher  *secrets.Cipher
 	catalog *messaging.Catalog
 	quota   QuotaEnqueuer
+	presets *preset.Registry
+	appURL  string
 }
 
-func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, quota QuotaEnqueuer) *Module {
-	return &Module{bus: bus, cipher: cipher, catalog: catalog, quota: quota}
+// New builds the module. presets is the Instance's Preset registry and appURL the public
+// origin the hook URLs are built from.
+func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, quota QuotaEnqueuer, presets *preset.Registry, appURL string) *Module {
+	return &Module{bus: bus, cipher: cipher, catalog: catalog, quota: quota, presets: presets, appURL: appURL}
 }
 
 // SMTPConfig and SESConfig are the write-side provider settings, secrets included.
@@ -114,6 +120,9 @@ type CreateInput struct {
 	MaxPerSecond Limit
 	MaxPerDay    Limit
 	Config       ConfigInput
+	// Preset and Params are the inbound side (ADR 0037); Params without a Preset is refused.
+	Preset *string
+	Params map[string]any
 }
 
 // UpdateInput is a partial edit; nil fields keep the stored value. A nil Config keeps the
@@ -125,6 +134,10 @@ type UpdateInput struct {
 	MaxPerSecond Limit
 	MaxPerDay    Limit
 	Config       *ConfigInput
+	// Preset, Params and RetireSecrets edit the inbound side; see sealInbound.
+	Preset        PresetChange
+	Params        map[string]any
+	RetireSecrets bool
 }
 
 // Create validates and stores an Integration, sealing its credentials.
@@ -145,6 +158,14 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if in.Enabled != nil {
 		enabled = *in.Enabled
 	}
+	inb, _, err := m.sealInbound(nil, PresetChange{Set: in.Preset != nil, Name: in.Preset}, in.Params, false)
+	if err != nil {
+		return nil, err
+	}
+	key, err := credentials.GenerateIngestKey()
+	if err != nil {
+		return nil, err
+	}
 
 	var row *ent.Integration
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -156,16 +177,21 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 			}
 		}
 		var err error
-		row, err = ts.Integration().Create().
+		create := ts.Integration().Create().
 			SetName(name).
 			SetChannel(channel).
 			SetProvider(provider).
 			SetConfigEncrypted(sealed).
+			SetIngestKey(key).
+			SetNillablePreset(inb.preset).
 			SetEnabled(enabled).
 			SetIsDefault(in.IsDefault).
 			SetNillableMaxPerSecond(in.MaxPerSecond.Value).
-			SetNillableMaxPerDay(in.MaxPerDay.Value).
-			Save(ctx)
+			SetNillableMaxPerDay(in.MaxPerDay.Value)
+		if inb.sealed != nil {
+			create.SetParamsEncrypted(*inb.sealed)
+		}
+		row, err = create.Save(ctx)
 		return err
 	})
 	if db.IsUniqueViolation(err) {
@@ -220,6 +246,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		sealed = &enc
 	}
 
+	inb, applyInbound, err := m.sealInbound(row, in.Preset, in.Params, in.RetireSecrets)
+	if err != nil {
+		return nil, err
+	}
+
 	// Promoting to default touches sibling rows, so it clears the channel's current
 	// default first, in the same transaction as the update.
 	promote := in.IsDefault != nil && *in.IsDefault && !row.IsDefault
@@ -240,6 +271,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		if sealed != nil {
 			upd.SetConfigEncrypted(*sealed)
+		}
+		if applyInbound {
+			if inb.preset == nil {
+				upd.ClearPreset().ClearParamsEncrypted()
+			} else {
+				upd.SetPreset(*inb.preset).SetParamsEncrypted(*inb.sealed)
+			}
 		}
 		applyLimit(in.MaxPerSecond, upd.SetMaxPerSecond, upd.ClearMaxPerSecond)
 		applyLimit(in.MaxPerDay, upd.SetMaxPerDay, upd.ClearMaxPerDay)
@@ -462,28 +500,4 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (
 		func(ctx context.Context, limit, offset int) ([]*ent.Integration, error) {
 			return s.Integration().Query().Order(ent.Asc(integration.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
-}
-
-// SNSTopics lists the SNS topics the Workspace's SES Integrations accept bounce and
-// complaint notifications from. A Workspace that names none gets an empty list.
-func (m *Module) SNSTopics(ctx context.Context, s *ent.Scoped) ([]string, error) {
-	rows, err := s.Integration().Query().Where(integration.ProviderEQ(integration.ProviderSes)).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	var topics []string
-	for _, row := range rows {
-		plaintext, err := m.cipher.Decrypt(row.ConfigEncrypted)
-		if err != nil {
-			return nil, err
-		}
-		var c ses.Config
-		if err := json.Unmarshal(plaintext, &c); err != nil {
-			return nil, err
-		}
-		if c.SNSTopicARN != "" {
-			topics = append(topics, c.SNSTopicARN)
-		}
-	}
-	return topics, nil
 }

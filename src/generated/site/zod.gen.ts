@@ -436,6 +436,15 @@ export const zSiteOAuthDecisionResult = z.object({
 });
 
 /**
+ * A Preset the Instance offers
+ */
+export const zSitePresetResource = z.object({
+  name: z.string(),
+  description: z.string(),
+  paramsSchema: z.record(z.string(), z.unknown())
+});
+
+/**
  * Result of a segment preview: how many deliverable contacts match
  */
 export const zSitePreviewSegmentResult = z.object({
@@ -669,7 +678,9 @@ export const zSiteCreateIntegrationInput = z.object({
   isDefault: z.exactOptional(z.boolean()),
   maxPerSecond: z.exactOptional(zSiteMaxPerSecond.nullable()),
   maxPerDay: z.exactOptional(zSiteMaxPerDay.nullable()),
-  config: zSiteIntegrationConfigInput
+  config: zSiteIntegrationConfigInput,
+  preset: z.exactOptional(z.string().nullable()),
+  params: z.exactOptional(z.record(z.string(), z.unknown()))
 });
 
 /**
@@ -757,7 +768,10 @@ export const zSiteUpdateIntegrationInput = z.object({
   isDefault: z.exactOptional(z.boolean()),
   maxPerSecond: z.exactOptional(zSiteMaxPerSecond.nullable()),
   maxPerDay: z.exactOptional(zSiteMaxPerDay.nullable()),
-  config: z.exactOptional(zSiteIntegrationConfigInput.nullable())
+  config: z.exactOptional(zSiteIntegrationConfigInput.nullable()),
+  preset: z.exactOptional(z.string().nullable()),
+  params: z.exactOptional(z.record(z.string(), z.unknown())),
+  retireSecrets: z.exactOptional(z.boolean())
 });
 
 /**
@@ -1149,6 +1163,10 @@ export const zSiteIntegrationResource = z.object({
   maxPerDay: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   sendLimit: zSiteSendLimitStatus,
   config: zSiteIntegrationConfig,
+  preset: z.string().nullable(),
+  params: z.record(z.string(), z.unknown()),
+  secretsRetiring: z.array(z.string()),
+  hookUrl: z.string(),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -1293,7 +1311,6 @@ export const zSiteWorkspaceResource = z.object({
   name: z.string(),
   slug: z.string(),
   collectKey: z.string(),
-  ingestKey: z.string(),
   postalAddress: z.string(),
   role: zSiteMembershipRole,
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
@@ -1734,6 +1751,11 @@ export const zSiteOAuthDecideBody = zSiteOAuthDecisionInput;
  * The request has succeeded.
  */
 export const zSiteOAuthDecideResponse = zSiteOAuthDecisionResult;
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePresetsListResponse = z.array(zSitePresetResource);
 
 export const zSitePublicUnsubscribesPerformPath = z.object({
   token: z.string()
@@ -2245,6 +2267,16 @@ export const zSiteIntegrationsUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteIntegrationsUpdateResponse = zSiteIntegrationResource;
+
+export const zSiteIntegrationsRegenerateKeyPath = z.object({
+  slug: z.string(),
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteIntegrationsRegenerateKeyResponse = zSiteIntegrationResource;
 
 export const zSiteInvitationsListPath = z.object({
   slug: z.string()

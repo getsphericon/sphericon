@@ -31,7 +31,6 @@ const workspace = {
   name: 'Acme',
   slug: 'test',
   collectKey: 'omck_test_key',
-  ingestKey: 'omik_test_key',
   postalAddress: '',
   accountLinkAvailable: false,
   holds: [],

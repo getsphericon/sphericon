@@ -3,57 +3,26 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/mail"
 	"net/url"
-	"slices"
 	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/logging"
+	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	sns "github.com/robbiet480/go.sns"
 )
 
-// hooksHandler serves inbound provider webhooks, routed by the workspace's secret
-// ingest key: POST /hooks/{key}/{provider}. Each provider has its own adapter
-// that verifies the provider's signature, normalizes the payload into our typed
-// domain events, and publishes them (suppression + persist subscribe downstream).
-// Today the only adapter is AWS SES delivered over SNS.
-func hooksHandler(client *ent.Client, bus *events.Bus, topics snsTopics) http.Handler {
-	h := &sesHook{
-		ent:    client,
-		bus:    bus,
-		topics: topics,
-		// VerifyPayload checks the signature against the (amazonaws-hosted) signing
-		// cert; injectable so tests can drive the parser without real AWS signatures.
-		verify:  func(p *sns.Payload) error { return p.VerifyPayload() },
-		confirm: confirmSNSSubscription,
-	}
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /hooks/{key}/ses", h.handle)
-	return mux
-}
-
-// snsTopics names the SNS topics a Workspace's SES Integrations accept notifications from.
-type snsTopics interface {
-	SNSTopics(ctx context.Context, s *ent.Scoped) ([]string, error)
-}
-
-type sesHook struct {
-	ent     *ent.Client
-	bus     *events.Bus
-	topics  snsTopics
-	verify  func(*sns.Payload) error
-	confirm func(ctx context.Context, subscribeURL string) error
-}
+// The SES adapter (AWS SES delivered over SNS) reads an SES Integration's callbacks until
+// the `ses` Preset replaces it (ADR 0037). It is hand-written: it verifies the SNS signature,
+// refuses a topic the Integration did not name, confirms a subscription and normalizes the
+// notification into Delivery failures that hook.publish writes to the outbox.
 
 // sesNotification is the SES event carried in the SNS Payload.Message string. SES
 // uses "notificationType" for identity notifications and "eventType" for
@@ -77,51 +46,29 @@ type sesNotification struct {
 	} `json:"complaint"`
 }
 
-func (h *sesHook) handle(w http.ResponseWriter, r *http.Request) {
-	ws, err := h.ent.Workspace.Query().
-		Where(workspace.IngestKey(r.PathValue("key"))).
-		Only(r.Context())
-	if ent.IsNotFound(err) {
-		http.NotFound(w, r)
-		return
-	}
-	if err != nil {
-		writeProblem(w, http.StatusInternalServerError, "workspace lookup failed")
-		return
-	}
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		var tooBig *http.MaxBytesError
-		if errors.As(err, &tooBig) {
-			writeProblem(w, http.StatusRequestEntityTooLarge, tooBig.Error())
-			return
-		}
-		writeProblem(w, http.StatusBadRequest, "read body")
-		return
-	}
+func (h *hook) serveSES(w http.ResponseWriter, r *http.Request, row *ent.Integration, body []byte) {
 	var payload sns.Payload
 	if err := json.Unmarshal(body, &payload); err != nil {
 		writeProblem(w, http.StatusBadRequest, "invalid SNS payload")
 		return
 	}
-	if err := h.verify(&payload); err != nil {
+	if err := h.verifySNS(&payload); err != nil {
 		writeProblem(w, http.StatusForbidden, "SNS signature verification failed")
 		return
 	}
 
 	// A valid signature proves AWS sent this, not whose topic it came from: the topic must
-	// be one the Workspace named, or anyone holding the key could suppress any address.
-	topics, err := h.topics.SNSTopics(r.Context(), h.ent.Scoped(ws.ID))
+	// be the one this Integration named, or anyone holding the key could suppress any address.
+	topic, err := h.integ.SNSTopic(row)
 	if err != nil {
 		writeProblem(w, http.StatusInternalServerError, "integration lookup failed")
 		return
 	}
-	if len(topics) == 0 {
+	if topic == "" {
 		writeProblem(w, http.StatusForbidden, "no SNS topic is configured: set snsTopicArn on the SES Integration")
 		return
 	}
-	if !slices.Contains(topics, payload.TopicArn) {
+	if payload.TopicArn != topic {
 		writeProblem(w, http.StatusForbidden, "SNS topic is not the one configured on the SES Integration")
 		return
 	}
@@ -130,17 +77,17 @@ func (h *sesHook) handle(w http.ResponseWriter, r *http.Request) {
 	case "SubscriptionConfirmation":
 		// Confirm the subscription by fetching the (SSRF-guarded) SubscribeURL. On
 		// failure return 5xx so SNS resends the confirmation.
-		if err := h.confirm(r.Context(), payload.SubscribeURL); err != nil {
-			logging.FromContext(r.Context()).Error("hooks/ses: confirm subscription failed", "workspace_id", ws.ID, "err", err)
+		if err := h.confirmURL(r.Context(), payload.SubscribeURL); err != nil {
+			logging.FromContext(r.Context()).Error("hooks/ses: confirm subscription failed", "integration_id", row.ID, "err", err)
 			writeProblem(w, http.StatusBadGateway, "subscription confirmation failed")
 			return
 		}
 	case "Notification":
-		// The ingest key resolved the Workspace above: this is where its scope is built.
 		// On failure return 5xx so SNS redelivers rather than dropping the bounce;
-		// downstream persist/suppression dedupe on redelivery (DedupKey).
-		if err := h.handleNotification(r.Context(), events.Ingest(h.ent.Scoped(ws.ID)), payload); err != nil {
-			logging.FromContext(r.Context()).Error("hooks/ses: notification processing failed", "workspace_id", ws.ID, "err", err)
+		// downstream persist/suppression dedupe on redelivery (DedupID).
+		s := events.Ingest(h.ent.Scoped(row.WorkspaceID))
+		if err := h.handleSESNotification(r.Context(), s, payload); err != nil {
+			logging.FromContext(r.Context()).Error("hooks/ses: notification processing failed", "integration_id", row.ID, "err", err)
 			writeProblem(w, http.StatusInternalServerError, "notification processing failed")
 			return
 		}
@@ -196,17 +143,23 @@ func parseSESNotification(message string) ([]sesFailure, error) {
 	return out, nil
 }
 
-func (h *sesHook) handleNotification(ctx context.Context, s *ent.Scoped, payload sns.Payload) error {
+func (h *hook) handleSESNotification(ctx context.Context, s *ent.Scoped, payload sns.Payload) error {
 	failures, err := parseSESNotification(payload.Message)
 	if err != nil {
 		return err
 	}
+	out := make([]preset.DeliveryFailure, 0, len(failures))
 	for _, f := range failures {
-		if err := h.publishFailure(ctx, s, payload.MessageId, f); err != nil {
-			return err
+		df := preset.DeliveryFailure{
+			ID: payload.MessageId, Destination: f.Email, SendingDomain: f.SendingDomain,
+			Kind: preset.Bounce, Permanent: f.Kind == events.BounceKindPermanent,
 		}
+		if f.Action == events.NameEmailComplained {
+			df.Kind = preset.Complaint
+		}
+		out = append(out, df)
 	}
-	return nil
+	return h.publish(ctx, s, "ses", out)
 }
 
 // sourceDomain extracts the lower-cased domain of a From address ("Name <a@b.c>" or
@@ -221,42 +174,6 @@ func sourceDomain(source string) string {
 		return ""
 	}
 	return strings.ToLower(domain)
-}
-
-// publishFailure normalizes the address, resolves the contact when known, and
-// publishes one typed EmailDeliveryFailure keyed by SNS messageId + recipient so
-// a redelivered notification dedupes downstream.
-func (h *sesHook) publishFailure(ctx context.Context, s *ent.Scoped, messageID string, f sesFailure) error {
-	action, kind := f.Action, f.Kind
-	email := strings.ToLower(strings.TrimSpace(f.Email))
-	if email == "" {
-		return nil
-	}
-	var contactID int64
-	c, err := s.Contact().Query().
-		Where(contact.EmailEqualFold(email)).
-		Only(ctx)
-	switch {
-	case err == nil:
-		contactID = c.ID
-	case ent.IsNotFound(err):
-		// No contact for this address (e.g. a bounce for an address we never had
-		// as a contact) — suppress it anyway, with no contact link.
-	default:
-		return fmt.Errorf("lookup contact %q: %w", email, err)
-	}
-	return h.bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
-		return pub.Publish(ctx, &events.EmailDeliveryFailure{
-			Action:        action,
-			WorkspaceID:   s.WorkspaceID(),
-			ContactID:     contactID,
-			Email:         email,
-			BounceKind:    kind,
-			Provider:      "ses",
-			SendingDomain: f.SendingDomain,
-			DedupID:       messageID + "/" + email,
-		})
-	})
 }
 
 // confirmSNSSubscription confirms an SNS subscription by GETting the SubscribeURL.

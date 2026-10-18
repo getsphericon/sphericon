@@ -274,12 +274,25 @@ type Invoker interface {
 	//
 	// GET /integrations
 	IntegrationsList(ctx context.Context, params IntegrationsListParams) (IntegrationsListRes, error)
+	// IntegrationsRegenerateKey invokes Integrations_regenerateKey operation.
+	//
+	// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
+	// pasted into the provider. Needs a person: hidden from MCP.
+	//
+	// POST /integrations/{id}/regenerate-key
+	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
 	// IntegrationsUpdate invokes Integrations_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /integrations/{id}
 	IntegrationsUpdate(ctx context.Context, request *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error)
+	// PresetsList invokes Presets_list operation.
+	//
+	// List the Presets the Instance offers, with the params schema of each.
+	//
+	// GET /presets
+	PresetsList(ctx context.Context) (PresetsListRes, error)
 	// SegmentsCreate invokes Segments_create operation.
 	//
 	// Create a resource.
@@ -5951,6 +5964,142 @@ func (c *Client) sendIntegrationsList(ctx context.Context, params IntegrationsLi
 	return result, nil
 }
 
+// IntegrationsRegenerateKey invokes Integrations_regenerateKey operation.
+//
+// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
+// pasted into the provider. Needs a person: hidden from MCP.
+//
+// POST /integrations/{id}/regenerate-key
+func (c *Client) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error) {
+	res, err := c.sendIntegrationsRegenerateKey(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendIntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (res IntegrationsRegenerateKeyRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Integrations_regenerateKey"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/integrations/{id}/regenerate-key"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, IntegrationsRegenerateKeyOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/integrations/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/regenerate-key"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, IntegrationsRegenerateKeyOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeIntegrationsRegenerateKeyResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // IntegrationsUpdate invokes Integrations_update operation.
 //
 // Update a resource.
@@ -6081,6 +6230,119 @@ func (c *Client) sendIntegrationsUpdate(ctx context.Context, request *UpdateInte
 
 	stage = "DecodeResponse"
 	result, err := decodeIntegrationsUpdateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// PresetsList invokes Presets_list operation.
+//
+// List the Presets the Instance offers, with the params schema of each.
+//
+// GET /presets
+func (c *Client) PresetsList(ctx context.Context) (PresetsListRes, error) {
+	res, err := c.sendPresetsList(ctx)
+	return res, err
+}
+
+func (c *Client) sendPresetsList(ctx context.Context) (res PresetsListRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Presets_list"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/presets"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, PresetsListOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/presets"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, PresetsListOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodePresetsListResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

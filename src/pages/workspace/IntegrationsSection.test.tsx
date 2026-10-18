@@ -3,6 +3,8 @@ import { beforeEach, expect, test } from 'vitest'
 
 import {
   handleSiteAuditList,
+  handleSiteIntegrationsRegenerateKey,
+  handleSitePresetsList,
   handleSiteIntegrationsCreate,
   handleSiteIntegrationsDelete,
   handleSiteIntegrationsList,
@@ -34,6 +36,10 @@ const smtp: SiteIntegrationResource = {
     warnings: ['unlimited'],
   },
   config: { kind: 'smtp', host: 'smtp.test', port: 587, from: 'a@acme.com' },
+  preset: null,
+  params: {},
+  secretsRetiring: [],
+  hookUrl: 'https://app.test/hooks/omik_one',
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 }
@@ -302,4 +308,82 @@ test('a member can read the providers but not change them', async () => {
     .element(screen.getByRole('button', { name: 'Connect provider' }))
     .not.toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+})
+
+const generic = {
+  name: 'generic',
+  description: 'A body already in the Delivery failure shape, signed with Standard Webhooks.',
+  paramsSchema: {
+    type: 'object',
+    properties: { secret: { type: 'string', writeOnly: true } },
+  },
+}
+
+const withPreset: SiteIntegrationResource = {
+  ...smtp,
+  preset: 'generic',
+  params: { secret: '********' },
+  secretsRetiring: ['secret'],
+}
+
+test('shows the hook URL and chooses a Preset with its params', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    list([smtp]),
+    handleSitePresetsList({ body: [generic] }),
+    handleSiteIntegrationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(withPreset)
+    }),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+
+  await screen.getByRole('button', { name: 'Inbound' }).click()
+  await expect.element(screen.getByText('https://app.test/hooks/omik_one')).toBeInTheDocument()
+  await screen.getByRole('combobox', { name: 'Preset' }).click()
+  await screen.getByRole('option', { name: 'generic' }).click()
+  await screen.getByRole('textbox', { name: /^Params/ }).fill('{"secret": "whsec_abc"}')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ preset: 'generic', params: { secret: 'whsec_abc' } }])
+})
+
+test('retires the old secrets of a rotating Preset', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    list([withPreset]),
+    handleSitePresetsList({ body: [generic] }),
+    handleSiteIntegrationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ ...withPreset, secretsRetiring: [] })
+    }),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+
+  await screen.getByRole('button', { name: 'Inbound' }).click()
+  await screen.getByRole('button', { name: 'Retire old secrets' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ retireSecrets: true }])
+})
+
+test('regenerates the hook URL after a confirmation', async () => {
+  const calls: string[] = []
+  worker.use(
+    list([smtp]),
+    handleSitePresetsList({ body: [generic] }),
+    handleSiteIntegrationsRegenerateKey(({ params }) => {
+      calls.push(params.id)
+      return HttpResponse.json({ ...smtp, hookUrl: 'https://app.test/hooks/omik_two' })
+    }),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+
+  await screen.getByRole('button', { name: 'Inbound' }).click()
+  await screen.getByRole('button', { name: 'Regenerate URL' }).click()
+  await screen
+    .getByRole('dialog', { name: 'Regenerate the hook URL?' })
+    .getByRole('button', { name: 'Regenerate URL' })
+    .click()
+
+  await expect.poll(() => calls).toEqual(['1'])
 })

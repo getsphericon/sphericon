@@ -178,6 +178,18 @@ model SiteIntegrationResource {
   /** Provider config (secrets redacted) */
   config: SiteIntegrationConfig;
 
+  /** The Preset this Integration's provider callbacks are read with; null when it receives none */
+  preset: string | null;
+
+  /** The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as `********`, never its value */
+  params: Record<unknown>;
+
+  /** Names of the secret params that are rotating: a retiring value is still accepted beside the current one */
+  secretsRetiring: string[];
+
+  /** Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is) */
+  hookUrl: string;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -198,6 +210,12 @@ model SiteCreateIntegrationInput {
   maxPerDay?: SiteMaxPerDay | null;
 
   config: SiteIntegrationConfigInput;
+
+  /** Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with */
+  preset?: string | null;
+
+  /** The Preset's params, validated against its `paramsSchema`: read the schema first */
+  params?: Record<unknown>;
 }
 
 /** Update a workspace integration. Omit `config` to keep stored credentials. */
@@ -213,6 +231,15 @@ model SiteUpdateIntegrationInput {
   maxPerDay?: SiteMaxPerDay | null;
 
   config?: SiteIntegrationConfigInput | null;
+
+  /** Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over */
+  preset?: string | null;
+
+  /** The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired) */
+  params?: Record<unknown>;
+
+  /** Stop accepting the retiring value of every rotating secret */
+  retireSecrets?: boolean;
 }
 
 // Bespoke (not WorkspaceCrud): `list` returns a bare array, not a paginated
@@ -271,6 +298,16 @@ namespace SiteIntegrations {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
+  /** Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only. */
+  @action("regenerate-key")
+  @post
+  @autoRoute
+  op regenerateKey(...ResourceParameters<SiteIntegrationResource>):
+    | SiteIntegrationResource
+    | BadRequestProblem
+    | ForbiddenProblem
+    | NotFoundProblem;
+
   /** Delete an integration. Owners and admins only. */
   @deletesResource(SiteIntegrationResource)
   @delete
@@ -280,4 +317,29 @@ namespace SiteIntegrations {
     | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;
+}
+
+// A Preset's params are dynamic by nature, so the contract carries the Preset's JSON Schema
+// and an Integration's values as opaque objects, validated server side (ADR 0037): the
+// recorded exception to "type fixed structures in the contract". The console offers a
+// Preset select and a JSON editor for the params, never a form generated from the schema.
+
+/** A Preset the Instance offers */
+model SitePresetResource {
+  /** The name an integration's `preset` refers to */
+  name: string;
+
+  /** What the Preset is for */
+  description: string;
+
+  /** JSON Schema (draft 2020-12) of the params; a string marked `writeOnly` is a secret */
+  paramsSchema: Record<unknown>;
+}
+
+@route("/presets")
+@tag("Site Integrations")
+namespace SitePresets {
+  /** List the Presets the Instance offers, with the params schema of each */
+  @get
+  op list(): SitePresetResource[];
 }

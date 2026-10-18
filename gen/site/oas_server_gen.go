@@ -288,6 +288,12 @@ type Handler interface {
 	//
 	// GET /workspaces/{slug}/integrations
 	SiteIntegrationsList(ctx context.Context, params SiteIntegrationsListParams) (SiteIntegrationsListRes, error)
+	// SiteIntegrationsRegenerateKey implements SiteIntegrations_regenerateKey operation.
+	//
+	// Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+	//
+	// POST /workspaces/{slug}/integrations/{id}/regenerate-key
+	SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (SiteIntegrationsRegenerateKeyRes, error)
 	// SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 	//
 	// Update an integration. Owners and admins only.
@@ -351,6 +357,12 @@ type Handler interface {
 	//
 	// GET /oauth/authorization
 	SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (SiteOAuthDescribeRes, error)
+	// SitePresetsList implements SitePresets_list operation.
+	//
+	// List the Presets the Instance offers, with the params schema of each.
+	//
+	// GET /presets
+	SitePresetsList(ctx context.Context) ([]SitePresetResource, error)
 	// SitePublicConfirmationsPerform implements SitePublicConfirmations_perform operation.
 	//
 	// Perform a double opt-in confirmation (ADR 0013). The deliberate human act behind the confirmation

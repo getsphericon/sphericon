@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -116,6 +117,20 @@ func (p *Preset) Description() string { return p.description }
 
 // ParamsSchema is the JSON Schema of the params, as the Preset file wrote it.
 func (p *Preset) ParamsSchema() map[string]any { return p.params }
+
+// SecretParams names the params the schema marks `writeOnly`: secrets, which are stored
+// encrypted, never returned by a read and rotated rather than replaced.
+func (p *Preset) SecretParams() []string {
+	props, _ := p.params["properties"].(map[string]any)
+	var names []string
+	for name, def := range props {
+		if d, ok := def.(map[string]any); ok && d["writeOnly"] == true {
+			names = append(names, name)
+		}
+	}
+	slices.Sort(names)
+	return names
+}
 
 // ValidateParams checks the Integration's values against the params schema.
 func (p *Preset) ValidateParams(values Params) error {

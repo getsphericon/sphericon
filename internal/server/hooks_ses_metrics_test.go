@@ -18,13 +18,13 @@ import (
 func TestSESHookCountsBounceAndComplaintOutcomes(t *testing.T) {
 	env := testhelper.Setup(t)
 	metricstest.StartMetrics(t)
-	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, noConfirm)
+	h := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, noConfirm)
 
 	bounce := `{"notificationType":"Bounce","mail":{"source":"hello@codebasics.dev"},
 	  "bounce":{"bounceType":"Permanent","bouncedRecipients":[{"emailAddress":"` + strings.ToUpper(fixtures.ContactAliceEmail) + `"}]}}`
-	require.Equal(t, 200, postSES(t, h, fixtures.AcmeIngestKey, sesNotificationBody(t, bounce)).Code)
+	require.Equal(t, 200, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, sesNotificationBody(t, bounce)).Code)
 	complaint := `{"eventType":"Complaint","complaint":{"complainedRecipients":[{"emailAddress":"stranger@example.com"}]}}`
-	require.Equal(t, 200, postSES(t, h, fixtures.AcmeIngestKey, sesNotificationBody(t, complaint)).Code)
+	require.Equal(t, 200, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, sesNotificationBody(t, complaint)).Code)
 
 	persistOutbox(t, env)
 
@@ -38,13 +38,13 @@ func TestSESHookCountsBounceAndComplaintOutcomes(t *testing.T) {
 func TestSESHookRedeliveryCountsOutcomeOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	metricstest.StartMetrics(t)
-	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, noConfirm)
+	h := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, noConfirm)
 
 	bounce := `{"notificationType":"Bounce","mail":{"source":"hello@codebasics.dev"},
 	  "bounce":{"bounceType":"Permanent","bouncedRecipients":[{"emailAddress":"` + fixtures.ContactAliceEmail + `"}]}}`
 	body := sesNotificationBody(t, bounce)
-	require.Equal(t, 200, postSES(t, h, fixtures.AcmeIngestKey, body).Code)
-	require.Equal(t, 200, postSES(t, h, fixtures.AcmeIngestKey, body).Code)
+	require.Equal(t, 200, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, body).Code)
+	require.Equal(t, 200, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, body).Code)
 	persistOutbox(t, env)
 
 	scrape := metricstest.ScrapeMetrics(t)

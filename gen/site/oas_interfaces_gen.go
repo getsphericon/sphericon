@@ -165,6 +165,10 @@ type SiteIntegrationsListRes interface {
 	siteIntegrationsListRes()
 }
 
+type SiteIntegrationsRegenerateKeyRes interface {
+	siteIntegrationsRegenerateKeyRes()
+}
+
 type SiteIntegrationsUpdateRes interface {
 	siteIntegrationsUpdateRes()
 }

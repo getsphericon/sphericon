@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -134,6 +135,8 @@ type TestEnv struct {
 	Tracker *tracking.Tracker
 	// Cipher is the instance the server seals with, for modules a test builds directly.
 	Cipher *secrets.Cipher
+	// Integrations is the module the server serves Integrations and their hooks with.
+	Integrations *integrations.Module
 
 	edition *ee.Edition // the EE parts, built like the composition root builds them
 
@@ -287,7 +290,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	templatesModule := templates.New()
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(cipher, edition.Audit)
-	integrationsModule := integrations.New(bus, cipher, catalog, inline)
+	presets, err := preset.Load(nil)
+	if err != nil {
+		t.Fatalf("load presets: %v", err)
+	}
+	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL)
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline)
 	automationsModule := automations.New()
 	broadcastsModule := broadcasts.New(inline)
@@ -322,7 +329,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{
-		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
+		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
 		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}
 }

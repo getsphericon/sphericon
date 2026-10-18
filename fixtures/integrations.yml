@@ -5,6 +5,7 @@
 # one is disabled. Exactly one is_default per (workspace, channel) — see the partial
 # unique index on integrations.
 - id: 1 # fixture: IntegrationAcmeDefault
+  ingest_key: omik_test_integrationacmedefault
   name: Mailpit (dev SMTP)
   channel: email
   provider: smtp
@@ -15,6 +16,7 @@
   created_at: '{{daysAgo 170}}'
   updated_at: '{{daysAgo 170}}'
 - id: 2 # fixture: IntegrationAcmeSes
+  ingest_key: omik_test_integrationacmeses
   name: Amazon SES (disabled)
   channel: email
   provider: ses
@@ -27,6 +29,7 @@
 
 # Globex (workspace 2).
 - id: 900 # fixture: IntegrationGlobex
+  ingest_key: omik_test_integrationglobex
   name: Globex SMTP
   channel: email
   provider: smtp
@@ -37,6 +40,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 901 # fixture: IntegrationGlobexSesNoTopic
+  ingest_key: omik_test_integrationglobexsesnotopic
   name: Globex SES (no SNS topic yet)
   channel: email
   provider: ses
@@ -46,3 +50,32 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Two Integrations of Acme read their callbacks with the generic Preset, each with a secret of its
+# own: a callback signed for one must never be accepted by the other.
+- id: 3 # fixture: IntegrationAcmeGenericA
+  ingest_key: omik_test_integrationacmegenerica
+  name: Relay A (generic Preset)
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"relay-a.example.com\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: generic
+  params_encrypted: '{{ encrypt "{\"secret\":\"whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LUEwMTIzNDU2Nzg5\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 4 # fixture: IntegrationAcmeGenericB
+  ingest_key: omik_test_integrationacmegenericb
+  name: Relay B (generic Preset)
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"relay-b.example.com\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: generic
+  params_encrypted: '{{ encrypt "{\"secret\":\"whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LUIwMTIzNDU2Nzg5\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'

@@ -23,7 +23,7 @@ import (
 func TestSESHookUnknownKeyNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	req := httptest.NewRequestWithContext(t.Context(), "POST", "/hooks/omik_does_not_exist/ses",
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/hooks/omik_does_not_exist",
 		strings.NewReader(`{"Type":"Notification","Message":"{}"}`))
 	rec := httptest.NewRecorder()
 	env.Server.ServeHTTP(rec, req)
@@ -37,7 +37,7 @@ func TestSESHookRejectsUnverifiedPayload(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	// The Acme workspace ingest key resolves the workspace before verification.
-	req := httptest.NewRequestWithContext(t.Context(), "POST", "/hooks/"+fixtures.AcmeIngestKey+"/ses",
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/hooks/"+fixtures.IntegrationAcmeSesIngestKey,
 		strings.NewReader(`{"Type":"Notification","Message":"{}","Signature":"bogus","SigningCertURL":"https://sns.us-east-1.amazonaws.com/x.pem"}`))
 	rec := httptest.NewRecorder()
 	env.Server.ServeHTTP(rec, req)
@@ -50,7 +50,7 @@ const acmeSNSTopic = "arn:aws:sns:eu-west-1:123456789012:acme-ses-events"
 
 func postSES(t *testing.T, h http.Handler, key, body string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequestWithContext(t.Context(), "POST", "/hooks/"+key+"/ses", strings.NewReader(body))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/hooks/"+key, strings.NewReader(body))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	return rec
@@ -85,11 +85,11 @@ func outboxEvents(t *testing.T, env *testhelper.TestEnv, email string) []events.
 // keyed by SNS message id + recipient, with the From domain echoed.
 func TestSESHookPublishesPermanentBounce(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, noConfirm)
+	h := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, noConfirm)
 
 	msg := `{"notificationType":"Bounce","mail":{"source":"News <hello@Codebasics.dev>"},
 	  "bounce":{"bounceType":"Permanent","bouncedRecipients":[{"emailAddress":"` + strings.ToUpper(fixtures.ContactAliceEmail) + `"}]}}`
-	rec := postSES(t, h, fixtures.AcmeIngestKey, sesNotificationBody(t, msg))
+	rec := postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, sesNotificationBody(t, msg))
 	require.Equal(t, 200, rec.Code)
 
 	got := outboxEvents(t, env, fixtures.ContactAliceEmail)
@@ -106,10 +106,10 @@ func TestSESHookPublishesPermanentBounce(t *testing.T) {
 // suppressed), just without a contact link; a blank recipient is skipped.
 func TestSESHookPublishesComplaintForUnknownAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, noConfirm)
+	h := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, noConfirm)
 
 	msg := `{"eventType":"Complaint","complaint":{"complainedRecipients":[{"emailAddress":" Stranger@Example.com "},{"emailAddress":"  "}]}}`
-	require.Equal(t, 200, postSES(t, h, fixtures.AcmeIngestKey, sesNotificationBody(t, msg)).Code)
+	require.Equal(t, 200, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, sesNotificationBody(t, msg)).Code)
 
 	got := outboxEvents(t, env, "stranger@example.com")
 	require.Len(t, got, 1)
@@ -119,20 +119,20 @@ func TestSESHookPublishesComplaintForUnknownAddress(t *testing.T) {
 
 func TestSESHookNotificationErrors(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, noConfirm)
+	h := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, noConfirm)
 
 	// A Message that is not JSON is a 500 so SNS redelivers it.
-	assert.Equal(t, 500, postSES(t, h, fixtures.AcmeIngestKey, sesNotificationBody(t, "not json")).Code)
+	assert.Equal(t, 500, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, sesNotificationBody(t, "not json")).Code)
 	// A body that is not an SNS payload is a 400.
-	assert.Equal(t, 400, postSES(t, h, fixtures.AcmeIngestKey, "not json").Code)
+	assert.Equal(t, 400, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, "not json").Code)
 	// Delivery notifications carry no failure: accepted, nothing published.
-	assert.Equal(t, 200, postSES(t, h, fixtures.AcmeIngestKey, sesNotificationBody(t, `{"notificationType":"Delivery"}`)).Code)
+	assert.Equal(t, 200, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, sesNotificationBody(t, `{"notificationType":"Delivery"}`)).Code)
 }
 
 func TestSESHookRejectsFailedVerification(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, func(*sns.Payload) error { return errors.New("bad sig") }, noConfirm)
-	assert.Equal(t, 403, postSES(t, h, fixtures.AcmeIngestKey, sesNotificationBody(t, "{}")).Code)
+	h := server.NewHooks(env.DB, env.Bus, env.Integrations, func(*sns.Payload) error { return errors.New("bad sig") }, noConfirm)
+	assert.Equal(t, 403, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, sesNotificationBody(t, "{}")).Code)
 }
 
 func TestSESHookSubscriptionConfirmation(t *testing.T) {
@@ -140,13 +140,13 @@ func TestSESHookSubscriptionConfirmation(t *testing.T) {
 	body := `{"Type":"SubscriptionConfirmation","TopicArn":"` + acmeSNSTopic + `","SubscribeURL":"https://sns.us-east-1.amazonaws.com/?Action=ConfirmSubscription"}`
 
 	var confirmed string
-	ok := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, func(_ context.Context, u string) error { confirmed = u; return nil })
-	assert.Equal(t, 200, postSES(t, ok, fixtures.AcmeIngestKey, body).Code)
+	ok := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, func(_ context.Context, u string) error { confirmed = u; return nil })
+	assert.Equal(t, 200, postSES(t, ok, fixtures.IntegrationAcmeSesIngestKey, body).Code)
 	assert.Contains(t, confirmed, "ConfirmSubscription")
 
 	// A failed confirmation is a 502 so SNS resends it.
-	failing := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, func(context.Context, string) error { return errors.New("down") })
-	assert.Equal(t, 502, postSES(t, failing, fixtures.AcmeIngestKey, body).Code)
+	failing := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, func(context.Context, string) error { return errors.New("down") })
+	assert.Equal(t, 502, postSES(t, failing, fixtures.IntegrationAcmeSesIngestKey, body).Code)
 }
 
 // The real confirmer only follows https amazonaws.com URLs.
@@ -167,12 +167,12 @@ const bounceMessage = `{"notificationType":"Bounce","bounce":{"bounceType":"Perm
 // suppresses nothing: an SNS signature proves AWS sent it, not whose topic it is.
 func TestSESHookRefusesNotificationFromAnotherTopic(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, noConfirm)
+	h := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, noConfirm)
 
 	b, err := json.Marshal(map[string]string{"Type": "Notification", "MessageId": "m1",
 		"TopicArn": "arn:aws:sns:eu-west-1:999999999999:attacker", "Message": bounceMessage})
 	require.NoError(t, err)
-	assert.Equal(t, 403, postSES(t, h, fixtures.AcmeIngestKey, string(b)).Code)
+	assert.Equal(t, 403, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, string(b)).Code)
 	assert.Empty(t, outboxEvents(t, env, "victim@example.com"))
 }
 
@@ -180,10 +180,10 @@ func TestSESHookRefusesNotificationFromAnotherTopic(t *testing.T) {
 func TestSESHookDoesNotConfirmAnotherTopic(t *testing.T) {
 	env := testhelper.Setup(t)
 	confirmed := false
-	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, func(context.Context, string) error { confirmed = true; return nil })
+	h := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, func(context.Context, string) error { confirmed = true; return nil })
 
 	body := `{"Type":"SubscriptionConfirmation","TopicArn":"arn:aws:sns:eu-west-1:999999999999:attacker","SubscribeURL":"https://sns.eu-west-1.amazonaws.com/?Action=ConfirmSubscription"}`
-	assert.Equal(t, 403, postSES(t, h, fixtures.AcmeIngestKey, body).Code)
+	assert.Equal(t, 403, postSES(t, h, fixtures.IntegrationAcmeSesIngestKey, body).Code)
 	assert.False(t, confirmed)
 }
 
@@ -191,9 +191,9 @@ func TestSESHookDoesNotConfirmAnotherTopic(t *testing.T) {
 // owner what to set.
 func TestSESHookFailsClosedWithoutConfiguredTopic(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, noConfirm)
+	h := server.NewHooks(env.DB, env.Bus, env.Integrations, acceptAll, noConfirm)
 
-	rec := postSES(t, h, fixtures.GlobexIngestKey, sesNotificationBody(t, bounceMessage))
+	rec := postSES(t, h, fixtures.IntegrationGlobexSesNoTopicIngestKey, sesNotificationBody(t, bounceMessage))
 	assert.Equal(t, 403, rec.Code)
 	assert.Contains(t, rec.Body.String(), "snsTopicArn")
 	assert.Empty(t, outboxEvents(t, env, "victim@example.com"))

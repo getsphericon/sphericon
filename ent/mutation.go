@@ -13400,6 +13400,9 @@ type IntegrationMutation struct {
 	channel                    *integration.Channel
 	provider                   *integration.Provider
 	config_encrypted           *string
+	preset                     *string
+	params_encrypted           *string
+	ingest_key                 *string
 	enabled                    *bool
 	is_default                 *bool
 	max_per_second             *int
@@ -13776,6 +13779,140 @@ func (m *IntegrationMutation) OldConfigEncrypted(ctx context.Context) (v string,
 // ResetConfigEncrypted resets all changes to the "config_encrypted" field.
 func (m *IntegrationMutation) ResetConfigEncrypted() {
 	m.config_encrypted = nil
+}
+
+// SetPreset sets the "preset" field.
+func (m *IntegrationMutation) SetPreset(s string) {
+	m.preset = &s
+}
+
+// Preset returns the value of the "preset" field in the mutation.
+func (m *IntegrationMutation) Preset() (r string, exists bool) {
+	v := m.preset
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPreset returns the old "preset" field's value of the Integration entity.
+// If the Integration object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationMutation) OldPreset(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPreset is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPreset requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPreset: %w", err)
+	}
+	return oldValue.Preset, nil
+}
+
+// ClearPreset clears the value of the "preset" field.
+func (m *IntegrationMutation) ClearPreset() {
+	m.preset = nil
+	m.clearedFields[integration.FieldPreset] = struct{}{}
+}
+
+// PresetCleared returns if the "preset" field was cleared in this mutation.
+func (m *IntegrationMutation) PresetCleared() bool {
+	_, ok := m.clearedFields[integration.FieldPreset]
+	return ok
+}
+
+// ResetPreset resets all changes to the "preset" field.
+func (m *IntegrationMutation) ResetPreset() {
+	m.preset = nil
+	delete(m.clearedFields, integration.FieldPreset)
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (m *IntegrationMutation) SetParamsEncrypted(s string) {
+	m.params_encrypted = &s
+}
+
+// ParamsEncrypted returns the value of the "params_encrypted" field in the mutation.
+func (m *IntegrationMutation) ParamsEncrypted() (r string, exists bool) {
+	v := m.params_encrypted
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParamsEncrypted returns the old "params_encrypted" field's value of the Integration entity.
+// If the Integration object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationMutation) OldParamsEncrypted(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParamsEncrypted is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParamsEncrypted requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParamsEncrypted: %w", err)
+	}
+	return oldValue.ParamsEncrypted, nil
+}
+
+// ClearParamsEncrypted clears the value of the "params_encrypted" field.
+func (m *IntegrationMutation) ClearParamsEncrypted() {
+	m.params_encrypted = nil
+	m.clearedFields[integration.FieldParamsEncrypted] = struct{}{}
+}
+
+// ParamsEncryptedCleared returns if the "params_encrypted" field was cleared in this mutation.
+func (m *IntegrationMutation) ParamsEncryptedCleared() bool {
+	_, ok := m.clearedFields[integration.FieldParamsEncrypted]
+	return ok
+}
+
+// ResetParamsEncrypted resets all changes to the "params_encrypted" field.
+func (m *IntegrationMutation) ResetParamsEncrypted() {
+	m.params_encrypted = nil
+	delete(m.clearedFields, integration.FieldParamsEncrypted)
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (m *IntegrationMutation) SetIngestKey(s string) {
+	m.ingest_key = &s
+}
+
+// IngestKey returns the value of the "ingest_key" field in the mutation.
+func (m *IntegrationMutation) IngestKey() (r string, exists bool) {
+	v := m.ingest_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIngestKey returns the old "ingest_key" field's value of the Integration entity.
+// If the Integration object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationMutation) OldIngestKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIngestKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIngestKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIngestKey: %w", err)
+	}
+	return oldValue.IngestKey, nil
+}
+
+// ResetIngestKey resets all changes to the "ingest_key" field.
+func (m *IntegrationMutation) ResetIngestKey() {
+	m.ingest_key = nil
 }
 
 // SetEnabled sets the "enabled" field.
@@ -14315,7 +14452,7 @@ func (m *IntegrationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *IntegrationMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, integration.FieldCreatedAt)
 	}
@@ -14336,6 +14473,15 @@ func (m *IntegrationMutation) Fields() []string {
 	}
 	if m.config_encrypted != nil {
 		fields = append(fields, integration.FieldConfigEncrypted)
+	}
+	if m.preset != nil {
+		fields = append(fields, integration.FieldPreset)
+	}
+	if m.params_encrypted != nil {
+		fields = append(fields, integration.FieldParamsEncrypted)
+	}
+	if m.ingest_key != nil {
+		fields = append(fields, integration.FieldIngestKey)
 	}
 	if m.enabled != nil {
 		fields = append(fields, integration.FieldEnabled)
@@ -14383,6 +14529,12 @@ func (m *IntegrationMutation) Field(name string) (ent.Value, bool) {
 		return m.Provider()
 	case integration.FieldConfigEncrypted:
 		return m.ConfigEncrypted()
+	case integration.FieldPreset:
+		return m.Preset()
+	case integration.FieldParamsEncrypted:
+		return m.ParamsEncrypted()
+	case integration.FieldIngestKey:
+		return m.IngestKey()
 	case integration.FieldEnabled:
 		return m.Enabled()
 	case integration.FieldIsDefault:
@@ -14422,6 +14574,12 @@ func (m *IntegrationMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldProvider(ctx)
 	case integration.FieldConfigEncrypted:
 		return m.OldConfigEncrypted(ctx)
+	case integration.FieldPreset:
+		return m.OldPreset(ctx)
+	case integration.FieldParamsEncrypted:
+		return m.OldParamsEncrypted(ctx)
+	case integration.FieldIngestKey:
+		return m.OldIngestKey(ctx)
 	case integration.FieldEnabled:
 		return m.OldEnabled(ctx)
 	case integration.FieldIsDefault:
@@ -14495,6 +14653,27 @@ func (m *IntegrationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetConfigEncrypted(v)
+		return nil
+	case integration.FieldPreset:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPreset(v)
+		return nil
+	case integration.FieldParamsEncrypted:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParamsEncrypted(v)
+		return nil
+	case integration.FieldIngestKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIngestKey(v)
 		return nil
 	case integration.FieldEnabled:
 		v, ok := value.(bool)
@@ -14633,6 +14812,12 @@ func (m *IntegrationMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *IntegrationMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(integration.FieldPreset) {
+		fields = append(fields, integration.FieldPreset)
+	}
+	if m.FieldCleared(integration.FieldParamsEncrypted) {
+		fields = append(fields, integration.FieldParamsEncrypted)
+	}
 	if m.FieldCleared(integration.FieldMaxPerSecond) {
 		fields = append(fields, integration.FieldMaxPerSecond)
 	}
@@ -14662,6 +14847,12 @@ func (m *IntegrationMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *IntegrationMutation) ClearField(name string) error {
 	switch name {
+	case integration.FieldPreset:
+		m.ClearPreset()
+		return nil
+	case integration.FieldParamsEncrypted:
+		m.ClearParamsEncrypted()
+		return nil
 	case integration.FieldMaxPerSecond:
 		m.ClearMaxPerSecond()
 		return nil
@@ -14705,6 +14896,15 @@ func (m *IntegrationMutation) ResetField(name string) error {
 		return nil
 	case integration.FieldConfigEncrypted:
 		m.ResetConfigEncrypted()
+		return nil
+	case integration.FieldPreset:
+		m.ResetPreset()
+		return nil
+	case integration.FieldParamsEncrypted:
+		m.ResetParamsEncrypted()
+		return nil
+	case integration.FieldIngestKey:
+		m.ResetIngestKey()
 		return nil
 	case integration.FieldEnabled:
 		m.ResetEnabled()
@@ -32049,7 +32249,6 @@ type WorkspaceMutation struct {
 	name                        *string
 	slug                        *string
 	collect_key                 *string
-	ingest_key                  *string
 	require_confirmed_opt_in    *bool
 	postal_address              *string
 	retention_days              *int
@@ -32428,42 +32627,6 @@ func (m *WorkspaceMutation) OldCollectKey(ctx context.Context) (v string, err er
 // ResetCollectKey resets all changes to the "collect_key" field.
 func (m *WorkspaceMutation) ResetCollectKey() {
 	m.collect_key = nil
-}
-
-// SetIngestKey sets the "ingest_key" field.
-func (m *WorkspaceMutation) SetIngestKey(s string) {
-	m.ingest_key = &s
-}
-
-// IngestKey returns the value of the "ingest_key" field in the mutation.
-func (m *WorkspaceMutation) IngestKey() (r string, exists bool) {
-	v := m.ingest_key
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIngestKey returns the old "ingest_key" field's value of the Workspace entity.
-// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WorkspaceMutation) OldIngestKey(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIngestKey is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIngestKey requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIngestKey: %w", err)
-	}
-	return oldValue.IngestKey, nil
-}
-
-// ResetIngestKey resets all changes to the "ingest_key" field.
-func (m *WorkspaceMutation) ResetIngestKey() {
-	m.ingest_key = nil
 }
 
 // SetRequireConfirmedOptIn sets the "require_confirmed_opt_in" field.
@@ -34489,7 +34652,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -34504,9 +34667,6 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.collect_key != nil {
 		fields = append(fields, workspace.FieldCollectKey)
-	}
-	if m.ingest_key != nil {
-		fields = append(fields, workspace.FieldIngestKey)
 	}
 	if m.require_confirmed_opt_in != nil {
 		fields = append(fields, workspace.FieldRequireConfirmedOptIn)
@@ -34565,8 +34725,6 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.Slug()
 	case workspace.FieldCollectKey:
 		return m.CollectKey()
-	case workspace.FieldIngestKey:
-		return m.IngestKey()
 	case workspace.FieldRequireConfirmedOptIn:
 		return m.RequireConfirmedOptIn()
 	case workspace.FieldPostalAddress:
@@ -34612,8 +34770,6 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSlug(ctx)
 	case workspace.FieldCollectKey:
 		return m.OldCollectKey(ctx)
-	case workspace.FieldIngestKey:
-		return m.OldIngestKey(ctx)
 	case workspace.FieldRequireConfirmedOptIn:
 		return m.OldRequireConfirmedOptIn(ctx)
 	case workspace.FieldPostalAddress:
@@ -34683,13 +34839,6 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCollectKey(v)
-		return nil
-	case workspace.FieldIngestKey:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIngestKey(v)
 		return nil
 	case workspace.FieldRequireConfirmedOptIn:
 		v, ok := value.(bool)
@@ -34935,9 +35084,6 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldCollectKey:
 		m.ResetCollectKey()
-		return nil
-	case workspace.FieldIngestKey:
-		m.ResetIngestKey()
 		return nil
 	case workspace.FieldRequireConfirmedOptIn:
 		m.ResetRequireConfirmedOptIn()

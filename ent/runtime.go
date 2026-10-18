@@ -420,24 +420,32 @@ func init() {
 	integrationDescName := integrationFields[1].Descriptor()
 	// integration.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	integration.NameValidator = integrationDescName.Validators[0].(func(string) error)
+	// integrationDescPreset is the schema descriptor for preset field.
+	integrationDescPreset := integrationFields[5].Descriptor()
+	// integration.PresetValidator is a validator for the "preset" field. It is called by the builders before save.
+	integration.PresetValidator = integrationDescPreset.Validators[0].(func(string) error)
+	// integrationDescIngestKey is the schema descriptor for ingest_key field.
+	integrationDescIngestKey := integrationFields[7].Descriptor()
+	// integration.IngestKeyValidator is a validator for the "ingest_key" field. It is called by the builders before save.
+	integration.IngestKeyValidator = integrationDescIngestKey.Validators[0].(func(string) error)
 	// integrationDescEnabled is the schema descriptor for enabled field.
-	integrationDescEnabled := integrationFields[5].Descriptor()
+	integrationDescEnabled := integrationFields[8].Descriptor()
 	// integration.DefaultEnabled holds the default value on creation for the enabled field.
 	integration.DefaultEnabled = integrationDescEnabled.Default.(bool)
 	// integrationDescIsDefault is the schema descriptor for is_default field.
-	integrationDescIsDefault := integrationFields[6].Descriptor()
+	integrationDescIsDefault := integrationFields[9].Descriptor()
 	// integration.DefaultIsDefault holds the default value on creation for the is_default field.
 	integration.DefaultIsDefault = integrationDescIsDefault.Default.(bool)
 	// integrationDescMaxPerSecond is the schema descriptor for max_per_second field.
-	integrationDescMaxPerSecond := integrationFields[7].Descriptor()
+	integrationDescMaxPerSecond := integrationFields[10].Descriptor()
 	// integration.MaxPerSecondValidator is a validator for the "max_per_second" field. It is called by the builders before save.
 	integration.MaxPerSecondValidator = integrationDescMaxPerSecond.Validators[0].(func(int) error)
 	// integrationDescMaxPerDay is the schema descriptor for max_per_day field.
-	integrationDescMaxPerDay := integrationFields[8].Descriptor()
+	integrationDescMaxPerDay := integrationFields[11].Descriptor()
 	// integration.MaxPerDayValidator is a validator for the "max_per_day" field. It is called by the builders before save.
 	integration.MaxPerDayValidator = integrationDescMaxPerDay.Validators[0].(func(int) error)
 	// integrationDescProviderQuotaUnavailable is the schema descriptor for provider_quota_unavailable field.
-	integrationDescProviderQuotaUnavailable := integrationFields[12].Descriptor()
+	integrationDescProviderQuotaUnavailable := integrationFields[15].Descriptor()
 	// integration.DefaultProviderQuotaUnavailable holds the default value on creation for the provider_quota_unavailable field.
 	integration.DefaultProviderQuotaUnavailable = integrationDescProviderQuotaUnavailable.Default.(bool)
 	invitationMixin := schema.Invitation{}.Mixin()
@@ -910,28 +918,24 @@ func init() {
 	workspaceDescCollectKey := workspaceFields[3].Descriptor()
 	// workspace.CollectKeyValidator is a validator for the "collect_key" field. It is called by the builders before save.
 	workspace.CollectKeyValidator = workspaceDescCollectKey.Validators[0].(func(string) error)
-	// workspaceDescIngestKey is the schema descriptor for ingest_key field.
-	workspaceDescIngestKey := workspaceFields[4].Descriptor()
-	// workspace.IngestKeyValidator is a validator for the "ingest_key" field. It is called by the builders before save.
-	workspace.IngestKeyValidator = workspaceDescIngestKey.Validators[0].(func(string) error)
 	// workspaceDescRequireConfirmedOptIn is the schema descriptor for require_confirmed_opt_in field.
-	workspaceDescRequireConfirmedOptIn := workspaceFields[5].Descriptor()
+	workspaceDescRequireConfirmedOptIn := workspaceFields[4].Descriptor()
 	// workspace.DefaultRequireConfirmedOptIn holds the default value on creation for the require_confirmed_opt_in field.
 	workspace.DefaultRequireConfirmedOptIn = workspaceDescRequireConfirmedOptIn.Default.(bool)
 	// workspaceDescPostalAddress is the schema descriptor for postal_address field.
-	workspaceDescPostalAddress := workspaceFields[6].Descriptor()
+	workspaceDescPostalAddress := workspaceFields[5].Descriptor()
 	// workspace.DefaultPostalAddress holds the default value on creation for the postal_address field.
 	workspace.DefaultPostalAddress = workspaceDescPostalAddress.Default.(string)
 	// workspaceDescRetentionDays is the schema descriptor for retention_days field.
-	workspaceDescRetentionDays := workspaceFields[7].Descriptor()
+	workspaceDescRetentionDays := workspaceFields[6].Descriptor()
 	// workspace.RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	workspace.RetentionDaysValidator = workspaceDescRetentionDays.Validators[0].(func(int) error)
 	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
-	workspaceDescFeedPosition := workspaceFields[9].Descriptor()
+	workspaceDescFeedPosition := workspaceFields[8].Descriptor()
 	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[15].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[14].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 }

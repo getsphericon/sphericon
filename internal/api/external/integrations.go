@@ -64,14 +64,20 @@ func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.Crea
 		return nil, err
 	}
 	s := auth.TokenScoped(ctx)
-	row, err := h.integrations.Create(ctx, s, integrations.CreateInput{
-		Name:         req.Name,
-		Enabled:      convert.Ptr(req.Enabled),
-		IsDefault:    req.IsDefault.Or(false),
-		MaxPerSecond: integrations.LimitOf(req.MaxPerSecond),
-		MaxPerDay:    integrations.LimitOf(req.MaxPerDay),
-		Config:       cfg,
-	})
+	inParams, err := integrations.ParamsOf(req.Params.Or(nil))
+	var row *ent.Integration
+	if err == nil {
+		row, err = h.integrations.Create(ctx, s, integrations.CreateInput{
+			Name:         req.Name,
+			Enabled:      convert.Ptr(req.Enabled),
+			IsDefault:    req.IsDefault.Or(false),
+			MaxPerSecond: integrations.LimitOf(req.MaxPerSecond),
+			MaxPerDay:    integrations.LimitOf(req.MaxPerDay),
+			Config:       cfg,
+			Preset:       integrations.PresetOf(req.Preset).Name,
+			Params:       inParams,
+		})
+	}
 	var verr *integrations.ValidationError
 	switch {
 	case errors.As(err, &verr):
@@ -122,11 +128,13 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 	}
 	id := int64(params.ID)
 	in := integrations.UpdateInput{
-		Name:         convert.Ptr(req.Name),
-		Enabled:      convert.Ptr(req.Enabled),
-		IsDefault:    convert.Ptr(req.IsDefault),
-		MaxPerSecond: integrations.LimitOf(req.MaxPerSecond),
-		MaxPerDay:    integrations.LimitOf(req.MaxPerDay),
+		Name:          convert.Ptr(req.Name),
+		Enabled:       convert.Ptr(req.Enabled),
+		IsDefault:     convert.Ptr(req.IsDefault),
+		MaxPerSecond:  integrations.LimitOf(req.MaxPerSecond),
+		MaxPerDay:     integrations.LimitOf(req.MaxPerDay),
+		Preset:        integrations.PresetOf(req.Preset),
+		RetireSecrets: req.RetireSecrets.Or(false),
 	}
 	if c, ok := req.Config.Get(); ok {
 		cfg, err := configInput(c)
@@ -136,7 +144,12 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 		in.Config = &cfg
 	}
 	s := auth.TokenScoped(ctx)
-	row, err := h.integrations.Update(ctx, s, id, in)
+	var row *ent.Integration
+	inParams, err := integrations.ParamsOf(req.Params.Or(nil))
+	if err == nil {
+		in.Params = inParams
+		row, err = h.integrations.Update(ctx, s, id, in)
+	}
 	var verr *integrations.ValidationError
 	switch {
 	case ent.IsNotFound(err):
@@ -156,6 +169,51 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 		return nil, err
 	}
 	return &res, nil
+}
+
+// IntegrationsRegenerateKey gives the Integration a new hook key: the old hook URL stops
+// working at once. Hidden from MCP, because it breaks a working URL and needs a person.
+func (h *Handlers) IntegrationsRegenerateKey(ctx context.Context, params externalapi.IntegrationsRegenerateKeyParams) (externalapi.IntegrationsRegenerateKeyRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:write") {
+		res := externalapi.IntegrationsRegenerateKeyUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
+		return &res, nil
+	}
+	s := auth.TokenScoped(ctx)
+	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
+	if ent.IsNotFound(err) {
+		res := externalapi.IntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, "integration not found"))
+		return &res, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.integrationOne(ctx, s, row)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// PresetsList returns the Presets the Instance offers with the params schema of each:
+// how an agent learns what an Integration's `params` takes.
+func (h *Handlers) PresetsList(ctx context.Context) (externalapi.PresetsListRes, error) {
+	if !auth.HasScope(auth.GetTokenAuth(ctx), "integrations:read") {
+		res := problem(http.StatusUnauthorized, "insufficient scope")
+		return &res, nil
+	}
+	reg := h.integrations.Presets()
+	names := reg.Names()
+	items := make([]externalapi.PresetResource, 0, len(names))
+	for _, name := range names {
+		p, _ := reg.Get(name)
+		items = append(items, externalapi.PresetResource{
+			Name: p.Name(), Description: p.Description(),
+			ParamsSchema: externalapi.PresetResourceParamsSchema(integrations.RawOf(p.ParamsSchema())),
+		})
+	}
+	return &externalapi.PresetsListOK{
+		Items: items, Page: 1, PageSize: int32(len(items)), TotalItems: int32(len(items)), TotalPages: 1,
+	}, nil
 }
 
 // IntegrationsDelete removes an Integration.
@@ -219,18 +277,29 @@ func (h *Handlers) integrationResource(row *ent.Integration, usage map[int64]int
 	if err != nil {
 		return externalapi.IntegrationResource{}, err
 	}
+	view, err := h.integrations.View(row)
+	if err != nil {
+		return externalapi.IntegrationResource{}, err
+	}
 	res := externalapi.IntegrationResource{
-		ID:           externalapi.EntityId(row.ID),
-		Name:         row.Name,
-		Channel:      externalapi.IntegrationChannel(row.Channel.String()),
-		Provider:     externalapi.IntegrationProvider(row.Provider.String()),
-		Enabled:      row.Enabled,
-		IsDefault:    row.IsDefault,
-		MaxPerSecond: limitOpt(row.MaxPerSecond),
-		MaxPerDay:    limitOpt(row.MaxPerDay),
-		SendLimit:    sendLimitStatus(row, usage),
-		CreatedAt:    externalapi.Timestamp(row.CreatedAt),
-		UpdatedAt:    externalapi.Timestamp(row.UpdatedAt),
+		Preset:          externalapi.NilString{Null: true},
+		Params:          externalapi.IntegrationResourceParams(integrations.RawOf(view.Values)),
+		SecretsRetiring: view.SecretsRetiring,
+		HookUrl:         h.integrations.HookURL(row),
+		ID:              externalapi.EntityId(row.ID),
+		Name:            row.Name,
+		Channel:         externalapi.IntegrationChannel(row.Channel.String()),
+		Provider:        externalapi.IntegrationProvider(row.Provider.String()),
+		Enabled:         row.Enabled,
+		IsDefault:       row.IsDefault,
+		MaxPerSecond:    limitOpt(row.MaxPerSecond),
+		MaxPerDay:       limitOpt(row.MaxPerDay),
+		SendLimit:       sendLimitStatus(row, usage),
+		CreatedAt:       externalapi.Timestamp(row.CreatedAt),
+		UpdatedAt:       externalapi.Timestamp(row.UpdatedAt),
+	}
+	if row.Preset != nil {
+		res.Preset = externalapi.NewNilString(*row.Preset)
 	}
 	switch {
 	case cfg.SMTP != nil:
