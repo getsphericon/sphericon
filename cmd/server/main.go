@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -48,6 +49,9 @@ func main() {
 	// `server upgrade --from <dir>` installs a downloaded release over this binary (ADR 0034).
 	if len(os.Args) > 1 && os.Args[1] == "upgrade" {
 		if err := runUpgrade(context.Background(), os.Args[2:], os.Stdout); err != nil {
+			if errors.Is(err, errNewerRelease) {
+				os.Exit(exitNewerRelease)
+			}
 			fatal("upgrade", err)
 		}
 		return
