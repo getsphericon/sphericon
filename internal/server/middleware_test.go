@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/getsphericon/sphericon/config"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -79,17 +78,6 @@ func TestRequestIDIsEchoedOrGenerated(t *testing.T) {
 	generated := do(t, h, http.MethodGet, "/", nil).Header().Get("X-Request-Id")
 	assert.Len(t, generated, 26)
 	assert.NotEqual(t, generated, do(t, h, http.MethodGet, "/", nil).Header().Get("X-Request-Id"))
-}
-
-func TestTimeoutBoundsTheRequestContext(t *testing.T) {
-	var deadline time.Time
-	var ok bool
-	h := timeout(time.Minute)(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-		deadline, ok = r.Context().Deadline()
-	}))
-	do(t, h, http.MethodGet, "/", nil)
-	require.True(t, ok)
-	assert.WithinDuration(t, time.Now().Add(time.Minute), deadline, 5*time.Second)
 }
 
 func TestCORSPoliciesByPath(t *testing.T) {
@@ -171,20 +159,6 @@ func TestCrossOriginGuardProtectsCookiePathsOnly(t *testing.T) {
 		assert.Equal(t, c.want, rec.Code, c.name)
 		assert.Equal(t, c.want == http.StatusNoContent, reached, c.name)
 	}
-}
-
-func TestChainRunsMiddlewareOutermostFirst(t *testing.T) {
-	var order []string
-	mw := func(name string) func(http.Handler) http.Handler {
-		return func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				order = append(order, name)
-				next.ServeHTTP(w, r)
-			})
-		}
-	}
-	do(t, chain(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { order = append(order, "handler") }), mw("a"), mw("b")), http.MethodGet, "/", nil)
-	assert.Equal(t, []string{"a", "b", "handler"}, order)
 }
 
 func TestBodyLimitCapsCollectSeparatelyAndRendersProblem413(t *testing.T) {

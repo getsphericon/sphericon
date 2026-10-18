@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // TestRecovererLogsPanicWithRequestID verifies the middleware chain order:
@@ -22,7 +24,7 @@ func TestRecovererLogsPanicWithRequestID(t *testing.T) {
 	boom := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		panic("boom")
 	})
-	handler := chain(boom, recoverer, requestID)
+	handler := chi.Chain(recoverer, requestID).Handler(boom)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/explode", nil)
 	req.Header.Set("X-Request-Id", "req-abc")
