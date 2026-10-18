@@ -47,6 +47,9 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 			VisitorID: e.VisitorId,
 			Action:    e.Action,
 		}
+		if id, ok := e.ClientEventId.Get(); ok {
+			evt.ClientEventID = id
+		}
 		if props, ok := e.Properties.Get(); ok {
 			evt.Properties = rawMap(props)
 		}
