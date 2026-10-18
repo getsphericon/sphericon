@@ -1,10 +1,11 @@
-import { Avatar, Group, Menu, NavLink, Stack, Text, UnstyledButton } from '@mantine/core'
+import { Avatar, Group, Menu, Stack, Text, UnstyledButton } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconChevronDown, IconHome, IconLogout } from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMatchRoute, useNavigate, useRouteContext } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { NavLinkLink } from '../components/RouterLink.tsx'
 import { operatorAuthLogoutMutation } from '../generated/operator/@tanstack/react-query.gen.ts'
 import { DashboardShell } from '../layouts/DashboardShell.tsx'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
@@ -13,16 +14,15 @@ import { Route as consoleLoginRoute } from '../routes/console/login.tsx'
 
 function ConsoleNavbar() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const matchRoute = useMatchRoute()
 
   return (
     <Stack gap="xs">
-      <NavLink
+      <NavLinkLink
+        to={consoleHomeRoute.to}
         label={t(($) => $.console.nav.workspaces)}
         leftSection={<IconHome size={18} />}
         active={Boolean(matchRoute({ to: consoleHomeRoute.to }))}
-        onClick={() => navigate({ to: consoleHomeRoute.to })}
       />
     </Stack>
   )

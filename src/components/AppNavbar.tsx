@@ -1,4 +1,4 @@
-import { NavLink, Stack } from '@mantine/core'
+import { Stack } from '@mantine/core'
 import {
   IconActivity,
   IconLayoutDashboard,
@@ -10,7 +10,7 @@ import {
   IconUsers,
   IconUsersGroup,
 } from '@tabler/icons-react'
-import { useMatchRoute, useNavigate } from '@tanstack/react-router'
+import { useMatchRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { Route as activityRoute } from '../routes/workspaces/$slug/activity.tsx'
@@ -22,91 +22,81 @@ import { Route as segmentsRoute } from '../routes/workspaces/$slug/segments/inde
 import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
 import { Route as templatesRoute } from '../routes/workspaces/$slug/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$slug/transactional-emails/index.tsx'
+import { NavLinkLink } from './RouterLink.tsx'
 
-// AppNavbar renders the workspace-scoped sidebar. Active sections are built
-// real now; roadmap sections are disabled placeholders that signal direction.
+// AppNavbar renders the workspace-scoped sidebar: one link per section, active on the
+// section's route or anything under it (the overview only on itself).
 export function AppNavbar({ slug }: { slug: string }) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const matchRoute = useMatchRoute()
 
   const sections = [
     {
-      key: 'overview',
+      route: overviewRoute,
       label: t(($) => $.nav.overview),
       icon: <IconLayoutDashboard size={18} />,
-      active: Boolean(matchRoute({ to: overviewRoute.to, params: { slug } })),
-      onClick: () => navigate({ to: overviewRoute.to, params: { slug } }),
+      fuzzy: false,
     },
     {
-      key: 'contacts',
+      route: contactsRoute,
       label: t(($) => $.nav.contacts),
       icon: <IconUsers size={18} />,
-      active: Boolean(matchRoute({ to: contactsRoute.to, params: { slug }, fuzzy: true })),
-      onClick: () => navigate({ to: contactsRoute.to, params: { slug } }),
+      fuzzy: true,
     },
     {
-      key: 'segments',
+      route: segmentsRoute,
       label: t(($) => $.nav.segments),
       icon: <IconUsersGroup size={18} />,
-      active: Boolean(matchRoute({ to: segmentsRoute.to, params: { slug }, fuzzy: true })),
-      onClick: () => navigate({ to: segmentsRoute.to, params: { slug } }),
+      fuzzy: true,
     },
     {
-      key: 'broadcasts',
+      route: broadcastsRoute,
       label: t(($) => $.nav.broadcasts),
       icon: <IconMailbox size={18} />,
-      active: Boolean(matchRoute({ to: broadcastsRoute.to, params: { slug }, fuzzy: true })),
-      onClick: () => navigate({ to: broadcastsRoute.to, params: { slug } }),
+      fuzzy: true,
     },
     {
-      key: 'templates',
+      route: templatesRoute,
       label: t(($) => $.nav.templates),
       icon: <IconTemplate size={18} />,
-      active: Boolean(matchRoute({ to: templatesRoute.to, params: { slug }, fuzzy: true })),
-      onClick: () => navigate({ to: templatesRoute.to, params: { slug } }),
+      fuzzy: true,
     },
     {
-      key: 'automations',
+      route: automationsRoute,
       label: t(($) => $.nav.automations),
       icon: <IconRobot size={18} />,
-      active: Boolean(matchRoute({ to: automationsRoute.to, params: { slug }, fuzzy: true })),
-      onClick: () => navigate({ to: automationsRoute.to, params: { slug } }),
+      fuzzy: true,
     },
     {
-      key: 'transactional-emails',
+      route: transactionalEmailsRoute,
       label: t(($) => $.nav.transactionalEmails),
       icon: <IconMailFast size={18} />,
-      active: Boolean(
-        matchRoute({ to: transactionalEmailsRoute.to, params: { slug }, fuzzy: true }),
-      ),
-      onClick: () => navigate({ to: transactionalEmailsRoute.to, params: { slug } }),
+      fuzzy: true,
     },
     {
-      key: 'activity',
+      route: activityRoute,
       label: t(($) => $.nav.activity),
       icon: <IconActivity size={18} />,
-      active: Boolean(matchRoute({ to: activityRoute.to, params: { slug }, fuzzy: true })),
-      onClick: () => navigate({ to: activityRoute.to, params: { slug } }),
+      fuzzy: true,
     },
     {
-      key: 'settings',
+      route: settingsRoute,
       label: t(($) => $.nav.settings),
       icon: <IconSettings size={18} />,
-      active: Boolean(matchRoute({ to: settingsRoute.to, params: { slug }, fuzzy: true })),
-      onClick: () => navigate({ to: settingsRoute.to, params: { slug } }),
+      fuzzy: true,
     },
   ]
 
   return (
     <Stack gap="xs">
-      {sections.map((s) => (
-        <NavLink
-          key={s.key}
-          label={s.label}
-          leftSection={s.icon}
-          active={s.active}
-          onClick={s.onClick}
+      {sections.map(({ route, label, icon, fuzzy }) => (
+        <NavLinkLink
+          key={route.to}
+          to={route.to}
+          params={{ slug }}
+          label={label}
+          leftSection={icon}
+          active={Boolean(matchRoute({ to: route.to, params: { slug }, fuzzy }))}
         />
       ))}
     </Stack>

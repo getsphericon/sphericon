@@ -1,9 +1,9 @@
 import { Button, Group, Input, Stack, TextInput } from '@mantine/core'
-import { useNavigate } from '@tanstack/react-router'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$slug/route.tsx'
@@ -16,7 +16,6 @@ export type SegmentPayload = { name: string; definition: SiteSegmentRuleGroup }
 
 export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<SegmentPayload>) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { slug } = workspaceRoute.useParams()
   const definition = form.values.definition
   // The form holds the rule group as JSON text; a blank or unreadable text is the empty group.
@@ -45,13 +44,9 @@ export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<Seg
         </Input.Wrapper>
 
         <Group justify="flex-end">
-          <Button
-            variant="default"
-            type="button"
-            onClick={() => navigate({ to: segmentsRoute.to, params: { slug } })}
-          >
+          <ButtonLink variant="default" to={segmentsRoute.to} params={{ slug }}>
             {t(($) => $.actions.cancel)}
-          </Button>
+          </ButtonLink>
           <Button type="submit" loading={isPending}>
             {t(($) => $.actions.save)}
           </Button>

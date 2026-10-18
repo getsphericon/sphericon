@@ -19,14 +19,14 @@ function serveCatalogue() {
   )
 }
 
-test('Cancel returns to the segments list of the current workspace', async () => {
+test('Cancel links back to the segments list of the current workspace', async () => {
   serveCatalogue()
-  const { screen, navigate } = await renderWithRouter(
+  const { screen } = await renderWithRouter(
     <SegmentCreatePage />,
     routeMount(segmentsCreateRoute, { slug: 'test' }),
   )
 
-  await screen.getByRole('button', { name: 'Cancel' }).click()
-
-  expect(navigate).toHaveBeenCalledWith({ to: segmentsRoute.to, params: { slug: 'test' } })
+  await expect
+    .element(screen.getByRole('link', { name: 'Cancel' }))
+    .toHaveAttribute('href', routeMount(segmentsRoute, { slug: 'test' }).initialPath)
 })
