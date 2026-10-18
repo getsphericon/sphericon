@@ -6,15 +6,21 @@
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '../i18n.ts'
+import { QueryClient } from '@tanstack/react-query'
 import { afterEach, beforeAll } from 'vitest'
 
 import { client as operatorClient } from '../generated/operator/client.gen.ts'
 import { client } from '../generated/site/client.gen.ts'
+import { createAppRouter } from '../router.ts'
 import { worker } from './worker.ts'
 
 // The app pins the generated client's base URL in src/main.tsx; mirror it here.
 client.setConfig({ baseUrl: '/site' })
 operatorClient.setConfig({ baseUrl: '/operator' })
+
+// A route object gets its `to`, `fullPath` and parent when a router is built over the generated
+// tree (the app builds one in src/main.tsx); tests read them off the routes they import.
+createAppRouter(new QueryClient())
 
 // MSW answers a request without a handler with a 500 and only logs it, which the app may
 // swallow. Record each one and fail the test that made it; handlers are dropped after every test.

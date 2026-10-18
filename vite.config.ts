@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { playwright } from '@vitest/browser-playwright'
 import type { Plugin } from 'vite'
@@ -51,7 +52,14 @@ function mswWorkerPlugin(): Plugin {
 // and is the single place that routes API paths (/site, /collect, /auth, /mcp, /oauth, /.well-known,
 // /avatar, /api) to the Go backend. Vite serves only the SPA + HMR here.
 export default defineConfig({
-  plugins: [react(), devLocalePlugin(), mswWorkerPlugin()],
+  // The router plugin generates src/routeTree.gen.ts from src/routes and splits each route's
+  // component into its own chunk; it must run before the React plugin.
+  plugins: [
+    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    react(),
+    devLocalePlugin(),
+    mswWorkerPlugin(),
+  ],
   // Under Vitest browser mode the page loads @vite/client, which would try to open
   // the dev HMR websocket below (wss://sphericon.localhost:443 — unreachable in CI) and
   // race the teardown with an unhandled "WebSocket closed without opened" rejection.

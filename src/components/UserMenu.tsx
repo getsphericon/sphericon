@@ -15,7 +15,9 @@ import {
   siteAuthLogoutMutation,
   siteWorkspacesAccountLinkMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
-import { loginRoute, profileRoute, settingsRoute } from '../router.tsx'
+import { Route as profileRoute } from '../routes/account/index.tsx'
+import { Route as loginRoute } from '../routes/login.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
 
 // UserMenu is the header account dropdown: profile, workspace settings, logout.
 // `slug` is the active workspace (absent in the account layout); the workspace

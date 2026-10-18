@@ -10,7 +10,7 @@ import {
   handleOperatorWorkspacesUnsuspend,
 } from '../generated/operator/msw.gen.ts'
 import type { OperatorWorkspaceDetailResource } from '../generated/operator/types.gen.ts'
-import { consoleWorkspaceRoute } from '../router.tsx'
+import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'

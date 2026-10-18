@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 
-import { accountRoute } from '../router.tsx'
+import { Route as accountRoute } from '../routes/account/route.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { AccountLayout } from './AccountLayout.tsx'

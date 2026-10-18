@@ -1,0 +1,32 @@
+import { expect, test } from 'vitest'
+
+import {
+  handleSiteCustomFieldsList,
+  handleSiteEventsActions,
+} from '../../generated/site/msw.gen.ts'
+import { Route as segmentsRoute } from '../../routes/workspaces/$slug/segments/index.tsx'
+import { Route as segmentsCreateRoute } from '../../routes/workspaces/$slug/segments/new.tsx'
+import { page } from '../../test/payloads.ts'
+import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { routeMount } from '../../test/routeMount.ts'
+import { worker } from '../../test/worker.ts'
+import { SegmentCreatePage } from './resource.tsx'
+
+function serveCatalogue() {
+  worker.use(
+    handleSiteEventsActions({ body: { actions: [] } }),
+    handleSiteCustomFieldsList({ body: page([], 0) }),
+  )
+}
+
+test('Cancel returns to the segments list of the current workspace', async () => {
+  serveCatalogue()
+  const { screen, navigate } = await renderWithRouter(
+    <SegmentCreatePage />,
+    routeMount(segmentsCreateRoute, { slug: 'test' }),
+  )
+
+  await screen.getByRole('button', { name: 'Cancel' }).click()
+
+  expect(navigate).toHaveBeenCalledWith({ to: segmentsRoute.to, params: { slug: 'test' } })
+})

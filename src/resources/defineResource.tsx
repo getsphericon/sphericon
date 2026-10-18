@@ -14,6 +14,7 @@ import type * as z from 'zod'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import type { FormValues, ResourceFormSchema, ResourceValues } from './resourceFormSchema.ts'
 
@@ -114,7 +115,7 @@ export function defineResource<
   function CreatePage() {
     const { t } = useTranslation()
     const navigate = useNavigate()
-    const { slug = '' } = useParams({ strict: false })
+    const { slug } = workspaceRoute.useParams()
     const texts = resource.texts(t)
 
     const form = useResourceForm(resource.schema.blank, resource.schema.create)
@@ -185,9 +186,8 @@ export function defineResource<
 
   function EditPage({ children }: ResourceEditPageProps<TResource>) {
     const { t } = useTranslation()
-    const params = useParams({ strict: false })
-    const slug = params.slug ?? ''
-    const id = String(Reflect.get(params, resource.idParam))
+    const { slug } = workspaceRoute.useParams()
+    const id = String(Reflect.get(useParams({ strict: false }), resource.idParam))
     const texts = resource.texts(t)
 
     const query = useQuery(resource.getOptions({ path: { slug, id } }))

@@ -23,8 +23,7 @@ import {
 } from '../generated/operator/@tanstack/react-query.gen.ts'
 import type { OperatorEnrolment, OperatorLoginResult } from '../generated/operator/types.gen.ts'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage.ts'
-import { consoleHomeRoute } from '../router.tsx'
-import { getRateLimitWait } from '../utils/apiErrors.ts'
+import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 
 // What the password step granted: a code to enter, plus the secret to add to an
 // authenticator app when the Operator has no TOTP yet (first login).
@@ -40,21 +39,13 @@ export function ConsoleLoginPage() {
   const [step, setStep] = useState<CodeStep | null>(null)
 
   const showError = (error: unknown) => {
-    const wait = getRateLimitWait(error)
-    const rateLimited = wait
-      ? wait.unit === 'minutes'
-        ? t(($) => $.console.login.rateLimitedMinutes, { count: wait.count })
-        : t(($) => $.console.login.rateLimitedSeconds, { count: wait.count })
-      : undefined
     notifications.show({
       color: 'red',
       title: t(($) => $.console.login.errorTitle),
-      message:
-        rateLimited ??
-        apiErrorMessage(
-          error,
-          t(($) => $.console.login.errorMessage),
-        ),
+      message: apiErrorMessage(
+        error,
+        t(($) => $.console.login.errorMessage),
+      ),
     })
   }
 

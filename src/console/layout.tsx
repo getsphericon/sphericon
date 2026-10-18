@@ -7,7 +7,9 @@ import { useTranslation } from 'react-i18next'
 
 import { operatorAuthLogoutMutation } from '../generated/operator/@tanstack/react-query.gen.ts'
 import { DashboardShell } from '../layouts/DashboardShell.tsx'
-import { consoleAuthedRoute, consoleHomeRoute, consoleLoginRoute } from '../router.tsx'
+import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
+import { Route as consoleAuthedRoute } from '../routes/console/_authed/route.tsx'
+import { Route as consoleLoginRoute } from '../routes/console/login.tsx'
 
 function ConsoleNavbar() {
   const { t } = useTranslation()

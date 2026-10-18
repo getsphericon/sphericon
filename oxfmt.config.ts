@@ -11,6 +11,7 @@ export default defineConfig({
   ignorePatterns: [
     'dist',
     'src/generated',
+    'src/routeTree.gen.ts',
     'types/resources.d.ts',
     'packages/*/src/generated',
     'packages/*/dist',

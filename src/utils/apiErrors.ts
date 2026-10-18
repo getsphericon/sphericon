@@ -16,6 +16,11 @@ function isApiErrorLike(error: unknown): error is ApiErrorLike {
 
 // A 403 problem+json body carries `status: 403` (RFC 7807); the backend answers
 // it for role-gated actions a plain member is not allowed to perform.
+// Whether the error is a problem body answering one of the given HTTP statuses.
+export function hasErrorStatus(error: unknown, statuses: readonly number[]) {
+  return isApiErrorLike(error) && statuses.includes(error.status ?? 0)
+}
+
 export function isForbiddenError(error: unknown) {
   return isApiErrorLike(error) && error.status === 403
 }

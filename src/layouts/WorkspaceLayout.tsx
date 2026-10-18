@@ -14,7 +14,8 @@ import {
 import { UserMenu } from '../components/UserMenu.tsx'
 import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceHold, SiteWorkspaceResource } from '../generated/site/types.gen.ts'
-import { overviewRoute, workspaceRoute } from '../router.tsx'
+import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
+import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
 import { isSecondFactorRequiredError } from '../utils/apiErrors.ts'
 import { DashboardShell } from './DashboardShell.tsx'
 

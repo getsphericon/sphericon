@@ -1,18 +1,21 @@
+import { QueryClient } from '@tanstack/react-query'
 import { expect, test } from 'vitest'
 
 import { handleOperatorMeGet } from './generated/operator/msw.gen.ts'
 import { handleSiteWorkspacesList } from './generated/site/msw.gen.ts'
-import {
-  consoleHomeRoute,
-  consoleLoginRoute,
-  indexRoute,
-  loginRoute,
-  oauthConsentRoute,
-  router,
-  workspaceRoute,
-} from './router.tsx'
+import { createAppRouter } from './router.ts'
+import { Route as consoleHomeRoute } from './routes/console/_authed/index.tsx'
+import { Route as consoleLoginRoute } from './routes/console/login.tsx'
+import { Route as indexRoute } from './routes/index.tsx'
+import { Route as loginRoute } from './routes/login.tsx'
+import { Route as oauthConsentRoute } from './routes/oauth/consent.tsx'
+import { Route as workspaceRoute } from './routes/workspaces/$slug/route.tsx'
 import { problem } from './test/problem.ts'
 import { worker } from './test/worker.ts'
+
+// A router with a cache of its own: the guards read the workspaces through it.
+const newRouter = () =>
+  createAppRouter(new QueryClient({ defaultOptions: { queries: { retry: false } } }))
 
 const workspace = (slug: string) => ({
   id: slug,
@@ -37,6 +40,7 @@ function serveWorkspaces(slugs: string[] | 'unauthorized') {
 }
 
 test('the index route sends a signed-in user to their first workspace', async () => {
+  const router = newRouter()
   serveWorkspaces(['acme', 'other'])
 
   await router.navigate({ to: indexRoute.to })
@@ -45,6 +49,7 @@ test('the index route sends a signed-in user to their first workspace', async ()
 })
 
 test('the index route sends a user without workspaces to login', async () => {
+  const router = newRouter()
   serveWorkspaces([])
 
   await router.navigate({ to: indexRoute.to })
@@ -53,6 +58,7 @@ test('the index route sends a user without workspaces to login', async () => {
 })
 
 test('the index route sends an unauthorized user to login', async () => {
+  const router = newRouter()
   serveWorkspaces('unauthorized')
 
   await router.navigate({ to: indexRoute.to })
@@ -61,6 +67,7 @@ test('the index route sends an unauthorized user to login', async () => {
 })
 
 test('an unknown workspace slug falls back to the first workspace', async () => {
+  const router = newRouter()
   serveWorkspaces(['acme'])
 
   await router.navigate({ to: workspaceRoute.to, params: { slug: 'nope' } })
@@ -69,6 +76,7 @@ test('an unknown workspace slug falls back to the first workspace', async () => 
 })
 
 test('an unknown workspace slug with no workspaces goes to login', async () => {
+  const router = newRouter()
   serveWorkspaces([])
 
   await router.navigate({ to: workspaceRoute.to, params: { slug: 'nope' } })
@@ -77,6 +85,7 @@ test('an unknown workspace slug with no workspaces goes to login', async () => {
 })
 
 test('the console sends a visitor without an Operator session to the console login', async () => {
+  const router = newRouter()
   worker.use(handleOperatorMeGet(() => problem(401, { detail: 'unauthorized' })))
 
   await router.navigate({ to: consoleHomeRoute.to })
@@ -85,6 +94,7 @@ test('the console sends a visitor without an Operator session to the console log
 })
 
 test('the console is inert without the license: its 404 also leads to the login', async () => {
+  const router = newRouter()
   worker.use(handleOperatorMeGet(() => problem(404, { detail: 'not found' })))
 
   await router.navigate({ to: consoleHomeRoute.to })
@@ -93,6 +103,7 @@ test('the console is inert without the license: its 404 also leads to the login'
 })
 
 test('the console opens for a signed-in Operator', async () => {
+  const router = newRouter()
   worker.use(handleOperatorMeGet({ body: { id: '1', email: 'ops@example.com' } }))
 
   await router.navigate({ to: consoleHomeRoute.to })
@@ -101,6 +112,7 @@ test('the console opens for a signed-in Operator', async () => {
 })
 
 test('the OAuth consent screen sends a signed-out user to login and remembers where to return', async () => {
+  const router = newRouter()
   serveWorkspaces('unauthorized')
 
   await router.navigate({
