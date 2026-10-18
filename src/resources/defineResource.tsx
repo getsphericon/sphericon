@@ -6,7 +6,7 @@ import {
   type UseQueryOptions,
   useQuery,
 } from '@tanstack/react-query'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import { type ComponentType, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -67,6 +67,7 @@ export type ResourceDescription<
   TCreated extends { id: string },
   TError extends ApiErrorLike,
   TGetKey extends QueryKey,
+  TIdParam extends string,
 > = {
   // Form values <-> API payload, derived from the generated zod schema (resourceFormSchema).
   schema: ResourceFormSchema<TPayload>
@@ -89,8 +90,9 @@ export type ResourceDescription<
   >
   listQueryKey: (options: { path: { slug: string } }) => QueryKey
   getQueryKey: (options: { path: { slug: string; id: string } }) => QueryKey
-  // Name of the route param that holds the resource id on the edit route, e.g. 'contactId'.
-  idParam: string
+  // The edit route and the name of its param that holds the resource id, e.g. 'contactId'.
+  editRoute: { useParams: () => Record<TIdParam, string> }
+  idParam: TIdParam
   // All user-facing strings, resolved with the i18n `t` so keys stay statically extracted.
   texts: (t: TFunction) => ResourceTexts
   // Where to go after creating: the edit route, expressed with route references.
@@ -111,7 +113,8 @@ export function defineResource<
   TCreated extends { id: string },
   TError extends ApiErrorLike,
   TGetKey extends QueryKey,
->(resource: ResourceDescription<TPayload, TResource, TCreated, TError, TGetKey>) {
+  TIdParam extends string,
+>(resource: ResourceDescription<TPayload, TResource, TCreated, TError, TGetKey, TIdParam>) {
   function CreatePage() {
     const { t } = useTranslation()
     const navigate = useNavigate()
@@ -187,7 +190,7 @@ export function defineResource<
   function EditPage({ children }: ResourceEditPageProps<TResource>) {
     const { t } = useTranslation()
     const { slug } = workspaceRoute.useParams()
-    const id = String(Reflect.get(useParams({ strict: false }), resource.idParam))
+    const id = resource.editRoute.useParams()[resource.idParam]
     const texts = resource.texts(t)
 
     const query = useQuery(resource.getOptions({ path: { slug, id } }))

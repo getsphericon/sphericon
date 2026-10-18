@@ -21,6 +21,7 @@ const templateResource = defineResource({
   updateMutation: siteTemplatesUpdateMutation,
   listQueryKey: siteTemplatesListQueryKey,
   getQueryKey: siteTemplatesGetQueryKey,
+  editRoute: templatesEditRoute,
   idParam: 'templateId',
   texts: (t) => ({
     createTitle: t(($) => $.templates.createTitle),

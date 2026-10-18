@@ -36,6 +36,7 @@ const broadcastResource = defineResource({
   updateMutation: siteBroadcastsUpdateMutation,
   listQueryKey: siteBroadcastsListQueryKey,
   getQueryKey: siteBroadcastsGetQueryKey,
+  editRoute: broadcastsEditRoute,
   idParam: 'broadcastId',
   texts: (t) => ({
     createTitle: t(($) => $.broadcasts.createTitle),
