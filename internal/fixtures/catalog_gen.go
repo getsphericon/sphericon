@@ -463,6 +463,18 @@ const (
 	IntegrationAcmeGenericBIngestKey = "omik_test_integrationacmegenericb"
 	// IntegrationAcmeGenericBName is from fixtures/integrations.
 	IntegrationAcmeGenericBName = "Relay B (generic Preset)"
+	// IntegrationAcmeMailgunID is from fixtures/integrations.
+	IntegrationAcmeMailgunID = 21
+	// IntegrationAcmeMailgunIngestKey is from fixtures/integrations.
+	IntegrationAcmeMailgunIngestKey = "omik_test_integrationacmemailgun"
+	// IntegrationAcmeMailgunName is from fixtures/integrations.
+	IntegrationAcmeMailgunName = "Mailgun relay"
+	// IntegrationAcmePostmarkID is from fixtures/integrations.
+	IntegrationAcmePostmarkID = 20
+	// IntegrationAcmePostmarkIngestKey is from fixtures/integrations.
+	IntegrationAcmePostmarkIngestKey = "omik_test_integrationacmepostmark"
+	// IntegrationAcmePostmarkName is from fixtures/integrations.
+	IntegrationAcmePostmarkName = "Postmark relay"
 	// IntegrationAcmeSesID is from fixtures/integrations.
 	IntegrationAcmeSesID = 2
 	// IntegrationAcmeSesIngestKey is from fixtures/integrations.
