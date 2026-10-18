@@ -368,6 +368,19 @@ if [ -n "$dup" ]; then
 fi
 '''
 
+["check:upgrade"]
+description = "ADR 0033 in CI: a destructive migration needs a breaking PR title, a breaking change needs an `Upgrade:` footer (cmd/upgradecheck; PR_TITLE, PR_BODY_FILE and BASE come from the pull request, default to the last commit against origin/main)"
+depends = ["db:up"]
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+base="${BASE:-origin/main}"
+title="${PR_TITLE:-$(git log -1 --format=%s)}"
+args=(--title "$title" --base "$base")
+go run ./cmd/upgradecheck migrations "${args[@]}"
+go run ./cmd/upgradecheck breaking "${args[@]}" ${PR_BODY_FILE:+--body-file "$PR_BODY_FILE"}
+'''
+
 ["check:env"]
 description = "Every environment variable config/config.go reads is documented in docs/self-hosting.md (the one env table)"
 run = '''
