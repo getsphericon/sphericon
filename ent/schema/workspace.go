@@ -90,7 +90,7 @@ func (Workspace) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		// Who set it: the structured actor of ADR 0026. The kind is system (the automated
-		// abuse detector), cli (the staff member command) or staff member; only a staff member has an
+		// abuse detector), cli (a command run on the server) or staff; only a staff member has an
 		// id (the real staff identity, never shown to the customer).
 		field.Enum("suspended_by_kind").
 			Values("system", "cli", "staff").

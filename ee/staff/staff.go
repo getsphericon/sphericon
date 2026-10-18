@@ -9,7 +9,7 @@
 // than a Workspace's data. Two reads build a Workspace scope, each over the one
 // Workspace the Staff member is looking at, because the module they ride takes one: the
 // Audit log (Module.AuditEntries) and the reputation rates (Module.WorkspaceDeliverability).
-// Every entry point checks the `operator` license feature, so an unlicensed instance
+// Every entry point checks the `staff` license feature, so an unlicensed instance
 // has no Staff member concept at all.
 //
 // Governed by ee/LICENSE, not the AGPL.
@@ -49,7 +49,7 @@ const challengeTTL = 5 * time.Minute
 const minSecretLength = 32
 
 var (
-	// ErrNotLicensed: the instance has no `operator` license, so no Staff member exists.
+	// ErrNotLicensed: the instance has no `staff` license, so no Staff member exists.
 	ErrNotLicensed = errors.New("staff: the staff feature is not licensed")
 	// ErrDuplicate: a Staff member with this email exists.
 	ErrDuplicate = errors.New("staff: email already in use")
@@ -93,7 +93,7 @@ type Config struct {
 	Clock func() time.Time
 	// Attempts counts failed logins per address (ADR 0025), under the Staff member's own
 	// kind so a User of the same address never shares a counter. It is required with
-	// the operator license (Validate): a missing counter would leave the login
+	// the staff license (Validate): a missing counter would leave the login
 	// unthrottled.
 	Attempts *accounts.Attempts
 	// Abuse are the abuse detector's limits (ADR 0026); the console shows rates under
@@ -111,7 +111,7 @@ type Config struct {
 // only when the feature is licensed: an unlicensed instance needs none of it.
 func (c Config) Validate(siteSecret string) error {
 	if len(c.Secret) < minSecretLength {
-		return fmt.Errorf("SPHERICON_STAFF_JWT_SECRET is required with the operator license and must be at least %d characters (e.g. `openssl rand -hex 32`)", minSecretLength)
+		return fmt.Errorf("SPHERICON_STAFF_JWT_SECRET is required with the staff license and must be at least %d characters (e.g. `openssl rand -hex 32`)", minSecretLength)
 	}
 	if subtle.ConstantTimeCompare([]byte(c.Secret), []byte(siteSecret)) == 1 {
 		return errors.New("SPHERICON_STAFF_JWT_SECRET must differ from SPHERICON_JWT_SECRET: a StaffMember session must never verify as a User's")
@@ -160,7 +160,7 @@ func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log,
 func (m *Module) Watch() *abuse.Watch { return m.watch }
 
 func (m *Module) licensed() error {
-	if !m.lic.Has(licensekey.FeatureOperator) {
+	if !m.lic.Has(licensekey.FeatureStaff) {
 		return ErrNotLicensed
 	}
 	return nil

@@ -16,7 +16,7 @@ import (
 
 func TestPruneNeverRemovesAClosedUsageSnapshot(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureOperator), febFirst))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), febFirst))
 	before, err := env.DB.Scoped(fixtures.AcmeID).Usage().Query().Where(entusage.Final(true)).Count(t.Context())
 	require.NoError(t, err)
 	require.Positive(t, before, "January 2026 is closed")

@@ -588,7 +588,7 @@ export type SiteAnalyticsOverview = {
   timeseries: Array<SiteAnalyticsPoint>;
   /**
    * Present while the Workspace is in the abuse detector's warning tier; absent
-   * otherwise and without the `operator` license
+   * otherwise and without the `staff` license
    */
   abuseWarning?: SiteAbuseWarning | null;
 };
@@ -1642,12 +1642,12 @@ export type SiteLoginSecondFactorInput = {
 };
 
 /**
- * A rolling 24-hour Send rate limit the staff member may set
+ * A rolling 24-hour Send rate limit the user may set
  */
 export type SiteMaxPerDay = number;
 
 /**
- * A per-second Send rate limit the staff member may set
+ * A per-second Send rate limit the user may set
  */
 export type SiteMaxPerSecond = number;
 

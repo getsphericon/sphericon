@@ -207,7 +207,7 @@ func TestRunJobsStartsTheWorkerPool(t *testing.T) {
 func TestNewStaffIsMinimal(t *testing.T) {
 	baseline(t)
 	t.Setenv("SPHERICON_METRICS_ADDR", freeAddr(t))
-	a, err := NewStaffMember("test")
+	a, err := NewCommandApp("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 
@@ -277,7 +277,7 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	t.Setenv("SPHERICON_SMTP_USER", "")
 	t.Setenv("SPHERICON_SMTP_PASS", "")
 	baseline(t)
-	a, err := NewStaffMember("test")
+	a, err := NewCommandApp("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ownedWorkspace(t, a, "app-suspend-test", "owner@app-suspend.test")
@@ -324,7 +324,7 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 	t.Setenv("SPHERICON_SMTP_HOST", "127.0.0.1")
 	t.Setenv("SPHERICON_SMTP_PORT", fmt.Sprint(port))
 	baseline(t)
-	a, err := NewStaffMember("test")
+	a, err := NewCommandApp("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ownedWorkspace(t, a, "app-suspend-fail-test", "owner@app-suspend-fail.test")
@@ -341,7 +341,7 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 
 func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 	baseline(t)
-	a, err := NewStaffMember("test")
+	a, err := NewCommandApp("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ctx := context.Background()
@@ -361,7 +361,7 @@ func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 // commits outside the per-test transaction), on a database of the test's own.
 func TestResetSecondFactorByEmail(t *testing.T) {
 	baseline(t)
-	a, err := NewStaffMember("test")
+	a, err := NewCommandApp("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ctx := context.Background()

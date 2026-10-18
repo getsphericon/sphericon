@@ -49,7 +49,7 @@ enum IntegrationProvider {
 
 /** Where an effective Send rate limit comes from */
 enum SendLimitSource {
-  /** Set by the staff member on the Integration */
+  /** Set by the user on the Integration */
   manual,
 
   /** Reported by the provider */

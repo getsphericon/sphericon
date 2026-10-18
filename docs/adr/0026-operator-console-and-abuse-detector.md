@@ -13,12 +13,12 @@ ADR settles how both are built. It adds no new freeze path: both only set and cl
 
 ### One licensed feature
 
-The Staff member, its console and the detector ship under a single license feature, `operator`
+The Staff member, its console and the detector ship under a single license feature, `staff`
 (`ee/licensekey`). They are meaningful only together, for a SaaS operator.
 
 ### Staff member identity and surface
 
-- Own ent table `operator`, written and read only from `ee/`. No self-signup: the first Staff member
+- Own ent table `staff`, written and read only from `ee/`. No self-signup: the first Staff member
   and every later one is created by `sphericon staff create <email>`.
 - Password plus mandatory TOTP (two-step login of [[0020-session-expiry-epoch-and-two-step-login]]),
   a separate cookie and JWT secret, a shorter session than a customer's with no "remember me",
@@ -67,7 +67,7 @@ password, no cookie, no TOTP, no console access.
   credential's id and its name, in the manner of an API token. Like a Staff member it is staff of the
   platform: every customer-facing read shows it as "sphericon staff" with no id
   ([[0022-audit-log-ee-captured-at-scoped-client]]), and only the Staff console names it.
-- All of it runs under the same `operator` license feature; unlicensed, nothing is served and the
+- All of it runs under the same `staff` license feature; unlicensed, nothing is served and the
   commands refuse.
 
 ### Console v1 shows metadata only

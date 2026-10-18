@@ -35,7 +35,7 @@ func runStaff(ctx context.Context, ops staffOps, args []string, out io.Writer) e
 		case errors.Is(err, staff.ErrDuplicate):
 			return fmt.Errorf("a staff with email %q already exists; nothing changed", email)
 		case errors.Is(err, staff.ErrNotLicensed):
-			return errors.New("this instance has no operator license (feature `operator`)")
+			return errors.New("this instance has no staff license (feature `staff`)")
 		case err != nil:
 			return err
 		}
@@ -45,7 +45,7 @@ func runStaff(ctx context.Context, ops staffOps, args []string, out io.Writer) e
 		case errors.Is(err, staff.ErrNotFound):
 			return fmt.Errorf("no staff with email %q; nothing changed", email)
 		case errors.Is(err, staff.ErrNotLicensed):
-			return errors.New("this instance has no operator license (feature `operator`)")
+			return errors.New("this instance has no staff license (feature `staff`)")
 		case err != nil:
 			return err
 		}

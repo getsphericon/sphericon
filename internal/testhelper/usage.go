@@ -10,7 +10,7 @@ import (
 )
 
 // RefreshUsage runs the usage job once as of now under the harness license, which
-// includes the staff member feature: it closes the elapsed Usage periods and refreshes the
+// includes the `staff` license feature: it closes the elapsed Usage periods and refreshes the
 // Live usage of the open one, as the periodic job does (the river schedule does not run
 // in tests).
 func (env *TestEnv) RefreshUsage(t *testing.T, now time.Time) {

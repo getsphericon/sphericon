@@ -61,17 +61,17 @@ func (i Identifier) kind() string {
 	return "contact_id"
 }
 
-// Staff member is who asked for the Erasure: a User (Site) or an API token (External, MCP).
-type StaffMember struct {
-	// Kind is StaffUser or StaffAPIToken.
+// Requester is who asked for the Erasure: a User (Site) or an API token (External, MCP).
+type Requester struct {
+	// Kind is RequesterUser or RequesterAPIToken.
 	Kind string
 	ID   int64
 }
 
-// Staff member kinds, as recorded on the contact.erased Event.
+// Requester kinds, as recorded on the contact.erased Event.
 const (
-	StaffUser     = "user"
-	StaffAPIToken = "api_token"
+	RequesterUser     = "user"
+	RequesterAPIToken = "api_token"
 )
 
 // Target is a resolved data subject: what every step erases. Resolving an Identifier
@@ -90,8 +90,8 @@ type Target struct {
 	SubjectID string
 	// IdentifierKind is what the Identifier was.
 	IdentifierKind string
-	// Staff member is who asked.
-	StaffMember StaffMember
+	// Requester is who asked.
+	Requester Requester
 }
 
 // step is one part of the erasure, run inside the transaction.
@@ -110,13 +110,13 @@ func New(bus *events.Bus) *Module {
 // Erase erases the identified data subject in one transaction: either all of it
 // happens or none. ErrNotFound means the identifier resolves to nothing in the
 // Workspace (including a row of another Workspace).
-func (m *Module) Erase(ctx context.Context, s *ent.Scoped, id Identifier, op StaffMember) error {
+func (m *Module) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Requester) error {
 	return m.bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
 		target, err := resolve(ctx, ts, id)
 		if err != nil {
 			return err
 		}
-		target.StaffMember = op
+		target.Requester = by
 		for _, run := range m.steps() {
 			if err := run(ctx, ts, target, pub); err != nil {
 				return err

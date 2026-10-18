@@ -19,7 +19,7 @@ func TestASendJustBeforeAndJustAfterMidnightUTCLandInDifferentPeriods(t *testing
 	message(t, env, "before", outboundmessage.KindBroadcast, outboundmessage.StatusSent, time.Date(2027, time.January, 31, 23, 59, 0, 0, time.UTC))
 	message(t, env, "after", outboundmessage.KindBroadcast, outboundmessage.StatusSent, time.Date(2027, time.February, 1, 0, 1, 0, 0, time.UTC))
 
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureOperator), feb.Add(time.Hour)))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour)))
 
 	january, february := figure(t, env, jan), figure(t, env, feb)
 	assert.EqualValues(t, 1, january.Value)
@@ -30,7 +30,7 @@ func TestASendJustBeforeAndJustAfterMidnightUTCLandInDifferentPeriods(t *testing
 
 func TestEveryWorkspaceIsClosedWithinAnHourOfMidnightUTC(t *testing.T) {
 	env := testhelper.Setup(t)
-	lic := licenseFor(t, licensekey.FeatureOperator)
+	lic := licenseFor(t, licensekey.FeatureStaff)
 	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, feb.Add(-time.Minute)), "the last run of January")
 
 	// The next scheduled tick after midnight is at most one Interval later.

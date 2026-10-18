@@ -380,12 +380,12 @@ export const zSiteLoginSecondFactorInput = z.object({
 });
 
 /**
- * A rolling 24-hour Send rate limit the staff member may set
+ * A rolling 24-hour Send rate limit the user may set
  */
 export const zSiteMaxPerDay = z.int().gte(1).lte(100000000);
 
 /**
- * A per-second Send rate limit the staff member may set
+ * A per-second Send rate limit the user may set
  */
 export const zSiteMaxPerSecond = z.int().gte(1).lte(10000);
 

@@ -56,7 +56,7 @@ func measureContacts(ctx context.Context, s *ent.Scoped, p Period, open bool, pr
 
 // Hook is the ent hook that keeps the contacts peak as Contacts change, because a peak
 // cannot be rebuilt afterwards. It is installed on every client (the long-lived one and
-// the event bus's transaction client) by the Edition. Without the `operator` license it
+// the event bus's transaction client) by the Edition. Without the `staff` license it
 // is not installed at all: the returned hook hands every mutation straight on.
 //
 // A mutation that can only raise the count (a create or an email set) raises the open
@@ -65,7 +65,7 @@ func measureContacts(ctx context.Context, s *ent.Scoped, p Period, open bool, pr
 // transaction, so the peak commits with the change it describes.
 func Hook(lic *licensekey.License, now func() time.Time) entgo.Hook {
 	return func(next entgo.Mutator) entgo.Mutator {
-		if !lic.Has(licensekey.FeatureOperator) {
+		if !lic.Has(licensekey.FeatureStaff) {
 			return next
 		}
 		return entgo.MutateFunc(func(ctx context.Context, m entgo.Mutation) (entgo.Value, error) {

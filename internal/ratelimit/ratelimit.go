@@ -346,7 +346,7 @@ func (l *Limiter) Middleware(next http.Handler) http.Handler {
 // loginPath is the two steps of a login on either surface, /site and /staff.
 func loginPath(path string) bool {
 	switch path {
-	case "/site/auth/login", "/site/auth/second-factor", paths.StaffMember + "/auth/login", paths.StaffMember + "/auth/second-factor":
+	case "/site/auth/login", "/site/auth/second-factor", paths.Staff + "/auth/login", paths.Staff + "/auth/second-factor":
 		return true
 	}
 	return false

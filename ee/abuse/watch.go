@@ -25,8 +25,8 @@ func NewWatch(lic *licensekey.License, limits Limits) *Watch {
 // Limits are the limits in force.
 func (w *Watch) Limits() Limits { return w.limits }
 
-// Licensed reports whether the detector runs at all (the `operator` license).
-func (w *Watch) Licensed() bool { return w.lic.Has(licensekey.FeatureOperator) }
+// Licensed reports whether the detector runs at all (the `staff` license).
+func (w *Watch) Licensed() bool { return w.lic.Has(licensekey.FeatureStaff) }
 
 // WindowFor is what the detector counts for the Workspace at now: the trailing 24 hours,
 // or since the Staff member last cleared a suspension, whichever is shorter.

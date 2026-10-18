@@ -204,7 +204,7 @@ var testLicense = sync.OnceValues(func() (*licensekey.License, error) {
 	if err != nil {
 		return nil, err
 	}
-	key, err := licensekey.Issue(priv, nil, licensekey.FeatureAudit, licensekey.FeatureRetention, licensekey.FeatureOperator)
+	key, err := licensekey.Issue(priv, nil, licensekey.FeatureAudit, licensekey.FeatureRetention, licensekey.FeatureStaff)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +302,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
 	require.NoError(t, err, "build MCP handler")
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
-	staffHandler, err := server.NewStaffAPI(edition.StaffMember(bus, systemMail))
+	staffHandler, err := server.NewStaffAPI(edition.Staff(bus, systemMail))
 	require.NoError(t, err, "build staff API")
 	accountLink, _, err := accountlink.FromConfig(&cfg)
 	require.NoError(t, err, "build account link")

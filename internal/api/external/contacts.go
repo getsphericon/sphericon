@@ -115,9 +115,9 @@ func (h *Handlers) ContactsUpdate(ctx context.Context, req *externalapi.UpdateCo
 	return &resource, nil
 }
 
-// tokenStaff is the API token behind the request, as the staff member of an Erasure.
-func tokenStaff(ctx context.Context) erasure.StaffMember {
-	return erasure.StaffMember{Kind: erasure.StaffAPIToken, ID: auth.GetTokenAuth(ctx).TokenID}
+// tokenRequester is the API token behind the request, as the requester of an Erasure.
+func tokenRequester(ctx context.Context) erasure.Requester {
+	return erasure.Requester{Kind: erasure.RequesterAPIToken, ID: auth.GetTokenAuth(ctx).TokenID}
 }
 
 // ContactsDelete is Erasure (ADR 0021): deleting a Contact removes its personal data.
@@ -135,7 +135,7 @@ func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.Contac
 	}
 
 	err = h.erasure.Erase(ctx, auth.TokenScoped(ctx), erasure.ByContactID(id),
-		tokenStaff(ctx))
+		tokenRequester(ctx))
 	if errors.Is(err, erasure.ErrNotFound) {
 		res := externalapi.ContactsDeleteNotFound(problem(http.StatusNotFound, "contact not found"))
 		return &res, nil
@@ -166,7 +166,7 @@ func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.Conta
 	}
 
 	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), id,
-		tokenStaff(ctx))
+		tokenRequester(ctx))
 	if errors.Is(err, erasure.ErrNotFound) {
 		res := externalapi.ContactsEraseByNotFound(problem(http.StatusNotFound, "nothing found for the identifier"))
 		return &res, nil

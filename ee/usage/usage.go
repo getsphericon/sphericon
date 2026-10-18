@@ -2,7 +2,7 @@
 // Usage snapshot of a closed period and the Live usage of the open one, one row per
 // (Workspace, period, metric) in the usages table. One periodic river job, registered
 // through Edition.Jobs() like the retention prune, closes the elapsed periods and
-// refreshes the open one; a read never recounts. Unlicensed (no `operator` feature),
+// refreshes the open one; a read never recounts. Unlicensed (no `staff` feature),
 // the job does nothing and no row is ever written.
 //
 // The raw client is used only to list Workspaces and to page their figures; every
@@ -102,9 +102,9 @@ func measureInFlightSends(ctx context.Context, s *ent.Scoped, p Period, open boo
 // Live usage of the open one, for every Workspace, as of now. It is a pure function of
 // now and the stored data: running it twice or late gives the same rows, and a closed
 // figure is never rewritten. A Workspace that fails does not stop the others: every
-// failure is joined into the returned error. Without the operator license it does nothing.
+// failure is joined into the returned error. Without the staff license it does nothing.
 func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, now time.Time) error {
-	if !lic.Has(licensekey.FeatureOperator) {
+	if !lic.Has(licensekey.FeatureStaff) {
 		return nil
 	}
 	workspaces, err := client.Workspace.Query().

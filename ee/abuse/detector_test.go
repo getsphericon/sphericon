@@ -35,7 +35,7 @@ const support = "support@sphericon.test"
 
 func detector(t *testing.T, env *testhelper.TestEnv) *abuse.Detector {
 	t.Helper()
-	return abuse.New(env.DB, licenseFor(t, licensekey.FeatureOperator), env.Bus, env.SystemMail,
+	return abuse.New(env.DB, licenseFor(t, licensekey.FeatureStaff), env.Bus, env.SystemMail,
 		abuse.Config{Limits: abuse.DefaultLimits(), SupportEmail: support})
 }
 

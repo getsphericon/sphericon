@@ -35,7 +35,7 @@ func TestNotifyWorkspaceSuspendedEmailsOwners(t *testing.T) {
 // A Staff member or the CLI appears to the customer as "sphericon staff"; the Staff member's
 // real id never leaves the platform.
 func TestNotifyWorkspaceSuspendedShowsStaffForStaffAndCLI(t *testing.T) {
-	for name, by := range map[string]suspension.Actor{"operator": suspension.StaffMember("op-42"), "cli": suspension.CLI} {
+	for name, by := range map[string]suspension.Actor{"staff": suspension.StaffMember("op-42"), "cli": suspension.CLI} {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := context.Background()

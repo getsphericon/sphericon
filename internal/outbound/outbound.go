@@ -602,7 +602,7 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 	return Result{Outcome: Sent, MessageID: msg.ID}, nil
 }
 
-// TestRequest is a staff member-initiated test send of a message to an address the
+// TestRequest is a user-initiated test send of a message to an address the
 // author names explicitly (e.g. a Broadcast preview).
 type TestRequest struct {
 	To        string

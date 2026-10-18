@@ -20,7 +20,7 @@ const serviceBase = "http://local/service"
 // ServiceCredentialValue, or issue one with IssueServiceCredential.
 func (env *TestEnv) ServiceClient(t *testing.T, value string) *serviceapi.Client {
 	t.Helper()
-	require.NotNil(t, env.Internal, "the instance serves no service endpoints (no operator license)")
+	require.NotNil(t, env.Internal, "the instance serves no service endpoints (no staff license)")
 	return env.serviceClientOn(t, injectClient{handler: env.Internal}, value)
 }
 

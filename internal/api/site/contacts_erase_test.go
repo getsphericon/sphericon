@@ -47,7 +47,7 @@ func TestSiteContactsDeleteByOwnerErases(t *testing.T) {
 }
 
 // The contact.erased signal names the User who erased.
-func TestSiteContactsEraseRecordsTheUserStaffMember(t *testing.T) {
+func TestSiteContactsEraseRecordsTheUserRequester(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
@@ -57,6 +57,6 @@ func TestSiteContactsEraseRecordsTheUserStaffMember(t *testing.T) {
 
 	msgs := env.Outbox(t, events.NameContactErased)
 	require.Len(t, msgs, 1)
-	assert.Equal(t, "user", msgs[0].Data["staffKind"])
-	assert.NotZero(t, msgs[0].Data["staffId"])
+	assert.Equal(t, "user", msgs[0].Data["requesterKind"])
+	assert.NotZero(t, msgs[0].Data["requesterId"])
 }

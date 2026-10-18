@@ -70,7 +70,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	}
 
 	// Staff member API — /staff (ADR 0026): the platform staff surface, its own cookie and
-	// secret. Without the `operator` license there is no handler and the whole prefix
+	// secret. Without the `staff` license there is no handler and the whole prefix
 	// answers 404, so it never falls through to the SPA shell below.
 	if staff == nil {
 		staff = http.NotFoundHandler()
@@ -147,7 +147,7 @@ func NewExternalAPI(client *ent.Client, deps apiexternal.Deps) (http.Handler, er
 }
 
 // staffPrefix mounts the Staff surface (ADR 0026).
-const staffPrefix = paths.StaffMember
+const staffPrefix = paths.Staff
 
 // StaffSurface is the Enterprise Staff member API (ee/staff), built into an ogen
 // server here so it renders errors like the other surfaces.
@@ -156,7 +156,7 @@ type StaffSurface interface {
 }
 
 // NewStaffAPI builds the /staff ogen server with RFC 7807 errors. A nil surface
-// (no `operator` license) yields a nil handler, which New mounts as a 404.
+// (no `staff` license) yields a nil handler, which New mounts as a 404.
 func NewStaffAPI(surface StaffSurface) (http.Handler, error) {
 	if surface == nil {
 		return nil, nil
@@ -173,7 +173,7 @@ type ServiceSurface interface {
 // NewInternal builds the handler of the internal listener (ADR 0026): the service
 // endpoints under /service and nothing else, behind the middleware the public server
 // uses where it applies (recoverer, request id, client address, rate limit, timeout,
-// body limit). A nil surface (no `operator` license) yields a nil handler, and the
+// body limit). A nil surface (no `staff` license) yields a nil handler, and the
 // composition root then binds no listener at all.
 func NewInternal(cfg *config.Config, surface ServiceSurface) (http.Handler, error) {
 	if surface == nil {

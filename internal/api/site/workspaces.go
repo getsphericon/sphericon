@@ -67,7 +67,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	return r, nil
 }
 
-// activeHolds is the holds the send path honours now: none without the `operator`
+// activeHolds is the holds the send path honours now: none without the `staff`
 // license. A Workspace loaded with its holds edge is read from it; otherwise one query.
 func (h *Handlers) activeHolds(ctx context.Context, s *ent.Scoped, w *ent.Workspace) ([]*ent.Hold, error) {
 	if h.holdsHonoured != nil && !h.holdsHonoured() {

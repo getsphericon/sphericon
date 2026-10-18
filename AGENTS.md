@@ -195,7 +195,7 @@ the wall clock; it injects the clock.
   - `/site/*` — frontend SPA API. Auth: **JWT cookie** (issued by the `login` operation through `auth.Sessions`, ADR 0020). Handlers in `internal/api/site`.
   - `/api/*` — external/public API. Auth: **Bearer api-token** (workspace-scoped). Handlers in `internal/api/external`.
   - `/collect/*` — tracking ingestion from customer sites. Auth: **x-collect-key** header. Handlers in `internal/api/collect`.
-  - `/staff/*` — platform staff (the **Staff member**, ADR 0026), Enterprise (license feature `operator`; unlicensed = 404).
+  - `/staff/*` — platform staff (the **Staff member**, ADR 0026), Enterprise (license feature `staff`; unlicensed = 404).
     Auth: its own **JWT cookie** (`STAFF_JWT`, `SPHERICON_STAFF_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/staff`.
   - `/service/*` — the service endpoints of the Staff surface, called by a platform service with a
     **Service credential** (ADR 0026): **Bearer** `smsc_…`, limited to scopes (`usage:read`,
@@ -264,7 +264,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/abuse` (the hourly
   abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
   exempt, then scopes to judge each, and writes its notice markers by id), `ee/usage` (the periodic
-  usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `operator` license, that keeps the contacts peak as Contacts change), `ee/staff` (the
+  usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `staff` license, that keeps the contacts peak as Contacts change), `ee/staff` (the
   platform Staff member, ADR 0026: the Staff member table, and the Workspace rows, suspension state and
   rates the console shows as tenant metadata; Workspace data goes through the scopes of
   list item 7), `internal/workspacefeed` (the ent hook, installed on every client, that gives

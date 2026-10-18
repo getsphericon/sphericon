@@ -16,19 +16,19 @@ enum SiteIntegrationProvider {
   ses,
 }
 
-/** A per-second Send rate limit the staff member may set */
+/** A per-second Send rate limit the user may set */
 @minValue(1)
 @maxValue(10000)
 scalar SiteMaxPerSecond extends int32;
 
-/** A rolling 24-hour Send rate limit the staff member may set */
+/** A rolling 24-hour Send rate limit the user may set */
 @minValue(1)
 @maxValue(100000000)
 scalar SiteMaxPerDay extends int32;
 
 /** Where an effective Send rate limit comes from */
 enum SiteSendLimitSource {
-  /** Set by the staff member on the Integration */
+  /** Set by the user on the Integration */
   manual,
 
   /** Reported by the provider */
