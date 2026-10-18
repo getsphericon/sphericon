@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
+
+	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
@@ -24,92 +24,111 @@ type serviceCredentialOps interface {
 	ServiceCredentials(ctx context.Context, name string) ([]*ent.ServiceCredential, error)
 }
 
-const serviceCredentialUsage = `usage: sphericon service-credential <command>
-  create [--expires-in <duration>] <name> <scope>[,<scope>...]
-  rotate [--expires-in <duration>] <id>
-  revoke <id>
-  list [<name>]
-scopes: usage:read, workspaces:read, holds:write`
-
 const noLicense = "this instance has no staff license (feature `staff`)"
 
-// runServiceCredential executes the `service-credential` commands (ADR 0026), the only
-// way a Service credential is created, rotated or revoked: no endpoint can. A value is
+// serviceCredentialCommand is `sphericon service-credential create|rotate|revoke|list` (ADR 0026),
+// the only way a Service credential is created, rotated or revoked: no endpoint can. A value is
 // shown once, when it is created, and only a hash of it is stored. A service may hold two
 // active credentials at once, so a rotation is `rotate` (a second credential with the
 // same name and scopes) followed by `revoke` of the old one once the service has switched.
-func runServiceCredential(ctx context.Context, ops serviceCredentialOps, now func() time.Time, args []string, out io.Writer) error {
-	if len(args) == 0 {
-		return errors.New(serviceCredentialUsage)
+func serviceCredentialCommand(d deps) *cli.Command {
+	expiresIn := func() cli.Flag {
+		return &cli.DurationFlag{
+			Name:  "expires-in",
+			Usage: "expire the credential this long from now (default: never)",
+			Validator: func(v time.Duration) error {
+				if v < 0 {
+					return errors.New("--expires-in must be a positive duration")
+				}
+				return nil
+			},
+		}
 	}
-	command, rest := args[0], args[1:]
-	fs := flag.NewFlagSet("service-credential "+command, flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	expiresIn := fs.Duration("expires-in", 0, "")
-	pos, err := parseInterleaved(fs, rest)
-	if err != nil {
-		return fmt.Errorf("%w\n%s", err, serviceCredentialUsage)
+	// expiry is the flag's deadline, nil when it was not given.
+	expiry := func(cmd *cli.Command) *time.Time {
+		in := cmd.Duration("expires-in")
+		if in == 0 {
+			return nil
+		}
+		at := d.now().Add(in)
+		return &at
 	}
-	var expiresAt *time.Time
-	if *expiresIn < 0 {
-		return errors.New("--expires-in must be a positive duration")
-	}
-	if *expiresIn > 0 {
-		at := now().Add(*expiresIn)
-		expiresAt = &at
-	}
-	switch command {
-	case "create":
-		if len(pos) != 2 {
-			return errors.New(serviceCredentialUsage)
-		}
-		return createServiceCredential(ctx, ops, out, staff.IssueInput{Name: pos[0], Scopes: parseScopes(pos[1]), ExpiresAt: expiresAt})
-	case "rotate":
-		id, err := parseID(pos)
-		if err != nil {
-			return err
-		}
-		issued, err := ops.RotateServiceCredential(ctx, id, expiresAt)
-		if err != nil {
-			return serviceCredentialError(err, id)
-		}
-		showIssued(out, issued)
-		_, _ = fmt.Fprintf(out, "credential %d stays active until you revoke it: `sphericon service-credential revoke %d`\n", id, id)
-	case "revoke":
-		id, err := parseID(pos)
-		if err != nil {
-			return err
-		}
-		if err := ops.RevokeServiceCredential(ctx, id); err != nil {
-			return serviceCredentialError(err, id)
-		}
-		_, _ = fmt.Fprintf(out, "service credential %d revoked: it is refused from now on\n", id)
-	case "list":
-		if len(pos) > 1 {
-			return errors.New(serviceCredentialUsage)
-		}
-		name := ""
-		if len(pos) == 1 {
-			name = pos[0]
-		}
-		list, err := ops.ServiceCredentials(ctx, name)
-		if err != nil {
-			return serviceCredentialError(err, 0)
-		}
-		listServiceCredentials(out, list, now())
-	default:
-		return fmt.Errorf("unknown service-credential command %q\n%s", command, serviceCredentialUsage)
-	}
-	return nil
-}
-
-func createServiceCredential(ctx context.Context, ops serviceCredentialOps, out io.Writer, in staff.IssueInput) error {
-	issued, err := ops.IssueServiceCredential(ctx, in)
-	if err != nil {
-		return serviceCredentialError(err, 0)
-	}
-	showIssued(out, issued)
-	return nil
+	return group("service-credential", "manage the Service credentials of the Staff surface",
+		&cli.Command{
+			Name:        "create",
+			Usage:       "create a Service credential and print its value once",
+			ArgsUsage:   "<name> <scope>[,<scope>...]",
+			Description: "scopes: usage:read, workspaces:read, holds:write",
+			Flags:       []cli.Flag{expiresIn()},
+			Arguments: []cli.Argument{
+				&cli.StringArg{Name: "name", Required: true},
+				&cli.StringArg{Name: "scopes", Required: true},
+			},
+			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+				issued, err := ops.IssueServiceCredential(ctx, staff.IssueInput{
+					Name:      cmd.StringArg("name"),
+					Scopes:    parseScopes(cmd.StringArg("scopes")),
+					ExpiresAt: expiry(cmd),
+				})
+				if err != nil {
+					return serviceCredentialError(err, 0)
+				}
+				showIssued(out(cmd), issued)
+				return nil
+			}),
+		},
+		&cli.Command{
+			Name:      "rotate",
+			Usage:     "issue a second credential with the same name and scopes",
+			ArgsUsage: "<id>",
+			Flags:     []cli.Flag{expiresIn()},
+			Arguments: []cli.Argument{&cli.IntArg{Name: "id", Required: true}},
+			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+				id, err := credentialID(cmd)
+				if err != nil {
+					return err
+				}
+				issued, err := ops.RotateServiceCredential(ctx, id, expiry(cmd))
+				if err != nil {
+					return serviceCredentialError(err, id)
+				}
+				showIssued(out(cmd), issued)
+				_, _ = fmt.Fprintf(out(cmd), "credential %d stays active until you revoke it: `sphericon service-credential revoke %d`\n", id, id)
+				return nil
+			}),
+		},
+		&cli.Command{
+			Name:      "revoke",
+			Usage:     "refuse a credential from now on",
+			ArgsUsage: "<id>",
+			Arguments: []cli.Argument{&cli.IntArg{Name: "id", Required: true}},
+			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+				id, err := credentialID(cmd)
+				if err != nil {
+					return err
+				}
+				if err := ops.RevokeServiceCredential(ctx, id); err != nil {
+					return serviceCredentialError(err, id)
+				}
+				_, _ = fmt.Fprintf(out(cmd), "service credential %d revoked: it is refused from now on\n", id)
+				return nil
+			}),
+		},
+		&cli.Command{
+			Name:      "list",
+			Usage:     "list the credentials, optionally of one name",
+			ArgsUsage: "[<name>]",
+			Arguments: []cli.Argument{&cli.StringArg{Name: "name"}},
+			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+				list, err := ops.ServiceCredentials(ctx, cmd.StringArg("name"))
+				if err != nil {
+					return serviceCredentialError(err, 0)
+				}
+				listServiceCredentials(out(cmd), list, d.now())
+				return nil
+			}),
+		},
+	)
 }
 
 func showIssued(out io.Writer, c *staff.Issued) {
@@ -162,31 +181,13 @@ func parseScopes(list string) []staff.Scope {
 	return scopes
 }
 
-func parseID(pos []string) (int64, error) {
-	if len(pos) != 1 {
-		return 0, errors.New(serviceCredentialUsage)
-	}
-	id, err := strconv.ParseInt(pos[0], 10, 64)
-	if err != nil || id < 1 {
-		return 0, fmt.Errorf("%q is not a service credential id (see `list`)", pos[0])
+// credentialID is the `<id>` argument of rotate and revoke.
+func credentialID(cmd *cli.Command) (int64, error) {
+	id := int64(cmd.IntArg("id"))
+	if id < 1 {
+		return 0, fmt.Errorf("%d is not a service credential id (see `list`)", id)
 	}
 	return id, nil
-}
-
-// parseInterleaved parses flags wherever they stand among the positional arguments.
-func parseInterleaved(fs *flag.FlagSet, args []string) ([]string, error) {
-	var pos []string
-	for {
-		if err := fs.Parse(args); err != nil {
-			return nil, err
-		}
-		rest := fs.Args()
-		if len(rest) == 0 {
-			return pos, nil
-		}
-		pos = append(pos, rest[0])
-		args = rest[1:]
-	}
 }
 
 func serviceCredentialError(err error, id int64) error {

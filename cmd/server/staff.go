@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
+
+	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/ee/staff"
 )
@@ -16,42 +17,51 @@ type staffOps interface {
 	ResetStaffTOTP(ctx context.Context, email string) error
 }
 
-const staffUsage = "usage: sphericon staff create|reset-totp <email>"
-
-// runStaff executes the `staff` commands (ADR 0026). `create <email>` is the only
+// staffCommand is `sphericon staff create|reset-totp <email>` (ADR 0026). `create` is the only
 // way a platform Staff member comes to exist, since there is no signup; it prints the
-// one-time password, and the Staff member enrols a TOTP at first login. `reset-totp <email>`
+// one-time password, and the Staff member enrols a TOTP at first login. `reset-totp`
 // is the only way a lost TOTP is reset (no web flow can): it clears the factor and ends
 // the Staff member's sessions, and the Staff member re-enrols at next login.
-func runStaff(ctx context.Context, ops staffOps, args []string, out io.Writer) error {
-	if len(args) != 2 {
-		return errors.New(staffUsage)
-	}
-	email := args[1]
-	switch args[0] {
-	case "create":
-		password, err := ops.CreateStaffMember(ctx, email)
-		switch {
-		case errors.Is(err, staff.ErrDuplicate):
-			return fmt.Errorf("a staff with email %q already exists; nothing changed", email)
-		case errors.Is(err, staff.ErrNotLicensed):
-			return errors.New("this instance has no staff license (feature `staff`)")
-		case err != nil:
-			return err
-		}
-		_, _ = fmt.Fprintf(out, "staff %q created\npassword (shown once): %s\nthe staff enrols a TOTP at first login\n", email, password)
-	case "reset-totp":
-		switch err := ops.ResetStaffTOTP(ctx, email); {
-		case errors.Is(err, staff.ErrNotFound):
-			return fmt.Errorf("no staff with email %q; nothing changed", email)
-		case errors.Is(err, staff.ErrNotLicensed):
-			return errors.New("this instance has no staff license (feature `staff`)")
-		case err != nil:
-			return err
-		}
-		_, _ = fmt.Fprintf(out, "totp of staff %q reset: every session has ended and the staff must re-enrol at next login\n", email)
-	default:
-		return fmt.Errorf("unknown staff command %q\n%s", args[0], staffUsage)
-	}
-	return nil
+func staffCommand(d deps) *cli.Command {
+	return group("staff", "manage platform Staff members",
+		&cli.Command{
+			Name:      "create",
+			Usage:     "create a Staff member and print their one-time password",
+			ArgsUsage: "<email>",
+			Arguments: []cli.Argument{&cli.StringArg{Name: "email", Required: true}},
+			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+				email := cmd.StringArg("email")
+				password, err := ops.CreateStaffMember(ctx, email)
+				switch {
+				case errors.Is(err, staff.ErrDuplicate):
+					return fmt.Errorf("a staff with email %q already exists; nothing changed", email)
+				case errors.Is(err, staff.ErrNotLicensed):
+					return errors.New(noLicense)
+				case err != nil:
+					return err
+				}
+				_, _ = fmt.Fprintf(out(cmd), "staff %q created\npassword (shown once): %s\nthe staff enrols a TOTP at first login\n", email, password)
+				return nil
+			}),
+		},
+		&cli.Command{
+			Name:      "reset-totp",
+			Usage:     "clear a Staff member's TOTP and end their sessions",
+			ArgsUsage: "<email>",
+			Arguments: []cli.Argument{&cli.StringArg{Name: "email", Required: true}},
+			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+				email := cmd.StringArg("email")
+				switch err := ops.ResetStaffTOTP(ctx, email); {
+				case errors.Is(err, staff.ErrNotFound):
+					return fmt.Errorf("no staff with email %q; nothing changed", email)
+				case errors.Is(err, staff.ErrNotLicensed):
+					return errors.New(noLicense)
+				case err != nil:
+					return err
+				}
+				_, _ = fmt.Fprintf(out(cmd), "totp of staff %q reset: every session has ended and the staff must re-enrol at next login\n", email)
+				return nil
+			}),
+		},
+	)
 }

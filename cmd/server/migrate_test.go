@@ -22,8 +22,8 @@ func TestApplyMigrationsCreatesRiverAndOutboxSchemaOnEmptyDatabase(t *testing.T)
 		DBPool:      config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, PGXMaxConns: 2},
 	}
 
-	require.NoError(t, applyMigrations(cfg))
-	require.NoError(t, applyMigrations(cfg))
+	require.NoError(t, applyMigrations(t.Context(), cfg))
+	require.NoError(t, applyMigrations(t.Context(), cfg))
 
 	pool, err := appdb.NewPGXPool(t.Context(), cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)

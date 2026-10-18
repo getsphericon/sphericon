@@ -23,7 +23,7 @@ func TestUserResetSecondFactorByEmail(t *testing.T) {
 	ops := &fakeUserOps{changed: true}
 	var out bytes.Buffer
 
-	require.NoError(t, runUser(context.Background(), ops, []string{"reset-second-factor", "sam@globex.test"}, &out))
+	require.NoError(t, execute(ops, &out, "user", "reset-second-factor", "sam@globex.test"))
 
 	assert.Equal(t, []string{"sam@globex.test"}, ops.reset)
 	assert.Contains(t, out.String(), "reset")
@@ -33,7 +33,7 @@ func TestUserResetSecondFactorReportsNoChange(t *testing.T) {
 	ops := &fakeUserOps{changed: false}
 	var out bytes.Buffer
 
-	require.NoError(t, runUser(context.Background(), ops, []string{"reset-second-factor", "john@acme.test"}, &out))
+	require.NoError(t, execute(ops, &out, "user", "reset-second-factor", "john@acme.test"))
 
 	assert.Contains(t, out.String(), "nothing changed")
 }
@@ -41,7 +41,7 @@ func TestUserResetSecondFactorReportsNoChange(t *testing.T) {
 func TestUserCommandNeedsAKnownSubcommandAndAnEmail(t *testing.T) {
 	ops := &fakeUserOps{}
 	for _, args := range [][]string{nil, {"reset-second-factor"}, {"delete", "sam@globex.test"}} {
-		require.Error(t, runUser(context.Background(), ops, args, &bytes.Buffer{}), "args %v", args)
+		require.Error(t, execute(ops, &bytes.Buffer{}, append([]string{"user"}, args...)...), "args %v", args)
 	}
 	assert.Empty(t, ops.reset)
 }
