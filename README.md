@@ -194,7 +194,7 @@ and health checks.
 sphericon is **open-core**. The core is licensed under the GNU AGPL-3.0
 ([`LICENSE`](LICENSE)); the Enterprise features under [`ee/`](ee/) are commercial and
 source-available ([`ee/LICENSE`](ee/LICENSE)). See [`LICENSING.md`](LICENSING.md) for the
-boundary.
+boundary. Contributions need a signed [CLA](CLA.md), see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Security
 
