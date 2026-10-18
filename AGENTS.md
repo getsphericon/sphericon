@@ -456,7 +456,7 @@ Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/a
 
 ### Worktrees
 
-Created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Never create a branch in the primary checkout: only in a worktree, and only when needed. See `docs/agents/worktrees.md`.
+A trivial change is committed straight to `main` in the primary checkout. Anything else is done in a worktree, created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Never create a branch, in the primary checkout or in a worktree. See `docs/agents/worktrees.md`.
 
 ### Advisor before /to-spec
 
