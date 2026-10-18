@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"log/slog"
 	"time"
+
+	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
@@ -16,36 +17,42 @@ import (
 	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 
-// runMigrate is `sphericon migrate`: it applies the pending migrations with no time limit,
-// or with --status only prints what would run.
-func runMigrate(env string, args []string, out io.Writer) error {
-	const usage = "usage: migrate [--status [--json]]"
-	fs := flag.NewFlagSet("migrate", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	status := fs.Bool("status", false, "print the schema's state and the pending migrations; change nothing")
-	asJSON := fs.Bool("json", false, "with --status, print the schema state and the table of Majors as JSON (what `upgrade` reads)")
-	if err := fs.Parse(args); err != nil || fs.NArg() > 0 || (*asJSON && !*status) {
-		return fmt.Errorf("unknown arguments %q (%s)", args, usage)
+// migrateCommand is `sphericon migrate`: it applies the pending migrations with no time limit
+// and exits (handy for an init container, release job or manual run), or with --status only
+// prints what would run.
+func migrateCommand(env string) *cli.Command {
+	return &cli.Command{
+		Name:  "migrate",
+		Usage: "apply pending migrations and exit",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{Name: "status", Usage: "print the schema's state and the pending migrations; change nothing"},
+			&cli.BoolFlag{Name: "json", Usage: "with --status, print the schema state and the table of Majors as JSON (what `upgrade` reads)"},
+		},
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			status, asJSON := cmd.Bool("status"), cmd.Bool("json")
+			if cmd.Args().Present() || (asJSON && !status) {
+				return fmt.Errorf("unknown arguments %q (usage: migrate [--status [--json]])", cmd.Args().Slice())
+			}
+			cfg, err := config.Load(env)
+			if err != nil {
+				return err
+			}
+			if status {
+				return printMigrationStatus(ctx, cfg, out(cmd), asJSON)
+			}
+			applied, err := applyMigrations(ctx, cfg)
+			if err != nil {
+				return err
+			}
+			slog.Info("migrations applied", "count", applied)
+			return nil
+		},
 	}
-	cfg, err := config.Load(env)
-	if err != nil {
-		return err
-	}
-	if *status {
-		return printMigrationStatus(context.Background(), cfg, out, *asJSON)
-	}
-	applied, err := applyMigrations(context.Background(), cfg)
-	if err != nil {
-		return err
-	}
-	slog.Info("migrations applied", "count", applied)
-	return nil
 }
 
 // migrateOnStart is the start with SPHERICON_DB_AUTO_MIGRATE on: the wait for the lock and the
 // run take at most SPHERICON_DB_MIGRATE_TIMEOUT (0 = no limit).
-func migrateOnStart(cfg *config.Config) error {
-	ctx := context.Background()
+func migrateOnStart(ctx context.Context, cfg *config.Config) error {
 	if cfg.MigrateTimeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, cfg.MigrateTimeout)

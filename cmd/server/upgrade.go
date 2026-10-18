@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
+	"github.com/urfave/cli/v3"
 	"golang.org/x/mod/semver"
 
 	"github.com/getsphericon/sphericon/internal/buildinfo"
@@ -22,60 +22,67 @@ var errNewerRelease = errors.New("a newer release is available")
 // exitNewerRelease is the exit status of `upgrade --check` when a newer release exists.
 const exitNewerRelease = 10
 
-// runUpgrade is `sphericon upgrade [--from <dir>] [--version vX.Y.Z] [--yes] [--check]`: it
+// upgradeCommand is `sphericon upgrade [--from <dir>] [--version vX.Y.Z] [--yes] [--restart]`: it
 // installs a release over the running binary, downloaded from GitHub or, with --from, already on
 // the machine (ADR 0034). --check only asks whether a newer release exists.
-func runUpgrade(ctx context.Context, args []string, out io.Writer) error {
+func upgradeCommand() *cli.Command {
 	const usage = "usage: upgrade [--from <dir>] [--version vX.Y.Z] [--yes] [--restart] | upgrade --check"
-	fs := flag.NewFlagSet("upgrade", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	from := fs.String("from", "", "directory with a release archive and checksums.txt (default: download from GitHub)")
-	version := fs.String("version", "", "release to install (default: the latest stable one)")
-	yes := fs.Bool("yes", false, "go past the Upgrade notes")
-	check := fs.Bool("check", false, "exit 0 when current, 10 when a newer release exists, 1 on error; change nothing")
-	restart := fs.Bool("restart", false, "migrate in a transient unit, then restart the systemd service")
-	service := fs.String("service", "sphericon", "systemd unit that --restart restarts")
-	if err := fs.Parse(args); err != nil {
-		return fmt.Errorf("%w (%s)", err, usage)
-	}
-	if *check {
-		if *from != "" || *version != "" || *yes || *restart {
-			return errors.New(usage)
-		}
-		gh, err := upgrade.NewGitHub()
-		if err != nil {
+	return &cli.Command{
+		Name:  "upgrade",
+		Usage: "install a release over this binary",
+		Flags: []cli.Flag{
+			&cli.StringFlag{Name: "from", Usage: "directory with a release archive and checksums.txt (default: download from GitHub)"},
+			&cli.StringFlag{Name: "version", Usage: "release to install (default: the latest stable one)"},
+			&cli.BoolFlag{Name: "yes", Usage: "go past the Upgrade notes"},
+			&cli.BoolFlag{Name: "check", Usage: "exit 0 when current, 10 when a newer release exists, 1 on error; change nothing"},
+			&cli.BoolFlag{Name: "restart", Usage: "migrate in a transient unit, then restart the systemd service"},
+			&cli.StringFlag{Name: "service", Value: "sphericon", Usage: "systemd unit that --restart restarts"},
+		},
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			if cmd.Args().Present() {
+				return fmt.Errorf("unexpected argument %q (%s)", cmd.Args().First(), usage)
+			}
+			from, version := cmd.String("from"), cmd.String("version")
+			if cmd.Bool("check") {
+				if from != "" || version != "" || cmd.Bool("yes") || cmd.Bool("restart") {
+					return errors.New(usage)
+				}
+				gh, err := upgrade.NewGitHub()
+				if err != nil {
+					return err
+				}
+				return checkRelease(ctx, gh, buildinfo.Current().Version, out(cmd))
+			}
+			var source upgrade.Source
+			if from != "" {
+				source = upgrade.DirSource(from)
+			} else {
+				gh, err := upgrade.NewGitHub()
+				if err != nil {
+					return err
+				}
+				source = gh
+			}
+			target, err := os.Executable()
+			if err != nil {
+				return err
+			}
+			opts := upgrade.Options{
+				Source:  source,
+				Target:  target,
+				Current: buildinfo.Current().Version,
+				Version: version,
+				Yes:     cmd.Bool("yes"),
+				Out:     out(cmd),
+			}
+			if cmd.Bool("restart") {
+				sd := upgrade.Systemd{Service: cmd.String("service"), Out: out(cmd)}
+				opts.Run, opts.PostSwap = sd.Run, sd.PostSwap
+			}
+			_, err = upgrade.Walk(ctx, opts)
 			return err
-		}
-		return checkRelease(ctx, gh, buildinfo.Current().Version, out)
+		},
 	}
-	var source upgrade.Source
-	if *from != "" {
-		source = upgrade.DirSource(*from)
-	} else {
-		gh, err := upgrade.NewGitHub()
-		if err != nil {
-			return err
-		}
-		source = gh
-	}
-	target, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	opts := upgrade.Options{
-		Source:  source,
-		Target:  target,
-		Current: buildinfo.Current().Version,
-		Version: *version,
-		Yes:     *yes,
-		Out:     out,
-	}
-	if *restart {
-		sd := upgrade.Systemd{Service: *service, Out: out}
-		opts.Run, opts.PostSwap = sd.Run, sd.PostSwap
-	}
-	_, err = upgrade.Walk(ctx, opts)
-	return err
 }
 
 // checkRelease says whether GitHub has a stable release newer than current, changing nothing.

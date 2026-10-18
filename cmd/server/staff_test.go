@@ -26,7 +26,7 @@ func TestStaffCreateShowsTheOneTimePassword(t *testing.T) {
 	ops := opsCreating("s3cret-once", nil)
 	var out bytes.Buffer
 
-	require.NoError(t, runStaff(context.Background(), ops, []string{"create", "staff@sphericon.test"}, &out))
+	require.NoError(t, execute(ops, &out, "staff", "create", "staff@sphericon.test"))
 
 	calls := ops.CreateStaffMemberCalls()
 	require.Len(t, calls, 1)
@@ -35,13 +35,13 @@ func TestStaffCreateShowsTheOneTimePassword(t *testing.T) {
 }
 
 func TestStaffCreateRefusesADuplicateEmail(t *testing.T) {
-	err := runStaff(context.Background(), opsCreating("", staff.ErrDuplicate), []string{"create", "staff@sphericon.test"}, &bytes.Buffer{})
+	err := execute(opsCreating("", staff.ErrDuplicate), &bytes.Buffer{}, "staff", "create", "staff@sphericon.test")
 
 	require.ErrorContains(t, err, "already exists")
 }
 
 func TestStaffCreateNeedsTheLicense(t *testing.T) {
-	err := runStaff(context.Background(), opsCreating("", staff.ErrNotLicensed), []string{"create", "staff@sphericon.test"}, &bytes.Buffer{})
+	err := execute(opsCreating("", staff.ErrNotLicensed), &bytes.Buffer{}, "staff", "create", "staff@sphericon.test")
 
 	require.ErrorContains(t, err, "license")
 }
@@ -49,7 +49,7 @@ func TestStaffCreateNeedsTheLicense(t *testing.T) {
 func TestStaffNeedsACommandAndAnEmail(t *testing.T) {
 	ops := opsCreating("x", nil)
 	for _, args := range [][]string{nil, {"create"}, {"delete", "staff@sphericon.test"}} {
-		require.Error(t, runStaff(context.Background(), ops, args, &bytes.Buffer{}), "args %v", args)
+		require.Error(t, execute(ops, &bytes.Buffer{}, append([]string{"staff"}, args...)...), "args %v", args)
 	}
 	assert.Empty(t, ops.CreateStaffMemberCalls())
 }
@@ -58,7 +58,7 @@ func TestStaffResetTOTPClearsTheFactorAndSaysTheStaffReenrols(t *testing.T) {
 	ops := opsResetting(nil)
 	var out bytes.Buffer
 
-	require.NoError(t, runStaff(context.Background(), ops, []string{"reset-totp", "staff@sphericon.test"}, &out))
+	require.NoError(t, execute(ops, &out, "staff", "reset-totp", "staff@sphericon.test"))
 
 	calls := ops.ResetStaffTOTPCalls()
 	require.Len(t, calls, 1)
@@ -67,13 +67,13 @@ func TestStaffResetTOTPClearsTheFactorAndSaysTheStaffReenrols(t *testing.T) {
 }
 
 func TestStaffResetTOTPRefusesAnUnknownStaffMember(t *testing.T) {
-	err := runStaff(context.Background(), opsResetting(staff.ErrNotFound), []string{"reset-totp", "nobody@sphericon.test"}, &bytes.Buffer{})
+	err := execute(opsResetting(staff.ErrNotFound), &bytes.Buffer{}, "staff", "reset-totp", "nobody@sphericon.test")
 
 	require.ErrorContains(t, err, "no staff")
 }
 
 func TestStaffResetTOTPNeedsTheLicense(t *testing.T) {
-	err := runStaff(context.Background(), opsResetting(staff.ErrNotLicensed), []string{"reset-totp", "staff@sphericon.test"}, &bytes.Buffer{})
+	err := execute(opsResetting(staff.ErrNotLicensed), &bytes.Buffer{}, "staff", "reset-totp", "staff@sphericon.test")
 
 	require.ErrorContains(t, err, "license")
 }

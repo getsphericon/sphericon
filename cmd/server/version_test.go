@@ -14,7 +14,7 @@ import (
 func TestVersionPrintsOneLineOnStdout(t *testing.T) {
 	var out bytes.Buffer
 
-	require.NoError(t, runVersion(&out, nil))
+	require.NoError(t, execute(nil, &out, "version"))
 
 	assert.Equal(t, buildinfo.Current().Line()+"\n", out.String())
 	assert.NotContains(t, out.String(), "commit none")
@@ -23,7 +23,7 @@ func TestVersionPrintsOneLineOnStdout(t *testing.T) {
 func TestVersionJSONPrintsTheSameAsAnObject(t *testing.T) {
 	var out bytes.Buffer
 
-	require.NoError(t, runVersion(&out, []string{"--json"}))
+	require.NoError(t, execute(nil, &out, "version", "--json"))
 
 	var got map[string]string
 	require.NoError(t, json.Unmarshal(out.Bytes(), &got))
@@ -36,5 +36,13 @@ func TestVersionJSONPrintsTheSameAsAnObject(t *testing.T) {
 }
 
 func TestVersionRejectsUnknownArguments(t *testing.T) {
-	require.Error(t, runVersion(&bytes.Buffer{}, []string{"--yaml"}))
+	require.Error(t, execute(nil, &bytes.Buffer{}, "version", "--yaml"))
+}
+
+func TestRootVersionFlagPrintsTheSameLineAsTheCommand(t *testing.T) {
+	var out bytes.Buffer
+
+	require.NoError(t, execute(nil, &out, "--version"))
+
+	assert.Equal(t, buildinfo.Current().Line()+"\n", out.String())
 }

@@ -10,10 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/urfave/cli/v3"
+
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/changelog"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/telemetry"
@@ -27,92 +28,49 @@ func main() {
 		env = "development"
 	}
 
-	if len(os.Args) > 1 && (os.Args[1] == "version" || os.Args[1] == "--version") {
-		args := os.Args[2:]
-		if os.Args[1] == "--version" {
-			args = nil
-		}
-		if err := runVersion(os.Stdout, args); err != nil {
-			fatal("version", err)
-		}
-		return
-	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	// `server upgrade-notes --since <version>` prints the Upgrade notes embedded in this binary.
-	if len(os.Args) > 1 && os.Args[1] == "upgrade-notes" {
-		if err := runUpgradeNotes(os.Stdout, os.Args[2:], changelog.Embedded()); err != nil {
-			fatal("upgrade-notes", err)
+	if err := newRoot(newDeps(env)).Run(ctx, os.Args); err != nil {
+		stop()
+		if errors.Is(err, errNewerRelease) {
+			// `upgrade --check` found a newer release: it already said so on stdout (ADR 0034).
+			os.Exit(exitNewerRelease)
 		}
-		return
+		fatal("sphericon", err)
 	}
+}
 
-	// `server upgrade --from <dir>` installs a downloaded release over this binary (ADR 0034).
-	if len(os.Args) > 1 && os.Args[1] == "upgrade" {
-		if err := runUpgrade(context.Background(), os.Args[2:], os.Stdout); err != nil {
-			if errors.Is(err, errNewerRelease) {
-				os.Exit(exitNewerRelease)
+// genkeyCommand prints a fresh SPHERICON_ENCRYPTION_KEY, so a binary or image install
+// can bootstrap without the Go toolchain. Its stdout is the key and nothing else: scripts
+// capture it.
+func genkeyCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "genkey",
+		Usage: "print a fresh SPHERICON_ENCRYPTION_KEY",
+		Action: func(_ context.Context, cmd *cli.Command) error {
+			key, err := secrets.GenerateKeysetBase64()
+			if err != nil {
+				return err
 			}
-			fatal("upgrade", err)
-		}
-		return
+			_, _ = fmt.Fprintln(out(cmd), key)
+			return nil
+		},
 	}
+}
 
-	// `server genkey` prints a fresh SPHERICON_ENCRYPTION_KEY, so a binary or image install
-	// can bootstrap without the Go toolchain.
-	if len(os.Args) > 1 && os.Args[1] == "genkey" {
-		key, err := secrets.GenerateKeysetBase64()
-		if err != nil {
-			fatal("genkey", err)
+// serve runs the server until it is interrupted or stops by itself.
+func serve(env string) cli.ActionFunc {
+	return func(ctx context.Context, cmd *cli.Command) error {
+		if cmd.Args().Present() {
+			return fmt.Errorf("unknown command %q (see `sphericon --help`)", cmd.Args().First())
 		}
-		fmt.Println(key)
-		return
+		runServer(ctx, env)
+		return nil
 	}
+}
 
-	// `server migrate` applies pending migrations and exits — handy for a
-	// separate orchestration step (init container, release job, manual run).
-	if len(os.Args) > 1 && os.Args[1] == "migrate" {
-		if err := runMigrate(env, os.Args[2:], os.Stdout); err != nil {
-			fatal("migrate", err)
-		}
-		return
-	}
-
-	// `server workspace suspend|unsuspend <slug> …` is the staff member toggle for a
-	// Workspace's outbound-sending freeze (ADR 0007).
-	if len(os.Args) > 1 && os.Args[1] == "workspace" {
-		if err := runWorkspaceCommand(env, os.Args[2:]); err != nil {
-			fatal("workspace", err)
-		}
-		return
-	}
-
-	// `server user reset-second-factor <email>` resets a User's Second factor for an
-	// instance with nobody to do it in the product (ADR 0020).
-	if len(os.Args) > 1 && os.Args[1] == "user" {
-		if err := runUserCommand(env, os.Args[2:]); err != nil {
-			fatal("user", err)
-		}
-		return
-	}
-
-	// `server staff member create <email>` makes a platform Staff member (ADR 0026): the only way
-	// one comes to exist, since the /staff surface has no signup.
-	if len(os.Args) > 1 && os.Args[1] == "staff" {
-		if err := runStaffCommand(env, os.Args[2:]); err != nil {
-			fatal("staff", err)
-		}
-		return
-	}
-
-	// `server service-credential create|rotate|revoke|list …` manages the Service
-	// credentials of the Staff surface (ADR 0026): no endpoint can mint or change one.
-	if len(os.Args) > 1 && os.Args[1] == "service-credential" {
-		if err := runServiceCredentialCommand(env, os.Args[2:]); err != nil {
-			fatal("service-credential", err)
-		}
-		return
-	}
-
+func runServer(ctx context.Context, env string) {
 	cfg, err := config.Load(env)
 	if err != nil {
 		fatal("load config", err)
@@ -127,12 +85,12 @@ func main() {
 	// job/event instrumentation pick these up from the globals. The shutdown is
 	// deferred at the top level so it runs after the HTTP server has stopped and
 	// the app has shut down (LIFO) — the last batched spans/metrics flush then.
-	telShutdown, err := telemetry.Setup(context.Background(), cfg, env, telemetry.BuildInfo{Version: build.Version, Commit: build.Commit})
+	telShutdown, err := telemetry.Setup(context.WithoutCancel(ctx), cfg, env, telemetry.BuildInfo{Version: build.Version, Commit: build.Commit})
 	if err != nil {
 		fatal("init telemetry", err)
 	}
 	defer func() {
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 		defer cancel()
 		if err := telShutdown(shutdownCtx); err != nil {
 			slog.Error("telemetry shutdown", "err", err)
@@ -142,10 +100,10 @@ func main() {
 	// Opt-in self-migration on startup, so the single binary/image can come up
 	// against a fresh database with no extra step.
 	if cfg.AutoMigrate {
-		if err := migrateOnStart(cfg); err != nil {
+		if err := migrateOnStart(ctx, cfg); err != nil {
 			fatal("auto-migrate", err)
 		}
-	} else if err := guardStart(context.Background(), cfg); err != nil {
+	} else if err := guardStart(ctx, cfg); err != nil {
 		fatal("schema guard", err)
 	}
 
@@ -153,9 +111,6 @@ func main() {
 	if err != nil {
 		fatal("init app", err)
 	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	// Start binds the opt-in metrics listener, starts the event router and the job
 	// queue and serves HTTP; any of them failing is fatal (a degraded instance that
@@ -184,55 +139,4 @@ func main() {
 func fatal(msg string, err error) {
 	slog.Error(msg, "err", err)
 	os.Exit(1)
-}
-
-// runWorkspaceCommand boots the minimal staff member app (no listener, no event router,
-// no workers) and runs one workspace command against it.
-func runWorkspaceCommand(env string, args []string) error {
-	a, err := app.NewCommandApp(env)
-	if err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	defer func() { _ = a.Shutdown(ctx) }()
-	return runWorkspace(ctx, a, args, os.Stdout)
-}
-
-// runUserCommand boots the minimal staff member app and runs one user command against it.
-func runUserCommand(env string, args []string) error {
-	a, err := app.NewCommandApp(env)
-	if err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	defer func() { _ = a.Shutdown(ctx) }()
-	return runUser(ctx, a, args, os.Stdout)
-}
-
-// runServiceCredentialCommand boots the minimal staff member app and runs one
-// service-credential command against it.
-func runServiceCredentialCommand(env string, args []string) error {
-	a, err := app.NewCommandApp(env)
-	if err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	defer func() { _ = a.Shutdown(ctx) }()
-	return runServiceCredential(ctx, a, time.Now, args, os.Stdout)
-}
-
-// runStaffCommand boots the minimal staff member app and runs one staff member command
-// against it.
-func runStaffCommand(env string, args []string) error {
-	a, err := app.NewCommandApp(env)
-	if err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	defer func() { _ = a.Shutdown(ctx) }()
-	return runStaff(ctx, a, args, os.Stdout)
 }

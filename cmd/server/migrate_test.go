@@ -115,9 +115,14 @@ func TestMigrateOnStartFailsWhenTheLockIsHeldPastTheTimeout(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, locker.SessionLock(t.Context(), conn))
 
-	require.Error(t, migrateOnStart(cfg))
+	require.Error(t, migrateOnStart(t.Context(), cfg))
 
 	var out bytes.Buffer
 	require.NoError(t, printMigrationStatus(t.Context(), cfg, &out, false))
 	require.Contains(t, out.String(), "schema:  empty")
+}
+
+func TestMigrateRefusesJSONWithoutStatusAndStrayArguments(t *testing.T) {
+	require.Error(t, execute(nil, &bytes.Buffer{}, "migrate", "--json"))
+	require.Error(t, execute(nil, &bytes.Buffer{}, "migrate", "now"))
 }

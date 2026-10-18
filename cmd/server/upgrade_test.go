@@ -14,13 +14,13 @@ import (
 )
 
 func TestUpgradeRejectsUnknownFlags(t *testing.T) {
-	err := runUpgrade(t.Context(), []string{"--bogus"}, &bytes.Buffer{})
+	err := execute(nil, &bytes.Buffer{}, "upgrade", "--bogus")
 
-	assert.ErrorContains(t, err, "usage: upgrade")
+	assert.Error(t, err)
 }
 
 func TestUpgradeCheckRefusesADirectory(t *testing.T) {
-	err := runUpgrade(t.Context(), []string{"--check", "--from", t.TempDir()}, &bytes.Buffer{})
+	err := execute(nil, &bytes.Buffer{}, "upgrade", "--check", "--from", t.TempDir())
 
 	assert.ErrorContains(t, err, "usage: upgrade")
 }

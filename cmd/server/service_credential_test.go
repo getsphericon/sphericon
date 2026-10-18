@@ -13,12 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 )
 
-var cliNow = time.Date(2026, time.March, 1, 12, 0, 0, 0, time.UTC)
-
 func run(t *testing.T, ops serviceCredentialOps, args ...string) (string, error) {
 	t.Helper()
 	var out bytes.Buffer
-	err := runServiceCredential(context.Background(), ops, func() time.Time { return cliNow }, args, &out)
+	err := execute(ops, &out, append([]string{"service-credential"}, args...)...)
 	return out.String(), err
 }
 
@@ -129,6 +127,26 @@ func TestServiceCredentialListShowsStateExpiryAndLastUsed(t *testing.T) {
 	assert.Contains(t, out, used.Format(time.RFC3339))
 	assert.Contains(t, out, soon.Format(time.RFC3339))
 	assert.Contains(t, out, "never")
+}
+
+func TestServiceCredentialCreateTakesTheExpiryAfterTheArguments(t *testing.T) {
+	ops := issuing(nil)
+
+	_, err := run(t, ops, "create", "service-a", "usage:read", "--expires-in", "720h")
+
+	require.NoError(t, err)
+	require.NotNil(t, ops.IssueServiceCredentialCalls()[0].In.ExpiresAt)
+	assert.True(t, ops.IssueServiceCredentialCalls()[0].In.ExpiresAt.Equal(cliNow.Add(720*time.Hour)))
+}
+
+func TestServiceCredentialRefusesExtraArgumentsAndANegativeExpiry(t *testing.T) {
+	ops := &serviceCredentialOpsMock{RevokeServiceCredentialFunc: func(context.Context, int64) error { return nil }}
+
+	_, err := run(t, ops, "revoke", "7", "8")
+	require.Error(t, err)
+	_, err = run(t, issuing(nil), "create", "--expires-in=-1h", "service-a", "usage:read")
+	require.Error(t, err)
+	assert.Empty(t, ops.RevokeServiceCredentialCalls())
 }
 
 func TestServiceCredentialNeedsAKnownCommandAndItsArguments(t *testing.T) {
