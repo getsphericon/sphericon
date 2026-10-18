@@ -16,7 +16,6 @@ import (
 
 	"net/http/httptest"
 
-	"github.com/DATA-DOG/go-txdb"
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
@@ -59,17 +58,20 @@ import (
 	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/mokevnin/pgcleaner"
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/stretchr/testify/require"
 )
 
-// Baseline is applied ONCE per test process: migrate schema + load fixtures
-// (committed). Each test then opens a go-txdb connection — a real transaction
-// that is rolled back on Close — so tests are fully isolated and the DB stays
-// at the fixture state. No hand-rolled transaction plumbing.
+// The Baseline is applied ONCE per test process, lazily, by the cleaner's setup:
+// migrate schema + load fixtures (committed). Each test then asks the cleaner for a
+// database: a real transaction that is rolled back when the test ends (pgcleaner's
+// Transaction strategy, go-txdb underneath), so tests are fully isolated and the DB
+// stays at the fixture state. No hand-rolled transaction plumbing.
 var (
 	once    sync.Once
 	baseCfg *config.Config
+	cleaner *pgcleaner.Cleaner
 	loadErr error
 )
 
@@ -84,21 +86,10 @@ func initBaseline() {
 			loadErr = err
 			return
 		}
-
-		sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
-		if err != nil {
-			loadErr = err
-			return
-		}
-		defer func() { _ = sqlDB.Close() }()
-		if err := migrateBaseline(context.Background(), sqlDB, cfg, projectRoot); err != nil {
-			loadErr = err
-			return
-		}
-
-		// Register a transactional driver backed by the real pgx connection.
-		txdb.Register("txdb", "pgx", cfg.DatabaseURL)
 		baseCfg = cfg
+		cleaner = pgcleaner.New(cfg.DatabaseURL, pgcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
+			return migrateBaseline(ctx, sqlDB, cfg, projectRoot)
+		}))
 	})
 }
 
@@ -205,13 +196,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		opt(st)
 	}
 
-	// dsn arg is just a pool identifier; each Open is its own transaction.
-	txDB, err := sql.Open("txdb", t.Name())
-	require.NoError(t, err, "open txdb")
-	// All queries must ride the SAME transaction; >1 conn would each get a
-	// separate tx and not see this test's writes (e.g. seeded tokens).
-	txDB.SetMaxOpenConns(1)
-	t.Cleanup(func() { _ = txDB.Close() }) // rollback
+	// All queries ride the SAME transaction (the cleaner limits the pool to one
+	// connection); it is rolled back when the test ends.
+	txDB := cleaner.DB(t)
 
 	client := db.NewEntClientOnTx(txDB)
 	// Bus over the same txdb connection: WithinTx opens a nested (savepoint)
