@@ -30,6 +30,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/oklog/ulid/v2"
 	"github.com/rs/cors"
@@ -133,7 +135,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// Order (ADR 0025): recoverer, requestID, CORS, client address, rate limit,
 	// timeout. CORS precedes the limiter so a 429 still reaches the browser; guard
 	// sits inside CORS so preflights are answered before the check.
-	return chain(mux, recoverer, requestID, corsMiddleware(cfg.CORSOrigins), clientip.Middleware, limiter.Middleware, timeout(30*time.Second), bodyLimit(cfg.BodyLimits), collectEventLimit(cfg.BodyLimits.CollectEvent), guard), nil
+	return chi.Chain(recoverer, requestID, corsMiddleware(cfg.CORSOrigins), clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), collectEventLimit(cfg.BodyLimits.CollectEvent), guard).Handler(mux), nil
 }
 
 // NewExternalAPI builds the external API (/api) ogen server: Bearer API-token
@@ -187,7 +189,7 @@ func NewInternal(cfg *config.Config, surface ServiceSurface) (http.Handler, erro
 	mux := http.NewServeMux()
 	mux.Handle(paths.Service+"/", srv)
 	limiter := ratelimit.New(cfg.RateLimits)
-	return chain(mux, recoverer, requestID, clientip.Middleware, limiter.Middleware, timeout(30*time.Second), bodyLimit(cfg.BodyLimits)), nil
+	return chi.Chain(recoverer, requestID, clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits)).Handler(mux), nil
 }
 
 // collectRetryAfter is the Retry-After (seconds) of a /collect 503: long enough for a
@@ -277,13 +279,11 @@ func writeCodedProblem(w http.ResponseWriter, status int, code, detail string) {
 }
 
 // --- cross-cutting net/http middleware ---
-
-func chain(h http.Handler, mws ...func(http.Handler) http.Handler) http.Handler {
-	for i := len(mws) - 1; i >= 0; i-- {
-		h = mws[i](h)
-	}
-	return h
-}
+//
+// chi supplies the chain and the timeout. recoverer and requestID stay ours:
+// chi's Recoverer answers a bare 500 (we render RFC 7807 and log through slog),
+// and chi's RequestID generates host-counter ids from a package-level generator
+// that cannot be replaced (we keep ULIDs and tag logging.FromContext).
 
 func recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -306,17 +306,6 @@ func recoverer(next http.Handler) http.Handler {
 		}()
 		next.ServeHTTP(w, r)
 	})
-}
-
-// timeout bounds every request's context (hang protection; replaces echo ContextTimeout).
-func timeout(d time.Duration) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx, cancel := context.WithTimeout(r.Context(), d)
-			defer cancel()
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
 }
 
 // collectPrefix mounts the public tracking ingestion; it is cut off from the rest
