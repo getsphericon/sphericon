@@ -423,6 +423,10 @@ Default five-label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, 
 
 Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/agents/domain.md`.
 
+### Worktrees
+
+Created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Never create a branch in the primary checkout: only in a worktree, and only when needed. See `docs/agents/worktrees.md`.
+
 ### Advisor before /to-spec
 
 Before running the `to-spec` skill, call the `advisor` tool first and take its advice into account. The skill is vendored, so this rule lives here rather than in the skill.
