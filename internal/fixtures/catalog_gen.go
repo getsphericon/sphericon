@@ -45,6 +45,10 @@ const (
 	AutomationInitechID = 300
 	// AutomationInitechName is from fixtures/automations.
 	AutomationInitechName = "Initech onboarding"
+	// AutomationNotifySlackID is from fixtures/automations.
+	AutomationNotifySlackID = 105
+	// AutomationNotifySlackName is from fixtures/automations.
+	AutomationNotifySlackName = "Notify Slack on signup"
 	// AutomationRunErasableID is from fixtures/automation_runs.
 	AutomationRunErasableID = 3000
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.

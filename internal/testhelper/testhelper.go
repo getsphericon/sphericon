@@ -301,7 +301,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	webhooksModule := webhooks.New(cipher, edition.Audit)
 	integrationsModule := integrations.New(bus, cipher, catalog, inline)
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline)
-	automationsModule := automations.New()
+	automationsModule := automations.New(cipher)
 	broadcastsModule := broadcasts.New(inline)
 	acc := accounts.New(client, bus)
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{

@@ -44,6 +44,16 @@
   workspace_id: 1
   created_at: '{{daysAgo 5}}'
   updated_at: '{{daysAgo 5}}'
+# An HTTP step (ADR 0039): URL, header value and signing secret are sealed per field, as
+# a saved step stores them. Draft, trigger unused elsewhere.
+- id: 105 # fixture: AutomationNotifySlack
+  name: Notify Slack on signup
+  status: draft
+  trigger_event: http_demo
+  definition: '[{"type":"http","id":"01J00000000000000000000001","url":"{{ encrypt "https://hooks.slack.com/services/T000/B000/XXXX" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"text\": \"New signup: {{ "{{ first_name }} {{ last_name }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
 
 # Globex (workspace 2).
 - id: 900 # fixture: AutomationGlobex

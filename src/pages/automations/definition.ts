@@ -1,10 +1,15 @@
 import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 
-import type { SiteAutomationStep } from '../../generated/site/types.gen.ts'
+import type {
+  SiteAutomationHttpHeader,
+  SiteAutomationStep,
+} from '../../generated/site/types.gen.ts'
 import {
   APPLY_TAG_NODE_TYPE,
   EMAIL_NODE_ICON,
   EMAIL_NODE_TYPE,
+  HTTP_NODE_ICON,
+  HTTP_NODE_TYPE,
   REMOVE_TAG_NODE_TYPE,
   TAG_NODE_ICON,
   WAIT_NODE_ICON,
@@ -37,9 +42,22 @@ const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
   wait: WAIT_NODE_ICON,
   apply_tag: TAG_NODE_ICON,
   remove_tag: TAG_NODE_ICON,
+  http: HTTP_NODE_ICON,
 }
 
+// The server never returns an HTTP step's URL, header values or signing secret, so the
+// canvas holds them blank: a blank field is "keep what is stored". Header names are
+// shown as "Name:" lines for the same reason.
 function stepProperties(step: AutomationStep): Record<string, unknown> {
+  if (step.type === 'http') {
+    return {
+      stepId: step.id ?? '',
+      url: '',
+      headers: (step.headers ?? []).map((h) => `${h.name}:`).join('\n'),
+      body: step.body ?? '',
+      secret: '',
+    }
+  }
   if (step.type === 'wait') {
     return { seconds: step.seconds ?? 0 }
   }
@@ -83,8 +101,36 @@ function asText(value: unknown): string {
   return typeof value === 'string' ? value : ''
 }
 
+// parseHeaders reads "Name: value" lines; a line with no value after the colon keeps the
+// stored value of the header with that name.
+function parseHeaders(text: string): SiteAutomationHttpHeader[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+    .map((line) => {
+      const at = line.indexOf(':')
+      const name = (at === -1 ? line : line.slice(0, at)).trim()
+      const value = at === -1 ? '' : line.slice(at + 1).trim()
+      return value === '' ? { name } : { name, value }
+    })
+}
+
 function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
   const props: Record<string, unknown> = node.data.properties
+  if (node.data.type === HTTP_NODE_TYPE) {
+    const id = asText(props.stepId)
+    const url = asText(props.url).trim()
+    const secret = asText(props.secret)
+    return {
+      type: 'http',
+      body: asText(props.body),
+      headers: parseHeaders(asText(props.headers)),
+      ...(id === '' ? {} : { id }),
+      ...(url === '' ? {} : { url }),
+      ...(secret === '' ? {} : { secret }),
+    }
+  }
   if (node.data.type === WAIT_NODE_TYPE) {
     return { type: 'wait', seconds: Math.trunc(Number(props.seconds)) || 0 }
   }

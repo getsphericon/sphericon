@@ -879,6 +879,120 @@
         }
       }
     },
+    "/automations/dry-run-http-step": {
+      "post": {
+        "operationId": "Automations_dryRunHttpStep",
+        "description": "Render an HTTP step's body for a Contact and validate it, calling nothing",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DryRunHttpStepResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Automations"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DryRunHttpStepInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/automations/{id}": {
       "get": {
         "operationId": "Automations_get",
@@ -8051,6 +8165,26 @@
         },
         "description": "What an audited change was done to"
       },
+      "AutomationHttpErrorKind": {
+        "type": "string",
+        "enum": ["invalid_body"],
+        "description": "Closed error kind of an HTTP step's body"
+      },
+      "AutomationHttpHeader": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon."
+          },
+          "value": {
+            "type": "string",
+            "description": "Header value. Omit it when editing to keep the stored value of the header with this name."
+          }
+        },
+        "description": "One request header of an HTTP step. The value is a secret: it is never returned."
+      },
       "AutomationResource": {
         "type": "object",
         "required": ["id", "name", "status", "triggerEvent", "steps", "createdAt", "updatedAt"],
@@ -8128,7 +8262,7 @@
           },
           "body": {
             "type": "string",
-            "description": "Email body as MJML (email steps)"
+            "description": "Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)"
           },
           "seconds": {
             "type": "integer",
@@ -8138,13 +8272,40 @@
           "tag": {
             "type": "string",
             "description": "Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps)"
+          },
+          "id": {
+            "type": "string",
+            "description": "Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets."
+          },
+          "url": {
+            "type": "string",
+            "description": "Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https."
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationHttpHeader"
+            },
+            "description": "Up to 5 request headers (HTTP steps). On read, only the names are returned."
+          },
+          "secret": {
+            "type": "string",
+            "description": "Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret."
+          },
+          "clearSecret": {
+            "type": "boolean",
+            "description": "Remove the signing secret on save (HTTP steps)"
+          },
+          "hasSecret": {
+            "type": "boolean",
+            "description": "Whether a signing secret is stored (HTTP steps, read only)"
           }
         },
         "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name."
       },
       "AutomationStepType": {
         "type": "string",
-        "enum": ["email", "wait", "apply_tag", "remove_tag"],
+        "enum": ["email", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
       },
       "BroadcastReport": {
@@ -9378,6 +9539,47 @@
           }
         },
         "description": "A DNS record the caller publishes to authenticate a Sending domain"
+      },
+      "DryRunHttpStepInput": {
+        "type": "object",
+        "required": ["body", "contactId"],
+        "properties": {
+          "body": {
+            "type": "string",
+            "description": "The Liquid JSON body to render"
+          },
+          "contactId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Contact whose values fill the template"
+          }
+        },
+        "description": "Request body for rendering an HTTP step's body for a Contact"
+      },
+      "DryRunHttpStepResult": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "description": "The rendered, valid JSON body. Absent when errorKind is set."
+          },
+          "errorKind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationHttpErrorKind"
+              }
+            ],
+            "description": "Why the body could not be rendered"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Human-readable detail of the error"
+          }
+        },
+        "description": "The body rendered for a Contact, or the kind of error that stopped it. Nothing is called."
       },
       "EmailAddress": {
         "type": "string",

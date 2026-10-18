@@ -387,6 +387,15 @@ func (s *AuthTokensListUnauthorized) Validate() error {
 	return nil
 }
 
+func (s AutomationHttpErrorKind) Validate() error {
+	switch s {
+	case "invalid_body":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *AutomationResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -481,6 +490,8 @@ func (s AutomationStepType) Validate() error {
 	case "apply_tag":
 		return nil
 	case "remove_tag":
+		return nil
+	case "http":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -584,6 +595,38 @@ func (s *AutomationsDeleteUnauthorized) Validate() error {
 }
 
 func (s *AutomationsDeleteUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsDryRunHttpStepBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsDryRunHttpStepNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsDryRunHttpStepUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsDryRunHttpStepUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1967,6 +2010,36 @@ func (s DnsRecordType) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
+}
+
+func (s *DryRunHttpStepResult) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.ErrorKind.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "errorKind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
 }
 
 func (s EmailAddress) Validate() error {

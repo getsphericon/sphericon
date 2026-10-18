@@ -2025,6 +2025,72 @@ func decodeSiteAutomationsDeleteParams(args [2]string, argsEscaped bool, r *http
 	return params, nil
 }
 
+// SiteAutomationsDryRunHttpStepParams is parameters of SiteAutomations_dryRunHttpStep operation.
+type SiteAutomationsDryRunHttpStepParams struct {
+	// URL-safe unique slug; the route key for nested workspace resources.
+	Slug string
+}
+
+func unpackSiteAutomationsDryRunHttpStepParams(packed middleware.Parameters) (params SiteAutomationsDryRunHttpStepParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "slug",
+			In:   "path",
+		}
+		params.Slug = packed[key].(string)
+	}
+	return params
+}
+
+func decodeSiteAutomationsDryRunHttpStepParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAutomationsDryRunHttpStepParams, _ error) {
+	// Decode path: slug.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "slug",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Slug = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "slug",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteAutomationsGetParams is parameters of SiteAutomations_get operation.
 type SiteAutomationsGetParams struct {
 	// URL-safe unique slug; the route key for nested workspace resources.

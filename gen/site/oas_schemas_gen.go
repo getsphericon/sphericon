@@ -2691,6 +2691,52 @@ func (o OptSiteAuditActorKind) Or(d SiteAuditActorKind) SiteAuditActorKind {
 	return d
 }
 
+// NewOptSiteAutomationHttpErrorKind returns new OptSiteAutomationHttpErrorKind with value set to v.
+func NewOptSiteAutomationHttpErrorKind(v SiteAutomationHttpErrorKind) OptSiteAutomationHttpErrorKind {
+	return OptSiteAutomationHttpErrorKind{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteAutomationHttpErrorKind is optional SiteAutomationHttpErrorKind.
+type OptSiteAutomationHttpErrorKind struct {
+	Value SiteAutomationHttpErrorKind
+	Set   bool
+}
+
+// IsSet returns true if OptSiteAutomationHttpErrorKind was set.
+func (o OptSiteAutomationHttpErrorKind) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteAutomationHttpErrorKind) Reset() {
+	var v SiteAutomationHttpErrorKind
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteAutomationHttpErrorKind) SetTo(v SiteAutomationHttpErrorKind) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteAutomationHttpErrorKind) Get() (v SiteAutomationHttpErrorKind, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAutomationHttpErrorKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteInstanceTelemetryLock returns new OptSiteInstanceTelemetryLock with value set to v.
 func NewOptSiteInstanceTelemetryLock(v SiteInstanceTelemetryLock) OptSiteInstanceTelemetryLock {
 	return OptSiteInstanceTelemetryLock{
@@ -4365,6 +4411,71 @@ type SiteAuthVerifyEmailOK struct{}
 
 func (*SiteAuthVerifyEmailOK) siteAuthVerifyEmailRes() {}
 
+// Closed error kind of an HTTP step's body.
+// Ref: #/components/schemas/SiteAutomationHttpErrorKind
+type SiteAutomationHttpErrorKind string
+
+const (
+	SiteAutomationHttpErrorKindInvalidBody SiteAutomationHttpErrorKind = "invalid_body"
+)
+
+// AllValues returns all SiteAutomationHttpErrorKind values.
+func (SiteAutomationHttpErrorKind) AllValues() []SiteAutomationHttpErrorKind {
+	return []SiteAutomationHttpErrorKind{
+		SiteAutomationHttpErrorKindInvalidBody,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAutomationHttpErrorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAutomationHttpErrorKindInvalidBody:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAutomationHttpErrorKind) UnmarshalText(data []byte) error {
+	switch SiteAutomationHttpErrorKind(data) {
+	case SiteAutomationHttpErrorKindInvalidBody:
+		*s = SiteAutomationHttpErrorKindInvalidBody
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One request header of an HTTP step. The value is a secret: it is never returned.
+// Ref: #/components/schemas/SiteAutomationHttpHeader
+type SiteAutomationHttpHeader struct {
+	// Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
+	Name string `json:"name"`
+	// Header value. Omit it when editing to keep the stored value of the header with this name.
+	Value OptString `json:"value"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteAutomationHttpHeader) GetName() string {
+	return s.Name
+}
+
+// GetValue returns the value of Value.
+func (s *SiteAutomationHttpHeader) GetValue() OptString {
+	return s.Value
+}
+
+// SetName sets the value of Name.
+func (s *SiteAutomationHttpHeader) SetName(val string) {
+	s.Name = val
+}
+
+// SetValue sets the value of Value.
+func (s *SiteAutomationHttpHeader) SetValue(val OptString) {
+	s.Value = val
+}
+
 // Automation resource used by the site UI.
 // Ref: #/components/schemas/SiteAutomationResource
 type SiteAutomationResource struct {
@@ -4511,12 +4622,27 @@ type SiteAutomationStep struct {
 	Type SiteAutomationStepType `json:"type"`
 	// Email subject (email steps).
 	Subject OptString `json:"subject"`
-	// Email body as MJML (email steps).
+	// Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
+	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
 	Body OptString `json:"body"`
 	// Delay before the next step, in seconds (wait steps).
 	Seconds OptInt32 `json:"seconds"`
 	// Tag name to apply or remove (apply_tag and remove_tag steps).
 	Tag OptString `json:"tag"`
+	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
+	ID OptString `json:"id"`
+	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
+	Headers []SiteAutomationHttpHeader `json:"headers"`
+	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
+	// Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (HTTP steps).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (HTTP steps, read only).
+	HasSecret OptBool `json:"hasSecret"`
 }
 
 // GetType returns the value of Type.
@@ -4544,6 +4670,36 @@ func (s *SiteAutomationStep) GetTag() OptString {
 	return s.Tag
 }
 
+// GetID returns the value of ID.
+func (s *SiteAutomationStep) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *SiteAutomationStep) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *SiteAutomationStep) GetHeaders() []SiteAutomationHttpHeader {
+	return s.Headers
+}
+
+// GetSecret returns the value of Secret.
+func (s *SiteAutomationStep) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *SiteAutomationStep) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *SiteAutomationStep) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
 // SetType sets the value of Type.
 func (s *SiteAutomationStep) SetType(val SiteAutomationStepType) {
 	s.Type = val
@@ -4569,6 +4725,36 @@ func (s *SiteAutomationStep) SetTag(val OptString) {
 	s.Tag = val
 }
 
+// SetID sets the value of ID.
+func (s *SiteAutomationStep) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *SiteAutomationStep) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *SiteAutomationStep) SetHeaders(val []SiteAutomationHttpHeader) {
+	s.Headers = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *SiteAutomationStep) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *SiteAutomationStep) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *SiteAutomationStep) SetHasSecret(val OptBool) {
+	s.HasSecret = val
+}
+
 // Kind of automation step.
 // Ref: #/components/schemas/SiteAutomationStepType
 type SiteAutomationStepType string
@@ -4578,6 +4764,7 @@ const (
 	SiteAutomationStepTypeWait      SiteAutomationStepType = "wait"
 	SiteAutomationStepTypeApplyTag  SiteAutomationStepType = "apply_tag"
 	SiteAutomationStepTypeRemoveTag SiteAutomationStepType = "remove_tag"
+	SiteAutomationStepTypeHTTP      SiteAutomationStepType = "http"
 )
 
 // AllValues returns all SiteAutomationStepType values.
@@ -4587,6 +4774,7 @@ func (SiteAutomationStepType) AllValues() []SiteAutomationStepType {
 		SiteAutomationStepTypeWait,
 		SiteAutomationStepTypeApplyTag,
 		SiteAutomationStepTypeRemoveTag,
+		SiteAutomationStepTypeHTTP,
 	}
 }
 
@@ -4600,6 +4788,8 @@ func (s SiteAutomationStepType) MarshalText() ([]byte, error) {
 	case SiteAutomationStepTypeApplyTag:
 		return []byte(s), nil
 	case SiteAutomationStepTypeRemoveTag:
+		return []byte(s), nil
+	case SiteAutomationStepTypeHTTP:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -4620,6 +4810,9 @@ func (s *SiteAutomationStepType) UnmarshalText(data []byte) error {
 		return nil
 	case SiteAutomationStepTypeRemoveTag:
 		*s = SiteAutomationStepTypeRemoveTag
+		return nil
+	case SiteAutomationStepTypeHTTP:
+		*s = SiteAutomationStepTypeHTTP
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -4666,6 +4859,18 @@ func (*SiteAutomationsDeleteNoContent) siteAutomationsDeleteRes() {}
 type SiteAutomationsDeleteNotFound ProblemDetails
 
 func (*SiteAutomationsDeleteNotFound) siteAutomationsDeleteRes() {}
+
+type SiteAutomationsDryRunHttpStepBadRequest ProblemDetails
+
+func (*SiteAutomationsDryRunHttpStepBadRequest) siteAutomationsDryRunHttpStepRes() {}
+
+type SiteAutomationsDryRunHttpStepNotFound ProblemDetails
+
+func (*SiteAutomationsDryRunHttpStepNotFound) siteAutomationsDryRunHttpStepRes() {}
+
+type SiteAutomationsDryRunHttpStepUnprocessableEntity ProblemDetails
+
+func (*SiteAutomationsDryRunHttpStepUnprocessableEntity) siteAutomationsDryRunHttpStepRes() {}
 
 type SiteAutomationsGetBadRequest ProblemDetails
 
@@ -6610,6 +6815,78 @@ func (s *SiteDnsRecordType) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+// Request body for rendering an HTTP step's body for a Contact.
+// Ref: #/components/schemas/SiteDryRunHttpStepInput
+type SiteDryRunHttpStepInput struct {
+	// The Liquid JSON body to render.
+	Body string `json:"body"`
+	// The Contact whose values fill the template.
+	ContactId EntityId `json:"contactId"`
+}
+
+// GetBody returns the value of Body.
+func (s *SiteDryRunHttpStepInput) GetBody() string {
+	return s.Body
+}
+
+// GetContactId returns the value of ContactId.
+func (s *SiteDryRunHttpStepInput) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// SetBody sets the value of Body.
+func (s *SiteDryRunHttpStepInput) SetBody(val string) {
+	s.Body = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *SiteDryRunHttpStepInput) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
+// Ref: #/components/schemas/SiteDryRunHttpStepResult
+type SiteDryRunHttpStepResult struct {
+	// The rendered, valid JSON body. Absent when errorKind is set.
+	Body OptString `json:"body"`
+	// Why the body could not be rendered.
+	ErrorKind OptSiteAutomationHttpErrorKind `json:"errorKind"`
+	// Human-readable detail of the error.
+	Detail OptString `json:"detail"`
+}
+
+// GetBody returns the value of Body.
+func (s *SiteDryRunHttpStepResult) GetBody() OptString {
+	return s.Body
+}
+
+// GetErrorKind returns the value of ErrorKind.
+func (s *SiteDryRunHttpStepResult) GetErrorKind() OptSiteAutomationHttpErrorKind {
+	return s.ErrorKind
+}
+
+// GetDetail returns the value of Detail.
+func (s *SiteDryRunHttpStepResult) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetBody sets the value of Body.
+func (s *SiteDryRunHttpStepResult) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetErrorKind sets the value of ErrorKind.
+func (s *SiteDryRunHttpStepResult) SetErrorKind(val OptSiteAutomationHttpErrorKind) {
+	s.ErrorKind = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *SiteDryRunHttpStepResult) SetDetail(val OptString) {
+	s.Detail = val
+}
+
+func (*SiteDryRunHttpStepResult) siteAutomationsDryRunHttpStepRes() {}
 
 // Request a change of the login email. The new address must be confirmed via a link sent to it before
 // the change takes effect.

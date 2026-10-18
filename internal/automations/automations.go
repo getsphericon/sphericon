@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 // Step kinds.
@@ -21,6 +22,7 @@ const (
 	StepWait      = "wait"
 	StepApplyTag  = "apply_tag"
 	StepRemoveTag = "remove_tag"
+	StepHTTP      = "http"
 )
 
 // Step is one node of an Automation's linear sequence, in the executor's on-disk
@@ -32,6 +34,16 @@ type Step struct {
 	Body    string `json:"body,omitempty"`
 	Seconds int    `json:"seconds,omitempty"`
 	Tag     string `json:"tag,omitempty"`
+
+	// HTTP steps (ADR 0039) hold ID, URL, Headers, Body (a Liquid JSON template) and
+	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;
+	// in a step being saved, an empty one keeps the stored value of the step with the
+	// same ID, and ClearSecret drops the signing secret.
+	ID          string   `json:"id,omitempty"`
+	URL         string   `json:"url,omitempty"`
+	Headers     []Header `json:"headers,omitempty"`
+	Secret      string   `json:"secret,omitempty"`
+	ClearSecret bool     `json:"-"`
 }
 
 // Domain errors. Callers match with errors.Is.
@@ -65,6 +77,8 @@ func Encode(steps []Step) (string, error) {
 			stored = append(stored, Step{Type: StepWait, Seconds: s.Seconds})
 		case StepApplyTag, StepRemoveTag:
 			stored = append(stored, Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)})
+		case StepHTTP:
+			stored = append(stored, Step{Type: StepHTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
 		default:
 			stored = append(stored, Step{Type: StepEmail, Subject: s.Subject, Body: s.Body})
 		}
@@ -76,7 +90,7 @@ func Encode(steps []Step) (string, error) {
 func validate(steps []Step) error {
 	for _, s := range steps {
 		switch s.Type {
-		case StepEmail:
+		case StepEmail, StepHTTP:
 		case StepWait:
 			if s.Seconds < 0 {
 				return ErrInvalidStep
@@ -93,11 +107,11 @@ func validate(steps []Step) error {
 }
 
 // Module is the automations module.
-type Module struct{}
+type Module struct{ cipher *secrets.Cipher }
 
 // New builds the automations module. It holds no client: every call takes the
-// Workspace's scoped client (ADR 0017).
-func New() *Module { return &Module{} }
+// Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets.
+func New(cipher *secrets.Cipher) *Module { return &Module{cipher: cipher} }
 
 // CreateInput is the data for a new Automation. It is always created as a draft:
 // activating is a separate, deliberate operation.
@@ -139,7 +153,11 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		SetTriggerEvent(in.TriggerEvent).
 		SetStatus(automation.StatusDraft)
 	if in.Steps != nil {
-		def, err := Encode(in.Steps)
+		sealed, err := m.sealSteps(in.Steps, nil)
+		if err != nil {
+			return nil, err
+		}
+		def, err := Encode(sealed)
 		if err != nil {
 			return nil, err
 		}
@@ -157,7 +175,15 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if err := validate(*in.Steps); err != nil {
 			return nil, err
 		}
-		def, err := Encode(*in.Steps)
+		var stored []Step
+		if cur, err := s.Automation().Get(ctx, id); err == nil {
+			stored, _ = Decode(cur.Definition)
+		}
+		sealed, err := m.sealSteps(*in.Steps, stored)
+		if err != nil {
+			return nil, err
+		}
+		def, err := Encode(sealed)
 		if err != nil {
 			return nil, err
 		}

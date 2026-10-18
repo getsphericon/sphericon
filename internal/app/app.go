@@ -1094,8 +1094,12 @@ func register(injector do.Injector, env string, o options) {
 		return webhooks.New(cipher, edition.Audit), nil
 	})
 
-	do.Provide(injector, func(do.Injector) (*automations.Module, error) {
-		return automations.New(), nil
+	do.Provide(injector, func(i do.Injector) (*automations.Module, error) {
+		cipher, err := do.Invoke[*secrets.Cipher](i)
+		if err != nil {
+			return nil, err
+		}
+		return automations.New(cipher), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*eventlog.Module, error) {
