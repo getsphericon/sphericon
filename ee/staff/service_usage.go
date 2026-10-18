@@ -3,7 +3,6 @@ package staff
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/getsphericon/sphericon/ee/usage"
@@ -70,11 +69,7 @@ func (h *ServiceHandlers) ServiceWorkspaceUsageGet(ctx context.Context, params s
 		p := serviceapi.ServiceWorkspaceUsageGetBadRequest(badPeriodProblem())
 		return &p, nil
 	}
-	id, ok := parseWorkspaceID(params.WorkspaceId)
-	if !ok {
-		p := serviceapi.ServiceWorkspaceUsageGetNotFound(workspaceNotFoundProblem())
-		return &p, nil
-	}
+	id := int64(params.WorkspaceId)
 	got, err := h.module.WorkspaceUsage(ctx, id, period)
 	if ent.IsNotFound(err) {
 		p := serviceapi.ServiceWorkspaceUsageGetNotFound(workspaceNotFoundProblem())
@@ -98,7 +93,7 @@ func (m *Module) WorkspaceUsage(ctx context.Context, workspaceID int64, period t
 
 func usageResource(w usage.WorkspaceUsage) serviceapi.WorkspaceUsageResource {
 	res := serviceapi.WorkspaceUsageResource{
-		WorkspaceId: serviceapi.EntityId(strconv.FormatInt(w.WorkspaceID, 10)),
+		WorkspaceId: serviceapi.EntityId(w.WorkspaceID),
 		Period:      w.Period.Format(periodLayout),
 		Figures:     make([]serviceapi.UsageFigure, 0, len(w.Figures)),
 	}

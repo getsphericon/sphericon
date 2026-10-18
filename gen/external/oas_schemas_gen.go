@@ -4030,7 +4030,7 @@ type EmailsSendUnprocessableEntity ProblemDetails
 
 func (*EmailsSendUnprocessableEntity) emailsSendRes() {}
 
-type EntityId string
+type EntityId int64
 
 // Distinct event action.
 // Ref: #/components/schemas/EventActionResource

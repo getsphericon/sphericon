@@ -109,7 +109,7 @@ func TestSiteSegmentResponsesHaveNoType(t *testing.T) {
 	})
 	ctx := context.Background()
 
-	_, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{Slug: fixtures.AcmeSlug, ID: "1"})
+	_, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{Slug: fixtures.AcmeSlug, ID: 1})
 	require.NoError(t, err)
 	_, err = c.SiteSegmentsList(ctx, siteapi.SiteSegmentsListParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)

@@ -726,14 +726,14 @@ func decodeAuthTokensDeleteParams(args [1]string, argsEscaped bool, r *http.Requ
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -744,14 +744,6 @@ func decodeAuthTokensDeleteParams(args [1]string, argsEscaped bool, r *http.Requ
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -807,14 +799,14 @@ func decodeAutomationsActivateParams(args [1]string, argsEscaped bool, r *http.R
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -825,14 +817,6 @@ func decodeAutomationsActivateParams(args [1]string, argsEscaped bool, r *http.R
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -888,14 +872,14 @@ func decodeAutomationsDeactivateParams(args [1]string, argsEscaped bool, r *http
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -906,14 +890,6 @@ func decodeAutomationsDeactivateParams(args [1]string, argsEscaped bool, r *http
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -969,14 +945,14 @@ func decodeAutomationsDeleteParams(args [1]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -987,14 +963,6 @@ func decodeAutomationsDeleteParams(args [1]string, argsEscaped bool, r *http.Req
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -1050,14 +1018,14 @@ func decodeAutomationsGetParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -1068,14 +1036,6 @@ func decodeAutomationsGetParams(args [1]string, argsEscaped bool, r *http.Reques
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -1258,14 +1218,14 @@ func decodeAutomationsUpdateParams(args [1]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -1276,14 +1236,6 @@ func decodeAutomationsUpdateParams(args [1]string, argsEscaped bool, r *http.Req
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -1339,14 +1291,14 @@ func decodeBroadcastsDeleteParams(args [1]string, argsEscaped bool, r *http.Requ
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -1357,14 +1309,6 @@ func decodeBroadcastsDeleteParams(args [1]string, argsEscaped bool, r *http.Requ
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -1420,14 +1364,14 @@ func decodeBroadcastsGetParams(args [1]string, argsEscaped bool, r *http.Request
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -1438,14 +1382,6 @@ func decodeBroadcastsGetParams(args [1]string, argsEscaped bool, r *http.Request
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -1628,14 +1564,14 @@ func decodeBroadcastsReportParams(args [1]string, argsEscaped bool, r *http.Requ
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -1646,14 +1582,6 @@ func decodeBroadcastsReportParams(args [1]string, argsEscaped bool, r *http.Requ
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -1709,14 +1637,14 @@ func decodeBroadcastsScheduleParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -1727,14 +1655,6 @@ func decodeBroadcastsScheduleParams(args [1]string, argsEscaped bool, r *http.Re
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -1790,14 +1710,14 @@ func decodeBroadcastsSetAudienceParams(args [1]string, argsEscaped bool, r *http
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -1808,14 +1728,6 @@ func decodeBroadcastsSetAudienceParams(args [1]string, argsEscaped bool, r *http
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -1871,14 +1783,14 @@ func decodeBroadcastsTestSendParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -1889,14 +1801,6 @@ func decodeBroadcastsTestSendParams(args [1]string, argsEscaped bool, r *http.Re
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -1952,14 +1856,14 @@ func decodeBroadcastsUnscheduleParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -1970,14 +1874,6 @@ func decodeBroadcastsUnscheduleParams(args [1]string, argsEscaped bool, r *http.
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -2033,14 +1929,14 @@ func decodeBroadcastsUpdateParams(args [1]string, argsEscaped bool, r *http.Requ
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -2051,14 +1947,6 @@ func decodeBroadcastsUpdateParams(args [1]string, argsEscaped bool, r *http.Requ
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -2114,14 +2002,14 @@ func decodeContactsDeleteParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -2132,14 +2020,6 @@ func decodeContactsDeleteParams(args [1]string, argsEscaped bool, r *http.Reques
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -2341,14 +2221,14 @@ func decodeContactsExportParams(args [0]string, argsEscaped bool, r *http.Reques
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
 				var paramsDotIDVal EntityId
 				if err := func() error {
-					var paramsDotIDValVal string
+					var paramsDotIDValVal int64
 					if err := func() error {
 						val, err := d.DecodeValue()
 						if err != nil {
 							return err
 						}
 
-						c, err := conv.ToString(val)
+						c, err := conv.ToStringInt64(val)
 						if err != nil {
 							return err
 						}
@@ -2366,21 +2246,6 @@ func decodeContactsExportParams(args [0]string, argsEscaped bool, r *http.Reques
 				params.ID.SetTo(paramsDotIDVal)
 				return nil
 			}); err != nil {
-				return err
-			}
-			if err := func() error {
-				if value, ok := params.ID.Get(); ok {
-					if err := func() error {
-						if err := value.Validate(); err != nil {
-							return err
-						}
-						return nil
-					}(); err != nil {
-						return err
-					}
-				}
-				return nil
-			}(); err != nil {
 				return err
 			}
 		}
@@ -2495,14 +2360,14 @@ func decodeContactsGetParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -2513,14 +2378,6 @@ func decodeContactsGetParams(args [1]string, argsEscaped bool, r *http.Request) 
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -2703,14 +2560,14 @@ func decodeContactsUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -2721,14 +2578,6 @@ func decodeContactsUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -2974,14 +2823,14 @@ func decodeIntegrationsDeleteParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -2992,14 +2841,6 @@ func decodeIntegrationsDeleteParams(args [1]string, argsEscaped bool, r *http.Re
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -3055,14 +2896,14 @@ func decodeIntegrationsGetParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -3073,14 +2914,6 @@ func decodeIntegrationsGetParams(args [1]string, argsEscaped bool, r *http.Reque
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -3263,14 +3096,14 @@ func decodeIntegrationsUpdateParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -3281,14 +3114,6 @@ func decodeIntegrationsUpdateParams(args [1]string, argsEscaped bool, r *http.Re
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -3344,14 +3169,14 @@ func decodeSegmentsDeleteParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -3362,14 +3187,6 @@ func decodeSegmentsDeleteParams(args [1]string, argsEscaped bool, r *http.Reques
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -3425,14 +3242,14 @@ func decodeSegmentsGetParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -3443,14 +3260,6 @@ func decodeSegmentsGetParams(args [1]string, argsEscaped bool, r *http.Request) 
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -3633,14 +3442,14 @@ func decodeSegmentsUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -3651,14 +3460,6 @@ func decodeSegmentsUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -3784,14 +3585,14 @@ func decodeSendingDomainsDeleteParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -3802,14 +3603,6 @@ func decodeSendingDomainsDeleteParams(args [1]string, argsEscaped bool, r *http.
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -3865,14 +3658,14 @@ func decodeSendingDomainsGetParams(args [1]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -3883,14 +3676,6 @@ func decodeSendingDomainsGetParams(args [1]string, argsEscaped bool, r *http.Req
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -4073,14 +3858,14 @@ func decodeSendingDomainsUpdateParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -4091,14 +3876,6 @@ func decodeSendingDomainsUpdateParams(args [1]string, argsEscaped bool, r *http.
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -4154,14 +3931,14 @@ func decodeSendingDomainsVerifyParams(args [1]string, argsEscaped bool, r *http.
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -4172,14 +3949,6 @@ func decodeSendingDomainsVerifyParams(args [1]string, argsEscaped bool, r *http.
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -4234,14 +4003,14 @@ func decodeTagsApplyParams(args [1]string, argsEscaped bool, r *http.Request) (p
 			})
 
 			if err := func() error {
-				var paramsDotContactIdVal string
+				var paramsDotContactIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -4252,14 +4021,6 @@ func decodeTagsApplyParams(args [1]string, argsEscaped bool, r *http.Request) (p
 					return err
 				}
 				params.ContactId = EntityId(paramsDotContactIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ContactId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -4464,14 +4225,14 @@ func decodeTagsListForContactParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotContactIdVal string
+				var paramsDotContactIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -4482,14 +4243,6 @@ func decodeTagsListForContactParams(args [1]string, argsEscaped bool, r *http.Re
 					return err
 				}
 				params.ContactId = EntityId(paramsDotContactIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ContactId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -4644,14 +4397,14 @@ func decodeTagsRemoveParams(args [2]string, argsEscaped bool, r *http.Request) (
 			})
 
 			if err := func() error {
-				var paramsDotContactIdVal string
+				var paramsDotContactIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -4662,14 +4415,6 @@ func decodeTagsRemoveParams(args [2]string, argsEscaped bool, r *http.Request) (
 					return err
 				}
 				params.ContactId = EntityId(paramsDotContactIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ContactId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -4770,14 +4515,14 @@ func decodeTemplatesDeleteParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -4788,14 +4533,6 @@ func decodeTemplatesDeleteParams(args [1]string, argsEscaped bool, r *http.Reque
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -4851,14 +4588,14 @@ func decodeTemplatesGetParams(args [1]string, argsEscaped bool, r *http.Request)
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -4869,14 +4606,6 @@ func decodeTemplatesGetParams(args [1]string, argsEscaped bool, r *http.Request)
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -5059,14 +4788,14 @@ func decodeTemplatesUpdateParams(args [1]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -5077,14 +4806,6 @@ func decodeTemplatesUpdateParams(args [1]string, argsEscaped bool, r *http.Reque
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -5140,14 +4861,14 @@ func decodeWebhooksDeleteParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -5158,14 +4879,6 @@ func decodeWebhooksDeleteParams(args [1]string, argsEscaped bool, r *http.Reques
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -5221,14 +4934,14 @@ func decodeWebhooksGetParams(args [1]string, argsEscaped bool, r *http.Request) 
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -5239,14 +4952,6 @@ func decodeWebhooksGetParams(args [1]string, argsEscaped bool, r *http.Request) 
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -5429,14 +5134,14 @@ func decodeWebhooksUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 			})
 
 			if err := func() error {
-				var paramsDotIDVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -5447,14 +5152,6 @@ func decodeWebhooksUpdateParams(args [1]string, argsEscaped bool, r *http.Reques
 					return err
 				}
 				params.ID = EntityId(paramsDotIDVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.ID.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err

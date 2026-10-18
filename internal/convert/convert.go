@@ -41,6 +41,16 @@ func Ptr[T any, O getter[T]](o O) *T {
 	return nil
 }
 
+// Int64Ptr is like Ptr but coerces named int64 option values (e.g. an EntityId)
+// down to *int64, the type ent's Nillable setters take.
+func Int64Ptr[T ~int64, O getter[T]](o O) *int64 {
+	if v, ok := o.Get(); ok {
+		n := int64(v)
+		return &n
+	}
+	return nil
+}
+
 // StringPtr is like Ptr but coerces named string option values (e.g. a
 // TimeZoneName scalar) down to *string, the type ent's Nillable setters take.
 func StringPtr[T ~string, O getter[T]](o O) *string {

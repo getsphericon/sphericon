@@ -41,11 +41,7 @@ func (h *Handlers) TagsListForContact(ctx context.Context, params externalapi.Ta
 		res := externalapi.TagsListForContactUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ContactId)
-	if err != nil {
-		res := externalapi.TagsListForContactBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ContactId)
 
 	scoped := auth.TokenScoped(ctx)
 	mine, err := h.tags.ForContact(ctx, scoped, id)
@@ -71,11 +67,7 @@ func (h *Handlers) TagsApply(ctx context.Context, req *externalapi.ApplyTagInput
 		res := externalapi.TagsApplyUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ContactId)
-	if err != nil {
-		res := externalapi.TagsApplyBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ContactId)
 
 	scoped := auth.TokenScoped(ctx)
 	t, err := h.tags.Apply(ctx, scoped, id, req.Name)
@@ -99,14 +91,10 @@ func (h *Handlers) TagsRemove(ctx context.Context, params externalapi.TagsRemove
 		res := externalapi.TagsRemoveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ContactId)
-	if err != nil {
-		res := externalapi.TagsRemoveBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ContactId)
 
 	scoped := auth.TokenScoped(ctx)
-	err = h.tags.Remove(ctx, scoped, id, params.Name)
+	err := h.tags.Remove(ctx, scoped, id, params.Name)
 	if errors.Is(err, tags.ErrContactNotFound) {
 		res := externalapi.TagsRemoveNotFound(problem(http.StatusNotFound, "contact not found"))
 		return &res, nil

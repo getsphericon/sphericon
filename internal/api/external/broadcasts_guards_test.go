@@ -30,23 +30,6 @@ func TestExternalBroadcastsCreateRefusesABlankName(t *testing.T) {
 	assert.Equal(t, before, after, "nothing is stored")
 }
 
-// A segment id that is not an int64 is the same 422 as an unknown segment, and
-// the audience is left as it was.
-func TestExternalBroadcastsSetAudienceRefusesAnUnparsableSegment(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	c := env.ExternalScoped(t, authorScopes...)
-
-	res, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(overflowID)},
-		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnprocessableEntity{}, res)
-
-	stored, err := env.DB.Broadcast.Get(ctx, fixtures.BroadcastDraftID)
-	require.NoError(t, err)
-	assert.Nil(t, stored.SegmentID)
-}
-
 // A provider failure on a test send is a 422 with the cause, never a 500, and
 // the broadcast stays a draft.
 func TestExternalBroadcastTestSendReportsAFailedSend(t *testing.T) {

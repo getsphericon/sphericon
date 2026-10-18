@@ -42,7 +42,7 @@ func assertTokenAudited(t *testing.T, env *testhelper.TestEnv, targetID external
 		entries = append(entries, e)
 		actions = append(actions, e.Action)
 		assert.Equal(t, actor, e.Actor)
-		assert.Equal(t, string(targetID), e.TargetID)
+		assert.Equal(t, strconv.FormatInt(int64(targetID), 10), e.TargetID)
 		assert.Equal(t, targetName, e.TargetName)
 		raw, err := json.Marshal(e)
 		require.NoError(t, err)
@@ -68,7 +68,7 @@ func TestExternalIntegrationWritesAreAuditedUnderTheToken(t *testing.T) {
 	scoped := env.DB.Scoped(fixtures.AcmeID)
 
 	created := createSMTP(t, c, "Audited mailer", false)
-	row, err := scoped.Integration().Get(ctx, mustID(t, created.ID))
+	row, err := scoped.Integration().Get(ctx, int64(created.ID))
 	require.NoError(t, err)
 
 	_, err = c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptNilIntegrationConfigInput(smtpInput("smtp2.example.com"))},
@@ -96,7 +96,7 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 	scoped := env.DB.Scoped(fixtures.AcmeID)
 
 	created := createDomain(t, c, externalapi.CreateSendingDomainInput{Domain: "audited.example.com"})
-	row, err := scoped.SendingDomain().Get(ctx, mustID(t, created.ID))
+	row, err := scoped.SendingDomain().Get(ctx, int64(created.ID))
 	require.NoError(t, err)
 
 	_, err = c.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("s2")},

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/samber/lo"
 
@@ -48,11 +47,7 @@ func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.Si
 	if err != nil {
 		return nil, err
 	}
-	id, err := strconv.ParseInt(string(params.ContactId), 10, 64)
-	if err != nil {
-		v := siteapi.SiteTagsListForContactBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ContactId)
 
 	mine, err := h.tags.ForContact(ctx, scoped, id)
 	if errors.Is(err, tags.ErrContactNotFound) {
@@ -81,11 +76,7 @@ func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.SiteApplyTagI
 	if err != nil {
 		return nil, err
 	}
-	id, err := strconv.ParseInt(string(params.ContactId), 10, 64)
-	if err != nil {
-		v := siteapi.SiteTagsApplyBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ContactId)
 
 	t, err := h.tags.Apply(ctx, scoped, id, req.Name)
 	if errors.Is(err, tags.ErrContactNotFound) {
@@ -112,11 +103,7 @@ func (h *Handlers) SiteTagsRemove(ctx context.Context, params siteapi.SiteTagsRe
 	if err != nil {
 		return nil, err
 	}
-	id, err := strconv.ParseInt(string(params.ContactId), 10, 64)
-	if err != nil {
-		v := siteapi.SiteTagsRemoveBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ContactId)
 
 	err = h.tags.Remove(ctx, scoped, id, params.Name)
 	if errors.Is(err, tags.ErrContactNotFound) {

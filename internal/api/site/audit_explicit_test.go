@@ -55,7 +55,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, e.Actor.Kind)
 	assert.Equal(t, "John", e.Actor.Name.Value)
 	assert.Equal(t, "invitation", e.Target.Type)
-	assert.Equal(t, string(created.Resource.ID), e.Target.ID.Value)
+	assert.Equal(t, strconv.FormatInt(int64(created.Resource.ID), 10), e.Target.ID.Value)
 	assert.Equal(t, "newbie@acme.test", e.Target.Name.Value)
 	diff, err := json.Marshal(e.Diff.Value)
 	require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 	revoked := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionInvitationRevoke)
 	require.Len(t, revoked, 1)
 	assert.Equal(t, "newbie@acme.test", revoked[0].Target.Name.Value)
-	assert.Equal(t, string(created.Resource.ID), revoked[0].Target.ID.Value)
+	assert.Equal(t, strconv.FormatInt(int64(created.Resource.ID), 10), revoked[0].Target.ID.Value)
 }
 
 func TestAuditInvitationAcceptIsAttributedToTheNewMember(t *testing.T) {

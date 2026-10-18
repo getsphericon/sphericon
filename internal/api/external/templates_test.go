@@ -2,7 +2,6 @@ package external_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -13,7 +12,7 @@ import (
 )
 
 func entityIDString(id int64) externalapi.EntityId {
-	return externalapi.EntityId(strconv.FormatInt(id, 10))
+	return externalapi.EntityId(id)
 }
 
 func TestExternalTemplatesCRUD(t *testing.T) {

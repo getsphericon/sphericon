@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/samber/lo"
 
@@ -22,7 +21,7 @@ func sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendingDomainResour
 	rec := sendingdomains.Records(d)
 
 	res := siteapi.SiteSendingDomainResource{
-		ID:           siteapi.EntityId(strconv.FormatInt(d.ID, 10)),
+		ID:           siteapi.EntityId(d.ID),
 		Domain:       d.Domain,
 		DkimSelector: d.DkimSelector,
 		Verified:     d.Verified,
@@ -109,11 +108,7 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteSendingDomainsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	d, err := s.SendingDomain().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsGetNotFound(problem(http.StatusNotFound, "sending domain not found"))
@@ -136,11 +131,7 @@ func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteSendingDomainsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = h.sendingDomains.Delete(ctx, s, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsDeleteNotFound(problem(http.StatusNotFound, "sending domain not found"))
@@ -162,11 +153,7 @@ func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteSendingDomainsVerifyBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = h.sendingDomains.Verify(ctx, s, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsVerifyNotFound(problem(http.StatusNotFound, "sending domain not found"))

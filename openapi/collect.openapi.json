@@ -379,7 +379,8 @@
       },
       "EntityId": {
         "type": "string",
-        "pattern": "^[0-9]+$"
+        "format": "int64",
+        "description": "A primary key, written as a decimal string so JavaScript never rounds it. The format\nmakes the Go servers parse it into an int64: a malformed id is refused as a 400 before\na handler runs."
       },
       "ForbiddenProblem": {
         "type": "object",

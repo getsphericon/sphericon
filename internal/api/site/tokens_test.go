@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/apitoken"
@@ -55,7 +54,7 @@ func TestSiteTokensDeleteUnknown(t *testing.T) {
 
 	del, err := c.SiteTokensDelete(context.Background(), siteapi.SiteTokensDeleteParams{
 		Slug: fixtures.AcmeSlug,
-		ID:   "999999",
+		ID:   999999,
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensDeleteNotFound{}, del)
@@ -83,7 +82,7 @@ func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteTokensCreateForbidden{}, created)
 
 	tok := env.DB.ApiToken.Query().FirstX(ctx)
-	deleted, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{Slug: fixtures.AcmeSlug, ID: siteapi.EntityId(strconv.FormatInt(tok.ID, 10))})
+	deleted, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{Slug: fixtures.AcmeSlug, ID: siteapi.EntityId(tok.ID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTokensDeleteForbidden{}, deleted)
 

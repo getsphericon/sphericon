@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -24,7 +23,7 @@ func invitationResource(inv *ent.Invitation) siteapi.SiteInvitationResource {
 		invitedBy = siteapi.NewOptNilString(inv.Edges.Inviter.Email)
 	}
 	return siteapi.SiteInvitationResource{
-		ID:             siteapi.EntityId(strconv.FormatInt(inv.ID, 10)),
+		ID:             siteapi.EntityId(inv.ID),
 		Email:          siteapi.EmailAddress(inv.Email),
 		Role:           siteapi.SiteInvitableRole(inv.Role),
 		ExpiresAt:      siteapi.Timestamp(inv.ExpiresAt),
@@ -134,11 +133,7 @@ func (h *Handlers) SiteInvitationsDelete(ctx context.Context, params siteapi.Sit
 		return &v, nil
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteInvitationsDeleteNotFound(problem(http.StatusNotFound, "invitation not found"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
 	found, err := h.accounts.RevokeInvitation(ctx, s, h.actor(ctx), id)
 	if err != nil {

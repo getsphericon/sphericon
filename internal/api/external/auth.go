@@ -102,13 +102,9 @@ func (h *Handlers) AuthTokensDelete(ctx context.Context, params externalapi.Auth
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.AuthTokensDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
-	err = apitokens.Revoke(ctx, auth.TokenScoped(ctx), id)
+	err := apitokens.Revoke(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, apitokens.ErrNotFound) {
 		res := externalapi.AuthTokensDeleteNotFound(problem(http.StatusNotFound, "token not found"))
 		return &res, nil

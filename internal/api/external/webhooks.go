@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -20,7 +19,7 @@ import (
 // must render as an empty list.
 func webhookResource(e webhooks.Endpoint) externalapi.WebhookResource {
 	return externalapi.WebhookResource{
-		ID:         externalapi.EntityId(strconv.FormatInt(e.ID, 10)),
+		ID:         externalapi.EntityId(e.ID),
 		URL:        e.URL,
 		EventTypes: lo.Ternary(e.EventTypes == nil, []string{}, e.EventTypes),
 		Enabled:    e.Enabled,
@@ -95,11 +94,7 @@ func (h *Handlers) WebhooksGet(ctx context.Context, params externalapi.WebhooksG
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.WebhooksGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
 	e, err := h.webhooks.Get(ctx, auth.TokenScoped(ctx), id)
 	if ent.IsNotFound(err) {
@@ -119,11 +114,7 @@ func (h *Handlers) WebhooksUpdate(ctx context.Context, req *externalapi.UpdateWe
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.WebhooksUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
 	e, err := h.webhooks.Update(ctx, auth.TokenScoped(ctx), id, webhooks.UpdateInput{
 		URL:        convert.StringPtr(req.URL),
@@ -151,13 +142,9 @@ func (h *Handlers) WebhooksDelete(ctx context.Context, params externalapi.Webhoo
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.WebhooksDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
-	err = h.webhooks.Delete(ctx, auth.TokenScoped(ctx), id)
+	err := h.webhooks.Delete(ctx, auth.TokenScoped(ctx), id)
 	if ent.IsNotFound(err) {
 		res := externalapi.WebhooksDeleteNotFound(problem(http.StatusNotFound, "webhook not found"))
 		return &res, nil

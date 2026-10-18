@@ -3,7 +3,6 @@ package external_test
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 	"testing"
 	"time"
 
@@ -33,7 +32,7 @@ func TestExternalAuditListNeedsTheAuditReadScope(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	require.Len(t, page.Items, 1, "only the Workspace's own fixture entry")
 	e := page.Items[0]
-	assert.Equal(t, strconv.Itoa(fixtures.AcmeAuditEntryID), string(e.ID))
+	assert.EqualValues(t, fixtures.AcmeAuditEntryID, e.ID)
 	assert.Equal(t, fixtures.AcmeAuditEntryAction, e.Action)
 	assert.Equal(t, externalapi.AuditActorKindUser, e.Actor.Kind)
 	diff, err := json.Marshal(e.Diff.Value)
@@ -48,7 +47,7 @@ func TestExternalAuditListIsTenantIsolated(t *testing.T) {
 	require.NoError(t, err)
 	page := res.(*externalapi.AuditEntryList)
 	require.Len(t, page.Items, 5, "Globex's own fixture entries, none of Acme's")
-	assert.Equal(t, strconv.Itoa(fixtures.GlobexAuditEntryID), string(page.Items[len(page.Items)-1].ID), "oldest last")
+	assert.EqualValues(t, fixtures.GlobexAuditEntryID, page.Items[len(page.Items)-1].ID, "oldest last")
 }
 
 func TestExternalAuditListPaginatesByCursor(t *testing.T) {
@@ -56,21 +55,21 @@ func TestExternalAuditListPaginatesByCursor(t *testing.T) {
 	ctx := context.Background()
 	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, "audit:read"))
 
-	var seen []string
+	var seen []int64
 	params := externalapi.AuditEntriesListParams{Limit: externalapi.NewOptInt32(2)}
 	for range 3 {
 		res, err := c.AuditEntriesList(ctx, params)
 		require.NoError(t, err)
 		page := res.(*externalapi.AuditEntryList)
 		for _, e := range page.Items {
-			seen = append(seen, string(e.ID))
+			seen = append(seen, int64(e.ID))
 		}
 		if page.NextCursor.Value == "" {
 			break
 		}
 		params.Cursor = externalapi.NewOptString(page.NextCursor.Value)
 	}
-	assert.Equal(t, []string{"6", "5", "4", "3", "1"}, seen, "newest first across three pages, the last one short")
+	assert.Equal(t, []int64{6, 5, 4, 3, 1}, seen, "newest first across three pages, the last one short")
 }
 
 func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {

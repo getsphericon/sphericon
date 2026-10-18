@@ -51,7 +51,7 @@ func NextCursor(next int64) string { return strconv.FormatInt(next, 10) }
 // View is an Audit entry as a customer sees it. A Staff member appears only as
 // events.StaffLabel, with no id.
 type View struct {
-	ID         string
+	ID         int64
 	OccurredAt time.Time
 	ActorKind  string
 	ActorID    *string
@@ -72,7 +72,7 @@ type View struct {
 // ViewOf builds the customer-facing view of a stored entry.
 func ViewOf(e *ent.AuditEntry) View {
 	v := View{
-		ID:         strconv.FormatInt(e.ID, 10),
+		ID:         e.ID,
 		OccurredAt: e.OccurredAt,
 		ActorKind:  e.ActorKind,
 		ActorID:    e.ActorID,

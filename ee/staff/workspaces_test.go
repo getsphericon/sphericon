@@ -48,7 +48,7 @@ func (h *harness) listWorkspaces(t *testing.T, c *staffapi.Client, params staffa
 	return page
 }
 
-func (h *harness) getWorkspace(t *testing.T, c *staffapi.Client, id string) staffapi.StaffWorkspacesGetRes {
+func (h *harness) getWorkspace(t *testing.T, c *staffapi.Client, id int64) staffapi.StaffWorkspacesGetRes {
 	t.Helper()
 	res, err := c.StaffWorkspacesGet(t.Context(), staffapi.StaffWorkspacesGetParams{WorkspaceId: staffapi.EntityId(id)})
 	require.NoError(t, err)
@@ -112,7 +112,7 @@ func TestASuspendedWorkspaceShowsItsActorReasonAndTime(t *testing.T) {
 
 	require.Len(t, page.Items, 1)
 	hooli := page.Items[0]
-	assert.EqualValues(t, strconv.Itoa(fixtures.HooliID), hooli.ID)
+	assert.EqualValues(t, fixtures.HooliID, hooli.ID)
 	assert.Equal(t, fixtures.HooliName, hooli.Name)
 	require.True(t, hooli.Suspension.Set)
 	s := hooli.Suspension.Value
@@ -127,13 +127,13 @@ func TestTheDetailShowsMetadataAndTheSuspensionState(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	acme, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.AcmeID)).(*staffapi.StaffWorkspaceDetailResource)
+	acme, ok := h.getWorkspace(t, c, int64(fixtures.AcmeID)).(*staffapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	assert.Equal(t, fixtures.AcmeSlug, acme.Slug)
 	assert.Equal(t, fixtures.AcmeName, acme.Name)
 	assert.False(t, acme.Suspension.Set, "an active Workspace has no suspension")
 
-	hooli, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
+	hooli, ok := h.getWorkspace(t, c, int64(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	require.True(t, hooli.Suspension.Set)
 	assert.Equal(t, staffapi.StaffSuspensionActorKindStaff, hooli.Suspension.Value.Actor.Kind)
@@ -145,7 +145,19 @@ func TestAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	assert.IsType(t, &staffapi.StaffWorkspacesGetNotFound{}, h.getWorkspace(t, c, "999999"))
+	assert.IsType(t, &staffapi.StaffWorkspacesGetNotFound{}, h.getWorkspace(t, c, 999999))
+}
+
+// An id that is not an int64 is refused by the contract as a 400 problem, before a handler runs.
+func TestAMalformedWorkspaceIDIsABadRequest(t *testing.T) {
+	h := newHarness(t)
+	_, cookie := h.staffSession(t)
+
+	for _, bad := range []string{"abc", "99999999999999999999"} {
+		rec := get(t, h.env.Server, "/staff/workspaces/"+bad, cookie)
+		assert.Equal(t, http.StatusBadRequest, rec.Code, bad)
+		assert.Contains(t, rec.Header().Get("Content-Type"), "application/problem+json", bad)
+	}
 }
 
 func TestWorkspaceResponsesCarryMetadataOnly(t *testing.T) {
@@ -201,7 +213,7 @@ func soylentDeliverability(t *testing.T, h *harness) staffapi.StaffDeliverabilit
 
 func soylentDeliverabilityAs(t *testing.T, h *harness, c *staffapi.Client) staffapi.StaffDeliverability {
 	t.Helper()
-	soylent, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.SoylentID)).(*staffapi.StaffWorkspaceDetailResource)
+	soylent, ok := h.getWorkspace(t, c, int64(fixtures.SoylentID)).(*staffapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	return soylent.Deliverability
 }
@@ -284,7 +296,7 @@ func TestAWorkspaceWithoutSendingDomainsHasNoRatesAndNoVolume(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	hooli, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
+	hooli, ok := h.getWorkspace(t, c, int64(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	assert.Empty(t, hooli.Deliverability.Domains)
 	assert.EqualValues(t, 0, hooli.Deliverability.SendVolume)
@@ -292,7 +304,7 @@ func TestAWorkspaceWithoutSendingDomainsHasNoRatesAndNoVolume(t *testing.T) {
 
 func (h *harness) acmeHolds(t *testing.T, c *staffapi.Client) []staffapi.StaffHold {
 	t.Helper()
-	detail, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.AcmeID)).(*staffapi.StaffWorkspaceDetailResource)
+	detail, ok := h.getWorkspace(t, c, int64(fixtures.AcmeID)).(*staffapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	return detail.Holds
 }
@@ -320,7 +332,7 @@ func TestAnExpiredHoldIsNotListedAndAnUnaffectedWorkspaceShowsNone(t *testing.T)
 	h.clock.t = h.clock.t.Add(2 * time.Hour)
 
 	assert.Empty(t, h.acmeHolds(t, c), "the fixture's lapsed hold and the expired one are not active")
-	globex, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.GlobexID)).(*staffapi.StaffWorkspaceDetailResource)
+	globex, ok := h.getWorkspace(t, c, int64(fixtures.GlobexID)).(*staffapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	assert.Empty(t, globex.Holds)
 }

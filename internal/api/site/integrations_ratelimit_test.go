@@ -17,7 +17,7 @@ func TestSiteIntegrationsSendRateLimitRoundTrips(t *testing.T) {
 	ctx := context.Background()
 
 	// Unlimited by default: both limits read back as null.
-	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{Slug: fixtures.AcmeSlug, ID: "1"})
+	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{Slug: fixtures.AcmeSlug, ID: 1})
 	require.NoError(t, err)
 	def := got.(*siteapi.SiteIntegrationResource)
 	assert.True(t, def.MaxPerSecond.Null)
@@ -57,7 +57,7 @@ func TestSiteIntegrationsSendRateLimitIsBounded(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	upd := siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: "1"}
+	upd := siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: 1}
 
 	for name, in := range map[string]*siteapi.SiteUpdateIntegrationInput{
 		"zero per second":   {MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(0)},
@@ -72,7 +72,7 @@ func TestSiteIntegrationsSendRateLimitIsBounded(t *testing.T) {
 		})
 	}
 
-	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{Slug: fixtures.AcmeSlug, ID: "1"})
+	got, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{Slug: fixtures.AcmeSlug, ID: 1})
 	require.NoError(t, err)
 	assert.True(t, got.(*siteapi.SiteIntegrationResource).MaxPerSecond.Null, "a rejected update changed nothing")
 
@@ -88,7 +88,7 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	params := siteapi.SiteIntegrationsGetParams{Slug: fixtures.AcmeSlug, ID: "1"}
+	params := siteapi.SiteIntegrationsGetParams{Slug: fixtures.AcmeSlug, ID: 1}
 
 	// No limit: nothing effective, no source, an "unlimited" warning, and the two
 	// fixture sends of the last 24 hours (a third is older, SES's is another row).
@@ -104,7 +104,7 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	// A manual limit is the effective one, sourced "manual", and the warning goes.
 	upd, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
 		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(14),
-	}, siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: "1"})
+	}, siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: 1})
 	require.NoError(t, err)
 	status = upd.(*siteapi.SiteIntegrationResource).SendLimit
 	assert.Equal(t, int32(14), status.PerSecond.Limit.Or(0))
@@ -115,9 +115,9 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	// The list carries the same status and each row's own usage.
 	list, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
-	usage := map[string]int32{}
+	usage := map[siteapi.EntityId]int32{}
 	for _, row := range *list.(*siteapi.SiteIntegrationsListOKApplicationJSON) {
-		usage[string(row.ID)] = row.SendLimit.SentLast24h
+		usage[row.ID] = row.SendLimit.SentLast24h
 	}
-	assert.Equal(t, map[string]int32{"1": 2, "2": 1}, usage)
+	assert.Equal(t, map[siteapi.EntityId]int32{1: 2, 2: 1}, usage)
 }

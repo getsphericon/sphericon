@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -340,7 +341,7 @@ func TestExternalContactsEraseFallsBackToTheContactID(t *testing.T) {
 	require.Len(t, envelopes, 1)
 	var data map[string]any
 	require.NoError(t, json.Unmarshal(envelopes[0].Data, &data))
-	assert.Equal(t, string(entityIDString(fixtures.ContactBystanderID)), data["subjectId"])
+	assert.Equal(t, strconv.FormatInt(fixtures.ContactBystanderID, 10), data["subjectId"])
 }
 
 // A refused Erasure emits nothing.

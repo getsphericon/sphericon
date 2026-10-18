@@ -2641,8 +2641,8 @@ func (c *Client) sendSiteAutomationsActivate(ctx context.Context, params SiteAut
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -2930,8 +2930,8 @@ func (c *Client) sendSiteAutomationsDeactivate(ctx context.Context, params SiteA
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -3084,8 +3084,8 @@ func (c *Client) sendSiteAutomationsDelete(ctx context.Context, params SiteAutom
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -3237,8 +3237,8 @@ func (c *Client) sendSiteAutomationsGet(ctx context.Context, params SiteAutomati
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -3560,8 +3560,8 @@ func (c *Client) sendSiteAutomationsUpdate(ctx context.Context, request *SiteUpd
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -3851,8 +3851,8 @@ func (c *Client) sendSiteBroadcastsDelete(ctx context.Context, params SiteBroadc
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4004,8 +4004,8 @@ func (c *Client) sendSiteBroadcastsGet(ctx context.Context, params SiteBroadcast
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4327,8 +4327,8 @@ func (c *Client) sendSiteBroadcastsSchedule(ctx context.Context, request *SiteSc
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4484,8 +4484,8 @@ func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcas
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4638,8 +4638,8 @@ func (c *Client) sendSiteBroadcastsTestSend(ctx context.Context, request *SiteTe
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -4795,8 +4795,8 @@ func (c *Client) sendSiteBroadcastsUpdate(ctx context.Context, request *SiteUpda
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -5087,8 +5087,8 @@ func (c *Client) sendSiteContactsDelete(ctx context.Context, params SiteContacts
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -5247,8 +5247,8 @@ func (c *Client) sendSiteContactsExport(ctx context.Context, params SiteContacts
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.ID.Get(); ok {
-				if unwrapped := string(val); true {
-					return e.EncodeValue(conv.StringToString(unwrapped))
+				if unwrapped := int64(val); true {
+					return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 				}
 				return nil
 			}
@@ -5417,8 +5417,8 @@ func (c *Client) sendSiteContactsGet(ctx context.Context, params SiteContactsGet
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -5740,8 +5740,8 @@ func (c *Client) sendSiteContactsUpdate(ctx context.Context, request *SiteUpdate
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -6217,8 +6217,8 @@ func (c *Client) sendSiteEventsList(ctx context.Context, params SiteEventsListPa
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.ContactId.Get(); ok {
-				if unwrapped := string(val); true {
-					return e.EncodeValue(conv.StringToString(unwrapped))
+				if unwrapped := int64(val); true {
+					return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 				}
 				return nil
 			}
@@ -6519,8 +6519,8 @@ func (c *Client) sendSiteIntegrationsDelete(ctx context.Context, params SiteInte
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -6672,8 +6672,8 @@ func (c *Client) sendSiteIntegrationsGet(ctx context.Context, params SiteIntegra
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -6957,8 +6957,8 @@ func (c *Client) sendSiteIntegrationsUpdate(ctx context.Context, request *SiteUp
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -7248,8 +7248,8 @@ func (c *Client) sendSiteInvitationsDelete(ctx context.Context, params SiteInvit
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -7533,8 +7533,8 @@ func (c *Client) sendSiteMembershipsDelete(ctx context.Context, params SiteMembe
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -7820,8 +7820,8 @@ func (c *Client) sendSiteMembershipsResetSecondFactor(ctx context.Context, param
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -7974,8 +7974,8 @@ func (c *Client) sendSiteMembershipsUpdate(ctx context.Context, request *SiteUpd
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -9566,8 +9566,8 @@ func (c *Client) sendSiteSegmentsDelete(ctx context.Context, params SiteSegments
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -9719,8 +9719,8 @@ func (c *Client) sendSiteSegmentsGet(ctx context.Context, params SiteSegmentsGet
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10177,8 +10177,8 @@ func (c *Client) sendSiteSegmentsUpdate(ctx context.Context, request *SiteUpdate
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10468,8 +10468,8 @@ func (c *Client) sendSiteSendingDomainsDelete(ctx context.Context, params SiteSe
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10621,8 +10621,8 @@ func (c *Client) sendSiteSendingDomainsGet(ctx context.Context, params SiteSendi
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -10944,8 +10944,8 @@ func (c *Client) sendSiteSendingDomainsVerify(ctx context.Context, params SiteSe
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -11233,8 +11233,8 @@ func (c *Client) sendSiteSuppressionsDelete(ctx context.Context, params SiteSupp
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -11556,8 +11556,8 @@ func (c *Client) sendSiteTagsApply(ctx context.Context, request *SiteApplyTagInp
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ContactId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ContactId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -11883,8 +11883,8 @@ func (c *Client) sendSiteTagsListForContact(ctx context.Context, params SiteTags
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ContactId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ContactId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -12075,8 +12075,8 @@ func (c *Client) sendSiteTagsRemove(ctx context.Context, params SiteTagsRemovePa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ContactId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ContactId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -12382,8 +12382,8 @@ func (c *Client) sendSiteTemplatesDelete(ctx context.Context, params SiteTemplat
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -12535,8 +12535,8 @@ func (c *Client) sendSiteTemplatesGet(ctx context.Context, params SiteTemplatesG
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -12858,8 +12858,8 @@ func (c *Client) sendSiteTemplatesUpdate(ctx context.Context, request *SiteUpdat
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -13149,8 +13149,8 @@ func (c *Client) sendSiteTokensDelete(ctx context.Context, params SiteTokensDele
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -14202,8 +14202,8 @@ func (c *Client) sendSiteWebhooksDelete(ctx context.Context, params SiteWebhooks
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -14355,8 +14355,8 @@ func (c *Client) sendSiteWebhooksGet(ctx context.Context, params SiteWebhooksGet
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -14678,8 +14678,8 @@ func (c *Client) sendSiteWebhooksUpdate(ctx context.Context, request *SiteUpdate
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.ID); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {

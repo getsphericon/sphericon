@@ -16,7 +16,7 @@ type guardCase struct {
 	name string
 	call func(c *externalapi.Client, id externalapi.EntityId) (any, error)
 	// denied and badID are the typed responses for a missing scope and a
-	// non-numeric id.
+	// malformed id.
 	denied, badID any
 }
 
@@ -118,22 +118,21 @@ func allScopes() []string {
 	return out
 }
 
-// overflowID passes the contract's ^[0-9]+$ pattern but is not an int64, so it
-// reaches the handler's own id parsing.
-const overflowID = "99999999999999999999"
-
-// An id that is not a valid primary key is a 400 for every id-addressed
-// operation, never a lookup. (Non-numeric ids are already refused by the
-// contract's pattern before any handler runs.)
-func TestExternalUnparsableIDIsABadRequest(t *testing.T) {
+// An id that is not an int64 is refused by the contract (a 400 problem) before any
+// handler runs, for every id-addressed operation. The typed client cannot spell one, so
+// each call carries a sentinel id that is swapped on the wire.
+func TestExternalMalformedIDIsABadRequest(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, allScopes()...)
-	for _, tc := range idGuardCases() {
-		t.Run(tc.name, func(t *testing.T) {
-			res, err := tc.call(c, overflowID)
-			require.NoError(t, err)
-			assert.IsType(t, tc.badID, res)
-		})
+	bearer := env.ScopedBearer(t, allScopes()...)
+	for _, bad := range []string{"abc", "99999999999999999999", "1.5", "-"} {
+		c := env.ExternalVia(t, bearer, testhelper.RewriteURL("123456789", bad))
+		for _, tc := range idGuardCases() {
+			t.Run(tc.name+"/"+bad, func(t *testing.T) {
+				res, err := tc.call(c, 123456789)
+				require.NoError(t, err)
+				assert.IsType(t, tc.badID, res)
+			})
+		}
 	}
 }
 
@@ -144,7 +143,7 @@ func TestExternalIDOperationsRequireTheirScope(t *testing.T) {
 	c := env.ExternalScoped(t, "tokens:read")
 	for _, tc := range idGuardCases() {
 		t.Run(tc.name, func(t *testing.T) {
-			res, err := tc.call(c, "1")
+			res, err := tc.call(c, 1)
 			require.NoError(t, err)
 			assert.IsType(t, tc.denied, res)
 		})
@@ -157,18 +156,9 @@ func TestExternalIDOperationsRequireACredential(t *testing.T) {
 	c := env.ExternalAnonymous(t)
 	for _, tc := range idGuardCases() {
 		t.Run(tc.name, func(t *testing.T) {
-			res, err := tc.call(c, "1")
+			res, err := tc.call(c, 1)
 			require.NoError(t, err)
 			assert.IsType(t, tc.denied, res, "401 variant")
 		})
 	}
-}
-
-// The contract's id pattern refuses non-numeric ids before a handler runs.
-func TestExternalNonNumericIDIsRefusedByTheContract(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, allScopes()...)
-	res, err := c.ContactsGet(context.Background(), externalapi.ContactsGetParams{ID: "abc"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsGetBadRequest{}, res)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -20,8 +19,8 @@ import (
 func membershipResource(m *ent.Membership) siteapi.SiteMembershipResource {
 	u := m.Edges.User
 	return siteapi.SiteMembershipResource{
-		ID:        siteapi.EntityId(strconv.FormatInt(m.ID, 10)),
-		UserId:    siteapi.EntityId(strconv.FormatInt(m.UserID, 10)),
+		ID:        siteapi.EntityId(m.ID),
+		UserId:    siteapi.EntityId(m.UserID),
 		Email:     siteapi.EmailAddress(u.Email),
 		Name:      u.Name,
 		Role:      siteapi.SiteMembershipRole(m.Role),
@@ -71,11 +70,7 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 		return &v, nil
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteMembershipsUpdateNotFound(problem(http.StatusNotFound, "member not found"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
 	updated, err := h.accounts.ChangeMembershipRole(ctx, s, h.actor(ctx), callerRole, id, membership.Role(req.Role))
 	switch {
@@ -115,11 +110,7 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 		return &v, nil
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteMembershipsDeleteNotFound(problem(http.StatusNotFound, "member not found"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
 	err = h.accounts.RemoveMembership(ctx, s, callerRole, id)
 	switch {
@@ -161,11 +152,7 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 		return &v, nil
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteMembershipsResetSecondFactorNotFound(problem(http.StatusNotFound, "member not found"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	target, err := s.Membership().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteMembershipsResetSecondFactorNotFound(problem(http.StatusNotFound, "member not found"))

@@ -73,14 +73,14 @@ func decodeStaffWorkspaceAuditListParams(args [1]string, argsEscaped bool, r *ht
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -91,14 +91,6 @@ func decodeStaffWorkspaceAuditListParams(args [1]string, argsEscaped bool, r *ht
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -240,14 +232,14 @@ func decodeStaffWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -258,14 +250,6 @@ func decodeStaffWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -320,14 +304,14 @@ func decodeStaffWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -338,14 +322,6 @@ func decodeStaffWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Re
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -646,14 +622,14 @@ func decodeStaffWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *htt
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -664,14 +640,6 @@ func decodeStaffWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *htt
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -726,14 +694,14 @@ func decodeStaffWorkspacesUnexemptParams(args [1]string, argsEscaped bool, r *ht
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -744,14 +712,6 @@ func decodeStaffWorkspacesUnexemptParams(args [1]string, argsEscaped bool, r *ht
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -806,14 +766,14 @@ func decodeStaffWorkspacesUnsuspendParams(args [1]string, argsEscaped bool, r *h
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -824,14 +784,6 @@ func decodeStaffWorkspacesUnsuspendParams(args [1]string, argsEscaped bool, r *h
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err

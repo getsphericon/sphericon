@@ -3,7 +3,6 @@ package site_test
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -47,8 +46,7 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	assert.NotContains(t, string(raw), "PRIVATE KEY")
 
 	// ...but it is persisted encrypted (never the plaintext PEM) and decryptable.
-	id, err := strconv.ParseInt(string(res.ID), 10, 64)
-	require.NoError(t, err)
+	id := int64(res.ID)
 	row, err := env.DB.SendingDomain.Get(ctx, id)
 	require.NoError(t, err)
 	assert.NotContains(t, row.DkimPrivateKeyEncrypted, "PRIVATE KEY", "stored key must be ciphertext, not PEM")

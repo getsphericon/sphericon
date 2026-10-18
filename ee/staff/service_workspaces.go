@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 )
@@ -30,7 +29,7 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 	}
 	for i, e := range page.Entries {
 		item := serviceapi.ServiceWorkspaceResource{
-			ID:        serviceapi.EntityId(strconv.FormatInt(e.Workspace.ID, 10)),
+			ID:        serviceapi.EntityId(e.Workspace.ID),
 			Slug:      e.Workspace.Slug,
 			Name:      e.Workspace.Name,
 			CreatedAt: serviceapi.Timestamp(e.Workspace.CreatedAt),
@@ -38,7 +37,7 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 		}
 		for j, u := range e.Owners {
 			owner := serviceapi.ServiceWorkspaceOwner{
-				UserId: serviceapi.EntityId(strconv.FormatInt(u.ID, 10)),
+				UserId: serviceapi.EntityId(u.ID),
 				Email:  serviceapi.EmailAddress(u.Email),
 			}
 			if u.EmailVerifiedAt != nil {

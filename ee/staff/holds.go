@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -147,11 +146,7 @@ func (m *Module) holdScope(ctx context.Context, bus *events.Bus, cred *ent.Servi
 
 // ServiceHoldsList lists a Workspace's active holds.
 func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceapi.ServiceHoldsListParams) (serviceapi.ServiceHoldsListRes, error) {
-	id, ok := parseWorkspaceID(params.WorkspaceId)
-	if !ok {
-		p := serviceapi.ServiceHoldsListNotFound(workspaceNotFoundProblem())
-		return &p, nil
-	}
+	id := int64(params.WorkspaceId)
 	rows, err := h.module.ActiveHolds(ctx, id)
 	if ent.IsNotFound(err) {
 		p := serviceapi.ServiceHoldsListNotFound(workspaceNotFoundProblem())
@@ -169,11 +164,7 @@ func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceap
 
 // ServiceHoldsSet sets or renews a hold.
 func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.HoldInput, params serviceapi.ServiceHoldsSetParams) (serviceapi.ServiceHoldsSetRes, error) {
-	id, ok := parseWorkspaceID(params.WorkspaceId)
-	if !ok {
-		p := serviceapi.ServiceHoldsSetNotFound(workspaceNotFoundProblem())
-		return &p, nil
-	}
+	id := int64(params.WorkspaceId)
 	change, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, HoldInput{
 		ReasonCode: req.ReasonCode, Message: req.Message, ExpiresAt: time.Time(req.ExpiresAt),
 	})
@@ -197,11 +188,7 @@ func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.H
 
 // ServiceHoldsClear clears a hold; a missing one is cleared already.
 func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params serviceapi.ServiceHoldsClearParams) (serviceapi.ServiceHoldsClearRes, error) {
-	id, ok := parseWorkspaceID(params.WorkspaceId)
-	if !ok {
-		p := serviceapi.ServiceHoldsClearNotFound(workspaceNotFoundProblem())
-		return &p, nil
-	}
+	id := int64(params.WorkspaceId)
 	change, err := h.module.ClearHold(ctx, h.bus, CurrentService(ctx), id, params.Key)
 	if ent.IsNotFound(err) {
 		p := serviceapi.ServiceHoldsClearNotFound(workspaceNotFoundProblem())
@@ -220,11 +207,6 @@ func holdResource(r *ent.Hold) serviceapi.HoldResource {
 		CreatedAt: serviceapi.Timestamp(r.CreatedAt),
 		UpdatedAt: serviceapi.Timestamp(r.UpdatedAt),
 	}
-}
-
-func parseWorkspaceID(id serviceapi.EntityId) (int64, bool) {
-	n, err := strconv.ParseInt(string(id), 10, 64)
-	return n, err == nil
 }
 
 func workspaceNotFoundProblem() serviceapi.ProblemDetails {

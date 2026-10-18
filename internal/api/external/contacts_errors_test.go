@@ -82,14 +82,14 @@ func TestExternalContactsAreWorkspaceScoped(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.ContactsDeleteNotFound{}, del)
 
-	still, err := env.DB.Contact.Get(ctx, mustParseID(t, string(foreign)))
+	still, err := env.DB.Contact.Get(ctx, int64(foreign))
 	require.NoError(t, err)
 	assert.Equal(t, "Gil", *still.FirstName, "the foreign contact is untouched")
 
-	missing, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{}, externalapi.ContactsUpdateParams{ID: "999999"})
+	missing, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{}, externalapi.ContactsUpdateParams{ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.ContactsUpdateNotFound{}, missing)
-	gone, err := c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: "999999"})
+	gone, err := c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.ContactsDeleteNotFound{}, gone)
 }
@@ -132,7 +132,7 @@ func TestExternalContactsBatchUpsertCarriesCustomFields(t *testing.T) {
 	out := res.(*externalapi.UpsertContactsResult)
 	require.Len(t, out.Results, 1)
 	assert.Equal(t, externalapi.ContactBatchStatusCreated, out.Results[0].Status)
-	stored, err := env.DB.Contact.Get(ctx, mustParseID(t, string(out.Results[0].ContactId.Value)))
+	stored, err := env.DB.Contact.Get(ctx, int64(out.Results[0].ContactId.Value))
 	require.NoError(t, err)
 	assert.Equal(t, "gold", stored.CustomFields["tier"])
 }

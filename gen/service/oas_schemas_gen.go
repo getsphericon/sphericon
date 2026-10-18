@@ -35,7 +35,7 @@ func (s *BearerAuth) SetRoles(val []string) {
 
 type EmailAddress string
 
-type EntityId string
+type EntityId int64
 
 // The outcome of clearing a hold.
 // Ref: #/components/schemas/HoldClearResult

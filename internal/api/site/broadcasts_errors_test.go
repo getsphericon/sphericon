@@ -50,28 +50,6 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 		assert.IsType(t, &siteapi.SiteBroadcastsTestSendNotFound{}, r7)
 	})
 
-	t.Run("invalid id", func(t *testing.T) {
-		bad := overflowID
-		r1, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{Slug: acme, ID: bad})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastsGetBadRequest{}, r1)
-		r2, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{}, siteapi.SiteBroadcastsUpdateParams{Slug: acme, ID: bad})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastsUpdateBadRequest{}, r2)
-		r3, err := c.SiteBroadcastsDelete(ctx, siteapi.SiteBroadcastsDeleteParams{Slug: acme, ID: bad})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastsDeleteBadRequest{}, r3)
-		r4, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{Slug: acme, ID: bad})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastsSendBadRequest{}, r4)
-		r5, err := c.SiteBroadcastsSchedule(ctx, &when, siteapi.SiteBroadcastsScheduleParams{Slug: acme, ID: bad})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastsScheduleBadRequest{}, r5)
-		r6, err := c.SiteBroadcastsTestSend(ctx, &testSend, siteapi.SiteBroadcastsTestSendParams{Slug: acme, ID: bad})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteBroadcastsTestSendBadRequest{}, r6)
-	})
-
 	t.Run("unknown id", func(t *testing.T) {
 		r1, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{Slug: acme, ID: missing})
 		require.NoError(t, err)
@@ -105,7 +83,7 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("invalid segment and integration references are 422", func(t *testing.T) {
-		bad := siteapi.NewOptNilEntityId("99999999999999999999") // digits only, so it passes the schema but overflows int64
+		bad := siteapi.NewOptNilEntityId(99999999) // no such row in any workspace
 		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{Name: "x", SegmentId: bad}, siteapi.SiteBroadcastsCreateParams{Slug: acme})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, r1)
