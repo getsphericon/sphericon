@@ -1,0 +1,1516 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sphericon StaffMember API",
+    "version": "1.0.0"
+  },
+  "tags": [
+    {
+      "name": "StaffMember Auth"
+    },
+    {
+      "name": "StaffMember"
+    },
+    {
+      "name": "StaffMember Workspaces"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "operationId": "StaffAuth_login",
+        "description": "Check the password. Answers a challenge (or, at first login, a TOTP enrolment)\nand never a session. Unknown email and wrong password answer the same 401.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffLoginResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffLoginInput"
+              }
+            }
+          }
+        },
+        "security": [{}]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "StaffAuth_logout",
+        "description": "End the session: bumps the Staff member's session epoch, so every session token of\nthe Staff member (a copied one too) stops verifying, and clears the session cookie.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. ",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The expired session cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Auth"]
+      }
+    },
+    "/auth/second-factor": {
+      "post": {
+        "operationId": "StaffAuth_secondFactor",
+        "description": "The second login step: verify the challenge and a TOTP code, then start the\nsession (the cookie is set here). At first login the code also confirms the\nenrolment. An expired, reused or forged challenge and a wrong code answer the\nsame 401.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The Staff member session cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffSecondFactorInput"
+              }
+            }
+          }
+        },
+        "security": [{}]
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "StaffMe_get",
+        "description": "The authenticated Staff member",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember"]
+      }
+    },
+    "/workspaces": {
+      "get": {
+        "operationId": "StaffWorkspaces_list",
+        "description": "List all Workspaces, newest first, optionally narrowed by a slug search",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StaffWorkspaceSearch.review"
+          },
+          {
+            "$ref": "#/components/parameters/StaffWorkspaceSearch.slug"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/StaffWorkspaceResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}": {
+      "get": {
+        "operationId": "StaffWorkspaces_get",
+        "description": "One Workspace's metadata, suspension state, rates and send volume",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffWorkspaceDetailResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/audit-entries": {
+      "get": {
+        "operationId": "StaffWorkspaceAudit_list",
+        "description": "One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing is then recorded.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor from a previous page",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffAuditEntryList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/exempt": {
+      "post": {
+        "operationId": "StaffWorkspaces_exempt",
+        "description": "Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor\nfrozen automatically, but stays listed with its rates and can still be suspended by\nhand. Audited. Idempotent.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffExemptionChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/suspend": {
+      "post": {
+        "operationId": "StaffWorkspaces_suspend",
+        "description": "Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the\nsigned-in Staff member. Idempotent: an already-suspended Workspace is left as it was.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSuspensionChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffSuspendInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/unexempt": {
+      "post": {
+        "operationId": "StaffWorkspaces_unexempt",
+        "description": "Police a Workspace by the abuse detector again. Audited. Idempotent.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffExemptionChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Workspaces"]
+      }
+    },
+    "/workspaces/{workspaceId}/unsuspend": {
+      "post": {
+        "operationId": "StaffWorkspaces_unsuspend",
+        "description": "Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is\nnot suspended is left as it was.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSuspensionChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Workspaces"]
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "components": {
+    "parameters": {
+      "PageQuery.page": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "description": "Page number (1-based)",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "default": 1
+        },
+        "explode": false
+      },
+      "PageQuery.pageSize": {
+        "name": "pageSize",
+        "in": "query",
+        "required": false,
+        "description": "Page size",
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "default": 25
+        },
+        "explode": false
+      },
+      "StaffWorkspaceSearch.review": {
+        "name": "review",
+        "in": "query",
+        "required": false,
+        "description": "Only Workspaces in this review state",
+        "schema": {
+          "$ref": "#/components/schemas/StaffWorkspaceReview"
+        },
+        "explode": false
+      },
+      "StaffWorkspaceSearch.slug": {
+        "name": "slug",
+        "in": "query",
+        "required": false,
+        "description": "Only Workspaces whose slug contains this text (case-insensitive)",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
+      }
+    },
+    "schemas": {
+      "ConflictProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 conflict response"
+      },
+      "EmailAddress": {
+        "type": "string",
+        "maxLength": 320,
+        "format": "email"
+      },
+      "EntityId": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      },
+      "ForbiddenProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 forbidden response"
+      },
+      "GoneProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 gone response: the resource existed but is no longer available (an expired link)"
+      },
+      "PaymentRequiredProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 payment required response: the feature needs an Enterprise license"
+      },
+      "ProblemCode": {
+        "type": "string",
+        "enum": ["second_factor_required", "email_verification_required"],
+        "description": "A machine-readable reason a client branches on, beyond the HTTP status"
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProblemCode"
+              }
+            ],
+            "description": "Why the request was refused, when the client should act on it"
+          },
+          "type": {
+            "type": "string",
+            "description": "A URI reference that identifies the problem type"
+          },
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem type"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status code"
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence"
+          },
+          "instance": {
+            "type": "string",
+            "description": "A URI reference that identifies the specific occurrence"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Validation errors grouped by field"
+          },
+          "form": {
+            "type": "string",
+            "description": "Form-level validation error"
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Field validation errors"
+          },
+          "retryAfter": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait"
+          }
+        },
+        "description": "RFC 7807 Problem Details"
+      },
+      "StaffAbuse": {
+        "type": "object",
+        "required": ["exempt"],
+        "properties": {
+          "exempt": {
+            "type": "boolean",
+            "description": "Exempt from the detector: neither warned nor frozen automatically"
+          },
+          "clearedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When a Staff member last lifted a suspension; the detector counts only Events after it"
+          },
+          "warningNotifiedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the owners were told of the current warning; absent outside an episode"
+          },
+          "freezeNotifiedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the owners were last told of a suspension"
+          },
+          "warning": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffAbuseWarning"
+              }
+            ],
+            "nullable": true,
+            "description": "Present while the Workspace is in the warning tier, computed now"
+          }
+        },
+        "description": "A Workspace's standing with the abuse detector (ADR 0026)"
+      },
+      "StaffAbuseMetric": {
+        "type": "string",
+        "enum": ["complaint", "bounce"],
+        "description": "Which metric of a Sending domain breached the abuse detector's warning limit"
+      },
+      "StaffAbuseWarning": {
+        "type": "object",
+        "required": ["domain", "metric", "rate"],
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "metric": {
+            "$ref": "#/components/schemas/StaffAbuseMetric"
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "description": "The rate, 0–1"
+          }
+        },
+        "description": "A Sending domain in the warning tier (ADR 0026), by the detector's own computation"
+      },
+      "StaffAuditActor": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffAuditActorKind"
+              }
+            ],
+            "description": "The kind of actor; a staff member carries no id and the name \"sphericon staff\"; a service is a Service credential, named as the Staff member who issued it chose"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The actor's id (a User id or an API token id); absent for the system and a staff member"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name snapshot taken when the entry was written"
+          }
+        },
+        "description": "The actor of an Audit entry"
+      },
+      "StaffAuditActorKind": {
+        "type": "string",
+        "enum": ["user", "api_token", "staff", "service", "system"],
+        "description": "Who performed an audited change, as the Workspace's own team sees it"
+      },
+      "StaffAuditEntryList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffAuditEntryResource"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `cursor` for the next page; absent on the last page"
+          }
+        },
+        "description": "A page of a Workspace's Audit log, newest first"
+      },
+      "StaffAuditEntryResource": {
+        "type": "object",
+        "required": ["id", "occurredAt", "actor", "action", "billing", "target"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "occurredAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the change happened"
+          },
+          "actor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffAuditActor"
+              }
+            ],
+            "description": "Who did it"
+          },
+          "action": {
+            "type": "string",
+            "description": "What was done, as `<entity>.<verb>`"
+          },
+          "billing": {
+            "type": "boolean",
+            "description": "True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`)"
+          },
+          "target": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffAuditTarget"
+              }
+            ],
+            "description": "What it was done to"
+          },
+          "diff": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "description": "Before/after of the changed fields"
+          },
+          "requestId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Request id of the change"
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true,
+            "description": "Client address of the change"
+          },
+          "userAgent": {
+            "type": "string",
+            "nullable": true,
+            "description": "Client user agent of the change"
+          }
+        },
+        "description": "One immutable Audit entry of a Workspace. Secrets are never recorded; they appear as changed only."
+      },
+      "StaffAuditTarget": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Entity type, e.g. membership"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The target's id"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name snapshot taken when the entry was written"
+          }
+        },
+        "description": "What an audited change was done to"
+      },
+      "StaffDeliverability": {
+        "type": "object",
+        "required": ["windowHours", "volumeFloor", "sendVolume", "domains"],
+        "properties": {
+          "windowHours": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Length of the trailing window, in hours"
+          },
+          "volumeFloor": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Fewest sends in the window (per Sending domain) for a rate to be defined"
+          },
+          "sendVolume": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages sent in the window across all Sending domains"
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffDomainRates"
+            },
+            "description": "One entry per Sending domain, oldest first"
+          }
+        },
+        "description": "A Workspace's deliverability over the trailing window: the rates of ADR 0011 per\nSending domain, and how much it sent. Counts only, never message content."
+      },
+      "StaffDomainRates": {
+        "type": "object",
+        "required": ["sendingDomainId", "domain", "complaintRate", "bounceRate"],
+        "properties": {
+          "sendingDomainId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Sending domain id"
+          },
+          "domain": {
+            "type": "string",
+            "description": "The domain the rates are for"
+          },
+          "complaintRate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffRate"
+              }
+            ],
+            "description": "Complaints over sent minus hard bounces"
+          },
+          "bounceRate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffRate"
+              }
+            ],
+            "description": "Hard bounces over sent"
+          }
+        },
+        "description": "The Complaint and Bounce rates of one Sending domain over the trailing window"
+      },
+      "StaffEnrolment": {
+        "type": "object",
+        "required": ["secret", "uri", "qrCode"],
+        "properties": {
+          "secret": {
+            "type": "string",
+            "description": "Base32 key"
+          },
+          "uri": {
+            "type": "string",
+            "description": "otpauth:// URI"
+          },
+          "qrCode": {
+            "type": "string",
+            "description": "PNG data URI of the URI"
+          }
+        },
+        "description": "A TOTP secret awaiting its first confirming code"
+      },
+      "StaffExemptionChange": {
+        "type": "object",
+        "required": ["changed", "workspace"],
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          },
+          "workspace": {
+            "$ref": "#/components/schemas/StaffWorkspaceResource"
+          }
+        },
+        "description": "The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether\nanything changed"
+      },
+      "StaffHold": {
+        "type": "object",
+        "required": ["key", "reasonCode", "message", "createdAt", "expiresAt", "setBy", "billing"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Unique per Workspace, chosen by the setter"
+          },
+          "reasonCode": {
+            "type": "string",
+            "description": "Machine reason code"
+          },
+          "message": {
+            "type": "string",
+            "description": "The message the setter gave for the Owner"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the hold was first set"
+          },
+          "expiresAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the hold lapses unless renewed"
+          },
+          "setBy": {
+            "type": "string",
+            "description": "Who set it: the name of its Service credential"
+          },
+          "billing": {
+            "type": "boolean",
+            "description": "True for a billing hold (reason code `non_payment` or `free_plan_cap`)"
+          }
+        },
+        "description": "An active Staff hold on a Workspace, as the console shows it (read only)"
+      },
+      "StaffLoginInput": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "description": "Sign in with an email and password. The email is a plain string: a malformed\naddress must answer like an unknown one."
+      },
+      "StaffLoginOutcome": {
+        "type": "string",
+        "enum": ["challenge", "enrolment"],
+        "description": "What the password step granted. There is never a session at this step: a TOTP is\nmandatory (ADR 0026). `challenge`: the Staff member has a TOTP, go on with a code.\n`enrolment`: the Staff member has none yet (first login); the `enrolment` secret is to be\nadded to an authenticator app, and the first code confirms it."
+      },
+      "StaffLoginResult": {
+        "type": "object",
+        "required": ["outcome", "challenge"],
+        "properties": {
+          "outcome": {
+            "$ref": "#/components/schemas/StaffLoginOutcome"
+          },
+          "challenge": {
+            "type": "string",
+            "description": "The signed challenge for the second step: bound to the Staff member, valid for 5\nminutes, working for one successful second step."
+          },
+          "enrolment": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffEnrolment"
+              }
+            ],
+            "description": "Present when the outcome is `enrolment`"
+          }
+        }
+      },
+      "StaffRate": {
+        "type": "object",
+        "required": ["numerator", "denominator", "rate"],
+        "properties": {
+          "numerator": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Events counted against the rate"
+          },
+          "denominator": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The population the rate is over"
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "nullable": true,
+            "description": "numerator / denominator; null (undefined) when fewer sends than the volume floor\nwere made in the window, never reported as 0"
+          }
+        },
+        "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011)"
+      },
+      "StaffResource": {
+        "type": "object",
+        "required": ["id", "email"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "Login email"
+          }
+        },
+        "description": "The authenticated platform Staff member (shown to customers only as \"sphericon staff\")"
+      },
+      "StaffSecondFactorInput": {
+        "type": "object",
+        "required": ["challenge", "code"],
+        "properties": {
+          "challenge": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "A current TOTP code from the authenticator app"
+          }
+        },
+        "description": "The second login step: the challenge from the password step and a TOTP code"
+      },
+      "StaffSuspendInput": {
+        "type": "object",
+        "required": ["reason"],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The reason, required: the Workspace owner is told why sending stopped"
+          }
+        },
+        "description": "Why a Workspace is being suspended; the owner is told"
+      },
+      "StaffSuspension": {
+        "type": "object",
+        "required": ["at", "actor"],
+        "properties": {
+          "at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When outbound sending was suspended"
+          },
+          "actor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffSuspensionActor"
+              }
+            ],
+            "description": "Who suspended it"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why, as given by the actor"
+          }
+        },
+        "description": "A Workspace's suspension state (ADR 0007)"
+      },
+      "StaffSuspensionActor": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/StaffSuspensionActorKind"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Staff member id; present only for the `staff` kind"
+          }
+        },
+        "description": "The actor of a suspension. Unlike a customer, a Staff member sees the real Staff member id."
+      },
+      "StaffSuspensionActorKind": {
+        "type": "string",
+        "enum": ["system", "cli", "staff"],
+        "description": "Who set a Workspace suspension (ADR 0026)"
+      },
+      "StaffSuspensionChange": {
+        "type": "object",
+        "required": ["changed", "workspace"],
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          },
+          "workspace": {
+            "$ref": "#/components/schemas/StaffWorkspaceResource"
+          }
+        },
+        "description": "The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether\nanything changed (suspending a suspended Workspace and unsuspending an active one\nchange nothing)."
+      },
+      "StaffWorkspaceDetailResource": {
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "createdAt",
+          "exempt",
+          "warned",
+          "holds",
+          "deliverability",
+          "abuse"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Workspace was created"
+          },
+          "suspension": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffSuspension"
+              }
+            ],
+            "nullable": true,
+            "description": "Present only while sending is suspended"
+          },
+          "exempt": {
+            "type": "boolean",
+            "description": "Exempt from the abuse detector (set by a Staff member)"
+          },
+          "warned": {
+            "type": "boolean",
+            "description": "The owners were warned and the Workspace has not left the warning tier since"
+          },
+          "holds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffHold"
+            },
+            "description": "Active Staff holds by key; a lapsed hold is not listed"
+          },
+          "deliverability": {
+            "$ref": "#/components/schemas/StaffDeliverability"
+          },
+          "abuse": {
+            "$ref": "#/components/schemas/StaffAbuse"
+          }
+        },
+        "description": "A Workspace with its deliverability and active holds, as the detail page shows it"
+      },
+      "StaffWorkspaceResource": {
+        "type": "object",
+        "required": ["id", "slug", "name", "createdAt", "exempt", "warned"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Workspace was created"
+          },
+          "suspension": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffSuspension"
+              }
+            ],
+            "nullable": true,
+            "description": "Present only while sending is suspended"
+          },
+          "exempt": {
+            "type": "boolean",
+            "description": "Exempt from the abuse detector (set by a Staff member)"
+          },
+          "warned": {
+            "type": "boolean",
+            "description": "The owners were warned and the Workspace has not left the warning tier since"
+          }
+        },
+        "description": "A Workspace as the Staff console sees it: metadata only, never Contacts,\ncontent or Events (ADR 0026)."
+      },
+      "StaffWorkspaceReview": {
+        "type": "string",
+        "enum": ["warned", "systemFrozen"],
+        "description": "Which Workspaces the list surfaces for review"
+      },
+      "TimeZoneName": {
+        "type": "string"
+      },
+      "Timestamp": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "STAFF_JWT"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/staff",
+      "description": "Local development staff API",
+      "variables": {}
+    }
+  ]
+}

@@ -233,7 +233,7 @@ func webhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.
 		data := env.Data
 		if entry, ok := ev.(*AuditEntry); ok {
 			// The staff identity never reaches a customer's endpoint (ADR 0022).
-			entry.MaskOperator()
+			entry.MaskStaff()
 			if data, err = json.Marshal(entry); err != nil {
 				return fmt.Errorf("marshal audit entry: %w", err)
 			}

@@ -25,7 +25,7 @@ func TestSendToAnErasedContactIsDroppedAtTheChokepoint(t *testing.T) {
 	req := marketing(t, env, "bc:erased", fixtures.ContactAliceID)
 
 	require.NoError(t, erasure.New(env.Bus).Erase(ctx, s, erasure.ByContactID(fixtures.ContactAliceID),
-		erasure.Operator{Kind: erasure.OperatorAPIToken}))
+		erasure.StaffMember{Kind: erasure.StaffAPIToken}))
 	before := len(env.CustomerMail.Messages())
 
 	res, err := newModule(env).Send(ctx, s, req)
@@ -47,7 +47,7 @@ func TestSendToAnErasedContactIdIsRefusedAtTheClaim(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, erasure.New(env.Bus).Erase(ctx, s, erasure.ByContactID(fixtures.ContactAliceID),
-		erasure.Operator{Kind: erasure.OperatorAPIToken}))
+		erasure.StaffMember{Kind: erasure.StaffAPIToken}))
 	before := len(env.CustomerMail.Messages())
 
 	req := transactional("tx:erased-id", "alice@example.com")

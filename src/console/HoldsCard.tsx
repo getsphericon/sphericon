@@ -2,12 +2,12 @@ import { Card, Group, Stack, Table, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { BillingBadge } from '../components/BillingBadge.tsx'
-import type { OperatorHold } from '../generated/operator/types.gen.ts'
+import type { StaffHold } from '../generated/staff/types.gen.ts'
 import { formatDateTime } from '../utils/datetime.ts'
 
-// A Workspace's active Operator holds, read only: what the Operator needs to answer a
+// A Workspace's active Staff holds, read only: what the Staff member needs to answer a
 // support question. The list arrives with the Workspace and holds no lapsed hold.
-export function HoldsCard({ holds }: { holds: OperatorHold[] }) {
+export function HoldsCard({ holds }: { holds: StaffHold[] }) {
   const { t } = useTranslation()
 
   return (

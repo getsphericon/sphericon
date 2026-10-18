@@ -5,7 +5,7 @@
 // and instances cannot overspend; a denial reports how long until capacity returns.
 //
 // Buckets are stored as a fill fraction of capacity (1 is full). Capacity and refill
-// derive from the limits passed in on every call, so an operator changing a limit
+// derive from the limits passed in on every call, so a staff member changing a limit
 // takes effect at once, and a bucket with no limit is simply kept full.
 package sendlimit
 

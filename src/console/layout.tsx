@@ -6,7 +6,7 @@ import { useMatchRoute, useNavigate, useRouteContext } from '@tanstack/react-rou
 import { useTranslation } from 'react-i18next'
 
 import { NavLinkLink } from '../components/RouterLink.tsx'
-import { operatorAuthLogoutMutation } from '../generated/operator/@tanstack/react-query.gen.ts'
+import { staffAuthLogoutMutation } from '../generated/staff/@tanstack/react-query.gen.ts'
 import { DashboardShell } from '../layouts/DashboardShell.tsx'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 import { Route as consoleAuthedRoute } from '../routes/console/_authed/route.tsx'
@@ -28,15 +28,15 @@ function ConsoleNavbar() {
   )
 }
 
-// The header menu: who is signed in, and logout (clears the Operator cookie).
-function OperatorMenu() {
+// The header menu: who is signed in, and logout (clears the Staff member cookie).
+function StaffMenu() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { operator } = useRouteContext({ from: consoleAuthedRoute.id })
+  const { staff } = useRouteContext({ from: consoleAuthedRoute.id })
 
   const logoutMutation = useMutation({
-    ...operatorAuthLogoutMutation(),
+    ...staffAuthLogoutMutation(),
     onSuccess: async () => {
       queryClient.clear()
       await navigate({ to: consoleLoginRoute.to })
@@ -55,10 +55,10 @@ function OperatorMenu() {
         <UnstyledButton>
           <Group gap="xs" wrap="nowrap">
             <Avatar radius="xl" size={32} color="blue">
-              {operator.email.charAt(0).toUpperCase()}
+              {staff.email.charAt(0).toUpperCase()}
             </Avatar>
             <Text size="sm" visibleFrom="sm">
-              {operator.email}
+              {staff.email}
             </Text>
             <IconChevronDown size={16} />
           </Group>
@@ -78,5 +78,5 @@ function OperatorMenu() {
 }
 
 export function ConsoleLayout() {
-  return <DashboardShell sidebar={<ConsoleNavbar />} headerRight={<OperatorMenu />} />
+  return <DashboardShell sidebar={<ConsoleNavbar />} headerRight={<StaffMenu />} />
 }

@@ -312,12 +312,13 @@
         "warningDetail": "{{metric}}: {{rate}} en {{domain}}",
         "warningNotifiedAt": "Propietarios avisados"
       },
-      "actorOperator": "Operador {{id}}",
       "actors": {
         "cli": "Línea de comandos",
-        "operator": "Operador",
+        "staff": "",
         "system": "Detector automático"
       },
+      "actorStaff": "Personal {{id}}",
+      "actorStaffMember": "",
       "auditLog": {
         "action": "Acción",
         "actor": "Por",
@@ -663,7 +664,8 @@
       "from": "Desde",
       "ip": "Dirección IP",
       "kindApiToken": "Token de API",
-      "kindOperator": "Personal de sphericon",
+      "kindStaff": "Personal de sphericon",
+      "kindStaffMember": "",
       "kindSystem": "Sistema",
       "kindUser": "Usuario",
       "loadError": "No se pudo cargar el registro de auditoría",

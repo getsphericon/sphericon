@@ -19,7 +19,7 @@ func Slugify(s string) string {
 	return slug.Make(s)
 }
 
-// WorkspaceIDBySlug resolves a Workspace slug to its id (operator tooling addresses
+// WorkspaceIDBySlug resolves a Workspace slug to its id (staff member tooling addresses
 // Workspaces by slug).
 func WorkspaceIDBySlug(ctx context.Context, client *ent.Client, slug string) (int64, error) {
 	id, err := client.Workspace.Query().Where(workspace.Slug(slug)).OnlyID(ctx)

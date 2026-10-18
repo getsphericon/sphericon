@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 )
 
@@ -24,11 +24,11 @@ func run(t *testing.T, ops serviceCredentialOps, args ...string) (string, error)
 
 func issuing(err error) *serviceCredentialOpsMock {
 	return &serviceCredentialOpsMock{
-		IssueServiceCredentialFunc: func(_ context.Context, in operator.IssueInput) (*operator.Issued, error) {
+		IssueServiceCredentialFunc: func(_ context.Context, in staff.IssueInput) (*staff.Issued, error) {
 			if err != nil {
 				return nil, err
 			}
-			return &operator.Issued{ID: 7, Name: in.Name, Scopes: in.Scopes, ExpiresAt: in.ExpiresAt, Value: "omsc_value_once"}, nil
+			return &staff.Issued{ID: 7, Name: in.Name, Scopes: in.Scopes, ExpiresAt: in.ExpiresAt, Value: "smsc_value_once"}, nil
 		},
 	}
 }
@@ -42,9 +42,9 @@ func TestServiceCredentialCreateShowsTheValueOnceWithItsNameAndScopes(t *testing
 	calls := ops.IssueServiceCredentialCalls()
 	require.Len(t, calls, 1)
 	assert.Equal(t, "service-a", calls[0].In.Name)
-	assert.Equal(t, []operator.Scope{operator.ScopeUsageRead, operator.ScopeHoldsWrite}, calls[0].In.Scopes)
+	assert.Equal(t, []staff.Scope{staff.ScopeUsageRead, staff.ScopeHoldsWrite}, calls[0].In.Scopes)
 	assert.Nil(t, calls[0].In.ExpiresAt)
-	assert.Contains(t, out, "omsc_value_once")
+	assert.Contains(t, out, "smsc_value_once")
 	assert.Contains(t, out, "shown once")
 }
 
@@ -63,9 +63,9 @@ func TestServiceCredentialCreateExplainsARefusal(t *testing.T) {
 		err  error
 		want string
 	}{
-		{operator.ErrNotLicensed, "license"},
-		{operator.ErrInvalidScope, "scope"},
-		{operator.ErrInvalidCredential, "name"},
+		{staff.ErrNotLicensed, "license"},
+		{staff.ErrInvalidScope, "scope"},
+		{staff.ErrInvalidCredential, "name"},
 	} {
 		_, err := run(t, issuing(tc.err), "create", "service-a", "usage:read")
 		require.ErrorContains(t, err, tc.want)
@@ -74,8 +74,8 @@ func TestServiceCredentialCreateExplainsARefusal(t *testing.T) {
 
 func TestServiceCredentialRotateShowsTheNewValueAndSaysTheOldOneStaysActive(t *testing.T) {
 	ops := &serviceCredentialOpsMock{
-		RotateServiceCredentialFunc: func(context.Context, int64, *time.Time) (*operator.Issued, error) {
-			return &operator.Issued{ID: 9, Name: "service-a", Value: "omsc_rotated"}, nil
+		RotateServiceCredentialFunc: func(context.Context, int64, *time.Time) (*staff.Issued, error) {
+			return &staff.Issued{ID: 9, Name: "service-a", Value: "smsc_rotated"}, nil
 		},
 	}
 
@@ -83,7 +83,7 @@ func TestServiceCredentialRotateShowsTheNewValueAndSaysTheOldOneStaysActive(t *t
 
 	require.NoError(t, err)
 	assert.EqualValues(t, 7, ops.RotateServiceCredentialCalls()[0].ID)
-	assert.Contains(t, out, "omsc_rotated")
+	assert.Contains(t, out, "smsc_rotated")
 	assert.Contains(t, out, "revoke")
 }
 
@@ -98,7 +98,7 @@ func TestServiceCredentialRevokeEndsTheCredential(t *testing.T) {
 }
 
 func TestServiceCredentialRevokeOfAMissingIdSaysSo(t *testing.T) {
-	ops := &serviceCredentialOpsMock{RevokeServiceCredentialFunc: func(context.Context, int64) error { return operator.ErrCredentialNotFound }}
+	ops := &serviceCredentialOpsMock{RevokeServiceCredentialFunc: func(context.Context, int64) error { return staff.ErrCredentialNotFound }}
 
 	_, err := run(t, ops, "revoke", "7")
 

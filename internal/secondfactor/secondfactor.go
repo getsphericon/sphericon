@@ -315,11 +315,11 @@ func (m *Module) Reset(ctx context.Context, userID int64, actor events.Actor, wo
 	})
 }
 
-// ResetByOperator is Reset from the operator command: the platform Operator `by`
+// ResetByStaff is Reset from the staff member command: the platform Staff member `by`
 // (shown to customers as "sphericon staff") is recorded in every Workspace the User
 // holds a Membership in.
-func (m *Module) ResetByOperator(ctx context.Context, userID int64, by string) error {
-	actor := events.Actor{Kind: events.ActorOperator, ID: by}
+func (m *Module) ResetByStaff(ctx context.Context, userID int64, by string) error {
+	actor := events.Actor{Kind: events.ActorStaff, ID: by}
 	return m.reset(ctx, userID, func(pub events.Publisher, tx *ent.Client, u *ent.User) error {
 		return accounts.RecordActionOnUser(ctx, tx, pub, actor, u, events.ActionUserSecondFactorReset, nil)
 	})

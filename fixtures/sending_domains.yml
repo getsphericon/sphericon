@@ -64,7 +64,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 
-# Soylent (workspace 6): the Operator console's rate-bearing Workspace. The first domain has
+# Soylent (workspace 6): the Staff console's rate-bearing Workspace. The first domain has
 # traffic in the last day (events.yml ids 400-411), the second none.
 - id: 400 # fixture: SendingDomainSoylent
   domain: mail.soylent.test

@@ -8,7 +8,7 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// Hold is an Operator hold (ADR 0009): one reversible freeze of a Workspace's outbound
+// Hold is a Staff hold (ADR 0009): one reversible freeze of a Workspace's outbound
 // sending, set from outside through the service endpoints under a key its setter
 // chooses. Several coexist per Workspace; each lapses at its expiry, which the setter
 // must renew, and the send path ignores an expired row at once (a read compares

@@ -21,19 +21,19 @@ const NameAuditEntry = "audit.entry"
 const (
 	ActorUser     = ent.ActorUser
 	ActorAPIToken = ent.ActorAPIToken
-	ActorOperator = ent.ActorOperator
+	ActorStaff    = ent.ActorStaff
 	ActorService  = ent.ActorService
 	ActorSystem   = ent.ActorSystem
 	ActorIngest   = ent.ActorIngest
 )
 
 // IsStaff reports whether an actor kind is the platform's own staff identity, a human
-// Operator or a Service credential: the kinds no customer-facing read may identify.
-func IsStaff(kind string) bool { return kind == ActorOperator || kind == ActorService }
+// Staff member or a Service credential: the kinds no customer-facing read may identify.
+func IsStaff(kind string) bool { return kind == ActorStaff || kind == ActorService }
 
-// OperatorLabel is how a platform Operator appears to the customer on every read
+// StaffLabel is how a platform Staff member appears to the customer on every read
 // surface (ADR 0022): the staff identity is never exposed.
-const OperatorLabel = "sphericon staff"
+const StaffLabel = "sphericon staff"
 
 // Actor is who performed a change. Name is a display snapshot (a User's name) so the
 // entry stays readable after the actor is gone.
@@ -130,12 +130,12 @@ func (*AuditEntry) EventVersion() int  { return 1 }
 func (e *AuditEntry) Workspace() int64 { return e.WorkspaceID }
 func (*AuditEntry) Unprojected()       {}
 
-// MaskOperator replaces a staff actor (an Operator or a Service credential) with the
+// MaskStaff replaces a staff actor (a Staff member or a Service credential) with the
 // customer-facing label and drops the staff id, for every surface that leaves the
 // platform (ADR 0022). The stored entry keeps the real identity.
-func (e *AuditEntry) MaskOperator() {
+func (e *AuditEntry) MaskStaff() {
 	if IsStaff(e.Actor.Kind) {
-		e.Actor = Actor{Kind: ActorOperator, Name: OperatorLabel}
+		e.Actor = Actor{Kind: ActorStaff, Name: StaffLabel}
 	}
 }
 

@@ -2,10 +2,7 @@ import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
 import { afterEach, expect, test } from 'vitest'
 
-import {
-  handleOperatorAuthLogin,
-  handleOperatorAuthSecondFactor,
-} from '../generated/operator/msw.gen.ts'
+import { handleStaffAuthLogin, handleStaffAuthSecondFactor } from '../generated/staff/msw.gen.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'
@@ -15,15 +12,15 @@ afterEach(() => {
   notifications.clean()
 })
 
-const operator = { id: '1', email: 'ops@example.com' }
+const staff = { id: '1', email: 'ops@example.com' }
 
 test('a TOTP challenge asks for a code and opens the console', async () => {
   const bodies: unknown[] = []
   worker.use(
-    handleOperatorAuthLogin({ body: { outcome: 'challenge', challenge: 'signed' } }),
-    handleOperatorAuthSecondFactor(async ({ request }) => {
+    handleStaffAuthLogin({ body: { outcome: 'challenge', challenge: 'signed' } }),
+    handleStaffAuthSecondFactor(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json(operator)
+      return HttpResponse.json(staff)
     }),
   )
   const { screen, navigate } = await renderWithRouter(<ConsoleLoginPage />)
@@ -41,7 +38,7 @@ test('a TOTP challenge asks for a code and opens the console', async () => {
 
 test('first login shows the enrolment secret and confirms it with the first code', async () => {
   worker.use(
-    handleOperatorAuthLogin({
+    handleStaffAuthLogin({
       body: {
         outcome: 'enrolment',
         challenge: 'signed',
@@ -52,7 +49,7 @@ test('first login shows the enrolment secret and confirms it with the first code
         },
       },
     }),
-    handleOperatorAuthSecondFactor({ body: operator }),
+    handleStaffAuthSecondFactor({ body: staff }),
   )
   const { screen, navigate } = await renderWithRouter(<ConsoleLoginPage />)
 
@@ -68,7 +65,7 @@ test('first login shows the enrolment secret and confirms it with the first code
 })
 
 test('a wrong password shows the error and stays on the password step', async () => {
-  worker.use(handleOperatorAuthLogin(() => problem(401, { detail: 'Invalid credentials' })))
+  worker.use(handleStaffAuthLogin(() => problem(401, { detail: 'Invalid credentials' })))
   const { screen, navigate } = await renderWithRouter(<ConsoleLoginPage />)
 
   await screen.getByLabelText(/^Email/).fill('ops@example.com')
@@ -80,7 +77,7 @@ test('a wrong password shows the error and stays on the password step', async ()
 })
 
 test('a rate-limited attempt says how long to wait', async () => {
-  worker.use(handleOperatorAuthLogin(() => problem(429, { retryAfter: 90 })))
+  worker.use(handleStaffAuthLogin(() => problem(429, { retryAfter: 90 })))
   const { screen } = await renderWithRouter(<ConsoleLoginPage />)
 
   await screen.getByLabelText(/^Email/).fill('ops@example.com')

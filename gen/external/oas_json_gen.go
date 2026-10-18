@@ -672,8 +672,8 @@ func (s *AuditActorKind) Decode(d *jx.Decoder) error {
 		*s = AuditActorKindUser
 	case AuditActorKindAPIToken:
 		*s = AuditActorKindAPIToken
-	case AuditActorKindOperator:
-		*s = AuditActorKindOperator
+	case AuditActorKindStaff:
+		*s = AuditActorKindStaff
 	case AuditActorKindSystem:
 		*s = AuditActorKindSystem
 	default:

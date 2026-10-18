@@ -147,18 +147,18 @@ func predicates(f events.AuditFilter) []predicate.AuditEntry {
 	if !f.To.IsZero() {
 		ps = append(ps, auditentry.OccurredAtLT(f.To))
 	}
-	// The operator kind covers every staff identity (a Service credential reads as an
-	// Operator to a customer), so the filter matches both.
-	if f.ActorKind == events.ActorOperator {
-		ps = append(ps, auditentry.ActorKindIn(events.ActorOperator, events.ActorService))
+	// The staff member kind covers every staff identity (a Service credential reads as an
+	// Staff member to a customer), so the filter matches both.
+	if f.ActorKind == events.ActorStaff {
+		ps = append(ps, auditentry.ActorKindIn(events.ActorStaff, events.ActorService))
 	} else if f.ActorKind != "" {
 		ps = append(ps, auditentry.ActorKind(f.ActorKind))
 	}
 	// A staff id is never exposed, so it must not be probeable either: with the
-	// operator kind the id filter is ignored, and without a kind an id filter never
+	// staff member kind the id filter is ignored, and without a kind an id filter never
 	// matches a staff entry (ADR 0022).
-	if f.ActorID != "" && f.ActorKind != events.ActorOperator {
-		ps = append(ps, auditentry.ActorID(f.ActorID), auditentry.ActorKindNotIn(events.ActorOperator, events.ActorService))
+	if f.ActorID != "" && f.ActorKind != events.ActorStaff {
+		ps = append(ps, auditentry.ActorID(f.ActorID), auditentry.ActorKindNotIn(events.ActorStaff, events.ActorService))
 	}
 	if f.Action != "" {
 		ps = append(ps, auditentry.Action(f.Action))

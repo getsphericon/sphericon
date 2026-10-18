@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-// userOps is what the `user` operator commands need from the app. The app
+// userOps is what the `user` staff member commands need from the app. The app
 // implements it (internal/app); tests use a fake.
 type userOps interface {
 	ResetSecondFactor(ctx context.Context, email string) (bool, error)

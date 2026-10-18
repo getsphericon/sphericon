@@ -211,7 +211,7 @@ _Avoid_: Send log, delivery row, email record
 **Outcome** (of an Outbound send):
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (Suppression,
 Unsubscribe, or missing Confirmation), or a permanent failure of that one message — or
-**per-source** and reversible: a **Hold** (Workspace suspension, Operator hold, an unverified
+**per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified
 Sending domain, or no Integration) or a **Deferral** (the Integration's Send rate limit is spent),
 after which the same messages may still be sent.
 _Avoid_: Status, result (unqualified)
@@ -383,19 +383,19 @@ A bare, single-purpose secret string that identifies a workspace for one job —
 not a bearer token. The deliberate counterpart to an API token.
 _Avoid_: Token (for these), API key
 
-**Operator** (platform operator):
+**Staff member**:
 A member of the **platform's** staff who acts _across_ all Workspaces (suspend an abusive
 sender, impersonate for support). Deliberately **not** a User and **not** reached through a
 Membership: a distinct identity with its own store and its own auth surface, holding **no**
 Membership, so the "every query is scoped by a Workspace" invariant has no exception —
-workspace-scoped code has no path that can return an Operator. A person who is both staff and
-a customer holds two separate identities (an Operator _and_ a User), by design, for
-least-privilege and clean audit. Created only by the `sphericon operator create` command (no
+workspace-scoped code has no path that can return a Staff member. A person who is both staff and
+a customer holds two separate identities (a Staff member _and_ a User), by design, for
+least-privilege and clean audit. Created only by the `sphericon staff create` command (no
 signup), it logs in with a password and a mandatory TOTP enrolled at first login, on a short
 session of its own. Failed logins are rate limited, and a lost TOTP is reset only by
-`sphericon operator reset-totp` (re-enrolment at next login), never through the web. Customers see its actions only as "sphericon staff". A SaaS/platform
+`sphericon staff reset-totp` (re-enrolment at next login), never through the web. Customers see its actions only as "sphericon staff". A SaaS/platform
 concept, absent from a plain self-hosted install.
-_Avoid_: Admin (that is a workspace Role), superuser, staff user, root
+_Avoid_: Operator (the former name), Admin (that is a workspace Role), superuser, staff user, root
 
 **Workspace suspension**:
 A reversible Workspace state that **freezes all outbound sending** — every one of the three
@@ -404,15 +404,15 @@ platform reputation-protection measure against an abusive sender. It is _not_ a 
 login, dashboard reads, `/api` reads, and `/collect` tracking keep working, so the owner can
 still see the suspension and appeal. Enforced in the **core** send path (the AGPL binary is
 the only reliable choke point). It records **attribution**: the actor that set it (an
-automated abuse detector — actor `system` — or a platform Operator) and a reason. The
+automated abuse detector — actor `system` — or a platform Staff member) and a reason. The
 automated path only fires above a minimum send volume (a rate is noise at low volume),
-notifies the workspace owner, and is one-click reversible by an Operator. Suspension is the
-_reputation_ freeze; an Operator hold is a separate freeze set from outside for another reason,
+notifies the workspace owner, and is one-click reversible by a Staff member. Suspension is the
+_reputation_ freeze; a Staff hold is a separate freeze set from outside for another reason,
 on the same core send chokepoint — the two are independent reasons, never merged.
-_Avoid_: Ban, lockout, disable, quota (suspension is not an entitlement state — see Operator hold)
+_Avoid_: Ban, lockout, disable, quota (suspension is not an entitlement state — see Staff hold)
 
-**Operator console**:
-The Operator's own web surface (a fourth API surface beside `/site`, `/api`, `/collect`) for
+**Staff console**:
+The Staff member's own web surface (a fourth API surface beside `/site`, `/api`, `/collect`) for
 acting across Workspaces. It shows Workspace **metadata only** (identity, suspension state,
 deliverability rates, send volume, Audit log) — never Contacts, content, or Events — and offers
 suspend and unsuspend. Impersonation is out of scope. A SaaS/platform concept, absent from a
@@ -426,7 +426,7 @@ minimum send volume. A lower limit only **warns** the owner and freezes nothing:
 computed from the rates, never stored, and the owners get one email per tier per episode (an
 episode ends when the Workspace leaves the tier). It counts only
 events after the last time a suspension was cleared, never reverses a suspension itself (only an
-Operator does), and skips a Workspace an Operator has exempted. A SaaS/platform concept.
+Staff member does), and skips a Workspace a Staff member has exempted. A SaaS/platform concept.
 _Avoid_: Spam filter, auto-ban
 
 **Webhook endpoint** (outbound):
@@ -508,7 +508,7 @@ _Avoid_: Permission, scope (scope is the API-token term)
 
 **Audit entry** (the Audit log is the Workspace's append-only sequence of them):
 An immutable record that an **actor** changed a Workspace's configuration or access — who
-(a User, an API token, a platform Operator shown to the customer only as "sphericon staff", or
+(a User, an API token, a platform Staff member shown to the customer only as "sphericon staff", or
 `system`), what (an action on a target), and when. It keeps a snapshot of the target's name (a Contact by id only), so
 it stays readable after the target is deleted; secrets are never recorded as values, and
 Contact changes name the fields changed, never their personal data. It covers the
@@ -520,8 +520,8 @@ _Avoid_: Event (that is a Contact/data-plane fact), activity, history, changelog
 
 ### Usage & holds
 
-The core _measures_ what each Workspace does and lets an Operator hold sending from outside; it
-keeps no allowance of its own. An external service reaches both through the Operator surface. A
+The core _measures_ what each Workspace does and lets a Staff member hold sending from outside; it
+keeps no allowance of its own. An external service reaches both through the Staff surface. A
 self-hosted install has no such service and none of this is visible to it.
 
 **Usage period**:
@@ -544,7 +544,7 @@ the Events are truth, the snapshot is the closed, reproducible figure.
 _Avoid_: Meter, counter, quota (quota is an allowance, not a measurement)
 
 **Service credential**:
-A machine identity of the Operator surface, next to the human Operator and not a User: a bearer value
+A machine identity of the Staff surface, next to the human Staff member and not a User: a bearer value
 that lets a service call the service endpoints without a login, held by no Workspace and no
 Membership. It carries a name, a set of scopes (read usage, read Workspaces, write holds) and an
 optional expiry, and records when it was last used. Created, rotated and revoked only by the
@@ -553,7 +553,7 @@ and only a hash is stored. A service may hold two active credentials at once so 
 downtime. The service endpoints are served only by a separate internal listener, never on the public
 port. Its writes are recorded in the Audit log under its name, which customers see only as
 "sphericon staff".
-_Avoid_: API key, API token (that is a Workspace's), service account, Operator
+_Avoid_: API key, API token (that is a Workspace's), service account, Staff member
 
 **Live usage**:
 The same per-(Workspace, metric) figures for the Usage period still open: not final, with the
@@ -562,16 +562,16 @@ sends still in flight. It is what lets a reader notice a limit being approached 
 closes; the Usage snapshot remains the only final figure.
 _Avoid_: Current usage, real-time usage
 
-**Operator hold**:
+**Staff hold**:
 A reversible Workspace state that **freezes all outbound sending** — all three send surfaces
-(Broadcast, Automation, Transactional), exactly like Workspace suspension — set by an Operator
-through the Operator surface for a reason other than reputation. Several can coexist: each is
+(Broadcast, Automation, Transactional), exactly like Workspace suspension — set by a Staff member
+through the Staff surface for a reason other than reputation. Several can coexist: each is
 stored separately under its own key, with a reason shown to the Workspace Owner and an expiry the
 setter must renew (required, and no further ahead than a configured maximum, 30 days by default), and each is cleared by its own setter or by its expiry. It is a **distinct
 cause on the same core chokepoint**, never a repurposing of suspension: the send path asks one
 question ("may this Workspace send now?") answered by several independent freeze reasons.
 Messages are **held, not failed**: they wait and go out when the hold lifts. Every change records
-the Operator that made it.
+the Staff member that made it.
 _Avoid_: Suspension (that is the reputation freeze), ban, lockout
 
 **Account link**:

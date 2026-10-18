@@ -22,7 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
@@ -153,9 +153,9 @@ type TestEnv struct {
 	// env's clock (ADR 0020).
 	SecondFactor *secondfactor.Module
 
-	// Operators is the Operator module the server logs staff in with (ADR 0026); it
+	// Staff members is the Staff member module the server logs staff in with (ADR 0026); it
 	// refuses every call on an unlicensed env.
-	Operators *operator.Module
+	StaffMembers *staff.Module
 }
 
 // Option tunes the server a test builds with Setup.
@@ -167,7 +167,7 @@ type setup struct {
 	cfg        *config.Config
 	now        func() time.Time
 	unlicensed bool
-	// volumeFloor is the Operator console's rate floor; zero is the default.
+	// volumeFloor is the Staff console's rate floor; zero is the default.
 	volumeFloor int
 }
 
@@ -175,9 +175,9 @@ type setup struct {
 // self-host. Setup's default is an instance licensed for every EE feature.
 func WithoutLicense() Option { return func(s *setup) { s.unlicensed = true } }
 
-// WithOperatorVolumeFloor sets the fewest sends in the Operator console's window for a
+// WithStaffVolumeFloor sets the fewest sends in the Staff console's window for a
 // rate to be defined, so a test crosses the floor with a handful of fixture Events.
-func WithOperatorVolumeFloor(n int) Option { return func(s *setup) { s.volumeFloor = n } }
+func WithStaffVolumeFloor(n int) Option { return func(s *setup) { s.volumeFloor = n } }
 
 // WithConfig edits a private copy of the test config before the server is built.
 func WithConfig(edit func(*config.Config)) Option { return func(s *setup) { edit(s.cfg) } }
@@ -193,9 +193,9 @@ func WithRateLimits(limits config.RateLimits) Option {
 	return func(s *setup) { s.cfg.RateLimits = limits }
 }
 
-// newOperatorSecret is the secret Operator sessions are signed with in a test env: random
+// newStaffSecret is the secret Staff member sessions are signed with in a test env: random
 // and its own, never the site's.
-func newOperatorSecret() string { return rand.Text() + rand.Text() }
+func newStaffSecret() string { return rand.Text() + rand.Text() }
 
 // testLicense mints, once per process, an EE license key signed by a throwaway key
 // pair and verified through the same Parse the production composition root uses.
@@ -261,15 +261,15 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	if st.volumeFloor > 0 {
 		limits.VolumeFloor = st.volumeFloor
 	}
-	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, operator.Config{
-		Secret: newOperatorSecret(), SessionTTL: cfg.OperatorSessionTTL, HoldMaxExpiry: cfg.OperatorHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
+	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, staff.Config{
+		Secret: newStaffSecret(), SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
 		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail,
 	})
 	require.NoError(t, err, "build edition")
 	// The Edition's ent hooks, on the client and on every transaction the bus opens.
 	client.Use(edition.Hooks()...)
 	bus.Use(edition.Hooks()...)
-	// The Operator hold freezer rides the send chokepoint like the app's.
+	// The Staff hold freezer rides the send chokepoint like the app's.
 	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
@@ -302,8 +302,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
 	require.NoError(t, err, "build MCP handler")
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
-	operatorHandler, err := server.NewOperatorAPI(edition.Operator(bus, systemMail))
-	require.NoError(t, err, "build operator API")
+	staffHandler, err := server.NewStaffAPI(edition.StaffMember(bus, systemMail))
+	require.NoError(t, err, "build staff API")
 	accountLink, _, err := accountlink.FromConfig(&cfg)
 	require.NoError(t, err, "build account link")
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
@@ -316,14 +316,14 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		SecondFactor:             secondFactor,
 		Clock:                    st.now,
 		RequireEmailVerification: cfg.RequireEmailVerification,
-	}, external, mcpHandler, operatorHandler)
+	}, external, mcpHandler, staffHandler)
 	require.NoError(t, err, "build server")
 	internalHandler, err := server.NewInternal(&cfg, edition.Service(bus))
 	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{
 		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
-		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor, Operators: edition.Operators,
+		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}
 }
 

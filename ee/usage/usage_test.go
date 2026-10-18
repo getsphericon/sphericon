@@ -182,7 +182,7 @@ func TestAMessageInFlightAtTheCloseIsCountedInThePeriodItWasSentIn(t *testing.T)
 	assert.EqualValues(t, 1, figure(t, env, feb).Value)
 }
 
-func TestNothingIsMaterializedWithoutTheOperatorLicense(t *testing.T) {
+func TestNothingIsMaterializedWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t)
 	message(t, env, "one", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.January, 3, 10))
 

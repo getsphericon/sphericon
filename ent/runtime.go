@@ -23,7 +23,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
-	"github.com/getsphericon/sphericon/ent/operator"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/schema"
@@ -31,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -531,37 +531,6 @@ func init() {
 	oauthcodeDescScopes := oauthcodeFields[4].Descriptor()
 	// oauthcode.DefaultScopes holds the default value on creation for the scopes field.
 	oauthcode.DefaultScopes = oauthcodeDescScopes.Default.([]string)
-	operatorMixin := schema.Operator{}.Mixin()
-	operatorMixinFields0 := operatorMixin[0].Fields()
-	_ = operatorMixinFields0
-	operatorFields := schema.Operator{}.Fields()
-	_ = operatorFields
-	// operatorDescCreatedAt is the schema descriptor for created_at field.
-	operatorDescCreatedAt := operatorMixinFields0[0].Descriptor()
-	// operator.DefaultCreatedAt holds the default value on creation for the created_at field.
-	operator.DefaultCreatedAt = operatorDescCreatedAt.Default.(func() time.Time)
-	// operatorDescUpdatedAt is the schema descriptor for updated_at field.
-	operatorDescUpdatedAt := operatorMixinFields0[1].Descriptor()
-	// operator.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	operator.DefaultUpdatedAt = operatorDescUpdatedAt.Default.(func() time.Time)
-	// operator.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	operator.UpdateDefaultUpdatedAt = operatorDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// operatorDescEmail is the schema descriptor for email field.
-	operatorDescEmail := operatorFields[1].Descriptor()
-	// operator.EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	operator.EmailValidator = operatorDescEmail.Validators[0].(func(string) error)
-	// operatorDescPasswordHash is the schema descriptor for password_hash field.
-	operatorDescPasswordHash := operatorFields[2].Descriptor()
-	// operator.PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
-	operator.PasswordHashValidator = operatorDescPasswordHash.Validators[0].(func(string) error)
-	// operatorDescTotpLastStep is the schema descriptor for totp_last_step field.
-	operatorDescTotpLastStep := operatorFields[5].Descriptor()
-	// operator.DefaultTotpLastStep holds the default value on creation for the totp_last_step field.
-	operator.DefaultTotpLastStep = operatorDescTotpLastStep.Default.(int64)
-	// operatorDescSessionEpoch is the schema descriptor for session_epoch field.
-	operatorDescSessionEpoch := operatorFields[6].Descriptor()
-	// operator.DefaultSessionEpoch holds the default value on creation for the session_epoch field.
-	operator.DefaultSessionEpoch = operatorDescSessionEpoch.Default.(int64)
 	outboundmessageMixin := schema.OutboundMessage{}.Mixin()
 	outboundmessageMixinFields0 := outboundmessageMixin[0].Fields()
 	_ = outboundmessageMixinFields0
@@ -700,6 +669,37 @@ func init() {
 	servicecredentialDescScopes := servicecredentialFields[4].Descriptor()
 	// servicecredential.DefaultScopes holds the default value on creation for the scopes field.
 	servicecredential.DefaultScopes = servicecredentialDescScopes.Default.([]string)
+	staffmemberMixin := schema.StaffMember{}.Mixin()
+	staffmemberMixinFields0 := staffmemberMixin[0].Fields()
+	_ = staffmemberMixinFields0
+	staffmemberFields := schema.StaffMember{}.Fields()
+	_ = staffmemberFields
+	// staffmemberDescCreatedAt is the schema descriptor for created_at field.
+	staffmemberDescCreatedAt := staffmemberMixinFields0[0].Descriptor()
+	// staffmember.DefaultCreatedAt holds the default value on creation for the created_at field.
+	staffmember.DefaultCreatedAt = staffmemberDescCreatedAt.Default.(func() time.Time)
+	// staffmemberDescUpdatedAt is the schema descriptor for updated_at field.
+	staffmemberDescUpdatedAt := staffmemberMixinFields0[1].Descriptor()
+	// staffmember.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	staffmember.DefaultUpdatedAt = staffmemberDescUpdatedAt.Default.(func() time.Time)
+	// staffmember.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	staffmember.UpdateDefaultUpdatedAt = staffmemberDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// staffmemberDescEmail is the schema descriptor for email field.
+	staffmemberDescEmail := staffmemberFields[1].Descriptor()
+	// staffmember.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	staffmember.EmailValidator = staffmemberDescEmail.Validators[0].(func(string) error)
+	// staffmemberDescPasswordHash is the schema descriptor for password_hash field.
+	staffmemberDescPasswordHash := staffmemberFields[2].Descriptor()
+	// staffmember.PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
+	staffmember.PasswordHashValidator = staffmemberDescPasswordHash.Validators[0].(func(string) error)
+	// staffmemberDescTotpLastStep is the schema descriptor for totp_last_step field.
+	staffmemberDescTotpLastStep := staffmemberFields[5].Descriptor()
+	// staffmember.DefaultTotpLastStep holds the default value on creation for the totp_last_step field.
+	staffmember.DefaultTotpLastStep = staffmemberDescTotpLastStep.Default.(int64)
+	// staffmemberDescSessionEpoch is the schema descriptor for session_epoch field.
+	staffmemberDescSessionEpoch := staffmemberFields[6].Descriptor()
+	// staffmember.DefaultSessionEpoch holds the default value on creation for the session_epoch field.
+	staffmember.DefaultSessionEpoch = staffmemberDescSessionEpoch.Default.(int64)
 	suppressionMixin := schema.Suppression{}.Mixin()
 	suppressionMixinFields0 := suppressionMixin[0].Fields()
 	_ = suppressionMixinFields0

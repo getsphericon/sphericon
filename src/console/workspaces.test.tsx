@@ -1,8 +1,8 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleOperatorWorkspacesList } from '../generated/operator/msw.gen.ts'
-import type { OperatorWorkspaceResource } from '../generated/operator/types.gen.ts'
+import { handleStaffWorkspacesList } from '../generated/staff/msw.gen.ts'
+import type { StaffWorkspaceResource } from '../generated/staff/types.gen.ts'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
 import { problem } from '../test/problem.ts'
@@ -13,7 +13,7 @@ import { ConsoleWorkspacesPage } from './workspaces.tsx'
 
 const HOME = routeMount(consoleHomeRoute)
 
-function workspace(over: Partial<OperatorWorkspaceResource> = {}): OperatorWorkspaceResource {
+function workspace(over: Partial<StaffWorkspaceResource> = {}): StaffWorkspaceResource {
   return {
     id: '1',
     slug: 'acme',
@@ -25,7 +25,7 @@ function workspace(over: Partial<OperatorWorkspaceResource> = {}): OperatorWorks
   }
 }
 
-const page = (items: OperatorWorkspaceResource[]) => ({
+const page = (items: StaffWorkspaceResource[]) => ({
   items,
   page: 1,
   pageSize: 25,
@@ -35,7 +35,7 @@ const page = (items: OperatorWorkspaceResource[]) => ({
 
 test('lists workspaces with their suspension state', async () => {
   worker.use(
-    handleOperatorWorkspacesList({
+    handleStaffWorkspacesList({
       body: page([
         workspace(),
         workspace({
@@ -44,7 +44,7 @@ test('lists workspaces with their suspension state', async () => {
           name: 'Hooli',
           suspension: {
             at: '2026-02-01T00:00:00Z',
-            actor: { kind: 'operator', id: 'op-fixture' },
+            actor: { kind: 'staff', id: 'op-fixture' },
             reason: 'abuse report',
           },
         }),
@@ -62,7 +62,7 @@ test('lists workspaces with their suspension state', async () => {
 test('searching sends the slug to the API', async () => {
   const slugs: (string | null)[] = []
   worker.use(
-    handleOperatorWorkspacesList(({ request }) => {
+    handleStaffWorkspacesList(({ request }) => {
       slugs.push(new URL(request.url).searchParams.get('slug'))
       return HttpResponse.json(page([workspace()]))
     }),
@@ -76,7 +76,7 @@ test('searching sends the slug to the API', async () => {
 
 test('a warned and an exempt workspace say so next to their state', async () => {
   worker.use(
-    handleOperatorWorkspacesList({
+    handleStaffWorkspacesList({
       body: page([
         workspace({ id: '2', slug: 'globex', name: 'Globex', warned: true }),
         workspace({ id: '8', slug: 'kramerica', name: 'Kramerica', exempt: true }),
@@ -93,7 +93,7 @@ test('a warned and an exempt workspace say so next to their state', async () => 
 test('choosing a review state sends it to the API', async () => {
   const reviews: (string | null)[] = []
   worker.use(
-    handleOperatorWorkspacesList(({ request }) => {
+    handleStaffWorkspacesList(({ request }) => {
       reviews.push(new URL(request.url).searchParams.get('review'))
       return HttpResponse.json(page([workspace()]))
     }),
@@ -107,7 +107,7 @@ test('choosing a review state sends it to the API', async () => {
 })
 
 test('opening a row navigates to the workspace', async () => {
-  worker.use(handleOperatorWorkspacesList({ body: page([workspace({ id: '7' })]) }))
+  worker.use(handleStaffWorkspacesList({ body: page([workspace({ id: '7' })]) }))
   const { screen, navigate } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
 
   await screen.getByText('acme', { exact: true }).click()
@@ -118,7 +118,7 @@ test('opening a row navigates to the workspace', async () => {
 })
 
 test('a failed load shows the error', async () => {
-  worker.use(handleOperatorWorkspacesList(() => problem(500, { detail: 'boom' })))
+  worker.use(handleStaffWorkspacesList(() => problem(500, { detail: 'boom' })))
   const { screen } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
 
   await expect.element(screen.getByText('boom')).toBeInTheDocument()

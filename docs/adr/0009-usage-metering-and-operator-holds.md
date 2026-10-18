@@ -2,12 +2,12 @@
 status: accepted
 ---
 
-# Usage metering and operator holds: measured in the core, managed from outside
+# Usage metering and staff holds: measured in the core, managed from outside
 
-The core **measures** what each Workspace does and lets an Operator **hold** a Workspace's sending
+The core **measures** what each Workspace does and lets a Staff member **hold** a Workspace's sending
 from outside. It knows nothing of why a Workspace is allowed or held: whoever manages a
 Workspace's allowance does so in a separate service that is not part of this repository, through
-the Operator surface (ADR 0008, 0026). A self-hosted install has no such service and sees none of
+the Staff surface (ADR 0008, 0026). A self-hosted install has no such service and sees none of
 it. This ADR fixes the boundary: what crosses it, and in which direction.
 
 It is unrelated to the **EE license key** (ADR 0014, mechanism (a)): an offline runtime key and an
@@ -25,17 +25,17 @@ external service have different lifecycles, and the two are not unified into one
   snapshotted live). Events ingested, seats and "active" contacts wait until a reader needs them.
 - **Live usage.** The open period's figures with a `final` flag and `computed_at`, served from a
   worker or cache and counting in-flight sends, never a recount on read.
-- **The external service reads; the core never calls out.** Through the Operator surface the
+- **The external service reads; the core never calls out.** Through the Staff surface the
   service reads per-Workspace aggregates (Usage snapshot and Live usage), computed from the core's
   own tables so a retry or a replay is idempotent, and the Workspaces created since a cursor, with
   their owner (identity and whether the email is verified). The core holds no address of the
   service and carries no outbound configuration for it.
-- **Operator hold.** A reversible Workspace freeze set through the Operator surface for a reason
+- **Staff hold.** A reversible Workspace freeze set through the Staff surface for a reason
   that is not reputation. Each hold is stored separately under an opaque key chosen by whoever
   sets it, with a machine reason code, a message shown to the Workspace Owner and an **expiry that
   the setter must renew**, so an unavailable service cannot freeze Workspaces for good. A hold is
   cleared by its own setter or by its expiry; any active hold freezes sending. Every change
-  records the Operator that made it. It reuses the **same core send chokepoint** as suspension
+  records the Staff member that made it. It reuses the **same core send chokepoint** as suspension
   (ADR 0007, 0015) but is a distinct cause, never a repurposing of it. It freezes all three send
   surfaces, and messages are **held, not failed**: they wait and go out when the hold lifts. The
   core has no grace period or retry logic of its own.
@@ -71,7 +71,7 @@ external service have different lifecycles, and the two are not unified into one
 
 ## Consequences
 
-- A self-hosted install has no Operator surface (ADR 0008), so it has no external reads, no Operator
+- A self-hosted install has no Staff surface (ADR 0008), so it has no external reads, no Staff member
   hold and no account link. The AGPL core gains only a generalized "is sending frozen, and why"
   check, which already existed for suspension.
 - The coupling is exactly two contracts: read usage and new Workspaces, write holds. Nothing

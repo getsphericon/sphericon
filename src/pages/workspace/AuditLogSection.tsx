@@ -436,7 +436,7 @@ function FilterForm({
             data={[
               { value: 'user', label: t(($) => $.settings.auditLog.kindUser) },
               { value: 'api_token', label: t(($) => $.settings.auditLog.kindApiToken) },
-              { value: 'operator', label: t(($) => $.settings.auditLog.kindOperator) },
+              { value: 'staff', label: t(($) => $.settings.auditLog.kindStaff) },
               { value: 'system', label: t(($) => $.settings.auditLog.kindSystem) },
             ]}
             {...form.getInputProps('actorKind')}
@@ -465,7 +465,7 @@ function FilterForm({
   )
 }
 
-const ACTOR_KINDS = ['user', 'api_token', 'operator', 'system'] as const
+const ACTOR_KINDS = ['user', 'api_token', 'staff', 'system'] as const
 
 function auditFilterKind(value: string | null) {
   return ACTOR_KINDS.find((kind) => kind === value)

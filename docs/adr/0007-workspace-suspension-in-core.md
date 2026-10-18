@@ -11,7 +11,7 @@ only reliable choke point — a SaaS-layer gate in front of core would be bypass
 calling the send path directly. So the core ships the mechanism: the `suspended` state with
 its attribution fields (actor + reason), the send-path refusal, an owner-facing notice on
 `/site`, and a bare `sphericon workspace suspend/unsuspend` CLI. Everything above the mechanism —
-the automated abuse detector, the Operator console, impersonation — is closed **EE/SaaS**.
+the automated abuse detector, the Staff console, impersonation — is closed **EE/SaaS**.
 
 ## Considered options
 
@@ -22,9 +22,9 @@ the automated abuse detector, the Operator console, impersonation — is closed 
 ## Consequences
 
 - Self-hosted (typically one workspace, doesn't police itself) gets the full mechanism and a CLI
-  toggle, and needs nothing more — no Operator, no console.
+  toggle, and needs nothing more — no Staff member, no console.
 - The automated detector only fires above a minimum send volume (a complaint/bounce _rate_ is
-  noise at low volume), notifies the owner, and is one-click reversible by an Operator — bounding
+  noise at low volume), notifies the owner, and is one-click reversible by a Staff member — bounding
   the blast radius of a false positive on a legitimate sender.
 - Impersonation and business dashboards are deferred out of the first version.
 
@@ -34,7 +34,7 @@ The send-path refusal is the **`Held`** outcome of the single Outbound send modu
 ([[0015-outbound-send-single-chokepoint]]), checked for every message on all three surfaces. It is
 a reversible, source-level hold, not a per-recipient skip: a Broadcast in flight pauses with its
 remaining recipients still pending and resumes on unsuspend, Automation Enrollments are held, and
-Transactional requests get a 4xx. An Operator hold (ADR 0009) is a second freeze reason answered by
+Transactional requests get a 4xx. A Staff hold (ADR 0009) is a second freeze reason answered by
 the same question, never merged with this one.
 
-See [[0026-operator-console-and-abuse-detector]] for the Operator console and the detector.
+See [[0026-operator-console-and-abuse-detector]] for the Staff console and the detector.

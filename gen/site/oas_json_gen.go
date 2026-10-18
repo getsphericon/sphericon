@@ -5554,8 +5554,8 @@ func (s *SiteAuditActorKind) Decode(d *jx.Decoder) error {
 		*s = SiteAuditActorKindUser
 	case SiteAuditActorKindAPIToken:
 		*s = SiteAuditActorKindAPIToken
-	case SiteAuditActorKindOperator:
-		*s = SiteAuditActorKindOperator
+	case SiteAuditActorKindStaff:
+		*s = SiteAuditActorKindStaff
 	case SiteAuditActorKindSystem:
 		*s = SiteAuditActorKindSystem
 	default:

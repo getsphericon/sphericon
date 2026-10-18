@@ -6,24 +6,21 @@ import { notifications } from '@mantine/notifications'
 import { useTranslation } from 'react-i18next'
 
 import {
-  operatorWorkspacesGetQueryKey,
-  operatorWorkspacesListQueryKey,
-  operatorWorkspacesExemptMutation,
-  operatorWorkspacesSuspendMutation,
-  operatorWorkspacesUnexemptMutation,
-  operatorWorkspacesUnsuspendMutation,
-} from '../generated/operator/@tanstack/react-query.gen.ts'
-import type {
-  OperatorExemptionChange,
-  OperatorSuspensionChange,
-} from '../generated/operator/types.gen.ts'
+  staffWorkspacesGetQueryKey,
+  staffWorkspacesListQueryKey,
+  staffWorkspacesExemptMutation,
+  staffWorkspacesSuspendMutation,
+  staffWorkspacesUnexemptMutation,
+  staffWorkspacesUnsuspendMutation,
+} from '../generated/staff/@tanstack/react-query.gen.ts'
+import type { StaffExemptionChange, StaffSuspensionChange } from '../generated/staff/types.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 
 // Both actions answer 200 with whether anything changed, so a no-op says so instead of
 // looking like a success.
 function useChangeNotice(changedMessage: string, unchangedMessage: string) {
   const { t } = useTranslation()
-  return (change: OperatorSuspensionChange | OperatorExemptionChange) => {
+  return (change: StaffSuspensionChange | StaffExemptionChange) => {
     notifications.show(
       change.changed
         ? {
@@ -41,10 +38,7 @@ function useChangeNotice(changedMessage: string, unchangedMessage: string) {
 }
 
 function useInvalidate(workspaceId: string) {
-  return [
-    operatorWorkspacesGetQueryKey({ path: { workspaceId } }),
-    operatorWorkspacesListQueryKey(),
-  ]
+  return [staffWorkspacesGetQueryKey({ path: { workspaceId } }), staffWorkspacesListQueryKey()]
 }
 
 function SuspendForm({ workspaceId, onClose }: { workspaceId: string; onClose: () => void }) {
@@ -61,7 +55,7 @@ function SuspendForm({ workspaceId, onClose }: { workspaceId: string; onClose: (
     t(($) => $.console.workspace.suspend.unchanged),
   )
   const mutation = useResourceMutation({
-    mutation: operatorWorkspacesSuspendMutation(),
+    mutation: staffWorkspacesSuspendMutation(),
     invalidate: useInvalidate(workspaceId),
     errorTitle: t(($) => $.console.workspace.suspend.error),
     onDone: (change) => {
@@ -119,7 +113,7 @@ export function SuspensionActions({
     t(($) => $.console.workspace.unsuspend.unchanged),
   )
   const unsuspend = useResourceMutation({
-    mutation: operatorWorkspacesUnsuspendMutation(),
+    mutation: staffWorkspacesUnsuspendMutation(),
     invalidate: useInvalidate(workspaceId),
     errorTitle: t(($) => $.console.workspace.unsuspend.error),
     onDone: notifyUnchanged,
@@ -170,13 +164,13 @@ export function ExemptionAction({ workspaceId, exempt }: { workspaceId: string; 
     t(($) => $.console.workspace.abuse.unchanged),
   )
   const exemptMutation = useResourceMutation({
-    mutation: operatorWorkspacesExemptMutation(),
+    mutation: staffWorkspacesExemptMutation(),
     invalidate: useInvalidate(workspaceId),
     errorTitle: t(($) => $.console.workspace.abuse.error),
     onDone: notifyUnchanged,
   })
   const unexemptMutation = useResourceMutation({
-    mutation: operatorWorkspacesUnexemptMutation(),
+    mutation: staffWorkspacesUnexemptMutation(),
     invalidate: useInvalidate(workspaceId),
     errorTitle: t(($) => $.console.workspace.abuse.error),
     onDone: notifyUnchanged,

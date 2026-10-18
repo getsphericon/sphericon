@@ -1,4 +1,4 @@
-# Operator holds (ADR 0009). Both rows are lapsed, so no fixture Workspace is frozen: a
+# Staff holds (ADR 0009). Both rows are lapsed, so no fixture Workspace is frozen: a
 # test that wants a freeze sets a hold through the service endpoints (or the scoped client).
 - id: 1 # fixture: HoldAcmeLapsed
   key: lapsed

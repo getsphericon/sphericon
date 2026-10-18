@@ -403,10 +403,10 @@ const (
 	InitechAdminAdaPassword = "ada-test-password"
 	// InitechAdminMembershipID is from fixtures/memberships.
 	InitechAdminMembershipID = 7
-	// InitechAuditOperatorSuspendAction is from fixtures/audit_entries.
-	InitechAuditOperatorSuspendAction = "workspace.suspend"
-	// InitechAuditOperatorSuspendID is from fixtures/audit_entries.
-	InitechAuditOperatorSuspendID = 7
+	// InitechAuditStaffSuspendAction is from fixtures/audit_entries.
+	InitechAuditStaffSuspendAction = "workspace.suspend"
+	// InitechAuditStaffSuspendID is from fixtures/audit_entries.
+	InitechAuditStaffSuspendID = 7
 	// InitechAuditUserTagAction is from fixtures/audit_entries.
 	InitechAuditUserTagAction = "tag.create"
 	// InitechAuditUserTagID is from fixtures/audit_entries.
@@ -501,28 +501,6 @@ const (
 	MemberMaryName = "Mary"
 	// MemberMaryPassword is from fixtures/users.
 	MemberMaryPassword = "mary-test-password"
-	// OperatorAlsoCustomerEmail is from fixtures/operators.
-	OperatorAlsoCustomerEmail = "info@getsphericon.com"
-	// OperatorAlsoCustomerID is from fixtures/operators.
-	OperatorAlsoCustomerID = 3
-	// OperatorAlsoCustomerPassword is from fixtures/operators.
-	OperatorAlsoCustomerPassword = "operator-both-password"
-	// OperatorAlsoCustomerTotpSecret is from fixtures/operators.
-	OperatorAlsoCustomerTotpSecret = "MFRGGZDFMZTWQ2LK"
-	// OperatorEnrolledEmail is from fixtures/operators.
-	OperatorEnrolledEmail = "staff@sphericon.test"
-	// OperatorEnrolledID is from fixtures/operators.
-	OperatorEnrolledID = 1
-	// OperatorEnrolledPassword is from fixtures/operators.
-	OperatorEnrolledPassword = "operator-test-password"
-	// OperatorEnrolledTotpSecret is from fixtures/operators.
-	OperatorEnrolledTotpSecret = "KRSXG5CTMVRXEZLU"
-	// OperatorFreshEmail is from fixtures/operators.
-	OperatorFreshEmail = "fresh-staff@sphericon.test"
-	// OperatorFreshID is from fixtures/operators.
-	OperatorFreshID = 2
-	// OperatorFreshPassword is from fixtures/operators.
-	OperatorFreshPassword = "operator-fresh-password"
 	// OutboundMessageBystanderDestination is from fixtures/outbound_messages.
 	OutboundMessageBystanderDestination = "ben@initech.test"
 	// OutboundMessageBystanderID is from fixtures/outbound_messages.
@@ -691,6 +669,28 @@ const (
 	SoylentName = "Soylent"
 	// SoylentSlug is from fixtures/workspaces.
 	SoylentSlug = "soylent"
+	// StaffAlsoCustomerEmail is from fixtures/staff_members.
+	StaffAlsoCustomerEmail = "info@getsphericon.com"
+	// StaffAlsoCustomerID is from fixtures/staff_members.
+	StaffAlsoCustomerID = 3
+	// StaffAlsoCustomerPassword is from fixtures/staff_members.
+	StaffAlsoCustomerPassword = "staff-both-password"
+	// StaffAlsoCustomerTotpSecret is from fixtures/staff_members.
+	StaffAlsoCustomerTotpSecret = "MFRGGZDFMZTWQ2LK"
+	// StaffEnrolledEmail is from fixtures/staff_members.
+	StaffEnrolledEmail = "staff@sphericon.test"
+	// StaffEnrolledID is from fixtures/staff_members.
+	StaffEnrolledID = 1
+	// StaffEnrolledPassword is from fixtures/staff_members.
+	StaffEnrolledPassword = "staff-test-password"
+	// StaffEnrolledTotpSecret is from fixtures/staff_members.
+	StaffEnrolledTotpSecret = "KRSXG5CTMVRXEZLU"
+	// StaffFreshEmail is from fixtures/staff_members.
+	StaffFreshEmail = "fresh-staff@sphericon.test"
+	// StaffFreshID is from fixtures/staff_members.
+	StaffFreshID = 2
+	// StaffFreshPassword is from fixtures/staff_members.
+	StaffFreshPassword = "staff-fresh-password"
 	// StaleLoginAttemptEmail is from fixtures/auth_attempts.
 	StaleLoginAttemptEmail = "stale@attempts.test"
 	// StaleLoginAttemptID is from fixtures/auth_attempts.

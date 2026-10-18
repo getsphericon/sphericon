@@ -1,5 +1,5 @@
 // Package otpcode is the TOTP arithmetic shared by every second step (a User's Second
-// factor, ADR 0020, and an Operator's TOTP, ADR 0026): new keys with their QR code, and
+// factor, ADR 0020, and a Staff member's TOTP, ADR 0026): new keys with their QR code, and
 // matching a submitted code against a secret at a clock. It holds no state: each caller
 // stores the last accepted time step itself and makes the conditional write that makes
 // a code single-use.

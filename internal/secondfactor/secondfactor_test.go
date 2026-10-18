@@ -187,11 +187,11 @@ func TestResetWithoutASecondFactorChangesNothing(t *testing.T) {
 	assert.Equal(t, before.SessionEpoch, after.SessionEpoch, "no session ends")
 }
 
-func TestOperatorResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
+func TestStaffResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
 	env, _ := setup(t)
 	ctx := t.Context()
 
-	require.NoError(t, env.SecondFactor.ResetByOperator(ctx, fixtures.SecondFactorSamID, "cli"))
+	require.NoError(t, env.SecondFactor.ResetByStaff(ctx, fixtures.SecondFactorSamID, "cli"))
 
 	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
@@ -206,6 +206,6 @@ func TestOperatorResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
 	assert.Equal(t, int64(fixtures.GlobexID), got[0].WorkspaceID)
 	assert.Equal(t, int64(fixtures.UmbrellaID), got[1].WorkspaceID)
 	for _, e := range got {
-		assert.Equal(t, events.ActorOperator, e.ActorKind)
+		assert.Equal(t, events.ActorStaff, e.ActorKind)
 	}
 }

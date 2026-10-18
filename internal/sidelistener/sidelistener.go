@@ -1,5 +1,5 @@
 // Package sidelistener is an opt-in HTTP listener beside the public port (ADR 0018):
-// the metrics listener and the internal listener of the Operator's service endpoints
+// the metrics listener and the internal listener of the Staff member's service endpoints
 // (ADR 0026) are both one. The network boundary is its control, so it binds only when
 // an address is configured and a bind failure is fatal.
 package sidelistener

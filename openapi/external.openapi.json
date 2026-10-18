@@ -7638,7 +7638,7 @@
         "name": "actorId",
         "in": "query",
         "required": false,
-        "description": "Only entries by the actor with this id (a User id or an API token id); ignored for the operator kind",
+        "description": "Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind",
         "schema": {
           "type": "string"
         },
@@ -7928,7 +7928,7 @@
                 "$ref": "#/components/schemas/AuditActorKind"
               }
             ],
-            "description": "The kind of actor; an operator is shown as \"sphericon staff\""
+            "description": "The kind of actor; a staff member is shown as \"sphericon staff\""
           },
           "id": {
             "type": "string",
@@ -7945,7 +7945,7 @@
       },
       "AuditActorKind": {
         "type": "string",
-        "enum": ["user", "api_token", "operator", "system"],
+        "enum": ["user", "api_token", "staff", "system"],
         "description": "Who performed an audited change"
       },
       "AuditEntryList": {

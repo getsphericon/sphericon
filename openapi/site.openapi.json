@@ -6438,7 +6438,7 @@
         "name": "actorId",
         "in": "query",
         "required": false,
-        "description": "Only entries by the actor with this id (a User id or an API token id); ignored for the operator kind",
+        "description": "Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind",
         "schema": {
           "type": "string"
         },
@@ -7798,7 +7798,7 @@
                 "$ref": "#/components/schemas/SiteAuditActorKind"
               }
             ],
-            "description": "The kind of actor; an operator is shown to the customer as \"sphericon staff\""
+            "description": "The kind of actor; a staff member is shown to the customer as \"sphericon staff\""
           },
           "id": {
             "type": "string",
@@ -7815,7 +7815,7 @@
       },
       "SiteAuditActorKind": {
         "type": "string",
-        "enum": ["user", "api_token", "operator", "system"],
+        "enum": ["user", "api_token", "staff", "system"],
         "description": "Who performed an audited change"
       },
       "SiteAuditEntryList": {
@@ -9175,14 +9175,14 @@
         "format": "int32",
         "minimum": 1,
         "maximum": 100000000,
-        "description": "A rolling 24-hour Send rate limit the operator may set"
+        "description": "A rolling 24-hour Send rate limit the staff member may set"
       },
       "SiteMaxPerSecond": {
         "type": "integer",
         "format": "int32",
         "minimum": 1,
         "maximum": 10000,
-        "description": "A per-second Send rate limit the operator may set"
+        "description": "A per-second Send rate limit the staff member may set"
       },
       "SiteMembershipResource": {
         "type": "object",
@@ -10512,7 +10512,7 @@
             "description": "True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a money reason, not for abuse"
           }
         },
-        "description": "An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's\nmembers see it. It is not a suspension: it is set from outside, carries its own\nmessage, and lifts by itself at its expiry."
+        "description": "A Staff hold on the Workspace's outbound sending (ADR 0009), as the Workspace's\nmembers see it. It is not a suspension: it is set from outside, carries its own\nmessage, and lifts by itself at its expiry."
       },
       "SiteWorkspaceResource": {
         "type": "object",
@@ -10595,7 +10595,7 @@
             "items": {
               "$ref": "#/components/schemas/SiteWorkspaceHold"
             },
-            "description": "The Operator holds active now, oldest key first; empty while nothing holds sending.\nAny one freezes every send surface, like a suspension, but a lapsed hold is never\nlisted."
+            "description": "The Staff holds active now, oldest key first; empty while nothing holds sending.\nAny one freezes every send surface, like a suspension, but a lapsed hold is never\nlisted."
           },
           "secondFactorRequiredAt": {
             "type": "string",

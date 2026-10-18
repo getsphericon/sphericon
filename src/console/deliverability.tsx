@@ -1,14 +1,14 @@
 import { Card, Group, Stack, Table, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import type { OperatorDeliverability, OperatorRate } from '../generated/operator/types.gen.ts'
+import type { StaffDeliverability, StaffRate } from '../generated/staff/types.gen.ts'
 import { resolveLocale } from '../i18n.ts'
 import { formatPercent } from '../utils/percent.ts'
 
 // A rate as its percentage over its "<numerator> / <denominator>" counts: the counts always
 // show, and the percentage is replaced by the floor notice while the rate is undefined
 // (ADR 0011).
-function RateCell({ rate, floor }: { rate: OperatorRate; floor: number }) {
+function RateCell({ rate, floor }: { rate: StaffRate; floor: number }) {
   const { t } = useTranslation()
 
   return (
@@ -29,7 +29,7 @@ function RateCell({ rate, floor }: { rate: OperatorRate; floor: number }) {
 
 // The Workspace's Complaint and Bounce rates per Sending domain and its send volume over
 // the trailing window: counts only, never content (ADR 0026).
-export function DeliverabilityCard({ deliverability }: { deliverability: OperatorDeliverability }) {
+export function DeliverabilityCard({ deliverability }: { deliverability: StaffDeliverability }) {
   const { t } = useTranslation()
 
   return (

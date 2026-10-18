@@ -3,7 +3,7 @@
 // hours (the rates of internal/reputation, no new math) and acts on two tiers. The lower
 // one only warns the owners by email; the higher one freezes the Workspace through the
 // core suspension (actor `system`) and tells them. It never lifts a suspension: only an
-// Operator does, and unsuspending stamps cleared_at, after which only newer Events count.
+// Staff member does, and unsuspending stamps cleared_at, after which only newer Events count.
 //
 // Governed by ee/LICENSE, not the AGPL.
 package abuse

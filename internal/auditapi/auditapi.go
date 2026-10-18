@@ -48,8 +48,8 @@ func Page(cursor string, limit int32, limitSet bool) (int64, int, error) {
 // NextCursor renders the cursor of the next page.
 func NextCursor(next int64) string { return strconv.FormatInt(next, 10) }
 
-// View is an Audit entry as a customer sees it. An Operator appears only as
-// events.OperatorLabel, with no id.
+// View is an Audit entry as a customer sees it. A Staff member appears only as
+// events.StaffLabel, with no id.
 type View struct {
 	ID         string
 	OccurredAt time.Time
@@ -86,8 +86,8 @@ func ViewOf(e *ent.AuditEntry) View {
 		UserAgent:  e.UserAgent,
 	}
 	if events.IsStaff(e.ActorKind) {
-		label := events.OperatorLabel
-		v.ActorKind, v.ActorID, v.ActorName = events.ActorOperator, nil, &label
+		label := events.StaffLabel
+		v.ActorKind, v.ActorID, v.ActorName = events.ActorStaff, nil, &label
 	}
 	v.Billing = isBillingHoldChange(e)
 	if len(e.Diff) > 0 {

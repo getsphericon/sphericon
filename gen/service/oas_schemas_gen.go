@@ -115,7 +115,7 @@ func (s *HoldList) SetItems(val []HoldResource) {
 
 func (*HoldList) serviceHoldsListRes() {}
 
-// An Operator hold: one reversible freeze of a Workspace's outbound sending (ADR 0009).
+// A Staff hold: one reversible freeze of a Workspace's outbound sending (ADR 0009).
 // Ref: #/components/schemas/HoldResource
 type HoldResource struct {
 	// The key the setter chose; unique per Workspace.

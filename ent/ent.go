@@ -30,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
-	"github.com/getsphericon/sphericon/ent/operator"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
@@ -39,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -125,7 +125,6 @@ func checkColumn(t, c string) error {
 			membership.Table:         membership.ValidColumn,
 			oauthclient.Table:        oauthclient.ValidColumn,
 			oauthcode.Table:          oauthcode.ValidColumn,
-			operator.Table:           operator.ValidColumn,
 			outboundmessage.Table:    outboundmessage.ValidColumn,
 			outboxmessage.Table:      outboxmessage.ValidColumn,
 			outboxoffset.Table:       outboxoffset.ValidColumn,
@@ -134,6 +133,7 @@ func checkColumn(t, c string) error {
 			sendlimiter.Table:        sendlimiter.ValidColumn,
 			sendingdomain.Table:      sendingdomain.ValidColumn,
 			servicecredential.Table:  servicecredential.ValidColumn,
+			staffmember.Table:        staffmember.ValidColumn,
 			suppression.Table:        suppression.ValidColumn,
 			tag.Table:                tag.ValidColumn,
 			unsubscribe.Table:        unsubscribe.ValidColumn,

@@ -2,14 +2,14 @@ import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
 
 import {
-  handleOperatorWorkspaceAuditList,
-  handleOperatorWorkspacesExempt,
-  handleOperatorWorkspacesGet,
-  handleOperatorWorkspacesSuspend,
-  handleOperatorWorkspacesUnexempt,
-  handleOperatorWorkspacesUnsuspend,
-} from '../generated/operator/msw.gen.ts'
-import type { OperatorWorkspaceDetailResource } from '../generated/operator/types.gen.ts'
+  handleStaffWorkspaceAuditList,
+  handleStaffWorkspacesExempt,
+  handleStaffWorkspacesGet,
+  handleStaffWorkspacesSuspend,
+  handleStaffWorkspacesUnexempt,
+  handleStaffWorkspacesUnsuspend,
+} from '../generated/staff/msw.gen.ts'
+import type { StaffWorkspaceDetailResource } from '../generated/staff/types.gen.ts'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
@@ -23,14 +23,14 @@ const MOUNT = {
   initialPath: consoleWorkspaceRoute.id.replace('$workspaceId', '5'),
 }
 
-const HOOLI: OperatorWorkspaceDetailResource = {
+const HOOLI: StaffWorkspaceDetailResource = {
   id: '5',
   slug: 'hooli',
   name: 'Hooli',
   createdAt: '2026-01-01T00:00:00Z',
   suspension: {
     at: '2026-02-01T00:00:00Z',
-    actor: { kind: 'operator', id: 'op-fixture' },
+    actor: { kind: 'staff', id: 'op-fixture' },
     reason: 'abuse report',
   },
   deliverability: { windowHours: 24, volumeFloor: 1000, sendVolume: 0, domains: [] },
@@ -56,13 +56,13 @@ const BELOW_FLOOR = {
 
 // The page always reads the Audit log; tests that care override it.
 beforeEach(() => {
-  worker.use(handleOperatorWorkspaceAuditList({ body: { items: [] } }))
+  worker.use(handleStaffWorkspaceAuditList({ body: { items: [] } }))
 })
 
-test('lists the audit log with an Operator shown as sphericon staff, and loads more', async () => {
+test('lists the audit log with a staff member shown as sphericon staff, and loads more', async () => {
   worker.use(
-    handleOperatorWorkspacesGet({ body: HOOLI }),
-    handleOperatorWorkspaceAuditList(({ request }) =>
+    handleStaffWorkspacesGet({ body: HOOLI }),
+    handleStaffWorkspaceAuditList(({ request }) =>
       new URL(request.url).searchParams.get('cursor')
         ? HttpResponse.json({
             items: [
@@ -80,7 +80,7 @@ test('lists the audit log with an Operator shown as sphericon staff, and loads m
               {
                 id: '2',
                 occurredAt: '2026-02-01T00:00:00Z',
-                actor: { kind: 'operator', name: 'sphericon staff' },
+                actor: { kind: 'staff', name: 'sphericon staff' },
                 action: 'workspace.suspend',
                 target: { type: 'workspace', id: '5', name: 'Hooli' },
               },
@@ -100,8 +100,8 @@ test('lists the audit log with an Operator shown as sphericon staff, and loads m
 
 test('a billing hold change in the audit log names the credential and shows billing activity', async () => {
   worker.use(
-    handleOperatorWorkspacesGet({ body: HOOLI }),
-    handleOperatorWorkspaceAuditList({
+    handleStaffWorkspacesGet({ body: HOOLI }),
+    handleStaffWorkspaceAuditList({
       body: {
         items: [
           {
@@ -123,32 +123,32 @@ test('a billing hold change in the audit log names the credential and shows bill
 })
 
 test('an empty audit log says so', async () => {
-  worker.use(handleOperatorWorkspacesGet({ body: HOOLI }))
+  worker.use(handleStaffWorkspacesGet({ body: HOOLI }))
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('No recorded changes')).toBeInTheDocument()
 })
 
 test('shows the metadata and who suspended the workspace, and why', async () => {
-  worker.use(handleOperatorWorkspacesGet({ body: HOOLI }))
+  worker.use(handleStaffWorkspacesGet({ body: HOOLI }))
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByRole('heading', { name: 'Hooli' })).toBeInTheDocument()
   await expect.element(screen.getByText('hooli', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('Operator op-fixture')).toBeInTheDocument()
+  await expect.element(screen.getByText('Staff member op-fixture')).toBeInTheDocument()
   await expect.element(screen.getByText('abuse report')).toBeInTheDocument()
 })
 
 test('a workspace that is not suspended says so', async () => {
-  worker.use(handleOperatorWorkspacesGet({ body: { ...HOOLI, suspension: null } }))
+  worker.use(handleStaffWorkspacesGet({ body: { ...HOOLI, suspension: null } }))
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('Sending is not suspended.')).toBeInTheDocument()
 })
 
-test('a non-operator actor shows its kind, not an id', async () => {
+test('a non-staff actor shows its kind, not an id', async () => {
   worker.use(
-    handleOperatorWorkspacesGet({
+    handleStaffWorkspacesGet({
       body: {
         ...HOOLI,
         suspension: { at: '2026-02-01T00:00:00Z', actor: { kind: 'cli' }, reason: null },
@@ -162,7 +162,7 @@ test('a non-operator actor shows its kind, not an id', async () => {
 })
 
 test('an unknown workspace shows the error', async () => {
-  worker.use(handleOperatorWorkspacesGet(() => problem(404, { detail: 'workspace not found' })))
+  worker.use(handleStaffWorkspacesGet(() => problem(404, { detail: 'workspace not found' })))
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('workspace not found')).toBeInTheDocument()
@@ -170,7 +170,7 @@ test('an unknown workspace shows the error', async () => {
 
 test('shows the send volume and the rates with their counts per sending domain', async () => {
   worker.use(
-    handleOperatorWorkspacesGet({
+    handleStaffWorkspacesGet({
       body: {
         ...HOOLI,
         deliverability: {
@@ -194,7 +194,7 @@ test('shows the send volume and the rates with their counts per sending domain',
 
 test('a rate below the volume floor shows the notice and its counts, never a percentage', async () => {
   worker.use(
-    handleOperatorWorkspacesGet({
+    handleStaffWorkspacesGet({
       body: {
         ...HOOLI,
         deliverability: {
@@ -217,7 +217,7 @@ test('a rate below the volume floor shows the notice and its counts, never a per
 })
 
 test('a workspace with no sending domains says so', async () => {
-  worker.use(handleOperatorWorkspacesGet({ body: HOOLI }))
+  worker.use(handleStaffWorkspacesGet({ body: HOOLI }))
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('No sending domains.')).toBeInTheDocument()
@@ -226,8 +226,8 @@ test('a workspace with no sending domains says so', async () => {
 test('suspending needs a reason, and sends it only after the confirm button', async () => {
   const suspended: unknown[] = []
   worker.use(
-    handleOperatorWorkspacesGet({ body: { ...HOOLI, suspension: null } }),
-    handleOperatorWorkspacesSuspend(async ({ request, params }) => {
+    handleStaffWorkspacesGet({ body: { ...HOOLI, suspension: null } }),
+    handleStaffWorkspacesSuspend(async ({ request, params }) => {
       suspended.push({ id: params.workspaceId, body: await request.json() })
       return HttpResponse.json({ changed: true, workspace: HOOLI })
     }),
@@ -249,8 +249,8 @@ test('suspending needs a reason, and sends it only after the confirm button', as
 test('lifting a suspension asks for confirmation first', async () => {
   const lifted: string[] = []
   worker.use(
-    handleOperatorWorkspacesGet({ body: HOOLI }),
-    handleOperatorWorkspacesUnsuspend(({ params }) => {
+    handleStaffWorkspacesGet({ body: HOOLI }),
+    handleStaffWorkspacesUnsuspend(({ params }) => {
       lifted.push(params.workspaceId)
       return HttpResponse.json({ changed: true, workspace: { ...HOOLI, suspension: null } })
     }),
@@ -270,8 +270,8 @@ test('lifting a suspension asks for confirmation first', async () => {
 
 test('a no-op says nothing changed', async () => {
   worker.use(
-    handleOperatorWorkspacesGet({ body: HOOLI }),
-    handleOperatorWorkspacesUnsuspend({ body: { changed: false, workspace: HOOLI } }),
+    handleStaffWorkspacesGet({ body: HOOLI }),
+    handleStaffWorkspacesUnsuspend({ body: { changed: false, workspace: HOOLI } }),
   )
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
@@ -285,7 +285,7 @@ test('a no-op says nothing changed', async () => {
 
 test('lists the active holds with key, reason code, message, since, expiry and setter', async () => {
   worker.use(
-    handleOperatorWorkspacesGet({
+    handleStaffWorkspacesGet({
       body: {
         ...HOOLI,
         holds: [
@@ -313,7 +313,7 @@ test('lists the active holds with key, reason code, message, since, expiry and s
   )
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
-  await expect.element(screen.getByRole('heading', { name: 'Operator holds' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('heading', { name: 'Staff holds' })).toBeInTheDocument()
   await expect.element(screen.getByText('k1', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('review', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Sending is paused for now.')).toBeInTheDocument()
@@ -323,7 +323,7 @@ test('lists the active holds with key, reason code, message, since, expiry and s
 })
 
 test('a workspace without holds says so', async () => {
-  worker.use(handleOperatorWorkspacesGet({ body: HOOLI }))
+  worker.use(handleStaffWorkspacesGet({ body: HOOLI }))
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('No active holds.')).toBeInTheDocument()
@@ -331,7 +331,7 @@ test('a workspace without holds says so', async () => {
 
 test('shows the warning the detector computes now and when the owners were last told', async () => {
   worker.use(
-    handleOperatorWorkspacesGet({
+    handleStaffWorkspacesGet({
       body: {
         ...HOOLI,
         suspension: null,
@@ -358,8 +358,8 @@ test('shows the warning the detector computes now and when the owners were last 
 test('exempting asks for confirmation first, then calls the API', async () => {
   const exempted: string[] = []
   worker.use(
-    handleOperatorWorkspacesGet({ body: HOOLI }),
-    handleOperatorWorkspacesExempt(({ params }) => {
+    handleStaffWorkspacesGet({ body: HOOLI }),
+    handleStaffWorkspacesExempt(({ params }) => {
       exempted.push(params.workspaceId)
       return HttpResponse.json({ changed: true, workspace: { ...HOOLI, exempt: true } })
     }),
@@ -380,10 +380,10 @@ test('exempting asks for confirmation first, then calls the API', async () => {
 test('an exempt workspace offers to police it again', async () => {
   const policed: string[] = []
   worker.use(
-    handleOperatorWorkspacesGet({
+    handleStaffWorkspacesGet({
       body: { ...HOOLI, exempt: true, abuse: { exempt: true } },
     }),
-    handleOperatorWorkspacesUnexempt(({ params }) => {
+    handleStaffWorkspacesUnexempt(({ params }) => {
       policed.push(params.workspaceId)
       return HttpResponse.json({ changed: true, workspace: HOOLI })
     }),

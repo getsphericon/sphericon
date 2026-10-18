@@ -93,7 +93,7 @@ func recipients(env *testhelper.TestEnv) []string {
 	return to
 }
 
-func TestNothingRunsWithoutTheOperatorLicense(t *testing.T) {
+func TestNothingRunsWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := time.Now()
 	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 100)
@@ -263,7 +263,7 @@ func TestAFailedFreezeNoticeLeavesTheFreezeInPlace(t *testing.T) {
 func TestASuspendedWorkspaceIsSkippedAndKeepsItsFirstActorAndReason(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := time.Now()
-	_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.Operator("op-7"), "chargeback")
+	_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.StaffMember("op-7"), "chargeback")
 	require.NoError(t, err)
 	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10)
 
@@ -272,7 +272,7 @@ func TestASuspendedWorkspaceIsSkippedAndKeepsItsFirstActorAndReason(t *testing.T
 	require.NoError(t, err)
 	assert.Equal(t, abuse.Summary{}, summary)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
-	assert.Equal(t, workspace.SuspendedByKindOperator, *ws.SuspendedByKind)
+	assert.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
 	assert.Equal(t, "chargeback", *ws.SuspensionReason)
 	assert.Empty(t, env.SystemMail.Messages())
 }
@@ -315,7 +315,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 	d := detector(t, env)
 	_, err := d.Run(t.Context(), now)
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.Operator("1"))
+	_, err = suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.StaffMember("1"))
 	require.NoError(t, err)
 
 	immediately, err := d.Run(t.Context(), now.Add(time.Minute))
@@ -336,7 +336,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 
 func TestUnsuspendingRecordsTheClearance(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.HooliID, suspension.Operator("1"))
+	_, err := suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.HooliID, suspension.StaffMember("1"))
 	require.NoError(t, err)
 
 	assert.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.HooliID).ClearedAt)

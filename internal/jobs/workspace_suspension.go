@@ -34,7 +34,7 @@ func NotifyWorkspaceSuspended(ctx context.Context, client *ent.Client, sender me
 	if ws.SuspensionReason != nil {
 		reason = *ws.SuspensionReason
 	}
-	// The owner never sees an Operator's id: the CLI and every Operator are "sphericon staff".
+	// The owner never sees a Staff member's id: the CLI and every Staff member are "sphericon staff".
 	actorKey := "email.workspace_suspended.actor_staff"
 	if ws.SuspendedByKind != nil && *ws.SuspendedByKind == workspace.SuspendedByKindSystem {
 		actorKey = "email.workspace_suspended.actor_system"

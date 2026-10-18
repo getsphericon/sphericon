@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { ButtonLink } from '../components/RouterLink.tsx'
-import { operatorWorkspacesGetOptions } from '../generated/operator/@tanstack/react-query.gen.ts'
-import type { OperatorAbuse, OperatorSuspension } from '../generated/operator/types.gen.ts'
+import { staffWorkspacesGetOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
+import type { StaffAbuse, StaffSuspension } from '../generated/staff/types.gen.ts'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
@@ -33,7 +33,7 @@ function SuspensionCard({
   suspension,
 }: {
   workspaceId: string
-  suspension: OperatorSuspension | null | undefined
+  suspension: StaffSuspension | null | undefined
 }) {
   const { t } = useTranslation()
 
@@ -57,8 +57,8 @@ function SuspensionCard({
             {formatDateTime(suspension.at)}
           </Field>
           <Field label={t(($) => $.console.workspace.suspendedBy)}>
-            {suspension.actor.kind === 'operator' && suspension.actor.id
-              ? t(($) => $.console.workspace.actorOperator, { id: suspension.actor.id })
+            {suspension.actor.kind === 'staff' && suspension.actor.id
+              ? t(($) => $.console.workspace.actorStaff, { id: suspension.actor.id })
               : t(($) => $.console.workspace.actors[suspension.actor.kind])}
           </Field>
           <Field label={t(($) => $.console.workspace.reason)}>
@@ -79,7 +79,7 @@ function SuspensionCard({
 
 // The Workspace's standing with the abuse detector (ADR 0026): whether it is exempt, the
 // warning it is in right now (computed live), and when the owners were last told.
-function AbuseCard({ workspaceId, abuse }: { workspaceId: string; abuse: OperatorAbuse }) {
+function AbuseCard({ workspaceId, abuse }: { workspaceId: string; abuse: StaffAbuse }) {
   const { t } = useTranslation()
   const never = t(($) => $.console.workspace.abuse.never)
   const warning = abuse.warning
@@ -130,7 +130,7 @@ function AbuseCard({ workspaceId, abuse }: { workspaceId: string; abuse: Operato
 export function ConsoleWorkspacePage() {
   const { t } = useTranslation()
   const { workspaceId } = consoleWorkspaceRoute.useParams()
-  const workspaceQuery = useQuery(operatorWorkspacesGetOptions({ path: { workspaceId } }))
+  const workspaceQuery = useQuery(staffWorkspacesGetOptions({ path: { workspaceId } }))
   const workspace = workspaceQuery.data
 
   return (

@@ -358,7 +358,7 @@ func (s *ApplyTagInput) SetName(val string) {
 // The actor of an Audit entry.
 // Ref: #/components/schemas/AuditActor
 type AuditActor struct {
-	// The kind of actor; an operator is shown as "sphericon staff".
+	// The kind of actor; a staff member is shown as "sphericon staff".
 	Kind AuditActorKind `json:"kind"`
 	// The actor's id (a User id or an API token id); absent for the system.
 	ID OptNilString `json:"id"`
@@ -403,7 +403,7 @@ type AuditActorKind string
 const (
 	AuditActorKindUser     AuditActorKind = "user"
 	AuditActorKindAPIToken AuditActorKind = "api_token"
-	AuditActorKindOperator AuditActorKind = "operator"
+	AuditActorKindStaff    AuditActorKind = "staff"
 	AuditActorKindSystem   AuditActorKind = "system"
 )
 
@@ -412,7 +412,7 @@ func (AuditActorKind) AllValues() []AuditActorKind {
 	return []AuditActorKind{
 		AuditActorKindUser,
 		AuditActorKindAPIToken,
-		AuditActorKindOperator,
+		AuditActorKindStaff,
 		AuditActorKindSystem,
 	}
 }
@@ -424,7 +424,7 @@ func (s AuditActorKind) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case AuditActorKindAPIToken:
 		return []byte(s), nil
-	case AuditActorKindOperator:
+	case AuditActorKindStaff:
 		return []byte(s), nil
 	case AuditActorKindSystem:
 		return []byte(s), nil
@@ -442,8 +442,8 @@ func (s *AuditActorKind) UnmarshalText(data []byte) error {
 	case AuditActorKindAPIToken:
 		*s = AuditActorKindAPIToken
 		return nil
-	case AuditActorKindOperator:
-		*s = AuditActorKindOperator
+	case AuditActorKindStaff:
+		*s = AuditActorKindStaff
 		return nil
 	case AuditActorKindSystem:
 		*s = AuditActorKindSystem

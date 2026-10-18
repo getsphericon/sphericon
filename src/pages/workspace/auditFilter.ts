@@ -9,7 +9,7 @@ const optionalText = z.coerce.string().optional().catch(undefined)
 export const auditFilterSchema = z.object({
   from: optionalText,
   to: optionalText,
-  actorKind: z.enum(['user', 'api_token', 'operator', 'system']).optional().catch(undefined),
+  actorKind: z.enum(['user', 'api_token', 'staff', 'system']).optional().catch(undefined),
   actorId: optionalText,
   action: optionalText,
   targetType: optionalText,

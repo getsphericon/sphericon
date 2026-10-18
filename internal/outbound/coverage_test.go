@@ -145,20 +145,20 @@ func TestFreezersHoldAfterTheCoreSuspensionCheck(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	open := &freezer{}
-	held := &freezer{reason: "operator_hold"}
+	held := &freezer{reason: "staff_hold"}
 	m := newModule(env, outbound.WithFreezers(open), outbound.WithFreezers(held))
 
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:frozen", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
-	assert.Equal(t, "operator_hold", res.Reason)
+	assert.Equal(t, "staff_hold", res.Reason)
 	assert.Zero(t, res.MessageID, "a freeze hold records nothing")
 	assert.Empty(t, env.CustomerMail.Messages())
 	assert.Equal(t, 1, open.calls, "freezers run in registration order, across WithFreezers calls")
 
 	hold, err := m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "")
 	require.NoError(t, err)
-	assert.Equal(t, "operator_hold", hold, "Preflight applies the same gate")
+	assert.Equal(t, "staff_hold", hold, "Preflight applies the same gate")
 
 	held.reason = ""
 	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:frozen", "a@example.com"))
@@ -168,7 +168,7 @@ func TestFreezersHoldAfterTheCoreSuspensionCheck(t *testing.T) {
 
 // Send and Preflight read one gate: with the real holds.Freezer they agree on an
 // active hold, a lapsed one and a hold the license does not honour.
-func TestSendAndPreflightAgreeOnAnOperatorHold(t *testing.T) {
+func TestSendAndPreflightAgreeOnAnStaffHold(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -197,7 +197,7 @@ func TestSendAndPreflightAgreeOnAnOperatorHold(t *testing.T) {
 	// The fixture Workspace already carries a lapsed hold.
 	agree("tx:lapsed", "")
 	create("active", time.Now().Add(time.Hour))
-	agree("tx:active", outbound.HoldOperator)
+	agree("tx:active", outbound.HoldStaff)
 	honoured = false
 	agree("tx:unlicensed", "")
 }

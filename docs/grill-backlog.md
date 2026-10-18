@@ -9,8 +9,8 @@ Legend: 🔴 launch-blocker / "can't send otherwise" · 🟡 parity with drip.co
 
 ## Done (grilled)
 
-- ✅ **Platform abuse control** — Workspace suspension (core mechanism) + Operator identity.
-  → ADR 0007, ADR 0008; CONTEXT: _Operator_, _Workspace suspension_.
+- ✅ **Platform abuse control** — Workspace suspension (core mechanism) + Staff member identity.
+  → ADR 0007, ADR 0008; CONTEXT: _Staff_, _Workspace suspension_.
 - ✅ **Sending domains** — native DKIM, verified-domain-required-to-send.
   → ADR 0010; CONTEXT: _Sending domain_.
 - ✅ **Complaint / bounce-rate metrics** — core/user-facing rate (thresholds are EE), complaint
@@ -59,9 +59,9 @@ native editor under the existing `draft`/`inactive` approval gate. Open forks:
   to be reachable over MCP at all (ADR 0016, "Send is a second lock"). Pulling the trigger is
   otherwise a human action. The `draft`/`inactive` states are the _boundary of what the AI can touch_, not just a review
   gate. The core choke points (Send-eligibility, Suppression, verified domain,
-  Workspace/Operator freeze) still guard the human's eventual send.
+  Workspace/Staff member freeze) still guard the human's eventual send.
 - **AI-authorship attribution** — reuse the actor-attribution pattern (actor `system` /
-  Operator): entities an agent creates carry "who authored — AI vs User".
+  Staff member): entities an agent creates carry "who authored — AI vs User".
 - **AI as a metered unit** — token/AI-call usage extends the Usage snapshot (ADR 0009)
   — a new metric, not a new mechanism.
 - **Skills (operating playbooks) as a distinct layer** — tools are _capability_
@@ -172,7 +172,7 @@ value, or its own concept; what mutates it (Events? automation actions?).
 ### 🟡 Audit log (workspace-scoped)
 
 Who changed what — team feature + compliance. Open forks: what's audited, retention,
-whether Operator actions (cross-workspace) log here or separately.
+whether Staff member actions (cross-workspace) log here or separately.
 
 ### 🟡 External `/api` breadth + rate limiting
 

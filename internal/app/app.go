@@ -18,7 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/accountlink"
@@ -68,10 +68,10 @@ type App struct {
 	Config *config.Config
 	Server *http.Server
 	// Metrics is the opt-in Prometheus listener (ADR 0018); nil when SPHERICON_METRICS_ADDR
-	// is empty and for the operator app.
+	// is empty and for the staff member app.
 	Metrics *telemetry.MetricsServer
 	// Internal is the opt-in internal listener of the service endpoints (ADR 0026); nil
-	// when SPHERICON_INTERNAL_ADDR is empty, without the `operator` license, and for the operator app.
+	// when SPHERICON_INTERNAL_ADDR is empty, without the `operator` license, and for the staff member app.
 	Internal *sidelistener.Server
 
 	injector       *do.RootScope
@@ -307,7 +307,7 @@ func New(env string, opts ...Option) (*App, error) {
 	}, nil
 }
 
-// ErrNotServable: Start was called on an app that has no servers (the operator app).
+// ErrNotServable: Start was called on an app that has no servers (the staff member app).
 var ErrNotServable = errors.New("app: this app has no servers to start")
 
 // ErrAlreadyStarted: Start was called a second time; an App starts once.
@@ -353,7 +353,7 @@ func (a *App) start(ctx context.Context) error {
 		}
 	}()
 	// The internal listener is bound before anything else is served for the same
-	// reason: an operator who asked for it must not silently run without it.
+	// reason: a staff member who asked for it must not silently run without it.
 	if err := a.Internal.Listen(ctx); err != nil {
 		return err
 	}
@@ -460,11 +460,11 @@ func (a *App) stop(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-// NewOperator builds the minimal app the operator commands need (config, database,
+// NewStaffMember builds the minimal app the staff member commands need (config, database,
 // ent client, system sender) without the HTTP server, the event router or the job
 // workers. Providers are lazy, so only what a command invokes is ever constructed;
 // that keeps `sphericon workspace …` quick to start and to shut down.
-func NewOperator(env string) (*App, error) {
+func NewStaffMember(env string) (*App, error) {
 	injector := do.New()
 	register(injector, env, options{})
 
@@ -543,7 +543,7 @@ func (a *App) UnsuspendWorkspace(ctx context.Context, slug string, by suspension
 
 // ResetSecondFactor clears the Second factor and Recovery codes of the User with
 // this email and ends every session of theirs (ADR 0020), recorded as
-// `user.second_factor_reset` by the Operator "cli" in each of their Workspaces. It
+// `user.second_factor_reset` by the Staff member "cli" in each of their Workspaces. It
 // reports whether anything changed: a User without a Second factor is left as is.
 func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error) {
 	client, err := do.Invoke[*entClient](a.injector)
@@ -558,53 +558,53 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	err = sf.ResetByOperator(ctx, id, "cli")
+	err = sf.ResetByStaff(ctx, id, "cli")
 	if errors.Is(err, secondfactor.ErrNotActive) {
 		return false, nil
 	}
 	return err == nil, err
 }
 
-// CreateOperator makes a platform Operator (ADR 0026) and returns its one-time password:
-// the only way an Operator comes to exist (there is no signup). It refuses a duplicate
+// CreateStaffMember makes a platform Staff member (ADR 0026) and returns its one-time password:
+// the only way a Staff member comes to exist (there is no signup). It refuses a duplicate
 // email and an instance without the `operator` license.
-func (a *App) CreateOperator(ctx context.Context, email string) (string, error) {
+func (a *App) CreateStaffMember(ctx context.Context, email string) (string, error) {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
 		return "", err
 	}
-	return edition.Operators.Create(ctx, email)
+	return edition.StaffMembers.Create(ctx, email)
 }
 
-// ResetOperatorTOTP clears the TOTP of the Operator with this email and ends its
-// sessions (ADR 0026): the only way a lost TOTP is reset. The Operator re-enrols at next
-// login. operator.ErrNotFound for an unknown email, ErrNotLicensed without the license.
-func (a *App) ResetOperatorTOTP(ctx context.Context, email string) error {
+// ResetStaffTOTP clears the TOTP of the Staff member with this email and ends its
+// sessions (ADR 0026): the only way a lost TOTP is reset. The Staff member re-enrols at next
+// login. staff.ErrNotFound for an unknown email, ErrNotLicensed without the license.
+func (a *App) ResetStaffTOTP(ctx context.Context, email string) error {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
 		return err
 	}
-	return edition.Operators.ResetTOTP(ctx, email)
+	return edition.StaffMembers.ResetTOTP(ctx, email)
 }
 
 // IssueServiceCredential creates a Service credential (ADR 0026) and returns it with its
-// value, shown once. Only the Operator's command line makes one: no endpoint can.
-func (a *App) IssueServiceCredential(ctx context.Context, in operator.IssueInput) (*operator.Issued, error) {
+// value, shown once. Only the Staff member's command line makes one: no endpoint can.
+func (a *App) IssueServiceCredential(ctx context.Context, in staff.IssueInput) (*staff.Issued, error) {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
 		return nil, err
 	}
-	return edition.Operators.IssueServiceCredential(ctx, in)
+	return edition.StaffMembers.IssueServiceCredential(ctx, in)
 }
 
 // RotateServiceCredential issues a new credential with the name and scopes of an active
 // one, leaving the old one active until it is revoked.
-func (a *App) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*operator.Issued, error) {
+func (a *App) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*staff.Issued, error) {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
 		return nil, err
 	}
-	return edition.Operators.RotateServiceCredential(ctx, id, expiresAt)
+	return edition.StaffMembers.RotateServiceCredential(ctx, id, expiresAt)
 }
 
 // RevokeServiceCredential ends a Service credential.
@@ -613,7 +613,7 @@ func (a *App) RevokeServiceCredential(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return edition.Operators.RevokeServiceCredential(ctx, id)
+	return edition.StaffMembers.RevokeServiceCredential(ctx, id)
 }
 
 // ServiceCredentials lists the Service credentials with their state, narrowed to one
@@ -623,7 +623,7 @@ func (a *App) ServiceCredentials(ctx context.Context, name string) ([]*ent.Servi
 	if err != nil {
 		return nil, err
 	}
-	return edition.Operators.ServiceCredentials(ctx, name)
+	return edition.StaffMembers.ServiceCredentials(ctx, name)
 }
 
 // Accounts is the product's Accounts module from the DI container, for harnesses that
@@ -724,7 +724,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		// The platform's own SMTP relay is operator-configured, not tenant input, so it may
+		// The platform's own SMTP relay is staff member-configured, not tenant input, so it may
 		// be a private host even where Workspace Integrations may not.
 		sender, err := buildSystemSender(cfg, registry.Default())
 		if err != nil {
@@ -773,10 +773,10 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		edition, err := ee.New(client.Client, lic, cipher, cfg.JWTSecret, operator.Config{
+		edition, err := ee.New(client.Client, lic, cipher, cfg.JWTSecret, staff.Config{
 			Abuse:        abuse.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
 			SupportEmail: cfg.SupportEmail,
-			Secret:       cfg.OperatorJWTSecret, SessionTTL: cfg.OperatorSessionTTL, HoldMaxExpiry: cfg.OperatorHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
+			Secret:       cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
 		})
 		if err != nil {
 			return nil, err
@@ -1129,7 +1129,7 @@ func register(injector do.Injector, env string, o options) {
 	})
 
 	// The handler of the internal listener (ADR 0026): the service endpoints of the
-	// Operator surface. Nil without the `operator` license.
+	// Staff surface. Nil without the `operator` license.
 	do.Provide(injector, func(i do.Injector) (*internalHandler, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -1188,12 +1188,12 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		operatorAPI, err := server.NewOperatorAPI(edition.Operator(bus.Bus, sys.EmailSender))
+		staffAPI, err := server.NewStaffAPI(edition.StaffMember(bus.Bus, sys.EmailSender))
 		if err != nil {
 			return nil, err
 		}
 
-		return server.New(cfg, database.DB, client.Client, site, external.Handler, mcp.Handler, operatorAPI)
+		return server.New(cfg, database.DB, client.Client, site, external.Handler, mcp.Handler, staffAPI)
 	})
 }
 

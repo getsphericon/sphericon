@@ -61,17 +61,17 @@ func (i Identifier) kind() string {
 	return "contact_id"
 }
 
-// Operator is who asked for the Erasure: a User (Site) or an API token (External, MCP).
-type Operator struct {
-	// Kind is OperatorUser or OperatorAPIToken.
+// Staff member is who asked for the Erasure: a User (Site) or an API token (External, MCP).
+type StaffMember struct {
+	// Kind is StaffUser or StaffAPIToken.
 	Kind string
 	ID   int64
 }
 
-// Operator kinds, as recorded on the contact.erased Event.
+// Staff member kinds, as recorded on the contact.erased Event.
 const (
-	OperatorUser     = "user"
-	OperatorAPIToken = "api_token"
+	StaffUser     = "user"
+	StaffAPIToken = "api_token"
 )
 
 // Target is a resolved data subject: what every step erases. Resolving an Identifier
@@ -90,8 +90,8 @@ type Target struct {
 	SubjectID string
 	// IdentifierKind is what the Identifier was.
 	IdentifierKind string
-	// Operator is who asked.
-	Operator Operator
+	// Staff member is who asked.
+	StaffMember StaffMember
 }
 
 // step is one part of the erasure, run inside the transaction.
@@ -110,13 +110,13 @@ func New(bus *events.Bus) *Module {
 // Erase erases the identified data subject in one transaction: either all of it
 // happens or none. ErrNotFound means the identifier resolves to nothing in the
 // Workspace (including a row of another Workspace).
-func (m *Module) Erase(ctx context.Context, s *ent.Scoped, id Identifier, op Operator) error {
+func (m *Module) Erase(ctx context.Context, s *ent.Scoped, id Identifier, op StaffMember) error {
 	return m.bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
 		target, err := resolve(ctx, ts, id)
 		if err != nil {
 			return err
 		}
-		target.Operator = op
+		target.StaffMember = op
 		for _, run := range m.steps() {
 			if err := run(ctx, ts, target, pub); err != nil {
 				return err

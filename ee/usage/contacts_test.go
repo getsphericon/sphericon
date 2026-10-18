@@ -99,7 +99,7 @@ func TestContactsDoesNotCountAnErasedContact(t *testing.T) {
 	now := at(2027, time.February, 10, 12)
 	env, _, base := contactsEnv(t, now)
 	require.NoError(t, erasure.New(env.Bus).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
-		erasure.ByContactID(fixtures.ContactAliceID), erasure.Operator{Kind: erasure.OperatorAPIToken, ID: 1}))
+		erasure.ByContactID(fixtures.ContactAliceID), erasure.StaffMember{Kind: erasure.StaffAPIToken, ID: 1}))
 	addContact(t, env, "after-erasure@example.com")
 
 	refreshAt(t, env, now)
@@ -138,7 +138,7 @@ func TestContactsPeakIsFrozenAtTheCloseAndTheNextPeriodStartsFromWhatRemains(t *
 	assert.Equal(t, base+2, figureOf(t, env, feb, usage.Contacts).Value, "February starts from the Contacts left in January")
 }
 
-func TestContactsIsNotMaintainedWithoutTheOperatorLicense(t *testing.T) {
+func TestContactsIsNotMaintainedWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	addContact(t, env, "unlicensed@example.com")
 

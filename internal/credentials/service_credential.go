@@ -7,12 +7,12 @@ import (
 	"regexp"
 )
 
-const serviceCredentialPrefix = "omsc"
+const serviceCredentialPrefix = "smsc"
 
-var serviceCredentialRe = regexp.MustCompile(`^omsc_([a-z0-9]+)_([A-Za-z0-9_-]+)$`)
+var serviceCredentialRe = regexp.MustCompile(`^smsc_([a-z0-9]+)_([A-Za-z0-9_-]+)$`)
 
 // GenerateServiceCredential returns a new Service credential's visible prefix, its
-// secret and the value a service presents (`omsc_<prefix>_<secret>`). The prefix of an
+// secret and the value a service presents (`smsc_<prefix>_<secret>`). The prefix of an
 // API token is `omtk`, so one kind never parses as the other.
 func GenerateServiceCredential() (prefix, secret, value string, err error) {
 	if prefix, err = GenerateTokenPrefix(); err != nil {

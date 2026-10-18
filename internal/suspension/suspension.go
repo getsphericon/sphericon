@@ -14,11 +14,11 @@ import (
 )
 
 // Actor is who suspends or lifts a suspension (ADR 0026): the automated abuse detector
-// (System), the operator command (CLI) or a platform Operator, whose real id is kept on
+// (System), the staff member command (CLI) or a platform Staff member, whose real id is kept on
 // the internal record while the customer sees only "sphericon staff".
 type Actor struct {
 	Kind workspace.SuspendedByKind
-	ID   string // an Operator's id; empty for System and CLI
+	ID   string // a Staff member's id; empty for System and CLI
 }
 
 var (
@@ -26,32 +26,32 @@ var (
 	CLI    = Actor{Kind: workspace.SuspendedByKindCli}
 )
 
-// Operator is the platform Operator with this id.
-func Operator(id string) Actor {
-	return Actor{Kind: workspace.SuspendedByKindOperator, ID: strings.TrimSpace(id)}
+// Staff member is the platform Staff member with this id.
+func StaffMember(id string) Actor {
+	return Actor{Kind: workspace.SuspendedByKindStaff, ID: strings.TrimSpace(id)}
 }
 
 func (a Actor) validate() error {
 	if err := workspace.SuspendedByKindValidator(a.Kind); err != nil {
 		return fmt.Errorf("an actor is required: %w", err)
 	}
-	if (a.Kind == workspace.SuspendedByKindOperator) != (a.ID != "") {
-		return errors.New("only an Operator actor has an id, and it must have one")
+	if (a.Kind == workspace.SuspendedByKindStaff) != (a.ID != "") {
+		return errors.New("only a StaffMember actor has an id, and it must have one")
 	}
 	return nil
 }
 
 // auditActor is the actor of the Audit entry. System is the system actor; the CLI is
-// platform staff acting from the server, recorded as an Operator named "cli". Customers
-// see both operator kinds only as "sphericon staff" (ADR 0022).
+// platform staff acting from the server, recorded as a Staff member named "cli". Customers
+// see both staff member kinds only as "sphericon staff" (ADR 0022).
 func (a Actor) auditActor() events.Actor {
 	switch a.Kind {
 	case workspace.SuspendedByKindSystem:
 		return events.Actor{Kind: events.ActorSystem}
 	case workspace.SuspendedByKindCli:
-		return events.Actor{Kind: events.ActorOperator, ID: "cli"}
+		return events.Actor{Kind: events.ActorStaff, ID: "cli"}
 	default:
-		return events.Actor{Kind: events.ActorOperator, ID: a.ID}
+		return events.Actor{Kind: events.ActorStaff, ID: a.ID}
 	}
 }
 

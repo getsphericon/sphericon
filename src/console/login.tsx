@@ -18,18 +18,18 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
-  operatorAuthLoginMutation,
-  operatorAuthSecondFactorMutation,
-} from '../generated/operator/@tanstack/react-query.gen.ts'
-import type { OperatorEnrolment, OperatorLoginResult } from '../generated/operator/types.gen.ts'
+  staffAuthLoginMutation,
+  staffAuthSecondFactorMutation,
+} from '../generated/staff/@tanstack/react-query.gen.ts'
+import type { StaffEnrolment, StaffLoginResult } from '../generated/staff/types.gen.ts'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage.ts'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 
 // What the password step granted: a code to enter, plus the secret to add to an
-// authenticator app when the Operator has no TOTP yet (first login).
+// authenticator app when the Staff member has no TOTP yet (first login).
 interface CodeStep {
   challenge: string
-  enrolment: OperatorEnrolment | undefined
+  enrolment: StaffEnrolment | undefined
 }
 
 export function ConsoleLoginPage() {
@@ -53,8 +53,8 @@ export function ConsoleLoginPage() {
   }
 
   const loginMutation = useMutation({
-    ...operatorAuthLoginMutation(),
-    onSuccess: (result: OperatorLoginResult) => {
+    ...staffAuthLoginMutation(),
+    onSuccess: (result: StaffLoginResult) => {
       setStep({ challenge: result.challenge, enrolment: result.enrolment })
     },
     onError: (error) => {
@@ -64,7 +64,7 @@ export function ConsoleLoginPage() {
   })
 
   const secondStepMutation = useMutation({
-    ...operatorAuthSecondFactorMutation(),
+    ...staffAuthSecondFactorMutation(),
     onSuccess: () => navigate({ to: consoleHomeRoute.to }),
     onError: (error) => {
       codeForm.setFieldValue('code', '')

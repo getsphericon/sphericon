@@ -89,7 +89,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "email", Type: field.TypeString},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"login", "operator_login", "password_reset", "register", "email_change"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"login", "staff_login", "password_reset", "register", "email_change"}},
 		{Name: "failures", Type: field.TypeInt, Default: 0},
 		{Name: "last_attempt_at", Type: field.TypeTime},
 	}
@@ -687,24 +687,6 @@ var (
 			},
 		},
 	}
-	// OperatorsColumns holds the columns for the "operators" table.
-	OperatorsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "email", Type: field.TypeString, Unique: true},
-		{Name: "password_hash", Type: field.TypeString},
-		{Name: "totp_secret_encrypted", Type: field.TypeString, Nullable: true},
-		{Name: "totp_confirmed_at", Type: field.TypeTime, Nullable: true},
-		{Name: "totp_last_step", Type: field.TypeInt64, Default: 0},
-		{Name: "session_epoch", Type: field.TypeInt64, Default: 0},
-	}
-	// OperatorsTable holds the schema information for the "operators" table.
-	OperatorsTable = &schema.Table{
-		Name:       "operators",
-		Columns:    OperatorsColumns,
-		PrimaryKey: []*schema.Column{OperatorsColumns[0]},
-	}
 	// OutboundMessagesColumns holds the columns for the "outbound_messages" table.
 	OutboundMessagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -909,6 +891,24 @@ var (
 		Name:       "service_credentials",
 		Columns:    ServiceCredentialsColumns,
 		PrimaryKey: []*schema.Column{ServiceCredentialsColumns[0]},
+	}
+	// StaffMembersColumns holds the columns for the "staff_members" table.
+	StaffMembersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "email", Type: field.TypeString, Unique: true},
+		{Name: "password_hash", Type: field.TypeString},
+		{Name: "totp_secret_encrypted", Type: field.TypeString, Nullable: true},
+		{Name: "totp_confirmed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "totp_last_step", Type: field.TypeInt64, Default: 0},
+		{Name: "session_epoch", Type: field.TypeInt64, Default: 0},
+	}
+	// StaffMembersTable holds the schema information for the "staff_members" table.
+	StaffMembersTable = &schema.Table{
+		Name:       "staff_members",
+		Columns:    StaffMembersColumns,
+		PrimaryKey: []*schema.Column{StaffMembersColumns[0]},
 	}
 	// SuppressionsColumns holds the columns for the "suppressions" table.
 	SuppressionsColumns = []*schema.Column{
@@ -1155,7 +1155,7 @@ var (
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
 		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
 		{Name: "suspended_at", Type: field.TypeTime, Nullable: true},
-		{Name: "suspended_by_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"system", "cli", "operator"}},
+		{Name: "suspended_by_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"system", "cli", "staff"}},
 		{Name: "suspended_by_id", Type: field.TypeString, Nullable: true},
 		{Name: "suspension_reason", Type: field.TypeString, Nullable: true},
 		{Name: "cleared_at", Type: field.TypeTime, Nullable: true},
@@ -1221,13 +1221,13 @@ var (
 		MembershipsTable,
 		OauthClientsTable,
 		OauthCodesTable,
-		OperatorsTable,
 		OutboundMessagesTable,
 		RecoveryCodesTable,
 		SegmentsTable,
 		SendLimitersTable,
 		SendingDomainsTable,
 		ServiceCredentialsTable,
+		StaffMembersTable,
 		SuppressionsTable,
 		TagsTable,
 		UnsubscribesTable,
@@ -1316,9 +1316,6 @@ func init() {
 	OauthCodesTable.Annotation = &entsql.Annotation{
 		Table: "oauth_codes",
 	}
-	OperatorsTable.Annotation = &entsql.Annotation{
-		Table: "operators",
-	}
 	OutboundMessagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	OutboundMessagesTable.Annotation = &entsql.Annotation{
 		Table: "outbound_messages",
@@ -1342,6 +1339,9 @@ func init() {
 	}
 	ServiceCredentialsTable.Annotation = &entsql.Annotation{
 		Table: "service_credentials",
+	}
+	StaffMembersTable.Annotation = &entsql.Annotation{
+		Table: "staff_members",
 	}
 	SuppressionsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SuppressionsTable.Annotation = &entsql.Annotation{

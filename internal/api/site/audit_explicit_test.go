@@ -154,21 +154,21 @@ func TestAuditPasswordResetIsRecorded(t *testing.T) {
 	assert.Equal(t, "Mary", got[0].Actor.Name.Value)
 }
 
-func TestAuditOperatorSuspensionShowsOnlySphericonStaff(t *testing.T) {
+func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "abuse report")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"))
+	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"))
 	require.NoError(t, err)
 
 	for _, action := range []string{events.ActionWorkspaceSuspend, events.ActionWorkspaceUnsuspend} {
 		got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, action)
 		require.Lenf(t, got, 1, action)
-		assert.Equal(t, siteapi.SiteAuditActorKindOperator, got[0].Actor.Kind)
+		assert.Equal(t, siteapi.SiteAuditActorKindStaff, got[0].Actor.Kind)
 		assert.Equal(t, "sphericon staff", got[0].Actor.Name.Value)
-		assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "", "the Operator's identity is never exposed")
+		assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "", "the StaffMember's identity is never exposed")
 		diff, err := json.Marshal(got[0].Diff.Value)
 		require.NoError(t, err)
 		assert.NotContains(t, string(diff), "op-42")
@@ -195,7 +195,7 @@ func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionWorkspaceSuspend)
 	require.Len(t, got, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindOperator, got[0].Actor.Kind)
+	assert.Equal(t, siteapi.SiteAuditActorKindStaff, got[0].Actor.Kind)
 	assert.Equal(t, "sphericon staff", got[0].Actor.Name.Value)
 	assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "")
 }
@@ -205,7 +205,7 @@ func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 	ctx := context.Background()
 	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "first")
 	require.NoError(t, err)
-	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "second")
+	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "second")
 	require.NoError(t, err)
 	require.False(t, changed)
 
@@ -257,13 +257,13 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = owner.SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Acme Two"}, // workspace.update
 		siteapi.SiteWorkspacesUpdateParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
-	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "abuse") // workspace.suspend
+	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse") // workspace.suspend
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42")) // workspace.unsuspend
+	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42")) // workspace.unsuspend
 	require.NoError(t, err)
-	_, err = suspension.SetAbuseExempt(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), true) // workspace.abuse_exempt
+	_, err = suspension.SetAbuseExempt(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), true) // workspace.abuse_exempt
 	require.NoError(t, err)
-	_, err = suspension.SetAbuseExempt(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), false) // workspace.abuse_unexempt
+	_, err = suspension.SetAbuseExempt(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), false) // workspace.abuse_unexempt
 	require.NoError(t, err)
 
 	_, err = env.ExternalAnchor(t).ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{ // contact.import
@@ -317,12 +317,12 @@ func recordAuditCallSites(t *testing.T) []string {
 	return sites
 }
 
-// An Operator's id cannot be probed: filtering by it matches nothing, and with the
-// operator kind the id filter is ignored, on the list and on the export alike.
-func TestAuditOperatorIdCannotBeProbed(t *testing.T) {
+// A Staff member's id cannot be probed: filtering by it matches nothing, and with the
+// staff member kind the id filter is ignored, on the list and on the export alike.
+func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "abuse report")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
 	require.NoError(t, err)
 	env.DeliverToEE(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -337,12 +337,12 @@ func TestAuditOperatorIdCannotBeProbed(t *testing.T) {
 		p.Slug = fixtures.AcmeSlug
 		return len(auditCSV(t, mustExport(ctx, t, owner, p))) - 1
 	}
-	operator := siteapi.NewOptSiteAuditActorKind(siteapi.SiteAuditActorKindOperator)
+	staff := siteapi.NewOptSiteAuditActorKind(siteapi.SiteAuditActorKindStaff)
 	probe, other := siteapi.NewOptString("op-42"), siteapi.NewOptString("someone-else")
 
 	assert.Zero(t, list(siteapi.SiteAuditListParams{ActorId: probe}), "the real id matches nothing without a kind")
 	assert.Zero(t, export(siteapi.SiteAuditExportParams{ActorId: probe}))
-	assert.Equal(t, 1, list(siteapi.SiteAuditListParams{ActorKind: operator, ActorId: probe}))
-	assert.Equal(t, 1, list(siteapi.SiteAuditListParams{ActorKind: operator, ActorId: other}), "a wrong id changes nothing: the id is ignored")
-	assert.Equal(t, 1, export(siteapi.SiteAuditExportParams{ActorKind: operator, ActorId: other}))
+	assert.Equal(t, 1, list(siteapi.SiteAuditListParams{ActorKind: staff, ActorId: probe}))
+	assert.Equal(t, 1, list(siteapi.SiteAuditListParams{ActorKind: staff, ActorId: other}), "a wrong id changes nothing: the id is ignored")
+	assert.Equal(t, 1, export(siteapi.SiteAuditExportParams{ActorKind: staff, ActorId: other}))
 }

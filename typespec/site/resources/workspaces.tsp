@@ -3,7 +3,7 @@ using TypeSpec.Rest;
 
 namespace Sphericon;
 
-/** An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's
+/** A Staff hold on the Workspace's outbound sending (ADR 0009), as the Workspace's
  * members see it. It is not a suspension: it is set from outside, carries its own
  * message, and lifts by itself at its expiry. */
 model SiteWorkspaceHold {
@@ -67,7 +67,7 @@ model SiteWorkspaceResource {
    * instance configured none, and then no billing text is shown. */
   billingUrl?: string | null;
 
-  /** The Operator holds active now, oldest key first; empty while nothing holds sending.
+  /** The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed. */
   holds: SiteWorkspaceHold[];
