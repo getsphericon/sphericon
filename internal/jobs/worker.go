@@ -5,7 +5,6 @@ package jobs
 
 import (
 	"context"
-	"database/sql"
 	"log/slog"
 	"time"
 
@@ -69,10 +68,10 @@ type Retention struct {
 // NewClient builds the river client with all workers registered. Workers carry
 // their own dependencies (ent client, sender resolver, secrets cipher, the
 // platform system sender). appURL is the public origin used to build the links
-// in account emails (reset/verify/change). db is the raw handle the instance-wide
-// outbox prune runs on; retention carries the prune settings. ext plugs in the
+// in account emails (reset/verify/change). The instance-wide outbox and Event prunes
+// run on entClient, the raw client; retention carries the prune settings. ext plugs in the
 // Enterprise Edition's workers and periodic jobs.
-func NewClient(pool *pgxpool.Pool, entClient *ent.Client, db *sql.DB, mod *outbound.Module, cipher *secrets.Cipher, systemSender messaging.EmailSender, lookup sending.TXTLookup, catalog *messaging.Catalog, appURL string, retention Retention, ext ...Extension) (*Client, error) {
+func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, systemSender messaging.EmailSender, lookup sending.TXTLookup, catalog *messaging.Catalog, appURL string, retention Retention, ext ...Extension) (*Client, error) {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &SendBroadcastWorker{ent: entClient, mod: mod})
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, mod: mod})
@@ -97,8 +96,8 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, db *sql.DB, mod *outbo
 	river.AddWorker(workers, &RefreshSendQuotasWorker{ent: entClient})
 	river.AddWorker(workers, &RefreshIntegrationQuotaWorker{ent: entClient, cipher: cipher, catalog: catalog})
 	river.AddWorker(workers, &PurgeAuthAttemptsWorker{ent: entClient})
-	river.AddWorker(workers, &PruneOutboxWorker{db: db, floor: retention.OutboxFloor})
-	river.AddWorker(workers, &PruneEventsWorker{db: db, retention: retention.Events})
+	river.AddWorker(workers, &PruneOutboxWorker{ent: entClient, floor: retention.OutboxFloor})
+	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{ent: entClient, retention: retention.UnverifiedUsers})
 
 	var extraPeriodic []*river.PeriodicJob

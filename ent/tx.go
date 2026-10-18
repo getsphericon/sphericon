@@ -54,6 +54,10 @@ type Tx struct {
 	Operator *OperatorClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
+	// OutboxMessage is the client for interacting with the OutboxMessage builders.
+	OutboxMessage *OutboxMessageClient
+	// OutboxOffset is the client for interacting with the OutboxOffset builders.
+	OutboxOffset *OutboxOffsetClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
 	// Segment is the client for interacting with the Segment builders.
@@ -231,6 +235,8 @@ func (tx *Tx) init() {
 	tx.OAuthCode = NewOAuthCodeClient(tx.config)
 	tx.Operator = NewOperatorClient(tx.config)
 	tx.OutboundMessage = NewOutboundMessageClient(tx.config)
+	tx.OutboxMessage = NewOutboxMessageClient(tx.config)
+	tx.OutboxOffset = NewOutboxOffsetClient(tx.config)
 	tx.RecoveryCode = NewRecoveryCodeClient(tx.config)
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendLimiter = NewSendLimiterClient(tx.config)

@@ -19,7 +19,7 @@ import (
 func TestOutboxLagIsReportedPerConsumerGroup(t *testing.T) {
 	env := testhelper.Setup(t)
 	metricstest.StartMetrics(t)
-	unregister, err := events.RegisterLagGauge(env.SQLDB)
+	unregister, err := events.RegisterLagGauge(env.DB)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = unregister() })
 
@@ -28,7 +28,6 @@ func TestOutboxLagIsReportedPerConsumerGroup(t *testing.T) {
 	})
 	require.NoError(t, err)
 	env.AgeOutbox(t, 2*time.Minute)
-	env.ClearOutboxCursors(t)
 	rows := env.OutboxRows(t)
 	last := rows[len(rows)-1]
 	env.SetOutboxCursor(t, events.GroupPersist, last.TxID, &last.Offset)

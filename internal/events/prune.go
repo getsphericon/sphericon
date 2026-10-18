@@ -2,10 +2,15 @@ package events
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"strings"
+	"slices"
 	"time"
+
+	entsql "entgo.io/ent/dialect/sql"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/outboxmessage"
+	"github.com/getsphericon/sphericon/ent/outboxoffset"
 )
 
 // outboxTable / offsetsTable are the quoted names of the domain-events outbox and
@@ -38,82 +43,50 @@ type PruneResult struct {
 // outbox forever. It then skips the run when any registered group has no offsets
 // row or a NULL ack, because that group has not consumed anything and may still
 // need every row.
-func PruneOutbox(ctx context.Context, db *sql.DB, floor time.Duration, batchSize int) (PruneResult, error) {
+func PruneOutbox(ctx context.Context, client *ent.Client, floor time.Duration, batchSize int) (PruneResult, error) {
 	var res PruneResult
 	groups := ConsumerGroups()
-	holders := make([]string, len(groups))
-	args := make([]any, len(groups))
-	for i, g := range groups {
-		holders[i] = fmt.Sprintf("$%d", i+1)
-		args[i] = g
-	}
-	registered := strings.Join(holders, ", ")
 
-	retired, err := db.ExecContext(ctx,
-		fmt.Sprintf(`DELETE FROM %s WHERE consumer_group NOT IN (%s)`, offsetsTable(), registered), args...)
+	retired, err := client.OutboxOffset.Delete().Where(outboxoffset.IDNotIn(groups...)).Exec(ctx)
 	if err != nil {
 		return res, fmt.Errorf("remove retired consumer groups: %w", err)
 	}
-	if res.RetiredGroups, err = retired.RowsAffected(); err != nil {
-		return res, err
-	}
+	res.RetiredGroups = int64(retired)
 
 	// The registered groups' cursors, lowest first: the first row bounds the prune.
-	rows, err := db.QueryContext(ctx, fmt.Sprintf(`
-		SELECT last_processed_transaction_id::text, offset_acked FROM %s
-		WHERE consumer_group IN (%s)
-		ORDER BY last_processed_transaction_id, offset_acked NULLS FIRST`, offsetsTable(), registered), args...)
+	cursors, err := client.OutboxOffset.Query().
+		Where(outboxoffset.IDIn(groups...)).
+		Order(outboxoffset.ByLastProcessedTransactionID(), outboxoffset.ByOffsetAcked(entsql.OrderNullsFirst())).
+		All(ctx)
 	if err != nil {
 		return res, fmt.Errorf("read consumer cursors: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
-	var (
-		cursors      int
-		cursorTx     string
-		cursorOffset int64
-		incomplete   bool
-	)
-	for rows.Next() {
-		var tx string
-		var acked sql.NullInt64
-		if err := rows.Scan(&tx, &acked); err != nil {
-			return res, err
-		}
-		if !acked.Valid {
-			incomplete = true
-		}
-		if cursors == 0 {
-			cursorTx, cursorOffset = tx, acked.Int64
-		}
-		cursors++
-	}
-	if err := rows.Err(); err != nil {
-		return res, err
-	}
-	_ = rows.Close()
-	if incomplete || cursors != len(groups) {
+	incomplete := slices.ContainsFunc(cursors, func(c *ent.OutboxOffset) bool { return c.OffsetAcked == nil })
+	if incomplete || len(cursors) != len(groups) {
 		res.Skipped = true
 		return res, nil
 	}
+	lowest := cursors[0]
 
-	del := fmt.Sprintf(`
-		DELETE FROM %[1]s WHERE (transaction_id, "offset") IN (
-			SELECT transaction_id, "offset" FROM %[1]s
-			WHERE (transaction_id, "offset") < ($1::xid8, $2::int)
-			  AND created_at < now() - make_interval(secs => $3)
-			ORDER BY transaction_id, "offset"
-			LIMIT $4)`, outboxTable())
+	cutoff := time.Now().Add(-floor)
 	for {
-		r, err := db.ExecContext(ctx, del, cursorTx, cursorOffset, floor.Seconds(), batchSize)
+		ids, err := client.OutboxMessage.Query().
+			Where(outboxBefore(lowest.LastProcessedTransactionID, *lowest.OffsetAcked), outboxmessage.CreatedAtLT(cutoff)).
+			Order(outboxmessage.ByTransactionID(), outboxmessage.ByID()).
+			Limit(batchSize).
+			IDs(ctx)
+		if err != nil {
+			return res, fmt.Errorf("select outbox batch: %w", err)
+		}
+		if len(ids) == 0 {
+			return res, nil
+		}
+		n, err := client.OutboxMessage.Delete().Where(outboxmessage.IDIn(ids...)).Exec(ctx)
 		if err != nil {
 			return res, fmt.Errorf("delete outbox batch: %w", err)
 		}
-		n, err := r.RowsAffected()
-		if err != nil {
-			return res, err
-		}
-		res.Deleted += n
-		if n < int64(batchSize) {
+		res.Deleted += int64(n)
+		if len(ids) < batchSize {
 			return res, nil
 		}
 	}

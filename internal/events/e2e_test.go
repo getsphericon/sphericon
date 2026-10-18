@@ -2,18 +2,15 @@ package events_test
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,21 +19,11 @@ import (
 // real DB (not txdb): a producer publishes through the transactional outbox, and
 // the watermill-sql router reads that same table and delivers the decoded
 // envelope to a subscriber. It uses a capture handler instead of persist so it
-// writes no ent rows (no FK setup, no fixture-count interference); it cleans up
-// the committed outbox rows on exit.
+// writes no ent rows (no FK setup, no fixture-count interference). The database is
+// the test's own, so what it commits is dropped with it.
 func TestDomainEventsRouterDelivery(t *testing.T) {
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-
-	db, err := sql.Open("pgx", cfg.DatabaseURL)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
-
+	db := testhelper.RealDB(t)
 	ctx := context.Background()
-	require.NoError(t, events.InitSchema(ctx, db))
-	t.Cleanup(func() {
-		_ = testhelper.PurgeOutbox(context.WithoutCancel(ctx), db)
-	})
 
 	router, err := events.NewRouter()
 	require.NoError(t, err)

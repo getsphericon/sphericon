@@ -32,6 +32,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/operator"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/outboxmessage"
+	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -125,6 +127,8 @@ func checkColumn(t, c string) error {
 			oauthcode.Table:          oauthcode.ValidColumn,
 			operator.Table:           operator.ValidColumn,
 			outboundmessage.Table:    outboundmessage.ValidColumn,
+			outboxmessage.Table:      outboxmessage.ValidColumn,
+			outboxoffset.Table:       outboxoffset.ValidColumn,
 			recoverycode.Table:       recoverycode.ValidColumn,
 			segment.Table:            segment.ValidColumn,
 			sendlimiter.Table:        sendlimiter.ValidColumn,

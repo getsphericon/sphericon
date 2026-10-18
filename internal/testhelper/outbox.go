@@ -3,10 +3,8 @@ package testhelper
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/getsphericon/sphericon/ee/abuse"
 	"slices"
 	"strconv"
 	"testing"
@@ -14,17 +12,21 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ee/abuse"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/outboxmessage"
+	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
-// The domain-event outbox is a watermill table, not an ent entity, so tests read it
-// through these helpers instead of querying it themselves.
+// The domain-event outbox is a watermill table that ent only generates a client for
+// (ent/schema/outbox_message.go), so tests read it through these helpers.
 
 // OutboxEnvelopes returns the envelopes published on the outbox in this test's
 // transaction, oldest first. With names, only envelopes of those event names.
 func (env *TestEnv) OutboxEnvelopes(t *testing.T, names ...string) []events.Envelope {
 	t.Helper()
-	envelopes, err := readOutbox(t.Context(), env.SQLDB, names)
+	envelopes, err := readOutbox(t.Context(), env.DB, names)
 	require.NoError(t, err)
 	return envelopes
 }
@@ -95,39 +97,28 @@ func (env *TestEnv) OutboxCount(t *testing.T, name string, match map[string]any)
 	return n
 }
 
-// PurgeOutbox empties the outbox of a database a test wrote to for real (outside
-// the per-test transaction), such as the router tests.
-func PurgeOutbox(ctx context.Context, db *sql.DB) error {
-	_, err := db.ExecContext(ctx, `DELETE FROM watermill_domain_events`)
-	return err
+// OutboxEnvelopesOn is OutboxEnvelopes for a database a test wrote to for real, read
+// through the ent client the test holds on it.
+func OutboxEnvelopesOn(ctx context.Context, client *ent.Client, names ...string) ([]events.Envelope, error) {
+	return readOutbox(ctx, client, names)
 }
 
-// OutboxEnvelopesOn is OutboxEnvelopes for a database a test wrote to for real.
-func OutboxEnvelopesOn(ctx context.Context, db *sql.DB, names ...string) ([]events.Envelope, error) {
-	return readOutbox(ctx, db, names)
-}
-
-func readOutbox(ctx context.Context, db *sql.DB, names []string) ([]events.Envelope, error) {
-	rows, err := db.QueryContext(ctx, `SELECT payload FROM watermill_domain_events ORDER BY "offset"`)
+func readOutbox(ctx context.Context, client *ent.Client, names []string) ([]events.Envelope, error) {
+	messages, err := client.OutboxMessage.Query().Order(outboxmessage.ByID()).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
 	var out []events.Envelope
-	for rows.Next() {
-		var payload []byte
-		if err := rows.Scan(&payload); err != nil {
-			return nil, err
-		}
+	for _, m := range messages {
 		var e events.Envelope
-		if err := json.Unmarshal(payload, &e); err != nil {
+		if err := json.Unmarshal(m.Payload, &e); err != nil {
 			return nil, err
 		}
 		if len(names) == 0 || slices.Contains(names, e.Name) {
 			out = append(out, e)
 		}
 	}
-	return out, rows.Err()
+	return out, nil
 }
 
 // OutboxRow is one raw outbox row: its position in the (transaction_id, offset)
@@ -142,19 +133,15 @@ type OutboxRow struct {
 // (transaction_id, offset) order.
 func (env *TestEnv) OutboxRows(t *testing.T) []OutboxRow {
 	t.Helper()
-	rows, err := env.SQLDB.QueryContext(t.Context(),
-		`SELECT transaction_id::text::bigint, "offset", created_at FROM watermill_domain_events ORDER BY transaction_id, "offset"`)
+	messages, err := env.DB.OutboxMessage.Query().
+		Order(outboxmessage.ByTransactionID(), outboxmessage.ByID()).All(t.Context())
 	require.NoError(t, err)
-	defer func() { _ = rows.Close() }()
-	var out []OutboxRow
-	for rows.Next() {
-		var r OutboxRow
-		var tx int64
-		require.NoError(t, rows.Scan(&tx, &r.Offset, &r.CreatedAt))
-		r.TxID = uint64(tx)
-		out = append(out, r)
+	out := make([]OutboxRow, len(messages))
+	for i, m := range messages {
+		tx, err := strconv.ParseUint(m.TransactionID, 10, 64)
+		require.NoError(t, err)
+		out[i] = OutboxRow{TxID: tx, Offset: m.ID, CreatedAt: m.CreatedAt}
 	}
-	require.NoError(t, rows.Err())
 	return out
 }
 
@@ -163,14 +150,15 @@ func (env *TestEnv) OutboxRows(t *testing.T) []OutboxRow {
 // floor; the producer always stamps rows with the current time.
 func (env *TestEnv) AgeOutbox(t *testing.T, age time.Duration, offsets ...int64) {
 	t.Helper()
-	q := `UPDATE watermill_domain_events SET created_at = created_at - make_interval(secs => $1)`
-	args := []any{age.Seconds()}
+	q := env.DB.OutboxMessage.Query()
 	if len(offsets) > 0 {
-		q += ` WHERE "offset" = ANY($2)`
-		args = append(args, offsets)
+		q = q.Where(outboxmessage.IDIn(offsets...))
 	}
-	_, err := env.SQLDB.ExecContext(t.Context(), q, args...)
+	messages, err := q.All(t.Context())
 	require.NoError(t, err)
+	for _, m := range messages {
+		require.NoError(t, env.DB.OutboxMessage.UpdateOneID(m.ID).SetCreatedAt(m.CreatedAt.Add(-age)).Exec(t.Context()))
+	}
 }
 
 // OutboxCursor is one consumer group's stored position. Acked is nil for a
@@ -185,45 +173,35 @@ type OutboxCursor struct {
 // the ack NULL).
 func (env *TestEnv) SetOutboxCursor(t *testing.T, group string, txID uint64, acked *int64) {
 	t.Helper()
-	_, err := env.SQLDB.ExecContext(t.Context(), `
-		INSERT INTO watermill_offsets_domain_events (consumer_group, offset_acked, last_processed_transaction_id)
-		VALUES ($1, $2, $3::text::xid8)
-		ON CONFLICT (consumer_group) DO UPDATE
-		SET offset_acked = EXCLUDED.offset_acked, last_processed_transaction_id = EXCLUDED.last_processed_transaction_id`,
-		group, acked, strconv.FormatUint(txID, 10))
+	err := env.DB.OutboxOffset.Create().
+		SetID(group).
+		SetNillableOffsetAcked(acked).
+		SetLastProcessedTransactionID(strconv.FormatUint(txID, 10)).
+		OnConflictColumns(outboxoffset.FieldID).
+		Update(func(u *ent.OutboxOffsetUpsert) {
+			u.UpdateLastProcessedTransactionID()
+			if acked == nil {
+				u.ClearOffsetAcked() // overwrite an earlier ack with NULL
+			} else {
+				u.UpdateOffsetAcked()
+			}
+		}).
+		Exec(t.Context())
 	require.NoError(t, err)
 }
 
 // OutboxCursors returns every consumer group's offsets row, keyed by group.
 func (env *TestEnv) OutboxCursors(t *testing.T) map[string]OutboxCursor {
 	t.Helper()
-	rows, err := env.SQLDB.QueryContext(t.Context(),
-		`SELECT consumer_group, offset_acked, last_processed_transaction_id::text::bigint FROM watermill_offsets_domain_events`)
+	offsets, err := env.DB.OutboxOffset.Query().All(t.Context())
 	require.NoError(t, err)
-	defer func() { _ = rows.Close() }()
 	out := map[string]OutboxCursor{}
-	for rows.Next() {
-		var group string
-		var acked sql.NullInt64
-		var tx int64
-		require.NoError(t, rows.Scan(&group, &acked, &tx))
-		c := OutboxCursor{TxID: uint64(tx)}
-		if acked.Valid {
-			c.Acked = &acked.Int64
-		}
-		out[group] = c
+	for _, o := range offsets {
+		tx, err := strconv.ParseUint(o.LastProcessedTransactionID, 10, 64)
+		require.NoError(t, err)
+		out[o.ID] = OutboxCursor{TxID: tx, Acked: o.OffsetAcked}
 	}
-	require.NoError(t, rows.Err())
 	return out
-}
-
-// ClearOutboxCursors removes every consumer group's offsets row in this test's
-// transaction, so a test starts from a known state whatever real-database tests
-// (the router tests) left committed.
-func (env *TestEnv) ClearOutboxCursors(t *testing.T) {
-	t.Helper()
-	_, err := env.SQLDB.ExecContext(t.Context(), `DELETE FROM watermill_offsets_domain_events`)
-	require.NoError(t, err)
 }
 
 // Abuse is the abuse detector as the composition root builds it (ADR 0026), over the

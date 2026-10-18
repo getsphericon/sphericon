@@ -4,6 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"entgo.io/ent/dialect/sql"
+
+	"github.com/getsphericon/sphericon/ent/outboxmessage"
+	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // QueuePurger removes what the internal queues still hold about a data subject: the
@@ -41,14 +46,23 @@ func (p *txPublisher) PurgeOutbox(ctx context.Context, workspaceID, contactID in
 	if contactID != 0 {
 		id = fmt.Sprint(contactID)
 	}
-	// The payload is the JSON-encoded Envelope; events name the Contact as data.contactId
-	// and the address as data.email.
-	_, err := p.tx.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s
-WHERE (payload::jsonb->>'workspaceId')::bigint = $1
-  AND ((payload::jsonb->'data'->>'contactId') = $2
-       OR lower(payload::jsonb->'data'->>'email') = ANY($3))`, outboxTable()),
-		workspaceID, id, lowered)
+	_, err := p.client.OutboxMessage.Delete().Where(outboxNamesSubject(workspaceID, id, lowered)).Exec(ctx)
 	return err
+}
+
+// outboxNamesSubject selects a Workspace's outbox envelopes that name a data subject. The
+// payload is the JSON-encoded Envelope; events name the Contact as data.contactId and the
+// address as data.email. ent has no predicate over a JSON document, so this is one on
+// the generated query.
+func outboxNamesSubject(workspaceID int64, contactID string, lowered []string) predicate.OutboxMessage {
+	return predicate.OutboxMessage(func(s *sql.Selector) {
+		payload := s.C(outboxmessage.FieldPayload)
+		s.Where(sql.P(func(b *sql.Builder) {
+			b.WriteString("(" + payload + "::jsonb->>'workspaceId')::bigint = ").Arg(workspaceID).
+				WriteString(" AND ((" + payload + "::jsonb->'data'->>'contactId') = ").Arg(contactID).
+				WriteString(" OR lower(" + payload + "::jsonb->'data'->>'email') = ANY(").Arg(lowered).WriteString("))")
+		}))
+	})
 }
 
 func (p *txPublisher) PurgeJobs(ctx context.Context, kind, key string, ids []int64) error {

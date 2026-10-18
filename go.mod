@@ -36,6 +36,7 @@ require (
 	github.com/ogen-go/ogen v1.24.0
 	github.com/oklog/ulid/v2 v2.1.2
 	github.com/osteele/liquid v1.9.2
+	github.com/peterldowns/pgtestdb v0.1.1
 	github.com/pquerna/otp v1.5.0
 	github.com/preslavrachev/gomjml v0.13.0
 	github.com/pressly/goose/v3 v3.28.0

@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"database/sql"
 	"log/slog"
 	"time"
 
@@ -51,16 +50,16 @@ func NewRefreshIntegrationQuotaWorker(client *ent.Client, cipher *secrets.Cipher
 	return &RefreshIntegrationQuotaWorker{ent: client, cipher: cipher, catalog: catalog}
 }
 
-func NewPruneOutboxWorker(db *sql.DB, floor time.Duration) *PruneOutboxWorker {
-	return &PruneOutboxWorker{db: db, floor: floor}
+func NewPruneOutboxWorker(client *ent.Client, floor time.Duration) *PruneOutboxWorker {
+	return &PruneOutboxWorker{ent: client, floor: floor}
 }
 
 func NewPruneUnverifiedUsersWorker(client *ent.Client, retention time.Duration) *PruneUnverifiedUsersWorker {
 	return &PruneUnverifiedUsersWorker{ent: client, retention: retention}
 }
 
-func NewPruneEventsWorker(db *sql.DB, retention time.Duration) *PruneEventsWorker {
-	return &PruneEventsWorker{db: db, retention: retention}
+func NewPruneEventsWorker(client *ent.Client, retention time.Duration) *PruneEventsWorker {
+	return &PruneEventsWorker{ent: client, retention: retention}
 }
 
 func NewEvaluateTriggerWorker(client *ent.Client) *EvaluateTriggerWorker {

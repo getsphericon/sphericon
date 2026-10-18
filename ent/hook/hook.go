@@ -249,6 +249,30 @@ func (f OutboundMessageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OutboundMessageMutation", m)
 }
 
+// The OutboxMessageFunc type is an adapter to allow the use of ordinary
+// function as OutboxMessage mutator.
+type OutboxMessageFunc func(context.Context, *ent.OutboxMessageMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OutboxMessageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OutboxMessageMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OutboxMessageMutation", m)
+}
+
+// The OutboxOffsetFunc type is an adapter to allow the use of ordinary
+// function as OutboxOffset mutator.
+type OutboxOffsetFunc func(context.Context, *ent.OutboxOffsetMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OutboxOffsetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OutboxOffsetMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OutboxOffsetMutation", m)
+}
+
 // The RecoveryCodeFunc type is an adapter to allow the use of ordinary
 // function as RecoveryCode mutator.
 type RecoveryCodeFunc func(context.Context, *ent.RecoveryCodeMutation) (ent.Value, error)

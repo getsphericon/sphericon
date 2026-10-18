@@ -173,6 +173,8 @@ else
   for d in $($psql -c "select datname from pg_database where not datistemplate and datname <> 'postgres'"); do
     if grep -qxF "$d" "$keep"; then continue; fi
     case "$d" in *\"*) echo "keep    database $d (unusual name)"; continue ;; esac
+    # pgtestdb's per-test databases belong to a test that may be running in any checkout.
+    case "$d" in testdb_tpl_*) echo "keep    database $d (pgtestdb)"; continue ;; esac
     if [ -z "$apply" ]; then echo "would drop database $d"; continue; fi
     $psql -c "drop database \"$d\" with (force)" >/dev/null && echo "dropped database $d"
   done

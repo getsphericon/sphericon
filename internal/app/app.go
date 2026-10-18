@@ -245,7 +245,7 @@ func New(env string, opts ...Option) (*App, error) {
 
 	// Operational gauges (outbox lag, queue depth). They read on scrape through the
 	// shared pools and live for the process, so they are never unregistered.
-	database, err := do.Invoke[*sqlDB](injector)
+	client, err := do.Invoke[*entClient](injector)
 	if err != nil {
 		_ = injector.Shutdown()
 		return nil, err
@@ -255,7 +255,7 @@ func New(env string, opts ...Option) (*App, error) {
 		_ = injector.Shutdown()
 		return nil, err
 	}
-	if _, err := events.RegisterLagGauge(database.DB); err != nil {
+	if _, err := events.RegisterLagGauge(client.Client); err != nil {
 		_ = injector.Shutdown()
 		return nil, err
 	}
@@ -893,15 +893,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		database, err := do.Invoke[*sqlDB](i)
-		if err != nil {
-			return nil, err
-		}
 		bus, err := do.Invoke[*eventsBus](i)
 		if err != nil {
 			return nil, err
 		}
-		jc, err := jobs.NewClient(pool.Pool, client.Client, database.DB, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL,
+		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL,
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention}, edition.Jobs(bus.Bus, sys.EmailSender))
 		if err != nil {
 			return nil, err

@@ -2,15 +2,12 @@ package events_test
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -21,27 +18,14 @@ import (
 )
 
 // RegisterSubscribers wires the four consumers onto one router; a published hard
-// bounce reaches every one of them. It runs against the real DB (the router reads
-// the committed outbox), and removes what it committed on exit.
+// bounce reaches every one of them. It runs on a database of its own (the router
+// reads the committed outbox), dropped with the test.
 func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = sqlDB.Close() })
+	sqlDB := testhelper.RealDB(t)
 	client := db.NewEntClient(sqlDB)
 
 	ctx := context.Background()
-	require.NoError(t, events.InitSchema(ctx, sqlDB))
 	const dest = "registered-bounce@example.com"
-	cleanup := func() {
-		bg := context.WithoutCancel(ctx)
-		_ = testhelper.PurgeOutbox(bg, sqlDB)
-		_, _ = client.Suppression.Delete().Where(suppression.Destination(dest)).Exec(bg)
-		_, _ = client.Event.Delete().Where(event.SubjectID(dest)).Exec(bg)
-	}
-	cleanup()
-	t.Cleanup(cleanup)
 
 	router, err := events.NewRouter()
 	require.NoError(t, err)

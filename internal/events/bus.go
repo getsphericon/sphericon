@@ -98,7 +98,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 		return fmt.Errorf("outbox publisher: %w", err)
 	}
 
-	if err := fn(txClient, &txPublisher{wm: wm, tx: sqlTx}); err != nil {
+	if err := fn(txClient, &txPublisher{wm: wm, tx: sqlTx, client: txClient}); err != nil {
 		_ = sqlTx.Rollback()
 		return err
 	}
@@ -156,6 +156,8 @@ func (nopTx) Rollback() error { return nil }
 type txPublisher struct {
 	wm *watermillsql.Publisher
 	tx *sql.Tx
+	// client is the ent client bound to tx, so a purge of the outbox rolls back with it.
+	client *ent.Client
 }
 
 func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {

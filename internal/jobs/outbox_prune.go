@@ -2,12 +2,13 @@ package jobs
 
 import (
 	"context"
-	"database/sql"
+
 	"log/slog"
 	"time"
 
 	"github.com/riverqueue/river"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
@@ -26,15 +27,15 @@ func (PruneOutboxArgs) Kind() string { return "outbox_prune" }
 
 // PruneOutboxWorker deletes outbox rows every registered consumer group has
 // consumed and that are older than the floor. It is instance-wide (the outbox is
-// not Workspace-scoped), so it holds the raw database handle.
+// not Workspace-scoped), so it holds the raw ent client.
 type PruneOutboxWorker struct {
 	river.WorkerDefaults[PruneOutboxArgs]
-	db    *sql.DB
+	ent   *ent.Client
 	floor time.Duration
 }
 
 func (w *PruneOutboxWorker) Work(ctx context.Context, _ *river.Job[PruneOutboxArgs]) error {
-	res, err := events.PruneOutbox(ctx, w.db, w.floor, outboxPruneBatch)
+	res, err := events.PruneOutbox(ctx, w.ent, w.floor, outboxPruneBatch)
 	if err != nil {
 		return err
 	}
