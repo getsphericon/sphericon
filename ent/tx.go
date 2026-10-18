@@ -40,6 +40,8 @@ type Tx struct {
 	Event *EventClient
 	// Hold is the client for interacting with the Hold builders.
 	Hold *HoldClient
+	// InstanceState is the client for interacting with the InstanceState builders.
+	InstanceState *InstanceStateClient
 	// Integration is the client for interacting with the Integration builders.
 	Integration *IntegrationClient
 	// Invitation is the client for interacting with the Invitation builders.
@@ -230,6 +232,7 @@ func (tx *Tx) init() {
 	tx.EmailTemplate = NewEmailTemplateClient(tx.config)
 	tx.Event = NewEventClient(tx.config)
 	tx.Hold = NewHoldClient(tx.config)
+	tx.InstanceState = NewInstanceStateClient(tx.config)
 	tx.Integration = NewIntegrationClient(tx.config)
 	tx.Invitation = NewInvitationClient(tx.config)
 	tx.Membership = NewMembershipClient(tx.config)

@@ -1458,6 +1458,69 @@ export type SiteForgotPasswordInput = {
 };
 
 /**
+ * What an Instance's Owner sees and decides about the Instance itself: it belongs to no
+ * Workspace. Only the Owners of the oldest existing Workspace may read or change it.
+ */
+export type SiteInstanceState = {
+  /**
+   * The Telemetry report setting
+   */
+  telemetry: SiteInstanceTelemetry;
+  /**
+   * Whether the one-time notice about the Telemetry report was acknowledged
+   */
+  noticeAcknowledged: boolean;
+  /**
+   * The newest stable release (a bare version such as `0.4.0`) when the Release check found
+   * one newer than the running version; absent otherwise, and always absent for a build whose
+   * version is not a release or when `SPHERICON_RELEASE_CHECK` is off.
+   */
+  latestRelease?: string;
+  /**
+   * The page that documents the schema of the Telemetry report
+   */
+  telemetrySchemaUrl: string;
+};
+
+/**
+ * The Telemetry report setting as it applies right now (ADR 0032)
+ */
+export type SiteInstanceTelemetry = {
+  /**
+   * Whether the Instance sends the Telemetry report
+   */
+  enabled: boolean;
+  /**
+   * Whether the environment decides, which makes the in-app switch read-only
+   */
+  locked: boolean;
+  /**
+   * What decides, set when locked
+   */
+  lockedBy?: SiteInstanceTelemetryLock;
+};
+
+/**
+ * Switch the Telemetry report on or off
+ */
+export type SiteInstanceTelemetryInput = {
+  /**
+   * The Owner's choice
+   */
+  enabled: boolean;
+};
+
+/**
+ * Why the environment, not the Owner, decides the Telemetry report
+ */
+export const SiteInstanceTelemetryLock = { ENVIRONMENT: 'environment', DO_NOT_TRACK: 'do_not_track' } as const;
+
+/**
+ * Why the environment, not the Owner, decides the Telemetry report
+ */
+export type SiteInstanceTelemetryLock = typeof SiteInstanceTelemetryLock[keyof typeof SiteInstanceTelemetryLock];
+
+/**
  * Delivery channel an integration belongs to
  */
 export const SiteIntegrationChannel = { EMAIL: 'email', SMS: 'sms' } as const;
@@ -3221,6 +3284,112 @@ export type SitePublicConfirmationsPerformResponses = {
 };
 
 export type SitePublicConfirmationsPerformResponse = SitePublicConfirmationsPerformResponses[keyof SitePublicConfirmationsPerformResponses];
+
+export type SiteInstanceGetStateData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/instance';
+};
+
+export type SiteInstanceGetStateErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+};
+
+export type SiteInstanceGetStateError = SiteInstanceGetStateErrors[keyof SiteInstanceGetStateErrors];
+
+export type SiteInstanceGetStateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteInstanceState;
+};
+
+export type SiteInstanceGetStateResponse = SiteInstanceGetStateResponses[keyof SiteInstanceGetStateResponses];
+
+export type SiteInstanceAcknowledgeNoticeData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/instance/notice/acknowledge';
+};
+
+export type SiteInstanceAcknowledgeNoticeErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+};
+
+export type SiteInstanceAcknowledgeNoticeError = SiteInstanceAcknowledgeNoticeErrors[keyof SiteInstanceAcknowledgeNoticeErrors];
+
+export type SiteInstanceAcknowledgeNoticeResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteInstanceState;
+};
+
+export type SiteInstanceAcknowledgeNoticeResponse = SiteInstanceAcknowledgeNoticeResponses[keyof SiteInstanceAcknowledgeNoticeResponses];
+
+export type SiteInstanceSetTelemetryData = {
+  body: SiteInstanceTelemetryInput;
+  path?: never;
+  query?: never;
+  url: '/instance/telemetry';
+};
+
+export type SiteInstanceSetTelemetryErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+};
+
+export type SiteInstanceSetTelemetryError = SiteInstanceSetTelemetryErrors[keyof SiteInstanceSetTelemetryErrors];
+
+export type SiteInstanceSetTelemetryResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteInstanceState;
+};
+
+export type SiteInstanceSetTelemetryResponse = SiteInstanceSetTelemetryResponses[keyof SiteInstanceSetTelemetryResponses];
+
+export type SiteInstancePreviewTelemetryReportData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/instance/telemetry/preview';
+};
+
+export type SiteInstancePreviewTelemetryReportErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+};
+
+export type SiteInstancePreviewTelemetryReportError = SiteInstancePreviewTelemetryReportErrors[keyof SiteInstancePreviewTelemetryReportErrors];
+
+export type SiteInstancePreviewTelemetryReportResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: {
+    [key: string]: unknown;
+  };
+};
+
+export type SiteInstancePreviewTelemetryReportResponse = SiteInstancePreviewTelemetryReportResponses[keyof SiteInstancePreviewTelemetryReportResponses];
 
 export type SitePublicInvitationsLookupData = {
   body?: never;

@@ -45,6 +45,9 @@ type Event func(*sql.Selector)
 // Hold is the predicate function for hold builders.
 type Hold func(*sql.Selector)
 
+// InstanceState is the predicate function for instancestate builders.
+type InstanceState func(*sql.Selector)
+
 // Integration is the predicate function for integration builders.
 type Integration func(*sql.Selector)
 

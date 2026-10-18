@@ -209,7 +209,7 @@ Operating a self-hosted instance over time: knowing an update exists, applying i
 report are **two channels with two switches** (ADR 0032): refusing telemetry must not hide a
 security release.
 
-- **Release-update notification** — the running instance checks for a newer published release
+- **Release-update notification** (built) — the running instance checks for a newer published release
   and surfaces an admin-only in-app banner ("vX.Y is available"). This is the solid MVP
   deliverable. **Auto-update is a separate, hedged follow-up** and is deployment-specific:
   reasonable for the single **binary** install, wrong for Docker/k8s (you roll a new image —
@@ -223,9 +223,10 @@ security release.
   - _Postgres major upgrade_ — a DBA operation (`pg_upgrade` or dump/restore across majors),
     independent of the app release. The doc says "14+".
 - **Usage telemetry (opt-out)** — decided in
-  [ADR 0032](./adr/0032-instance-telemetry-report-and-release-check): a daily anonymous Telemetry
+  [ADR 0032](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0032-instance-telemetry-report-and-release-check.md): a daily anonymous Telemetry
   report on by default, switchable off by `SPHERICON_TELEMETRY` or by the owner in the app. The
-  release check is a separate channel with its own switch. Not built yet.
+  release check is a separate channel with its own switch. Built: see
+  [Telemetry and the Release check](./operations/telemetry).
 
 ---
 

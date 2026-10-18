@@ -264,6 +264,32 @@ type Handler interface {
 	//
 	// GET /workspaces/{slug}/events
 	SiteEventsList(ctx context.Context, params SiteEventsListParams) (SiteEventsListRes, error)
+	// SiteInstanceAcknowledgeNotice implements SiteInstance_acknowledgeNotice operation.
+	//
+	// Acknowledge the one-time Telemetry report notice. Idempotent.
+	//
+	// POST /instance/notice/acknowledge
+	SiteInstanceAcknowledgeNotice(ctx context.Context) (SiteInstanceAcknowledgeNoticeRes, error)
+	// SiteInstanceGetState implements SiteInstance_getState operation.
+	//
+	// Read the Instance state. Refused to everyone but the Owners of the oldest Workspace.
+	//
+	// GET /instance
+	SiteInstanceGetState(ctx context.Context) (SiteInstanceGetStateRes, error)
+	// SiteInstancePreviewTelemetryReport implements SiteInstance_previewTelemetryReport operation.
+	//
+	// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
+	// schema describes, built by the code that sends it. Works whether or not sending is on. Refused to
+	// everyone but the Owners of the oldest Workspace.
+	//
+	// GET /instance/telemetry/preview
+	SiteInstancePreviewTelemetryReport(ctx context.Context) (SiteInstancePreviewTelemetryReportRes, error)
+	// SiteInstanceSetTelemetry implements SiteInstance_setTelemetry operation.
+	//
+	// Switch the Telemetry report on or off. Answers 409 while the environment decides.
+	//
+	// PUT /instance/telemetry
+	SiteInstanceSetTelemetry(ctx context.Context, req *SiteInstanceTelemetryInput) (SiteInstanceSetTelemetryRes, error)
 	// SiteIntegrationsCreate implements SiteIntegrations_create operation.
 	//
 	// Create an integration. Owners and admins only.

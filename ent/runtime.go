@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -401,6 +402,25 @@ func init() {
 	holdDescSetBy := holdFields[5].Descriptor()
 	// hold.SetByValidator is a validator for the "set_by" field. It is called by the builders before save.
 	hold.SetByValidator = holdDescSetBy.Validators[0].(func(string) error)
+	instancestateMixin := schema.InstanceState{}.Mixin()
+	instancestateMixinFields0 := instancestateMixin[0].Fields()
+	_ = instancestateMixinFields0
+	instancestateFields := schema.InstanceState{}.Fields()
+	_ = instancestateFields
+	// instancestateDescCreatedAt is the schema descriptor for created_at field.
+	instancestateDescCreatedAt := instancestateMixinFields0[0].Descriptor()
+	// instancestate.DefaultCreatedAt holds the default value on creation for the created_at field.
+	instancestate.DefaultCreatedAt = instancestateDescCreatedAt.Default.(func() time.Time)
+	// instancestateDescUpdatedAt is the schema descriptor for updated_at field.
+	instancestateDescUpdatedAt := instancestateMixinFields0[1].Descriptor()
+	// instancestate.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	instancestate.DefaultUpdatedAt = instancestateDescUpdatedAt.Default.(func() time.Time)
+	// instancestate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	instancestate.UpdateDefaultUpdatedAt = instancestateDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// instancestateDescInstanceID is the schema descriptor for instance_id field.
+	instancestateDescInstanceID := instancestateFields[1].Descriptor()
+	// instancestate.DefaultInstanceID holds the default value on creation for the instance_id field.
+	instancestate.DefaultInstanceID = instancestateDescInstanceID.Default.(func() string)
 	integrationMixin := schema.Integration{}.Mixin()
 	integrationMixinFields0 := integrationMixin[0].Fields()
 	_ = integrationMixinFields0

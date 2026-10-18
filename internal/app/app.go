@@ -30,12 +30,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
@@ -56,6 +58,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/telemetry"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samber/do/v2"
@@ -342,6 +345,20 @@ func (a *App) Start(ctx context.Context) error {
 const unwindTimeout = 15 * time.Second
 
 func (a *App) start(ctx context.Context) error {
+	// The first start creates the Instance state row and its random Instance id (ADR 0032).
+	inst, err := do.Invoke[*instance.Module](a.injector)
+	if err != nil {
+		return err
+	}
+	if _, err := inst.Ensure(ctx); err != nil {
+		return err
+	}
+	if err := inst.AnnounceRelease(ctx); err != nil {
+		return err
+	}
+	if err := telemetry.ObserveReleaseAvailable(inst.LatestRelease); err != nil {
+		return err
+	}
 	// The metrics listener is bound first: a bind failure (port in use) must fail the
 	// boot, not leave an unmonitored instance.
 	if err := a.bindMetrics(ctx); err != nil {
@@ -893,8 +910,17 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
+		inst, err := do.Invoke[*instance.Module](i)
+		if err != nil {
+			return nil, err
+		}
+		reporter, err := instance.NewSender(inst, cfg)
+		if err != nil {
+			return nil, err
+		}
 		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL,
-			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention}, edition.Jobs(bus.Bus, sys.EmailSender))
+			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
+			edition.Jobs(bus.Bus, sys.EmailSender), inst.Jobs(), reporter.Jobs())
 		if err != nil {
 			return nil, err
 		}
@@ -943,6 +969,23 @@ func register(injector do.Injector, env string, o options) {
 			return nil, err
 		}
 		return accounts.New(client.Client, bus.Bus), nil
+	})
+
+	// The Instance state and who decides about it (ADR 0032), over the raw client.
+	do.Provide(injector, func(i do.Injector) (*instance.Module, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
+		if err != nil {
+			return nil, err
+		}
+		return instance.New(client.Client, instance.EnvironmentOf(cfg), instance.HostOf(cfg, buildinfo.Current().Version), nil, instance.WithReleaseSource(source)), nil
 	})
 
 	// Attempts counts failed logins per account (ADR 0025) over the raw client.
@@ -1375,7 +1418,12 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	if err != nil {
 		return apisite.Deps{}, err
 	}
+	inst, err := do.Invoke[*instance.Module](i)
+	if err != nil {
+		return apisite.Deps{}, err
+	}
 	return apisite.Deps{
+		Instance:    inst,
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Automations: auto,

@@ -53,6 +53,8 @@ export default defineConfig({
             { text: 'Runbook', link: '/operations/runbook' },
             { text: 'Scaling and tuning', link: '/operations/scaling' },
             { text: 'Security hardening', link: '/operations/security' },
+            { text: 'Telemetry and the Release check', link: '/operations/telemetry' },
+            { text: 'Telemetry report schema', link: '/operations/telemetry-schema' },
           ],
         },
         {

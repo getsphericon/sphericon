@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -101,6 +102,7 @@ type Handlers struct {
 	secondFactor   *secondfactor.Module
 	now            func() time.Time
 	accountLink    *accountlink.Link
+	instance       *instance.Module
 	holdsHonoured  func() bool
 	billingURL     string
 	// requireVerification is the email verification gate (ADR 0030): off only on an
@@ -146,6 +148,8 @@ type AbuseWatch interface {
 // cannot diverge on how a module is constructed.
 type Deps struct {
 	Accounts *accounts.Accounts
+	// Instance is the Instance state no Workspace owns (ADR 0032).
+	Instance *instance.Module
 	// Attempts counts failed logins and password-reset mails per account (ADR
 	// 0025); login and forgot-password share it.
 	Attempts       *accounts.Attempts
@@ -206,7 +210,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, billingURL: d.BillingURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, billingURL: d.BillingURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }

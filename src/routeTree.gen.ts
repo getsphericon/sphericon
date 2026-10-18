@@ -22,6 +22,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as UnsubscribedRouteImport } from './routes/unsubscribed'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
+import { Route as AccountInstanceRouteImport } from './routes/account/instance'
 import { Route as AccountSecurityRouteImport } from './routes/account/security'
 import { Route as ConsoleAuthedRouteRouteImport } from './routes/console/_authed/route'
 import { Route as ConsoleLoginRouteImport } from './routes/console/login'
@@ -115,6 +116,11 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AccountRouteRoute,
+} as any)
+const AccountInstanceRoute = AccountInstanceRouteImport.update({
+  id: '/instance',
+  path: '/instance',
   getParentRoute: () => AccountRouteRoute,
 } as any)
 const AccountSecurityRoute = AccountSecurityRouteImport.update({
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
   '/workspaces/$slug': typeof WorkspacesSlugRouteRouteWithChildren
+  '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -336,6 +343,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -380,6 +388,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/console/_authed': typeof ConsoleAuthedRouteRouteWithChildren
   '/workspaces/$slug': typeof WorkspacesSlugRouteRouteWithChildren
+  '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -425,6 +434,7 @@ export interface FileRouteTypes {
     | '/unsubscribed'
     | '/verify-email'
     | '/workspaces/$slug'
+    | '/account/instance'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
+    | '/account/instance'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
@@ -509,6 +520,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/console/_authed'
     | '/workspaces/$slug'
+    | '/account/instance'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
@@ -648,6 +660,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/account/'
       preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
+    '/account/instance': {
+      id: '/account/instance'
+      path: '/instance'
+      fullPath: '/account/instance'
+      preLoaderRoute: typeof AccountInstanceRouteImport
       parentRoute: typeof AccountRouteRoute
     }
     '/account/security': {
@@ -857,11 +876,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AccountRouteRouteChildren {
+  AccountInstanceRoute: typeof AccountInstanceRoute
   AccountSecurityRoute: typeof AccountSecurityRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteRouteChildren: AccountRouteRouteChildren = {
+  AccountInstanceRoute: AccountInstanceRoute,
   AccountSecurityRoute: AccountSecurityRoute,
   AccountIndexRoute: AccountIndexRoute,
 }

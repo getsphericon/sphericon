@@ -2691,6 +2691,52 @@ func (o OptSiteAuditActorKind) Or(d SiteAuditActorKind) SiteAuditActorKind {
 	return d
 }
 
+// NewOptSiteInstanceTelemetryLock returns new OptSiteInstanceTelemetryLock with value set to v.
+func NewOptSiteInstanceTelemetryLock(v SiteInstanceTelemetryLock) OptSiteInstanceTelemetryLock {
+	return OptSiteInstanceTelemetryLock{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteInstanceTelemetryLock is optional SiteInstanceTelemetryLock.
+type OptSiteInstanceTelemetryLock struct {
+	Value SiteInstanceTelemetryLock
+	Set   bool
+}
+
+// IsSet returns true if OptSiteInstanceTelemetryLock was set.
+func (o OptSiteInstanceTelemetryLock) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteInstanceTelemetryLock) Reset() {
+	var v SiteInstanceTelemetryLock
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteInstanceTelemetryLock) SetTo(v SiteInstanceTelemetryLock) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteInstanceTelemetryLock) Get() (v SiteInstanceTelemetryLock, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteInstanceTelemetryLock) Or(d SiteInstanceTelemetryLock) SiteInstanceTelemetryLock {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteSegmentRuleGroup returns new OptSiteSegmentRuleGroup with value set to v.
 func NewOptSiteSegmentRuleGroup(v SiteSegmentRuleGroup) OptSiteSegmentRuleGroup {
 	return OptSiteSegmentRuleGroup{
@@ -3043,19 +3089,22 @@ func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 	s.RetryAfter = val
 }
 
-func (*ProblemDetails) siteAnalyticsOverviewRes()         {}
-func (*ProblemDetails) siteAuthConfirmEmailChangeRes()    {}
-func (*ProblemDetails) siteAuthResetPasswordRes()         {}
-func (*ProblemDetails) siteAuthSecondFactorRes()          {}
-func (*ProblemDetails) siteAuthVerifyEmailRes()           {}
-func (*ProblemDetails) siteEventsActionsRes()             {}
-func (*ProblemDetails) siteEventsListRes()                {}
-func (*ProblemDetails) siteIntegrationsListRes()          {}
-func (*ProblemDetails) siteInvitationsListRes()           {}
-func (*ProblemDetails) siteMembershipsListRes()           {}
-func (*ProblemDetails) sitePublicInvitationsLookupRes()   {}
-func (*ProblemDetails) sitePublicUnsubscribesPerformRes() {}
-func (*ProblemDetails) siteTokensListRes()                {}
+func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
+func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
+func (*ProblemDetails) siteAuthResetPasswordRes()              {}
+func (*ProblemDetails) siteAuthSecondFactorRes()               {}
+func (*ProblemDetails) siteAuthVerifyEmailRes()                {}
+func (*ProblemDetails) siteEventsActionsRes()                  {}
+func (*ProblemDetails) siteEventsListRes()                     {}
+func (*ProblemDetails) siteInstanceAcknowledgeNoticeRes()      {}
+func (*ProblemDetails) siteInstanceGetStateRes()               {}
+func (*ProblemDetails) siteInstancePreviewTelemetryReportRes() {}
+func (*ProblemDetails) siteIntegrationsListRes()               {}
+func (*ProblemDetails) siteInvitationsListRes()                {}
+func (*ProblemDetails) siteMembershipsListRes()                {}
+func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
+func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
+func (*ProblemDetails) siteTokensListRes()                     {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -6826,6 +6875,188 @@ func (s *SiteForgotPasswordInput) GetEmail() EmailAddress {
 // SetEmail sets the value of Email.
 func (s *SiteForgotPasswordInput) SetEmail(val EmailAddress) {
 	s.Email = val
+}
+
+type SiteInstancePreviewTelemetryReportOK map[string]jx.Raw
+
+func (s *SiteInstancePreviewTelemetryReportOK) init() SiteInstancePreviewTelemetryReportOK {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+func (*SiteInstancePreviewTelemetryReportOK) siteInstancePreviewTelemetryReportRes() {}
+
+type SiteInstanceSetTelemetryConflict ProblemDetails
+
+func (*SiteInstanceSetTelemetryConflict) siteInstanceSetTelemetryRes() {}
+
+type SiteInstanceSetTelemetryForbidden ProblemDetails
+
+func (*SiteInstanceSetTelemetryForbidden) siteInstanceSetTelemetryRes() {}
+
+// What an Instance's Owner sees and decides about the Instance itself: it belongs to no Workspace.
+// Only the Owners of the oldest existing Workspace may read or change it.
+// Ref: #/components/schemas/SiteInstanceState
+type SiteInstanceState struct {
+	// The Telemetry report setting.
+	Telemetry SiteInstanceTelemetry `json:"telemetry"`
+	// Whether the one-time notice about the Telemetry report was acknowledged.
+	NoticeAcknowledged bool `json:"noticeAcknowledged"`
+	// The newest stable release (a bare version such as `0.4.0`) when the Release check found one newer
+	// than the running version; absent otherwise, and always absent for a build whose version is not a
+	// release or when `SPHERICON_RELEASE_CHECK` is off.
+	LatestRelease OptString `json:"latestRelease"`
+	// The page that documents the schema of the Telemetry report.
+	TelemetrySchemaUrl string `json:"telemetrySchemaUrl"`
+}
+
+// GetTelemetry returns the value of Telemetry.
+func (s *SiteInstanceState) GetTelemetry() SiteInstanceTelemetry {
+	return s.Telemetry
+}
+
+// GetNoticeAcknowledged returns the value of NoticeAcknowledged.
+func (s *SiteInstanceState) GetNoticeAcknowledged() bool {
+	return s.NoticeAcknowledged
+}
+
+// GetLatestRelease returns the value of LatestRelease.
+func (s *SiteInstanceState) GetLatestRelease() OptString {
+	return s.LatestRelease
+}
+
+// GetTelemetrySchemaUrl returns the value of TelemetrySchemaUrl.
+func (s *SiteInstanceState) GetTelemetrySchemaUrl() string {
+	return s.TelemetrySchemaUrl
+}
+
+// SetTelemetry sets the value of Telemetry.
+func (s *SiteInstanceState) SetTelemetry(val SiteInstanceTelemetry) {
+	s.Telemetry = val
+}
+
+// SetNoticeAcknowledged sets the value of NoticeAcknowledged.
+func (s *SiteInstanceState) SetNoticeAcknowledged(val bool) {
+	s.NoticeAcknowledged = val
+}
+
+// SetLatestRelease sets the value of LatestRelease.
+func (s *SiteInstanceState) SetLatestRelease(val OptString) {
+	s.LatestRelease = val
+}
+
+// SetTelemetrySchemaUrl sets the value of TelemetrySchemaUrl.
+func (s *SiteInstanceState) SetTelemetrySchemaUrl(val string) {
+	s.TelemetrySchemaUrl = val
+}
+
+func (*SiteInstanceState) siteInstanceAcknowledgeNoticeRes() {}
+func (*SiteInstanceState) siteInstanceGetStateRes()          {}
+func (*SiteInstanceState) siteInstanceSetTelemetryRes()      {}
+
+// The Telemetry report setting as it applies right now (ADR 0032).
+// Ref: #/components/schemas/SiteInstanceTelemetry
+type SiteInstanceTelemetry struct {
+	// Whether the Instance sends the Telemetry report.
+	Enabled bool `json:"enabled"`
+	// Whether the environment decides, which makes the in-app switch read-only.
+	Locked bool `json:"locked"`
+	// What decides, set when locked.
+	LockedBy OptSiteInstanceTelemetryLock `json:"lockedBy"`
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *SiteInstanceTelemetry) GetEnabled() bool {
+	return s.Enabled
+}
+
+// GetLocked returns the value of Locked.
+func (s *SiteInstanceTelemetry) GetLocked() bool {
+	return s.Locked
+}
+
+// GetLockedBy returns the value of LockedBy.
+func (s *SiteInstanceTelemetry) GetLockedBy() OptSiteInstanceTelemetryLock {
+	return s.LockedBy
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *SiteInstanceTelemetry) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+// SetLocked sets the value of Locked.
+func (s *SiteInstanceTelemetry) SetLocked(val bool) {
+	s.Locked = val
+}
+
+// SetLockedBy sets the value of LockedBy.
+func (s *SiteInstanceTelemetry) SetLockedBy(val OptSiteInstanceTelemetryLock) {
+	s.LockedBy = val
+}
+
+// Switch the Telemetry report on or off.
+// Ref: #/components/schemas/SiteInstanceTelemetryInput
+type SiteInstanceTelemetryInput struct {
+	// The Owner's choice.
+	Enabled bool `json:"enabled"`
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *SiteInstanceTelemetryInput) GetEnabled() bool {
+	return s.Enabled
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *SiteInstanceTelemetryInput) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+// Why the environment, not the Owner, decides the Telemetry report.
+// Ref: #/components/schemas/SiteInstanceTelemetryLock
+type SiteInstanceTelemetryLock string
+
+const (
+	SiteInstanceTelemetryLockEnvironment SiteInstanceTelemetryLock = "environment"
+	SiteInstanceTelemetryLockDoNotTrack  SiteInstanceTelemetryLock = "do_not_track"
+)
+
+// AllValues returns all SiteInstanceTelemetryLock values.
+func (SiteInstanceTelemetryLock) AllValues() []SiteInstanceTelemetryLock {
+	return []SiteInstanceTelemetryLock{
+		SiteInstanceTelemetryLockEnvironment,
+		SiteInstanceTelemetryLockDoNotTrack,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteInstanceTelemetryLock) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteInstanceTelemetryLockEnvironment:
+		return []byte(s), nil
+	case SiteInstanceTelemetryLockDoNotTrack:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteInstanceTelemetryLock) UnmarshalText(data []byte) error {
+	switch SiteInstanceTelemetryLock(data) {
+	case SiteInstanceTelemetryLockEnvironment:
+		*s = SiteInstanceTelemetryLockEnvironment
+		return nil
+	case SiteInstanceTelemetryLockDoNotTrack:
+		*s = SiteInstanceTelemetryLockDoNotTrack
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // Delivery channel an integration belongs to.

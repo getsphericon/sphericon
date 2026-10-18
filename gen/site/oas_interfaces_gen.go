@@ -149,6 +149,22 @@ type SiteEventsListRes interface {
 	siteEventsListRes()
 }
 
+type SiteInstanceAcknowledgeNoticeRes interface {
+	siteInstanceAcknowledgeNoticeRes()
+}
+
+type SiteInstanceGetStateRes interface {
+	siteInstanceGetStateRes()
+}
+
+type SiteInstancePreviewTelemetryReportRes interface {
+	siteInstancePreviewTelemetryReportRes()
+}
+
+type SiteInstanceSetTelemetryRes interface {
+	siteInstanceSetTelemetryRes()
+}
+
 type SiteIntegrationsCreateRes interface {
 	siteIntegrationsCreateRes()
 }
