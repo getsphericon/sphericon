@@ -238,8 +238,14 @@ func webhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.
 				return fmt.Errorf("marshal audit entry: %w", err)
 			}
 		}
+		// A retried event whose repeat slipped past the collect-side check carries the same
+		// DedupKey, so the receiver sees one id for it and can drop the second delivery.
+		id := env.ID
+		if env.DedupKey != "" {
+			id = env.DedupKey
+		}
 		body, err := json.Marshal(webhookPayload{
-			ID:          env.ID,
+			ID:          id,
 			Type:        name,
 			OccurredAt:  env.OccurredAt,
 			WorkspaceID: env.WorkspaceID,
@@ -250,7 +256,7 @@ func webhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.
 		if err != nil {
 			return fmt.Errorf("marshal webhook payload: %w", err)
 		}
-		return dispatcher.Dispatch(msg.Context(), client.Scoped(env.WorkspaceID), name, env.ID, body)
+		return dispatcher.Dispatch(msg.Context(), client.Scoped(env.WorkspaceID), name, id, body)
 	}
 }
 

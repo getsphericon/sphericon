@@ -81,6 +81,8 @@ dist
 packages/*/dist
 # built SPA copied into the Go embed tree by `mise run build:spa` (release only)
 internal/server/assets/spa/
+# release changelog copied into the Go embed tree by `mise run build:changelog`
+internal/changelog/CHANGELOG.md
 
 # compiled Go binaries / goreleaser output
 bin/

@@ -372,6 +372,19 @@ if [ -n "$dup" ]; then
 fi
 '''
 
+["check:upgrade"]
+description = "ADR 0033 in CI: a destructive migration needs a breaking PR title, a breaking change needs an `Upgrade:` line in its `BREAKING CHANGE:` footer (cmd/upgradecheck; PR_TITLE, PR_BODY_FILE and BASE come from the pull request, default to the last commit against origin/main)"
+depends = ["db:up"]
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+base="${BASE:-origin/main}"
+title="${PR_TITLE:-$(git log -1 --format=%s)}"
+args=(--title "$title" --base "$base")
+go run ./cmd/upgradecheck migrations "${args[@]}"
+go run ./cmd/upgradecheck breaking "${args[@]}" ${PR_BODY_FILE:+--body-file "$PR_BODY_FILE"}
+'''
+
 ["check:env"]
 description = "Every environment variable config/config.go reads is documented in docs/self-hosting.md (the one env table)"
 run = '''
@@ -433,10 +446,29 @@ helm template r "$chart" --set existingSecret=sphericon-secrets \
   --set ingress.enabled=true --set ingress.tls.enabled=true --set ingress.tls.secretName=tls \
   --set metrics.enabled=true --set metrics.serviceMonitor.enabled=true \
   --set metrics.prometheusRule.enabled=true | $kc
+# The release packages the chart with chart version = app version.
+mise run release:chart -- 9.9.9
 # Every alert in the rules needs a runbook section named after it.
 for alert in $(sed -n 's/^ *- alert: *//p' "$chart/files/alerts.yaml"); do
   grep -q "^## $alert\$" docs/operations/runbook.md || { echo "error: no runbook section for $alert"; exit 1; }
 done
+'''
+
+["release:chart"]
+description = "Package the Helm chart with chart version = app version (no leading v) and push it to an OCI registry path; without a registry only package and verify"
+usage = '''
+arg "<version>" help="app and chart version, no leading v"
+arg "[registry]" help="oci://host/path to push to"
+'''
+run = '''
+set -eu
+version=$usage_version
+out=$(mktemp -d)
+helm package charts/sphericon --version "$version" --app-version "$version" --destination "$out"
+pkg="$out/sphericon-$version.tgz"
+test "$(helm show chart "$pkg" | sed -n 's/^appVersion: *//p' | tr -d '"')" = "$version" \
+  || { echo "error: packaged appVersion is not $version"; exit 1; }
+if [ -n "${usage_registry:-}" ]; then helm push "$pkg" "$usage_registry"; fi
 '''
 
 ["check:infra"]
@@ -500,13 +532,17 @@ run = [
   "cp -R dist/. internal/server/assets/spa/",
 ]
 
+["build:changelog"]
+description = "Copy CHANGELOG.md into the Go embed tree (gitignored; release builds only)"
+run = "cp CHANGELOG.md internal/changelog/CHANGELOG.md"
+
 [build]
-description = "Self-contained release binary (tracker + SPA embedded); VERSION env overrides `dev`"
-depends = ["build:tracker", "build:spa"]
+description = "Self-contained release binary (tracker, SPA, changelog embedded); VERSION env overrides `dev`"
+depends = ["build:tracker", "build:spa", "build:changelog"]
 run = '''
 commit=$(git rev-parse --short HEAD 2>/dev/null || echo none)
 date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-go build -tags embed_spa -ldflags "-s -w -X main.version=${VERSION:-dev} -X main.commit=$commit -X main.date=$date" -o bin/sphericon ./cmd/server
+go build -tags embed_spa,embed_changelog -ldflags "-s -w -X github.com/getsphericon/sphericon/internal/buildinfo.Version=${VERSION:-dev} -X github.com/getsphericon/sphericon/internal/buildinfo.Commit=$commit -X github.com/getsphericon/sphericon/internal/buildinfo.Date=$date" -o bin/sphericon ./cmd/server
 '''
 
 [loc]

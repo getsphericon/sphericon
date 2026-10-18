@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/schema"
+	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -573,6 +574,21 @@ func init() {
 	recoverycodeDescCodeHash := recoverycodeFields[2].Descriptor()
 	// recoverycode.CodeHashValidator is a validator for the "code_hash" field. It is called by the builders before save.
 	recoverycode.CodeHashValidator = recoverycodeDescCodeHash.Validators[0].(func(string) error)
+	schemastateMixin := schema.SchemaState{}.Mixin()
+	schemastateMixinFields0 := schemastateMixin[0].Fields()
+	_ = schemastateMixinFields0
+	schemastateFields := schema.SchemaState{}.Fields()
+	_ = schemastateFields
+	// schemastateDescCreatedAt is the schema descriptor for created_at field.
+	schemastateDescCreatedAt := schemastateMixinFields0[0].Descriptor()
+	// schemastate.DefaultCreatedAt holds the default value on creation for the created_at field.
+	schemastate.DefaultCreatedAt = schemastateDescCreatedAt.Default.(func() time.Time)
+	// schemastateDescUpdatedAt is the schema descriptor for updated_at field.
+	schemastateDescUpdatedAt := schemastateMixinFields0[1].Descriptor()
+	// schemastate.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	schemastate.DefaultUpdatedAt = schemastateDescUpdatedAt.Default.(func() time.Time)
+	// schemastate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	schemastate.UpdateDefaultUpdatedAt = schemastateDescUpdatedAt.UpdateDefault.(func() time.Time)
 	segmentMixin := schema.Segment{}.Mixin()
 	segmentMixinFields0 := segmentMixin[0].Fields()
 	_ = segmentMixinFields0

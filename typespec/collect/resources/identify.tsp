@@ -31,5 +31,6 @@ namespace CollectIdentify {
     | UnauthorizedProblem
     | PayloadTooLargeProblem
     | TooManyRequestsProblem
-    | UnprocessableEntityProblem;
+    | UnprocessableEntityProblem
+    | ServiceUnavailableProblem;
 }

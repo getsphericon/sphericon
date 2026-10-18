@@ -23,17 +23,27 @@ neither the command, a diagnosis, nor the guard's message can say what runs wher
   notes of every release between the two versions and, if there are any, waits for `--yes`. It
   refuses to run inside a container or Kubernetes and says which command to use instead.
 - **It reaches the database through the service, not by itself.** Its shell does not carry the
-  service's environment, so the documented systemd setup has a `sphericon-migrate.service`
-  (oneshot, same user and environment file) that `upgrade --restart` starts before it runs
-  `systemctl restart sphericon`; a failed migration stops there with the old version still serving.
-  Without `--restart` it prints the two commands.
+  service's environment, so `upgrade --restart` reads the service's `User` and `EnvironmentFile`
+  with `systemctl show` and runs the new binary's `migrate` as a transient unit
+  (`systemd-run --wait --collect` with those properties), so there is no second unit file to
+  install; then it swaps and runs `systemctl restart sphericon`. A failed migration stops there
+  with the old version still serving. Without `--restart` it prints the commands.
 - **Across Majors it walks** to the last release of each Major, then to the target; every step is the
   sequence above. `--version vX.Y.Z` pins a release, a downgrade is refused, and `--from <dir>` takes
   an archive and `checksums.txt` already on the machine, so a host without internet access
   upgrades with no network call; it lists the archives a Major crossing still needs before starting.
+- **The walk asks the release it is about to install.** The table of Majors (`db.Majors`) lives in
+  the new binary, not the running one, so `upgrade` stages the target, verifies it and runs its
+  `migrate --status --json` (through the service's unit with `--restart`, like `migrate`), which
+  prints the database's state and that table. The walk installs the Floor of every Major above the
+  database's that lies after the running release and before the target, oldest first, then the
+  target. Nothing beyond the target's own archive is needed, so it works offline; the GitHub
+  Release carries no extra metadata file. With `--from` (any source) every archive of the plan is
+  checked before the first step and a missing one refuses the Upgrade, naming it.
 - **The notes travel in the binary.** `CHANGELOG.md` is embedded, so the new binary prints its own
   `Upgrade:` entries offline. A commit with `!` or `BREAKING CHANGE:` must carry an `Upgrade:`
-  footer saying what the Self-hoster does, which commitlint checks; the release notes are the only
+  line inside its `BREAKING CHANGE:` footer saying what the Self-hoster does (release-please renders
+  only that footer's text into the changelog), which `cmd/upgradecheck` checks in CI; the release notes are the only
   place for it, with no per-version table kept by hand.
 - **Helm: a chart on `ghcr.io/getsphericon/charts/sphericon`**, published as an OCI artifact at every
   release with the chart version equal to the app version, so `helm upgrade sphericon
@@ -50,6 +60,9 @@ neither the command, a diagnosis, nor the guard's message can say what runs wher
 
 - **`sphericon upgrade` runs `migrate` itself.** Rejected: it runs from a shell that has none of
   the service's environment, so it would need the database URL given a second time.
+- **A `sphericon-migrate.service` oneshot unit next to the service.** Rejected: a second file to
+  install and keep in step with the first; a transient unit built from the service's own
+  properties has nothing to install.
 - **Restart by default.** Rejected: a command that restarts a service nobody told it about
   surprises; the flag names it.
 - **A second update check with its own switch and an email to a configured address.** Rejected:

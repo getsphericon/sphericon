@@ -15,6 +15,13 @@ export type BadRequestProblem = {
 export type CollectEventInput = {
   visitorId: string;
   action: string;
+  /**
+   * A client-chosen id that makes a retry safe. It is unique within the Workspace: sending
+   * an event again with the same id changes nothing, so a client that did not see the answer
+   * (a network error, a `503`) resends the whole batch. Generate it once per event, when the
+   * event happens (a UUID), and reuse it on every retry. An event without one is not deduplicated.
+   */
+  clientEventId?: string | null;
   properties?: {
     [key: string]: unknown;
   } | null;
@@ -166,6 +173,10 @@ export type CollectEventsCreateErrors = {
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
   429: ProblemDetails;
+  /**
+   * RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.
+   */
+  503: ProblemDetails;
 };
 
 export type CollectEventsCreateError = CollectEventsCreateErrors[keyof CollectEventsCreateErrors];
@@ -203,6 +214,10 @@ export type CollectIdentifyCreateErrors = {
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
   429: ProblemDetails;
+  /**
+   * RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.
+   */
+  503: ProblemDetails;
 };
 
 export type CollectIdentifyCreateError = CollectIdentifyCreateErrors[keyof CollectIdentifyCreateErrors];

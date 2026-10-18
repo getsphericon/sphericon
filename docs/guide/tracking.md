@@ -46,6 +46,40 @@ the collect key in an `x-collect-key` header:
 | `POST /collect/identify` | Bind a `visitorId` to alias keys and traits. |
 | `POST /collect/events`   | Record a batch of events for visitors.       |
 
+## Retrying from a server client
+
+`/collect` is safe to retry. Give every event in `POST /collect/events` a `clientEventId`: an
+id you choose, unique within the workspace (a UUID), generated once when the event happens and
+reused on every retry.
+
+```json
+{
+  "events": [
+    {
+      "visitorId": "v_1",
+      "action": "viewed_pricing",
+      "clientEventId": "0b0a3c2e-6f0e-4d0e-9a41-5d0c2f8f6f11"
+    }
+  ]
+}
+```
+
+- A repeat of an id in the same workspace is accepted (`204`) and changes nothing: the event is
+  counted once, whether the first attempt reached sphericon or not. Resend a whole batch rather
+  than working out which events arrived. Ids are per workspace, so two workspaces may use the
+  same id. An event without a `clientEventId` is not deduplicated.
+- When the database cannot be reached, `/collect` answers `503` with a `Retry-After` header (in
+  seconds) and the request changes nothing. Wait that long, then send the same batch with the same
+  ids; back off exponentially if it keeps answering `503`. A restart of a single-host instance
+  takes seconds, so a few retries cover it.
+- `429` also carries `Retry-After`; retry it the same way. Other `4xx` answers are not retryable:
+  fix the request.
+
+The browser tracker (`t.js`) does this for you: it gives every event a `clientEventId`, keeps
+events it could not send (network error, `429`, `5xx`) in a bounded `localStorage` queue of 100
+events (the oldest is dropped first), retries them with backoff (honouring `Retry-After`) and sends
+what is left on the next page load.
+
 ## Contacts and identity
 
 A contact is anchored by an internal id. Email, phone and `subject_id` are alias keys: each is

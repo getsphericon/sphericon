@@ -36,10 +36,15 @@ func (s *ApiKeyAuth) SetRoles(val []string) {
 
 // Ref: #/components/schemas/CollectEventInput
 type CollectEventInput struct {
-	VisitorId  string                            `json:"visitorId"`
-	Action     string                            `json:"action"`
-	Properties OptNilCollectEventInputProperties `json:"properties"`
-	OccurredAt OptNilTimestamp                   `json:"occurredAt"`
+	VisitorId string `json:"visitorId"`
+	Action    string `json:"action"`
+	// A client-chosen id that makes a retry safe. It is unique within the Workspace: sending an event
+	// again with the same id changes nothing, so a client that did not see the answer (a network error, a
+	// `503`) resends the whole batch. Generate it once per event, when the event happens (a UUID), and
+	// reuse it on every retry. An event without one is not deduplicated.
+	ClientEventId OptNilString                      `json:"clientEventId"`
+	Properties    OptNilCollectEventInputProperties `json:"properties"`
+	OccurredAt    OptNilTimestamp                   `json:"occurredAt"`
 }
 
 // GetVisitorId returns the value of VisitorId.
@@ -50,6 +55,11 @@ func (s *CollectEventInput) GetVisitorId() string {
 // GetAction returns the value of Action.
 func (s *CollectEventInput) GetAction() string {
 	return s.Action
+}
+
+// GetClientEventId returns the value of ClientEventId.
+func (s *CollectEventInput) GetClientEventId() OptNilString {
+	return s.ClientEventId
 }
 
 // GetProperties returns the value of Properties.
@@ -70,6 +80,11 @@ func (s *CollectEventInput) SetVisitorId(val string) {
 // SetAction sets the value of Action.
 func (s *CollectEventInput) SetAction(val string) {
 	s.Action = val
+}
+
+// SetClientEventId sets the value of ClientEventId.
+func (s *CollectEventInput) SetClientEventId(val OptNilString) {
+	s.ClientEventId = val
 }
 
 // SetProperties sets the value of Properties.
@@ -101,6 +116,35 @@ func (*CollectEventsCreateNoContent) collectEventsCreateRes() {}
 type CollectEventsCreateRequestEntityTooLarge ProblemDetails
 
 func (*CollectEventsCreateRequestEntityTooLarge) collectEventsCreateRes() {}
+
+// CollectEventsCreateServiceUnavailableHeaders wraps ProblemDetails with response headers.
+type CollectEventsCreateServiceUnavailableHeaders struct {
+	RetryAfter int32
+	Response   ProblemDetails
+}
+
+// GetRetryAfter returns the value of RetryAfter.
+func (s *CollectEventsCreateServiceUnavailableHeaders) GetRetryAfter() int32 {
+	return s.RetryAfter
+}
+
+// GetResponse returns the value of Response.
+func (s *CollectEventsCreateServiceUnavailableHeaders) GetResponse() ProblemDetails {
+	return s.Response
+}
+
+// SetRetryAfter sets the value of RetryAfter.
+func (s *CollectEventsCreateServiceUnavailableHeaders) SetRetryAfter(val int32) {
+	s.RetryAfter = val
+}
+
+// SetResponse sets the value of Response.
+func (s *CollectEventsCreateServiceUnavailableHeaders) SetResponse(val ProblemDetails) {
+	s.Response = val
+}
+
+func (*CollectEventsCreateServiceUnavailableHeaders) collectEventsCreateRes()   {}
+func (*CollectEventsCreateServiceUnavailableHeaders) collectIdentifyCreateRes() {}
 
 type CollectEventsCreateUnauthorized ProblemDetails
 

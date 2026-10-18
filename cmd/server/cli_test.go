@@ -27,13 +27,18 @@ func execute(fake any, out io.Writer, args ...string) error {
 	ops.staffOps, _ = fake.(staffOps)
 	ops.serviceCredentialOps, _ = fake.(serviceCredentialOps)
 
-	root := newRoot(deps{
+	return runDeps(deps{
 		env: "test",
 		now: func() time.Time { return cliNow },
 		open: func(context.Context) (commandOps, func(), error) {
 			return ops, func() {}, nil
 		},
-	})
+	}, out, args...)
+}
+
+// runDeps runs `sphericon <args>` through the real command tree built on d, writing results to out.
+func runDeps(d deps, out io.Writer, args ...string) error {
+	root := newRoot(d)
 	root.Writer = out
 	root.ErrWriter = io.Discard
 	root.ExitErrHandler = func(context.Context, *cli.Command, error) {}

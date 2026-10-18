@@ -187,6 +187,20 @@ the wall clock; it injects the clock.
   in a transaction of its own), written by `mise run db:river-migration` from the river version in
   `go.mod`; after a river upgrade run it again and `rivermigrate.Validate` in
   `cmd/server/migrate_test.go` tells you when it is due. Do not edit those files by hand.
+- **Migration rules (ADR 0033).** Between two Majors a migration only adds (a table, a nullable
+  column, an index built `CONCURRENTLY`, a new payload field); a removal or a rename waits for a
+  Major (before 1.0 every `0.MINOR` is one). Heavy data work is a river job that runs after the
+  Upgrade, never a migration: a migration is fast DDL. A long DDL is built concurrently without a
+  transaction (`CREATE INDEX CONCURRENTLY` under `-- +goose NO TRANSACTION`). A destructive
+  migration starts with a check that the data it strands has moved (a `DO` block that raises), so
+  an Upgrade that skipped a release fails instead of losing data. CI (`mise run check:upgrade`,
+  `cmd/upgradecheck`) lints the migrations a PR adds, skipping the generated river ones, and fails
+  a destructive finding unless the PR title is breaking (`!`); a breaking PR title or commit needs
+  an `Upgrade:` line inside its `BREAKING CHANGE:` footer, in a commit message or the PR body,
+  saying what a Self-hoster does (`BREAKING CHANGE: <what broke>` then a line `Upgrade: <what to do>`;
+  release-please renders only the text of that footer into CHANGELOG.md, never a footer of its own,
+  and `sphericon upgrade-notes` reads the `Upgrade:` lines from its BREAKING CHANGES section; the
+  repository squashes with the PR title and the commit messages).
 - `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the outbox and
   river migrations (they were created at boot) needs a `db:reset`.
 - Test DB is separate (`SPHERICON_ENV=test`); tests get it from the migrations, see "Common commands".

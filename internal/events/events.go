@@ -308,11 +308,15 @@ type CollectedEvent struct {
 	Phone       string         `json:"phone,omitempty"`
 	Properties  map[string]any `json:"properties,omitempty"`
 	OccurredAt  time.Time      `json:"occurredAt,omitempty"`
+	// DedupID is the persist idempotency key of an event the client gave a clientEventId
+	// (visitors.CollectDedupKey: the Workspace and that id). Empty for an event without one.
+	DedupID string `json:"dedupId,omitempty"`
 }
 
 func (*CollectedEvent) EventName() string  { return NameCollected }
 func (*CollectedEvent) EventVersion() int  { return 1 }
 func (e *CollectedEvent) Workspace() int64 { return e.WorkspaceID }
+func (e *CollectedEvent) EventID() string  { return e.DedupID }
 func (e *CollectedEvent) Project() Projection {
 	return Projection{
 		Subject:    e.SubjectID,

@@ -31,6 +31,12 @@ func (s *CollectEventInput) encodeFields(e *jx.Encoder) {
 		e.Str(s.Action)
 	}
 	{
+		if s.ClientEventId.Set {
+			e.FieldStart("clientEventId")
+			s.ClientEventId.Encode(e)
+		}
+	}
+	{
 		if s.Properties.Set {
 			e.FieldStart("properties")
 			s.Properties.Encode(e)
@@ -44,11 +50,12 @@ func (s *CollectEventInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollectEventInput = [4]string{
+var jsonFieldsNameOfCollectEventInput = [5]string{
 	0: "visitorId",
 	1: "action",
-	2: "properties",
-	3: "occurredAt",
+	2: "clientEventId",
+	3: "properties",
+	4: "occurredAt",
 }
 
 // Decode decodes CollectEventInput from json.
@@ -83,6 +90,16 @@ func (s *CollectEventInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"action\"")
+			}
+		case "clientEventId":
+			if err := func() error {
+				s.ClientEventId.Reset()
+				if err := s.ClientEventId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clientEventId\"")
 			}
 		case "properties":
 			if err := func() error {

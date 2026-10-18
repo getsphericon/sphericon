@@ -9,6 +9,8 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/changelog"
 )
 
 // commandOps is everything the staff member commands need from the app. The app
@@ -23,7 +25,9 @@ type commandOps interface {
 // deps is what the commands reach outside themselves for, so tests can swap it.
 type deps struct {
 	env string
-	now func() time.Time
+	// changelog is the text `upgrade-notes` reads: the one embedded in this binary.
+	changelog string
+	now       func() time.Time
 	// open boots the minimal command app (no listener, no event router, no workers) and
 	// returns its ops and the function that shuts it down. It runs only once the
 	// arguments have parsed.
@@ -32,8 +36,9 @@ type deps struct {
 
 func newDeps(env string) deps {
 	return deps{
-		env: env,
-		now: time.Now,
+		env:       env,
+		changelog: changelog.Embedded(),
+		now:       time.Now,
 		open: func(ctx context.Context) (commandOps, func(), error) {
 			a, err := app.NewCommandApp(env)
 			if err != nil {
@@ -46,15 +51,18 @@ func newDeps(env string) deps {
 
 // newRoot builds the `sphericon` command tree. Without a subcommand it serves.
 func newRoot(d deps) *cli.Command {
+	cli.VersionPrinter = printVersion
 	return &cli.Command{
 		Name:    "sphericon",
 		Usage:   "marketing automation platform",
-		Version: version,
+		Version: buildinfo.Current().Version,
 		Action:  serve(d.env),
 		Commands: []*cli.Command{
 			versionCommand(),
 			genkeyCommand(),
 			migrateCommand(d.env),
+			upgradeCommand(),
+			upgradeNotesCommand(d.changelog),
 			workspaceCommand(d),
 			userCommand(d),
 			staffCommand(d),

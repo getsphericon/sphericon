@@ -25,6 +25,7 @@ import (
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/clientip"
+	dbpkg "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/paths"
@@ -101,7 +102,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 		apicollect.NewHandlers(bus),
 		apiauth.NewCollectSecurityHandler(client),
 		collectapi.WithPathPrefix(collectPrefix),
-		collectapi.WithErrorHandler(problemErrorHandler),
+		collectapi.WithErrorHandler(collectErrorHandler),
 	)
 	if err != nil {
 		return nil, err
@@ -189,6 +190,22 @@ func NewInternal(cfg *config.Config, surface ServiceSurface) (http.Handler, erro
 	mux.Handle(paths.Service+"/", srv)
 	limiter := ratelimit.New(cfg.RateLimits)
 	return chi.Chain(recoverer, requestID, clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits)).Handler(mux), nil
+}
+
+// collectRetryAfter is the Retry-After (seconds) of a /collect 503: long enough for a
+// restarting database to come back, short enough that a client's events stay fresh.
+const collectRetryAfter = "5"
+
+// collectErrorHandler is problemErrorHandler for /collect, which also tells its client
+// to retry: a database that cannot be reached is a 503 with Retry-After, because a
+// retried event is counted once (clientEventId) and a client can send it again safely.
+func collectErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+	if dbpkg.IsUnavailable(err) {
+		w.Header().Set("Retry-After", collectRetryAfter)
+		writeProblem(w, http.StatusServiceUnavailable, "database unavailable, retry later")
+		return
+	}
+	problemErrorHandler(ctx, w, r, err)
 }
 
 // problemErrorHandler renders ogen errors as RFC 7807 application/problem+json.

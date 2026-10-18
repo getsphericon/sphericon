@@ -58,3 +58,30 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # The chart is published as an OCI artifact with its version equal to the app version, so
+  # `helm upgrade sphericon oci://ghcr.io/getsphericon/charts/sphericon --version X --reuse-values`
+  # is the whole Upgrade on Kubernetes (ADR 0034).
+  chart:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+      REGISTRY_USER: ${{ github.actor }}
+      REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+          persist-credentials: false
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        with:
+          cache: false
+      - name: Publish the chart
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | helm registry login ghcr.io --username "$REGISTRY_USER" --password-stdin
+          mise run release:chart -- "${TAG_NAME#v}" oci://ghcr.io/getsphericon/charts

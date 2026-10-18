@@ -33,7 +33,7 @@ unreachable, or the metrics listener is not enabled.
 **Fix.** Restart on a crash loop caused by configuration (a missing secret, an invalid
 `SPHERICON_ENCRYPTION_KEY`, a port clash between `PORT` and `SPHERICON_METRICS_ADDR` all fail startup with a clear
 log line). After a bad deploy, roll back the image. Pending migrations are not applied
-automatically with several replicas: run them as described in [Upgrading](./upgrading#migrate).
+automatically with several replicas: run them as described in [Upgrading](./upgrading).
 
 ## SphericonCollectErrorRatioHigh
 

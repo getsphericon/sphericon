@@ -33,7 +33,9 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/contrib/otelconf"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
@@ -103,6 +105,15 @@ func Setup(ctx context.Context, cfg *config.Config, env string, build BuildInfo)
 	if err := runtime.Start(runtime.WithMeterProvider(sdk.MeterProvider())); err != nil {
 		return nil, errors.Join(err, sdk.Shutdown(ctx))
 	}
+
+	// sphericon_build_info{version,commit} 1: which build this Instance runs (ADR 0034).
+	buildGauge, err := sdk.MeterProvider().Meter("sphericon").Int64Gauge("sphericon_build_info",
+		otelmetric.WithDescription("The build this process runs; always 1."))
+	if err != nil {
+		return nil, errors.Join(err, sdk.Shutdown(ctx))
+	}
+	buildGauge.Record(ctx, 1, otelmetric.WithAttributes(
+		attribute.String("version", build.Version), attribute.String("commit", build.Commit)))
 
 	metricsHandler = promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
 

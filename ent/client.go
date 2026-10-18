@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -103,6 +104,8 @@ type Client struct {
 	OutboxOffset *OutboxOffsetClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
+	// SchemaState is the client for interacting with the SchemaState builders.
+	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
 	Segment *SegmentClient
 	// SendLimiter is the client for interacting with the SendLimiter builders.
@@ -162,6 +165,7 @@ func (c *Client) init() {
 	c.OutboxMessage = NewOutboxMessageClient(c.config)
 	c.OutboxOffset = NewOutboxOffsetClient(c.config)
 	c.RecoveryCode = NewRecoveryCodeClient(c.config)
+	c.SchemaState = NewSchemaStateClient(c.config)
 	c.Segment = NewSegmentClient(c.config)
 	c.SendLimiter = NewSendLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
@@ -289,6 +293,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		OutboxMessage:      NewOutboxMessageClient(cfg),
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
+		SchemaState:        NewSchemaStateClient(cfg),
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
 		SendingDomain:      NewSendingDomainClient(cfg),
@@ -343,6 +348,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		OutboxMessage:      NewOutboxMessageClient(cfg),
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
 		RecoveryCode:       NewRecoveryCodeClient(cfg),
+		SchemaState:        NewSchemaStateClient(cfg),
 		Segment:            NewSegmentClient(cfg),
 		SendLimiter:        NewSendLimiterClient(cfg),
 		SendingDomain:      NewSendingDomainClient(cfg),
@@ -389,9 +395,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
-		c.RecoveryCode, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
-		c.StaffMember, c.Suppression, c.Tag, c.Unsubscribe, c.Usage, c.User, c.Visitor,
-		c.WebhookEndpoint, c.Workspace,
+		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
+		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.Unsubscribe,
+		c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -405,9 +411,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
 		c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
-		c.RecoveryCode, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
-		c.StaffMember, c.Suppression, c.Tag, c.Unsubscribe, c.Usage, c.User, c.Visitor,
-		c.WebhookEndpoint, c.Workspace,
+		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
+		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.Unsubscribe,
+		c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -460,6 +466,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OutboxOffset.mutate(ctx, m)
 	case *RecoveryCodeMutation:
 		return c.RecoveryCode.mutate(ctx, m)
+	case *SchemaStateMutation:
+		return c.SchemaState.mutate(ctx, m)
 	case *SegmentMutation:
 		return c.Segment.mutate(ctx, m)
 	case *SendLimiterMutation:
@@ -3897,6 +3905,139 @@ func (c *RecoveryCodeClient) mutate(ctx context.Context, m *RecoveryCodeMutation
 	}
 }
 
+// SchemaStateClient is a client for the SchemaState schema.
+type SchemaStateClient struct {
+	config
+}
+
+// NewSchemaStateClient returns a client for the SchemaState from the given config.
+func NewSchemaStateClient(c config) *SchemaStateClient {
+	return &SchemaStateClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `schemastate.Hooks(f(g(h())))`.
+func (c *SchemaStateClient) Use(hooks ...Hook) {
+	c.hooks.SchemaState = append(c.hooks.SchemaState, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `schemastate.Intercept(f(g(h())))`.
+func (c *SchemaStateClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SchemaState = append(c.inters.SchemaState, interceptors...)
+}
+
+// Create returns a builder for creating a SchemaState entity.
+func (c *SchemaStateClient) Create() *SchemaStateCreate {
+	mutation := newSchemaStateMutation(c.config, OpCreate)
+	return &SchemaStateCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SchemaState entities.
+func (c *SchemaStateClient) CreateBulk(builders ...*SchemaStateCreate) *SchemaStateCreateBulk {
+	return &SchemaStateCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SchemaStateClient) MapCreateBulk(slice any, setFunc func(*SchemaStateCreate, int)) *SchemaStateCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SchemaStateCreateBulk{err: fmt.Errorf("calling to SchemaStateClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SchemaStateCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SchemaStateCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SchemaState.
+func (c *SchemaStateClient) Update() *SchemaStateUpdate {
+	mutation := newSchemaStateMutation(c.config, OpUpdate)
+	return &SchemaStateUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SchemaStateClient) UpdateOne(_m *SchemaState) *SchemaStateUpdateOne {
+	mutation := newSchemaStateMutation(c.config, OpUpdateOne, withSchemaState(_m))
+	return &SchemaStateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SchemaStateClient) UpdateOneID(id int64) *SchemaStateUpdateOne {
+	mutation := newSchemaStateMutation(c.config, OpUpdateOne, withSchemaStateID(id))
+	return &SchemaStateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SchemaState.
+func (c *SchemaStateClient) Delete() *SchemaStateDelete {
+	mutation := newSchemaStateMutation(c.config, OpDelete)
+	return &SchemaStateDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SchemaStateClient) DeleteOne(_m *SchemaState) *SchemaStateDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SchemaStateClient) DeleteOneID(id int64) *SchemaStateDeleteOne {
+	builder := c.Delete().Where(schemastate.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SchemaStateDeleteOne{builder}
+}
+
+// Query returns a query builder for SchemaState.
+func (c *SchemaStateClient) Query() *SchemaStateQuery {
+	return &SchemaStateQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSchemaState},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SchemaState entity by its id.
+func (c *SchemaStateClient) Get(ctx context.Context, id int64) (*SchemaState, error) {
+	return c.Query().Where(schemastate.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SchemaStateClient) GetX(ctx context.Context, id int64) *SchemaState {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SchemaStateClient) Hooks() []Hook {
+	return c.hooks.SchemaState
+}
+
+// Interceptors returns the client interceptors.
+func (c *SchemaStateClient) Interceptors() []Interceptor {
+	return c.inters.SchemaState
+}
+
+func (c *SchemaStateClient) mutate(ctx context.Context, m *SchemaStateMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SchemaStateCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SchemaStateUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SchemaStateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SchemaStateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SchemaState mutation op: %q", m.Op())
+	}
+}
+
 // SegmentClient is a client for the Segment schema.
 type SegmentClient struct {
 	config
@@ -6272,17 +6413,19 @@ type (
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
 		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode,
-		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, Segment,
-		SendLimiter, SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
-		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Hook
+		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
+		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
+		Suppression, Tag, Unsubscribe, Usage, User, Visitor, WebhookEndpoint,
+		Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
 		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode,
-		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, Segment,
-		SendLimiter, SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
-		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
+		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
+		Suppression, Tag, Unsubscribe, Usage, User, Visitor, WebhookEndpoint,
+		Workspace []ent.Interceptor
 	}
 )
 
