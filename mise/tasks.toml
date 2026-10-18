@@ -232,7 +232,8 @@ description = "Update npm, Go and skills dependencies"
 depends = ["update:npm", "update:go", "update:skills"]
 
 ["update:npm"]
-run = "pnpm exec ncu -u && pnpm update"
+# openapi-ts stays on its pinned next channel: stable still needs the TypeScript package, which breaks under TS7.
+run = "pnpm exec ncu -u --reject @hey-api/openapi-ts && pnpm update"
 
 ["update:go"]
 run = "go get -u ./... && go mod tidy"

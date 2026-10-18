@@ -15,6 +15,7 @@ extend-exclude = [
   "locales",
   "internal/server/assets",
   "CHANGELOG.md",
+  ".agents/skills",
 ]
 
 [default]
