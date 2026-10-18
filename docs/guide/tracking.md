@@ -75,6 +75,11 @@ reused on every retry.
 - `429` also carries `Retry-After`; retry it the same way. Other `4xx` answers are not retryable:
   fix the request.
 
+The browser tracker (`t.js`) does this for you: it gives every event a `clientEventId`, keeps
+events it could not send (network error, `429`, `5xx`) in a bounded `localStorage` queue of 100
+events (the oldest is dropped first), retries them with backoff (honouring `Retry-After`) and sends
+what is left on the next page load.
+
 ## Contacts and identity
 
 A contact is anchored by an internal id. Email, phone and `subject_id` are alias keys: each is

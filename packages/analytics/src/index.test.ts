@@ -25,7 +25,7 @@ interface SentBody {
   phone?: string | null
   subjectId?: string | null
   traits?: unknown
-  events: { visitorId: string; action: string; properties: unknown }[]
+  events: { visitorId: string; action: string; properties: unknown; clientEventId?: string }[]
 }
 
 function sentBodies(stub: FetchStub, path: string): SentBody[] {
@@ -124,19 +124,147 @@ test('identify swallows network failures', async () => {
   await expect(identify({ email: 'a@example.com' })).resolves.toBeUndefined()
 })
 
-test('events that failed to send are re-queued and retried on the next flush', async () => {
+const QUEUE_KEY = 'om_q'
+
+interface Sent {
+  clientEventId?: string
+  action: string
+}
+
+function sentEvents(stub: FetchStub): Sent[][] {
+  return sentBodies(stub, '/collect/events').map((b) => b.events)
+}
+
+function storedQueue(): Sent[] {
+  const raw: Sent[] = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]')
+  return raw
+}
+
+beforeEach(() => {
+  localStorage.clear()
+})
+
+test('every event carries a clientEventId, generated once and reused on a retry', async () => {
   fetchStub.mockRejectedValueOnce(new Error('offline'))
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
 
   track('first')
   await vi.advanceTimersByTimeAsync(200)
-  track('second')
+  await vi.advanceTimersByTimeAsync(1000)
+
+  const [first, retry] = sentEvents(fetchStub)
+  expect(first?.[0]?.clientEventId).toEqual(expect.any(String))
+  expect(retry?.[0]?.clientEventId).toBe(first?.[0]?.clientEventId)
+})
+
+test('an event that failed to send stays in the browser queue until it is accepted', async () => {
+  fetchStub.mockRejectedValueOnce(new Error('offline'))
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+
+  track('first')
+  await vi.advanceTimersByTimeAsync(200)
+  expect(storedQueue().map((e) => e.action)).toEqual(['first'])
+
+  await vi.advanceTimersByTimeAsync(1000)
+  expect(storedQueue()).toEqual([])
+})
+
+test('429 and 5xx are retried, honouring Retry-After', async () => {
+  fetchStub.mockResolvedValueOnce(
+    new Response(null, { status: 503, headers: { 'retry-after': '5' } }),
+  )
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+
+  track('first')
+  await vi.advanceTimersByTimeAsync(200)
+  await vi.advanceTimersByTimeAsync(4000)
+  expect(sentEvents(fetchStub)).toHaveLength(1)
+
+  await vi.advanceTimersByTimeAsync(1000)
+  expect(sentEvents(fetchStub)).toHaveLength(2)
+  expect(storedQueue()).toEqual([])
+})
+
+test('the backoff grows while the instance keeps failing', async () => {
+  fetchStub.mockResolvedValue(new Response(null, { status: 500 }))
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+
+  track('first')
+  await vi.advanceTimersByTimeAsync(200)
+  await vi.advanceTimersByTimeAsync(1000)
+  expect(sentEvents(fetchStub)).toHaveLength(2)
+
+  await vi.advanceTimersByTimeAsync(1999)
+  expect(sentEvents(fetchStub)).toHaveLength(2)
+  await vi.advanceTimersByTimeAsync(1)
+  expect(sentEvents(fetchStub)).toHaveLength(3)
+})
+
+test('a 4xx other than 429 drops the batch instead of retrying it', async () => {
+  fetchStub.mockResolvedValueOnce(new Response(null, { status: 400 }))
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+
+  track('bad')
+  await vi.advanceTimersByTimeAsync(200)
+  await vi.advanceTimersByTimeAsync(60_000)
+
+  expect(sentEvents(fetchStub)).toHaveLength(1)
+  expect(storedQueue()).toEqual([])
+})
+
+test('events left in the browser queue are sent on the next page load', async () => {
+  localStorage.setItem(
+    QUEUE_KEY,
+    JSON.stringify([
+      {
+        visitorId: 'v',
+        action: 'left over',
+        properties: null,
+        occurredAt: '2026-01-01T00:00:00.000Z',
+        clientEventId: 'id-1',
+      },
+    ]),
+  )
+  const { initTracking } = await loadTracker()
+  initTracking(CONFIG)
   await vi.advanceTimersByTimeAsync(200)
 
-  const bodies = sentBodies(fetchStub, '/collect/events')
-  expect(bodies).toHaveLength(2)
-  expect(bodies[1]?.events.map((e) => e.action)).toEqual(['first', 'second'])
+  expect(sentEvents(fetchStub)).toEqual([
+    [expect.objectContaining({ action: 'left over', clientEventId: 'id-1' })],
+  ])
+  expect(storedQueue()).toEqual([])
+})
+
+test('the queue never grows past its bound and drops the oldest first', async () => {
+  fetchStub.mockResolvedValue(new Response(null, { status: 503 }))
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+
+  for (let i = 0; i < 150; i += 1) {
+    track(`e${i}`)
+  }
+  await vi.advanceTimersByTimeAsync(200)
+
+  const actions = storedQueue().map((e) => e.action)
+  expect(actions).toHaveLength(100)
+  expect(actions[0]).toBe('e50')
+  expect(actions.at(-1)).toBe('e149')
+})
+
+test('a corrupt stored queue is ignored', async () => {
+  localStorage.setItem(QUEUE_KEY, '{not json')
+  const { initTracking, track } = await loadTracker()
+  initTracking(CONFIG)
+
+  track('ok')
+  await vi.advanceTimersByTimeAsync(200)
+
+  expect(sentEvents(fetchStub)).toEqual([[expect.objectContaining({ action: 'ok' })]])
 })
 
 test('calls made before init are queued on window._omq and replayed by init', async () => {
@@ -212,7 +340,11 @@ test('pagehide flushes pending events without waiting for the timer', async () =
 
   window.dispatchEvent(new Event('pagehide'))
 
-  expect(fetchStub).toHaveBeenCalledTimes(1)
+  // Trackers loaded by earlier tests keep their pagehide listeners, so look for this event only.
+  const sent = sentEvents(fetchStub)
+    .flat()
+    .filter((e) => e.action === 'leaving')
+  expect(sent).toHaveLength(1)
 })
 
 test('trackPageView sends a page.view event with the page details', async () => {
