@@ -89,6 +89,76 @@ func (_c *WebhookEndpointCreate) SetNillableEnabled(v *bool) *WebhookEndpointCre
 	return _c
 }
 
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (_c *WebhookEndpointCreate) SetConsecutiveFailures(v int) *WebhookEndpointCreate {
+	_c.mutation.SetConsecutiveFailures(v)
+	return _c
+}
+
+// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
+func (_c *WebhookEndpointCreate) SetNillableConsecutiveFailures(v *int) *WebhookEndpointCreate {
+	if v != nil {
+		_c.SetConsecutiveFailures(*v)
+	}
+	return _c
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (_c *WebhookEndpointCreate) SetFailingSince(v time.Time) *WebhookEndpointCreate {
+	_c.mutation.SetFailingSince(v)
+	return _c
+}
+
+// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
+func (_c *WebhookEndpointCreate) SetNillableFailingSince(v *time.Time) *WebhookEndpointCreate {
+	if v != nil {
+		_c.SetFailingSince(*v)
+	}
+	return _c
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (_c *WebhookEndpointCreate) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointCreate {
+	_c.mutation.SetLastErrorKind(v)
+	return _c
+}
+
+// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
+func (_c *WebhookEndpointCreate) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointCreate {
+	if v != nil {
+		_c.SetLastErrorKind(*v)
+	}
+	return _c
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (_c *WebhookEndpointCreate) SetLastErrorStatus(v int) *WebhookEndpointCreate {
+	_c.mutation.SetLastErrorStatus(v)
+	return _c
+}
+
+// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
+func (_c *WebhookEndpointCreate) SetNillableLastErrorStatus(v *int) *WebhookEndpointCreate {
+	if v != nil {
+		_c.SetLastErrorStatus(*v)
+	}
+	return _c
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (_c *WebhookEndpointCreate) SetLastFailureAt(v time.Time) *WebhookEndpointCreate {
+	_c.mutation.SetLastFailureAt(v)
+	return _c
+}
+
+// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
+func (_c *WebhookEndpointCreate) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointCreate {
+	if v != nil {
+		_c.SetLastFailureAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *WebhookEndpointCreate) SetID(v int64) *WebhookEndpointCreate {
 	_c.mutation.SetID(v)
@@ -174,6 +244,11 @@ func (_c *WebhookEndpointCreate) check() error {
 	if _, ok := _c.mutation.Enabled(); !ok {
 		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "WebhookEndpoint.enabled"`)}
 	}
+	if v, ok := _c.mutation.LastErrorKind(); ok {
+		if err := webhookendpoint.LastErrorKindValidator(v); err != nil {
+			return &ValidationError{Name: "last_error_kind", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.last_error_kind": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "WebhookEndpoint.workspace"`)}
 	}
@@ -233,6 +308,26 @@ func (_c *WebhookEndpointCreate) createSpec() (*WebhookEndpoint, *sqlgraph.Creat
 	if value, ok := _c.mutation.Enabled(); ok {
 		_spec.SetField(webhookendpoint.FieldEnabled, field.TypeBool, value)
 		_node.Enabled = value
+	}
+	if value, ok := _c.mutation.ConsecutiveFailures(); ok {
+		_spec.SetField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)
+		_node.ConsecutiveFailures = &value
+	}
+	if value, ok := _c.mutation.FailingSince(); ok {
+		_spec.SetField(webhookendpoint.FieldFailingSince, field.TypeTime, value)
+		_node.FailingSince = &value
+	}
+	if value, ok := _c.mutation.LastErrorKind(); ok {
+		_spec.SetField(webhookendpoint.FieldLastErrorKind, field.TypeEnum, value)
+		_node.LastErrorKind = &value
+	}
+	if value, ok := _c.mutation.LastErrorStatus(); ok {
+		_spec.SetField(webhookendpoint.FieldLastErrorStatus, field.TypeInt, value)
+		_node.LastErrorStatus = &value
+	}
+	if value, ok := _c.mutation.LastFailureAt(); ok {
+		_spec.SetField(webhookendpoint.FieldLastFailureAt, field.TypeTime, value)
+		_node.LastFailureAt = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -381,6 +476,108 @@ func (u *WebhookEndpointUpsert) UpdateEnabled() *WebhookEndpointUpsert {
 	return u
 }
 
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (u *WebhookEndpointUpsert) SetConsecutiveFailures(v int) *WebhookEndpointUpsert {
+	u.Set(webhookendpoint.FieldConsecutiveFailures, v)
+	return u
+}
+
+// UpdateConsecutiveFailures sets the "consecutive_failures" field to the value that was provided on create.
+func (u *WebhookEndpointUpsert) UpdateConsecutiveFailures() *WebhookEndpointUpsert {
+	u.SetExcluded(webhookendpoint.FieldConsecutiveFailures)
+	return u
+}
+
+// AddConsecutiveFailures adds v to the "consecutive_failures" field.
+func (u *WebhookEndpointUpsert) AddConsecutiveFailures(v int) *WebhookEndpointUpsert {
+	u.Add(webhookendpoint.FieldConsecutiveFailures, v)
+	return u
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (u *WebhookEndpointUpsert) ClearConsecutiveFailures() *WebhookEndpointUpsert {
+	u.SetNull(webhookendpoint.FieldConsecutiveFailures)
+	return u
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (u *WebhookEndpointUpsert) SetFailingSince(v time.Time) *WebhookEndpointUpsert {
+	u.Set(webhookendpoint.FieldFailingSince, v)
+	return u
+}
+
+// UpdateFailingSince sets the "failing_since" field to the value that was provided on create.
+func (u *WebhookEndpointUpsert) UpdateFailingSince() *WebhookEndpointUpsert {
+	u.SetExcluded(webhookendpoint.FieldFailingSince)
+	return u
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (u *WebhookEndpointUpsert) ClearFailingSince() *WebhookEndpointUpsert {
+	u.SetNull(webhookendpoint.FieldFailingSince)
+	return u
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (u *WebhookEndpointUpsert) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpsert {
+	u.Set(webhookendpoint.FieldLastErrorKind, v)
+	return u
+}
+
+// UpdateLastErrorKind sets the "last_error_kind" field to the value that was provided on create.
+func (u *WebhookEndpointUpsert) UpdateLastErrorKind() *WebhookEndpointUpsert {
+	u.SetExcluded(webhookendpoint.FieldLastErrorKind)
+	return u
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (u *WebhookEndpointUpsert) ClearLastErrorKind() *WebhookEndpointUpsert {
+	u.SetNull(webhookendpoint.FieldLastErrorKind)
+	return u
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (u *WebhookEndpointUpsert) SetLastErrorStatus(v int) *WebhookEndpointUpsert {
+	u.Set(webhookendpoint.FieldLastErrorStatus, v)
+	return u
+}
+
+// UpdateLastErrorStatus sets the "last_error_status" field to the value that was provided on create.
+func (u *WebhookEndpointUpsert) UpdateLastErrorStatus() *WebhookEndpointUpsert {
+	u.SetExcluded(webhookendpoint.FieldLastErrorStatus)
+	return u
+}
+
+// AddLastErrorStatus adds v to the "last_error_status" field.
+func (u *WebhookEndpointUpsert) AddLastErrorStatus(v int) *WebhookEndpointUpsert {
+	u.Add(webhookendpoint.FieldLastErrorStatus, v)
+	return u
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (u *WebhookEndpointUpsert) ClearLastErrorStatus() *WebhookEndpointUpsert {
+	u.SetNull(webhookendpoint.FieldLastErrorStatus)
+	return u
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (u *WebhookEndpointUpsert) SetLastFailureAt(v time.Time) *WebhookEndpointUpsert {
+	u.Set(webhookendpoint.FieldLastFailureAt, v)
+	return u
+}
+
+// UpdateLastFailureAt sets the "last_failure_at" field to the value that was provided on create.
+func (u *WebhookEndpointUpsert) UpdateLastFailureAt() *WebhookEndpointUpsert {
+	u.SetExcluded(webhookendpoint.FieldLastFailureAt)
+	return u
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (u *WebhookEndpointUpsert) ClearLastFailureAt() *WebhookEndpointUpsert {
+	u.SetNull(webhookendpoint.FieldLastFailureAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -520,6 +717,125 @@ func (u *WebhookEndpointUpsertOne) SetEnabled(v bool) *WebhookEndpointUpsertOne 
 func (u *WebhookEndpointUpsertOne) UpdateEnabled() *WebhookEndpointUpsertOne {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.UpdateEnabled()
+	})
+}
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (u *WebhookEndpointUpsertOne) SetConsecutiveFailures(v int) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetConsecutiveFailures(v)
+	})
+}
+
+// AddConsecutiveFailures adds v to the "consecutive_failures" field.
+func (u *WebhookEndpointUpsertOne) AddConsecutiveFailures(v int) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.AddConsecutiveFailures(v)
+	})
+}
+
+// UpdateConsecutiveFailures sets the "consecutive_failures" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertOne) UpdateConsecutiveFailures() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateConsecutiveFailures()
+	})
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (u *WebhookEndpointUpsertOne) ClearConsecutiveFailures() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearConsecutiveFailures()
+	})
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (u *WebhookEndpointUpsertOne) SetFailingSince(v time.Time) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetFailingSince(v)
+	})
+}
+
+// UpdateFailingSince sets the "failing_since" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertOne) UpdateFailingSince() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateFailingSince()
+	})
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (u *WebhookEndpointUpsertOne) ClearFailingSince() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearFailingSince()
+	})
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (u *WebhookEndpointUpsertOne) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetLastErrorKind(v)
+	})
+}
+
+// UpdateLastErrorKind sets the "last_error_kind" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertOne) UpdateLastErrorKind() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateLastErrorKind()
+	})
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (u *WebhookEndpointUpsertOne) ClearLastErrorKind() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearLastErrorKind()
+	})
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (u *WebhookEndpointUpsertOne) SetLastErrorStatus(v int) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetLastErrorStatus(v)
+	})
+}
+
+// AddLastErrorStatus adds v to the "last_error_status" field.
+func (u *WebhookEndpointUpsertOne) AddLastErrorStatus(v int) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.AddLastErrorStatus(v)
+	})
+}
+
+// UpdateLastErrorStatus sets the "last_error_status" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertOne) UpdateLastErrorStatus() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateLastErrorStatus()
+	})
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (u *WebhookEndpointUpsertOne) ClearLastErrorStatus() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearLastErrorStatus()
+	})
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (u *WebhookEndpointUpsertOne) SetLastFailureAt(v time.Time) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetLastFailureAt(v)
+	})
+}
+
+// UpdateLastFailureAt sets the "last_failure_at" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertOne) UpdateLastFailureAt() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateLastFailureAt()
+	})
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (u *WebhookEndpointUpsertOne) ClearLastFailureAt() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearLastFailureAt()
 	})
 }
 
@@ -828,6 +1144,125 @@ func (u *WebhookEndpointUpsertBulk) SetEnabled(v bool) *WebhookEndpointUpsertBul
 func (u *WebhookEndpointUpsertBulk) UpdateEnabled() *WebhookEndpointUpsertBulk {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.UpdateEnabled()
+	})
+}
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (u *WebhookEndpointUpsertBulk) SetConsecutiveFailures(v int) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetConsecutiveFailures(v)
+	})
+}
+
+// AddConsecutiveFailures adds v to the "consecutive_failures" field.
+func (u *WebhookEndpointUpsertBulk) AddConsecutiveFailures(v int) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.AddConsecutiveFailures(v)
+	})
+}
+
+// UpdateConsecutiveFailures sets the "consecutive_failures" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertBulk) UpdateConsecutiveFailures() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateConsecutiveFailures()
+	})
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (u *WebhookEndpointUpsertBulk) ClearConsecutiveFailures() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearConsecutiveFailures()
+	})
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (u *WebhookEndpointUpsertBulk) SetFailingSince(v time.Time) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetFailingSince(v)
+	})
+}
+
+// UpdateFailingSince sets the "failing_since" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertBulk) UpdateFailingSince() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateFailingSince()
+	})
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (u *WebhookEndpointUpsertBulk) ClearFailingSince() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearFailingSince()
+	})
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (u *WebhookEndpointUpsertBulk) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetLastErrorKind(v)
+	})
+}
+
+// UpdateLastErrorKind sets the "last_error_kind" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertBulk) UpdateLastErrorKind() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateLastErrorKind()
+	})
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (u *WebhookEndpointUpsertBulk) ClearLastErrorKind() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearLastErrorKind()
+	})
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (u *WebhookEndpointUpsertBulk) SetLastErrorStatus(v int) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetLastErrorStatus(v)
+	})
+}
+
+// AddLastErrorStatus adds v to the "last_error_status" field.
+func (u *WebhookEndpointUpsertBulk) AddLastErrorStatus(v int) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.AddLastErrorStatus(v)
+	})
+}
+
+// UpdateLastErrorStatus sets the "last_error_status" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertBulk) UpdateLastErrorStatus() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateLastErrorStatus()
+	})
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (u *WebhookEndpointUpsertBulk) ClearLastErrorStatus() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearLastErrorStatus()
+	})
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (u *WebhookEndpointUpsertBulk) SetLastFailureAt(v time.Time) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetLastFailureAt(v)
+	})
+}
+
+// UpdateLastFailureAt sets the "last_failure_at" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertBulk) UpdateLastFailureAt() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateLastFailureAt()
+	})
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (u *WebhookEndpointUpsertBulk) ClearLastFailureAt() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearLastFailureAt()
 	})
 }
 

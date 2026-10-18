@@ -2,7 +2,9 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"slices"
+	"time"
 
 	"github.com/riverqueue/river"
 
@@ -30,6 +32,7 @@ type DeliverWebhookWorker struct {
 	ent    *ent.Client
 	cipher *secrets.Cipher
 	client webhook.Doer
+	now    func() time.Time
 }
 
 func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverWebhookArgs]) error {
@@ -52,7 +55,48 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	if err != nil {
 		return err
 	}
-	return webhook.Send(ctx, w.client, e.URL, string(secret), job.Args.EventName, job.Args.DeliveryID, job.Args.Body)
+	sendErr := webhook.Send(ctx, w.client, e.URL, string(secret), job.Args.EventName, job.Args.DeliveryID, job.Args.Body)
+	if err := w.recordOutcome(ctx, e, sendErr); err != nil {
+		return err
+	}
+	return sendErr
+}
+
+// recordOutcome keeps the endpoint's failure state (ADR 0039): a failed delivery extends
+// the run of failures with its closed error kind, a 2xx clears it. The scope has no actor,
+// so these system writes are not audited.
+func (w *DeliverWebhookWorker) recordOutcome(ctx context.Context, e *ent.WebhookEndpoint, sendErr error) error {
+	s := w.ent.Scoped(e.WorkspaceID)
+	var deliveryErr *webhook.DeliveryError
+	if sendErr == nil {
+		if e.ConsecutiveFailures == nil {
+			return nil
+		}
+		return s.WebhookEndpoint().UpdateOneID(e.ID).
+			ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
+			ClearLastErrorStatus().ClearLastFailureAt().Exec(ctx)
+	}
+	if !errors.As(sendErr, &deliveryErr) {
+		return nil // not a delivery outcome (an unusable secret): nothing to remember
+	}
+	now := w.now()
+	failures := 1
+	if e.ConsecutiveFailures != nil {
+		failures = *e.ConsecutiveFailures + 1
+	}
+	u := s.WebhookEndpoint().UpdateOneID(e.ID).
+		SetConsecutiveFailures(failures).
+		SetLastErrorKind(webhookendpoint.LastErrorKind(deliveryErr.Kind)).
+		SetLastFailureAt(now)
+	if e.FailingSince == nil {
+		u.SetFailingSince(now)
+	}
+	if deliveryErr.Kind == webhook.KindHTTPStatus {
+		u.SetLastErrorStatus(deliveryErr.Status)
+	} else {
+		u.ClearLastErrorStatus()
+	}
+	return u.Exec(ctx)
 }
 
 // Dispatch fans a domain event out to every enabled endpoint in the workspace

@@ -833,6 +833,19 @@ export const zSiteVerifyEmailInput = z.object({
   password: z.string()
 });
 
+/**
+ * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
+ * time), `blocked_address` (the URL names an address this instance does not permit),
+ * `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
+ * failure).
+ */
+export const zSiteWebhookErrorKind = z.enum([
+  'timeout',
+  'blocked_address',
+  'http_status',
+  'network'
+]);
+
 export const zTimeZoneName = z.string();
 
 /**
@@ -1290,6 +1303,17 @@ export const zSiteUserResource = z.object({
 });
 
 /**
+ * The failure state of an endpoint that is currently failing; absent while it is healthy.
+ */
+export const zSiteWebhookFailure = z.object({
+  consecutiveFailures: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  since: zTimestamp,
+  lastFailureAt: zTimestamp,
+  kind: zSiteWebhookErrorKind,
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
  * Webhook endpoint resource used by the site UI
  */
 export const zSiteWebhookEndpointResource = z.object({
@@ -1298,6 +1322,7 @@ export const zSiteWebhookEndpointResource = z.object({
   secret: z.string(),
   eventTypes: z.array(z.string()),
   enabled: z.boolean(),
+  failure: z.exactOptional(zSiteWebhookFailure),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });

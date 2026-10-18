@@ -81,6 +81,7 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 		ent:    entClient,
 		cipher: cipher,
 		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
+		now:    time.Now,
 	})
 	river.AddWorker(workers, &SendWelcomeWorker{sender: systemSender})
 	river.AddWorker(workers, &SendAuthMailWorker{sender: systemSender, appURL: appURL})

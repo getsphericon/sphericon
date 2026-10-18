@@ -1453,6 +1453,21 @@ func ScopedEntities() []ScopedEntity {
 					b.SetEventTypes(src.EventTypes)
 				}
 				b.SetEnabled(src.Enabled)
+				if src.ConsecutiveFailures != nil {
+					b.SetConsecutiveFailures(*src.ConsecutiveFailures)
+				}
+				if src.FailingSince != nil {
+					b.SetFailingSince(*src.FailingSince)
+				}
+				if src.LastErrorKind != nil {
+					b.SetLastErrorKind(*src.LastErrorKind)
+				}
+				if src.LastErrorStatus != nil {
+					b.SetLastErrorStatus(*src.LastErrorStatus)
+				}
+				if src.LastFailureAt != nil {
+					b.SetLastFailureAt(*src.LastFailureAt)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

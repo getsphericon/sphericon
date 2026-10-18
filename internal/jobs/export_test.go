@@ -30,8 +30,8 @@ func NewMemberInviteWorker(sender messaging.EmailSender) *SendMemberInviteWorker
 	return &SendMemberInviteWorker{sender: sender}
 }
 
-func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer) *DeliverWebhookWorker {
-	return &DeliverWebhookWorker{ent: client, cipher: cipher, client: doer}
+func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time) *DeliverWebhookWorker {
+	return &DeliverWebhookWorker{ent: client, cipher: cipher, client: doer, now: now}
 }
 
 func NewVerifySendingDomainWorker(client *ent.Client, lookup sending.TXTLookup, sender messaging.EmailSender) *VerifySendingDomainWorker {

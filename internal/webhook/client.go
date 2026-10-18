@@ -73,13 +73,13 @@ func Send(ctx context.Context, client Doer, url, secret, eventName, deliveryID s
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return transportError(err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBytes))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("webhook endpoint returned status %d", resp.StatusCode)
+		return statusError(resp.StatusCode)
 	}
 	return nil
 }
