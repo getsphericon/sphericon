@@ -4,8 +4,10 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,10 +31,17 @@ func boundaries(stateMajor int) string {
 // `migrate`, and prints status on `migrate --status --json`.
 func walkRelease(t *testing.T, dir, version, status string) {
 	t.Helper()
+	walkReleaseWithNotes(t, dir, version, status, "")
+}
+
+// walkReleaseWithNotes is walkRelease whose `upgrade-notes` prints notes.
+func walkReleaseWithNotes(t *testing.T, dir, version, status, notes string) {
+	t.Helper()
 	script := fmt.Sprintf("#!/bin/sh\ncase \"$*\" in\n"+
 		"'migrate --status --json') printf '%%s' '%s' ;;\n"+
+		"upgrade-notes*) printf '%%s' '%s' ;;\n"+
 		"migrate) echo %s >> \"$(dirname \"$0\")/installed\" ;;\n"+
-		"esac\n", status, version)
+		"esac\n", status, notes, version)
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
@@ -137,4 +146,68 @@ func TestWalkWithAMissingArchiveRefusesBeforeInstallingAnything(t *testing.T) {
 	assert.Empty(t, s.installed(t))
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
 	assert.False(t, s.exists("sphericon.old"))
+}
+
+// Every release of the walk has its Upgrade notes shown, and --yes asked for, before the first
+// migration or swap: here the notes sit in the target's changelog, which covers both Majors.
+func TestWalkShowsTheNotesOfEveryReleaseAndWaitsForYesBeforeChangingAnything(t *testing.T) {
+	s := newSetup(t)
+	notes := "0.3.2\n  - export your segments\n\n0.6.0\n  - set SPHERICON_FOO\n"
+	for _, v := range []string{"0.3.2", "0.5.1"} {
+		walkRelease(t, s.dir, v, boundaries(1))
+	}
+	walkReleaseWithNotes(t, s.dir, "0.6.0", boundaries(1), notes)
+
+	_, err := upgrade.Walk(t.Context(), s.opts(""))
+
+	require.ErrorIs(t, err, upgrade.ErrNeedsConfirmation)
+	assert.Contains(t, s.out.String(), "export your segments")
+	assert.Contains(t, s.out.String(), "set SPHERICON_FOO")
+	assert.Empty(t, s.installed(t))
+	assert.Equal(t, "old binary", s.read(t, "sphericon"))
+	assert.False(t, s.exists("sphericon.old"))
+	assert.False(t, s.exists("sphericon.new"))
+	assert.False(t, s.exists("sphericon.plan"))
+
+	o := s.opts("")
+	o.Yes = true
+	s.out.Reset()
+	res, err := upgrade.Walk(t.Context(), o)
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(res))
+	assert.Equal(t, 1, strings.Count(s.out.String(), "export your segments"), "the notes are shown once, not per step")
+	assert.False(t, s.exists("sphericon.plan"))
+}
+
+// onceSource lets the target's archive be fetched one time only.
+type onceSource struct {
+	upgrade.Source
+	target string
+	used   bool
+}
+
+func (o *onceSource) Fetch(ctx context.Context, version string, p upgrade.Platform) (upgrade.Release, error) {
+	if version == o.target {
+		if o.used {
+			return upgrade.Release{}, errors.New("the target was fetched twice")
+		}
+		o.used = true
+	}
+	return o.Source.Fetch(ctx, version, p)
+}
+
+func TestWalkInstallsTheTargetFromTheCopyItStagedInsteadOfFetchingItAgain(t *testing.T) {
+	s := newSetup(t)
+	for _, v := range []string{"0.3.2", "0.5.1", "0.6.0"} {
+		walkRelease(t, s.dir, v, boundaries(1))
+	}
+	o := s.opts("")
+	o.Source = &onceSource{Source: o.Source, target: "0.6.0"}
+
+	res, err := upgrade.Walk(t.Context(), o)
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(res))
+	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, s.installed(t))
 }

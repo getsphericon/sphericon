@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/urfave/cli/v3"
 	"golang.org/x/mod/semver"
@@ -74,6 +73,7 @@ func upgradeCommand() *cli.Command {
 				Version: version,
 				Yes:     cmd.Bool("yes"),
 				Out:     out(cmd),
+				Service: cmd.String("service"),
 			}
 			if cmd.Bool("restart") {
 				sd := upgrade.Systemd{Service: cmd.String("service"), Out: out(cmd)}
@@ -91,7 +91,7 @@ func checkRelease(ctx context.Context, gh *upgrade.GitHub, current string, out i
 	if err != nil {
 		return err
 	}
-	if semver.Compare("v"+latest, "v"+strings.TrimPrefix(current, "v")) > 0 {
+	if semver.Compare(buildinfo.Semver(latest), buildinfo.Semver(current)) > 0 {
 		_, err := fmt.Fprintf(out, "A newer release is available: %s (running %s). Run `sphericon upgrade`.\n", latest, current)
 		return errors.Join(err, errNewerRelease)
 	}

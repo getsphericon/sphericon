@@ -6,6 +6,7 @@ package buildinfo
 import (
 	"fmt"
 	"runtime/debug"
+	"strings"
 )
 
 // Set by -ldflags "-X github.com/getsphericon/sphericon/internal/buildinfo.Version=..." etc.
@@ -70,3 +71,10 @@ func resolve(set Info, bi *debug.BuildInfo) Info {
 	}
 	return out
 }
+
+// Semver is v in the "v1.2.3" form golang.org/x/mod/semver wants, whether it came with the
+// leading "v" or without ("0.1.0", the form release archives and `--version` use).
+func Semver(v string) string { return "v" + strings.TrimPrefix(v, "v") }
+
+// Bare is v without the leading "v" ("0.1.0"), the form of archive names and Results.
+func Bare(v string) string { return strings.TrimPrefix(v, "v") }

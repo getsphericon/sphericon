@@ -97,8 +97,11 @@ func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []Collect
 		dedupID := ""
 		if evt.ClientEventID != "" {
 			dedupID = CollectDedupKey(s.WorkspaceID(), evt.ClientEventID)
-			// Already stored: a retry of an event that arrived. (One still on the outbox is
-			// deduplicated by the persist subscriber on the same key.)
+			// Already stored: a retry of an event that arrived. One still on the outbox, or
+			// racing this call, is published again and the persist subscriber's unique
+			// source_id keeps one Event row; the webhook id is the same key, so a receiver
+			// drops the duplicate. Enrolling a Contact is once per
+			// Automation, so a trigger evaluated twice in that window enrolls once.
 			seen, err := s.Event().Query().Where(event.SourceID(dedupID)).Exist(ctx)
 			if err != nil {
 				return err

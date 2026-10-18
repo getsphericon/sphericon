@@ -66,45 +66,47 @@ func migrateOnStart(ctx context.Context, cfg *config.Config) error {
 	return nil
 }
 
-// applyMigrations opens a short-lived connection (separate from the app's DI pool), runs the
-// guard (a migration is allowed, so only a binary that cannot run on the schema is refused) and
-// applies the embedded migrations under the database lock; ctx is the only time limit.
-func applyMigrations(ctx context.Context, cfg *config.Config) (int, error) {
+// withDB runs fn on a short-lived connection (separate from the app's DI pool) that it closes
+// afterwards.
+func withDB[T any](cfg *config.Config, fn func(db *sql.DB) (T, error)) (T, error) {
 	db, err := sql.Open("pgx", cfg.DatabaseURL)
 	if err != nil {
-		return 0, err
+		var zero T
+		return zero, err
 	}
 	defer func() { _ = db.Close() }()
-	if err := (appdb.Guard{Build: buildinfo.Current(), AutoMigrate: true}).Check(ctx, db); err != nil {
-		return 0, err
-	}
-	return appdb.Migrate(ctx, db)
+	return fn(db)
+}
+
+// applyMigrations runs the guard (a migration is allowed, so only a binary that cannot run on
+// the schema is refused) and applies the embedded migrations under the database lock; ctx is
+// the only time limit.
+func applyMigrations(ctx context.Context, cfg *config.Config) (int, error) {
+	return withDB(cfg, func(db *sql.DB) (int, error) {
+		if err := (appdb.Guard{Build: buildinfo.Current(), AutoMigrate: true}).Check(ctx, db); err != nil {
+			return 0, err
+		}
+		return appdb.Migrate(ctx, db)
+	})
 }
 
 // guardStart is the start without auto-migrate: the process refuses, naming what to do, when
 // it cannot run on the database as it is (ADR 0033).
 func guardStart(ctx context.Context, cfg *config.Config) error {
-	db, err := sql.Open("pgx", cfg.DatabaseURL)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = db.Close() }()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	return appdb.Guard{Build: buildinfo.Current()}.Check(ctx, db)
+	_, err := withDB(cfg, func(db *sql.DB) (struct{}, error) {
+		return struct{}{}, appdb.Guard{Build: buildinfo.Current()}.Check(ctx, db)
+	})
+	return err
 }
 
 // printMigrationStatus prints the schema's state, the newest the binary knows and the
 // pending migrations, and changes nothing.
 func printMigrationStatus(ctx context.Context, cfg *config.Config, out io.Writer, asJSON bool) error {
-	db, err := sql.Open("pgx", cfg.DatabaseURL)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = db.Close() }()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	st, err := appdb.Status(ctx, db)
+	st, err := withDB(cfg, func(db *sql.DB) (appdb.SchemaStatus, error) { return appdb.Status(ctx, db) })
 	if err != nil {
 		return err
 	}

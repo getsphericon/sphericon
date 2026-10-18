@@ -54,11 +54,8 @@ func ReadState(ctx context.Context, sqlDB *sql.DB) (SchemaState, error) {
 	}
 }
 
-// Refusal is a start that the guard stops. Needs is the release to install: the floor a
-// binary is older than, or the last release of the Major a skipped Upgrade went past; it is
-// empty when the remedy is `sphericon migrate`.
+// Refusal is a start that the guard stops; its message names the remedy.
 type Refusal struct {
-	Needs   string
 	message string
 }
 
@@ -95,7 +92,7 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 	tail := " Upgrade guide: " + UpgradeGuideURL
 
 	if semver.IsValid(g.Build.Version) && semver.IsValid(state.Floor) && semver.Compare(g.Build.Version, state.Floor) < 0 {
-		return &Refusal{Needs: state.Floor, message: fmt.Sprintf(
+		return &Refusal{message: fmt.Sprintf(
 			"%s is older than the database allows: its schema is Major %d and needs %s or newer.%s",
 			who, state.Major, state.Floor, tail)}
 	}
@@ -107,7 +104,7 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 				needs = m.Floor
 			}
 		}
-		return &Refusal{Needs: needs, message: fmt.Sprintf(
+		return &Refusal{message: fmt.Sprintf(
 			"%s skipped a Major: the database is at Major %d and this binary at Major %d; install %s first, then upgrade again.%s",
 			who, state.Major, own, needs, tail)}
 	case behind == 1 && !g.AutoMigrate:

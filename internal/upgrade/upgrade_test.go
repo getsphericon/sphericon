@@ -197,6 +197,18 @@ func TestUpgradeNeedsAnArchiveForThisPlatform(t *testing.T) {
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
 }
 
+func TestTheRestartHintNamesTheServiceItWasGiven(t *testing.T) {
+	s := newSetup(t)
+	release(t, s.dir, "0.2.0", "", false)
+	o := s.opts("")
+	o.Service = "sphericon-prod"
+
+	_, err := upgrade.Step(t.Context(), o)
+
+	require.NoError(t, err)
+	assert.Contains(t, s.out.String(), "systemctl restart sphericon-prod\n")
+}
+
 func TestPostSwapStepReplacesTheRestartHint(t *testing.T) {
 	s := newSetup(t)
 	release(t, s.dir, "0.2.0", "", false)

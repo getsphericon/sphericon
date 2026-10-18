@@ -7,11 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"runtime"
 	"slices"
 	"strings"
 
 	"golang.org/x/mod/semver"
+
+	"github.com/getsphericon/sphericon/internal/buildinfo"
 )
 
 // Boundaries is what `sphericon migrate --status --json` prints and the walk reads: the
@@ -35,37 +36,35 @@ type MajorFloor struct {
 // The table of Majors lives in the release being installed, not in the running binary, so the
 // walk stages the target, asks it (`migrate --status --json`, which also reads the database)
 // and then installs the Floor of every Major above the database's, oldest first. It needs
-// nothing beyond the target's own archive, so it works offline.
+// nothing beyond the target's own archive, so it works offline. That same staged binary
+// carries the changelog of every release up to itself, so the walk prints the Upgrade notes
+// of every release it will install, and waits for --yes, before the first migration or swap;
+// the target is then installed from the staged copy rather than fetched again.
 //
 // With a directory Source every archive of the walk is checked before the first step, and
 // a missing one refuses the whole Upgrade.
 func Walk(ctx context.Context, o Options) ([]Result, error) {
-	if o.Platform == (Platform{}) {
-		o.Platform = Platform{OS: runtime.GOOS, Arch: runtime.GOARCH}
-	}
-	if o.Container == nil {
-		o.Container = DetectContainer
-	}
-	if o.Run == nil {
-		o.Run = execRun
-	}
-	if kind := o.Container(); kind != "" {
-		return nil, containerRefusal(kind)
-	}
-	current := "v" + strings.TrimPrefix(o.Current, "v")
-	if !semver.IsValid(current) {
-		return nil, fmt.Errorf("this build is %q, not a release: install a release binary first", o.Current)
+	o, current, err := begin(o)
+	if err != nil {
+		return nil, err
 	}
 	target, err := chooseVersion(ctx, o)
 	if err != nil {
 		return nil, err
 	}
-	if semver.Compare("v"+target, current) <= 0 {
+	if semver.Compare(buildinfo.Semver(target), current) <= 0 {
 		res, err := Step(ctx, o) // prints "Already running" or refuses the downgrade
 		return []Result{res}, err
 	}
 
-	b, err := readBoundaries(ctx, o, target)
+	// The staged target: asked for the Majors and the notes, then installed as the last step
+	// (the rename takes it away; whatever is left is removed here).
+	probe, err := stage(ctx, o, target, o.Target+".plan")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = os.Remove(probe) }()
+	b, err := readBoundaries(ctx, o, probe, target)
 	if err != nil {
 		return nil, err
 	}
@@ -78,18 +77,25 @@ func Walk(ctx context.Context, o Options) ([]Result, error) {
 			return nil, err
 		}
 	}
+	if err := confirmNotes(ctx, o, probe, current, target); err != nil {
+		return nil, err
+	}
 
 	var results []Result
-	for _, version := range plan {
+	for i, version := range plan {
 		step := o
 		step.Version = version
 		step.Current = current
+		step.notesConfirmed = true
+		if i == len(plan)-1 {
+			step.staged = probe
+		}
 		res, err := Step(ctx, step)
 		if err != nil {
 			return results, err
 		}
 		results = append(results, res)
-		current = "v" + res.Version
+		current = buildinfo.Semver(res.Version)
 	}
 	return results, nil
 }
@@ -102,8 +108,8 @@ func planWalk(b Boundaries, current, target string) []string {
 		if m.Major <= b.State.Major || !semver.IsValid(m.Floor) {
 			continue
 		}
-		if semver.Compare(m.Floor, current) > 0 && semver.Compare(m.Floor, "v"+target) < 0 {
-			plan = append(plan, strings.TrimPrefix(m.Floor, "v"))
+		if semver.Compare(m.Floor, current) > 0 && semver.Compare(m.Floor, buildinfo.Semver(target)) < 0 {
+			plan = append(plan, buildinfo.Bare(m.Floor))
 		}
 	}
 	return append(plan, target)
@@ -128,25 +134,10 @@ func requireArchives(ctx context.Context, o Options, plan []string) error {
 	return nil
 }
 
-// readBoundaries stages the target next to the installed binary just long enough to ask it.
-func readBoundaries(ctx context.Context, o Options, target string) (Boundaries, error) {
-	rel, err := o.Source.Fetch(ctx, target, o.Platform)
-	if err != nil {
-		return Boundaries{}, err
-	}
-	if rel.Cleanup != nil {
-		defer rel.Cleanup()
-	}
-	if err := verify(rel); err != nil {
-		return Boundaries{}, err
-	}
-	probe := o.Target + ".plan"
-	defer func() { _ = os.Remove(probe) }()
-	if err := unpack(rel.ArchivePath, probe); err != nil {
-		return Boundaries{}, err
-	}
+// readBoundaries asks the staged target which Majors lie between.
+func readBoundaries(ctx context.Context, o Options, staged, target string) (Boundaries, error) {
 	var out bytes.Buffer
-	if err := o.Run(ctx, probe, []string{"migrate", "--status", "--json"}, &out); err != nil {
+	if err := o.Run(ctx, staged, []string{"migrate", "--status", "--json"}, &out); err != nil {
 		return Boundaries{}, fmt.Errorf("ask %s which Majors lie between (nothing was changed): %w", target, err)
 	}
 	var b Boundaries

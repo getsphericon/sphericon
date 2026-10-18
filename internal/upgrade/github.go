@@ -14,6 +14,8 @@ import (
 	"github.com/google/go-github/v88/github"
 	"golang.org/x/mod/semver"
 	"golang.org/x/net/http/httpproxy"
+
+	"github.com/getsphericon/sphericon/internal/buildinfo"
 )
 
 const (
@@ -58,8 +60,8 @@ func (g *GitHub) LatestRelease(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	v := strings.TrimPrefix(r.GetTagName(), "v")
-	if !semver.IsValid("v" + v) {
+	v := buildinfo.Bare(r.GetTagName())
+	if !semver.IsValid(buildinfo.Semver(v)) {
 		return "", fmt.Errorf("the latest release is tagged %q, which is not a version", r.GetTagName())
 	}
 	return v, nil
@@ -73,8 +75,8 @@ func (g *GitHub) Versions(ctx context.Context, p Platform) ([]string, error) {
 	}
 	var out []string
 	for _, r := range rs {
-		v := strings.TrimPrefix(r.GetTagName(), "v")
-		if r.GetDraft() || r.GetPrerelease() || !semver.IsValid("v"+v) {
+		v := buildinfo.Bare(r.GetTagName())
+		if r.GetDraft() || r.GetPrerelease() || !semver.IsValid(buildinfo.Semver(v)) {
 			continue
 		}
 		if asset(r, ArchiveName(v, p)) != nil {
@@ -86,7 +88,7 @@ func (g *GitHub) Versions(ctx context.Context, p Platform) ([]string, error) {
 
 // Fetch downloads the archive and checksums.txt of a release into a temporary directory.
 func (g *GitHub) Fetch(ctx context.Context, version string, p Platform) (Release, error) {
-	r, _, err := g.client.Repositories.GetReleaseByTag(ctx, githubOwner, githubRepo, "v"+version)
+	r, _, err := g.client.Repositories.GetReleaseByTag(ctx, githubOwner, githubRepo, buildinfo.Semver(version))
 	if err != nil {
 		return Release{}, fmt.Errorf("release %s: %w", version, err)
 	}

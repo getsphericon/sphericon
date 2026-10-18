@@ -68,7 +68,6 @@ func TestGuardRefusesABinaryOlderThanTheFloorAndNamesTheRelease(t *testing.T) {
 
 	var refusal *db.Refusal
 	require.ErrorAs(t, err, &refusal)
-	assert.Equal(t, "v0.5.2", refusal.Needs)
 	assert.Contains(t, err.Error(), "sphericon v0.5.1 (commit abc1234, built 2026-10-18T10:00:00Z)")
 	assert.Contains(t, err.Error(), "v0.5.2 or newer")
 	assert.Contains(t, err.Error(), db.UpgradeGuideURL)
@@ -90,7 +89,6 @@ func TestGuardRefusesASkippedMajorAndNamesTheReleaseToInstallFirst(t *testing.T)
 
 	var refusal *db.Refusal
 	require.ErrorAs(t, err, &refusal)
-	assert.Equal(t, "v0.4.7", refusal.Needs)
 	assert.Contains(t, err.Error(), "install v0.4.7 first")
 	assert.Contains(t, err.Error(), "sphericon v0.6.0 (commit abc1234")
 	assert.Contains(t, err.Error(), db.UpgradeGuideURL)

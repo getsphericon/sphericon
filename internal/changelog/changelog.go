@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"golang.org/x/mod/semver"
+
+	"github.com/getsphericon/sphericon/internal/buildinfo"
 )
 
 // Release is one `## ` section of the changelog.
@@ -72,13 +74,13 @@ func Parse(text string) []Release {
 
 // Since keeps the releases newer than since ("v0.1.9" or "0.1.9") that have Upgrade entries.
 func Since(releases []Release, since string) ([]Release, error) {
-	base := "v" + strings.TrimPrefix(since, "v")
+	base := buildinfo.Semver(since)
 	if !semver.IsValid(base) {
 		return nil, fmt.Errorf("%q is not a version", since)
 	}
 	var out []Release
 	for _, r := range releases {
-		if len(r.Upgrades) > 0 && semver.Compare("v"+r.Version, base) > 0 {
+		if len(r.Upgrades) > 0 && semver.Compare(buildinfo.Semver(r.Version), base) > 0 {
 			out = append(out, r)
 		}
 	}

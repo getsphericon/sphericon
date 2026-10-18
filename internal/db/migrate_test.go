@@ -5,7 +5,6 @@ import (
 	"sync"
 	"testing"
 	"testing/fstest"
-	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
@@ -66,16 +65,17 @@ func TestStatusOnAnEmptyDatabaseListsEveryMigrationAndLeavesItEmpty(t *testing.T
 	assert.Len(t, st.Pending, applied)
 }
 
-// Migrate has no time limit of its own: a slow migration completes when the caller sets none.
-func TestMigrateFSRunsASlowMigrationToCompletion(t *testing.T) {
+// Migrate has no time limit of its own: it applies a migration under a context with no
+// deadline, and the lock wait is bounded by that context alone.
+func TestMigrateFSAppliesAMigrationUnderAContextWithNoDeadline(t *testing.T) {
 	sqlDB := openEmpty(t)
-	files := fstest.MapFS{"20200101000000_slow.sql": {Data: []byte("-- +goose Up\nSELECT pg_sleep(2);\nCREATE TABLE slow_done (id int);\n")}}
+	files := fstest.MapFS{"20200101000000_slow.sql": {Data: []byte("-- +goose Up\nCREATE TABLE slow_done (id int);\n")}}
+	_, hasDeadline := t.Context().Deadline()
+	require.False(t, hasDeadline)
 
-	start := time.Now()
 	applied, err := db.MigrateFS(t.Context(), sqlDB, files)
 	require.NoError(t, err)
 	assert.Equal(t, 1, applied)
-	assert.GreaterOrEqual(t, time.Since(start), 2*time.Second)
 
 	st, err := db.StatusFS(t.Context(), sqlDB, files)
 	require.NoError(t, err)

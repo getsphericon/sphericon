@@ -110,8 +110,10 @@ sphericon upgrade --check; [ $? -ne 10 ] || echo "a sphericon release is availab
 
 When the target lies beyond the next Major, `upgrade` stages the target, asks it which Majors lie
 between (`migrate --status --json`, which reads your database) and installs the last release of
-each Major in turn, then the target. Each step is a full Upgrade (migrate, swap, restart) and
-prints the notes of its own range; `--yes` covers all of them.
+each Major in turn, then the target. Before the first migration or swap it prints the Upgrade
+notes of every release it will install (the target's changelog covers them all) and stops
+without `--yes`; `--yes` covers the whole walk. Each step is then a full Upgrade (migrate, swap,
+restart).
 
 ```text
 Crossing 2 Majors: installing 0.4.9, 0.5.6, 0.6.0 in turn.
