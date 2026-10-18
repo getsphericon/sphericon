@@ -35,7 +35,7 @@ func TestExternalTagsListAndPerContact(t *testing.T) {
 	require.Truef(t, ok, "got %T", mine)
 	assert.Equal(t, []string{"newsletter", "vip"}, tagNames(contactTags.Items))
 
-	missing, err := c.TagsListForContact(ctx, externalapi.TagsListForContactParams{ContactId: "999999"})
+	missing, err := c.TagsListForContact(ctx, externalapi.TagsListForContactParams{ContactId: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.TagsListForContactNotFound{}, missing)
 }
@@ -80,7 +80,7 @@ func TestExternalTagsApplyAndRemove(t *testing.T) {
 	assert.Empty(t, mine.(*externalapi.TagsListForContactOK).Items)
 
 	// Unknown contact and blank name.
-	nf, err := c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "x"}, externalapi.TagsApplyParams{ContactId: "999999"})
+	nf, err := c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "x"}, externalapi.TagsApplyParams{ContactId: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.TagsApplyNotFound{}, nf)
 	blank, err := c.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "  "}, externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactBobID)})

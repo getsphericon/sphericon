@@ -13,7 +13,7 @@ type ConverterImpl struct{}
 func (c *ConverterImpl) ApiTokenToInfo(source *ent.ApiToken) external.ApiTokenInfo {
 	var externalapiApiTokenInfo external.ApiTokenInfo
 	if source != nil {
-		externalapiApiTokenInfo.ID = entityID((*source).ID)
+		externalapiApiTokenInfo.ID = external.EntityId((*source).ID)
 		externalapiApiTokenInfo.Name = (*source).Name
 		if (*source).Scopes != nil {
 			externalapiApiTokenInfo.Scopes = make([]external.ApiTokenScope, len((*source).Scopes))
@@ -32,7 +32,7 @@ func (c *ConverterImpl) ApiTokenToInfo(source *ent.ApiToken) external.ApiTokenIn
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.AutomationResource {
 	var externalapiAutomationResource external.AutomationResource
 	if source != nil {
-		externalapiAutomationResource.ID = entityID((*source).ID)
+		externalapiAutomationResource.ID = external.EntityId((*source).ID)
 		externalapiAutomationResource.Name = (*source).Name
 		externalapiAutomationResource.Status = external.AutomationStatus((*source).Status)
 		externalapiAutomationResource.TriggerEvent = (*source).TriggerEvent
@@ -45,8 +45,8 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.Au
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) external.ContactExportBroadcastRecipient {
 	var externalapiContactExportBroadcastRecipient external.ContactExportBroadcastRecipient
 	if source != nil {
-		externalapiContactExportBroadcastRecipient.ID = entityID((*source).ID)
-		externalapiContactExportBroadcastRecipient.BroadcastId = entityID((*source).BroadcastID)
+		externalapiContactExportBroadcastRecipient.ID = external.EntityId((*source).ID)
+		externalapiContactExportBroadcastRecipient.BroadcastId = external.EntityId((*source).BroadcastID)
 		externalapiContactExportBroadcastRecipient.Status = string((*source).Status)
 		externalapiContactExportBroadcastRecipient.Error = optNilString((*source).Error)
 		externalapiContactExportBroadcastRecipient.SentAt = optNilTimestamp((*source).SentAt)
@@ -59,7 +59,7 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.BroadcastResource {
 	var externalapiBroadcastResource external.BroadcastResource
 	if source != nil {
-		externalapiBroadcastResource.ID = entityID((*source).ID)
+		externalapiBroadcastResource.ID = external.EntityId((*source).ID)
 		externalapiBroadcastResource.Name = (*source).Name
 		externalapiBroadcastResource.Subject = (*source).Subject
 		externalapiBroadcastResource.FromName = optNilString((*source).FromName)
@@ -77,7 +77,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.ContactExportConfirmation {
 	var externalapiContactExportConfirmation external.ContactExportConfirmation
 	if source != nil {
-		externalapiContactExportConfirmation.ID = entityID((*source).ID)
+		externalapiContactExportConfirmation.ID = external.EntityId((*source).ID)
 		externalapiContactExportConfirmation.Channel = string((*source).Channel)
 		externalapiContactExportConfirmation.Destination = (*source).Destination
 		externalapiContactExportConfirmation.Provenance = string((*source).Provenance)
@@ -88,7 +88,7 @@ func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.
 func (c *ConverterImpl) ContactToExport(source *ent.Contact) external.ContactExportContact {
 	var externalapiContactExportContact external.ContactExportContact
 	if source != nil {
-		externalapiContactExportContact.ID = entityID((*source).ID)
+		externalapiContactExportContact.ID = external.EntityId((*source).ID)
 		externalapiContactExportContact.SubjectId = optNilString((*source).SubjectID)
 		externalapiContactExportContact.Email = optNilString((*source).Email)
 		externalapiContactExportContact.Phone = optNilString((*source).Phone)
@@ -104,7 +104,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) external.ContactExp
 func (c *ConverterImpl) ContactToResource(source *ent.Contact) external.ContactResource {
 	var externalapiContactResource external.ContactResource
 	if source != nil {
-		externalapiContactResource.ID = entityID((*source).ID)
+		externalapiContactResource.ID = external.EntityId((*source).ID)
 		externalapiContactResource.SubjectId = optNilString((*source).SubjectID)
 		externalapiContactResource.Email = optNilEmailAddress((*source).Email)
 		externalapiContactResource.Phone = optNilString((*source).Phone)
@@ -120,7 +120,7 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) external.ContactR
 func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) external.CustomFieldResource {
 	var externalapiCustomFieldResource external.CustomFieldResource
 	if source != nil {
-		externalapiCustomFieldResource.ID = entityID((*source).ID)
+		externalapiCustomFieldResource.ID = external.EntityId((*source).ID)
 		externalapiCustomFieldResource.Key = (*source).Key
 		externalapiCustomFieldResource.Name = (*source).Name
 		externalapiCustomFieldResource.Type = external.CustomFieldType((*source).Type)
@@ -132,7 +132,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) external.
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) external.TemplateResource {
 	var externalapiTemplateResource external.TemplateResource
 	if source != nil {
-		externalapiTemplateResource.ID = entityID((*source).ID)
+		externalapiTemplateResource.ID = external.EntityId((*source).ID)
 		externalapiTemplateResource.Name = (*source).Name
 		externalapiTemplateResource.Subject = (*source).Subject
 		externalapiTemplateResource.Body = (*source).Body
@@ -144,7 +144,7 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) exter
 func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportEvent {
 	var externalapiContactExportEvent external.ContactExportEvent
 	if source != nil {
-		externalapiContactExportEvent.ID = entityID((*source).ID)
+		externalapiContactExportEvent.ID = external.EntityId((*source).ID)
 		externalapiContactExportEvent.SourceId = optNilString((*source).SourceID)
 		externalapiContactExportEvent.VisitorId = optNilString((*source).VisitorID)
 		externalapiContactExportEvent.SubjectId = (*source).SubjectID
@@ -160,7 +160,7 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportE
 func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) external.ContactExportOutboundMessage {
 	var externalapiContactExportOutboundMessage external.ContactExportOutboundMessage
 	if source != nil {
-		externalapiContactExportOutboundMessage.ID = entityID((*source).ID)
+		externalapiContactExportOutboundMessage.ID = external.EntityId((*source).ID)
 		externalapiContactExportOutboundMessage.Kind = string((*source).Kind)
 		externalapiContactExportOutboundMessage.Channel = string((*source).Channel)
 		externalapiContactExportOutboundMessage.Destination = (*source).Destination
@@ -182,7 +182,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentResource {
 	var externalapiSegmentResource external.SegmentResource
 	if source != nil {
-		externalapiSegmentResource.ID = entityID((*source).ID)
+		externalapiSegmentResource.ID = external.EntityId((*source).ID)
 		externalapiSegmentResource.Name = (*source).Name
 		externalapiSegmentResource.Definition = segmentDefinition((*source).Definition)
 		externalapiSegmentResource.CreatedAt = timestamp((*source).CreatedAt)
@@ -193,7 +193,7 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentR
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) external.ContactExportSuppression {
 	var externalapiContactExportSuppression external.ContactExportSuppression
 	if source != nil {
-		externalapiContactExportSuppression.ID = entityID((*source).ID)
+		externalapiContactExportSuppression.ID = external.EntityId((*source).ID)
 		externalapiContactExportSuppression.Channel = string((*source).Channel)
 		externalapiContactExportSuppression.Destination = (*source).Destination
 		externalapiContactExportSuppression.Reason = string((*source).Reason)
@@ -204,7 +204,7 @@ func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) external.Co
 func (c *ConverterImpl) TagToExport(source *ent.Tag) external.ContactExportTag {
 	var externalapiContactExportTag external.ContactExportTag
 	if source != nil {
-		externalapiContactExportTag.ID = entityID((*source).ID)
+		externalapiContactExportTag.ID = external.EntityId((*source).ID)
 		externalapiContactExportTag.Name = (*source).Name
 		externalapiContactExportTag.CreatedAt = timestamp((*source).CreatedAt)
 	}
@@ -213,7 +213,7 @@ func (c *ConverterImpl) TagToExport(source *ent.Tag) external.ContactExportTag {
 func (c *ConverterImpl) TagToResource(source *ent.Tag) external.TagResource {
 	var externalapiTagResource external.TagResource
 	if source != nil {
-		externalapiTagResource.ID = entityID((*source).ID)
+		externalapiTagResource.ID = external.EntityId((*source).ID)
 		externalapiTagResource.Name = (*source).Name
 		externalapiTagResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
@@ -222,7 +222,7 @@ func (c *ConverterImpl) TagToResource(source *ent.Tag) external.TagResource {
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.ContactExportUnsubscribe {
 	var externalapiContactExportUnsubscribe external.ContactExportUnsubscribe
 	if source != nil {
-		externalapiContactExportUnsubscribe.ID = entityID((*source).ID)
+		externalapiContactExportUnsubscribe.ID = external.EntityId((*source).ID)
 		externalapiContactExportUnsubscribe.Channel = string((*source).Channel)
 		externalapiContactExportUnsubscribe.Destination = (*source).Destination
 		externalapiContactExportUnsubscribe.SendingSource = (*source).SendingSource
@@ -233,7 +233,7 @@ func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) external.Co
 func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) external.ContactExportVisitor {
 	var externalapiContactExportVisitor external.ContactExportVisitor
 	if source != nil {
-		externalapiContactExportVisitor.ID = entityID((*source).ID)
+		externalapiContactExportVisitor.ID = external.EntityId((*source).ID)
 		externalapiContactExportVisitor.VisitorId = (*source).VisitorID
 		externalapiContactExportVisitor.LastSeenAt = timestamp((*source).LastSeenAt)
 		externalapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)

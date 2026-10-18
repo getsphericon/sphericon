@@ -58,14 +58,14 @@ func decodeServiceHoldsClearParams(args [2]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -76,14 +76,6 @@ func decodeServiceHoldsClearParams(args [2]string, argsEscaped bool, r *http.Req
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -183,14 +175,14 @@ func decodeServiceHoldsListParams(args [1]string, argsEscaped bool, r *http.Requ
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -201,14 +193,6 @@ func decodeServiceHoldsListParams(args [1]string, argsEscaped bool, r *http.Requ
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -271,14 +255,14 @@ func decodeServiceHoldsSetParams(args [2]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -289,14 +273,6 @@ func decodeServiceHoldsSetParams(args [2]string, argsEscaped bool, r *http.Reque
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err
@@ -756,14 +732,14 @@ func decodeServiceWorkspaceUsageGetParams(args [1]string, argsEscaped bool, r *h
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotWorkspaceIdVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
@@ -774,14 +750,6 @@ func decodeServiceWorkspaceUsageGetParams(args [1]string, argsEscaped bool, r *h
 					return err
 				}
 				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
 				return nil
 			}(); err != nil {
 				return err

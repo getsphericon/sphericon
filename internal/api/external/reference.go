@@ -3,7 +3,6 @@ package external
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -63,7 +62,7 @@ func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalap
 	items := make([]externalapi.SendingDomainRatesResource, len(rates))
 	for i, r := range rates {
 		items[i] = externalapi.SendingDomainRatesResource{
-			SendingDomainId: externalapi.EntityId(strconv.FormatInt(r.Domain.ID, 10)),
+			SendingDomainId: externalapi.EntityId(r.Domain.ID),
 			Domain:          r.Domain.Domain,
 			WindowDays:      days,
 			ComplaintRate:   rateTriple(r.Complaint),

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -15,23 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/samber/lo"
 )
-
-// optEntityID converts an OptNil EntityId option (a numeric string) into the
-// *int64 ent's nillable setters expect. A missing or null option yields nil; a
-// malformed value yields ok=false so the caller can return 400.
-func optEntityID[O interface {
-	Get() (siteapi.EntityId, bool)
-}](o O) (id *int64, ok bool) {
-	s := convert.StringPtr(o)
-	if s == nil {
-		return nil, true
-	}
-	v, err := strconv.ParseInt(*s, 10, 64)
-	if err != nil {
-		return nil, false
-	}
-	return &v, true
-}
 
 // broadcastResource maps a Broadcast and, while it is sending, attaches its progress
 // and ETA (ADR 0023), derived on the server from its recipients. Only the single-row
@@ -88,16 +70,8 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		return nil, err
 	}
 
-	segmentID, ok := optEntityID(req.SegmentId)
-	if !ok {
-		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, i18n.T("errors.segment_invalid", nil)))
-		return &v, nil
-	}
-	integrationID, ok := optEntityID(req.IntegrationId)
-	if !ok {
-		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, i18n.T("errors.integration_invalid", nil)))
-		return &v, nil
-	}
+	segmentID := convert.Int64Ptr(req.SegmentId)
+	integrationID := convert.Int64Ptr(req.IntegrationId)
 
 	b, err := h.broadcasts.Create(ctx, ws, broadcasts.Fields{
 		Name:          &req.Name,
@@ -125,11 +99,7 @@ func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBro
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteBroadcastsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, ws, id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
 		v := siteapi.SiteBroadcastsGetNotFound(problem(http.StatusNotFound, "broadcast not found"))
@@ -155,22 +125,10 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteBroadcastsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
-	segmentID, ok := optEntityID(req.SegmentId)
-	if !ok {
-		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, i18n.T("errors.segment_invalid", nil)))
-		return &v, nil
-	}
-	integrationID, ok := optEntityID(req.IntegrationId)
-	if !ok {
-		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, i18n.T("errors.integration_invalid", nil)))
-		return &v, nil
-	}
+	segmentID := convert.Int64Ptr(req.SegmentId)
+	integrationID := convert.Int64Ptr(req.IntegrationId)
 
 	// JSON Merge Patch: an explicit null clears the field, an absent key keeps it.
 	b, err := h.broadcasts.Update(ctx, ws, id, broadcasts.Fields{
@@ -211,11 +169,7 @@ func (h *Handlers) SiteBroadcastsDelete(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteBroadcastsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = h.broadcasts.Delete(ctx, ws, id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
 		v := siteapi.SiteBroadcastsDeleteNotFound(problem(http.StatusNotFound, "broadcast not found"))
@@ -239,11 +193,7 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteBroadcastsSendBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
 	b, err := h.broadcasts.Send(ctx, ws, id)
 	switch {
@@ -274,11 +224,7 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Site
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteBroadcastsScheduleBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
 	b, err := h.broadcasts.Schedule(ctx, ws, id, time.Time(req.ScheduledAt))
 	switch {
@@ -308,11 +254,7 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Site
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteBroadcastsTestSendBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, ws, id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
 		v := siteapi.SiteBroadcastsTestSendNotFound(problem(http.StatusNotFound, "broadcast not found"))

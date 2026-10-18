@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-const missingAutomation = externalapi.EntityId("999999")
+const missingAutomation = externalapi.EntityId(999999)
 
 // Every id-addressed automation operation answers 404 for an id that does not
 // exist, and the same for another workspace's automation, which stays untouched.

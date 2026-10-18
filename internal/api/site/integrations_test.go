@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -103,8 +102,7 @@ func TestSiteIntegrationsCRUD(t *testing.T) {
 	assert.Equal(t, "smtp-user", smtpOut.Username.Or(""))
 
 	// Stored config must be ciphertext, never the plaintext password.
-	rowID, err := strconv.ParseInt(string(res.ID), 10, 64)
-	require.NoError(t, err)
+	rowID := int64(res.ID)
 	row, err := env.DB.Integration.Get(ctx, rowID)
 	require.NoError(t, err)
 	assert.NotEmpty(t, row.ConfigEncrypted)

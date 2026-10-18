@@ -3,10 +3,10 @@ package site
 import (
 	"context"
 	"net/http"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -23,11 +23,7 @@ func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEvents
 	}
 
 	f := eventlog.Filter{Action: params.Action.Or(""), Email: params.Email.Or("")}
-	if v, ok := params.ContactId.Get(); ok {
-		if id, perr := strconv.ParseInt(string(v), 10, 64); perr == nil {
-			f.ContactID = &id
-		}
-	}
+	f.ContactID = convert.Int64Ptr(params.ContactId)
 	page, err := h.eventlog.List(ctx, scoped, f, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err

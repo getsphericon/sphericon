@@ -45,7 +45,7 @@ func TestExternalAutomationsRead(t *testing.T) {
 	assert.Equal(t, "engaged", steps[0].Tag.Or(""))
 	assert.Equal(t, externalapi.AutomationStepTypeRemoveTag, steps[1].Type)
 
-	missing, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: "999999"})
+	missing, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AutomationsGetNotFound{}, missing)
 
@@ -138,7 +138,7 @@ func TestExternalAutomationsActivateAndDeactivate(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.AutomationStatusDraft, off.(*externalapi.AutomationResource).Status)
 
-	missing, err := c.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: "999999"})
+	missing, err := c.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AutomationsActivateNotFound{}, missing)
 }

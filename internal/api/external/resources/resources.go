@@ -6,7 +6,6 @@ package resources
 
 import (
 	"encoding/json"
-	"strconv"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -62,7 +61,6 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:output:file ./converter_gen.go
 // goverter:matchIgnoreCase
 // goverter:useZeroValueOnPointerInconsistency
-// goverter:extend entityID
 // goverter:extend timestamp
 // goverter:extend optNilString
 // goverter:extend optNilEmailAddress
@@ -146,10 +144,6 @@ func exportJSON(m map[string]any) externalapi.OptNilContactExportJson {
 	return externalapi.NewOptNilContactExportJson(out)
 }
 
-func entityID(id int64) externalapi.EntityId {
-	return externalapi.EntityId(strconv.FormatInt(id, 10))
-}
-
 func timestamp(t time.Time) externalapi.Timestamp {
 	return externalapi.Timestamp(t)
 }
@@ -172,7 +166,7 @@ func optNilEntityID(v *int64) externalapi.OptNilEntityId {
 	if v == nil {
 		return externalapi.OptNilEntityId{}
 	}
-	return externalapi.NewOptNilEntityId(entityID(*v))
+	return externalapi.NewOptNilEntityId(externalapi.EntityId(*v))
 }
 
 func optNilTimeZone(v *string) externalapi.OptNilTimeZoneName {

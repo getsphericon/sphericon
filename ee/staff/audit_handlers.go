@@ -3,7 +3,6 @@ package staff
 import (
 	"context"
 	"net/http"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
@@ -14,11 +13,7 @@ import (
 // StaffWorkspaceAuditList is a page of one Workspace's Audit log, newest first. An
 // Staff member's entry shows as "sphericon staff" with no id, as it does to the customer.
 func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffapi.StaffWorkspaceAuditListParams) (staffapi.StaffWorkspaceAuditListRes, error) {
-	id, err := strconv.ParseInt(string(params.WorkspaceId), 10, 64)
-	if err != nil {
-		v := staffapi.StaffWorkspaceAuditListNotFound(notFoundProblem())
-		return &v, nil
-	}
+	id := int64(params.WorkspaceId)
 	cursor, limit, err := auditapi.Page(params.Cursor.Or(""), params.Limit.Or(0), params.Limit.IsSet())
 	if err != nil {
 		v := staffapi.StaffWorkspaceAuditListBadRequest{

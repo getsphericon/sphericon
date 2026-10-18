@@ -601,8 +601,8 @@ func (c *Client) sendStaffWorkspaceAuditList(ctx context.Context, params StaffWo
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -776,8 +776,8 @@ func (c *Client) sendStaffWorkspacesExempt(ctx context.Context, params StaffWork
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -911,8 +911,8 @@ func (c *Client) sendStaffWorkspacesGet(ctx context.Context, params StaffWorkspa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1231,8 +1231,8 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1369,8 +1369,8 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1505,8 +1505,8 @@ func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffW
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {

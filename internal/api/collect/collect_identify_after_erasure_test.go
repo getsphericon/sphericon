@@ -2,7 +2,6 @@ package collect_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +23,7 @@ func TestCollectIdentifyAfterErasureCreatesAFreshContactStillRefusedByTheSurvivi
 	ctx := context.Background()
 
 	erased, err := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, "contacts:erase")).
-		ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: externalapi.EntityId(strconv.FormatInt(fixtures.ContactErasableID, 10))})
+		ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: externalapi.EntityId(fixtures.ContactErasableID)})
 	require.NoError(t, err)
 	require.IsType(t, &externalapi.ContactsDeleteNoContent{}, erased)
 

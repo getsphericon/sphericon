@@ -15,19 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// A template id that is not an int64 can name no template: 404, nothing sent.
-func TestExternalEmailsSendWithAnUnparsableTemplateIDIsNotFound(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "emails:send")
-
-	res, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
-		TemplateId: overflowID, Destination: "a@example.com",
-	}, externalapi.EmailsSendParams{})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EmailsSendNotFound{}, res)
-	assert.Empty(t, env.CustomerMail.Messages())
-}
-
 // A template that cannot render is a 422 naming the cause; the key is then spent,
 // so retrying it replays the failure as a 409 instead of sending.
 func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {

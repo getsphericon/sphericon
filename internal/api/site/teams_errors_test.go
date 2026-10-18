@@ -14,9 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// overflowID matches the id pattern (digits only) but does not fit an int64, so it reaches the handler's parse guard.
-const overflowID siteapi.EntityId = "99999999999999999999"
-
 func TestSiteMembershipsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -41,9 +38,6 @@ func TestSiteMembershipsErrorBranches(t *testing.T) {
 	u1, err := owner.SiteMembershipsUpdate(ctx, role, siteapi.SiteMembershipsUpdateParams{Slug: foreign, ID: memberID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateNotFound{}, u1)
-	u2, err := owner.SiteMembershipsUpdate(ctx, role, siteapi.SiteMembershipsUpdateParams{Slug: acme, ID: overflowID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteMembershipsUpdateNotFound{}, u2)
 	u3, err := owner.SiteMembershipsUpdate(ctx, role, siteapi.SiteMembershipsUpdateParams{Slug: acme, ID: idStr(99999)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateNotFound{}, u3)
@@ -70,9 +64,6 @@ func TestSiteMembershipsErrorBranches(t *testing.T) {
 	d2, err := member.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: acme, ID: memberID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsDeleteForbidden{}, d2)
-	d3, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: acme, ID: overflowID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteMembershipsDeleteNotFound{}, d3)
 	d4, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: acme, ID: idStr(99999)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsDeleteNotFound{}, d4)
@@ -134,9 +125,6 @@ func TestSiteInvitationsErrorBranches(t *testing.T) {
 	d1, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{Slug: foreign, ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsDeleteNotFound{}, d1)
-	d2, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{Slug: acme, ID: overflowID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteInvitationsDeleteNotFound{}, d2)
 	d3, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{Slug: acme, ID: idStr(99999)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsDeleteNotFound{}, d3)

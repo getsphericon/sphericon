@@ -2,6 +2,8 @@ package testhelper
 
 import (
 	"context"
+	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -113,6 +115,37 @@ func (env *TestEnv) ExternalWithToken(t *testing.T, bearer string) *externalapi.
 	c, err := externalapi.NewClient(externalBase, bearerSource{bearer}, externalapi.WithClient(env.Transport(nil)))
 	require.NoError(t, err)
 	return c
+}
+
+// ExternalVia is ExternalWithToken with the in-memory transport wrapped by wrap, for
+// tests that change the request on the wire (e.g. RewriteURL).
+func (env *TestEnv) ExternalVia(t *testing.T, bearer string, wrap func(inner ht.Client) ht.Client) *externalapi.Client {
+	t.Helper()
+	c, err := externalapi.NewClient(externalBase, bearerSource{bearer}, externalapi.WithClient(wrap(env.Transport(nil))))
+	require.NoError(t, err)
+	return c
+}
+
+// RewriteURL wraps a transport so every occurrence of from in a request's URL (path and
+// query) becomes to. A typed client cannot spell a malformed id, so a test sends a valid
+// sentinel id and swaps it on the wire.
+func RewriteURL(from, to string) func(inner ht.Client) ht.Client {
+	return func(inner ht.Client) ht.Client {
+		return rewriteClient{inner: inner, from: from, to: to}
+	}
+}
+
+type rewriteClient struct {
+	inner    ht.Client
+	from, to string
+}
+
+func (c rewriteClient) Do(r *http.Request) (*http.Response, error) {
+	r = r.Clone(r.Context())
+	r.URL.Path = strings.ReplaceAll(r.URL.Path, c.from, c.to)
+	r.URL.RawPath = ""
+	r.URL.RawQuery = strings.ReplaceAll(r.URL.RawQuery, c.from, c.to)
+	return c.inner.Do(r)
 }
 
 // CollectAcme returns a /collect client carrying the Acme collect key.

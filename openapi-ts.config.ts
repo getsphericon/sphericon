@@ -33,6 +33,18 @@ const surface = (name: 'site' | 'staff'): UserConfig => ({
     {
       name: 'zod',
       '~resolvers': {
+        // An EntityId is a decimal string on the wire (the contract's `format: int64` on a
+        // string, so the Go server parses it) and a `string` in the generated types. The
+        // stock output for int64 is a coerced bigint, which JSON cannot carry: keep the string.
+        number: (ctx) =>
+          ctx.schema.format === 'int64'
+            ? ctx
+                .$(ctx.plugin.imports.z)
+                .attr('string')
+                .call()
+                .attr('regex')
+                .call(ctx.$.regexp('^[0-9]+$'))
+            : undefined,
         object: (ctx) =>
           ctx.nodes.base({
             ...ctx,

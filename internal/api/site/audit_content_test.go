@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -89,7 +90,7 @@ func TestSiteContactChangesCarryNamesOnly(t *testing.T) {
 	assert.Equal(t, map[string]any{"last_name": "changed", "custom_fields": "changed"}, contactEntries[1].Diff)
 
 	for _, e := range contactEntries {
-		assert.Equal(t, string(id), e.TargetID)
+		assert.Equal(t, strconv.FormatInt(int64(id), 10), e.TargetID)
 		assert.Empty(t, e.TargetName)
 		raw, err := json.Marshal(e)
 		require.NoError(t, err)

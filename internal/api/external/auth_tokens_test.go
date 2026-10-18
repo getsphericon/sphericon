@@ -22,7 +22,7 @@ func TestExternalAuthMeDescribesTheCallingToken(t *testing.T) {
 	info, ok := res.(*externalapi.ApiTokenInfo)
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, fixtures.AnchorTokenName, info.Name)
-	assert.EqualValues(t, fixtures.AnchorTokenID, mustParseID(t, string(info.ID)))
+	assert.EqualValues(t, fixtures.AnchorTokenID, int64(info.ID))
 }
 
 func TestExternalAuthMeRequiresACredential(t *testing.T) {
@@ -75,7 +75,7 @@ func TestExternalAuthTokensCreate(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	assert.NotEmpty(t, created.Token)
 
-	row, err := env.DB.ApiToken.Get(ctx, mustParseID(t, string(created.TokenInfo.ID)))
+	row, err := env.DB.ApiToken.Get(ctx, int64(created.TokenInfo.ID))
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, row.WorkspaceID)
 	assert.Equal(t, []string{"contacts:read"}, row.Scopes)
@@ -116,13 +116,9 @@ func TestExternalAuthTokensDelete(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, after, "a revoked token no longer authenticates")
 
-	missing, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: "999999"})
+	missing, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AuthTokensDeleteNotFound{}, missing)
-
-	bad, err := c.AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: overflowID})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensDeleteBadRequest{}, bad)
 
 	denied, err := env.ExternalScoped(t, "tokens:read").AuthTokensDelete(ctx, externalapi.AuthTokensDeleteParams{ID: entityIDString(victim.ID)})
 	require.NoError(t, err)
@@ -162,7 +158,7 @@ func TestExternalAuthTokensBootstrap(t *testing.T) {
 	require.NoError(t, err)
 	created, ok := res.(*externalapi.CreateApiTokenResponse)
 	require.Truef(t, ok, "got %T", res)
-	row, err := env.DB.ApiToken.Get(ctx, mustParseID(t, string(created.TokenInfo.ID)))
+	row, err := env.DB.ApiToken.Get(ctx, int64(created.TokenInfo.ID))
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, row.WorkspaceID, "the oldest workspace")
 	assert.Equal(t, []string{"tokens:write"}, row.Scopes)

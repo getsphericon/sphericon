@@ -69,11 +69,7 @@ func (h *Handlers) SegmentsGet(ctx context.Context, params externalapi.SegmentsG
 	}
 
 	ws := auth.TokenScoped(ctx)
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.SegmentsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	s, err := ws.Segment().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		res := externalapi.SegmentsGetNotFound(problem(http.StatusNotFound, "segment not found"))
@@ -93,11 +89,7 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 	}
 
 	ws := auth.TokenScoped(ctx)
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.SegmentsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
 	if group, ok := req.Definition.Get(); ok {
 		def, err := segments.Encode(&group)
@@ -129,12 +121,8 @@ func (h *Handlers) SegmentsDelete(ctx context.Context, params externalapi.Segmen
 	}
 
 	ws := auth.TokenScoped(ctx)
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.SegmentsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
-	err = ws.Segment().DeleteOneID(id).Exec(ctx)
+	id := int64(params.ID)
+	err := ws.Segment().DeleteOneID(id).Exec(ctx)
 	if ent.IsNotFound(err) {
 		res := externalapi.SegmentsDeleteNotFound(problem(http.StatusNotFound, "segment not found"))
 		return &res, nil

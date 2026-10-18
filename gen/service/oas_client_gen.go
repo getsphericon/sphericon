@@ -179,8 +179,8 @@ func (c *Client) sendServiceHoldsClear(ctx context.Context, params ServiceHoldsC
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -332,8 +332,8 @@ func (c *Client) sendServiceHoldsList(ctx context.Context, params ServiceHoldsLi
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -469,8 +469,8 @@ func (c *Client) sendServiceHoldsSet(ctx context.Context, request *HoldInput, pa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1063,8 +1063,8 @@ func (c *Client) sendServiceWorkspaceUsageGet(ctx context.Context, params Servic
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {

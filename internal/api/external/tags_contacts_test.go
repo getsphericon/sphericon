@@ -18,7 +18,7 @@ func TestExternalTagsRemoveForAnUnknownOrForeignContactIsNotFound(t *testing.T) 
 	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
 
 	for name, id := range map[string]externalapi.EntityId{
-		"unknown": "999999",
+		"unknown": 999999,
 		"foreign": entityIDString(globexContact(t, env, "tagless@globex.test")),
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -44,7 +44,7 @@ func TestExternalContactsCreatePersistsCustomFields(t *testing.T) {
 	created, ok := res.(*externalapi.ContactResource)
 	require.Truef(t, ok, "got %T", res)
 
-	stored, err := env.DB.Contact.Get(ctx, mustParseID(t, string(created.ID)))
+	stored, err := env.DB.Contact.Get(ctx, int64(created.ID))
 	require.NoError(t, err)
 	assert.Equal(t, "pro", stored.CustomFields["plan"])
 }

@@ -19,7 +19,7 @@ import (
 func (h *harness) suspend(t *testing.T, c *staffapi.Client, id int64, reason string) staffapi.StaffWorkspacesSuspendRes {
 	t.Helper()
 	res, err := c.StaffWorkspacesSuspend(t.Context(), &staffapi.StaffSuspendInput{Reason: reason},
-		staffapi.StaffWorkspacesSuspendParams{WorkspaceId: staffapi.EntityId(strconv.FormatInt(id, 10))})
+		staffapi.StaffWorkspacesSuspendParams{WorkspaceId: staffapi.EntityId(id)})
 	require.NoError(t, err)
 	return res
 }
@@ -27,7 +27,7 @@ func (h *harness) suspend(t *testing.T, c *staffapi.Client, id int64, reason str
 func (h *harness) unsuspend(t *testing.T, c *staffapi.Client, id int64) staffapi.StaffWorkspacesUnsuspendRes {
 	t.Helper()
 	res, err := c.StaffWorkspacesUnsuspend(t.Context(),
-		staffapi.StaffWorkspacesUnsuspendParams{WorkspaceId: staffapi.EntityId(strconv.FormatInt(id, 10))})
+		staffapi.StaffWorkspacesUnsuspendParams{WorkspaceId: staffapi.EntityId(id)})
 	require.NoError(t, err)
 	return res
 }
@@ -35,7 +35,7 @@ func (h *harness) unsuspend(t *testing.T, c *staffapi.Client, id int64) staffapi
 func (h *harness) sendOnAPI(t *testing.T, to string) externalapi.EmailsSendRes {
 	t.Helper()
 	res, err := h.env.ExternalScoped(t, "emails:send").EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{
-		TemplateId: externalapi.EntityId(strconv.Itoa(fixtures.TemplateWelcomeID)), Destination: externalapi.EmailAddress(to),
+		TemplateId: externalapi.EntityId(int64(fixtures.TemplateWelcomeID)), Destination: externalapi.EmailAddress(to),
 	}, externalapi.EmailsSendParams{})
 	require.NoError(t, err)
 	return res
@@ -98,7 +98,7 @@ func TestSuspensionActionsNeedAnStaffSession(t *testing.T) {
 	h := newHarness(t)
 
 	res, err := h.env.StaffAnonymous(t).StaffWorkspacesSuspend(t.Context(), &staffapi.StaffSuspendInput{Reason: "x"},
-		staffapi.StaffWorkspacesSuspendParams{WorkspaceId: "1"})
+		staffapi.StaffWorkspacesSuspendParams{WorkspaceId: 1})
 	require.NoError(t, err)
 	assert.IsType(t, &staffapi.StaffWorkspacesSuspendUnauthorized{}, res)
 	assert.Nil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)

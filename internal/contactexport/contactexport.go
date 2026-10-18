@@ -40,9 +40,6 @@ var ErrNotFound = errors.New("contactexport: contact not found")
 // ErrIdentifier means the request named neither or both of id and email.
 var ErrIdentifier = errors.New("contactexport: exactly one of id or email is required")
 
-// ErrInvalidID means the id is not a number.
-var ErrInvalidID = errors.New("contactexport: invalid id")
-
 // Ref is the optional string of a query parameter read as "(value, present)": nil
 // when absent. It lets a handler pass its generated Opt parameters straight to Find.
 func Ref[T ~string](v T, ok bool) *string {
@@ -54,18 +51,14 @@ func Ref[T ~string](v T, ok bool) *string {
 
 // Find resolves the Contact to export by exactly one of its id or email, inside
 // the Workspace of s: another Workspace's Contact is not found. Both surfaces map its
-// three errors (ErrInvalidID, ErrIdentifier: bad request; ErrNotFound) the same way.
-func Find(ctx context.Context, s *ent.Scoped, id, email *string) (*ent.Contact, error) {
+// two errors (ErrIdentifier: bad request; ErrNotFound) the same way.
+func Find(ctx context.Context, s *ent.Scoped, id *int64, email *string) (*ent.Contact, error) {
 	if (id == nil) == (email == nil) {
 		return nil, ErrIdentifier
 	}
 	q := s.Contact().Query()
 	if id != nil {
-		n, err := strconv.ParseInt(*id, 10, 64)
-		if err != nil {
-			return nil, ErrInvalidID
-		}
-		q = q.Where(contact.ID(n))
+		q = q.Where(contact.ID(*id))
 	} else {
 		q = q.Where(contact.Email(strings.ToLower(strings.TrimSpace(*email))))
 	}

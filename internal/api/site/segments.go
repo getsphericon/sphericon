@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/samber/lo"
 
@@ -80,11 +79,7 @@ func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegme
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteSegmentsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	s, err := ws.Segment().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSegmentsGetNotFound(problem(http.StatusNotFound, "segment not found"))
@@ -107,11 +102,7 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteSegmentsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
 	if group, ok := req.Definition.Get(); ok {
 		def, err := segments.Encode(&group)
@@ -146,11 +137,7 @@ func (h *Handlers) SiteSegmentsDelete(ctx context.Context, params siteapi.SiteSe
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteSegmentsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = ws.Segment().DeleteOneID(id).Exec(ctx)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSegmentsDeleteNotFound(problem(http.StatusNotFound, "segment not found"))

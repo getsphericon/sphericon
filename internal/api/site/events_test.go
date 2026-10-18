@@ -117,32 +117,3 @@ func TestSiteEventsActionsUnknownWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.ProblemDetails{}, res)
 }
-
-// The contract pattern (^[0-9]+$) already refuses a non-numeric contactId with a 400, so the
-// handler's own parse only ever sees digit strings; one that overflows int64 is ignored,
-// leaving the list unfiltered rather than failing.
-func TestSiteEventsListUnparsableContactIDIsIgnored(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
-
-	unfiltered, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{Slug: fixtures.AcmeSlug})
-	require.NoError(t, err)
-	want, isOK := unfiltered.(*siteapi.SiteEventsListOK)
-	require.Truef(t, isOK, "got %T", unfiltered)
-
-	res, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{
-		Slug:      fixtures.AcmeSlug,
-		ContactId: siteapi.NewOptEntityId("99999999999999999999999"),
-	})
-	require.NoError(t, err)
-	got, isOK := res.(*siteapi.SiteEventsListOK)
-	require.Truef(t, isOK, "got %T", res)
-	assert.Equal(t, want.TotalItems, got.TotalItems)
-
-	_, err = c.SiteEventsList(ctx, siteapi.SiteEventsListParams{
-		Slug:      fixtures.AcmeSlug,
-		ContactId: siteapi.NewOptEntityId("not-a-number"),
-	})
-	assert.Error(t, err, "a non-numeric contactId is refused by the contract")
-}

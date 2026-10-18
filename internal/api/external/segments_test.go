@@ -2,7 +2,6 @@ package external_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -35,7 +34,7 @@ func TestExternalSegmentsRead(t *testing.T) {
 	require.Truef(t, isSeg, "got %T", got)
 	assert.Equal(t, "Active subscribers", seg.Name)
 
-	missing, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: "999999"})
+	missing, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SegmentsGetNotFound{}, missing)
 }
@@ -140,7 +139,7 @@ func TestExternalSegmentsWorkspaceIsolation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	id := externalapi.EntityId(strconv.FormatInt(fixtures.SegmentGlobexID, 10))
+	id := externalapi.EntityId(fixtures.SegmentGlobexID)
 
 	c := env.ExternalScoped(t, "segments:read", "segments:write")
 

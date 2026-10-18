@@ -2,7 +2,6 @@ package external_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -119,7 +118,7 @@ func TestExternalBroadcastAudienceIsASegmentOrEveryone(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, cleared.(*externalapi.BroadcastResource).SegmentId.IsSet())
 
-	unknown, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId("999999")},
+	unknown, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(999999)},
 		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnprocessableEntity{}, unknown)
@@ -261,14 +260,14 @@ func TestExternalBroadcastScheduleRefusesWhatCannotBeScheduled(t *testing.T) {
 	res, err := c.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: sentBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsScheduleUnprocessableEntity{}, res, "a sent broadcast is history")
-	res, err = c.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: "999999"})
+	res, err = c.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsScheduleNotFound{}, res)
 
 	un, err := c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsUnscheduleUnprocessableEntity{}, un, "nothing to unschedule on a draft")
-	un, err = c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: "999999"})
+	un, err = c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsUnscheduleNotFound{}, un)
 }
@@ -278,7 +277,7 @@ func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 	ctx := context.Background()
 
 	// The Globex tenant's committed broadcast and segment.
-	foreignID := externalapi.EntityId(strconv.FormatInt(fixtures.BroadcastGlobexID, 10))
+	foreignID := externalapi.EntityId(fixtures.BroadcastGlobexID)
 	foreignSegID := int64(fixtures.SegmentGlobexID)
 
 	c := env.ExternalScoped(t, authorScopes...) // bound to workspace 1
@@ -310,7 +309,7 @@ func TestExternalBroadcastsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 	assert.IsType(t, &externalapi.BroadcastsSetAudienceNotFound{}, aud)
 
 	// Another workspace's segment cannot be the audience of our broadcast.
-	cross, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(externalapi.EntityId(strconv.FormatInt(foreignSegID, 10)))},
+	cross, err := c.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NewNilEntityId(externalapi.EntityId(foreignSegID))},
 		externalapi.BroadcastsSetAudienceParams{ID: draftBroadcast})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsSetAudienceUnprocessableEntity{}, cross)

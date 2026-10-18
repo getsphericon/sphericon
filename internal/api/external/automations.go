@@ -68,11 +68,7 @@ func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.Automa
 		res := externalapi.AutomationsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.AutomationsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	a, err := h.automations.Get(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, automations.ErrNotFound) {
 		res := externalapi.AutomationsGetNotFound(problem(http.StatusNotFound, "automation not found"))
@@ -90,11 +86,7 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 		res := externalapi.AutomationsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.AutomationsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
 	in := automations.UpdateInput{
 		Name:         convert.StringPtr(req.Name),
@@ -124,12 +116,8 @@ func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.Aut
 		res := externalapi.AutomationsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.AutomationsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
-	err = h.automations.Delete(ctx, auth.TokenScoped(ctx), id)
+	id := int64(params.ID)
+	err := h.automations.Delete(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, automations.ErrNotFound) {
 		res := externalapi.AutomationsDeleteNotFound(problem(http.StatusNotFound, "automation not found"))
 		return &res, nil
@@ -148,11 +136,7 @@ func (h *Handlers) AutomationsActivate(ctx context.Context, params externalapi.A
 		res := externalapi.AutomationsActivateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.AutomationsActivateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	a, err := h.automations.Activate(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, automations.ErrNotFound) {
 		res := externalapi.AutomationsActivateNotFound(problem(http.StatusNotFound, "automation not found"))
@@ -170,11 +154,7 @@ func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi
 		res := externalapi.AutomationsDeactivateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.AutomationsDeactivateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	a, err := h.automations.Deactivate(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, automations.ErrNotFound) {
 		res := externalapi.AutomationsDeactivateNotFound(problem(http.StatusNotFound, "automation not found"))

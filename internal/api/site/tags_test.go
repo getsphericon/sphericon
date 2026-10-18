@@ -59,7 +59,7 @@ func TestSiteTagsListApplyRemove(t *testing.T) {
 	assert.Empty(t, mine.(*siteapi.SiteTagsListForContactOK).Items)
 
 	// Errors: unknown contact, blank name, unknown workspace.
-	nf, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: "x"}, siteapi.SiteTagsApplyParams{Slug: fixtures.AcmeSlug, ContactId: "999999"})
+	nf, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: "x"}, siteapi.SiteTagsApplyParams{Slug: fixtures.AcmeSlug, ContactId: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTagsApplyNotFound{}, nf)
 	blank, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: " "}, siteapi.SiteTagsApplyParams{Slug: fixtures.AcmeSlug, ContactId: idStr(fixtures.ContactBobID)})

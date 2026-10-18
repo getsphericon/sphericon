@@ -6,7 +6,6 @@ package resources
 
 import (
 	"encoding/json"
-	"strconv"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -25,7 +24,6 @@ import (
 // goverter:output:file ./converter_gen.go
 // goverter:matchIgnoreCase
 // goverter:useZeroValueOnPointerInconsistency
-// goverter:extend entityID
 // goverter:extend timestamp
 // goverter:extend optNilString
 // goverter:extend optNilEmailAddress
@@ -40,7 +38,6 @@ import (
 // goverter:extend automationSteps
 // goverter:extend segmentDefinition
 // goverter:extend emailVerified
-// goverter:extend requiredEntityID
 // goverter:extend transactionalChannel
 // goverter:extend transactionalStatus
 // goverter:extend transactionalError
@@ -91,7 +88,7 @@ type Converter interface {
 	// text only for a failed send.
 	// goverter:map . Status | transactionalStatus
 	// goverter:map . Error | transactionalError
-	// goverter:map TemplateID TemplateId | requiredEntityID
+	// goverter:map TemplateID TemplateId
 	TransactionalMessageToResource(source *ent.OutboundMessage) siteapi.SiteTransactionalEmailResource
 
 	// The Data export members (ADR 0021): the contract's typed projection of the
@@ -161,10 +158,6 @@ func emailVerified(t *time.Time) bool {
 	return t != nil
 }
 
-func entityID(id int64) siteapi.EntityId {
-	return siteapi.EntityId(strconv.FormatInt(id, 10))
-}
-
 func timestamp(t time.Time) siteapi.Timestamp {
 	return siteapi.Timestamp(t)
 }
@@ -173,15 +166,6 @@ func timestamp(t time.Time) siteapi.Timestamp {
 // send channel enum (email is the only channel built).
 func transactionalChannel(outboundmessage.Channel) siteapi.SiteTransactionalEmailChannel {
 	return siteapi.SiteTransactionalEmailChannelEmail
-}
-
-// requiredEntityID renders a nullable id that is always set for the row kind it is
-// used on (a transactional message always references its Template).
-func requiredEntityID(v *int64) siteapi.EntityId {
-	if v == nil {
-		return ""
-	}
-	return entityID(*v)
 }
 
 // transactionalStatus maps an Outbound message's status onto the transactional
@@ -225,7 +209,7 @@ func optNilEntityID(v *int64) siteapi.OptNilEntityId {
 	if v == nil {
 		return siteapi.OptNilEntityId{}
 	}
-	return siteapi.NewOptNilEntityId(entityID(*v))
+	return siteapi.NewOptNilEntityId(siteapi.EntityId(*v))
 }
 
 // broadcastStats folds the broadcast's flat delivery counters into the nested

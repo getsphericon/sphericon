@@ -3,7 +3,6 @@ package external_test
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,13 +15,6 @@ import (
 )
 
 const smtpSecret = "hunter2-smtp-secret"
-
-func mustID(t *testing.T, id externalapi.EntityId) int64 {
-	t.Helper()
-	n, err := strconv.ParseInt(string(id), 10, 64)
-	require.NoError(t, err)
-	return n
-}
 
 func smtpInput(host string) externalapi.IntegrationConfigInput {
 	return externalapi.IntegrationConfigInput{OneOf: externalapi.NewSmtpConfigInputIntegrationConfigInputSum(externalapi.SmtpConfigInput{
@@ -89,7 +81,7 @@ func TestExternalIntegrationsCreateNeverReturnsSecrets(t *testing.T) {
 	assert.Equal(t, "smtp.example.com", smtp.Host)
 	assert.Equal(t, "mailer", smtp.Username.Or(""))
 
-	row, err := env.DB.Scoped(fixtures.AcmeID).Integration().Get(ctx, mustID(t, created.ID))
+	row, err := env.DB.Scoped(fixtures.AcmeID).Integration().Get(ctx, int64(created.ID))
 	require.NoError(t, err)
 	assert.NotContains(t, row.ConfigEncrypted, smtpSecret, "the password is sealed at rest")
 
@@ -139,7 +131,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
 	created := createSMTP(t, c, "To edit", false)
 	scoped := env.DB.Scoped(fixtures.AcmeID)
-	before, err := scoped.Integration().Get(ctx, mustID(t, created.ID))
+	before, err := scoped.Integration().Get(ctx, int64(created.ID))
 	require.NoError(t, err)
 
 	renamed, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{

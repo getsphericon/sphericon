@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,9 +63,6 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		r1, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{Slug: foreign, ID: row.ID})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsGetNotFound{}, r1)
-		r2, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{Slug: acme, ID: overflowID})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsGetBadRequest{}, r2)
 		r3, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{Slug: acme, ID: idStr(99999)})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsGetNotFound{}, r3)
@@ -77,9 +73,6 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		r1, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{Slug: foreign, ID: row.ID})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, r1)
-		r2, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{Slug: acme, ID: overflowID})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsUpdateBadRequest{}, r2)
 		r3, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{Slug: acme, ID: idStr(99999)})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, r3)
@@ -92,7 +85,7 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, r5, "an invalid config is rejected")
 
-		stored, err := env.DB.Integration.Get(ctx, mustID(t, row.ID))
+		stored, err := env.DB.Integration.Get(ctx, int64(row.ID))
 		require.NoError(t, err)
 		assert.Equal(t, "Primary SMTP", stored.Name, "rejected updates changed nothing")
 
@@ -108,9 +101,6 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		r1, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{Slug: foreign, ID: row.ID})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, r1)
-		r2, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{Slug: acme, ID: overflowID})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteIntegrationsDeleteBadRequest{}, r2)
 		r3, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{Slug: acme, ID: idStr(99999)})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNotFound{}, r3)
@@ -118,16 +108,8 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		r4, err := c.SiteIntegrationsDelete(ctx, siteapi.SiteIntegrationsDeleteParams{Slug: acme, ID: row.ID})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsDeleteNoContent{}, r4)
-		exists, err := env.DB.Integration.Query().Where(integration.ID(mustID(t, row.ID))).Exist(ctx)
+		exists, err := env.DB.Integration.Query().Where(integration.ID(int64(row.ID))).Exist(ctx)
 		require.NoError(t, err)
 		assert.False(t, exists)
 	})
-}
-
-// mustID parses an API entity id into the numeric primary key.
-func mustID(t *testing.T, id siteapi.EntityId) int64 {
-	t.Helper()
-	n, err := strconv.ParseInt(string(id), 10, 64)
-	require.NoError(t, err)
-	return n
 }

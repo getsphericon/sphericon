@@ -15,7 +15,7 @@ import (
 
 func (h *harness) auditEntries(t *testing.T, c *staffapi.Client, workspaceID int, params staffapi.StaffWorkspaceAuditListParams) staffapi.StaffWorkspaceAuditListRes {
 	t.Helper()
-	params.WorkspaceId = staffapi.EntityId(strconv.Itoa(workspaceID))
+	params.WorkspaceId = staffapi.EntityId(int64(workspaceID))
 	res, err := c.StaffWorkspaceAuditList(t.Context(), params)
 	require.NoError(t, err)
 	return res
@@ -34,11 +34,11 @@ func TestTheWorkspaceAuditLogListsThatWorkspacesEntriesNewestFirst(t *testing.T)
 
 	page := h.auditPage(t, c, fixtures.GlobexID, staffapi.StaffWorkspaceAuditListParams{})
 
-	ids := make([]string, 0, len(page.Items))
+	ids := make([]int64, 0, len(page.Items))
 	for _, e := range page.Items {
-		ids = append(ids, string(e.ID))
+		ids = append(ids, int64(e.ID))
 	}
-	assert.Equal(t, []string{"6", "5", "4", "3", "1"}, ids, "only Globex's entries, newest first")
+	assert.Equal(t, []int64{6, 5, 4, 3, 1}, ids, "only Globex's entries, newest first")
 	assert.False(t, page.NextCursor.IsSet() && !page.NextCursor.IsNull())
 	assert.Equal(t, "tag.create", page.Items[0].Action)
 }
@@ -56,8 +56,8 @@ func TestTheWorkspaceAuditLogIsPaginatedByCursor(t *testing.T) {
 		Limit: staffapi.NewOptInt32(2), Cursor: staffapi.NewOptString(cursor),
 	})
 	require.Len(t, second.Items, 2)
-	assert.Equal(t, staffapi.EntityId("4"), second.Items[0].ID)
-	assert.Equal(t, staffapi.EntityId("3"), second.Items[1].ID)
+	assert.Equal(t, staffapi.EntityId(4), second.Items[0].ID)
+	assert.Equal(t, staffapi.EntityId(3), second.Items[1].ID)
 }
 
 func TestAStaffMembersEntryShowsAsSphericonStaffWithoutTheStaffId(t *testing.T) {
@@ -68,7 +68,7 @@ func TestAStaffMembersEntryShowsAsSphericonStaffWithoutTheStaffId(t *testing.T) 
 
 	require.Len(t, page.Items, 2)
 	staff := page.Items[1]
-	assert.Equal(t, staffapi.EntityId(strconv.Itoa(fixtures.InitechAuditStaffSuspendID)), staff.ID)
+	assert.Equal(t, staffapi.EntityId(int64(fixtures.InitechAuditStaffSuspendID)), staff.ID)
 	assert.Equal(t, staffapi.StaffAuditActorKindStaff, staff.Actor.Kind)
 	assert.Equal(t, "sphericon staff", staff.Actor.Name.Value)
 	assert.False(t, staff.Actor.ID.IsSet() && !staff.Actor.ID.IsNull(), "no StaffMember id")

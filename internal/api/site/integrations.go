@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/samber/lo"
@@ -113,11 +112,7 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteIntegrationsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	row, err := s.Integration().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsGetNotFound(problem(http.StatusNotFound, "integration not found"))
@@ -152,11 +147,7 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 		return &v, nil
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteIntegrationsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
 	in := integrations.UpdateInput{
 		Name:         convert.Ptr(req.Name),
@@ -211,11 +202,7 @@ func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.Si
 		return &v, nil
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteIntegrationsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = h.integrations.Delete(ctx, s, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsDeleteNotFound(problem(http.StatusNotFound, "integration not found"))
@@ -254,7 +241,7 @@ var errUnknownProvider = errors.New("unsupported provider")
 // with all secrets redacted.
 func (h *Handlers) integrationToResource(row *ent.Integration, usage map[int64]int) (siteapi.SiteIntegrationResource, error) {
 	res := siteapi.SiteIntegrationResource{
-		ID:           siteapi.EntityId(strconv.FormatInt(row.ID, 10)),
+		ID:           siteapi.EntityId(row.ID),
 		Name:         row.Name,
 		Channel:      siteapi.SiteIntegrationChannel(row.Channel.String()),
 		Provider:     siteapi.SiteIntegrationProvider(row.Provider.String()),
