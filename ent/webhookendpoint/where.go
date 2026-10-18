@@ -585,6 +585,36 @@ func LastFailureAtNotNil() predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldLastFailureAt))
 }
 
+// DisabledReasonEQ applies the EQ predicate on the "disabled_reason" field.
+func DisabledReasonEQ(v DisabledReason) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldEQ(FieldDisabledReason, v))
+}
+
+// DisabledReasonNEQ applies the NEQ predicate on the "disabled_reason" field.
+func DisabledReasonNEQ(v DisabledReason) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldDisabledReason, v))
+}
+
+// DisabledReasonIn applies the In predicate on the "disabled_reason" field.
+func DisabledReasonIn(vs ...DisabledReason) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldIn(FieldDisabledReason, vs...))
+}
+
+// DisabledReasonNotIn applies the NotIn predicate on the "disabled_reason" field.
+func DisabledReasonNotIn(vs ...DisabledReason) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldDisabledReason, vs...))
+}
+
+// DisabledReasonIsNil applies the IsNil predicate on the "disabled_reason" field.
+func DisabledReasonIsNil() predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldIsNull(FieldDisabledReason))
+}
+
+// DisabledReasonNotNil applies the NotNil predicate on the "disabled_reason" field.
+func DisabledReasonNotNil() predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldDisabledReason))
+}
+
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(func(s *sql.Selector) {

@@ -32116,6 +32116,7 @@ type WebhookEndpointMutation struct {
 	last_error_status       *int
 	addlast_error_status    *int
 	last_failure_at         *time.Time
+	disabled_reason         *webhookendpoint.DisabledReason
 	clearedFields           map[string]struct{}
 	workspace               *int64
 	clearedworkspace        bool
@@ -32796,6 +32797,55 @@ func (m *WebhookEndpointMutation) ResetLastFailureAt() {
 	delete(m.clearedFields, webhookendpoint.FieldLastFailureAt)
 }
 
+// SetDisabledReason sets the "disabled_reason" field.
+func (m *WebhookEndpointMutation) SetDisabledReason(wr webhookendpoint.DisabledReason) {
+	m.disabled_reason = &wr
+}
+
+// DisabledReason returns the value of the "disabled_reason" field in the mutation.
+func (m *WebhookEndpointMutation) DisabledReason() (r webhookendpoint.DisabledReason, exists bool) {
+	v := m.disabled_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisabledReason returns the old "disabled_reason" field's value of the WebhookEndpoint entity.
+// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointMutation) OldDisabledReason(ctx context.Context) (v *webhookendpoint.DisabledReason, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisabledReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisabledReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisabledReason: %w", err)
+	}
+	return oldValue.DisabledReason, nil
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (m *WebhookEndpointMutation) ClearDisabledReason() {
+	m.disabled_reason = nil
+	m.clearedFields[webhookendpoint.FieldDisabledReason] = struct{}{}
+}
+
+// DisabledReasonCleared returns if the "disabled_reason" field was cleared in this mutation.
+func (m *WebhookEndpointMutation) DisabledReasonCleared() bool {
+	_, ok := m.clearedFields[webhookendpoint.FieldDisabledReason]
+	return ok
+}
+
+// ResetDisabledReason resets all changes to the "disabled_reason" field.
+func (m *WebhookEndpointMutation) ResetDisabledReason() {
+	m.disabled_reason = nil
+	delete(m.clearedFields, webhookendpoint.FieldDisabledReason)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *WebhookEndpointMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -32857,7 +32907,7 @@ func (m *WebhookEndpointMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WebhookEndpointMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, webhookendpoint.FieldCreatedAt)
 	}
@@ -32894,6 +32944,9 @@ func (m *WebhookEndpointMutation) Fields() []string {
 	if m.last_failure_at != nil {
 		fields = append(fields, webhookendpoint.FieldLastFailureAt)
 	}
+	if m.disabled_reason != nil {
+		fields = append(fields, webhookendpoint.FieldDisabledReason)
+	}
 	return fields
 }
 
@@ -32926,6 +32979,8 @@ func (m *WebhookEndpointMutation) Field(name string) (ent.Value, bool) {
 		return m.LastErrorStatus()
 	case webhookendpoint.FieldLastFailureAt:
 		return m.LastFailureAt()
+	case webhookendpoint.FieldDisabledReason:
+		return m.DisabledReason()
 	}
 	return nil, false
 }
@@ -32959,6 +33014,8 @@ func (m *WebhookEndpointMutation) OldField(ctx context.Context, name string) (en
 		return m.OldLastErrorStatus(ctx)
 	case webhookendpoint.FieldLastFailureAt:
 		return m.OldLastFailureAt(ctx)
+	case webhookendpoint.FieldDisabledReason:
+		return m.OldDisabledReason(ctx)
 	}
 	return nil, fmt.Errorf("unknown WebhookEndpoint field %s", name)
 }
@@ -33052,6 +33109,13 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLastFailureAt(v)
 		return nil
+	case webhookendpoint.FieldDisabledReason:
+		v, ok := value.(webhookendpoint.DisabledReason)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisabledReason(v)
+		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint field %s", name)
 }
@@ -33127,6 +33191,9 @@ func (m *WebhookEndpointMutation) ClearedFields() []string {
 	if m.FieldCleared(webhookendpoint.FieldLastFailureAt) {
 		fields = append(fields, webhookendpoint.FieldLastFailureAt)
 	}
+	if m.FieldCleared(webhookendpoint.FieldDisabledReason) {
+		fields = append(fields, webhookendpoint.FieldDisabledReason)
+	}
 	return fields
 }
 
@@ -33158,6 +33225,9 @@ func (m *WebhookEndpointMutation) ClearField(name string) error {
 		return nil
 	case webhookendpoint.FieldLastFailureAt:
 		m.ClearLastFailureAt()
+		return nil
+	case webhookendpoint.FieldDisabledReason:
+		m.ClearDisabledReason()
 		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint nullable field %s", name)
@@ -33202,6 +33272,9 @@ func (m *WebhookEndpointMutation) ResetField(name string) error {
 		return nil
 	case webhookendpoint.FieldLastFailureAt:
 		m.ResetLastFailureAt()
+		return nil
+	case webhookendpoint.FieldDisabledReason:
+		m.ResetDisabledReason()
 		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint field %s", name)

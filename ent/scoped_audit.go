@@ -747,6 +747,7 @@ func (e *WebhookEndpoint) auditFields() map[string]any {
 		"last_error_kind":      derefAudit(e.LastErrorKind),
 		"last_error_status":    derefAudit(e.LastErrorStatus),
 		"last_failure_at":      derefAudit(e.LastFailureAt),
+		"disabled_reason":      derefAudit(e.DisabledReason),
 	}
 }
 

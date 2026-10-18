@@ -3,6 +3,9 @@ package jobs
 import (
 	"context"
 	"errors"
+	"log/slog"
+	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
@@ -11,7 +14,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
@@ -25,6 +30,15 @@ type DeliverWebhookArgs struct {
 	Body       []byte `json:"body"`
 }
 
+// A Webhook endpoint disables itself (ADR 0039) on a 410, or when a run of consecutive
+// failures has both lasted the window and reached the count. The window is what makes the
+// count safe: a restart in the middle of a burst piles up failures in minutes and never
+// retires a healthy endpoint.
+const (
+	WebhookDisableFailures = 20
+	WebhookDisableWindow   = 2 * time.Hour
+)
+
 func (DeliverWebhookArgs) Kind() string { return jobkind.DeliverWebhook }
 
 type DeliverWebhookWorker struct {
@@ -33,6 +47,10 @@ type DeliverWebhookWorker struct {
 	cipher *secrets.Cipher
 	client webhook.Doer
 	now    func() time.Time
+	// bus and sender serve the automatic disable: an audited change by the system actor,
+	// and the notice to the Workspace's owners through the platform sender.
+	bus    *events.Bus
+	sender messaging.EmailSender
 }
 
 func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverWebhookArgs]) error {
@@ -80,12 +98,9 @@ func (w *DeliverWebhookWorker) recordOutcome(ctx context.Context, e *ent.Webhook
 		return nil // not a delivery outcome (an unusable secret): nothing to remember
 	}
 	now := w.now()
-	failures := 1
-	if e.ConsecutiveFailures != nil {
-		failures = *e.ConsecutiveFailures + 1
-	}
+	// The count is incremented in SQL, so workers failing at once do not lose one.
 	u := s.WebhookEndpoint().UpdateOneID(e.ID).
-		SetConsecutiveFailures(failures).
+		AddConsecutiveFailures(1).
 		SetLastErrorKind(webhookendpoint.LastErrorKind(deliveryErr.Kind)).
 		SetLastFailureAt(now)
 	if e.FailingSince == nil {
@@ -96,7 +111,76 @@ func (w *DeliverWebhookWorker) recordOutcome(ctx context.Context, e *ent.Webhook
 	} else {
 		u.ClearLastErrorStatus()
 	}
-	return u.Exec(ctx)
+	updated, err := u.Save(ctx)
+	if err != nil {
+		return err
+	}
+	if reason, ok := disableReason(updated, deliveryErr, now); ok {
+		return w.disable(ctx, updated, reason)
+	}
+	return nil
+}
+
+// disableReason applies the rule to the endpoint as its failure was just recorded.
+func disableReason(e *ent.WebhookEndpoint, failure *webhook.DeliveryError, now time.Time) (webhookendpoint.DisabledReason, bool) {
+	if failure.Kind == webhook.KindHTTPStatus && failure.Status == http.StatusGone {
+		return webhookendpoint.DisabledReasonGone, true
+	}
+	if e.ConsecutiveFailures != nil && *e.ConsecutiveFailures >= WebhookDisableFailures &&
+		e.FailingSince != nil && now.Sub(*e.FailingSince) >= WebhookDisableWindow {
+		return webhookendpoint.DisabledReasonPersistentFailure, true
+	}
+	return "", false
+}
+
+// disable turns the endpoint off as the system actor, so the Audit log shows it, and mails
+// the Workspace's owners once: the update only matches while the endpoint is still
+// enabled, so a concurrent worker or a retry that lost the race sends nothing.
+func (w *DeliverWebhookWorker) disable(ctx context.Context, e *ent.WebhookEndpoint, reason webhookendpoint.DisabledReason) error {
+	s := w.bus.Act(w.ent.Scoped(e.WorkspaceID), events.Actor{Kind: events.ActorSystem})
+	err := s.WebhookEndpoint().UpdateOneID(e.ID).Where(webhookendpoint.Enabled(true)).
+		SetEnabled(false).SetDisabledReason(reason).Exec(ctx)
+	if ent.IsNotFound(err) {
+		return nil // already disabled
+	}
+	if err != nil {
+		return err
+	}
+	// A failed notice is logged, not returned: river would retry a delivery whose
+	// endpoint is already off.
+	if err := w.notifyOwners(ctx, e, reason); err != nil {
+		slog.ErrorContext(ctx, "webhook disable notice failed", "endpoint_id", e.ID, "error", err)
+	}
+	return nil
+}
+
+func (w *DeliverWebhookWorker) notifyOwners(ctx context.Context, e *ent.WebhookEndpoint, reason webhookendpoint.DisabledReason) error {
+	if w.sender == nil {
+		return nil
+	}
+	ws, err := w.ent.Workspace.Get(ctx, e.WorkspaceID)
+	if err != nil {
+		return err
+	}
+	data := map[string]any{
+		"Workspace": ws.Name,
+		"URL":       originOf(e.URL),
+		"Failures":  WebhookDisableFailures,
+		"Window":    WebhookDisableWindow.String(),
+	}
+	data["Reason"] = i18n.T("email.webhook_disabled.reason_"+string(reason), data)
+	return NotifyWorkspaceOwners(ctx, w.ent, w.sender, ws.ID,
+		i18n.T("email.webhook_disabled.subject", data), i18n.T("email.webhook_disabled.body", data))
+}
+
+// originOf keeps scheme and host of an endpoint URL for a mail: the path and query may
+// carry a secret.
+func originOf(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	return (&url.URL{Scheme: u.Scheme, Host: u.Host}).String()
 }
 
 // Dispatch fans a domain event out to every enabled endpoint in the workspace

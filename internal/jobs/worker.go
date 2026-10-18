@@ -16,6 +16,7 @@ import (
 	"github.com/riverqueue/rivercontrib/otelriver"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -71,7 +72,7 @@ type Retention struct {
 // webhook deliveries (ADR 0039). The instance-wide outbox and Event prunes
 // run on entClient, the raw client; retention carries the prune settings. ext plugs in the
 // Enterprise Edition's workers and periodic jobs.
-func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, systemSender messaging.EmailSender, lookup sending.TXTLookup, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, retention Retention, ext ...Extension) (*Client, error) {
+func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, retention Retention, ext ...Extension) (*Client, error) {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, &SendBroadcastWorker{ent: entClient, mod: mod})
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, mod: mod})
@@ -82,6 +83,8 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 		cipher: cipher,
 		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
 		now:    time.Now,
+		bus:    bus,
+		sender: systemSender,
 	})
 	river.AddWorker(workers, &SendWelcomeWorker{sender: systemSender})
 	river.AddWorker(workers, &SendAuthMailWorker{sender: systemSender, appURL: appURL})
