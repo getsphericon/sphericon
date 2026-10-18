@@ -32,6 +32,7 @@ const segmentResource = defineResource({
   updateMutation: siteSegmentsUpdateMutation,
   listQueryKey: siteSegmentsListQueryKey,
   getQueryKey: siteSegmentsGetQueryKey,
+  editRoute: segmentsEditRoute,
   idParam: 'segmentId',
   texts: (t) => ({
     createTitle: t(($) => $.segments.createTitle),

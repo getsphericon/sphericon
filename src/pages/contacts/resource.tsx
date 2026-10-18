@@ -31,6 +31,7 @@ const contactResource = defineResource({
   updateMutation: siteContactsUpdateMutation,
   listQueryKey: siteContactsListQueryKey,
   getQueryKey: siteContactsGetQueryKey,
+  editRoute: contactsEditRoute,
   idParam: 'contactId',
   texts: (t) => ({
     createTitle: t(($) => $.form.createTitle),
