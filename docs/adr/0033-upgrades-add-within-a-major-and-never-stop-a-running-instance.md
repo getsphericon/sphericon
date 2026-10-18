@@ -29,12 +29,19 @@ research behind them is `docs/research/self-hoster-upgrade-prior-art.md`.
   start migrates under a Postgres session advisory lock, so replicas take turns, for at most
   `SPHERICON_DB_MIGRATE_TIMEOUT` (default ten minutes, `0` for no limit). `sphericon migrate`
   itself has no time limit.
-- **The database records its Major**, one row that only a destructive migration changes. A process
-  starts when the database's Major equals its own; refuses when the database's is higher (a rollback
-  past a removal) or lower by two or more (a skipped Major); and when it is lower by one it migrates
-  if `SPHERICON_DB_AUTO_MIGRATE` is on, otherwise refuses and names `sphericon migrate`. A release
-  inside a Major is compatible with the schema of any other release of it, in both directions, so a
-  restarted old process never fails because the schema moved ahead.
+- **The database records its Major and a floor**, one row (`schema_state`) holding the schema's
+  Major (a counter, 1 for the first, plus one per destructive migration) and the **floor**: the
+  oldest release that still runs on it, which is the last release of the previous Major. Only a
+  destructive migration changes it, writing both. A process refuses to start when its release is
+  older than the floor (a rollback past a removal; the message names the release the database
+  needs) and when the database is two or more Majors behind it (a skipped Major; it names the
+  last release of the database's Major, to install first). When the database is one Major behind it
+  migrates if `SPHERICON_DB_AUTO_MIGRATE` is on, otherwise refuses and names `sphericon migrate`.
+  It does not refuse merely because the database's Major is higher: the last release of a Major
+  is exactly the floor of the next, so it starts on the next Major's schema and an interrupted
+  Upgrade leaves the Instance running. A release inside a Major is compatible with the schema of
+  any other release of it, in both directions. Every refusal names the version, the commit and a
+  link to the upgrade guide. A build with no release number (`dev`) is never older than a floor.
 - **The new version migrates before it serves.** An Upgrade runs the migration with the new binary
   while the old one keeps running, and only then swaps and restarts. An interruption leaves the old
   binary on a schema it can use. A refusal or a failed migration blocks the Upgrade, never a
@@ -58,5 +65,7 @@ research behind them is `docs/research/self-hoster-upgrade-prior-art.md`.
 ## Consequences
 
 A destructive change waits for the next Major and is split into an add in a release and a removal
-in the next Major, so a field is deprecated for a whole Major. The Schema major row and the guard are
-written when the first Major after this ADR needs them; the rule and the lint apply from now on.
+in the next Major, so a field is deprecated for a whole Major. The state row and the guard ship
+before 1.0, where every `0.MINOR` is a Major, because the next release already needs them. The
+destructive migration and its release must agree: it writes the new Major and the floor to the
+row, and adds the same pair to `Majors` in `internal/db`, which `sphericon upgrade` also walks.

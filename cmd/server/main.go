@@ -145,6 +145,8 @@ func main() {
 		if err := migrateOnStart(cfg); err != nil {
 			fatal("auto-migrate", err)
 		}
+	} else if err := guardStart(context.Background(), cfg); err != nil {
+		fatal("schema guard", err)
 	}
 
 	application, err := app.New(env)
