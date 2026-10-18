@@ -28,7 +28,10 @@ and suppress any address for good (Suppression does not auto-clear).
   a per-run timeout; limits on body size, program size and event count; exactly one result. Go
   validates what comes out (a closed type, a parsed address, bounded strings) and never trusts the
   program's shape. `generic` verifies with Standard Webhooks.
-- **Verify the raw bytes first, write before answering.** An unknown event type answers 2xx, a bad
+- **Nothing reaches the transform unverified; write before answering.** A scheme that signs over a
+  header (HMAC header, Standard Webhooks, token) is checked on the raw bytes before any parsing; one
+  that carries its signature in the body (Mailgun's fields, SNS) parses it under the body limit,
+  verifies, and only then transforms. An unknown event type answers 2xx, a bad
   signature 4xx, a failure on our side 5xx so the provider retries; the Delivery failure is in the
   outbox before the 2xx. Redeliveries dedupe on the provider's event id plus the Destination.
 - **Out of scope.** A bare MTA with no provider (VERP return paths and an inbound mailbox parsing
