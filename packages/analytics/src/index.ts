@@ -6,6 +6,10 @@ import type {
 
 const VISITOR_COOKIE_NAME = 'om_vid'
 const FLUSH_DELAY_MS = 200
+const QUEUE_KEY = 'om_q'
+const MAX_QUEUE = 100
+const RETRY_BASE_MS = 1000
+const RETRY_MAX_MS = 60_000
 
 // SSR guard: the package is imported on the server (Next/Remix/TanStack Start).
 // `typeof window` never throws when undefined, so this is safe at module load,
@@ -36,6 +40,9 @@ interface Runtime {
   visitorId: string
   pendingEvents: CollectEventInput[]
   flushTimer: number | null
+  retryTimer: number | null
+  attempt: number
+  sending: boolean
 }
 
 declare global {
@@ -121,8 +128,27 @@ function collectUrl(config: TrackerConfig, path: string): string {
   return `${config.baseUrl}${path}`
 }
 
+// Unsent events live in localStorage so a restart of the instance, or a page load, never loses them.
+function readQueue(): CollectEventInput[] {
+  try {
+    const stored: CollectEventInput[] | null = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? '[]')
+
+    return Array.isArray(stored) ? stored.slice(-MAX_QUEUE) : []
+  } catch {
+    return []
+  }
+}
+
+function saveQueue(events: CollectEventInput[]): void {
+  try {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(events))
+  } catch {
+    // storage is full or blocked: the in-memory queue still retries
+  }
+}
+
 function flushSoon(): void {
-  if (runtime?.flushTimer !== null) {
+  if (runtime?.flushTimer !== null || runtime.retryTimer !== null) {
     return
   }
 
@@ -131,31 +157,65 @@ function flushSoon(): void {
   }, FLUSH_DELAY_MS)
 }
 
+function retryDelay(response: Response | null, attempt: number): number {
+  const seconds = Number(response?.headers.get('retry-after'))
+
+  if (seconds > 0) {
+    return Math.min(seconds * 1000, RETRY_MAX_MS)
+  }
+
+  return Math.min(RETRY_BASE_MS * 2 ** attempt, RETRY_MAX_MS)
+}
+
 async function flushEvents(): Promise<void> {
-  if (!runtime) {
+  if (!runtime || runtime.sending) {
     return
   }
 
-  if (runtime.flushTimer !== null) {
-    window.clearTimeout(runtime.flushTimer)
-    runtime.flushTimer = null
-  }
+  window.clearTimeout(runtime.flushTimer ?? undefined)
+  window.clearTimeout(runtime.retryTimer ?? undefined)
+  runtime.flushTimer = null
+  runtime.retryTimer = null
 
   if (runtime.pendingEvents.length === 0) {
     return
   }
 
-  const events = runtime.pendingEvents.splice(0)
+  const state = runtime
+  const events = state.pendingEvents.slice()
   const body: CollectEventsInput = { events }
+  let retry = false
+  let response: Response | null = null
 
-  await fetch(collectUrl(runtime.config, '/collect/events'), {
-    method: 'POST',
-    headers: buildHeaders(runtime.config),
-    body: JSON.stringify(body),
-    keepalive: true,
-  }).catch(() => {
-    runtime?.pendingEvents.unshift(...events)
-  })
+  state.sending = true
+
+  try {
+    response = await fetch(collectUrl(state.config, '/collect/events'), {
+      method: 'POST',
+      headers: buildHeaders(state.config),
+      body: JSON.stringify(body),
+      keepalive: true,
+    })
+    retry = response.status === 429 || response.status >= 500
+  } catch {
+    retry = true
+  }
+
+  state.sending = false
+
+  if (retry) {
+    state.retryTimer = window.setTimeout(
+      () => void flushEvents(),
+      retryDelay(response, state.attempt),
+    )
+    state.attempt += 1
+    return
+  }
+
+  state.attempt = 0
+  state.pendingEvents = state.pendingEvents.filter((event) => !events.includes(event))
+  saveQueue(state.pendingEvents)
+  flushSoon()
 }
 
 function flushEventsOnPageHide(): void {
@@ -210,8 +270,11 @@ export function initTracking(config?: TrackerConfig): void {
   runtime = {
     config: resolved,
     visitorId: getOrCreateVisitorId(),
-    pendingEvents: [],
+    pendingEvents: readQueue(),
     flushTimer: null,
+    retryTimer: null,
+    attempt: 0,
+    sending: false,
   }
 
   for (const command of initialQueue) {
@@ -219,6 +282,7 @@ export function initTracking(config?: TrackerConfig): void {
   }
 
   window.addEventListener('pagehide', flushEventsOnPageHide)
+  flushSoon()
 }
 
 export async function identify(payload: IdentifyInput): Promise<void> {
@@ -262,7 +326,10 @@ export function track(action: string, properties?: EventProperties): void {
     action,
     properties: properties ?? null,
     occurredAt: new Date().toISOString(),
+    clientEventId: randomVisitorId(),
   })
+  runtime.pendingEvents = runtime.pendingEvents.slice(-MAX_QUEUE)
+  saveQueue(runtime.pendingEvents)
 
   flushSoon()
 }
