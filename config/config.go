@@ -163,6 +163,13 @@ type Config struct {
 	// system emails and validation messages (internal/i18n).
 	Locale string
 
+	// Telemetry is SPHERICON_TELEMETRY when it is set to true or false: the environment
+	// then decides the Telemetry report (ADR 0032). Nil (unset, or any other value) leaves
+	// the decision to the Instance's Owner.
+	Telemetry *bool
+	// DoNotTrack is DO_NOT_TRACK=1: it switches the Telemetry report off and never on.
+	DoNotTrack bool
+
 	// RequireEmailVerification keeps the email verification gate on (ADR 0030). Only an
 	// explicit SPHERICON_REQUIRE_EMAIL_VERIFICATION=false turns it off, for a self-hosted install
 	// without outbound mail; the default and any other value keep it on. It is never
@@ -272,6 +279,8 @@ type environment struct {
 
 	SMTPAllowPrivateHosts    bool   `env:"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS"`
 	Locale                   string `env:"SPHERICON_APP_LOCALE" envDefault:"en"`
+	Telemetry                string `env:"SPHERICON_TELEMETRY"`
+	DoNotTrack               string `env:"DO_NOT_TRACK"`
 	RequireEmailVerification string `env:"SPHERICON_REQUIRE_EMAIL_VERIFICATION"`
 
 	LogLevel        string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
@@ -381,6 +390,8 @@ func Load(envName string) (*Config, error) {
 		IsDev:                   isDevEnv(envName),
 		SMTPAllowPrivateHosts:   e.SMTPAllowPrivateHosts,
 		Locale:                  i18n.Normalize(e.Locale),
+		Telemetry:               parseExplicitBool(e.Telemetry),
+		DoNotTrack:              strings.TrimSpace(e.DoNotTrack) == "1",
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
 		LogLevel:                 e.LogLevel,
@@ -678,4 +689,18 @@ func envFiles(rootDir, envName string) []string {
 	}
 	files = append(files, filepath.Join(rootDir, ".env."+envName+".local"))
 	return files
+}
+
+// parseExplicitBool is nil unless v is "true" or "false" (case-insensitive): a typo must
+// not switch anything on or off.
+func parseExplicitBool(v string) *bool {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "true":
+		on := true
+		return &on
+	case "false":
+		off := false
+		return &off
+	}
+	return nil
 }

@@ -20,6 +20,7 @@ export default interface Resources {
     },
     "account": {
       "backToDashboard": "Dashboard",
+      "instance": "Instance",
       "profile": "Profile",
       "security": "Security"
     },
@@ -430,6 +431,28 @@ export default interface Resources {
     "form": {
       "createTitle": "New contact",
       "editTitle": "Edit contact"
+    },
+    "instance": {
+      "notice": {
+        "acknowledge": "Got it",
+        "description": "This instance sends the project one anonymous report a day (version, deployment, rough size and which features are used; never names, addresses or exact numbers). It is on by default. You can switch it off in the instance settings at any time.",
+        "descriptionLocked": "This instance sends the project one anonymous report a day (version, deployment, rough size and which features are used; never names, addresses or exact numbers). The server environment decides whether it is sent; see the instance settings.",
+        "errorTitle": "Could not save your acknowledgement",
+        "settings": "Instance settings",
+        "title": "Anonymous usage report"
+      },
+      "ownersOnly": "Only the owners of the oldest workspace can manage the instance.",
+      "telemetry": {
+        "description": "Send the project one anonymous report a day with the version, deployment and rough size of this instance. It never contains names, addresses or exact numbers.",
+        "errorTitle": "Could not update the usage report",
+        "forbidden": "Only the owners of the oldest workspace can change this.",
+        "lockedDoNotTrack": "Switched off by the DO_NOT_TRACK environment variable.",
+        "lockedEnvironment": "Set by the SPHERICON_TELEMETRY environment variable, which decides for this instance.",
+        "saved": "Usage report setting saved",
+        "switchLabel": "Send the anonymous usage report",
+        "title": "Usage report"
+      },
+      "title": "Instance"
     },
     "login": {
       "codeLabel": "Authentication code",

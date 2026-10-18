@@ -320,6 +320,36 @@ export const zSiteForgotPasswordInput = z.object({
 });
 
 /**
+ * Switch the Telemetry report on or off
+ */
+export const zSiteInstanceTelemetryInput = z.object({
+  enabled: z.boolean()
+});
+
+/**
+ * Why the environment, not the Owner, decides the Telemetry report
+ */
+export const zSiteInstanceTelemetryLock = z.enum(['environment', 'do_not_track']);
+
+/**
+ * The Telemetry report setting as it applies right now (ADR 0032)
+ */
+export const zSiteInstanceTelemetry = z.object({
+  enabled: z.boolean(),
+  locked: z.boolean(),
+  lockedBy: z.exactOptional(zSiteInstanceTelemetryLock)
+});
+
+/**
+ * What an Instance's Owner sees and decides about the Instance itself: it belongs to no
+ * Workspace. Only the Owners of the oldest existing Workspace may read or change it.
+ */
+export const zSiteInstanceState = z.object({
+  telemetry: zSiteInstanceTelemetry,
+  noticeAcknowledged: z.boolean()
+});
+
+/**
  * Delivery channel an integration belongs to
  */
 export const zSiteIntegrationChannel = z.enum(['email', 'sms']);
@@ -1642,6 +1672,23 @@ export const zSitePublicConfirmationsPerformPath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSitePublicConfirmationsPerformResponse = z.void();
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteInstanceGetStateResponse = zSiteInstanceState;
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteInstanceAcknowledgeNoticeResponse = zSiteInstanceState;
+
+export const zSiteInstanceSetTelemetryBody = zSiteInstanceTelemetryInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteInstanceSetTelemetryResponse = zSiteInstanceState;
 
 export const zSitePublicInvitationsLookupPath = z.object({
   token: z.string()

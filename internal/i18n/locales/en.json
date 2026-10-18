@@ -51,6 +51,8 @@
   "errors.current_password_incorrect": "current password is incorrect",
   "errors.second_factor_code_invalid": "the code is not valid",
   "errors.second_factor_already_active": "a second factor is already active",
+  "errors.instance_owner_only": "only the owners of the oldest workspace can manage the instance",
+  "errors.telemetry_locked": "the environment decides the telemetry report; change it there",
   "errors.second_factor_no_pending": "start enrollment first",
   "errors.second_factor_not_active": "no second factor is active",
   "errors.second_factor_reset_self": "reset your own second factor by disabling it in your account",

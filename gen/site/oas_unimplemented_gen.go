@@ -383,6 +383,33 @@ func (UnimplementedHandler) SiteEventsList(ctx context.Context, params SiteEvent
 	return r, ht.ErrNotImplemented
 }
 
+// SiteInstanceAcknowledgeNotice implements SiteInstance_acknowledgeNotice operation.
+//
+// Acknowledge the one-time Telemetry report notice. Idempotent.
+//
+// POST /instance/notice/acknowledge
+func (UnimplementedHandler) SiteInstanceAcknowledgeNotice(ctx context.Context) (r SiteInstanceAcknowledgeNoticeRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteInstanceGetState implements SiteInstance_getState operation.
+//
+// Read the Instance state. Refused to everyone but the Owners of the oldest Workspace.
+//
+// GET /instance
+func (UnimplementedHandler) SiteInstanceGetState(ctx context.Context) (r SiteInstanceGetStateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteInstanceSetTelemetry implements SiteInstance_setTelemetry operation.
+//
+// Switch the Telemetry report on or off. Answers 409 while the environment decides.
+//
+// PUT /instance/telemetry
+func (UnimplementedHandler) SiteInstanceSetTelemetry(ctx context.Context, req *SiteInstanceTelemetryInput) (r SiteInstanceSetTelemetryRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteIntegrationsCreate implements SiteIntegrations_create operation.
 //
 // Create an integration. Owners and admins only.

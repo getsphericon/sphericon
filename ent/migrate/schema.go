@@ -524,6 +524,24 @@ var (
 			},
 		},
 	}
+	// InstanceStateColumns holds the columns for the "instance_state" table.
+	InstanceStateColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "instance_id", Type: field.TypeString},
+		{Name: "telemetry_enabled", Type: field.TypeBool, Nullable: true},
+		{Name: "notice_acknowledged_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_report_sent_at", Type: field.TypeTime, Nullable: true},
+		{Name: "latest_release", Type: field.TypeString, Nullable: true},
+		{Name: "latest_release_checked_at", Type: field.TypeTime, Nullable: true},
+	}
+	// InstanceStateTable holds the schema information for the "instance_state" table.
+	InstanceStateTable = &schema.Table{
+		Name:       "instance_state",
+		Columns:    InstanceStateColumns,
+		PrimaryKey: []*schema.Column{InstanceStateColumns[0]},
+	}
 	// IntegrationsColumns holds the columns for the "integrations" table.
 	IntegrationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1230,6 +1248,7 @@ var (
 		EmailTemplatesTable,
 		EventsTable,
 		HoldsTable,
+		InstanceStateTable,
 		IntegrationsTable,
 		InvitationsTable,
 		MembershipsTable,
@@ -1309,6 +1328,9 @@ func init() {
 	HoldsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	HoldsTable.Annotation = &entsql.Annotation{
 		Table: "holds",
+	}
+	InstanceStateTable.Annotation = &entsql.Annotation{
+		Table: "instance_state",
 	}
 	IntegrationsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	IntegrationsTable.Annotation = &entsql.Annotation{

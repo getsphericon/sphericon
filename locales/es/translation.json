@@ -18,6 +18,7 @@
   },
   "account": {
     "backToDashboard": "Panel",
+    "instance": "Instancia",
     "profile": "Perfil",
     "security": "Seguridad"
   },
@@ -434,6 +435,28 @@
   "form": {
     "createTitle": "Nuevo contacto",
     "editTitle": "Editar contacto"
+  },
+  "instance": {
+    "notice": {
+      "acknowledge": "Entendido",
+      "description": "Esta instancia envía al proyecto un informe anónimo al día (versión, despliegue, tamaño aproximado y funciones usadas; nunca nombres, direcciones ni cifras exactas). Está activado por defecto. Puedes desactivarlo en los ajustes de la instancia en cualquier momento.",
+      "descriptionLocked": "Esta instancia envía al proyecto un informe anónimo al día (versión, despliegue, tamaño aproximado y funciones usadas; nunca nombres, direcciones ni cifras exactas). El entorno del servidor decide si se envía; consulta los ajustes de la instancia.",
+      "errorTitle": "No se pudo guardar la confirmación",
+      "settings": "Ajustes de la instancia",
+      "title": "Informe anónimo de uso"
+    },
+    "ownersOnly": "Solo los propietarios del espacio de trabajo más antiguo pueden gestionar la instancia.",
+    "telemetry": {
+      "description": "Enviar al proyecto un informe anónimo al día con la versión, el despliegue y el tamaño aproximado de esta instancia. Nunca contiene nombres, direcciones ni cifras exactas.",
+      "errorTitle": "No se pudo actualizar el informe de uso",
+      "forbidden": "Solo los propietarios del espacio de trabajo más antiguo pueden cambiar esto.",
+      "lockedDoNotTrack": "Desactivado por la variable de entorno DO_NOT_TRACK.",
+      "lockedEnvironment": "Definido por la variable de entorno SPHERICON_TELEMETRY, que decide para esta instancia.",
+      "saved": "Ajuste del informe de uso guardado",
+      "switchLabel": "Enviar el informe anónimo de uso",
+      "title": "Informe de uso"
+    },
+    "title": "Instancia"
   },
   "login": {
     "codeLabel": "Código de autenticación",

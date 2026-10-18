@@ -165,6 +165,18 @@ func (f HoldFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HoldMutation", m)
 }
 
+// The InstanceStateFunc type is an adapter to allow the use of ordinary
+// function as InstanceState mutator.
+type InstanceStateFunc func(context.Context, *ent.InstanceStateMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f InstanceStateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.InstanceStateMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InstanceStateMutation", m)
+}
+
 // The IntegrationFunc type is an adapter to allow the use of ordinary
 // function as Integration mutator.
 type IntegrationFunc func(context.Context, *ent.IntegrationMutation) (ent.Value, error)

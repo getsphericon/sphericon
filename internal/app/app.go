@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
@@ -342,6 +343,14 @@ func (a *App) Start(ctx context.Context) error {
 const unwindTimeout = 15 * time.Second
 
 func (a *App) start(ctx context.Context) error {
+	// The first start creates the Instance state row and its random Instance id (ADR 0032).
+	inst, err := do.Invoke[*instance.Module](a.injector)
+	if err != nil {
+		return err
+	}
+	if _, err := inst.Ensure(ctx); err != nil {
+		return err
+	}
 	// The metrics listener is bound first: a bind failure (port in use) must fail the
 	// boot, not leave an unmonitored instance.
 	if err := a.bindMetrics(ctx); err != nil {
@@ -945,6 +954,19 @@ func register(injector do.Injector, env string, o options) {
 		return accounts.New(client.Client, bus.Bus), nil
 	})
 
+	// The Instance state and who decides about it (ADR 0032), over the raw client.
+	do.Provide(injector, func(i do.Injector) (*instance.Module, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		return instance.New(client.Client, instance.EnvironmentOf(cfg), nil), nil
+	})
+
 	// Attempts counts failed logins per account (ADR 0025) over the raw client.
 	do.Provide(injector, func(i do.Injector) (*accounts.Attempts, error) {
 		cfg, err := do.Invoke[*config.Config](i)
@@ -1375,7 +1397,12 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	if err != nil {
 		return apisite.Deps{}, err
 	}
+	inst, err := do.Invoke[*instance.Module](i)
+	if err != nil {
+		return apisite.Deps{}, err
+	}
 	return apisite.Deps{
+		Instance:    inst,
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Automations: auto,

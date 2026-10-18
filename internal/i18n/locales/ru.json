@@ -51,6 +51,8 @@
   "errors.current_password_incorrect": "неверный текущий пароль",
   "errors.second_factor_code_invalid": "код недействителен",
   "errors.second_factor_already_active": "второй фактор уже включён",
+  "errors.instance_owner_only": "управлять инсталляцией могут только владельцы самого старого рабочего пространства",
+  "errors.telemetry_locked": "отчёт телеметрии задаётся окружением; измените его там",
   "errors.second_factor_no_pending": "сначала начните подключение",
   "errors.second_factor_not_active": "второй фактор не включён",
   "errors.second_factor_reset_self": "свой второй фактор отключите в настройках аккаунта",

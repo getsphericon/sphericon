@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AppNavbar } from '../components/AppNavbar.tsx'
+import { InstanceNotice } from '../components/InstanceNotice.tsx'
 import {
   SecondFactorBlocked,
   SecondFactorGraceBanner,
@@ -173,6 +174,7 @@ export function WorkspaceLayout() {
       sidebar={<AppNavbar slug={slug} />}
       banner={
         <>
+          <InstanceNotice />
           {current?.suspendedAt ? (
             <SuspensionBanner
               reason={current.suspensionReason}
