@@ -1,0 +1,82 @@
+# yaml-language-server: $schema=../preset.schema.json
+version: 1
+name: generic
+description: A body already in the Delivery failure shape, signed with Standard Webhooks.
+params:
+  type: object
+  required: [secret]
+  additionalProperties: false
+  properties:
+    secret:
+      type: string
+      title: Signing secret
+      description: The whsec_ secret the sender signs with.
+      writeOnly: true
+verify:
+  kind: standard_webhooks
+  secret: secret
+# The body is one Delivery failure or an array of them.
+transform: |
+  .body | if type == "array" then . else [.] end
+tests:
+  - name: a signed failure becomes a Delivery failure
+    now: '2026-01-01T00:00:00Z'
+    params:
+      secret: whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LTAxMjM0NTY3ODk=
+    request:
+      headers:
+        webhook-id: msg_1
+        webhook-timestamp: '1767225600'
+        webhook-signature: v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=
+      body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","permanent":true,"sending_domain":"News.Example.com"}'
+    expect:
+      failures:
+        - id: evt_1
+          destination: alice@example.com
+          kind: bounce
+          permanent: true
+          sending_domain: news.example.com
+  - name: an unsigned request is refused
+    now: '2026-01-01T00:00:00Z'
+    params:
+      secret: whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LTAxMjM0NTY3ODk=
+    request:
+      body: '{"id":"evt_1","destination":"alice@example.com","kind":"bounce","permanent":true}'
+    expect:
+      refused: unauthentic
+  - name: a signature over another body is refused
+    now: '2026-01-01T00:00:00Z'
+    params:
+      secret: whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LTAxMjM0NTY3ODk=
+    request:
+      headers:
+        webhook-id: msg_1
+        webhook-timestamp: '1767225600'
+        webhook-signature: v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=
+      body: '{"id":"evt_1","destination":"victim@example.com","kind":"complaint"}'
+    expect:
+      refused: unauthentic
+  - name: a stale signed request is refused
+    now: '2026-01-01T00:10:00Z'
+    params:
+      secret: whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LTAxMjM0NTY3ODk=
+    request:
+      headers:
+        webhook-id: msg_1
+        webhook-timestamp: '1767225600'
+        webhook-signature: v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=
+      body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","permanent":true,"sending_domain":"News.Example.com"}'
+    expect:
+      refused: unauthentic
+  - name: another Integration's secret is refused
+    now: '2026-01-01T00:00:00Z'
+    params:
+      secret: whsec_b3RoZXItc2VjcmV0LW90aGVyLXNlY3JldC0wMDAwMDA=
+    request:
+      headers:
+        webhook-id: msg_1
+        webhook-timestamp: '1767225600'
+        webhook-signature: v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=
+      body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","permanent":true,"sending_domain":"News.Example.com"}'
+    expect:
+      refused: unauthentic
