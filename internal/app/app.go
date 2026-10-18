@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -228,6 +229,12 @@ func New(env string, opts ...Option) (*App, error) {
 
 	handler, err := do.Invoke[http.Handler](injector)
 	if err != nil {
+		_ = injector.Shutdown()
+		return nil, err
+	}
+
+	// The Presets load at start: a broken custom file stops it here, not on a callback.
+	if _, err := do.Invoke[*preset.Registry](injector); err != nil {
 		_ = injector.Shutdown()
 		return nil, err
 	}
@@ -661,6 +668,21 @@ func register(injector do.Injector, env string, o options) {
 			cfg.UseListener(o.listener.Addr())
 		}
 		return cfg, nil
+	})
+
+	// The Presets of the Instance: the built-in ones and the Self-hoster's directory.
+	do.Provide(injector, func(i do.Injector) (*preset.Registry, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		if cfg.PresetsDir == "" {
+			return preset.Load(nil)
+		}
+		if _, err := os.Stat(cfg.PresetsDir); err != nil {
+			return nil, fmt.Errorf("SPHERICON_PRESETS_DIR: %w", err)
+		}
+		return preset.Load(os.DirFS(cfg.PresetsDir))
 	})
 
 	do.Provide(injector, func(i do.Injector) (*sqlDB, error) {
