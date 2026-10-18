@@ -18,6 +18,10 @@ type SchemaStatus struct {
 	Current int64
 	Newest  int64
 	Pending []string
+	// State is the state row (Major 1 when there is none yet) and BinaryMajor the Major of
+	// this binary's own schema. Status fills them; StatusFS, which has no table of Majors, does not.
+	State       SchemaState
+	BinaryMajor int
 }
 
 // Migrate applies the embedded migrations to sqlDB with goose and reports how many it ran: the
@@ -42,7 +46,15 @@ func Status(ctx context.Context, sqlDB *sql.DB) (SchemaStatus, error) {
 	if err != nil {
 		return SchemaStatus{}, err
 	}
-	return StatusFS(ctx, sqlDB, files)
+	st, err := StatusFS(ctx, sqlDB, files)
+	if err != nil {
+		return SchemaStatus{}, err
+	}
+	if st.State, err = ReadState(ctx, sqlDB); err != nil {
+		return SchemaStatus{}, err
+	}
+	st.BinaryMajor = Majors[len(Majors)-1].Major
+	return st, nil
 }
 
 // MigrateFS is Migrate over any migrations directory.

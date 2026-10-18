@@ -80,6 +80,7 @@ func TestMigrationStatusListsPendingAndChangesNothing(t *testing.T) {
 	var after bytes.Buffer
 	require.NoError(t, printMigrationStatus(t.Context(), cfg, &after))
 	require.Contains(t, after.String(), "pending: none")
+	require.Contains(t, after.String(), "state:   Major 1, oldest release that runs: v0.0.0 (this binary: Major 1)")
 }
 
 // A start with auto-migrate waits for the lock for at most the timeout, fails, and leaves the
