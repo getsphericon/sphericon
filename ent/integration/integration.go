@@ -29,6 +29,12 @@ const (
 	FieldProvider = "provider"
 	// FieldConfigEncrypted holds the string denoting the config_encrypted field in the database.
 	FieldConfigEncrypted = "config_encrypted"
+	// FieldPreset holds the string denoting the preset field in the database.
+	FieldPreset = "preset"
+	// FieldParamsEncrypted holds the string denoting the params_encrypted field in the database.
+	FieldParamsEncrypted = "params_encrypted"
+	// FieldIngestKey holds the string denoting the ingest_key field in the database.
+	FieldIngestKey = "ingest_key"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
 	// FieldIsDefault holds the string denoting the is_default field in the database.
@@ -77,6 +83,9 @@ var Columns = []string{
 	FieldChannel,
 	FieldProvider,
 	FieldConfigEncrypted,
+	FieldPreset,
+	FieldParamsEncrypted,
+	FieldIngestKey,
 	FieldEnabled,
 	FieldIsDefault,
 	FieldMaxPerSecond,
@@ -106,6 +115,10 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// PresetValidator is a validator for the "preset" field. It is called by the builders before save.
+	PresetValidator func(string) error
+	// IngestKeyValidator is a validator for the "ingest_key" field. It is called by the builders before save.
+	IngestKeyValidator func(string) error
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
 	DefaultEnabled bool
 	// DefaultIsDefault holds the default value on creation for the "is_default" field.
@@ -208,6 +221,21 @@ func ByProvider(opts ...sql.OrderTermOption) OrderOption {
 // ByConfigEncrypted orders the results by the config_encrypted field.
 func ByConfigEncrypted(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldConfigEncrypted, opts...).ToFunc()
+}
+
+// ByPreset orders the results by the preset field.
+func ByPreset(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPreset, opts...).ToFunc()
+}
+
+// ByParamsEncrypted orders the results by the params_encrypted field.
+func ByParamsEncrypted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParamsEncrypted, opts...).ToFunc()
+}
+
+// ByIngestKey orders the results by the ingest_key field.
+func ByIngestKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIngestKey, opts...).ToFunc()
 }
 
 // ByEnabled orders the results by the enabled field.

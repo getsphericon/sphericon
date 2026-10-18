@@ -90,6 +90,40 @@ func (_c *IntegrationCreate) SetConfigEncrypted(v string) *IntegrationCreate {
 	return _c
 }
 
+// SetPreset sets the "preset" field.
+func (_c *IntegrationCreate) SetPreset(v string) *IntegrationCreate {
+	_c.mutation.SetPreset(v)
+	return _c
+}
+
+// SetNillablePreset sets the "preset" field if the given value is not nil.
+func (_c *IntegrationCreate) SetNillablePreset(v *string) *IntegrationCreate {
+	if v != nil {
+		_c.SetPreset(*v)
+	}
+	return _c
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (_c *IntegrationCreate) SetParamsEncrypted(v string) *IntegrationCreate {
+	_c.mutation.SetParamsEncrypted(v)
+	return _c
+}
+
+// SetNillableParamsEncrypted sets the "params_encrypted" field if the given value is not nil.
+func (_c *IntegrationCreate) SetNillableParamsEncrypted(v *string) *IntegrationCreate {
+	if v != nil {
+		_c.SetParamsEncrypted(*v)
+	}
+	return _c
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (_c *IntegrationCreate) SetIngestKey(v string) *IntegrationCreate {
+	_c.mutation.SetIngestKey(v)
+	return _c
+}
+
 // SetEnabled sets the "enabled" field.
 func (_c *IntegrationCreate) SetEnabled(v bool) *IntegrationCreate {
 	_c.mutation.SetEnabled(v)
@@ -331,6 +365,19 @@ func (_c *IntegrationCreate) check() error {
 	if _, ok := _c.mutation.ConfigEncrypted(); !ok {
 		return &ValidationError{Name: "config_encrypted", err: errors.New(`ent: missing required field "Integration.config_encrypted"`)}
 	}
+	if v, ok := _c.mutation.Preset(); ok {
+		if err := integration.PresetValidator(v); err != nil {
+			return &ValidationError{Name: "preset", err: fmt.Errorf(`ent: validator failed for field "Integration.preset": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.IngestKey(); !ok {
+		return &ValidationError{Name: "ingest_key", err: errors.New(`ent: missing required field "Integration.ingest_key"`)}
+	}
+	if v, ok := _c.mutation.IngestKey(); ok {
+		if err := integration.IngestKeyValidator(v); err != nil {
+			return &ValidationError{Name: "ingest_key", err: fmt.Errorf(`ent: validator failed for field "Integration.ingest_key": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "Integration.enabled"`)}
 	}
@@ -409,6 +456,18 @@ func (_c *IntegrationCreate) createSpec() (*Integration, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ConfigEncrypted(); ok {
 		_spec.SetField(integration.FieldConfigEncrypted, field.TypeString, value)
 		_node.ConfigEncrypted = value
+	}
+	if value, ok := _c.mutation.Preset(); ok {
+		_spec.SetField(integration.FieldPreset, field.TypeString, value)
+		_node.Preset = &value
+	}
+	if value, ok := _c.mutation.ParamsEncrypted(); ok {
+		_spec.SetField(integration.FieldParamsEncrypted, field.TypeString, value)
+		_node.ParamsEncrypted = value
+	}
+	if value, ok := _c.mutation.IngestKey(); ok {
+		_spec.SetField(integration.FieldIngestKey, field.TypeString, value)
+		_node.IngestKey = value
 	}
 	if value, ok := _c.mutation.Enabled(); ok {
 		_spec.SetField(integration.FieldEnabled, field.TypeBool, value)
@@ -596,6 +655,54 @@ func (u *IntegrationUpsert) SetConfigEncrypted(v string) *IntegrationUpsert {
 // UpdateConfigEncrypted sets the "config_encrypted" field to the value that was provided on create.
 func (u *IntegrationUpsert) UpdateConfigEncrypted() *IntegrationUpsert {
 	u.SetExcluded(integration.FieldConfigEncrypted)
+	return u
+}
+
+// SetPreset sets the "preset" field.
+func (u *IntegrationUpsert) SetPreset(v string) *IntegrationUpsert {
+	u.Set(integration.FieldPreset, v)
+	return u
+}
+
+// UpdatePreset sets the "preset" field to the value that was provided on create.
+func (u *IntegrationUpsert) UpdatePreset() *IntegrationUpsert {
+	u.SetExcluded(integration.FieldPreset)
+	return u
+}
+
+// ClearPreset clears the value of the "preset" field.
+func (u *IntegrationUpsert) ClearPreset() *IntegrationUpsert {
+	u.SetNull(integration.FieldPreset)
+	return u
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (u *IntegrationUpsert) SetParamsEncrypted(v string) *IntegrationUpsert {
+	u.Set(integration.FieldParamsEncrypted, v)
+	return u
+}
+
+// UpdateParamsEncrypted sets the "params_encrypted" field to the value that was provided on create.
+func (u *IntegrationUpsert) UpdateParamsEncrypted() *IntegrationUpsert {
+	u.SetExcluded(integration.FieldParamsEncrypted)
+	return u
+}
+
+// ClearParamsEncrypted clears the value of the "params_encrypted" field.
+func (u *IntegrationUpsert) ClearParamsEncrypted() *IntegrationUpsert {
+	u.SetNull(integration.FieldParamsEncrypted)
+	return u
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (u *IntegrationUpsert) SetIngestKey(v string) *IntegrationUpsert {
+	u.Set(integration.FieldIngestKey, v)
+	return u
+}
+
+// UpdateIngestKey sets the "ingest_key" field to the value that was provided on create.
+func (u *IntegrationUpsert) UpdateIngestKey() *IntegrationUpsert {
+	u.SetExcluded(integration.FieldIngestKey)
 	return u
 }
 
@@ -881,6 +988,62 @@ func (u *IntegrationUpsertOne) SetConfigEncrypted(v string) *IntegrationUpsertOn
 func (u *IntegrationUpsertOne) UpdateConfigEncrypted() *IntegrationUpsertOne {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.UpdateConfigEncrypted()
+	})
+}
+
+// SetPreset sets the "preset" field.
+func (u *IntegrationUpsertOne) SetPreset(v string) *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetPreset(v)
+	})
+}
+
+// UpdatePreset sets the "preset" field to the value that was provided on create.
+func (u *IntegrationUpsertOne) UpdatePreset() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdatePreset()
+	})
+}
+
+// ClearPreset clears the value of the "preset" field.
+func (u *IntegrationUpsertOne) ClearPreset() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearPreset()
+	})
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (u *IntegrationUpsertOne) SetParamsEncrypted(v string) *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetParamsEncrypted(v)
+	})
+}
+
+// UpdateParamsEncrypted sets the "params_encrypted" field to the value that was provided on create.
+func (u *IntegrationUpsertOne) UpdateParamsEncrypted() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateParamsEncrypted()
+	})
+}
+
+// ClearParamsEncrypted clears the value of the "params_encrypted" field.
+func (u *IntegrationUpsertOne) ClearParamsEncrypted() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearParamsEncrypted()
+	})
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (u *IntegrationUpsertOne) SetIngestKey(v string) *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetIngestKey(v)
+	})
+}
+
+// UpdateIngestKey sets the "ingest_key" field to the value that was provided on create.
+func (u *IntegrationUpsertOne) UpdateIngestKey() *IntegrationUpsertOne {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateIngestKey()
 	})
 }
 
@@ -1357,6 +1520,62 @@ func (u *IntegrationUpsertBulk) SetConfigEncrypted(v string) *IntegrationUpsertB
 func (u *IntegrationUpsertBulk) UpdateConfigEncrypted() *IntegrationUpsertBulk {
 	return u.Update(func(s *IntegrationUpsert) {
 		s.UpdateConfigEncrypted()
+	})
+}
+
+// SetPreset sets the "preset" field.
+func (u *IntegrationUpsertBulk) SetPreset(v string) *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetPreset(v)
+	})
+}
+
+// UpdatePreset sets the "preset" field to the value that was provided on create.
+func (u *IntegrationUpsertBulk) UpdatePreset() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdatePreset()
+	})
+}
+
+// ClearPreset clears the value of the "preset" field.
+func (u *IntegrationUpsertBulk) ClearPreset() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearPreset()
+	})
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (u *IntegrationUpsertBulk) SetParamsEncrypted(v string) *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetParamsEncrypted(v)
+	})
+}
+
+// UpdateParamsEncrypted sets the "params_encrypted" field to the value that was provided on create.
+func (u *IntegrationUpsertBulk) UpdateParamsEncrypted() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateParamsEncrypted()
+	})
+}
+
+// ClearParamsEncrypted clears the value of the "params_encrypted" field.
+func (u *IntegrationUpsertBulk) ClearParamsEncrypted() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.ClearParamsEncrypted()
+	})
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (u *IntegrationUpsertBulk) SetIngestKey(v string) *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.SetIngestKey(v)
+	})
+}
+
+// UpdateIngestKey sets the "ingest_key" field to the value that was provided on create.
+func (u *IntegrationUpsertBulk) UpdateIngestKey() *IntegrationUpsertBulk {
+	return u.Update(func(s *IntegrationUpsert) {
+		s.UpdateIngestKey()
 	})
 }
 

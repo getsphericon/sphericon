@@ -384,12 +384,13 @@ func Persist(ctx context.Context, client *ent.Client, env Envelope) error {
 // detected, keeps SNS redeliveries from counting twice.
 func recordProviderOutcome(ctx context.Context, ev DomainEvent) {
 	f, ok := ev.(*EmailDeliveryFailure)
-	if !ok || f.Provider != string(messaging.ProviderSES) {
+	if !ok || f.Provider == "" {
 		return
 	}
 	status := messaging.SendBounce
 	if f.Action == NameEmailComplained {
 		status = messaging.SendComplaint
 	}
-	messaging.RecordSendOutcome(ctx, messaging.ProviderSES, status)
+	// Provider is the Preset's name (ADR 0037), or "ses" for the SES adapter.
+	messaging.RecordSendOutcome(ctx, messaging.Provider(f.Provider), status)
 }

@@ -141,6 +141,9 @@ func generateMigration(ctx context.Context, name string) error {
 	if err := migrate.NamedDiff(ctx, devURL, name,
 		schema.WithDir(dir),
 		schema.WithMigrationMode(schema.ModeReplay),
+		// A removal is a destructive migration (ADR 0033): written here, guarded by hand.
+		schema.WithDropColumn(true),
+		schema.WithDropIndex(true),
 		schema.WithDialect(dialect.Postgres),
 		schema.WithFormatter(sqltool.GooseFormatter),
 	); err != nil {

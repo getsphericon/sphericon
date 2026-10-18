@@ -47,6 +47,26 @@ func (Integration) Fields() []ent.Field {
 		field.String("config_encrypted").
 			Sensitive().
 			Annotations(Sensitive{}),
+		// The Preset this Integration's provider callbacks are read with (ADR 0037); nil
+		// when the Integration receives none. An SES Integration with no Preset is read by
+		// the SES adapter until the `ses` Preset replaces it.
+		field.String("preset").
+			Optional().
+			Nillable().
+			NotEmpty(),
+		// Encrypted JSON of the Preset's params (secrets included; a secret that is
+		// rotating holds the current and the retiring value). Never returned by a read.
+		field.String("params_encrypted").
+			Optional().
+			Sensitive().
+			Annotations(Sensitive{}),
+		// The secret key of this Integration's hook, POST /hooks/{ingest_key}: it names the
+		// Integration and so its Workspace. It is an address, not the authentication (the
+		// Preset's signature or secret is) and regenerating it revokes the old URL.
+		field.String("ingest_key").
+			NotEmpty().
+			Unique().
+			Annotations(Sensitive{}),
 		field.Bool("enabled").
 			Default(true),
 		field.Bool("is_default").

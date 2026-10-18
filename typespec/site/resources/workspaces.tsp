@@ -40,9 +40,6 @@ model SiteWorkspaceResource {
   /** Per-workspace collect write-key (x-collect-key) for the tracking snippet */
   collectKey: string;
 
-  /** Secret key that routes inbound provider webhooks (/hooks/{ingestKey}/...) */
-  ingestKey: string;
-
   /** Physical postal address printed in the marketing email footer (CAN-SPAM
    * 15 U.S.C. §7704(a)(5)). Empty until the workspace sets one. */
   postalAddress: string;

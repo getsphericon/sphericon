@@ -1643,6 +1643,29 @@
         }
       }
     },
+    "/presets": {
+      "get": {
+        "operationId": "SitePresets_list",
+        "description": "List the Presets the Instance offers, with the params schema of each",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SitePresetResource"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Integrations"]
+      }
+    },
     "/unsubscribes/{token}": {
       "post": {
         "operationId": "SitePublicUnsubscribes_perform",
@@ -4180,6 +4203,63 @@
         "responses": {
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Integrations"]
+      }
+    },
+    "/workspaces/{slug}/integrations/{id}/regenerate-key": {
+      "post": {
+        "operationId": "SiteIntegrations_regenerateKey",
+        "description": "Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteIntegrationResourceKey.slug"
+          },
+          {
+            "$ref": "#/components/parameters/SiteIntegrationResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteIntegrationResource"
+                }
+              }
+            }
           },
           "400": {
             "description": "RFC 7807 bad request response",
@@ -8553,6 +8633,16 @@
           },
           "config": {
             "$ref": "#/components/schemas/SiteIntegrationConfigInput"
+          },
+          "preset": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first"
           }
         },
         "description": "Create a workspace integration. The provider/channel are derived from `config.kind`."
@@ -8963,6 +9053,10 @@
           "maxPerDay",
           "sendLimit",
           "config",
+          "preset",
+          "params",
+          "secretsRetiring",
+          "hookUrl",
           "createdAt",
           "updatedAt"
         ],
@@ -9030,6 +9124,27 @@
               }
             ],
             "description": "Provider config (secrets redacted)"
+          },
+          "preset": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Preset this Integration's provider callbacks are read with; null when it receives none"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as `********`, never its value"
+          },
+          "secretsRetiring": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Names of the secret params that are rotating: a retiring value is still accepted beside the current one"
+          },
+          "hookUrl": {
+            "type": "string",
+            "description": "Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is)"
           },
           "createdAt": {
             "allOf": [
@@ -9316,6 +9431,26 @@
           }
         },
         "description": "Where to send the user's browser next (back to the client, with a code or an error)"
+      },
+      "SitePresetResource": {
+        "type": "object",
+        "required": ["name", "description", "paramsSchema"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name an integration's `preset` refers to"
+          },
+          "description": {
+            "type": "string",
+            "description": "What the Preset is for"
+          },
+          "paramsSchema": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "JSON Schema (draft 2020-12) of the params; a string marked `writeOnly` is a secret"
+          }
+        },
+        "description": "A Preset the Instance offers"
       },
       "SitePreviewSegmentInput": {
         "type": "object",
@@ -10309,6 +10444,20 @@
               }
             ],
             "nullable": true
+          },
+          "preset": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)"
+          },
+          "retireSecrets": {
+            "type": "boolean",
+            "description": "Stop accepting the retiring value of every rotating secret"
           }
         },
         "description": "Update a workspace integration. Omit `config` to keep stored credentials."
@@ -10532,7 +10681,6 @@
           "name",
           "slug",
           "collectKey",
-          "ingestKey",
           "postalAddress",
           "role",
           "holds",
@@ -10559,10 +10707,6 @@
           "collectKey": {
             "type": "string",
             "description": "Per-workspace collect write-key (x-collect-key) for the tracking snippet"
-          },
-          "ingestKey": {
-            "type": "string",
-            "description": "Secret key that routes inbound provider webhooks (/hooks/{ingestKey}/...)"
           },
           "postalAddress": {
             "type": "string",

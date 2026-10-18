@@ -73,14 +73,20 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 	if err != nil {
 		return nil, err
 	}
-	row, err := h.integrations.Create(ctx, s, integrations.CreateInput{
-		Name:         req.Name,
-		Enabled:      convert.Ptr(req.Enabled),
-		IsDefault:    req.IsDefault.Or(false),
-		MaxPerSecond: integrations.LimitOf(req.MaxPerSecond),
-		MaxPerDay:    integrations.LimitOf(req.MaxPerDay),
-		Config:       cfg,
-	})
+	inParams, err := integrations.ParamsOf(req.Params.Or(nil))
+	var row *ent.Integration
+	if err == nil {
+		row, err = h.integrations.Create(ctx, s, integrations.CreateInput{
+			Name:         req.Name,
+			Enabled:      convert.Ptr(req.Enabled),
+			IsDefault:    req.IsDefault.Or(false),
+			MaxPerSecond: integrations.LimitOf(req.MaxPerSecond),
+			MaxPerDay:    integrations.LimitOf(req.MaxPerDay),
+			Config:       cfg,
+			Preset:       integrations.PresetOf(req.Preset).Name,
+			Params:       inParams,
+		})
+	}
 	var verr *integrations.ValidationError
 	switch {
 	case errors.As(err, &verr):
@@ -150,11 +156,13 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 	id := int64(params.ID)
 
 	in := integrations.UpdateInput{
-		Name:         convert.Ptr(req.Name),
-		Enabled:      convert.Ptr(req.Enabled),
-		IsDefault:    convert.Ptr(req.IsDefault),
-		MaxPerSecond: integrations.LimitOf(req.MaxPerSecond),
-		MaxPerDay:    integrations.LimitOf(req.MaxPerDay),
+		Name:          convert.Ptr(req.Name),
+		Enabled:       convert.Ptr(req.Enabled),
+		IsDefault:     convert.Ptr(req.IsDefault),
+		MaxPerSecond:  integrations.LimitOf(req.MaxPerSecond),
+		MaxPerDay:     integrations.LimitOf(req.MaxPerDay),
+		Preset:        integrations.PresetOf(req.Preset),
+		RetireSecrets: req.RetireSecrets.Or(false),
 	}
 	if c, ok := req.Config.Get(); ok {
 		cfg, err := configInput(c)
@@ -163,7 +171,12 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 		}
 		in.Config = &cfg
 	}
-	updated, err := h.integrations.Update(ctx, s, id, in)
+	var updated *ent.Integration
+	inParams, err := integrations.ParamsOf(req.Params.Or(nil))
+	if err == nil {
+		in.Params = inParams
+		updated, err = h.integrations.Update(ctx, s, id, in)
+	}
 	var verr *integrations.ValidationError
 	switch {
 	case ent.IsNotFound(err):
@@ -185,6 +198,50 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 		return nil, err
 	}
 	return &res, nil
+}
+
+// SiteIntegrationsRegenerateKey gives the integration a new hook key; the old hook URL
+// stops working at once. Owners and admins only.
+func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params siteapi.SiteIntegrationsRegenerateKeyParams) (siteapi.SiteIntegrationsRegenerateKeyRes, error) {
+	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteIntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !accounts.CanManageIntegrations(role) {
+		v := siteapi.SiteIntegrationsRegenerateKeyForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
+		return &v, nil
+	}
+	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteIntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, "integration not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.integrationResource(ctx, s, row)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// SitePresetsList returns the Presets the Instance offers with their params schemas.
+func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResource, error) {
+	reg := h.integrations.Presets()
+	out := make([]siteapi.SitePresetResource, 0, len(reg.Names()))
+	for _, name := range reg.Names() {
+		p, _ := reg.Get(name)
+		out = append(out, siteapi.SitePresetResource{
+			Name: p.Name(), Description: p.Description(),
+			ParamsSchema: siteapi.SitePresetResourceParamsSchema(integrations.RawOf(p.ParamsSchema())),
+		})
+	}
+	return out, nil
 }
 
 // SiteIntegrationsDelete removes an integration.
@@ -254,6 +311,18 @@ func (h *Handlers) integrationToResource(row *ent.Integration, usage map[int64]i
 		CreatedAt:    siteapi.Timestamp(row.CreatedAt),
 		UpdatedAt:    siteapi.Timestamp(row.UpdatedAt),
 	}
+
+	res.HookUrl = h.integrations.HookURL(row)
+	res.Preset = siteapi.NilString{Null: true}
+	if row.Preset != nil {
+		res.Preset = siteapi.NewNilString(*row.Preset)
+	}
+	view, err := h.integrations.View(row)
+	if err != nil {
+		return res, err
+	}
+	res.Params = siteapi.SiteIntegrationResourceParams(integrations.RawOf(view.Values))
+	res.SecretsRetiring = view.SecretsRetiring
 
 	cfg, err := h.integrations.Redact(row)
 	if err != nil {

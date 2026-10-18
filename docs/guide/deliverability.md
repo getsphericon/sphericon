@@ -51,5 +51,7 @@ automation.
 
 Bounce and complaint notifications from an SES-compatible service over SNS are ingested and written to the suppression list, so you
 stop mailing an address after it bounces. Only notifications from the SNS topic named on the SES
-integration are accepted; set its **SNS topic ARN** or no bounce is ingested. The workspace also tracks bounce and complaint rates
+integration are accepted; set its **SNS topic ARN** or no bounce is ingested. Each integration has its
+own hook URL (`hookUrl`, shown on every read of the integration and in the console under **Inbound**):
+subscribe SNS to that URL, not to a workspace-wide one. The workspace also tracks bounce and complaint rates
 per sending domain; read them from `GET /api/sending-domains/rates`.

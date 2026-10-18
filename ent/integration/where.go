@@ -80,6 +80,21 @@ func ConfigEncrypted(v string) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldConfigEncrypted, v))
 }
 
+// Preset applies equality check predicate on the "preset" field. It's identical to PresetEQ.
+func Preset(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldPreset, v))
+}
+
+// ParamsEncrypted applies equality check predicate on the "params_encrypted" field. It's identical to ParamsEncryptedEQ.
+func ParamsEncrypted(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldParamsEncrypted, v))
+}
+
+// IngestKey applies equality check predicate on the "ingest_key" field. It's identical to IngestKeyEQ.
+func IngestKey(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldIngestKey, v))
+}
+
 // Enabled applies equality check predicate on the "enabled" field. It's identical to EnabledEQ.
 func Enabled(v bool) predicate.Integration {
 	return predicate.Integration(sql.FieldEQ(FieldEnabled, v))
@@ -388,6 +403,221 @@ func ConfigEncryptedEqualFold(v string) predicate.Integration {
 // ConfigEncryptedContainsFold applies the ContainsFold predicate on the "config_encrypted" field.
 func ConfigEncryptedContainsFold(v string) predicate.Integration {
 	return predicate.Integration(sql.FieldContainsFold(FieldConfigEncrypted, v))
+}
+
+// PresetEQ applies the EQ predicate on the "preset" field.
+func PresetEQ(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldPreset, v))
+}
+
+// PresetNEQ applies the NEQ predicate on the "preset" field.
+func PresetNEQ(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldNEQ(FieldPreset, v))
+}
+
+// PresetIn applies the In predicate on the "preset" field.
+func PresetIn(vs ...string) predicate.Integration {
+	return predicate.Integration(sql.FieldIn(FieldPreset, vs...))
+}
+
+// PresetNotIn applies the NotIn predicate on the "preset" field.
+func PresetNotIn(vs ...string) predicate.Integration {
+	return predicate.Integration(sql.FieldNotIn(FieldPreset, vs...))
+}
+
+// PresetGT applies the GT predicate on the "preset" field.
+func PresetGT(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldGT(FieldPreset, v))
+}
+
+// PresetGTE applies the GTE predicate on the "preset" field.
+func PresetGTE(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldGTE(FieldPreset, v))
+}
+
+// PresetLT applies the LT predicate on the "preset" field.
+func PresetLT(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldLT(FieldPreset, v))
+}
+
+// PresetLTE applies the LTE predicate on the "preset" field.
+func PresetLTE(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldLTE(FieldPreset, v))
+}
+
+// PresetContains applies the Contains predicate on the "preset" field.
+func PresetContains(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldContains(FieldPreset, v))
+}
+
+// PresetHasPrefix applies the HasPrefix predicate on the "preset" field.
+func PresetHasPrefix(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldHasPrefix(FieldPreset, v))
+}
+
+// PresetHasSuffix applies the HasSuffix predicate on the "preset" field.
+func PresetHasSuffix(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldHasSuffix(FieldPreset, v))
+}
+
+// PresetIsNil applies the IsNil predicate on the "preset" field.
+func PresetIsNil() predicate.Integration {
+	return predicate.Integration(sql.FieldIsNull(FieldPreset))
+}
+
+// PresetNotNil applies the NotNil predicate on the "preset" field.
+func PresetNotNil() predicate.Integration {
+	return predicate.Integration(sql.FieldNotNull(FieldPreset))
+}
+
+// PresetEqualFold applies the EqualFold predicate on the "preset" field.
+func PresetEqualFold(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldEqualFold(FieldPreset, v))
+}
+
+// PresetContainsFold applies the ContainsFold predicate on the "preset" field.
+func PresetContainsFold(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldContainsFold(FieldPreset, v))
+}
+
+// ParamsEncryptedEQ applies the EQ predicate on the "params_encrypted" field.
+func ParamsEncryptedEQ(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedNEQ applies the NEQ predicate on the "params_encrypted" field.
+func ParamsEncryptedNEQ(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldNEQ(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedIn applies the In predicate on the "params_encrypted" field.
+func ParamsEncryptedIn(vs ...string) predicate.Integration {
+	return predicate.Integration(sql.FieldIn(FieldParamsEncrypted, vs...))
+}
+
+// ParamsEncryptedNotIn applies the NotIn predicate on the "params_encrypted" field.
+func ParamsEncryptedNotIn(vs ...string) predicate.Integration {
+	return predicate.Integration(sql.FieldNotIn(FieldParamsEncrypted, vs...))
+}
+
+// ParamsEncryptedGT applies the GT predicate on the "params_encrypted" field.
+func ParamsEncryptedGT(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldGT(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedGTE applies the GTE predicate on the "params_encrypted" field.
+func ParamsEncryptedGTE(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldGTE(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedLT applies the LT predicate on the "params_encrypted" field.
+func ParamsEncryptedLT(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldLT(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedLTE applies the LTE predicate on the "params_encrypted" field.
+func ParamsEncryptedLTE(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldLTE(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedContains applies the Contains predicate on the "params_encrypted" field.
+func ParamsEncryptedContains(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldContains(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedHasPrefix applies the HasPrefix predicate on the "params_encrypted" field.
+func ParamsEncryptedHasPrefix(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldHasPrefix(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedHasSuffix applies the HasSuffix predicate on the "params_encrypted" field.
+func ParamsEncryptedHasSuffix(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldHasSuffix(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedIsNil applies the IsNil predicate on the "params_encrypted" field.
+func ParamsEncryptedIsNil() predicate.Integration {
+	return predicate.Integration(sql.FieldIsNull(FieldParamsEncrypted))
+}
+
+// ParamsEncryptedNotNil applies the NotNil predicate on the "params_encrypted" field.
+func ParamsEncryptedNotNil() predicate.Integration {
+	return predicate.Integration(sql.FieldNotNull(FieldParamsEncrypted))
+}
+
+// ParamsEncryptedEqualFold applies the EqualFold predicate on the "params_encrypted" field.
+func ParamsEncryptedEqualFold(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldEqualFold(FieldParamsEncrypted, v))
+}
+
+// ParamsEncryptedContainsFold applies the ContainsFold predicate on the "params_encrypted" field.
+func ParamsEncryptedContainsFold(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldContainsFold(FieldParamsEncrypted, v))
+}
+
+// IngestKeyEQ applies the EQ predicate on the "ingest_key" field.
+func IngestKeyEQ(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldEQ(FieldIngestKey, v))
+}
+
+// IngestKeyNEQ applies the NEQ predicate on the "ingest_key" field.
+func IngestKeyNEQ(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldNEQ(FieldIngestKey, v))
+}
+
+// IngestKeyIn applies the In predicate on the "ingest_key" field.
+func IngestKeyIn(vs ...string) predicate.Integration {
+	return predicate.Integration(sql.FieldIn(FieldIngestKey, vs...))
+}
+
+// IngestKeyNotIn applies the NotIn predicate on the "ingest_key" field.
+func IngestKeyNotIn(vs ...string) predicate.Integration {
+	return predicate.Integration(sql.FieldNotIn(FieldIngestKey, vs...))
+}
+
+// IngestKeyGT applies the GT predicate on the "ingest_key" field.
+func IngestKeyGT(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldGT(FieldIngestKey, v))
+}
+
+// IngestKeyGTE applies the GTE predicate on the "ingest_key" field.
+func IngestKeyGTE(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldGTE(FieldIngestKey, v))
+}
+
+// IngestKeyLT applies the LT predicate on the "ingest_key" field.
+func IngestKeyLT(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldLT(FieldIngestKey, v))
+}
+
+// IngestKeyLTE applies the LTE predicate on the "ingest_key" field.
+func IngestKeyLTE(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldLTE(FieldIngestKey, v))
+}
+
+// IngestKeyContains applies the Contains predicate on the "ingest_key" field.
+func IngestKeyContains(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldContains(FieldIngestKey, v))
+}
+
+// IngestKeyHasPrefix applies the HasPrefix predicate on the "ingest_key" field.
+func IngestKeyHasPrefix(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldHasPrefix(FieldIngestKey, v))
+}
+
+// IngestKeyHasSuffix applies the HasSuffix predicate on the "ingest_key" field.
+func IngestKeyHasSuffix(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldHasSuffix(FieldIngestKey, v))
+}
+
+// IngestKeyEqualFold applies the EqualFold predicate on the "ingest_key" field.
+func IngestKeyEqualFold(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldEqualFold(FieldIngestKey, v))
+}
+
+// IngestKeyContainsFold applies the ContainsFold predicate on the "ingest_key" field.
+func IngestKeyContainsFold(v string) predicate.Integration {
+	return predicate.Integration(sql.FieldContainsFold(FieldIngestKey, v))
 }
 
 // EnabledEQ applies the EQ predicate on the "enabled" field.

@@ -1019,6 +1019,14 @@ func register(injector do.Injector, env string, o options) {
 	})
 
 	do.Provide(injector, func(i do.Injector) (*integrations.Module, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		presets, err := do.Invoke[*preset.Registry](i)
+		if err != nil {
+			return nil, err
+		}
 		bus, err := do.Invoke[*eventsBus](i)
 		if err != nil {
 			return nil, err
@@ -1035,7 +1043,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return integrations.New(bus.Bus, cipher, catalog, jc.Client), nil
+		return integrations.New(bus.Bus, cipher, catalog, jc.Client, presets, cfg.AppURL), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*sendingdomains.Module, error) {
