@@ -37,9 +37,6 @@ model SesConfig {
   /** Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS */
   endpoint?: string | null;
 
-  /** The one SNS topic bounce and complaint notifications are accepted from; none means the hook refuses all */
-  snsTopicArn?: string | null;
-
   /** Last 4 chars of the access key id, for recognition */
   accessKeyIdLast4?: string | null;
 }
@@ -75,9 +72,6 @@ model SesConfigInput {
 
   /** Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS */
   endpoint?: string | null;
-
-  /** The SNS topic (ARN) this Integration's bounces and complaints arrive through; notifications from any other topic are refused */
-  snsTopicArn?: string | null;
 }
 
 /** Provider config submitted by the caller, discriminated by `kind`. */

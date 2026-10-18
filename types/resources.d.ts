@@ -700,8 +700,6 @@ export default interface Resources {
           "port": "Port",
           "region": "AWS region",
           "secretAccessKey": "Secret access key",
-          "snsTopicArn": "SNS topic ARN",
-          "snsTopicArnHint": "The SNS topic your SES bounces and complaints are published to. Notifications from any other topic are ignored; without it nothing is suppressed.",
           "username": "Username"
         },
         "inbound": {

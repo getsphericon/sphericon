@@ -1,6 +1,7 @@
 package preset
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -40,16 +41,17 @@ type verifyConfig struct {
 	User            string   `json:"user"`
 	SignedFields    []string `json:"signed_fields"`
 	SignatureField  string   `json:"signature_field"`
+	Topic           string   `json:"topic"`
 }
 
 // verifier checks one request. overBody is true for a scheme whose signature lives in
 // the body: the engine parses the body under its limit first and hands it over.
 type verifier interface {
 	overBody() bool
-	verify(req Request, body any, params Params, now time.Time) error
+	verify(ctx context.Context, req Request, body any, params Params, now time.Time) error
 }
 
-func newVerifier(c verifyConfig) (verifier, error) {
+func newVerifier(c verifyConfig, o options) (verifier, error) {
 	var tolerance time.Duration
 	if c.Tolerance != "" {
 		d, err := time.ParseDuration(c.Tolerance)
@@ -69,6 +71,8 @@ func newVerifier(c verifyConfig) (verifier, error) {
 		return &standardWebhooksVerifier{secret: c.Secret}, nil
 	case "token":
 		return &tokenVerifier{c: c}, nil
+	case "sns":
+		return &snsVerifier{c: c, certs: o.certs}, nil
 	case "hmac_body":
 		return &hmacBody{c: c, tolerance: tolerance}, nil
 	}
@@ -178,7 +182,7 @@ type hmacHeader struct {
 
 func (*hmacHeader) overBody() bool { return false }
 
-func (h *hmacHeader) verify(req Request, _ any, params Params, now time.Time) error {
+func (h *hmacHeader) verify(_ context.Context, req Request, _ any, params Params, now time.Time) error {
 	secrets := secretsOf(params, h.c.Secret)
 	if len(secrets) == 0 {
 		return errNoSecret
@@ -222,7 +226,7 @@ func (*standardWebhooksVerifier) overBody() bool { return false }
 // standardWebhooksTolerance is the specification's.
 const standardWebhooksTolerance = 5 * time.Minute
 
-func (s *standardWebhooksVerifier) verify(req Request, _ any, params Params, now time.Time) error {
+func (s *standardWebhooksVerifier) verify(_ context.Context, req Request, _ any, params Params, now time.Time) error {
 	secrets := secretsOf(params, s.secret)
 	if len(secrets) == 0 {
 		return errNoSecret
@@ -252,7 +256,7 @@ type tokenVerifier struct{ c verifyConfig }
 
 func (*tokenVerifier) overBody() bool { return false }
 
-func (t *tokenVerifier) verify(req Request, _ any, params Params, _ time.Time) error {
+func (t *tokenVerifier) verify(_ context.Context, req Request, _ any, params Params, _ time.Time) error {
 	secrets := secretsOf(params, t.c.Secret)
 	if len(secrets) == 0 {
 		return errNoSecret
@@ -302,7 +306,7 @@ type hmacBody struct {
 
 func (*hmacBody) overBody() bool { return true }
 
-func (h *hmacBody) verify(_ Request, body any, params Params, now time.Time) error {
+func (h *hmacBody) verify(_ context.Context, _ Request, body any, params Params, now time.Time) error {
 	secrets := secretsOf(params, h.c.Secret)
 	if len(secrets) == 0 {
 		return errNoSecret

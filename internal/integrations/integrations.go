@@ -56,12 +56,26 @@ type Module struct {
 	quota   QuotaEnqueuer
 	presets *preset.Registry
 	appURL  string
+	confirm func(ctx context.Context, url string) error
+}
+
+// Option tunes the module.
+type Option func(*Module)
+
+// WithSubscriptionConfirmer replaces how a Preset's confirm action is performed: a GET
+// through the SSRF-guarded client by default.
+func WithSubscriptionConfirmer(f func(ctx context.Context, url string) error) Option {
+	return func(m *Module) { m.confirm = f }
 }
 
 // New builds the module. presets is the Instance's Preset registry and appURL the public
 // origin the hook URLs are built from.
-func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, quota QuotaEnqueuer, presets *preset.Registry, appURL string) *Module {
-	return &Module{bus: bus, cipher: cipher, catalog: catalog, quota: quota, presets: presets, appURL: appURL}
+func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, quota QuotaEnqueuer, presets *preset.Registry, appURL string, opts ...Option) *Module {
+	m := &Module{bus: bus, cipher: cipher, catalog: catalog, quota: quota, presets: presets, appURL: appURL, confirm: confirmByGet}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
 }
 
 // SMTPConfig and SESConfig are the write-side provider settings, secrets included.
@@ -81,7 +95,6 @@ type (
 		From            string
 		FromName        string
 		Endpoint        string
-		SNSTopicARN     string
 	}
 )
 
@@ -158,7 +171,13 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if in.Enabled != nil {
 		enabled = *in.Enabled
 	}
-	inb, _, err := m.sealInbound(nil, PresetChange{Set: in.Preset != nil, Name: in.Preset}, in.Params, false)
+	// An SES Integration reads its callbacks with the `ses` Preset unless told otherwise.
+	presetName := in.Preset
+	if presetName == nil && provider == integration.ProviderSes {
+		presetName = new(string)
+		*presetName = "ses"
+	}
+	inb, _, err := m.sealInbound(nil, PresetChange{Set: presetName != nil, Name: presetName}, in.Params, false)
 	if err != nil {
 		return nil, err
 	}
@@ -367,7 +386,7 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 		provider = integration.ProviderSes
 		plaintext, err = json.Marshal(ses.Config{
 			Region: c.Region, AccessKeyID: c.AccessKeyID, SecretAccessKey: c.SecretAccessKey,
-			From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, SNSTopicARN: c.SNSTopicARN,
+			From: c.From, FromName: c.FromName, Endpoint: c.Endpoint,
 		})
 	default:
 		return "", "", nil, configError(errUnknownProvider)
@@ -457,7 +476,6 @@ type (
 		From             string
 		FromName         string
 		Endpoint         string
-		SNSTopicARN      string
 		AccessKeyIDLast4 string
 	}
 )
@@ -487,7 +505,7 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 			last4 = last4[n-4:]
 		}
 		return RedactedConfig{SES: &RedactedSES{
-			Region: c.Region, From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, SNSTopicARN: c.SNSTopicARN, AccessKeyIDLast4: last4,
+			Region: c.Region, From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, AccessKeyIDLast4: last4,
 		}}, nil
 	}
 	return RedactedConfig{}, errUnknownProvider

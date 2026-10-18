@@ -3,8 +3,10 @@ package external_test
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"testing"
 
+	"github.com/go-faster/jx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -231,17 +233,21 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	assert.Equal(t, fixtures.IntegrationGlobexName, row.Name)
 }
 
-// An SES Integration carries the SNS topic its bounces arrive through, returned on read;
-// a value that is not a topic ARN is refused.
-func TestExternalIntegrationsSESKeepsItsSNSTopic(t *testing.T) {
+// An SES Integration reads its callbacks with the `ses` Preset without being told so, and
+// the SNS topic it accepts is a param of that Preset: returned on read, and refused when it
+// is not a topic ARN.
+func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
 	ses := func(topic string) *externalapi.CreateIntegrationInput {
-		return &externalapi.CreateIntegrationInput{Name: "SES " + topic, Config: externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
-			Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
-			SnsTopicArn: externalapi.NewOptNilString(topic),
-		})}}
+		return &externalapi.CreateIntegrationInput{
+			Name: "SES " + topic,
+			Config: externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
+				Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
+			})},
+			Params: externalapi.NewOptCreateIntegrationInputParams(externalapi.CreateIntegrationInputParams{"topic_arn": jx.Raw(strconv.Quote(topic))}),
+		}
 	}
 
 	bad, err := c.IntegrationsCreate(ctx, ses("not-an-arn"))
@@ -253,7 +259,6 @@ func TestExternalIntegrationsSESKeepsItsSNSTopic(t *testing.T) {
 	require.NoError(t, err)
 	created, ok := res.(*externalapi.IntegrationResource)
 	require.Truef(t, ok, "got %T", res)
-	got, ok := created.Config.OneOf.GetSesConfig()
-	require.True(t, ok)
-	assert.Equal(t, topic, got.SnsTopicArn.Or(""))
+	assert.Equal(t, "ses", created.Preset.Or(""))
+	assert.JSONEq(t, strconv.Quote(topic), string(created.Params["topic_arn"]))
 }

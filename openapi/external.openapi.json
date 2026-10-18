@@ -10511,11 +10511,6 @@
             "nullable": true,
             "description": "Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS"
           },
-          "snsTopicArn": {
-            "type": "string",
-            "nullable": true,
-            "description": "The one SNS topic bounce and complaint notifications are accepted from; none means the hook refuses all"
-          },
           "accessKeyIdLast4": {
             "type": "string",
             "nullable": true,
@@ -10552,11 +10547,6 @@
             "type": "string",
             "nullable": true,
             "description": "Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS"
-          },
-          "snsTopicArn": {
-            "type": "string",
-            "nullable": true,
-            "description": "The SNS topic (ARN) this Integration's bounces and complaints arrive through; notifications from any other topic are refused"
           }
         },
         "description": "SES credentials"

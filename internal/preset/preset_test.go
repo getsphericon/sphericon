@@ -20,6 +20,7 @@ func TestPresetsPassTheirOwnTests(t *testing.T) {
 	names := custom.Names()
 	require.Contains(t, names, "generic")
 	require.Contains(t, names, "hostile")
+	require.Contains(t, names, "ses")
 	for _, name := range names {
 		p, _ := custom.Get(name)
 		t.Run(name, func(t *testing.T) {

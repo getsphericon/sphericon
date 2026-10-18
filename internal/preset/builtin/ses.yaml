@@ -1,0 +1,168 @@
+# yaml-language-server: $schema=../preset.schema.json
+version: 1
+name: ses
+description: Amazon SES bounces and complaints, delivered through an SNS topic.
+params:
+  type: object
+  additionalProperties: false
+  properties:
+    topic_arn:
+      type: string
+      title: SNS topic ARN
+      description: The one SNS topic your SES bounces and complaints are published to. A signed notification from any other topic is refused; without a topic the hook refuses every notification.
+      pattern: ^arn:aws[a-z-]*:sns:[a-z0-9-]+:[0-9]+:[A-Za-z0-9_-]+$
+verify:
+  kind: sns
+  topic: topic_arn
+# The SNS message carries the SES event as a JSON string. SES uses notificationType for
+# identity notifications and eventType for configuration-set event publishing; either is
+# read. Only a bounce and a complaint are failures; a blank recipient is skipped.
+transform: |
+  def domain:
+    (. // "")
+    | (capture("<[^<>@\\s]+@(?<d>[^<>\\s]+)>\\s*$") // capture("^\\s*[^<>@\\s]+@(?<d>[^<>\\s]+)\\s*$") // {d: ""})
+    | .d;
+  def addresses: map(.emailAddress // "" | select(gsub("\\s"; "") != ""));
+  .body as $n
+  | if $n.Type != "Notification" then []
+    else
+      ($n.Message | fromjson) as $m
+      | ($m.notificationType // $m.eventType) as $type
+      | ($m.mail.source | domain) as $d
+      | if $type == "Bounce" then
+          (($m.bounce.bounceType == "Permanent") as $permanent
+          | [($m.bounce.bouncedRecipients // []) | addresses[]
+             | {id: $n.MessageId, destination: ., kind: "bounce", permanent: $permanent, sending_domain: $d}])
+        elif $type == "Complaint" then
+          [($m.complaint.complainedRecipients // []) | addresses[]
+           | {id: $n.MessageId, destination: ., kind: "complaint", sending_domain: $d}]
+        else [] end
+    end
+tests:
+  - name: a permanent bounce suppresses every recipient and carries the sending domain
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"{\"notificationType\":\"Bounce\",\"mail\":{\"source\":\"News \u003chello@Codebasics.dev\u003e\"},\"bounce\":{\"bounceType\":\"Permanent\",\"bouncedRecipients\":[{\"emailAddress\":\"Alice@Example.com\"},{\"emailAddress\":\"b@example.com\"}]}}","MessageId":"sns-msg-1","Signature":"Zq/MQ4IPluwvzxoaYElLRHswyg7lMsAOhfw+DMZKOrXjey50vpLWt9x/xD0mgLofvkZmkitKtb/6tIgrucMgPRVR4pp5I3KdX5LBb+hRwY7/onc3KnM8OEruegCRYcm4QReeStozr8f2CrVZQ/f9Le5d2WdOe63iwsnkAfVYJGLit0o0s/PBsy5YUGHDeTq+UYfTYvnPVjw08rgfdHVoCOmVmy6NMnKCISyCnhTH31/pgtPc+wn8R3KI7qbYlGAS7G3REA7v814gHdxJmor3Ks8ZG0YooclQDnZK8ToUHH+u+XGXVNfJXQKT4n7hH/8jmnVwo40MrrEOTBOLkO8hvg==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
+    expect:
+      failures:
+        - {
+            id: sns-msg-1,
+            destination: alice@example.com,
+            kind: bounce,
+            permanent: true,
+            sending_domain: codebasics.dev,
+          }
+        - {
+            id: sns-msg-1,
+            destination: b@example.com,
+            kind: bounce,
+            permanent: true,
+            sending_domain: codebasics.dev,
+          }
+  - name: a transient bounce is not permanent
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"{\"notificationType\":\"Bounce\",\"bounce\":{\"bounceType\":\"Transient\",\"bouncedRecipients\":[{\"emailAddress\":\"soft@example.com\"}]}}","MessageId":"sns-msg-2","Signature":"0U3ktSf3jHp1wZ3QjoOmUnZEkiGgtNe+r1mXV/lWc+hxxtWWsahjkmq2HPiUzFWc8Lpg81zhB/qLxNL2Zmkk8ku2MV63e5DQ/8ZSxQPH809PBpUA9CMJF2ZPOUltHEJrtQSdwujiWPLdae+HYAWGP7vasnNwHnlGHfMcbrOHtGI3Aq9uZWyRwSdMoJRQjdv4+CgaMkdxdoj4P7YhxdPPZH9rHLtiEapYjAxxYmrh9gT0Fb/4d80i1Um0KbsUUgtFTQVPLUmMr9UzJRI1epaQd/dmIFULTzBwetA1peUQQg53KGOHKHANWJug7m2bM1cSOJOrTZFqG7y5F7ZzbnzNew==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
+    expect:
+      failures:
+        - { id: sns-msg-2, destination: soft@example.com, kind: bounce, permanent: false }
+  - name: a complaint in the configuration-set form, with a blank recipient skipped
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"{\"eventType\":\"Complaint\",\"mail\":{\"source\":\"hello@codebasics.dev\"},\"complaint\":{\"complainedRecipients\":[{\"emailAddress\":\" Stranger@Example.com \"},{\"emailAddress\":\"  \"}]}}","MessageId":"sns-msg-3","Signature":"rS/m7td4Psz68u7a2wbe5S+2vBJZRAGFeGA+GFMdn8hWBAykP4v3N/FprSa/dBgU1RCLVtyl+Ptv/VhRbzim57p+tQEjsUL+ni2JXSbrek6ZjDOihI2XAVf1jO29eUsPkpLDYnuw3miyExU2oTR1IMklyqOoDG1GSguKy6hibvj7GnK3v55KAnWcXunzP4o1E2L3xS7p4fVaSGhcXDdeYw55GDFVY8YwDzHDc0h5sWZTB4fPzdRZ7HNBtHoXj/Zself9TkQfwCHqVTZb1PzyWgNUjHd30D5FuYrAXJNdILLgJHgYGFFiX/kCbFdkFlhUeUsrhjl8tlffZXB8Y+laUg==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
+    expect:
+      failures:
+        - {
+            id: sns-msg-3,
+            destination: stranger@example.com,
+            kind: complaint,
+            sending_domain: codebasics.dev,
+          }
+  - name: a delivery carries no failure
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"{\"notificationType\":\"Delivery\",\"delivery\":{}}","MessageId":"sns-msg-4","Signature":"SkU9FzH7aNWses+zhcltRfF7rkW2uDA6WofYPI6GmFgzcisMeTlYK2zEmU7G6/naz3LsJXq1u/mJO507TApSp1k+S/rICEiWOCmaUN/8wOIKPqVYPen2qO3+2uA6Q3q2GByhen216hLjWRP1bkU+tTielybHX6j3MS8Y52BUUavA7f6ve4JavVEHEvCFLXpI+8skwRylue9xfKOmZnv5nNuPeHNicXFdWEfRWDh9Z5PHLImRL79iBVAV+N5T9ynDwSTpPf3Pc5NyTo/uz2etaQl0sqYWiI7JoSbXDmkFX63thfC/bBEg4IYNj1zcoMPcCy1qtKcZmMqtqciAJiMKXg==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
+    expect:
+      failures: []
+  - name: a Message that is not JSON cannot be read
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"not json","MessageId":"sns-msg-5","Signature":"tSKsBjXFMoYecvwkWHcaYVCwDYjz8xP2n60+Xv41dPNMKyaMBL9q2QF3a921sRtpWZsvabReq23S21F50WSFVIGAgtlV8o/tr8JFLb01hga6tn7g2owGv88trPMQno9U0WGBssSb2QzbrAfRlf0Q94ZW8T9UXAwFMnwoo3FPL3twdkDb7k3SJeiyi8nMNnLOZfjrPOdtbYxFdFkE2dDdgsr6SkM1N8ltfMqkbVkGa7Zebokkt0oP5X6g4HKhJCwPllELQejDEWAUapsUzxMZsAJuOtrvzW/8tYOB09QjHJH93kiDPl8hvWLQqlawaT97IxF8qP6gURyxxCySxgLtMw==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
+    expect:
+      refused: transform_failed
+  - name: a signed notification from another topic is refused
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"{\"notificationType\":\"Bounce\",\"bounce\":{\"bounceType\":\"Permanent\",\"bouncedRecipients\":[{\"emailAddress\":\"victim@example.com\"}]}}","MessageId":"sns-msg-6","Signature":"mcSVirdJDQFJbMso5q1WThFxUudkHGrftcnz5l/fc5A8KcbNbtyFY+AeUiSKTwErR1tmwDOwdZ/R4D+Hw9KAlJ+AZ/whpEQRpyOwTF6nf9gurRsBzbIrhz7tVO/49uQw1cL75owp02jjSM7XXpf2DmDfEdSZweVxRpOGpJq8yGi5DuOMRzeCQlRLicqCqFGjV0vfUDxncWph76KBVYxOyo8jAE4H/2qQT/m7rjCDjsTpxvhq8alCqKpC6p0iFskBwmHaZ+C1pMGxYS+6PPB/juf9Jl5o6aWSzW8NWD7lNQAzcysJ0VipwafiLlmz5eL/gfBrMPMQ2kjTkKhgrzLHLA==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:999999999999:attacker","Type":"Notification"}'
+    expect:
+      refused: unauthentic
+  - name: an Integration that names no topic refuses every notification
+    now: '2026-01-01T00:00:00Z'
+    params: {}
+    request:
+      body: '{"Message":"{\"notificationType\":\"Bounce\",\"mail\":{\"source\":\"News \u003chello@Codebasics.dev\u003e\"},\"bounce\":{\"bounceType\":\"Permanent\",\"bouncedRecipients\":[{\"emailAddress\":\"Alice@Example.com\"},{\"emailAddress\":\"b@example.com\"}]}}","MessageId":"sns-msg-1","Signature":"Zq/MQ4IPluwvzxoaYElLRHswyg7lMsAOhfw+DMZKOrXjey50vpLWt9x/xD0mgLofvkZmkitKtb/6tIgrucMgPRVR4pp5I3KdX5LBb+hRwY7/onc3KnM8OEruegCRYcm4QReeStozr8f2CrVZQ/f9Le5d2WdOe63iwsnkAfVYJGLit0o0s/PBsy5YUGHDeTq+UYfTYvnPVjw08rgfdHVoCOmVmy6NMnKCISyCnhTH31/pgtPc+wn8R3KI7qbYlGAS7G3REA7v814gHdxJmor3Ks8ZG0YooclQDnZK8ToUHH+u+XGXVNfJXQKT4n7hH/8jmnVwo40MrrEOTBOLkO8hvg==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
+    expect:
+      refused: unauthentic
+  - name: a notification altered after signing is refused
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"{\"notificationType\":\"Bounce\",\"mail\":{\"source\":\"News \u003chello@Codebasics.dev\u003e\"},\"bounce\":{\"bounceType\":\"Permanent\",\"bouncedRecipients\":[{\"emailAddress\":\"victim@example.com\"},{\"emailAddress\":\"b@example.com\"}]}}","MessageId":"sns-msg-1","Signature":"Zq/MQ4IPluwvzxoaYElLRHswyg7lMsAOhfw+DMZKOrXjey50vpLWt9x/xD0mgLofvkZmkitKtb/6tIgrucMgPRVR4pp5I3KdX5LBb+hRwY7/onc3KnM8OEruegCRYcm4QReeStozr8f2CrVZQ/f9Le5d2WdOe63iwsnkAfVYJGLit0o0s/PBsy5YUGHDeTq+UYfTYvnPVjw08rgfdHVoCOmVmy6NMnKCISyCnhTH31/pgtPc+wn8R3KI7qbYlGAS7G3REA7v814gHdxJmor3Ks8ZG0YooclQDnZK8ToUHH+u+XGXVNfJXQKT4n7hH/8jmnVwo40MrrEOTBOLkO8hvg==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
+    expect:
+      refused: unauthentic
+  - name: a signature that is not AWS's is refused
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"{\"notificationType\":\"Bounce\",\"mail\":{\"source\":\"News \u003chello@Codebasics.dev\u003e\"},\"bounce\":{\"bounceType\":\"Permanent\",\"bouncedRecipients\":[{\"emailAddress\":\"Alice@Example.com\"},{\"emailAddress\":\"b@example.com\"}]}}","MessageId":"sns-msg-1","Signature":"Ym9ndXM=","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
+    expect:
+      refused: unauthentic
+  - name: a signing certificate from outside AWS is refused
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"{\"notificationType\":\"Bounce\",\"mail\":{\"source\":\"News \u003chello@Codebasics.dev\u003e\"},\"bounce\":{\"bounceType\":\"Permanent\",\"bouncedRecipients\":[{\"emailAddress\":\"Alice@Example.com\"},{\"emailAddress\":\"b@example.com\"}]}}","MessageId":"sns-msg-1","Signature":"Zq/MQ4IPluwvzxoaYElLRHswyg7lMsAOhfw+DMZKOrXjey50vpLWt9x/xD0mgLofvkZmkitKtb/6tIgrucMgPRVR4pp5I3KdX5LBb+hRwY7/onc3KnM8OEruegCRYcm4QReeStozr8f2CrVZQ/f9Le5d2WdOe63iwsnkAfVYJGLit0o0s/PBsy5YUGHDeTq+UYfTYvnPVjw08rgfdHVoCOmVmy6NMnKCISyCnhTH31/pgtPc+wn8R3KI7qbYlGAS7G3REA7v814gHdxJmor3Ks8ZG0YooclQDnZK8ToUHH+u+XGXVNfJXQKT4n7hH/8jmnVwo40MrrEOTBOLkO8hvg==","SignatureVersion":"2","SigningCertURL":"https://evil.example.com/cert.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
+    expect:
+      refused: unauthentic
+  - name: a subscription confirmation is returned as an action to confirm
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"You have chosen to subscribe to the topic arn:aws:sns:eu-west-1:123456789012:acme-ses-events","MessageId":"sns-msg-7","Signature":"RBMWxlFmkIczMQzu1tUiVbAEaFb814jsD6vjFHNu9G5tvDRitw+IeItrNUH+JP0qlokvLht/+9GaeMXVRijAarHGhCWc6alPZa4NbxgjccKVxpW9cLiYm8CoNAWyhfghihGq1PKp0LcHiV+1CsFKTTEo4NB7FA53YbZ3qm0L6MFtRz44DtnjzkAX0qqZGxzht8shitxm4T/UR4Pd5cJAE9qR+f6YdbqoI4rfBvhthXKOvhlRtOcPcJIQhXN3CgrFI5VexkdAwEfqqfrS4cFBhpzkfH5PYUAQrwVCIjnvwWtL7RrtRIERWaYuPFDokz/yPXHj1CKEd2BVVtxxTE61fw==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","SubscribeURL":"https://sns.eu-west-1.amazonaws.com/?Action=ConfirmSubscription\u0026TopicArn=arn:aws:sns:eu-west-1:123456789012:acme-ses-events\u0026Token=abc","Timestamp":"2026-01-01T00:00:00.000Z","Token":"token-sns-msg-7","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"SubscriptionConfirmation"}'
+    expect:
+      failures: []
+      action:
+        kind: confirm
+        url: 'https://sns.eu-west-1.amazonaws.com/?Action=ConfirmSubscription&TopicArn=arn:aws:sns:eu-west-1:123456789012:acme-ses-events&Token=abc'
+  - name: a confirmation for another topic is not confirmed
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"You have chosen to subscribe to the topic arn:aws:sns:eu-west-1:999999999999:attacker","MessageId":"sns-msg-8","Signature":"Ad2ohbYUC9ZVF4F9qbxVdBrEVk995LFSZsbZZfft0Nn/IObzQKFZvzeY33tCd10pDmIBmIRbjLBUUpO50HGf8narOtnRyvicfczkeBNN2Rk979gA5DH1Sd3S+MxJ10fiVbWrToMBAva4oB11j+KkfS4ps1BSTmDctyY56OK26VgB/dzGxNh/YIPmjBz7AXH+w/fl2beY7Qf/KvG89Hvod3tKLUyDRgYLOL/59PQpe8iALafRymyUkhwdD+PqCdME/yeCYPZ9nVZRL2PpncXzKoOa37VLDjeSbdAMPCoXeFF/kUSmLXJulm9VUvTIESpPuLI9Nptq3HUqN0Klb1hWDg==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","SubscribeURL":"https://sns.eu-west-1.amazonaws.com/?Action=ConfirmSubscription","Timestamp":"2026-01-01T00:00:00.000Z","Token":"token-sns-msg-8","TopicArn":"arn:aws:sns:eu-west-1:999999999999:attacker","Type":"SubscriptionConfirmation"}'
+    expect:
+      refused: unauthentic
+  - name: a SubscribeURL outside AWS is refused
+    now: '2026-01-01T00:00:00Z'
+    params:
+      topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
+    request:
+      body: '{"Message":"You have chosen to subscribe to the topic arn:aws:sns:eu-west-1:123456789012:acme-ses-events","MessageId":"sns-msg-9","Signature":"dGvcpGWBdyHy/3bCuLGf6Bm4ebwErT7+qK780X3J92iQmyYsY32I3vQVgf8EBy1vtLfMlejDYTFh9c45mHcUSrHFi+/f3tzR8bBLSYn3rjDnQuf92qE7CzJhpkf+DgeY3AsdvQwNR5vcCR84lIfx4fDoIUTTHzvkN/IAzaOZllfUOnfN0M4PF3h6PvPQ/B+hWgxhZF4szYbI5QW53e/IDiWEsMop+NQUrpjjsc06G94Y9u4lDJZVO0C5gG7VWImnmziFX/vFkgvJjwXGnSwTEVlChJShk5Sz9seKc5HnDdyLte7B/wzqW16B3QhVDjDO5mTDFZ95V6h3nR1eGm1ZeA==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","SubscribeURL":"https://evil.example.com/?Action=ConfirmSubscription","Timestamp":"2026-01-01T00:00:00.000Z","Token":"token-sns-msg-9","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"SubscriptionConfirmation"}'
+    expect:
+      refused: unauthentic

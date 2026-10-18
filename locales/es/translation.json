@@ -716,8 +716,6 @@
         "port": "Puerto",
         "region": "Región de AWS",
         "secretAccessKey": "Clave de acceso secreta",
-        "snsTopicArn": "ARN del tema SNS",
-        "snsTopicArnHint": "El tema SNS en el que SES publica rebotes y quejas. Se rechazan las notificaciones de cualquier otro tema; sin él no se suprime nada.",
         "username": "Nombre de usuario"
       },
       "inbound": {

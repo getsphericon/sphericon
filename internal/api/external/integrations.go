@@ -248,7 +248,6 @@ func configInput(in externalapi.IntegrationConfigInput) (integrations.ConfigInpu
 		return integrations.ConfigInput{SES: &integrations.SESConfig{
 			Region: c.Region, AccessKeyID: c.AccessKeyId, SecretAccessKey: c.SecretAccessKey,
 			From: string(c.From), FromName: c.FromName.Or(""), Endpoint: c.Endpoint.Or(""),
-			SNSTopicARN: c.SnsTopicArn.Or(""),
 		}}, nil
 	}
 	return integrations.ConfigInput{}, errors.New("unsupported provider")
@@ -312,7 +311,7 @@ func (h *Handlers) integrationResource(row *ent.Integration, usage map[int64]int
 		c := cfg.SES
 		res.Config = externalapi.IntegrationConfig{OneOf: externalapi.NewSesConfigIntegrationConfigSum(externalapi.SesConfig{
 			Kind: externalapi.SesConfigKindSes, Region: c.Region, From: externalapi.EmailAddress(c.From),
-			FromName: omitEmpty(c.FromName), Endpoint: omitEmpty(c.Endpoint), SnsTopicArn: omitEmpty(c.SNSTopicARN),
+			FromName: omitEmpty(c.FromName), Endpoint: omitEmpty(c.Endpoint),
 			AccessKeyIdLast4: omitEmpty(c.AccessKeyIDLast4),
 		})}
 	}

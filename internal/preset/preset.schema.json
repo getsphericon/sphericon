@@ -116,6 +116,20 @@
           }
         },
         {
+          "title": "sns",
+          "description": "An Amazon SNS message: its signature (both versions), the signing certificate host, and the one topic the Integration names. A subscription confirmation is returned as an action for the caller to perform.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "topic"],
+          "properties": {
+            "kind": { "const": "sns" },
+            "topic": {
+              "description": "The param holding the SNS topic ARN the Integration accepts.",
+              "$ref": "#/$defs/paramName"
+            }
+          }
+        },
+        {
           "title": "hmac_body",
           "description": "HMAC over named fields of the JSON body; the signature is a field of the body too.",
           "type": "object",
@@ -189,7 +203,17 @@
               "additionalProperties": false,
               "required": ["failures"],
               "properties": {
-                "failures": { "type": "array", "items": { "$ref": "#/$defs/failure" } }
+                "failures": { "type": "array", "items": { "$ref": "#/$defs/failure" } },
+                "action": {
+                  "description": "What the caller is asked to do, such as confirm a subscription.",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "url"],
+                  "properties": {
+                    "kind": { "const": "confirm" },
+                    "url": { "type": "string" }
+                  }
+                }
               }
             },
             {

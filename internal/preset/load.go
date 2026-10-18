@@ -51,14 +51,18 @@ type testCase struct {
 	} `json:"request"`
 	Expect struct {
 		Failures *[]DeliveryFailure `json:"failures"`
-		Refused  string             `json:"refused"`
+		Action   *struct {
+			Kind ActionKind `json:"kind"`
+			URL  string     `json:"url"`
+		} `json:"action"`
+		Refused string `json:"refused"`
 	} `json:"expect"`
 }
 
 // Parse reads one Preset file: it must be YAML, valid against the published Preset
 // JSON Schema, carry a params schema that compiles, a verify block that is coherent
 // and a transform that compiles. An error names the file and the line.
-func Parse(name string, data []byte) (*Preset, error) {
+func Parse(name string, data []byte, opts ...Option) (*Preset, error) {
 	var root yaml.Node
 	if err := yaml.Unmarshal(data, &root); err != nil {
 		return nil, parseError(name, yamlErrorLine(err), err.Error())
@@ -97,7 +101,7 @@ func Parse(name string, data []byte) (*Preset, error) {
 	if err != nil {
 		return nil, parseError(name, at("params"), err.Error())
 	}
-	v, err := newVerifier(f.Verify)
+	v, err := newVerifier(f.Verify, buildOptions(opts))
 	if err != nil {
 		return nil, parseError(name, at("verify"), err.Error())
 	}
@@ -227,25 +231,25 @@ type Registry struct {
 // file at its root. It is the one entry the server uses at start: a file that fails to
 // parse, to validate or to compile, or a name that collides with a built-in (or with
 // another custom file), is an error naming the file.
-func Load(custom fs.FS) (*Registry, error) {
+func Load(custom fs.FS, opts ...Option) (*Registry, error) {
 	r := &Registry{byName: map[string]*Preset{}}
 	sub, err := fs.Sub(builtinFS, "builtin")
 	if err != nil {
 		return nil, err
 	}
-	if err := r.add(sub, "built-in "); err != nil {
+	if err := r.add(sub, "built-in ", opts); err != nil {
 		return nil, err
 	}
 	if custom == nil {
 		return r, nil
 	}
-	if err := r.add(custom, ""); err != nil {
+	if err := r.add(custom, "", opts); err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-func (r *Registry) add(fsys fs.FS, label string) error {
+func (r *Registry) add(fsys fs.FS, label string, opts []Option) error {
 	entries, err := fs.ReadDir(fsys, ".")
 	if err != nil {
 		return fmt.Errorf("preset: read directory: %w", err)
@@ -259,7 +263,7 @@ func (r *Registry) add(fsys fs.FS, label string) error {
 		if err != nil {
 			return fmt.Errorf("preset %s%s: %w", label, e.Name(), err)
 		}
-		p, err := Parse(label+e.Name(), data)
+		p, err := Parse(label+e.Name(), data, opts...)
 		if err != nil {
 			return err
 		}
@@ -299,7 +303,7 @@ type CaseResult struct {
 func (p *Preset) RunTests(ctx context.Context) []CaseResult {
 	results := make([]CaseResult, 0, len(p.tests))
 	for _, c := range p.tests {
-		results = append(results, CaseResult{Name: c.Name, Err: p.runCase(ctx, c)})
+		results = append(results, CaseResult{Name: c.Name, Err: p.forTest().runCase(ctx, c)})
 	}
 	return results
 }
@@ -342,6 +346,12 @@ func (p *Preset) runCase(ctx context.Context, c testCase) error {
 	}
 	if !slices.Equal(res.Failures, *c.Expect.Failures) && (len(res.Failures) != 0 || len(*c.Expect.Failures) != 0) {
 		return fmt.Errorf("expected failures %v, got %v", *c.Expect.Failures, res.Failures)
+	}
+	switch want := c.Expect.Action; {
+	case want == nil && res.Action != nil:
+		return fmt.Errorf("expected no action, got %s %s", res.Action.Kind, res.Action.URL)
+	case want != nil && (res.Action == nil || res.Action.Kind != want.Kind || res.Action.URL != want.URL):
+		return fmt.Errorf("expected action %s %s, got %v", want.Kind, want.URL, res.Action)
 	}
 	return nil
 }

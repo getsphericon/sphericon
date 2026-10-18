@@ -55,7 +55,6 @@ interface IntegrationFormValues extends SendLimitValues {
   accessKeyId: string
   secretAccessKey: string
   endpoint: string
-  snsTopicArn: string
   from: string
   fromName: string
 }
@@ -72,7 +71,6 @@ const INITIAL_VALUES: IntegrationFormValues = {
   accessKeyId: '',
   secretAccessKey: '',
   endpoint: '',
-  snsTopicArn: '',
   from: '',
   fromName: '',
   ...NO_LIMITS,
@@ -86,7 +84,6 @@ function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput 
       accessKeyId: values.accessKeyId.trim(),
       secretAccessKey: values.secretAccessKey,
       endpoint: values.endpoint.trim() || null,
-      snsTopicArn: values.snsTopicArn.trim() || null,
       from: values.from.trim(),
       fromName: values.fromName.trim() || null,
     }
@@ -221,12 +218,6 @@ export function IntegrationsSection({ slug }: { slug: string }) {
                   description={t(($) => $.settings.integrations.fields.endpointHint)}
                   placeholder="https://postbox.cloud.yandex.net"
                   {...form.getInputProps('endpoint')}
-                />
-                <TextInput
-                  label={t(($) => $.settings.integrations.fields.snsTopicArn)}
-                  description={t(($) => $.settings.integrations.fields.snsTopicArnHint)}
-                  placeholder="arn:aws:sns:eu-west-1:123456789012:ses-events"
-                  {...form.getInputProps('snsTopicArn')}
                 />
               </>
             ) : (

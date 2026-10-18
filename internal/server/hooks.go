@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/preset"
-	sns "github.com/robbiet480/go.sns"
 )
 
 // hooksHandler serves inbound provider callbacks (ADR 0037): POST /hooks/{key}. The key
@@ -27,8 +26,7 @@ import (
 // The Integration's Preset verifies the request (a bad signature or wrong source is 4xx)
 // and turns the payload into Delivery failures, which are published through the bus in
 // one transaction before the 2xx; our own failure is 5xx so the provider retries; a valid
-// request the Preset does not handle is 2xx with nothing published. An SES Integration
-// with no Preset is read by the SES adapter until the `ses` Preset replaces it.
+// request the Preset does not handle is 2xx with nothing published.
 func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Module, now func() time.Time) http.Handler {
 	if now == nil {
 		now = time.Now
@@ -38,10 +36,6 @@ func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Modul
 		bus:   bus,
 		integ: integ,
 		now:   now,
-		// VerifyPayload checks the signature against the (amazonaws-hosted) signing
-		// cert; injectable so tests can drive the parser without real AWS signatures.
-		verifySNS:  func(p *sns.Payload) error { return p.VerifyPayload() },
-		confirmURL: confirmSNSSubscription,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /hooks/{key}", h.handle)
@@ -49,12 +43,10 @@ func hooksHandler(client *ent.Client, bus *events.Bus, integ *integrations.Modul
 }
 
 type hook struct {
-	ent        *ent.Client
-	bus        *events.Bus
-	integ      *integrations.Module
-	now        func() time.Time
-	verifySNS  func(*sns.Payload) error
-	confirmURL func(ctx context.Context, subscribeURL string) error
+	ent   *ent.Client
+	bus   *events.Bus
+	integ *integrations.Module
+	now   func() time.Time
 }
 
 func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
@@ -82,14 +74,12 @@ func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch {
-	case row.Preset != nil:
-		h.servePreset(w, r, row, body)
-	case row.Provider == integration.ProviderSes:
-		h.serveSES(w, r, row, body)
-	default:
+	if row.Preset == nil {
+		// An Integration with no Preset reads no callbacks.
 		http.NotFound(w, r)
+		return
 	}
+	h.servePreset(w, r, row, body)
 }
 
 func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Integration, body []byte) {
@@ -126,7 +116,7 @@ func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Inte
 
 	// The action is the engine's request to its caller: confirm a subscription at a URL.
 	if res.Action != nil && res.Action.Kind == preset.ActionConfirm {
-		if err := h.confirmURL(ctx, res.Action.URL); err != nil {
+		if err := h.integ.ConfirmSubscription(ctx, res.Action.URL); err != nil {
 			log.Error("hooks: confirm subscription failed", "integration_id", row.ID, "err", err)
 			writeProblem(w, http.StatusBadGateway, "subscription confirmation failed")
 			return

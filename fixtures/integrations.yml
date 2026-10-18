@@ -20,7 +20,9 @@
   name: Amazon SES (disabled)
   channel: email
   provider: ses
-  config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAEXAMPLE\",\"from\":\"hello@codebasics.dev\",\"snsTopicArn\":\"arn:aws:sns:eu-west-1:123456789012:acme-ses-events\"}" }}'
+  config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAEXAMPLE\",\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: ses
+  params_encrypted: '{{ encrypt "{\"topic_arn\":\"arn:aws:sns:eu-west-1:123456789012:acme-ses-events\"}" }}'
   enabled: false
   is_default: false
   workspace_id: 1
@@ -45,6 +47,8 @@
   channel: email
   provider: ses
   config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAGLOBEX\",\"from\":\"hello@globex.test\"}" }}'
+  preset: ses
+  params_encrypted: '{{ encrypt "{}" }}'
   enabled: true
   is_default: false
   workspace_id: 2

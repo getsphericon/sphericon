@@ -9,11 +9,9 @@ import (
 	"github.com/go-faster/jx"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/preset"
 )
 
@@ -138,23 +136,6 @@ func (m *Module) openParams(row *ent.Integration) (map[string]any, error) {
 		return nil, err
 	}
 	return stored, nil
-}
-
-// SNSTopic is the SNS topic an SES Integration without a Preset accepts notifications
-// from, "" when it names none (the SES adapter then refuses every one).
-func (m *Module) SNSTopic(row *ent.Integration) (string, error) {
-	if row.Provider != integration.ProviderSes {
-		return "", nil
-	}
-	plaintext, err := m.cipher.Decrypt(row.ConfigEncrypted)
-	if err != nil {
-		return "", err
-	}
-	var c ses.Config
-	if err := json.Unmarshal(plaintext, &c); err != nil {
-		return "", err
-	}
-	return c.SNSTopicARN, nil
 }
 
 // inbound is the stored inbound side an Integration write leaves behind.

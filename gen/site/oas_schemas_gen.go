@@ -9845,9 +9845,6 @@ type SiteSesConfig struct {
 	FromName OptNilString      `json:"fromName"`
 	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
 	Endpoint OptNilString `json:"endpoint"`
-	// The one SNS topic bounce and complaint notifications are accepted from; none means the hook refuses
-	// all.
-	SnsTopicArn OptNilString `json:"snsTopicArn"`
 	// Last 4 chars of the access key id, for recognition.
 	AccessKeyIdLast4 OptNilString `json:"accessKeyIdLast4"`
 }
@@ -9875,11 +9872,6 @@ func (s *SiteSesConfig) GetFromName() OptNilString {
 // GetEndpoint returns the value of Endpoint.
 func (s *SiteSesConfig) GetEndpoint() OptNilString {
 	return s.Endpoint
-}
-
-// GetSnsTopicArn returns the value of SnsTopicArn.
-func (s *SiteSesConfig) GetSnsTopicArn() OptNilString {
-	return s.SnsTopicArn
 }
 
 // GetAccessKeyIdLast4 returns the value of AccessKeyIdLast4.
@@ -9912,11 +9904,6 @@ func (s *SiteSesConfig) SetEndpoint(val OptNilString) {
 	s.Endpoint = val
 }
 
-// SetSnsTopicArn sets the value of SnsTopicArn.
-func (s *SiteSesConfig) SetSnsTopicArn(val OptNilString) {
-	s.SnsTopicArn = val
-}
-
 // SetAccessKeyIdLast4 sets the value of AccessKeyIdLast4.
 func (s *SiteSesConfig) SetAccessKeyIdLast4(val OptNilString) {
 	s.AccessKeyIdLast4 = val
@@ -9933,9 +9920,6 @@ type SiteSesConfigInput struct {
 	FromName        OptNilString           `json:"fromName"`
 	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
 	Endpoint OptNilString `json:"endpoint"`
-	// The SNS topic (ARN) this Integration's bounces and complaints arrive through; notifications from any
-	// other topic are refused.
-	SnsTopicArn OptNilString `json:"snsTopicArn"`
 }
 
 // GetKind returns the value of Kind.
@@ -9973,11 +9957,6 @@ func (s *SiteSesConfigInput) GetEndpoint() OptNilString {
 	return s.Endpoint
 }
 
-// GetSnsTopicArn returns the value of SnsTopicArn.
-func (s *SiteSesConfigInput) GetSnsTopicArn() OptNilString {
-	return s.SnsTopicArn
-}
-
 // SetKind sets the value of Kind.
 func (s *SiteSesConfigInput) SetKind(val SiteSesConfigInputKind) {
 	s.Kind = val
@@ -10011,11 +9990,6 @@ func (s *SiteSesConfigInput) SetFromName(val OptNilString) {
 // SetEndpoint sets the value of Endpoint.
 func (s *SiteSesConfigInput) SetEndpoint(val OptNilString) {
 	s.Endpoint = val
-}
-
-// SetSnsTopicArn sets the value of SnsTopicArn.
-func (s *SiteSesConfigInput) SetSnsTopicArn(val OptNilString) {
-	s.SnsTopicArn = val
 }
 
 type SiteSesConfigInputKind string

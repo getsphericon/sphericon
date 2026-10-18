@@ -722,8 +722,6 @@
         "port": "Порт",
         "region": "Регион AWS",
         "secretAccessKey": "Secret access key",
-        "snsTopicArn": "ARN SNS-топика",
-        "snsTopicArnHint": "SNS-топик, в который SES публикует отскоки и жалобы. Уведомления из любого другого топика отклоняются; без него ничего не попадает в подавление.",
         "username": "Имя пользователя"
       },
       "inbound": {

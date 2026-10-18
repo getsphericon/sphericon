@@ -152,6 +152,9 @@ type TestEnv struct {
 	// SES scripts the send quota every "ses" Integration reports.
 	SES *FakeSES
 
+	// Confirmations records the subscription URLs a Preset's confirm action fetched.
+	Confirmations *Confirmations
+
 	// SecondFactor is the module the server verifies Second factors with, on the
 	// env's clock (ADR 0020).
 	SecondFactor *secondfactor.Module
@@ -290,11 +293,14 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	templatesModule := templates.New()
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(cipher, edition.Audit)
-	presets, err := preset.Load(nil)
+	// An `sns` Preset checks signatures against the test certificate, so a test posts a
+	// notification signed offline; confirmations are recorded, never fetched.
+	presets, err := preset.Load(nil, preset.WithSNSCertificates(preset.TestSNSCertificates))
 	if err != nil {
 		t.Fatalf("load presets: %v", err)
 	}
-	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL)
+	confirmations := &Confirmations{}
+	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline)
 	automationsModule := automations.New()
 	broadcastsModule := broadcasts.New(inline)
@@ -330,7 +336,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	return &TestEnv{
 		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
-		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
+		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}
 }
 

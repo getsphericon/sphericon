@@ -1,0 +1,10 @@
+{
+  "Message": "{\"notificationType\":\"Bounce\",\"bounce\":{\"bounceType\":\"Transient\",\"bouncedRecipients\":[{\"emailAddress\":\"soft@example.com\"}]}}",
+  "MessageId": "sns-msg-2",
+  "Signature": "0U3ktSf3jHp1wZ3QjoOmUnZEkiGgtNe+r1mXV/lWc+hxxtWWsahjkmq2HPiUzFWc8Lpg81zhB/qLxNL2Zmkk8ku2MV63e5DQ/8ZSxQPH809PBpUA9CMJF2ZPOUltHEJrtQSdwujiWPLdae+HYAWGP7vasnNwHnlGHfMcbrOHtGI3Aq9uZWyRwSdMoJRQjdv4+CgaMkdxdoj4P7YhxdPPZH9rHLtiEapYjAxxYmrh9gT0Fb/4d80i1Um0KbsUUgtFTQVPLUmMr9UzJRI1epaQd/dmIFULTzBwetA1peUQQg53KGOHKHANWJug7m2bM1cSOJOrTZFqG7y5F7ZzbnzNew==",
+  "SignatureVersion": "2",
+  "SigningCertURL": "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem",
+  "Timestamp": "2026-01-01T00:00:00.000Z",
+  "TopicArn": "arn:aws:sns:eu-west-1:123456789012:acme-ses-events",
+  "Type": "Notification"
+}

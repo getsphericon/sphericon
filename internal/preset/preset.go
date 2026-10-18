@@ -158,11 +158,11 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 		if body, err = parseBody(req.Body); err != nil {
 			return Result{}, err
 		}
-		if err := p.verifier.verify(req, body, params, now); err != nil {
+		if err := p.verifier.verify(ctx, req, body, params, now); err != nil {
 			return Result{}, fmt.Errorf("%w: %w", ErrUnauthentic, err)
 		}
 	} else {
-		if err := p.verifier.verify(req, nil, params, now); err != nil {
+		if err := p.verifier.verify(ctx, req, nil, params, now); err != nil {
 			return Result{}, fmt.Errorf("%w: %w", ErrUnauthentic, err)
 		}
 		var err error
@@ -174,7 +174,21 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 	if err != nil {
 		return Result{}, err
 	}
-	return Result{Failures: failures}, nil
+	res := Result{Failures: failures}
+	if a, ok := p.verifier.(interface{ action(body any) *Action }); ok {
+		res.Action = a.action(body)
+	}
+	return res, nil
+}
+
+// forTest is the Preset as its own tests run it: offline, so an `sns` Preset checks
+// signatures against the test certificate instead of fetching one.
+func (p *Preset) forTest() *Preset {
+	q := *p
+	if s, ok := p.verifier.(*snsVerifier); ok {
+		q.verifier = &snsVerifier{c: s.c, certs: TestSNSCertificates}
+	}
+	return &q
 }
 
 // parseBody reads the body as JSON whatever its Content-Type. Integers survive exactly.

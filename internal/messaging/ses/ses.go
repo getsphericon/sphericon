@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -38,10 +37,6 @@ type Config struct {
 	// Endpoint targets an SES-compatible API (e.g. Yandex Cloud Postbox) instead
 	// of AWS. Empty ⇒ AWS default endpoint for Region. Not a secret.
 	Endpoint string `json:"endpoint,omitempty"`
-	// SNSTopicARN is the one SNS topic the Workspace's bounce and complaint hook accepts
-	// notifications from. An SNS signature proves AWS sent a message, not whose topic it
-	// came from, so a hook with no topic here refuses everything. Not a secret.
-	SNSTopicARN string `json:"snsTopicArn,omitempty"`
 }
 
 // requestTimeout bounds one SES API call made through the SSRF-hardened client.
@@ -80,22 +75,7 @@ func validate(raw []byte) error {
 	case cfg.From == "":
 		return fmt.Errorf("ses: from is required")
 	}
-	if err := validTopicARN(cfg.SNSTopicARN); err != nil {
-		return err
-	}
 	return validEndpoint(cfg.Endpoint)
-}
-
-// validTopicARN accepts no topic (the hook then fails closed) or an SNS topic ARN.
-func validTopicARN(arn string) error {
-	if arn == "" {
-		return nil
-	}
-	parts := strings.Split(arn, ":")
-	if len(parts) != 6 || parts[0] != "arn" || parts[2] != "sns" || parts[3] == "" || parts[4] == "" || parts[5] == "" {
-		return fmt.Errorf("ses: snsTopicArn must be an SNS topic ARN (arn:aws:sns:<region>:<account>:<topic>)")
-	}
-	return nil
 }
 
 // validEndpoint accepts no endpoint (AWS) or an absolute https URL with a host. Which
