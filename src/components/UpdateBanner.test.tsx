@@ -11,6 +11,7 @@ import { UpdateBanner } from './UpdateBanner.tsx'
 const state = (over: Partial<SiteInstanceState> = {}): SiteInstanceState => ({
   telemetry: { enabled: true, locked: false },
   noticeAcknowledged: true,
+  telemetrySchemaUrl: 'https://docs.example.test/telemetry-schema',
   ...over,
 })
 

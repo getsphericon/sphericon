@@ -47,6 +47,7 @@ func releaseEnv(t *testing.T, version, url string, edit ...func(*config.Config))
 		testhelper.WithConfig(func(c *config.Config) {
 			c.GitHubAPIURL = url
 			c.ReleaseCheck = true
+			c.IsDev = false // the Release check never runs in a development or test environment
 			for _, e := range edit {
 				e(c)
 			}
@@ -165,4 +166,21 @@ func TestABuildThatIsNotAReleaseNeitherAsksNorShowsABanner(t *testing.T) {
 	assert.Nil(t, row.LatestRelease)
 	assert.False(t, asked.Load())
 	assert.False(t, instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).LatestRelease.Set)
+}
+
+func TestADevelopmentEnvironmentNeverAsksForANewerRelease(t *testing.T) {
+	var asked atomic.Bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		asked.Store(true)
+		_ = json.NewEncoder(w).Encode(map[string]any{"tag_name": "v9.0.0", "assets": []any{}})
+	}))
+	t.Cleanup(srv.Close)
+	env, _ := releaseEnv(t, "0.1.0", srv.URL, func(c *config.Config) { c.IsDev = true })
+
+	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+
+	row, err := env.Instance.Ensure(t.Context())
+	require.NoError(t, err)
+	assert.Nil(t, row.LatestRelease)
+	assert.False(t, asked.Load())
 }

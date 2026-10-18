@@ -1471,6 +1471,10 @@ export type SiteInstanceState = {
    * version is not a release or when `SPHERICON_RELEASE_CHECK` is off.
    */
   latestRelease?: string;
+  /**
+   * The page that documents the schema of the Telemetry report
+   */
+  telemetrySchemaUrl: string;
 };
 
 /**

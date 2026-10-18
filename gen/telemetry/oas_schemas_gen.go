@@ -95,32 +95,32 @@ func (s *OrderOfMagnitude) UnmarshalText(data []byte) error {
 type TelemetryDeployShape string
 
 const (
-	TelemetryDeployShapeDocker     TelemetryDeployShape = "docker"
-	TelemetryDeployShapeKubernetes TelemetryDeployShape = "kubernetes"
 	TelemetryDeployShapeBinary     TelemetryDeployShape = "binary"
-	TelemetryDeployShapeOther      TelemetryDeployShape = "other"
+	TelemetryDeployShapeContainer  TelemetryDeployShape = "container"
+	TelemetryDeployShapeKubernetes TelemetryDeployShape = "kubernetes"
+	TelemetryDeployShapeUnknown    TelemetryDeployShape = "unknown"
 )
 
 // AllValues returns all TelemetryDeployShape values.
 func (TelemetryDeployShape) AllValues() []TelemetryDeployShape {
 	return []TelemetryDeployShape{
-		TelemetryDeployShapeDocker,
-		TelemetryDeployShapeKubernetes,
 		TelemetryDeployShapeBinary,
-		TelemetryDeployShapeOther,
+		TelemetryDeployShapeContainer,
+		TelemetryDeployShapeKubernetes,
+		TelemetryDeployShapeUnknown,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (s TelemetryDeployShape) MarshalText() ([]byte, error) {
 	switch s {
-	case TelemetryDeployShapeDocker:
+	case TelemetryDeployShapeBinary:
+		return []byte(s), nil
+	case TelemetryDeployShapeContainer:
 		return []byte(s), nil
 	case TelemetryDeployShapeKubernetes:
 		return []byte(s), nil
-	case TelemetryDeployShapeBinary:
-		return []byte(s), nil
-	case TelemetryDeployShapeOther:
+	case TelemetryDeployShapeUnknown:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -130,17 +130,17 @@ func (s TelemetryDeployShape) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *TelemetryDeployShape) UnmarshalText(data []byte) error {
 	switch TelemetryDeployShape(data) {
-	case TelemetryDeployShapeDocker:
-		*s = TelemetryDeployShapeDocker
+	case TelemetryDeployShapeBinary:
+		*s = TelemetryDeployShapeBinary
+		return nil
+	case TelemetryDeployShapeContainer:
+		*s = TelemetryDeployShapeContainer
 		return nil
 	case TelemetryDeployShapeKubernetes:
 		*s = TelemetryDeployShapeKubernetes
 		return nil
-	case TelemetryDeployShapeBinary:
-		*s = TelemetryDeployShapeBinary
-		return nil
-	case TelemetryDeployShapeOther:
-		*s = TelemetryDeployShapeOther
+	case TelemetryDeployShapeUnknown:
+		*s = TelemetryDeployShapeUnknown
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

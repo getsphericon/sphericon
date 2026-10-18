@@ -14746,12 +14746,17 @@ func (s *SiteInstanceState) encodeFields(e *jx.Encoder) {
 			s.LatestRelease.Encode(e)
 		}
 	}
+	{
+		e.FieldStart("telemetrySchemaUrl")
+		e.Str(s.TelemetrySchemaUrl)
+	}
 }
 
-var jsonFieldsNameOfSiteInstanceState = [3]string{
+var jsonFieldsNameOfSiteInstanceState = [4]string{
 	0: "telemetry",
 	1: "noticeAcknowledged",
 	2: "latestRelease",
+	3: "telemetrySchemaUrl",
 }
 
 // Decode decodes SiteInstanceState from json.
@@ -14795,6 +14800,18 @@ func (s *SiteInstanceState) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"latestRelease\"")
 			}
+		case "telemetrySchemaUrl":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.TelemetrySchemaUrl = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"telemetrySchemaUrl\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -14805,7 +14822,7 @@ func (s *SiteInstanceState) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00001011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

@@ -5,13 +5,16 @@ import { useTranslation } from 'react-i18next'
 
 import { siteInstancePreviewTelemetryReportOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 
-// The page that documents the Telemetry report's schema (ADR 0032).
-const telemetrySchemaDocsUrl = 'https://docs.getsphericon.app/operations/telemetry-schema'
-
-// TelemetryReportActions lets an Owner read what the Instance sends: a link to the published
-// schema and a preview of the report as it would be sent right now, whether or not sending
+// TelemetryReportActions lets an Owner read what the Instance sends: a link to the schema
+// page (the Instance state names it, so it is right for every deployment) and a preview of the report as it would be sent right now, whether or not sending
 // is on. The report is fetched only once the preview is opened.
-export function TelemetryReportActions({ size = 'sm' }: { size?: 'xs' | 'sm' }) {
+export function TelemetryReportActions({
+  schemaUrl,
+  size = 'sm',
+}: {
+  schemaUrl: string
+  size?: 'xs' | 'sm'
+}) {
   const { t } = useTranslation()
   const [opened, { open, close }] = useDisclosure(false)
   const report = useQuery({
@@ -23,7 +26,7 @@ export function TelemetryReportActions({ size = 'sm' }: { size?: 'xs' | 'sm' }) 
   return (
     <>
       <Group gap="md">
-        <Anchor href={telemetrySchemaDocsUrl} target="_blank" rel="noopener noreferrer" size={size}>
+        <Anchor href={schemaUrl} target="_blank" rel="noopener noreferrer" size={size}>
           {t(($) => $.instance.report.schema)}
         </Anchor>
         <Button variant="subtle" size={size === 'xs' ? 'compact-xs' : 'compact-sm'} onClick={open}>

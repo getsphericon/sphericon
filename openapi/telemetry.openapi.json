@@ -53,7 +53,7 @@
       },
       "TelemetryDeployShape": {
         "type": "string",
-        "enum": ["docker", "kubernetes", "binary", "other"]
+        "enum": ["binary", "container", "kubernetes", "unknown"]
       },
       "TelemetryEdition": {
         "type": "string",

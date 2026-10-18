@@ -18,7 +18,7 @@ import (
 var testHost = instance.Host{
 	AppVersion:  "1.4.2",
 	Edition:     telemetryapi.TelemetryEditionCore,
-	DeployShape: telemetryapi.TelemetryDeployShapeDocker,
+	DeployShape: telemetryapi.TelemetryDeployShapeContainer,
 	OS:          "linux",
 	Arch:        "arm64",
 	Locale:      telemetryapi.TelemetryLocaleEn,
@@ -40,7 +40,7 @@ func TestReportFromFixturesIsValidAndBucketed(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, telemetryschema.Validate(body))
 	assert.Equal(t, "1.4.2", report.AppVersion)
-	assert.Equal(t, telemetryapi.TelemetryDeployShapeDocker, report.DeployShape)
+	assert.Equal(t, telemetryapi.TelemetryDeployShapeContainer, report.DeployShape)
 	assert.Equal(t, telemetryapi.TelemetryLocaleEn, report.Locale)
 	assert.Equal(t, telemetryapi.OrderOfMagnitude19, report.Workspaces)
 	assert.Equal(t, telemetryapi.OrderOfMagnitude1099, report.Contacts)

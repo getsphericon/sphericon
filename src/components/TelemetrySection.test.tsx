@@ -13,6 +13,7 @@ import { TelemetrySection } from './TelemetrySection.tsx'
 const state = (telemetry: SiteInstanceState['telemetry']): SiteInstanceState => ({
   telemetry,
   noticeAcknowledged: true,
+  telemetrySchemaUrl: 'https://docs.example.test/telemetry-schema',
 })
 
 test('an owner switches the report off', async () => {

@@ -36,6 +36,9 @@ model SiteInstanceState {
    * one newer than the running version; absent otherwise, and always absent for a build whose
    * version is not a release or when `SPHERICON_RELEASE_CHECK` is off. */
   latestRelease?: string;
+
+  /** The page that documents the schema of the Telemetry report */
+  telemetrySchemaUrl: string;
 }
 
 /** Switch the Telemetry report on or off */

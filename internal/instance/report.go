@@ -70,11 +70,11 @@ func DeployShapeOf(container string) telemetryapi.TelemetryDeployShape {
 	case "helm":
 		return telemetryapi.TelemetryDeployShapeKubernetes
 	case "docker":
-		return telemetryapi.TelemetryDeployShapeDocker
+		return telemetryapi.TelemetryDeployShapeContainer
 	case "":
 		return telemetryapi.TelemetryDeployShapeBinary
 	}
-	return telemetryapi.TelemetryDeployShapeOther
+	return telemetryapi.TelemetryDeployShapeUnknown
 }
 
 // BuildReport assembles the Telemetry report (ADR 0032) from core tables only: never from an
@@ -89,6 +89,8 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 	since := now.Add(-reportWindow)
 	var q reportQueries
 	workspaces := q.count(client.Workspace.Query().Count(ctx))
+	// Erasure deletes the Contact row (GLOSSARY: there is no softer delete), so an erased
+	// Contact is already gone; anonymous tracker Contacts have no email and are left out.
 	contacts := q.count(client.Contact.Query().Where(contact.EmailNotNil(), contact.EmailNEQ("")).Count(ctx))
 	emails := q.count(client.OutboundMessage.Query().
 		Where(outboundmessage.StatusEQ(outboundmessage.StatusSent), outboundmessage.SentAtGTE(since)).Count(ctx))

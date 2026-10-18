@@ -6910,6 +6910,8 @@ type SiteInstanceState struct {
 	// than the running version; absent otherwise, and always absent for a build whose version is not a
 	// release or when `SPHERICON_RELEASE_CHECK` is off.
 	LatestRelease OptString `json:"latestRelease"`
+	// The page that documents the schema of the Telemetry report.
+	TelemetrySchemaUrl string `json:"telemetrySchemaUrl"`
 }
 
 // GetTelemetry returns the value of Telemetry.
@@ -6927,6 +6929,11 @@ func (s *SiteInstanceState) GetLatestRelease() OptString {
 	return s.LatestRelease
 }
 
+// GetTelemetrySchemaUrl returns the value of TelemetrySchemaUrl.
+func (s *SiteInstanceState) GetTelemetrySchemaUrl() string {
+	return s.TelemetrySchemaUrl
+}
+
 // SetTelemetry sets the value of Telemetry.
 func (s *SiteInstanceState) SetTelemetry(val SiteInstanceTelemetry) {
 	s.Telemetry = val
@@ -6940,6 +6947,11 @@ func (s *SiteInstanceState) SetNoticeAcknowledged(val bool) {
 // SetLatestRelease sets the value of LatestRelease.
 func (s *SiteInstanceState) SetLatestRelease(val OptString) {
 	s.LatestRelease = val
+}
+
+// SetTelemetrySchemaUrl sets the value of TelemetrySchemaUrl.
+func (s *SiteInstanceState) SetTelemetrySchemaUrl(val string) {
+	s.TelemetrySchemaUrl = val
 }
 
 func (*SiteInstanceState) siteInstanceAcknowledgeNoticeRes() {}

@@ -59,12 +59,10 @@ type rig struct {
 	db     *ent.Client
 }
 
-func noJitter() time.Duration { return 0 }
-
 // newRig builds a Module and Sender that would send: a production-like config (not dev) over
-// the receiver, a release version, the notice acknowledged and no jitter. edit changes the
-// config, version is the running version.
-func newRig(t *testing.T, version string, edit func(*config.Config)) *rig {
+// the receiver, a release version and the notice acknowledged at the clock's time. edit
+// changes the config, version is the running version.
+func newRig(t *testing.T, version string, edit func(*config.Config), opts ...instance.SenderOption) *rig {
 	t.Helper()
 	env := testhelper.Setup(t)
 	recv := newReceiver(t, http.StatusNoContent)
@@ -76,7 +74,7 @@ func newRig(t *testing.T, version string, edit func(*config.Config)) *rig {
 	host := testHost
 	host.AppVersion = version
 	mod := instance.New(env.DB, instance.EnvironmentOf(cfg), host, clk.now)
-	sender, err := instance.NewSender(mod, cfg, instance.WithJitter(noJitter))
+	sender, err := instance.NewSender(mod, cfg, opts...)
 	require.NoError(t, err)
 	_, err = mod.AcknowledgeNotice(t.Context())
 	require.NoError(t, err)
@@ -90,8 +88,23 @@ func (r *rig) lastSent(t *testing.T) *time.Time {
 	return row.LastReportSentAt
 }
 
+// offset is the Instance's fixed time of day for its report.
+func (r *rig) offset(t *testing.T) time.Duration {
+	t.Helper()
+	row, err := r.mod.Ensure(t.Context())
+	require.NoError(t, err)
+	return instance.ReportOffset(row.InstanceID)
+}
+
+// firstSend moves the clock to the moment the first report is due.
+func (r *rig) firstSend(t *testing.T) {
+	t.Helper()
+	r.clock.t = r.clock.t.Add(r.offset(t))
+}
+
 func TestSenderPostsTheReportThePreviewShowsAndRecordsWhenItWasSent(t *testing.T) {
 	r := newRig(t, "1.4.2", nil)
+	r.firstSend(t)
 	preview, err := r.mod.Report(t.Context())
 	require.NoError(t, err)
 	want, err := json.Marshal(preview)
@@ -109,6 +122,7 @@ func TestSenderPostsTheReportThePreviewShowsAndRecordsWhenItWasSent(t *testing.T
 
 func TestSenderSendsOncePerDay(t *testing.T) {
 	r := newRig(t, "1.4.2", nil)
+	r.firstSend(t)
 	require.NoError(t, r.sender.Run(t.Context()))
 
 	r.clock.t = r.clock.t.Add(3 * time.Hour)
@@ -121,19 +135,34 @@ func TestSenderSendsOncePerDay(t *testing.T) {
 	assert.True(t, r.lastSent(t).Equal(r.clock.t))
 }
 
-func TestSenderJitterBringsTheNextSendForwardWithinTheDay(t *testing.T) {
-	r := newRig(t, "1.4.2", nil)
-	jittered, err := instance.NewSender(r.mod, &config.Config{TelemetryReceiverURL: r.recv.URL},
-		instance.WithJitter(func() time.Duration { return 2 * time.Hour }))
-	require.NoError(t, err)
-	require.NoError(t, r.sender.Run(t.Context()))
+func TestSenderOffsetIsAStableTimeOfDayDerivedFromTheInstanceId(t *testing.T) {
+	assert.Equal(t, instance.ReportOffset("abc"), instance.ReportOffset("abc"))
+	for _, id := range []string{"a", "b", "c", "d", "e", "f"} {
+		assert.Less(t, instance.ReportOffset(id), 6*time.Hour)
+		assert.GreaterOrEqual(t, instance.ReportOffset(id), time.Duration(0))
+	}
+}
 
-	r.clock.t = r.clock.t.Add(21 * time.Hour)
-	require.NoError(t, jittered.Run(t.Context()))
+func TestSenderFirstReportWaitsTheOffsetAfterTheNoticeAndLaterOnesKeepTheTimeOfDay(t *testing.T) {
+	r := newRig(t, "1.4.2", nil)
+	acked := r.clock.t
+	offset := r.offset(t)
+
+	r.clock.t = acked.Add(offset - time.Nanosecond)
+	require.NoError(t, r.sender.Run(t.Context()))
+	assert.Empty(t, r.recv.got())
+
+	r.clock.t = acked.Add(offset)
+	require.NoError(t, r.sender.Run(t.Context()))
 	assert.Len(t, r.recv.got(), 1)
 
-	r.clock.t = r.clock.t.Add(time.Hour)
-	require.NoError(t, jittered.Run(t.Context()))
+	nextSlot := r.clock.t.Truncate(24 * time.Hour).Add(24*time.Hour + offset)
+	r.clock.t = nextSlot.Add(-time.Minute)
+	require.NoError(t, r.sender.Run(t.Context()))
+	assert.Len(t, r.recv.got(), 1)
+
+	r.clock.t = nextSlot
+	require.NoError(t, r.sender.Run(t.Context()))
 	assert.Len(t, r.recv.got(), 2)
 }
 
@@ -160,6 +189,7 @@ func TestSenderStaysSilent(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			r := newRig(t, c.version, c.edit)
+			r.firstSend(t)
 			if c.prep != nil {
 				c.prep(t, r)
 			}
@@ -175,6 +205,7 @@ func TestSenderStaysSilent(t *testing.T) {
 func TestSenderSendsWhenTheEnvironmentTurnsItOnWithoutTheOwnersChoice(t *testing.T) {
 	yes := true
 	r := newRig(t, "1.4.2", func(c *config.Config) { c.Telemetry = &yes })
+	r.firstSend(t)
 
 	require.NoError(t, r.sender.Run(t.Context()))
 
@@ -183,6 +214,7 @@ func TestSenderSendsWhenTheEnvironmentTurnsItOnWithoutTheOwnersChoice(t *testing
 
 func TestSenderLeavesThingsHealthyWhenTheReceiverIsUnreachableOrRefuses(t *testing.T) {
 	r := newRig(t, "1.4.2", nil)
+	r.firstSend(t)
 	r.recv.Close()
 
 	require.NoError(t, r.sender.Run(t.Context()))
@@ -193,5 +225,25 @@ func TestSenderLeavesThingsHealthyWhenTheReceiverIsUnreachableOrRefuses(t *testi
 	require.NoError(t, err)
 
 	require.NoError(t, sender.Run(t.Context()))
+	assert.Nil(t, r.lastSent(t))
+}
+
+func TestSenderCutsOffASendThatTakesTooLongAndLeavesTheStateUnchanged(t *testing.T) {
+	release := make(chan struct{})
+	slow := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		select {
+		case <-release:
+		case <-req.Context().Done():
+		}
+	}))
+	t.Cleanup(slow.Close)
+	t.Cleanup(func() { close(release) })
+	r := newRig(t, "1.4.2", func(c *config.Config) { c.TelemetryReceiverURL = slow.URL }, instance.WithTimeout(50*time.Millisecond))
+	r.firstSend(t)
+
+	start := time.Now()
+	require.NoError(t, r.sender.Run(t.Context()))
+
+	assert.Less(t, time.Since(start), 3*time.Second)
 	assert.Nil(t, r.lastSent(t))
 }

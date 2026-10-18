@@ -21,10 +21,10 @@ enum TelemetryEdition {
 }
 
 enum TelemetryDeployShape {
-  docker,
-  kubernetes,
   binary,
-  other,
+  container,
+  kubernetes,
+  `unknown`,
 }
 
 enum TelemetryLocale {

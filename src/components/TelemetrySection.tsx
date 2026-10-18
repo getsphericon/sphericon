@@ -31,7 +31,7 @@ export function TelemetrySection({ state }: { state: SiteInstanceState }) {
         <Text c="dimmed" size="sm">
           {t(($) => $.instance.telemetry.description)}
         </Text>
-        <TelemetryReportActions />
+        <TelemetryReportActions schemaUrl={state.telemetrySchemaUrl} />
         <Switch
           label={t(($) => $.instance.telemetry.switchLabel)}
           checked={telemetry.enabled}

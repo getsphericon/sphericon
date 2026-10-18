@@ -18,7 +18,11 @@ beforeEach(() => {
 test('an owner of the oldest workspace is offered the instance page', async () => {
   worker.use(
     handleSiteInstanceGetState({
-      body: { telemetry: { enabled: true, locked: false }, noticeAcknowledged: true },
+      body: {
+        telemetry: { enabled: true, locked: false },
+        noticeAcknowledged: true,
+        telemetrySchemaUrl: 'https://docs.example.test/telemetry-schema',
+      },
     }),
   )
   const { screen } = await renderWithRouter(<AccountNavbar />)

@@ -20,7 +20,7 @@ receiver stores no source address. The report carries:
 - **Identity of the Instance:** a random `instanceId` stored in your database and derived from
   nothing, and a `schemaVersion`.
 - **The build:** `appVersion`, `edition` (`core` or `ee`), `os`, `arch` and the deploy shape
-  (`docker`, `kubernetes`, `binary` or `other`).
+  (`binary`, `container`, `kubernetes` or `unknown`).
 - **The environment:** the Postgres major version, the configured locale (`ru`, `en` or `es`) and
   `instanceAgeDays`, the whole days since the first start.
 - **Order-of-magnitude counts:** `workspaces`, identified `contacts` (erased ones excluded) and
@@ -37,10 +37,11 @@ Instance builds is checked against it. A new field is a schema change documented
 
 ### When it is sent
 
-The Instance checks every hour whether a report is due and sends at most one a day. The next send
-is brought forward by a random 0 to 6 hours, so Instances that started together do not all report
-in the same minute. The first report waits until an Owner has seen the one-time notice in the app
-(Instance settings). A send has a five-second timeout and no retry queue: a failed send is logged
+The Instance checks every hour whether a report is due and sends at most one a day. Each Instance
+reports at its own fixed time of day, 0 to 6 hours after midnight UTC, derived from its Instance
+id, so Instances that started together do not all report in the same minute. The first report
+waits until an Owner has seen the one-time notice in the app (Instance settings) and then until
+that offset has passed. A send has a five-second timeout and no retry queue: a failed send is logged
 at debug level and the next hourly check is the retry. It never affects boot, readiness or health.
 
 Nothing is sent from a development or test environment or from a build that

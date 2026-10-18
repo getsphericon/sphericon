@@ -35,7 +35,7 @@ export function InstanceNotice() {
               ? t(($) => $.instance.notice.descriptionLocked)
               : t(($) => $.instance.notice.description)}
           </Text>
-          <TelemetryReportActions size="xs" />
+          <TelemetryReportActions schemaUrl={state.data.telemetrySchemaUrl} size="xs" />
         </Stack>
         <Group gap="xs">
           <ButtonLink to={instanceRoute.to} size="xs" variant="light">

@@ -79,14 +79,14 @@ func (s *TelemetryDeployShape) Decode(d *jx.Decoder) error {
 	}
 	// Try to use constant string.
 	switch TelemetryDeployShape(v) {
-	case TelemetryDeployShapeDocker:
-		*s = TelemetryDeployShapeDocker
-	case TelemetryDeployShapeKubernetes:
-		*s = TelemetryDeployShapeKubernetes
 	case TelemetryDeployShapeBinary:
 		*s = TelemetryDeployShapeBinary
-	case TelemetryDeployShapeOther:
-		*s = TelemetryDeployShapeOther
+	case TelemetryDeployShapeContainer:
+		*s = TelemetryDeployShapeContainer
+	case TelemetryDeployShapeKubernetes:
+		*s = TelemetryDeployShapeKubernetes
+	case TelemetryDeployShapeUnknown:
+		*s = TelemetryDeployShapeUnknown
 	default:
 		*s = TelemetryDeployShape(v)
 	}

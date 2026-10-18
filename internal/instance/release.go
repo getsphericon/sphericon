@@ -20,16 +20,15 @@ type ReleaseSource interface {
 	LatestRelease(ctx context.Context) (string, error)
 }
 
-// checking is whether the Release check runs at all: it is switched on and the running
-// build is a release.
+// checking is whether the Release check runs at all: it is switched on, this is not a
+// development or test environment and the running build is a release.
 func (m *Module) checking() bool {
-	return m.env.ReleaseCheck && buildinfo.IsRelease(m.host.AppVersion)
+	return m.env.ReleaseCheck && !m.env.Dev && buildinfo.IsRelease(m.host.AppVersion)
 }
 
 // isNewer is whether latest is a stable release strictly newer than the running version.
 func (m *Module) isNewer(latest string) bool {
-	v := buildinfo.Semver(latest)
-	return semver.IsValid(v) && semver.Prerelease(v) == "" && semver.Compare(v, buildinfo.Semver(m.host.AppVersion)) > 0
+	return buildinfo.IsRelease(latest) && semver.Compare(buildinfo.Semver(latest), buildinfo.Semver(m.host.AppVersion)) > 0
 }
 
 // newer is the stored release when it is still newer than the running version (an Instance
@@ -69,14 +68,11 @@ func (m *Module) CheckRelease(ctx context.Context) error {
 	if !m.isNewer(latest) {
 		return nil
 	}
-	row, err := m.Ensure(ctx)
+	changed, err := m.recordRelease(ctx, latest)
 	if err != nil {
 		return err
 	}
-	if err := m.ent.InstanceState.UpdateOneID(stateID).SetLatestRelease(latest).SetLatestReleaseCheckedAt(m.now()).Exec(ctx); err != nil {
-		return err
-	}
-	if row.LatestRelease == nil || *row.LatestRelease != latest {
+	if changed {
 		m.announce(ctx, latest)
 	}
 	return nil

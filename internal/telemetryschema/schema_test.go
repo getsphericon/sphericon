@@ -18,7 +18,7 @@ func sampleReport() telemetryapi.TelemetryReport {
 		Edition:            telemetryapi.TelemetryEditionCore,
 		Os:                 "linux",
 		Arch:               "arm64",
-		DeployShape:        telemetryapi.TelemetryDeployShapeDocker,
+		DeployShape:        telemetryapi.TelemetryDeployShapeContainer,
 		PostgresMajor:      17,
 		Locale:             telemetryapi.TelemetryLocaleEn,
 		InstanceAgeDays:    42,

@@ -31,11 +31,17 @@ type Environment struct {
 	DoNotTrack bool
 	// ReleaseCheck is SPHERICON_RELEASE_CHECK; it never depends on the two above.
 	ReleaseCheck bool
+	// Dev is a development or test environment: neither the Telemetry report nor the
+	// Release check ever runs there.
+	Dev bool
+	// SchemaURL is the page that documents the Telemetry report's schema.
+	SchemaURL string
 }
 
 // EnvironmentOf reads the Instance switches from the configuration.
 func EnvironmentOf(cfg *config.Config) Environment {
-	return Environment{Telemetry: cfg.Telemetry, DoNotTrack: cfg.DoNotTrack, ReleaseCheck: cfg.ReleaseCheck}
+	return Environment{Telemetry: cfg.Telemetry, DoNotTrack: cfg.DoNotTrack, ReleaseCheck: cfg.ReleaseCheck,
+		Dev: cfg.IsDev, SchemaURL: cfg.TelemetrySchemaURL}
 }
 
 // Lock names what decides a setting the Owner cannot change.
@@ -80,6 +86,8 @@ type State struct {
 	NoticeAcknowledged bool
 	// LatestRelease is the bare version of a newer stable release, empty when there is none.
 	LatestRelease string
+	// SchemaURL is the page that documents the Telemetry report's schema.
+	SchemaURL string
 }
 
 // Module is the Instance state and the rules around it.
@@ -170,6 +178,7 @@ func (m *Module) State(ctx context.Context) (State, error) {
 		Telemetry:          Effective(m.env, row.TelemetryEnabled),
 		NoticeAcknowledged: row.NoticeAcknowledgedAt != nil,
 		LatestRelease:      m.newer(row.LatestRelease),
+		SchemaURL:          m.env.SchemaURL,
 	}, nil
 }
 
@@ -200,4 +209,23 @@ func (m *Module) AcknowledgeNotice(ctx context.Context) (State, error) {
 		}
 	}
 	return m.State(ctx)
+}
+
+// MarkReportSent stores when the last Telemetry report went out.
+func (m *Module) MarkReportSent(ctx context.Context, at time.Time) error {
+	if _, err := m.Ensure(ctx); err != nil {
+		return err
+	}
+	return m.ent.InstanceState.UpdateOneID(stateID).SetLastReportSentAt(at).Exec(ctx)
+}
+
+// recordRelease stores the newest release the check found with the check time, and reports
+// whether it differs from the one stored before.
+func (m *Module) recordRelease(ctx context.Context, latest string) (bool, error) {
+	row, err := m.Ensure(ctx)
+	if err != nil {
+		return false, err
+	}
+	err = m.ent.InstanceState.UpdateOneID(stateID).SetLatestRelease(latest).SetLatestReleaseCheckedAt(m.now()).Exec(ctx)
+	return row.LatestRelease == nil || *row.LatestRelease != latest, err
 }

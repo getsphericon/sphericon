@@ -31,7 +31,7 @@ func instanceState(s instance.State) *siteapi.SiteInstanceState {
 	if s.Telemetry.Locked {
 		t.LockedBy = siteapi.NewOptSiteInstanceTelemetryLock(siteapi.SiteInstanceTelemetryLock(s.Telemetry.LockedBy))
 	}
-	out := &siteapi.SiteInstanceState{Telemetry: t, NoticeAcknowledged: s.NoticeAcknowledged}
+	out := &siteapi.SiteInstanceState{Telemetry: t, NoticeAcknowledged: s.NoticeAcknowledged, TelemetrySchemaUrl: s.SchemaURL}
 	if s.LatestRelease != "" {
 		out.LatestRelease = siteapi.NewOptString(s.LatestRelease)
 	}

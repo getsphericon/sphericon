@@ -34,13 +34,13 @@ func (s OrderOfMagnitude) Validate() error {
 
 func (s TelemetryDeployShape) Validate() error {
 	switch s {
-	case "docker":
+	case "binary":
+		return nil
+	case "container":
 		return nil
 	case "kubernetes":
 		return nil
-	case "binary":
-		return nil
-	case "other":
+	case "unknown":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

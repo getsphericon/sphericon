@@ -83,6 +83,9 @@ type DBPool struct {
 // telemetryReceiverURL is the address of the Telemetry report receiver, fixed in the binary.
 const telemetryReceiverURL = "https://telemetry.getsphericon.app"
 
+// telemetrySchemaURL is the page that documents the Telemetry report's schema.
+const telemetrySchemaURL = "https://docs.getsphericon.app/operations/telemetry-schema"
+
 type Config struct {
 	DatabaseURL    string
 	Port           string
@@ -175,6 +178,9 @@ type Config struct {
 	// TelemetryReceiverURL is where the daily Telemetry report goes. It is a constant of the
 	// binary with no environment variable (ADR 0032): a test points it at its own receiver.
 	TelemetryReceiverURL string
+	// TelemetrySchemaURL is the page that documents the Telemetry report's schema; the SPA
+	// links to it. A constant of the binary with no environment variable.
+	TelemetrySchemaURL string
 	// ReleaseCheck is SPHERICON_RELEASE_CHECK (default on): the daily Release check for a
 	// newer release (ADR 0032). It sends nothing about the Instance and is independent of
 	// the Telemetry report and DO_NOT_TRACK.
@@ -407,6 +413,7 @@ func Load(envName string) (*Config, error) {
 		Telemetry:               parseExplicitBool(e.Telemetry),
 		DoNotTrack:              strings.TrimSpace(e.DoNotTrack) == "1",
 		TelemetryReceiverURL:    telemetryReceiverURL,
+		TelemetrySchemaURL:      telemetrySchemaURL,
 		ReleaseCheck:            e.ReleaseCheck,
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",

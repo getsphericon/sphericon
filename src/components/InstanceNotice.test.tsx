@@ -14,6 +14,7 @@ import { InstanceNotice } from './InstanceNotice.tsx'
 const state = (over: Partial<SiteInstanceState> = {}): SiteInstanceState => ({
   telemetry: { enabled: true, locked: false },
   noticeAcknowledged: false,
+  telemetrySchemaUrl: 'https://docs.example.test/telemetry-schema',
   ...over,
 })
 
