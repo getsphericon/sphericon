@@ -5,6 +5,7 @@ import { handleSiteAuthLogout, handleSiteWorkspacesAccountLink } from '../genera
 import { Route as profileRoute } from '../routes/account/index.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
+import { routeMount } from '../test/routeMount.ts'
 import { worker } from '../test/worker.ts'
 import { UserMenu } from './UserMenu.tsx'
 
@@ -33,22 +34,22 @@ test('shows workspace settings only when a workspace is active', async () => {
   expect(screen.container.textContent).not.toContain('Workspace settings')
 })
 
-test('profile item navigates to the profile page', async () => {
-  const { screen, navigate } = await renderWithRouter(<UserMenu slug="acme" />)
+test('profile item links to the profile page', async () => {
+  const { screen } = await renderWithRouter(<UserMenu slug="acme" />)
   await screen.getByRole('button').click()
-  await screen.getByText('Profile').click()
-
-  await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: profileRoute.to }])
-})
-
-test('workspace settings item navigates with the active slug', async () => {
-  const { screen, navigate } = await renderWithRouter(<UserMenu slug="acme" />)
-  await screen.getByRole('button').click()
-  await screen.getByText('Workspace settings').click()
 
   await expect
-    .poll(() => navigate.mock.calls)
-    .toContainEqual([{ to: settingsRoute.to, params: { slug: 'acme' } }])
+    .element(screen.getByRole('menuitem', { name: 'Profile' }))
+    .toHaveAttribute('href', routeMount(profileRoute).initialPath)
+})
+
+test('workspace settings item links with the active slug', async () => {
+  const { screen } = await renderWithRouter(<UserMenu slug="acme" />)
+  await screen.getByRole('button').click()
+
+  await expect
+    .element(screen.getByRole('menuitem', { name: 'Workspace settings' }))
+    .toHaveAttribute('href', routeMount(settingsRoute, { slug: 'acme' }).initialPath)
 })
 
 test('a failed logout shows an error and stays put', async () => {

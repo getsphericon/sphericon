@@ -2,6 +2,7 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { handleSiteAutomationsCreate } from '../../generated/site/msw.gen.ts'
+import { Route as automationsRoute } from '../../routes/workspaces/$slug/automations/index.tsx'
 import { Route as automationsCreateRoute } from '../../routes/workspaces/$slug/automations/new.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -67,9 +68,10 @@ test('the chosen trigger event is sent', async () => {
   await expect.element(screen.getByText('Failed to save automation')).toBeInTheDocument()
 })
 
-test('Cancel returns to the list without calling the API', async () => {
-  const { screen, navigate } = await renderWithRouter(<AutomationCreatePage />, CREATE_ROUTE)
-  await screen.getByRole('button', { name: 'Cancel' }).click()
+test('Cancel links back to the list', async () => {
+  const { screen } = await renderWithRouter(<AutomationCreatePage />, CREATE_ROUTE)
 
-  expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ params: { slug: 'test' } }))
+  await expect
+    .element(screen.getByRole('link', { name: 'Cancel' }))
+    .toHaveAttribute('href', routeMount(automationsRoute, { slug: 'test' }).initialPath)
 })

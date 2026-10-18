@@ -3,6 +3,7 @@ import { useForm } from '@mantine/form'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteAutomationsCreateMutation,
   siteAutomationsListQueryKey,
@@ -48,13 +49,9 @@ export function AutomationCreatePage() {
         <Stack>
           <AutomationDetailsFields form={form} />
           <Group justify="flex-end">
-            <Button
-              variant="default"
-              type="button"
-              onClick={() => void navigate({ to: automationsRoute.to, params: { slug } })}
-            >
+            <ButtonLink variant="default" to={automationsRoute.to} params={{ slug }}>
               {t(($) => $.actions.cancel)}
-            </Button>
+            </ButtonLink>
             <Button type="submit" loading={createMutation.isPending}>
               {t(($) => $.actions.continue)}
             </Button>

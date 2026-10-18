@@ -103,13 +103,13 @@ test('shows the connected install status once events arrive', async () => {
   await expect.element(screen.getByText(/Events are arriving/)).toBeInTheDocument()
 })
 
-test('the activity link opens the workspace activity feed', async () => {
+test('the activity link points at the workspace activity feed', async () => {
   serveWorkspace()
-  const { screen, navigate } = await renderWithRouter(<SettingsPage />, SETTINGS_ROUTE)
+  const { screen } = await renderWithRouter(<SettingsPage />, SETTINGS_ROUTE)
 
-  await screen.getByRole('button', { name: 'Open activity feed' }).click()
-
-  expect(navigate).toHaveBeenCalledWith({ to: activityRoute.to, params: { slug: 'test' } })
+  await expect
+    .element(screen.getByRole('link', { name: 'Open activity feed' }))
+    .toHaveAttribute('href', routeMount(activityRoute, { slug: 'test' }).initialPath)
 })
 
 test('shows an error alert when the workspaces fail to load', async () => {

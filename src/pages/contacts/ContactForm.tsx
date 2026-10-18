@@ -1,7 +1,7 @@
 import { Button, Group, Stack, TextInput } from '@mantine/core'
-import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteCreateContactInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
@@ -15,7 +15,6 @@ export function ContactForm({
   onSubmit,
 }: ResourceFormProps<SiteCreateContactInput>) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { slug } = workspaceRoute.useParams()
 
   return (
@@ -29,13 +28,9 @@ export function ContactForm({
         <TextInput label={t(($) => $.table.timeZone)} {...form.getInputProps('timeZone')} />
 
         <Group justify="flex-end">
-          <Button
-            variant="default"
-            type="button"
-            onClick={() => void navigate({ to: contactsRoute.to, params: { slug } })}
-          >
+          <ButtonLink variant="default" to={contactsRoute.to} params={{ slug }}>
             {t(($) => $.actions.cancel)}
-          </Button>
+          </ButtonLink>
           <Button type="submit" loading={isPending}>
             {t(($) => $.actions.save)}
           </Button>

@@ -1,6 +1,5 @@
 import {
   Alert,
-  Anchor,
   Badge,
   Button,
   Card,
@@ -19,6 +18,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { AnchorLink } from '../../components/RouterLink.tsx'
 import {
   siteEventsListOptions,
   siteWorkspacesListOptions,
@@ -97,7 +97,6 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 // into the workspace (see App.tsx) — every event here comes from their own site.
 function InstallStatus({ slug }: { slug: string }) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const statusQuery = useQuery({
     ...siteEventsListOptions({
       path: { slug },
@@ -121,14 +120,9 @@ function InstallStatus({ slug }: { slug: string }) {
           {t(($) => $.settings.installStatusWaiting)}
         </Badge>
       )}
-      <Anchor
-        component="button"
-        type="button"
-        size="sm"
-        onClick={() => void navigate({ to: activityRoute.to, params: { slug } })}
-      >
+      <AnchorLink to={activityRoute.to} params={{ slug }} size="sm">
         {t(($) => $.settings.viewActivity)}
-      </Anchor>
+      </AnchorLink>
     </Group>
   )
 }

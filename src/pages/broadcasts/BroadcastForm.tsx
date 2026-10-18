@@ -1,8 +1,8 @@
 import { Alert, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteSegmentsListOptions,
   siteTemplatesListOptions,
@@ -18,7 +18,6 @@ export function BroadcastForm({
   onSubmit,
 }: ResourceFormProps<SiteCreateBroadcastInput>) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { slug } = workspaceRoute.useParams()
 
   const segmentsQuery = useQuery(
@@ -95,13 +94,9 @@ export function BroadcastForm({
         />
 
         <Group justify="flex-end">
-          <Button
-            variant="default"
-            type="button"
-            onClick={() => void navigate({ to: broadcastsRoute.to, params: { slug } })}
-          >
+          <ButtonLink variant="default" to={broadcastsRoute.to} params={{ slug }}>
             {t(($) => $.actions.cancel)}
-          </Button>
+          </ButtonLink>
           <Button type="submit" loading={isPending}>
             {t(($) => $.actions.save)}
           </Button>
