@@ -344,3 +344,5 @@ Pushing telemetry elsewhere (OTLP, stdout, several destinations at once) is conf
 
 Sizing, [backup and restore](./operations/backup) and [upgrading](./operations/upgrading)
 (including PostgreSQL major upgrades) are covered in the [Operations](./operations/) section.
+What the Instance sends, how to preview it and how to turn it off (`SPHERICON_TELEMETRY`, `DO_NOT_TRACK`,
+`SPHERICON_RELEASE_CHECK`) is on [Telemetry and the Release check](./operations/telemetry).
