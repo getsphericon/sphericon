@@ -410,7 +410,8 @@ func migrateBaseline(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, pro
 // outbox all come from them. The worker databases are cloned from a template that has just
 // this (see initBaseline).
 func migrateSchema(ctx context.Context, sqlDB *sql.DB) error {
-	return db.Migrate(ctx, sqlDB)
+	_, err := db.Migrate(ctx, sqlDB)
+	return err
 }
 
 // loadFixtures replaces the contents of every fixture table with the committed rows. It

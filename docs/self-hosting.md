@@ -29,6 +29,7 @@ the binary). `SPHERICON_ENV` selects the environment (`development` by default; 
 | `SPHERICON_METRICS_ADDR`                                                                                              | no                               | — (off)                                 | `host:port` for the opt-in Prometheus listener. Must differ from `PORT`; see [Prometheus metrics](#prometheus-metrics).                                                                                                                                                                                                      |
 | `SPHERICON_INTERNAL_ADDR`                                                                                             | no                               | — (off)                                 | `host:port` for the opt-in internal listener that serves the Service credential endpoints of the Staff surface (needs the `staff` license). Must differ from `PORT` and `SPHERICON_METRICS_ADDR`; see [Service credentials](#service-credentials).                                                                           |
 | `SPHERICON_DB_AUTO_MIGRATE`                                                                                           | no                               | `false`                                 | Apply embedded migrations on startup. Convenient for single-replica; see below.                                                                                                                                                                                                                                              |
+| `SPHERICON_DB_MIGRATE_TIMEOUT`                                                                                        | no                               | `10m`                                   | With auto-migrate on, the longest a start waits for the migration lock and the run before it fails. `0` is no limit. `sphericon migrate` itself has no limit.                                                                                                                                                                |
 | `SPHERICON_CORS_ORIGINS`                                                                                              | no                               | —                                       | Comma/space-separated origins allowed credentialed CORS on the cookie-authenticated API (`/site`, `/auth`). Empty means same-origin only, which is what the bundled SPA needs; the bearer-token APIs are unaffected.                                                                                                         |
 | `SPHERICON_MAX_BODY_BYTES`                                                                                            | no                               | `1048576`                               | Largest accepted request body (bytes) on every surface except `/collect`; larger bodies get `413`.                                                                                                                                                                                                                           |
 | `SPHERICON_COLLECT_MAX_BODY_BYTES`                                                                                    | no                               | `512000`                                | Largest accepted `/collect` batch (`POST /collect/events`, bytes); larger gets `413`.                                                                                                                                                                                                                                        |
@@ -96,12 +97,19 @@ without it they cannot be read again. Changing `SPHERICON_JWT_SECRET` only signs
 Migrations are embedded in the binary. You apply them one of two ways:
 
 - **Single replica:** set `SPHERICON_DB_AUTO_MIGRATE=true` and the binary migrates on startup.
-- **Multiple replicas:** do **not** use `SPHERICON_DB_AUTO_MIGRATE` (replicas would race). Run the
-  migration step once before rolling out the new version:
+- **Multiple replicas:** leave `SPHERICON_DB_AUTO_MIGRATE` off, so a heavy migration never runs
+  under an orchestrator's liveness probe. Run the migration step once before rolling out the new
+  version:
 
   ```sh
   ./sphericon migrate      # applies pending migrations and exits
   ```
+
+  `migrate` has no time limit and takes a database lock, so two migrations started together run
+  one after the other and the second finds nothing to do. `./sphericon migrate --status` prints the
+  schema's current state, the newest state the binary knows and the pending migrations, and changes
+  nothing. With auto-migrate on, a start waits for the lock and the run for at most
+  `SPHERICON_DB_MIGRATE_TIMEOUT` and fails when it runs out.
 
   Use it as a pre-deploy job or a Kubernetes init container, then start the servers
   without `SPHERICON_DB_AUTO_MIGRATE`.

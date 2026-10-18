@@ -132,8 +132,11 @@ type Config struct {
 	// (SPHERICON_BILLING_URL). Empty (the self-host default) shows no link and no billing text.
 	BillingURL  string
 	AutoMigrate bool
-	BodyLimits  BodyLimits
-	RateLimits  RateLimits
+	// MigrateTimeout bounds the lock wait and the run of a start with AutoMigrate on
+	// (SPHERICON_DB_MIGRATE_TIMEOUT); 0 is no limit.
+	MigrateTimeout time.Duration
+	BodyLimits     BodyLimits
+	RateLimits     RateLimits
 	// OutboxFloor is the minimum age of a domain-event outbox row before the
 	// prune job may delete it (SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS, default 7; ADR 0019).
 	OutboxFloor time.Duration
@@ -239,6 +242,8 @@ type environment struct {
 	BillingURL   string `env:"SPHERICON_BILLING_URL"`
 	AutoMigrate  bool   `env:"SPHERICON_DB_AUTO_MIGRATE"`
 
+	MigrateTimeout time.Duration `env:"SPHERICON_DB_MIGRATE_TIMEOUT" envDefault:"10m"`
+
 	MaxBodyBytes         int64 `env:"SPHERICON_MAX_BODY_BYTES" envDefault:"1048576"`
 	CollectMaxBodyBytes  int64 `env:"SPHERICON_COLLECT_MAX_BODY_BYTES" envDefault:"512000"`
 	CollectMaxEventBytes int64 `env:"SPHERICON_COLLECT_MAX_EVENT_BYTES" envDefault:"32768"`
@@ -343,6 +348,7 @@ func Load(envName string) (*Config, error) {
 		SupportEmail:                strings.TrimSpace(e.SupportEmail),
 		BillingURL:                  strings.TrimSpace(e.BillingURL),
 		AutoMigrate:                 e.AutoMigrate,
+		MigrateTimeout:              e.MigrateTimeout,
 
 		BodyLimits: BodyLimits{
 			Default:      e.MaxBodyBytes,
