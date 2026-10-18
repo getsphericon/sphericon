@@ -459,7 +459,11 @@ export default interface Resources {
         "switchLabel": "Send the anonymous usage report",
         "title": "Usage report"
       },
-      "title": "Instance"
+      "title": "Instance",
+      "update": {
+        "description": "Version {{version}} of sphericon has been released. Run `sphericon upgrade` to update this instance, or see the upgrade guide for your deployment.",
+        "title": "A new version is available"
+      }
     },
     "login": {
       "codeLabel": "Authentication code",

@@ -6906,6 +6906,10 @@ type SiteInstanceState struct {
 	Telemetry SiteInstanceTelemetry `json:"telemetry"`
 	// Whether the one-time notice about the Telemetry report was acknowledged.
 	NoticeAcknowledged bool `json:"noticeAcknowledged"`
+	// The newest stable release (a bare version such as `0.4.0`) when the Release check found one newer
+	// than the running version; absent otherwise, and always absent for a build whose version is not a
+	// release or when `SPHERICON_RELEASE_CHECK` is off.
+	LatestRelease OptString `json:"latestRelease"`
 }
 
 // GetTelemetry returns the value of Telemetry.
@@ -6918,6 +6922,11 @@ func (s *SiteInstanceState) GetNoticeAcknowledged() bool {
 	return s.NoticeAcknowledged
 }
 
+// GetLatestRelease returns the value of LatestRelease.
+func (s *SiteInstanceState) GetLatestRelease() OptString {
+	return s.LatestRelease
+}
+
 // SetTelemetry sets the value of Telemetry.
 func (s *SiteInstanceState) SetTelemetry(val SiteInstanceTelemetry) {
 	s.Telemetry = val
@@ -6926,6 +6935,11 @@ func (s *SiteInstanceState) SetTelemetry(val SiteInstanceTelemetry) {
 // SetNoticeAcknowledged sets the value of NoticeAcknowledged.
 func (s *SiteInstanceState) SetNoticeAcknowledged(val bool) {
 	s.NoticeAcknowledged = val
+}
+
+// SetLatestRelease sets the value of LatestRelease.
+func (s *SiteInstanceState) SetLatestRelease(val OptString) {
+	s.LatestRelease = val
 }
 
 func (*SiteInstanceState) siteInstanceAcknowledgeNoticeRes() {}

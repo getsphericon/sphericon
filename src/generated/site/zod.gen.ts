@@ -346,7 +346,8 @@ export const zSiteInstanceTelemetry = z.object({
  */
 export const zSiteInstanceState = z.object({
   telemetry: zSiteInstanceTelemetry,
-  noticeAcknowledged: z.boolean()
+  noticeAcknowledged: z.boolean(),
+  latestRelease: z.exactOptional(z.string())
 });
 
 /**

@@ -175,6 +175,13 @@ type Config struct {
 	// TelemetryReceiverURL is where the daily Telemetry report goes. It is a constant of the
 	// binary with no environment variable (ADR 0032): a test points it at its own receiver.
 	TelemetryReceiverURL string
+	// ReleaseCheck is SPHERICON_RELEASE_CHECK (default on): the daily Release check for a
+	// newer release (ADR 0032). It sends nothing about the Instance and is independent of
+	// the Telemetry report and DO_NOT_TRACK.
+	ReleaseCheck bool
+	// GitHubAPIURL is the API root the Release check asks; empty is api.github.com. It has
+	// no environment variable: tests point it at a server of their own.
+	GitHubAPIURL string
 
 	// RequireEmailVerification keeps the email verification gate on (ADR 0030). Only an
 	// explicit SPHERICON_REQUIRE_EMAIL_VERIFICATION=false turns it off, for a self-hosted install
@@ -287,6 +294,7 @@ type environment struct {
 	Locale                   string `env:"SPHERICON_APP_LOCALE" envDefault:"en"`
 	Telemetry                string `env:"SPHERICON_TELEMETRY"`
 	DoNotTrack               string `env:"DO_NOT_TRACK"`
+	ReleaseCheck             bool   `env:"SPHERICON_RELEASE_CHECK" envDefault:"true"`
 	RequireEmailVerification string `env:"SPHERICON_REQUIRE_EMAIL_VERIFICATION"`
 
 	LogLevel        string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
@@ -399,6 +407,7 @@ func Load(envName string) (*Config, error) {
 		Telemetry:               parseExplicitBool(e.Telemetry),
 		DoNotTrack:              strings.TrimSpace(e.DoNotTrack) == "1",
 		TelemetryReceiverURL:    telemetryReceiverURL,
+		ReleaseCheck:            e.ReleaseCheck,
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
 		LogLevel:                 e.LogLevel,

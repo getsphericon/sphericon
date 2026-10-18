@@ -14740,11 +14740,18 @@ func (s *SiteInstanceState) encodeFields(e *jx.Encoder) {
 		e.FieldStart("noticeAcknowledged")
 		e.Bool(s.NoticeAcknowledged)
 	}
+	{
+		if s.LatestRelease.Set {
+			e.FieldStart("latestRelease")
+			s.LatestRelease.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteInstanceState = [2]string{
+var jsonFieldsNameOfSiteInstanceState = [3]string{
 	0: "telemetry",
 	1: "noticeAcknowledged",
+	2: "latestRelease",
 }
 
 // Decode decodes SiteInstanceState from json.
@@ -14777,6 +14784,16 @@ func (s *SiteInstanceState) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"noticeAcknowledged\"")
+			}
+		case "latestRelease":
+			if err := func() error {
+				s.LatestRelease.Reset()
+				if err := s.LatestRelease.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"latestRelease\"")
 			}
 		default:
 			return d.Skip()

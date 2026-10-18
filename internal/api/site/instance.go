@@ -31,7 +31,11 @@ func instanceState(s instance.State) *siteapi.SiteInstanceState {
 	if s.Telemetry.Locked {
 		t.LockedBy = siteapi.NewOptSiteInstanceTelemetryLock(siteapi.SiteInstanceTelemetryLock(s.Telemetry.LockedBy))
 	}
-	return &siteapi.SiteInstanceState{Telemetry: t, NoticeAcknowledged: s.NoticeAcknowledged}
+	out := &siteapi.SiteInstanceState{Telemetry: t, NoticeAcknowledged: s.NoticeAcknowledged}
+	if s.LatestRelease != "" {
+		out.LatestRelease = siteapi.NewOptString(s.LatestRelease)
+	}
+	return out
 }
 
 // SiteInstanceGetState returns the Instance state to an Owner of the oldest Workspace.

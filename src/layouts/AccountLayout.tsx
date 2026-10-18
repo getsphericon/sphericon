@@ -1,5 +1,6 @@
 import { AccountNavbar } from '../components/AccountNavbar.tsx'
 import { InstanceNotice } from '../components/InstanceNotice.tsx'
+import { UpdateBanner } from '../components/UpdateBanner.tsx'
 import { UserMenu } from '../components/UserMenu.tsx'
 import { DashboardShell } from './DashboardShell.tsx'
 
@@ -10,7 +11,12 @@ export function AccountLayout() {
     <DashboardShell
       sidebar={<AccountNavbar />}
       headerRight={<UserMenu />}
-      banner={<InstanceNotice />}
+      banner={
+        <>
+          <UpdateBanner />
+          <InstanceNotice />
+        </>
+      }
     />
   )
 }

@@ -60,9 +60,9 @@ func NewSender(mod *Module, cfg *config.Config, opts ...SenderOption) (*Sender, 
 	return s, nil
 }
 
-// IsRelease reports whether version is a release: a plain semantic version, not a
+// isReleaseBuild reports whether version is a release: a plain semantic version, not a
 // development build or a prerelease.
-func IsRelease(version string) bool {
+func isReleaseBuild(version string) bool {
 	v := buildinfo.Semver(version)
 	return semver.IsValid(v) && semver.Prerelease(v) == "" && semver.Build(v) == ""
 }
@@ -70,7 +70,7 @@ func IsRelease(version string) bool {
 // Run sends the report when every gate lets it through. A failed send is logged at debug
 // level and left for the next cycle; only a failure to read or store the state is an error.
 func (s *Sender) Run(ctx context.Context) error {
-	if s.dev || !IsRelease(s.mod.host.AppVersion) {
+	if s.dev || !isReleaseBuild(s.mod.host.AppVersion) {
 		return nil
 	}
 	row, err := s.mod.Ensure(ctx)
