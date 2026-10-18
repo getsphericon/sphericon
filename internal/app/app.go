@@ -903,8 +903,17 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
+		inst, err := do.Invoke[*instance.Module](i)
+		if err != nil {
+			return nil, err
+		}
+		reporter, err := instance.NewSender(inst, cfg)
+		if err != nil {
+			return nil, err
+		}
 		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL,
-			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention}, edition.Jobs(bus.Bus, sys.EmailSender))
+			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
+			edition.Jobs(bus.Bus, sys.EmailSender), jobs.TelemetryReportExtension(reporter))
 		if err != nil {
 			return nil, err
 		}

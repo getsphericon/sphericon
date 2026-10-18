@@ -80,6 +80,9 @@ type DBPool struct {
 	PGXMaxConns int32
 }
 
+// telemetryReceiverURL is the address of the Telemetry report receiver, fixed in the binary.
+const telemetryReceiverURL = "https://telemetry.getsphericon.app"
+
 type Config struct {
 	DatabaseURL    string
 	Port           string
@@ -169,6 +172,9 @@ type Config struct {
 	Telemetry *bool
 	// DoNotTrack is DO_NOT_TRACK=1: it switches the Telemetry report off and never on.
 	DoNotTrack bool
+	// TelemetryReceiverURL is where the daily Telemetry report goes. It is a constant of the
+	// binary with no environment variable (ADR 0032): a test points it at its own receiver.
+	TelemetryReceiverURL string
 
 	// RequireEmailVerification keeps the email verification gate on (ADR 0030). Only an
 	// explicit SPHERICON_REQUIRE_EMAIL_VERIFICATION=false turns it off, for a self-hosted install
@@ -392,6 +398,7 @@ func Load(envName string) (*Config, error) {
 		Locale:                  i18n.Normalize(e.Locale),
 		Telemetry:               parseExplicitBool(e.Telemetry),
 		DoNotTrack:              strings.TrimSpace(e.DoNotTrack) == "1",
+		TelemetryReceiverURL:    telemetryReceiverURL,
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
 		LogLevel:                 e.LogLevel,
