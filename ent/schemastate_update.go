@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -25,6 +26,12 @@ type SchemaStateUpdate struct {
 // Where appends a list predicates to the SchemaStateUpdate builder.
 func (_u *SchemaStateUpdate) Where(ps ...predicate.SchemaState) *SchemaStateUpdate {
 	_u.mutation.Where(ps...)
+	return _u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *SchemaStateUpdate) SetUpdatedAt(v time.Time) *SchemaStateUpdate {
+	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
@@ -70,6 +77,7 @@ func (_u *SchemaStateUpdate) Mutation() *SchemaStateMutation {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *SchemaStateUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -95,6 +103,14 @@ func (_u *SchemaStateUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (_u *SchemaStateUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := schemastate.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
+	}
+}
+
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (_u *SchemaStateUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SchemaStateUpdate {
 	_u.modifiers = append(_u.modifiers, modifiers...)
@@ -109,6 +125,9 @@ func (_u *SchemaStateUpdate) sqlSave(ctx context.Context) (_node int, err error)
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(schemastate.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.Major(); ok {
 		_spec.SetField(schemastate.FieldMajor, field.TypeInt, value)
@@ -139,6 +158,12 @@ type SchemaStateUpdateOne struct {
 	hooks     []Hook
 	mutation  *SchemaStateMutation
 	modifiers []func(*sql.UpdateBuilder)
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *SchemaStateUpdateOne) SetUpdatedAt(v time.Time) *SchemaStateUpdateOne {
+	_u.mutation.SetUpdatedAt(v)
+	return _u
 }
 
 // SetMajor sets the "major" field.
@@ -196,6 +221,7 @@ func (_u *SchemaStateUpdateOne) Select(field string, fields ...string) *SchemaSt
 
 // Save executes the query and returns the updated SchemaState entity.
 func (_u *SchemaStateUpdateOne) Save(ctx context.Context) (*SchemaState, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -218,6 +244,14 @@ func (_u *SchemaStateUpdateOne) Exec(ctx context.Context) error {
 func (_u *SchemaStateUpdateOne) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (_u *SchemaStateUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := schemastate.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -252,6 +286,9 @@ func (_u *SchemaStateUpdateOne) sqlSave(ctx context.Context) (_node *SchemaState
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(schemastate.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.Major(); ok {
 		_spec.SetField(schemastate.FieldMajor, field.TypeInt, value)

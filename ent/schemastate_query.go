@@ -265,12 +265,12 @@ func (_q *SchemaStateQuery) Clone() *SchemaStateQuery {
 // Example:
 //
 //	var v []struct {
-//		Major int `json:"major,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.SchemaState.Query().
-//		GroupBy(schemastate.FieldMajor).
+//		GroupBy(schemastate.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *SchemaStateQuery) GroupBy(field string, fields ...string) *SchemaStateGroupBy {
@@ -288,11 +288,11 @@ func (_q *SchemaStateQuery) GroupBy(field string, fields ...string) *SchemaState
 // Example:
 //
 //	var v []struct {
-//		Major int `json:"major,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.SchemaState.Query().
-//		Select(schemastate.FieldMajor).
+//		Select(schemastate.FieldCreatedAt).
 //		Scan(ctx, &v)
 func (_q *SchemaStateQuery) Select(fields ...string) *SchemaStateSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)

@@ -782,6 +782,8 @@ var (
 	// SchemaStateColumns holds the columns for the "schema_state" table.
 	SchemaStateColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "major", Type: field.TypeInt},
 		{Name: "floor", Type: field.TypeString},
 	}

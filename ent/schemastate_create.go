@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -19,6 +20,34 @@ type SchemaStateCreate struct {
 	mutation *SchemaStateMutation
 	hooks    []Hook
 	conflict []sql.ConflictOption
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (_c *SchemaStateCreate) SetCreatedAt(v time.Time) *SchemaStateCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (_c *SchemaStateCreate) SetNillableCreatedAt(v *time.Time) *SchemaStateCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
+	}
+	return _c
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_c *SchemaStateCreate) SetUpdatedAt(v time.Time) *SchemaStateCreate {
+	_c.mutation.SetUpdatedAt(v)
+	return _c
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_c *SchemaStateCreate) SetNillableUpdatedAt(v *time.Time) *SchemaStateCreate {
+	if v != nil {
+		_c.SetUpdatedAt(*v)
+	}
+	return _c
 }
 
 // SetMajor sets the "major" field.
@@ -46,6 +75,7 @@ func (_c *SchemaStateCreate) Mutation() *SchemaStateMutation {
 
 // Save creates the SchemaState in the database.
 func (_c *SchemaStateCreate) Save(ctx context.Context) (*SchemaState, error) {
+	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
@@ -71,8 +101,26 @@ func (_c *SchemaStateCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (_c *SchemaStateCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		v := schemastate.DefaultCreatedAt()
+		_c.mutation.SetCreatedAt(v)
+	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		v := schemastate.DefaultUpdatedAt()
+		_c.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (_c *SchemaStateCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "SchemaState.created_at"`)}
+	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "SchemaState.updated_at"`)}
+	}
 	if _, ok := _c.mutation.Major(); !ok {
 		return &ValidationError{Name: "major", err: errors.New(`ent: missing required field "SchemaState.major"`)}
 	}
@@ -112,6 +160,14 @@ func (_c *SchemaStateCreate) createSpec() (*SchemaState, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = id
 	}
+	if value, ok := _c.mutation.CreatedAt(); ok {
+		_spec.SetField(schemastate.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := _c.mutation.UpdatedAt(); ok {
+		_spec.SetField(schemastate.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
 	if value, ok := _c.mutation.Major(); ok {
 		_spec.SetField(schemastate.FieldMajor, field.TypeInt, value)
 		_node.Major = value
@@ -127,7 +183,7 @@ func (_c *SchemaStateCreate) createSpec() (*SchemaState, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.SchemaState.Create().
-//		SetMajor(v).
+//		SetCreatedAt(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -136,7 +192,7 @@ func (_c *SchemaStateCreate) createSpec() (*SchemaState, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.SchemaStateUpsert) {
-//			SetMajor(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *SchemaStateCreate) OnConflict(opts ...sql.ConflictOption) *SchemaStateUpsertOne {
@@ -171,6 +227,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *SchemaStateUpsert) SetUpdatedAt(v time.Time) *SchemaStateUpsert {
+	u.Set(schemastate.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *SchemaStateUpsert) UpdateUpdatedAt() *SchemaStateUpsert {
+	u.SetExcluded(schemastate.FieldUpdatedAt)
+	return u
+}
 
 // SetMajor sets the "major" field.
 func (u *SchemaStateUpsert) SetMajor(v int) *SchemaStateUpsert {
@@ -219,6 +287,9 @@ func (u *SchemaStateUpsertOne) UpdateNewValues() *SchemaStateUpsertOne {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(schemastate.FieldID)
 		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(schemastate.FieldCreatedAt)
+		}
 	}))
 	return u
 }
@@ -248,6 +319,20 @@ func (u *SchemaStateUpsertOne) Update(set func(*SchemaStateUpsert)) *SchemaState
 		set(&SchemaStateUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *SchemaStateUpsertOne) SetUpdatedAt(v time.Time) *SchemaStateUpsertOne {
+	return u.Update(func(s *SchemaStateUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *SchemaStateUpsertOne) UpdateUpdatedAt() *SchemaStateUpsertOne {
+	return u.Update(func(s *SchemaStateUpsert) {
+		s.UpdateUpdatedAt()
+	})
 }
 
 // SetMajor sets the "major" field.
@@ -337,6 +422,7 @@ func (_c *SchemaStateCreateBulk) Save(ctx context.Context) ([]*SchemaState, erro
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*SchemaStateMutation)
 				if !ok {
@@ -419,7 +505,7 @@ func (_c *SchemaStateCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.SchemaStateUpsert) {
-//			SetMajor(v+v).
+//			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *SchemaStateCreateBulk) OnConflict(opts ...sql.ConflictOption) *SchemaStateUpsertBulk {
@@ -466,6 +552,9 @@ func (u *SchemaStateUpsertBulk) UpdateNewValues() *SchemaStateUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(schemastate.FieldID)
 			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(schemastate.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -496,6 +585,20 @@ func (u *SchemaStateUpsertBulk) Update(set func(*SchemaStateUpsert)) *SchemaStat
 		set(&SchemaStateUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *SchemaStateUpsertBulk) SetUpdatedAt(v time.Time) *SchemaStateUpsertBulk {
+	return u.Update(func(s *SchemaStateUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *SchemaStateUpsertBulk) UpdateUpdatedAt() *SchemaStateUpsertBulk {
+	return u.Update(func(s *SchemaStateUpsert) {
+		s.UpdateUpdatedAt()
+	})
 }
 
 // SetMajor sets the "major" field.

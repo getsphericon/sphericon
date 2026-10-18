@@ -21808,6 +21808,8 @@ type SchemaStateMutation struct {
 	op            Op
 	typ           string
 	id            *int64
+	created_at    *time.Time
+	updated_at    *time.Time
 	major         *int
 	addmajor      *int
 	floor         *string
@@ -21919,6 +21921,78 @@ func (m *SchemaStateMutation) IDs(ctx context.Context) ([]int64, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SchemaStateMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SchemaStateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SchemaState entity.
+// If the SchemaState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SchemaStateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SchemaStateMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SchemaStateMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SchemaStateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SchemaState entity.
+// If the SchemaState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SchemaStateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SchemaStateMutation) ResetUpdatedAt() {
+	m.updated_at = nil
 }
 
 // SetMajor sets the "major" field.
@@ -22047,7 +22121,13 @@ func (m *SchemaStateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SchemaStateMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, schemastate.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, schemastate.FieldUpdatedAt)
+	}
 	if m.major != nil {
 		fields = append(fields, schemastate.FieldMajor)
 	}
@@ -22062,6 +22142,10 @@ func (m *SchemaStateMutation) Fields() []string {
 // schema.
 func (m *SchemaStateMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case schemastate.FieldCreatedAt:
+		return m.CreatedAt()
+	case schemastate.FieldUpdatedAt:
+		return m.UpdatedAt()
 	case schemastate.FieldMajor:
 		return m.Major()
 	case schemastate.FieldFloor:
@@ -22075,6 +22159,10 @@ func (m *SchemaStateMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *SchemaStateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case schemastate.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case schemastate.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	case schemastate.FieldMajor:
 		return m.OldMajor(ctx)
 	case schemastate.FieldFloor:
@@ -22088,6 +22176,20 @@ func (m *SchemaStateMutation) OldField(ctx context.Context, name string) (ent.Va
 // type.
 func (m *SchemaStateMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case schemastate.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case schemastate.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
 	case schemastate.FieldMajor:
 		v, ok := value.(int)
 		if !ok {
@@ -22166,6 +22268,12 @@ func (m *SchemaStateMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *SchemaStateMutation) ResetField(name string) error {
 	switch name {
+	case schemastate.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case schemastate.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
 	case schemastate.FieldMajor:
 		m.ResetMajor()
 		return nil

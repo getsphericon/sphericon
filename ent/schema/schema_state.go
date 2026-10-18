@@ -21,6 +21,10 @@ func (SchemaState) Annotations() []schema.Annotation {
 	}
 }
 
+func (SchemaState) Mixin() []ent.Mixin {
+	return []ent.Mixin{TimeMixin{}}
+}
+
 func (SchemaState) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("id").
