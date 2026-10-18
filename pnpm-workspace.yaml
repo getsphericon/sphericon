@@ -25,10 +25,10 @@ minimumReleaseAgeExclude:
   - '@typescript/native-preview-win32-arm64@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
   - '@typescript/native-preview-win32-x64@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
   - '@typescript/native-preview@7.0.0-dev.20260620.1 || 7.0.0-dev.20260624.1 || 7.0.0-dev.20260627.2'
-  - '@tanstack/query-core@5.101.1 || 5.101.2'
-  - '@tanstack/react-query@5.101.1 || 5.101.2'
+  - '@tanstack/query-core@5.101.1 || 5.101.2 || 5.104.4'
+  - '@tanstack/react-query@5.101.1 || 5.101.2 || 5.104.4'
   - '@vitejs/plugin-react@6.0.3'
-  - i18next@26.3.2
+  - i18next@26.3.2 || 26.5.2
   - playwright-core@1.61.1
   - playwright@1.61.1
   - vite@8.1.0 || 8.3.4
@@ -41,5 +41,13 @@ minimumReleaseAgeExclude:
   - '@typespec/openapi@1.17.0'
   - '@typespec/rest@0.87.0'
   - '@typespec/versioning@0.87.0'
-  - i18next-cli@1.75.1 || 1.75.2
+  - i18next-cli@1.75.1 || 1.75.2 || 1.77.0
   - knip@6.41.0
+  - '@mantine/charts@9.7.3'
+  - '@mantine/core@9.7.3'
+  - '@mantine/form@9.7.3'
+  - '@mantine/hooks@9.7.3'
+  - '@mantine/modals@9.7.3'
+  - '@mantine/notifications@9.7.3'
+  - '@mantine/store@9.7.3'
+  - react-i18next@17.1.0
