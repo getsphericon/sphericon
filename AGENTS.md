@@ -362,10 +362,12 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
 - ADR numbers are unique (`mise run check:adr`). Take the next free number when you add an ADR,
   and re-check after merging `main`: parallel branches pick the same one.
 - After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the generated output.
-- **No direct SQL in tests.** Tests read and write through ent (`env.DB`), river's own API, or a
-  `testhelper` abstraction for tables ent doesn't model (the domain-event outbox: `env.Outbox*`,
-  `env.OutboxCount`). `forbidigo` in `.golangci.yml` rejects `*sql.DB` `Exec`/`Query`/`QueryRow` in
-  `_test.go` files. Inject faults with ent hooks/interceptors, never DDL or triggers.
+- **No direct SQL in tests.** Tests read and write through ent (`env.DB`) or river's own API. The
+  domain-event outbox is modelled in ent too (`OutboxMessage`, `OutboxOffset`: watermill owns the
+  tables, `entsql.Skip` keeps them out of migrations, only the client is generated), so
+  `env.Outbox*`, `env.OutboxCount` and the cursor helpers sit on the generated client.
+  `forbidigo` in `.golangci.yml` rejects `*sql.DB` `Exec`/`Query`/`QueryRow` in `_test.go` files.
+  Inject faults with ent hooks/interceptors, never DDL or triggers.
 - **Tests never clean up by hand, and never reset state at their start.** A test that needs a real
   commit (the outbox router, concurrent workers, a whole app) takes a database of its own from
   `testhelper.RealDB`, `RealDBURL` or `EmptyDBURL` (pgtestdb), dropped when the test ends; every

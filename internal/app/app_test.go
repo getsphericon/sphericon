@@ -371,8 +371,6 @@ func TestResetSecondFactorByEmail(t *testing.T) {
 	ctx := context.Background()
 	client, err := invokeEnt(a)
 	require.NoError(t, err)
-	database, err := invokeSQL(a)
-	require.NoError(t, err)
 
 	before := client.User.GetX(ctx, fixtures.SecondFactorSamID)
 
@@ -384,7 +382,7 @@ func TestResetSecondFactorByEmail(t *testing.T) {
 	assert.Empty(t, after.SecondFactorSecretEncrypted)
 	assert.Greater(t, after.SessionEpoch, before.SessionEpoch, "every session ends")
 
-	envelopes, err := testhelper.OutboxEnvelopesOn(ctx, database, events.NameAuditEntry)
+	envelopes, err := testhelper.OutboxEnvelopesOn(ctx, client, events.NameAuditEntry)
 	require.NoError(t, err)
 	var workspaces []int64
 	for _, e := range envelopes {

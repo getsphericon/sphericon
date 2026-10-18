@@ -66,6 +66,12 @@ type Operator func(*sql.Selector)
 // OutboundMessage is the predicate function for outboundmessage builders.
 type OutboundMessage func(*sql.Selector)
 
+// OutboxMessage is the predicate function for outboxmessage builders.
+type OutboxMessage func(*sql.Selector)
+
+// OutboxOffset is the predicate function for outboxoffset builders.
+type OutboxOffset func(*sql.Selector)
+
 // RecoveryCode is the predicate function for recoverycode builders.
 type RecoveryCode func(*sql.Selector)
 
