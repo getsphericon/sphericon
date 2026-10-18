@@ -205,9 +205,9 @@ current go-pkgz/auth email+password flow, which does neither natively.
 ### Self-hosting lifecycle — core, not EE
 
 Operating a self-hosted instance over time: knowing an update exists, applying it safely, and
-(optionally) telling us how the fleet uses the product. The version check and telemetry are
-**one outbound channel behind one opt-out gate** — the "is there a newer release?" ping _is_ a
-usage signal; plan and document them together, not as two disconnected features.
+(optionally) telling us how the fleet uses the product. The release check and the telemetry
+report are **two channels with two switches** (ADR 0032): refusing telemetry must not hide a
+security release.
 
 - **Release-update notification** — the running instance checks for a newer published release
   and surfaces an admin-only in-app banner ("vX.Y is available"). This is the solid MVP
@@ -222,14 +222,10 @@ usage signal; plan and document them together, not as two disconnected features.
     single replica), roll servers. Migrations are embedded and forward-only.
   - _Postgres major upgrade_ — a DBA operation (`pg_upgrade` or dump/restore across majors),
     independent of the app release. The doc says "14+"; compose ships `postgres:16`.
-- **Usage telemetry (opt-out)** — anonymous self-hosted → us usage reporting, on by default with
-  a single documented kill-switch (env var) **and** an in-app toggle. This is the politically
-  sensitive item (OSS phone-home; cf. the Homebrew/Audacity blowback), so the design must
-  pin down: a stable anonymous **instance id** (no workspace/contact/PII), an _exactly
-  documented_ payload (version, instance age, coarse counts, deploy shape), and the opt-out
-  honoured before the first send. **ADR candidate** — this roadmap defers to `docs/adr/*`, so
-  a bare bullet is low-signal; the payload/consent contract deserves its own ADR (not authored
-  yet — say the word).
+- **Usage telemetry (opt-out)** — decided in
+  [ADR 0032](./adr/0032-instance-telemetry-report-and-release-check): a daily anonymous Telemetry
+  report on by default, switchable off by `SPHERICON_TELEMETRY` or by the owner in the app. The
+  release check is a separate channel with its own switch. Not built yet.
 
 ---
 

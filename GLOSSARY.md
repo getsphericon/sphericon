@@ -583,6 +583,32 @@ no shared secret. The app never calls the address and keeps nothing about the re
 Unconfigured, the operation answers 404 and the link is absent.
 _Avoid_: SSO (nothing is federated: the receiver keeps no session of the app), magic link
 
+### Self-hosting lifecycle
+
+**Instance**:
+One installation of the app: one database and every Workspace in it, whatever the number of
+processes serving it. The unit that is upgraded, backed up and counted in a Telemetry report. The
+SaaS is an Instance too, but never reports on itself.
+_Avoid_: Installation, deployment, tenant (that is a Workspace), server
+
+**Instance id**:
+A random identifier an Instance generates for itself at first start. It is derived from nothing
+(no Workspace, User, host or address) and identifies no one, only lets reports from the same
+Instance be told apart over time.
+_Avoid_: Install id, machine id, license id
+
+**Release check**:
+The Instance asking where the newest published release is, so an owner can be told one exists.
+It sends nothing about the Instance and is independent of the Telemetry report.
+_Avoid_: Update ping, phone-home
+
+**Telemetry report**:
+The anonymous, exactly documented summary an Instance sends to the project: coarse facts about the
+Instance, never about a Workspace, Contact or person. On by default, switchable off by the
+operator's configuration (which then wins) or by the owner in the app. Not the operator's own
+OpenTelemetry metrics, which go to a collector the operator chooses.
+_Avoid_: Usage ping, phone-home, analytics, tracking (that is the tracker on customer sites)
+
 ## Channels & future surfaces
 
 The identity spine — **Contact + Visitor + Event** — is channel-agnostic and is the stable point
