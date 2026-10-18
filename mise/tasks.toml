@@ -521,7 +521,7 @@ depends = ["build:tracker", "build:spa"]
 run = '''
 commit=$(git rev-parse --short HEAD 2>/dev/null || echo none)
 date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-go build -tags embed_spa -ldflags "-s -w -X main.version=${VERSION:-dev} -X main.commit=$commit -X main.date=$date" -o bin/sphericon ./cmd/server
+go build -tags embed_spa -ldflags "-s -w -X github.com/getsphericon/sphericon/internal/buildinfo.Version=${VERSION:-dev} -X github.com/getsphericon/sphericon/internal/buildinfo.Commit=$commit -X github.com/getsphericon/sphericon/internal/buildinfo.Date=$date" -o bin/sphericon ./cmd/server
 '''
 
 [loc]
