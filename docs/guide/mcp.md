@@ -65,7 +65,7 @@ registration and PKCE (S256 only).
 | Automations         | `automations_*`, `automations_deactivate`, `automations_dry_run_http_step`             |
 | Reference and rates | `custom_fields_list`, `sending_domains_list`, `sending_domains_rates`                  |
 | Consent             | `unsubscribes_create`, `suppressions_create`                                           |
-| Webhooks            | `webhooks_*`                                                                           |
+| Webhooks            | `webhooks_*`, `webhooks_regenerate_secret`, `webhooks_test`                            |
 
 API token management is never a tool. The live list for your token is whatever `tools/list`
 returns; it depends on the token's scopes.

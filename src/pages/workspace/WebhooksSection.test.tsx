@@ -6,6 +6,8 @@ import {
   handleSiteWebhooksCreate,
   handleSiteWebhooksDelete,
   handleSiteWebhooksList,
+  handleSiteWebhooksRegenerateSecret,
+  handleSiteWebhooksTest,
   handleSiteWebhooksUpdate,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteWebhookEndpointResource } from '../../generated/site/types.gen.ts'
@@ -114,6 +116,41 @@ test('toggles an endpoint off', async () => {
   await expect
     .poll(() => bodies)
     .toEqual([{ url: 'https://example.com/hook', eventTypes: ['email.opened'], enabled: false }])
+})
+
+test('regenerates the secret after confirmation', async () => {
+  let regenerated = false
+  worker.use(
+    list([endpoint()]),
+    handleSiteWebhooksRegenerateSecret(() => {
+      regenerated = true
+      return HttpResponse.json(endpoint({ secret: 'whsec_2' }))
+    }),
+  )
+  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+
+  await screen.getByRole('button', { name: 'Regenerate secret' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Regenerate secret' }).click()
+
+  await expect.poll(() => regenerated).toBe(true)
+})
+
+test('sends a test event and shows what the receiver answered', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    list([endpoint()]),
+    handleSiteWebhooksTest(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({ delivered: false, kind: 'http_status', status: 410 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+
+  await screen.getByRole('button', { name: 'Send test event' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Send' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ eventType: 'contact.created' }])
+  await expect.element(screen.getByText('Not delivered: HTTP 410')).toBeInTheDocument()
 })
 
 test('deletes an endpoint after confirmation', async () => {

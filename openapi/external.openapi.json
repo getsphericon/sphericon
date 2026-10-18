@@ -7729,6 +7729,222 @@
         },
         "tags": ["Webhooks"]
       }
+    },
+    "/webhooks/{id}/regenerate-secret": {
+      "post": {
+        "operationId": "Webhooks_regenerateSecret",
+        "description": "Replace the endpoint's signing secret; the old one stops verifying at once. The new secret is never returned here: read it in the app. Needs the webhooks:regenerate scope.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WebhookResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Webhooks"]
+      }
+    },
+    "/webhooks/{id}/test": {
+      "post": {
+        "operationId": "Webhooks_test",
+        "description": "Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer. Does not change the endpoint's failure state. Needs the webhooks:test scope.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WebhookResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookTestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Webhooks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestWebhookInput"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "security": [
@@ -8007,6 +8223,8 @@
           "templates:write",
           "webhooks:read",
           "webhooks:write",
+          "webhooks:regenerate",
+          "webhooks:test",
           "custom_fields:read",
           "sending_domains:read",
           "sending_domains:write",
@@ -10694,6 +10912,17 @@
         },
         "description": "Request body for a test send"
       },
+      "TestWebhookInput": {
+        "type": "object",
+        "required": ["eventType"],
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "description": "The event name the sample carries, for example `contact.created`"
+          }
+        },
+        "description": "Request body for sending a sample event to a webhook endpoint"
+      },
       "TimeZoneName": {
         "type": "string"
       },
@@ -11132,6 +11361,30 @@
           }
         },
         "description": "Outbound webhook endpoint. The HMAC signing secret is deliberately absent:\nit is never returned through the external API (view it in the app)."
+      },
+      "WebhookTestResult": {
+        "type": "object",
+        "required": ["delivered"],
+        "properties": {
+          "delivered": {
+            "type": "boolean",
+            "description": "Whether the receiver answered 2xx"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status the receiver answered, when it answered"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookErrorKind"
+              }
+            ],
+            "description": "Why the delivery failed; absent when delivered"
+          }
+        },
+        "description": "What the receiver answered to a test delivery. The endpoint's failure state is not touched."
       }
     },
     "securitySchemes": {

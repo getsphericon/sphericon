@@ -123,6 +123,8 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteWebhooksDeleteOperation:                       []string{},
 	SiteWebhooksGetOperation:                          []string{},
 	SiteWebhooksListOperation:                         []string{},
+	SiteWebhooksRegenerateSecretOperation:             []string{},
+	SiteWebhooksTestOperation:                         []string{},
 	SiteWebhooksUpdateOperation:                       []string{},
 	SiteWorkspacesAccountLinkOperation:                []string{},
 	SiteWorkspacesListOperation:                       []string{},

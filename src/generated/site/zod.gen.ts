@@ -770,6 +770,13 @@ export const zSiteTestSendBroadcastInput = z.object({
 });
 
 /**
+ * Request body for sending a sample event to a webhook endpoint
+ */
+export const zSiteTestWebhookInput = z.object({
+  eventType: z.string()
+});
+
+/**
  * The channel a transactional send went out on (email today; sms reserved)
  */
 export const zSiteTransactionalEmailChannel = z.enum(['email']);
@@ -882,6 +889,15 @@ export const zSiteWebhookErrorKind = z.enum([
   'http_status',
   'network'
 ]);
+
+/**
+ * What the receiver answered to a test delivery. The endpoint's failure state is not touched.
+ */
+export const zSiteWebhookTestResult = z.object({
+  delivered: z.boolean(),
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  kind: z.exactOptional(zSiteWebhookErrorKind)
+});
 
 export const zTimeZoneName = z.string();
 
@@ -2760,6 +2776,28 @@ export const zSiteWebhooksUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteWebhooksUpdateResponse = zSiteWebhookEndpointResource;
+
+export const zSiteWebhooksRegenerateSecretPath = z.object({
+  slug: z.string(),
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWebhooksRegenerateSecretResponse = zSiteWebhookEndpointResource;
+
+export const zSiteWebhooksTestBody = zSiteTestWebhookInput;
+
+export const zSiteWebhooksTestPath = z.object({
+  slug: z.string(),
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWebhooksTestResponse = zSiteWebhookTestResult;
 
 export const zSiteSegmentsListPath = z.object({
   slug: z.string()

@@ -140,6 +140,8 @@ const (
 	ApiTokenScopeTemplatesWrite      ApiTokenScope = "templates:write"
 	ApiTokenScopeWebhooksRead        ApiTokenScope = "webhooks:read"
 	ApiTokenScopeWebhooksWrite       ApiTokenScope = "webhooks:write"
+	ApiTokenScopeWebhooksRegenerate  ApiTokenScope = "webhooks:regenerate"
+	ApiTokenScopeWebhooksTest        ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead    ApiTokenScope = "custom_fields:read"
 	ApiTokenScopeSendingDomainsRead  ApiTokenScope = "sending_domains:read"
 	ApiTokenScopeSendingDomainsWrite ApiTokenScope = "sending_domains:write"
@@ -172,6 +174,8 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeTemplatesWrite,
 		ApiTokenScopeWebhooksRead,
 		ApiTokenScopeWebhooksWrite,
+		ApiTokenScopeWebhooksRegenerate,
+		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
 		ApiTokenScopeSendingDomainsRead,
 		ApiTokenScopeSendingDomainsWrite,
@@ -219,6 +223,10 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeWebhooksRead:
 		return []byte(s), nil
 	case ApiTokenScopeWebhooksWrite:
+		return []byte(s), nil
+	case ApiTokenScopeWebhooksRegenerate:
+		return []byte(s), nil
+	case ApiTokenScopeWebhooksTest:
 		return []byte(s), nil
 	case ApiTokenScopeCustomFieldsRead:
 		return []byte(s), nil
@@ -296,6 +304,12 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeWebhooksWrite:
 		*s = ApiTokenScopeWebhooksWrite
+		return nil
+	case ApiTokenScopeWebhooksRegenerate:
+		*s = ApiTokenScopeWebhooksRegenerate
+		return nil
+	case ApiTokenScopeWebhooksTest:
+		*s = ApiTokenScopeWebhooksTest
 		return nil
 	case ApiTokenScopeCustomFieldsRead:
 		*s = ApiTokenScopeCustomFieldsRead
@@ -6975,6 +6989,52 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// NewOptWebhookErrorKind returns new OptWebhookErrorKind with value set to v.
+func NewOptWebhookErrorKind(v WebhookErrorKind) OptWebhookErrorKind {
+	return OptWebhookErrorKind{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptWebhookErrorKind is optional WebhookErrorKind.
+type OptWebhookErrorKind struct {
+	Value WebhookErrorKind
+	Set   bool
+}
+
+// IsSet returns true if OptWebhookErrorKind was set.
+func (o OptWebhookErrorKind) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptWebhookErrorKind) Reset() {
+	var v WebhookErrorKind
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptWebhookErrorKind) SetTo(v WebhookErrorKind) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptWebhookErrorKind) Get() (v WebhookErrorKind, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptWebhookErrorKind) Or(d WebhookErrorKind) WebhookErrorKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptWebhookFailure returns new OptWebhookFailure with value set to v.
 func NewOptWebhookFailure(v WebhookFailure) OptWebhookFailure {
 	return OptWebhookFailure{
@@ -7377,6 +7437,8 @@ func (*ProblemDetailsHeaders) webhooksCreateRes()            {}
 func (*ProblemDetailsHeaders) webhooksDeleteRes()            {}
 func (*ProblemDetailsHeaders) webhooksGetRes()               {}
 func (*ProblemDetailsHeaders) webhooksListRes()              {}
+func (*ProblemDetailsHeaders) webhooksRegenerateSecretRes()  {}
+func (*ProblemDetailsHeaders) webhooksTestRes()              {}
 func (*ProblemDetailsHeaders) webhooksUpdateRes()            {}
 
 // A rate as the (numerator, denominator, rate) triple (ADR 0011). The rate is null when the
@@ -9857,6 +9919,23 @@ func (s *TestSendBroadcastInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
 
+// Request body for sending a sample event to a webhook endpoint.
+// Ref: #/components/schemas/TestWebhookInput
+type TestWebhookInput struct {
+	// The event name the sample carries, for example `contact.created`.
+	EventType string `json:"eventType"`
+}
+
+// GetEventType returns the value of EventType.
+func (s *TestWebhookInput) GetEventType() string {
+	return s.EventType
+}
+
+// SetEventType sets the value of EventType.
+func (s *TestWebhookInput) SetEventType(val string) {
+	s.EventType = val
+}
+
 type TimeZoneName string
 
 type Timestamp time.Time
@@ -10725,9 +10804,53 @@ func (s *WebhookResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*WebhookResource) webhooksCreateRes() {}
-func (*WebhookResource) webhooksGetRes()    {}
-func (*WebhookResource) webhooksUpdateRes() {}
+func (*WebhookResource) webhooksCreateRes()           {}
+func (*WebhookResource) webhooksGetRes()              {}
+func (*WebhookResource) webhooksRegenerateSecretRes() {}
+func (*WebhookResource) webhooksUpdateRes()           {}
+
+// What the receiver answered to a test delivery. The endpoint's failure state is not touched.
+// Ref: #/components/schemas/WebhookTestResult
+type WebhookTestResult struct {
+	// Whether the receiver answered 2xx.
+	Delivered bool `json:"delivered"`
+	// HTTP status the receiver answered, when it answered.
+	Status OptInt32 `json:"status"`
+	// Why the delivery failed; absent when delivered.
+	Kind OptWebhookErrorKind `json:"kind"`
+}
+
+// GetDelivered returns the value of Delivered.
+func (s *WebhookTestResult) GetDelivered() bool {
+	return s.Delivered
+}
+
+// GetStatus returns the value of Status.
+func (s *WebhookTestResult) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// GetKind returns the value of Kind.
+func (s *WebhookTestResult) GetKind() OptWebhookErrorKind {
+	return s.Kind
+}
+
+// SetDelivered sets the value of Delivered.
+func (s *WebhookTestResult) SetDelivered(val bool) {
+	s.Delivered = val
+}
+
+// SetStatus sets the value of Status.
+func (s *WebhookTestResult) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
+// SetKind sets the value of Kind.
+func (s *WebhookTestResult) SetKind(val OptWebhookErrorKind) {
+	s.Kind = val
+}
+
+func (*WebhookTestResult) webhooksTestRes() {}
 
 type WebhooksCreateUnauthorized ProblemDetails
 
@@ -10847,6 +10970,34 @@ func (*WebhooksListUnauthorized) webhooksListRes() {}
 type WebhooksListUnprocessableEntity ProblemDetails
 
 func (*WebhooksListUnprocessableEntity) webhooksListRes() {}
+
+type WebhooksRegenerateSecretBadRequest ProblemDetails
+
+func (*WebhooksRegenerateSecretBadRequest) webhooksRegenerateSecretRes() {}
+
+type WebhooksRegenerateSecretNotFound ProblemDetails
+
+func (*WebhooksRegenerateSecretNotFound) webhooksRegenerateSecretRes() {}
+
+type WebhooksRegenerateSecretUnauthorized ProblemDetails
+
+func (*WebhooksRegenerateSecretUnauthorized) webhooksRegenerateSecretRes() {}
+
+type WebhooksTestBadRequest ProblemDetails
+
+func (*WebhooksTestBadRequest) webhooksTestRes() {}
+
+type WebhooksTestNotFound ProblemDetails
+
+func (*WebhooksTestNotFound) webhooksTestRes() {}
+
+type WebhooksTestUnauthorized ProblemDetails
+
+func (*WebhooksTestUnauthorized) webhooksTestRes() {}
+
+type WebhooksTestUnprocessableEntity ProblemDetails
+
+func (*WebhooksTestUnprocessableEntity) webhooksTestRes() {}
 
 type WebhooksUpdateBadRequest ProblemDetails
 

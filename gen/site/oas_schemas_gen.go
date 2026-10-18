@@ -2875,6 +2875,52 @@ func (o OptSiteSuppressionChannel) Or(d SiteSuppressionChannel) SiteSuppressionC
 	return d
 }
 
+// NewOptSiteWebhookErrorKind returns new OptSiteWebhookErrorKind with value set to v.
+func NewOptSiteWebhookErrorKind(v SiteWebhookErrorKind) OptSiteWebhookErrorKind {
+	return OptSiteWebhookErrorKind{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteWebhookErrorKind is optional SiteWebhookErrorKind.
+type OptSiteWebhookErrorKind struct {
+	Value SiteWebhookErrorKind
+	Set   bool
+}
+
+// IsSet returns true if OptSiteWebhookErrorKind was set.
+func (o OptSiteWebhookErrorKind) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteWebhookErrorKind) Reset() {
+	var v SiteWebhookErrorKind
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteWebhookErrorKind) SetTo(v SiteWebhookErrorKind) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteWebhookErrorKind) Get() (v SiteWebhookErrorKind, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteWebhookErrorKind) Or(d SiteWebhookErrorKind) SiteWebhookErrorKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteWebhookFailure returns new OptSiteWebhookFailure with value set to v.
 func NewOptSiteWebhookFailure(v SiteWebhookFailure) OptSiteWebhookFailure {
 	return OptSiteWebhookFailure{
@@ -11157,6 +11203,23 @@ func (s *SiteTestSendBroadcastInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
 
+// Request body for sending a sample event to a webhook endpoint.
+// Ref: #/components/schemas/SiteTestWebhookInput
+type SiteTestWebhookInput struct {
+	// The event name the sample carries, for example `contact.created`.
+	EventType string `json:"eventType"`
+}
+
+// GetEventType returns the value of EventType.
+func (s *SiteTestWebhookInput) GetEventType() string {
+	return s.EventType
+}
+
+// SetEventType sets the value of EventType.
+func (s *SiteTestWebhookInput) SetEventType(val string) {
+	s.EventType = val
+}
+
 type SiteTokensCreateForbidden ProblemDetails
 
 func (*SiteTokensCreateForbidden) siteTokensCreateRes() {}
@@ -12215,9 +12278,10 @@ func (s *SiteWebhookEndpointResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteWebhookEndpointResource) siteWebhooksCreateRes() {}
-func (*SiteWebhookEndpointResource) siteWebhooksGetRes()    {}
-func (*SiteWebhookEndpointResource) siteWebhooksUpdateRes() {}
+func (*SiteWebhookEndpointResource) siteWebhooksCreateRes()           {}
+func (*SiteWebhookEndpointResource) siteWebhooksGetRes()              {}
+func (*SiteWebhookEndpointResource) siteWebhooksRegenerateSecretRes() {}
+func (*SiteWebhookEndpointResource) siteWebhooksUpdateRes()           {}
 
 // Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in time),
 // `blocked_address` (the URL names an address this instance does not permit), `http_status` (a non-2xx
@@ -12343,6 +12407,49 @@ func (s *SiteWebhookFailure) SetStatus(val OptInt32) {
 	s.Status = val
 }
 
+// What the receiver answered to a test delivery. The endpoint's failure state is not touched.
+// Ref: #/components/schemas/SiteWebhookTestResult
+type SiteWebhookTestResult struct {
+	// Whether the receiver answered 2xx.
+	Delivered bool `json:"delivered"`
+	// HTTP status the receiver answered, when it answered.
+	Status OptInt32 `json:"status"`
+	// Why the delivery failed; absent when delivered.
+	Kind OptSiteWebhookErrorKind `json:"kind"`
+}
+
+// GetDelivered returns the value of Delivered.
+func (s *SiteWebhookTestResult) GetDelivered() bool {
+	return s.Delivered
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteWebhookTestResult) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteWebhookTestResult) GetKind() OptSiteWebhookErrorKind {
+	return s.Kind
+}
+
+// SetDelivered sets the value of Delivered.
+func (s *SiteWebhookTestResult) SetDelivered(val bool) {
+	s.Delivered = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteWebhookTestResult) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteWebhookTestResult) SetKind(val OptSiteWebhookErrorKind) {
+	s.Kind = val
+}
+
+func (*SiteWebhookTestResult) siteWebhooksTestRes() {}
+
 type SiteWebhooksCreateNotFound ProblemDetails
 
 func (*SiteWebhooksCreateNotFound) siteWebhooksCreateRes() {}
@@ -12449,6 +12556,26 @@ func (*SiteWebhooksListOK) siteWebhooksListRes() {}
 type SiteWebhooksListUnprocessableEntity ProblemDetails
 
 func (*SiteWebhooksListUnprocessableEntity) siteWebhooksListRes() {}
+
+type SiteWebhooksRegenerateSecretBadRequest ProblemDetails
+
+func (*SiteWebhooksRegenerateSecretBadRequest) siteWebhooksRegenerateSecretRes() {}
+
+type SiteWebhooksRegenerateSecretNotFound ProblemDetails
+
+func (*SiteWebhooksRegenerateSecretNotFound) siteWebhooksRegenerateSecretRes() {}
+
+type SiteWebhooksTestBadRequest ProblemDetails
+
+func (*SiteWebhooksTestBadRequest) siteWebhooksTestRes() {}
+
+type SiteWebhooksTestNotFound ProblemDetails
+
+func (*SiteWebhooksTestNotFound) siteWebhooksTestRes() {}
+
+type SiteWebhooksTestUnprocessableEntity ProblemDetails
+
+func (*SiteWebhooksTestUnprocessableEntity) siteWebhooksTestRes() {}
 
 type SiteWebhooksUpdateBadRequest ProblemDetails
 

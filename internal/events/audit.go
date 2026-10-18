@@ -66,6 +66,8 @@ const (
 	ActionWorkspaceAbuseUnexempt      = "workspace.abuse_unexempt"
 	ActionContactImport               = "contact.import"
 	ActionAuditLogExport              = "audit_log.export"
+	// A sample event was sent to a Webhook endpoint (ADR 0039): no row changes.
+	ActionWebhookEndpointTest = "webhook_endpoint.test"
 )
 
 // ExplicitAuditActions lists every action emitted by an explicit RecordAudit call.
@@ -90,6 +92,7 @@ var ExplicitAuditActions = []string{
 	ActionWorkspaceAbuseUnexempt,
 	ActionContactImport,
 	ActionAuditLogExport,
+	ActionWebhookEndpointTest,
 }
 
 // Unprojected is an optional DomainEvent capability: an event that is not a

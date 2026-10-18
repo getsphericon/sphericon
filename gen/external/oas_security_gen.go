@@ -103,6 +103,8 @@ var operationRolesBearerAuth = map[string][]string{
 	WebhooksDeleteOperation:            []string{},
 	WebhooksGetOperation:               []string{},
 	WebhooksListOperation:              []string{},
+	WebhooksRegenerateSecretOperation:  []string{},
+	WebhooksTestOperation:              []string{},
 	WebhooksUpdateOperation:            []string{},
 }
 

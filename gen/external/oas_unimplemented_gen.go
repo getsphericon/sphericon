@@ -653,6 +653,26 @@ func (UnimplementedHandler) WebhooksList(ctx context.Context, params WebhooksLis
 	return r, ht.ErrNotImplemented
 }
 
+// WebhooksRegenerateSecret implements Webhooks_regenerateSecret operation.
+//
+// Replace the endpoint's signing secret; the old one stops verifying at once. The new secret is never
+// returned here: read it in the app. Needs the webhooks:regenerate scope.
+//
+// POST /webhooks/{id}/regenerate-secret
+func (UnimplementedHandler) WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (r WebhooksRegenerateSecretRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// WebhooksTest implements Webhooks_test operation.
+//
+// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+// Does not change the endpoint's failure state. Needs the webhooks:test scope.
+//
+// POST /webhooks/{id}/test
+func (UnimplementedHandler) WebhooksTest(ctx context.Context, req *TestWebhookInput, params WebhooksTestParams) (r WebhooksTestRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // WebhooksUpdate implements Webhooks_update operation.
 //
 // Update a resource.

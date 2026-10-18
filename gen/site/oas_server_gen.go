@@ -667,6 +667,18 @@ type Handler interface {
 	//
 	// GET /workspaces/{slug}/webhooks
 	SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (SiteWebhooksListRes, error)
+	// SiteWebhooksRegenerateSecret implements SiteWebhooks_regenerateSecret operation.
+	//
+	// Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+	//
+	// POST /workspaces/{slug}/webhooks/{id}/regenerate-secret
+	SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (SiteWebhooksRegenerateSecretRes, error)
+	// SiteWebhooksTest implements SiteWebhooks_test operation.
+	//
+	// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+	//
+	// POST /workspaces/{slug}/webhooks/{id}/test
+	SiteWebhooksTest(ctx context.Context, req *SiteTestWebhookInput, params SiteWebhooksTestParams) (SiteWebhooksTestRes, error)
 	// SiteWebhooksUpdate implements SiteWebhooks_update operation.
 	//
 	// Update a resource from the site UI.

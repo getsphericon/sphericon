@@ -19,6 +19,20 @@ an endpoint without deleting it. The URL must be an absolute `http` or `https` a
 
 The signing secret is never returned by the API. Read it in the app, where the endpoint is shown.
 
+## Replace the secret and send a test event
+
+If a secret leaks, replace it: `POST /api/webhooks/{id}/regenerate-secret` (token scope
+`webhooks:regenerate`) or **Regenerate secret** in the app. The old secret stops verifying at
+once, so update your receiver with the new one (shown in the app) first or right after.
+
+To check a URL and your signature verification before a real event, send a sample:
+`POST /api/webhooks/{id}/test` with `{"eventType":"contact.created"}` (token scope
+`webhooks:test`), or **Send test event** in the app. The sample is signed like a real delivery and
+sent at once, even to a disabled endpoint. The response says whether the receiver answered 2xx
+(`delivered`), its `status`, and otherwise the error `kind` (`timeout`, `blocked_address`,
+`http_status` or `network`). A test never changes the endpoint's failure state. Both actions are
+recorded in the Audit log.
+
 ## Events
 
 | Event                 | When                                                |

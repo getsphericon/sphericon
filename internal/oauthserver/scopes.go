@@ -24,6 +24,8 @@ var grantableScopes = []string{
 	"templates:write",
 	"webhooks:read",
 	"webhooks:write",
+	"webhooks:regenerate",
+	"webhooks:test",
 	"custom_fields:read",
 	"sending_domains:read",
 	"integrations:read",

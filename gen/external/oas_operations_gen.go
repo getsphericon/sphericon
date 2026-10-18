@@ -76,5 +76,7 @@ const (
 	WebhooksDeleteOperation            OperationName = "WebhooksDelete"
 	WebhooksGetOperation               OperationName = "WebhooksGet"
 	WebhooksListOperation              OperationName = "WebhooksList"
+	WebhooksRegenerateSecretOperation  OperationName = "WebhooksRegenerateSecret"
+	WebhooksTestOperation              OperationName = "WebhooksTest"
 	WebhooksUpdateOperation            OperationName = "WebhooksUpdate"
 )

@@ -18,6 +18,8 @@ enum ApiTokenScope {
   templatesWrite: "templates:write",
   webhooksRead: "webhooks:read",
   webhooksWrite: "webhooks:write",
+  webhooksRegenerate: "webhooks:regenerate",
+  webhooksTest: "webhooks:test",
   customFieldsRead: "custom_fields:read",
   sendingDomainsRead: "sending_domains:read",
   sendingDomainsWrite: "sending_domains:write",
