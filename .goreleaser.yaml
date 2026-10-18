@@ -14,13 +14,14 @@ before:
     # Build the embedded assets (SPA + tracker) before cross-compiling.
     - mise run build:tracker
     - mise run build:spa
+    - mise run build:changelog
 
 builds:
   - id: sphericon
     main: ./cmd/server
     binary: sphericon
     flags:
-      - -tags=embed_spa
+      - -tags=embed_spa,embed_changelog
     env:
       - CGO_ENABLED=0
     ldflags:

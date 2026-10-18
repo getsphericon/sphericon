@@ -528,13 +528,17 @@ run = [
   "cp -R dist/. internal/server/assets/spa/",
 ]
 
+["build:changelog"]
+description = "Copy CHANGELOG.md into the Go embed tree (gitignored; release builds only)"
+run = "cp CHANGELOG.md internal/changelog/CHANGELOG.md"
+
 [build]
-description = "Self-contained release binary (tracker + SPA embedded); VERSION env overrides `dev`"
-depends = ["build:tracker", "build:spa"]
+description = "Self-contained release binary (tracker, SPA, changelog embedded); VERSION env overrides `dev`"
+depends = ["build:tracker", "build:spa", "build:changelog"]
 run = '''
 commit=$(git rev-parse --short HEAD 2>/dev/null || echo none)
 date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-go build -tags embed_spa -ldflags "-s -w -X github.com/getsphericon/sphericon/internal/buildinfo.Version=${VERSION:-dev} -X github.com/getsphericon/sphericon/internal/buildinfo.Commit=$commit -X github.com/getsphericon/sphericon/internal/buildinfo.Date=$date" -o bin/sphericon ./cmd/server
+go build -tags embed_spa,embed_changelog -ldflags "-s -w -X github.com/getsphericon/sphericon/internal/buildinfo.Version=${VERSION:-dev} -X github.com/getsphericon/sphericon/internal/buildinfo.Commit=$commit -X github.com/getsphericon/sphericon/internal/buildinfo.Date=$date" -o bin/sphericon ./cmd/server
 '''
 
 [loc]

@@ -23,7 +23,8 @@ COPY --from=frontend /src/dist/ internal/server/assets/spa/
 ARG VERSION=docker
 ARG COMMIT=
 ARG DATE=
-RUN go build -tags embed_spa \
+RUN cp CHANGELOG.md internal/changelog/CHANGELOG.md \
+    && go build -tags embed_spa,embed_changelog \
     -ldflags "-s -w -X github.com/getsphericon/sphericon/internal/buildinfo.Version=${VERSION} -X github.com/getsphericon/sphericon/internal/buildinfo.Commit=${COMMIT} -X github.com/getsphericon/sphericon/internal/buildinfo.Date=${DATE}" \
     -o /sphericon ./cmd/server
 

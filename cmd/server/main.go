@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
+	"github.com/getsphericon/sphericon/internal/changelog"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/telemetry"
@@ -32,6 +33,14 @@ func main() {
 		}
 		if err := runVersion(os.Stdout, args); err != nil {
 			fatal("version", err)
+		}
+		return
+	}
+
+	// `server upgrade-notes --since <version>` prints the Upgrade notes embedded in this binary.
+	if len(os.Args) > 1 && os.Args[1] == "upgrade-notes" {
+		if err := runUpgradeNotes(os.Stdout, os.Args[2:], changelog.Embedded()); err != nil {
+			fatal("upgrade-notes", err)
 		}
 		return
 	}
