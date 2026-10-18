@@ -75,6 +75,7 @@ type (
 		From            string
 		FromName        string
 		Endpoint        string
+		SNSTopicARN     string
 	}
 )
 
@@ -328,7 +329,7 @@ func (m *Module) encode(in ConfigInput) (integration.Provider, integration.Chann
 		provider = integration.ProviderSes
 		plaintext, err = json.Marshal(ses.Config{
 			Region: c.Region, AccessKeyID: c.AccessKeyID, SecretAccessKey: c.SecretAccessKey,
-			From: c.From, FromName: c.FromName, Endpoint: c.Endpoint,
+			From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, SNSTopicARN: c.SNSTopicARN,
 		})
 	default:
 		return "", "", nil, configError(errUnknownProvider)
@@ -418,6 +419,7 @@ type (
 		From             string
 		FromName         string
 		Endpoint         string
+		SNSTopicARN      string
 		AccessKeyIDLast4 string
 	}
 )
@@ -447,7 +449,7 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 			last4 = last4[n-4:]
 		}
 		return RedactedConfig{SES: &RedactedSES{
-			Region: c.Region, From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, AccessKeyIDLast4: last4,
+			Region: c.Region, From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, SNSTopicARN: c.SNSTopicARN, AccessKeyIDLast4: last4,
 		}}, nil
 	}
 	return RedactedConfig{}, errUnknownProvider
@@ -460,4 +462,28 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (
 		func(ctx context.Context, limit, offset int) ([]*ent.Integration, error) {
 			return s.Integration().Query().Order(ent.Asc(integration.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
+}
+
+// SNSTopics lists the SNS topics the Workspace's SES Integrations accept bounce and
+// complaint notifications from. A Workspace that names none gets an empty list.
+func (m *Module) SNSTopics(ctx context.Context, s *ent.Scoped) ([]string, error) {
+	rows, err := s.Integration().Query().Where(integration.ProviderEQ(integration.ProviderSes)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var topics []string
+	for _, row := range rows {
+		plaintext, err := m.cipher.Decrypt(row.ConfigEncrypted)
+		if err != nil {
+			return nil, err
+		}
+		var c ses.Config
+		if err := json.Unmarshal(plaintext, &c); err != nil {
+			return nil, err
+		}
+		if c.SNSTopicARN != "" {
+			topics = append(topics, c.SNSTopicARN)
+		}
+	}
+	return topics, nil
 }

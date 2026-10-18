@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/mail"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -26,10 +27,11 @@ import (
 // that verifies the provider's signature, normalizes the payload into our typed
 // domain events, and publishes them (suppression + persist subscribe downstream).
 // Today the only adapter is AWS SES delivered over SNS.
-func hooksHandler(client *ent.Client, bus *events.Bus) http.Handler {
+func hooksHandler(client *ent.Client, bus *events.Bus, topics snsTopics) http.Handler {
 	h := &sesHook{
-		ent: client,
-		bus: bus,
+		ent:    client,
+		bus:    bus,
+		topics: topics,
 		// VerifyPayload checks the signature against the (amazonaws-hosted) signing
 		// cert; injectable so tests can drive the parser without real AWS signatures.
 		verify:  func(p *sns.Payload) error { return p.VerifyPayload() },
@@ -40,9 +42,15 @@ func hooksHandler(client *ent.Client, bus *events.Bus) http.Handler {
 	return mux
 }
 
+// snsTopics names the SNS topics a Workspace's SES Integrations accept notifications from.
+type snsTopics interface {
+	SNSTopics(ctx context.Context, s *ent.Scoped) ([]string, error)
+}
+
 type sesHook struct {
 	ent     *ent.Client
 	bus     *events.Bus
+	topics  snsTopics
 	verify  func(*sns.Payload) error
 	confirm func(ctx context.Context, subscribeURL string) error
 }
@@ -99,6 +107,22 @@ func (h *sesHook) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := h.verify(&payload); err != nil {
 		writeProblem(w, http.StatusForbidden, "SNS signature verification failed")
+		return
+	}
+
+	// A valid signature proves AWS sent this, not whose topic it came from: the topic must
+	// be one the Workspace named, or anyone holding the key could suppress any address.
+	topics, err := h.topics.SNSTopics(r.Context(), h.ent.Scoped(ws.ID))
+	if err != nil {
+		writeProblem(w, http.StatusInternalServerError, "integration lookup failed")
+		return
+	}
+	if len(topics) == 0 {
+		writeProblem(w, http.StatusForbidden, "no SNS topic is configured: set snsTopicArn on the SES Integration")
+		return
+	}
+	if !slices.Contains(topics, payload.TopicArn) {
+		writeProblem(w, http.StatusForbidden, "SNS topic is not the one configured on the SES Integration")
 		return
 	}
 

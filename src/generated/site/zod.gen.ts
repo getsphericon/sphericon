@@ -601,6 +601,7 @@ export const zSiteSesConfig = z.object({
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable()),
   endpoint: z.exactOptional(z.string().nullable()),
+  snsTopicArn: z.exactOptional(z.string().nullable()),
   accessKeyIdLast4: z.exactOptional(z.string().nullable())
 });
 
@@ -614,7 +615,8 @@ export const zSiteSesConfigInput = z.object({
   secretAccessKey: z.string(),
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable()),
-  endpoint: z.exactOptional(z.string().nullable())
+  endpoint: z.exactOptional(z.string().nullable()),
+  snsTopicArn: z.exactOptional(z.string().nullable())
 });
 
 /**

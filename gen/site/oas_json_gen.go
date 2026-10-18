@@ -14774,6 +14774,12 @@ func (s SiteIntegrationConfigInputSum) encodeFields(e *jx.Encoder) {
 					s.Endpoint.Encode(e)
 				}
 			}
+			{
+				if s.SnsTopicArn.Set {
+					e.FieldStart("snsTopicArn")
+					s.SnsTopicArn.Encode(e)
+				}
+			}
 		}
 	}
 }
@@ -14910,6 +14916,12 @@ func (s SiteIntegrationConfigSum) encodeFields(e *jx.Encoder) {
 				if s.Endpoint.Set {
 					e.FieldStart("endpoint")
 					s.Endpoint.Encode(e)
+				}
+			}
+			{
+				if s.SnsTopicArn.Set {
+					e.FieldStart("snsTopicArn")
+					s.SnsTopicArn.Encode(e)
 				}
 			}
 			{
@@ -23099,6 +23111,12 @@ func (s *SiteSesConfig) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.SnsTopicArn.Set {
+			e.FieldStart("snsTopicArn")
+			s.SnsTopicArn.Encode(e)
+		}
+	}
+	{
 		if s.AccessKeyIdLast4.Set {
 			e.FieldStart("accessKeyIdLast4")
 			s.AccessKeyIdLast4.Encode(e)
@@ -23106,13 +23124,14 @@ func (s *SiteSesConfig) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteSesConfig = [6]string{
+var jsonFieldsNameOfSiteSesConfig = [7]string{
 	0: "kind",
 	1: "region",
 	2: "from",
 	3: "fromName",
 	4: "endpoint",
-	5: "accessKeyIdLast4",
+	5: "snsTopicArn",
+	6: "accessKeyIdLast4",
 }
 
 // Decode decodes SiteSesConfig from json.
@@ -23175,6 +23194,16 @@ func (s *SiteSesConfig) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"endpoint\"")
+			}
+		case "snsTopicArn":
+			if err := func() error {
+				s.SnsTopicArn.Reset()
+				if err := s.SnsTopicArn.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"snsTopicArn\"")
 			}
 		case "accessKeyIdLast4":
 			if err := func() error {
@@ -23283,9 +23312,15 @@ func (s *SiteSesConfigInput) encodeFields(e *jx.Encoder) {
 			s.Endpoint.Encode(e)
 		}
 	}
+	{
+		if s.SnsTopicArn.Set {
+			e.FieldStart("snsTopicArn")
+			s.SnsTopicArn.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteSesConfigInput = [7]string{
+var jsonFieldsNameOfSiteSesConfigInput = [8]string{
 	0: "kind",
 	1: "region",
 	2: "accessKeyId",
@@ -23293,6 +23328,7 @@ var jsonFieldsNameOfSiteSesConfigInput = [7]string{
 	4: "from",
 	5: "fromName",
 	6: "endpoint",
+	7: "snsTopicArn",
 }
 
 // Decode decodes SiteSesConfigInput from json.
@@ -23379,6 +23415,16 @@ func (s *SiteSesConfigInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"endpoint\"")
+			}
+		case "snsTopicArn":
+			if err := func() error {
+				s.SnsTopicArn.Reset()
+				if err := s.SnsTopicArn.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"snsTopicArn\"")
 			}
 		default:
 			return d.Skip()

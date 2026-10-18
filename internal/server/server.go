@@ -121,7 +121,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 
 	// Inbound provider webhooks (SES bounce/complaint via SNS), routed by the
 	// workspace's secret ingest key: POST /hooks/{key}/{provider}.
-	mux.Handle("/hooks/", hooksHandler(client, bus))
+	mux.Handle("/hooks/", hooksHandler(client, bus, site.Integrations))
 
 	// Catch-all: the embedded SPA (release builds with -tags embed_spa). Most
 	// specific pattern wins, so this never shadows the API prefixes above.

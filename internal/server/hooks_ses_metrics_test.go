@@ -18,7 +18,7 @@ import (
 func TestSESHookCountsBounceAndComplaintOutcomes(t *testing.T) {
 	env := testhelper.Setup(t)
 	metricstest.StartMetrics(t)
-	h := server.NewSESHooks(env.DB, env.Bus, acceptAll, noConfirm)
+	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, noConfirm)
 
 	bounce := `{"notificationType":"Bounce","mail":{"source":"hello@codebasics.dev"},
 	  "bounce":{"bounceType":"Permanent","bouncedRecipients":[{"emailAddress":"` + strings.ToUpper(fixtures.ContactAliceEmail) + `"}]}}`
@@ -38,7 +38,7 @@ func TestSESHookCountsBounceAndComplaintOutcomes(t *testing.T) {
 func TestSESHookRedeliveryCountsOutcomeOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	metricstest.StartMetrics(t)
-	h := server.NewSESHooks(env.DB, env.Bus, acceptAll, noConfirm)
+	h := server.NewSESHooks(env.DB, env.Bus, env.Cipher, acceptAll, noConfirm)
 
 	bounce := `{"notificationType":"Bounce","mail":{"source":"hello@codebasics.dev"},
 	  "bounce":{"bounceType":"Permanent","bouncedRecipients":[{"emailAddress":"` + fixtures.ContactAliceEmail + `"}]}}`

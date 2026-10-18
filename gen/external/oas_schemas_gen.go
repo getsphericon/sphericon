@@ -8493,6 +8493,9 @@ type SesConfig struct {
 	FromName OptNilString  `json:"fromName"`
 	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
 	Endpoint OptNilString `json:"endpoint"`
+	// The one SNS topic bounce and complaint notifications are accepted from; none means the hook refuses
+	// all.
+	SnsTopicArn OptNilString `json:"snsTopicArn"`
 	// Last 4 chars of the access key id, for recognition.
 	AccessKeyIdLast4 OptNilString `json:"accessKeyIdLast4"`
 }
@@ -8520,6 +8523,11 @@ func (s *SesConfig) GetFromName() OptNilString {
 // GetEndpoint returns the value of Endpoint.
 func (s *SesConfig) GetEndpoint() OptNilString {
 	return s.Endpoint
+}
+
+// GetSnsTopicArn returns the value of SnsTopicArn.
+func (s *SesConfig) GetSnsTopicArn() OptNilString {
+	return s.SnsTopicArn
 }
 
 // GetAccessKeyIdLast4 returns the value of AccessKeyIdLast4.
@@ -8552,6 +8560,11 @@ func (s *SesConfig) SetEndpoint(val OptNilString) {
 	s.Endpoint = val
 }
 
+// SetSnsTopicArn sets the value of SnsTopicArn.
+func (s *SesConfig) SetSnsTopicArn(val OptNilString) {
+	s.SnsTopicArn = val
+}
+
 // SetAccessKeyIdLast4 sets the value of AccessKeyIdLast4.
 func (s *SesConfig) SetAccessKeyIdLast4(val OptNilString) {
 	s.AccessKeyIdLast4 = val
@@ -8568,6 +8581,9 @@ type SesConfigInput struct {
 	FromName        OptNilString       `json:"fromName"`
 	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
 	Endpoint OptNilString `json:"endpoint"`
+	// The SNS topic (ARN) this Integration's bounces and complaints arrive through; notifications from any
+	// other topic are refused.
+	SnsTopicArn OptNilString `json:"snsTopicArn"`
 }
 
 // GetKind returns the value of Kind.
@@ -8605,6 +8621,11 @@ func (s *SesConfigInput) GetEndpoint() OptNilString {
 	return s.Endpoint
 }
 
+// GetSnsTopicArn returns the value of SnsTopicArn.
+func (s *SesConfigInput) GetSnsTopicArn() OptNilString {
+	return s.SnsTopicArn
+}
+
 // SetKind sets the value of Kind.
 func (s *SesConfigInput) SetKind(val SesConfigInputKind) {
 	s.Kind = val
@@ -8638,6 +8659,11 @@ func (s *SesConfigInput) SetFromName(val OptNilString) {
 // SetEndpoint sets the value of Endpoint.
 func (s *SesConfigInput) SetEndpoint(val OptNilString) {
 	s.Endpoint = val
+}
+
+// SetSnsTopicArn sets the value of SnsTopicArn.
+func (s *SesConfigInput) SetSnsTopicArn(val OptNilString) {
+	s.SnsTopicArn = val
 }
 
 type SesConfigInputKind string

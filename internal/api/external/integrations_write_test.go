@@ -230,3 +230,30 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.IntegrationGlobexName, row.Name)
 }
+
+// An SES Integration carries the SNS topic its bounces arrive through, returned on read;
+// a value that is not a topic ARN is refused.
+func TestExternalIntegrationsSESKeepsItsSNSTopic(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	ses := func(topic string) *externalapi.CreateIntegrationInput {
+		return &externalapi.CreateIntegrationInput{Name: "SES " + topic, Config: externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
+			Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
+			SnsTopicArn: externalapi.NewOptNilString(topic),
+		})}}
+	}
+
+	bad, err := c.IntegrationsCreate(ctx, ses("not-an-arn"))
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, bad)
+
+	const topic = "arn:aws:sns:eu-west-1:123456789012:ses-events"
+	res, err := c.IntegrationsCreate(ctx, ses(topic))
+	require.NoError(t, err)
+	created, ok := res.(*externalapi.IntegrationResource)
+	require.Truef(t, ok, "got %T", res)
+	got, ok := created.Config.OneOf.GetSesConfig()
+	require.True(t, ok)
+	assert.Equal(t, topic, got.SnsTopicArn.Or(""))
+}
