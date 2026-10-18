@@ -21,6 +21,12 @@ Enterprise code is compiled into the **same single binary** as the core; its fea
 remain locked until a valid license key is present at runtime. We distribute one
 artifact for everyone — there is no separate enterprise build.
 
+## Third-party code in the repository
+
+The `migrations/*_river_*.sql` files carry the SQL of [river](https://github.com/riverqueue/river)
+verbatim, written by `mise run db:river-migration`. river is licensed under the Mozilla Public
+License 2.0, which applies to those files; the rest of the repository keeps its own license.
+
 ## Questions
 
 For commercial licensing or an Enterprise subscription, contact the sphericon team.

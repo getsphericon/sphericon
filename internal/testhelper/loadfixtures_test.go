@@ -27,7 +27,7 @@ func TestFixturesLoadedInsideASynctestBubbleAreDatedByTheRealClock(t *testing.T)
 		sqlDB, err := sql.Open("pgx", url)
 		require.NoError(t, err)
 		t.Cleanup(func() { _ = sqlDB.Close() })
-		require.NoError(t, migrateSchema(t.Context(), sqlDB, cfg))
+		require.NoError(t, migrateSchema(t.Context(), sqlDB))
 		require.NoError(t, loadFixtures(t.Context(), sqlDB, cfg, projectRoot()))
 
 		row, err := db.NewEntClient(sqlDB).AuthAttempt.Get(t.Context(), fixtures.FreshLoginAttemptID)

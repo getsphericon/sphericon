@@ -19,10 +19,10 @@ import (
 )
 
 // outboxSchema / outboxOffsets are the single source of truth for the
-// domain_events topic layout. The producer (WithinTx publisher), the subscribers
-// (NewSubscriber), and the DDL (InitSchema) all reference these, so the table the
-// producer writes, the table the consumers read, and the table InitSchema creates
-// cannot drift apart.
+// domain_events topic layout. The producer (WithinTx publisher) and the subscribers
+// (NewSubscriber) reference these, so the table the producer writes and the table the
+// consumers read cannot drift apart. The tables themselves come from the migrations
+// (migrations/*_domain_events_outbox.sql), which mirror this layout.
 var (
 	outboxSchema  = watermillsql.DefaultPostgreSQLSchema{}
 	outboxOffsets = watermillsql.DefaultPostgreSQLOffsetsAdapter{}
@@ -88,7 +88,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	txClient.Use(b.hooks...)
 
 	// watermill-sql forbids AutoInitializeSchema on a tx handle (a CREATE TABLE
-	// would implicitly commit). The outbox table is created up front by InitSchema.
+	// would implicitly commit). The outbox tables are created by the migrations.
 	wm, err := watermillsql.NewPublisher(watermillsql.TxFromStdSQL(sqlTx), watermillsql.PublisherConfig{
 		SchemaAdapter:        outboxSchema,
 		AutoInitializeSchema: false,
@@ -191,60 +191,4 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) error {
 	}
 	msg := message.NewMessage(env.ID, body)
 	return p.wm.Publish(TopicDomainEvents, msg)
-}
-
-// InitSchema creates the outbox topic's message and offsets tables and tunes
-// their autovacuum. It is idempotent (CREATE TABLE IF NOT EXISTS, ALTER TABLE
-// SET) and must run at boot before any producer publishes: the tx publisher
-// cannot self-initialize the schema. The outbox tables are created here rather
-// than by the Atlas migrations, so their per-table autovacuum settings live here
-// too.
-//
-// The outbox is insert-heavy and pruned in batches (PruneOutbox), so it carries
-// a steady stream of dead tuples; the offsets table is a handful of rows updated
-// on every ack. Vacuuming both at a low dead-tuple ratio keeps bloat small.
-func InitSchema(ctx context.Context, db *sql.DB) error {
-	schemaQueries, err := outboxSchema.SchemaInitializingQueries(watermillsql.SchemaInitializingQueriesParams{Topic: TopicDomainEvents})
-	if err != nil {
-		return fmt.Errorf("outbox schema queries: %w", err)
-	}
-	offsetsQueries, err := outboxOffsets.SchemaInitializingQueries(watermillsql.OffsetsSchemaInitializingQueriesParams{Topic: TopicDomainEvents})
-	if err != nil {
-		return fmt.Errorf("outbox offsets schema queries: %w", err)
-	}
-	queries := make([]string, 0, len(schemaQueries)+len(offsetsQueries)+2)
-	for _, q := range append(schemaQueries, offsetsQueries...) {
-		queries = append(queries, q.Query)
-	}
-	queries = append(queries,
-		fmt.Sprintf(`ALTER TABLE %s SET (autovacuum_vacuum_scale_factor = 0.01, autovacuum_vacuum_threshold = 1000, autovacuum_analyze_scale_factor = 0.02)`, outboxTable()),
-		fmt.Sprintf(`ALTER TABLE %s SET (autovacuum_vacuum_scale_factor = 0, autovacuum_vacuum_threshold = 50, autovacuum_analyze_scale_factor = 0, autovacuum_analyze_threshold = 50)`, offsetsTable()),
-	)
-	for _, q := range queries {
-		if _, err := db.ExecContext(ctx, q); err != nil {
-			return fmt.Errorf("init domain-events outbox schema: %w", err)
-		}
-	}
-	return timestamptzCreatedAt(ctx, db)
-}
-
-// timestamptzCreatedAt converts the outbox created_at from watermill's plain
-// TIMESTAMP (wall time of whichever session wrote it) to timestamptz, so the age
-// computations (lag gauge, prune floor) are absolute and independent of session
-// TimeZone. The column default CURRENT_TIMESTAMP is timestamptz already, so inserts
-// are unchanged. Checked first so a converted table is not locked on every boot.
-func timestamptzCreatedAt(ctx context.Context, db *sql.DB) error {
-	var typ string
-	if err := db.QueryRowContext(ctx,
-		`SELECT atttypid::regtype::text FROM pg_attribute WHERE attrelid = $1::regclass AND attname = 'created_at'`,
-		outboxTable()).Scan(&typ); err != nil {
-		return fmt.Errorf("inspect outbox created_at: %w", err)
-	}
-	if typ == "timestamp with time zone" {
-		return nil
-	}
-	if _, err := db.ExecContext(ctx, fmt.Sprintf(`ALTER TABLE %s ALTER COLUMN created_at TYPE timestamptz`, outboxTable())); err != nil {
-		return fmt.Errorf("convert outbox created_at to timestamptz: %w", err)
-	}
-	return nil
 }

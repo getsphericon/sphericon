@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
@@ -13,9 +14,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// On an empty database applyMigrations creates the app schema and river's own
-// tables, and is safe to run again.
-func TestApplyMigrationsCreatesRiverSchemaOnEmptyDatabase(t *testing.T) {
+// On an empty database applyMigrations creates the app schema, river's tables and the
+// domain-event outbox, and is safe to run again.
+func TestApplyMigrationsCreatesRiverAndOutboxSchemaOnEmptyDatabase(t *testing.T) {
 	cfg := &config.Config{
 		DatabaseURL: testhelper.EmptyDBURL(t),
 		DBPool:      config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, PGXMaxConns: 2},
@@ -32,4 +33,16 @@ func TestApplyMigrationsCreatesRiverSchemaOnEmptyDatabase(t *testing.T) {
 	res, err := migrator.Validate(t.Context(), nil)
 	require.NoError(t, err)
 	require.True(t, res.OK, "river migrations pending: %v", res.Messages)
+
+	// The outbox the producer writes and the consumers read exists, empty.
+	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	client := appdb.NewEntClient(sqlDB)
+	messages, err := client.OutboxMessage.Query().Count(t.Context())
+	require.NoError(t, err)
+	require.Zero(t, messages)
+	offsets, err := client.OutboxOffset.Query().Count(t.Context())
+	require.NoError(t, err)
+	require.Zero(t, offsets)
 }

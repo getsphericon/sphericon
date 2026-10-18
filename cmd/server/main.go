@@ -4,24 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io/fs"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
 	appdb "github.com/getsphericon/sphericon/internal/db"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/telemetry"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/pressly/goose/v3"
 )
 
 // Build metadata, injected via -ldflags by the Makefile / GoReleaser.
@@ -190,28 +186,9 @@ func applyMigrations(cfg *config.Config) error {
 	}
 	defer func() { _ = db.Close() }()
 
-	files, err := fs.Sub(sphericon.MigrationsFS, "migrations")
-	if err != nil {
-		return err
-	}
-	provider, err := goose.NewProvider(goose.DialectPostgres, db, files)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	if _, err = provider.Up(ctx); err != nil {
-		return err
-	}
-
-	// river owns its own schema (river_job, ...), which goose does not carry.
-	pool, err := appdb.NewPGXPool(ctx, cfg.DatabaseURL, cfg.DBPool)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-	return jobs.Migrate(ctx, pool)
+	return appdb.Migrate(ctx, db)
 }
 
 // runWorkspaceCommand boots the minimal operator app (no listener, no event router,
