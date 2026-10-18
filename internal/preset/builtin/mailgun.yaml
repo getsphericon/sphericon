@@ -1,0 +1,103 @@
+# yaml-language-server: $schema=../preset.schema.json
+version: 1
+name: mailgun
+description: Mailgun failed and complained event webhooks, signed with the account's webhook signing key.
+params:
+  type: object
+  required: [signing_key]
+  additionalProperties: false
+  properties:
+    signing_key:
+      type: string
+      title: HTTP webhook signing key
+      description: The account-wide key under Settings, API Security (not an API key).
+      writeOnly: true
+# The body is {"signature": {timestamp, token, signature}, "event-data": {...}}. The
+# signature is the hex HMAC-SHA256 of timestamp followed by token, keyed with the signing
+# key. No timestamp tolerance: Mailgun retries for hours and a replay of a genuine event is
+# idempotent (it dedupes on the event id). The `signature` object is documented under
+# "Securing webhooks"; the event-data wrapper is only named there, no page shows the whole
+# envelope, so confirm it against a real POST.
+verify:
+  kind: hmac_body
+  secret: signing_key
+  signed_fields: [signature.timestamp, signature.token]
+  signature_field: signature.signature
+  algorithm: sha256
+  encoding: hex
+# event `failed` carries severity permanent or temporary; `complained` carries none.
+# Everything else (accepted, delivered, opened, clicked, unsubscribed) is ignored. The
+# Sending domain is the domain of the From header, else the sending domain's name. With PII
+# redaction on, the recipient is not an address and the event is skipped.
+transform: |
+  .body["event-data"] as $e
+  | ($e.recipient // "") as $to
+  | ([$e.message.headers.from // "" | ascii_downcase | capture("@(?<d>[a-z0-9.-]+)>?\\s*$").d] | first // $e.domain.name) as $domain
+  | def failure($kind; $permanent):
+      if $to | contains("@")
+      then [{id: $e.id, destination: $to, kind: $kind, permanent: $permanent, sending_domain: $domain}]
+      else [] end;
+  if $e.event == "complained" then failure("complaint"; false)
+  elif $e.event == "failed" then
+    if $e.severity == "permanent" then failure("bounce"; true)
+    elif $e.severity == "temporary" then failure("bounce"; false)
+    else [] end
+  else [] end
+tests:
+  - name: a permanent failure is a permanent bounce
+    params:
+      signing_key: mailgun-test-signing-key-0123456789
+    request:
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"failed","id":"2kFItcrLQuKTdp-Ia2Xr7w","timestamp":1770918175.5923693,"log-level":"error","recipient":"Badrecipient@Sample.Mailgun.com","reason":"bounce","severity":"permanent","message":{"headers":{"from":"Sample Sender <sender@Sample.Mailgun.com>","to":"badrecipient@sample.mailgun.com"}},"delivery-status":{"code":550},"domain":{"name":"sample.mailgun.com"}}}'
+    expect:
+      failures:
+        - id: 2kFItcrLQuKTdp-Ia2Xr7w
+          destination: badrecipient@sample.mailgun.com
+          kind: bounce
+          permanent: true
+          sending_domain: sample.mailgun.com
+  - name: a temporary failure is a transient bounce
+    params:
+      signing_key: mailgun-test-signing-key-0123456789
+    request:
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"failed","id":"YusK9KhoTwe2C00iRxsEqQ","log-level":"warn","recipient":"tempfailrecipient@sample.mailgun.com","reason":"generic","severity":"temporary","message":{"headers":{"from":"sender@sample.mailgun.com"}},"delivery-status":{"code":421},"domain":{"name":"sample.mailgun.com"}}}'
+    expect:
+      failures:
+        - id: YusK9KhoTwe2C00iRxsEqQ
+          destination: tempfailrecipient@sample.mailgun.com
+          kind: bounce
+          permanent: false
+          sending_domain: sample.mailgun.com
+  - name: a complaint has no severity and is a complaint
+    params:
+      signing_key: mailgun-test-signing-key-0123456789
+    request:
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"complained","id":"rIVDlyk8SY-mJauQoYmNFA","log-level":"warn","domain":{"name":"sample.mailgun.com"},"message":{"headers":{"to":"recipient@sample.mailgun.com","from":"Sample Sender <sender@sample.mailgun.com>"}},"recipient":"recipient@sample.mailgun.com"}}'
+    expect:
+      failures:
+        - id: rIVDlyk8SY-mJauQoYmNFA
+          destination: recipient@sample.mailgun.com
+          kind: complaint
+          permanent: false
+          sending_domain: sample.mailgun.com
+  - name: a delivered event is no failure
+    params:
+      signing_key: mailgun-test-signing-key-0123456789
+    request:
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"delivered","id":"abc","recipient":"a@sample.mailgun.com"}}'
+    expect:
+      failures: []
+  - name: a wrong signature is refused
+    params:
+      signing_key: mailgun-test-signing-key-0123456789
+    request:
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"0000000000000000000000000000000000000000000000000000000000000000"},"event-data":{"event":"failed","id":"x","recipient":"victim@example.com","severity":"permanent"}}'
+    expect:
+      refused: unauthentic
+  - name: another Integration's signing key is refused
+    params:
+      signing_key: mailgun-other-signing-key-9876543210
+    request:
+      body: '{"signature":{"token":"0123456789abcdefghijklmnopqrstuvwxyz0123456789ab","timestamp":"1767225600","signature":"cd9b89c82f6bf18a0f3fa06927a2879cfa0fcc9d2312e23b40e7559a5d828301"},"event-data":{"event":"failed","id":"x","recipient":"victim@example.com","severity":"permanent"}}'
+    expect:
+      refused: unauthentic
