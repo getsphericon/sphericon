@@ -329,10 +329,10 @@ back via the Integration's Ingest hook and land in Suppression.
 _Avoid_: Provider (alone), ESP, sender, connector
 
 **Tracking domain**:
-A workspace's one optional, DNS-verified hostname (a CNAME to the Instance's edge) under which the
-links in its mail (click, open, unsubscribe, confirm) are built, so recipients see the sender's own
-domain. Independent of the Sending domain. It serves only those link paths; when it is not
-verified, new mail falls back to the Instance's own host.
+The hostname `track.<sending domain>`, a CNAME to the Instance's edge, under which the links in mail
+sent from that Sending domain (click, open, unsubscribe, confirm) are built, so recipients see the
+sender's own domain. Set up with the Sending domain's DNS records but verified on its own; it serves
+only those link paths, and until it is serving, new mail uses the Instance's own host.
 _Avoid_: Click domain, link domain, custom domain (unqualified)
 
 **Sending domain**:
