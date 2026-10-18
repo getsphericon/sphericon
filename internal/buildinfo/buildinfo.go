@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"runtime/debug"
 	"strings"
+
+	"golang.org/x/mod/semver"
 )
 
 // Set by -ldflags "-X github.com/getsphericon/sphericon/internal/buildinfo.Version=..." etc.
@@ -78,3 +80,7 @@ func Semver(v string) string { return "v" + strings.TrimPrefix(v, "v") }
 
 // Bare is v without the leading "v" ("0.1.0"), the form of archive names and Results.
 func Bare(v string) string { return strings.TrimPrefix(v, "v") }
+
+// IsRelease reports whether v is a release version ("v1.2.3", "1.2.3"), not "dev" or a
+// commit-derived pseudo-version name.
+func IsRelease(v string) bool { return semver.IsValid(Semver(v)) }

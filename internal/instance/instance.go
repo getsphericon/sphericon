@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/getsphericon/sphericon/config"
@@ -22,16 +23,21 @@ const stateID int64 = 1
 // ErrTelemetryLocked is returned when the Owner tries to change a setting the environment decides.
 var ErrTelemetryLocked = errors.New("the telemetry setting is decided by the environment")
 
-// Environment is what the deployment says about the Telemetry report: SPHERICON_TELEMETRY
-// when set to true or false, and DO_NOT_TRACK=1.
+// Environment is what the deployment says about the Instance: SPHERICON_TELEMETRY when set
+// to true or false, DO_NOT_TRACK=1, SPHERICON_RELEASE_CHECK and the version that runs.
 type Environment struct {
 	Telemetry  *bool
 	DoNotTrack bool
+	// ReleaseCheck is SPHERICON_RELEASE_CHECK; it never depends on the two above.
+	ReleaseCheck bool
+	// Version is the running version. The module never reads the build globally.
+	Version string
 }
 
-// EnvironmentOf reads the Telemetry report switches from the configuration.
-func EnvironmentOf(cfg *config.Config) Environment {
-	return Environment{Telemetry: cfg.Telemetry, DoNotTrack: cfg.DoNotTrack}
+// EnvironmentOf reads the Instance switches from the configuration; version is the running
+// version (buildinfo's at the composition root).
+func EnvironmentOf(cfg *config.Config, version string) Environment {
+	return Environment{Telemetry: cfg.Telemetry, DoNotTrack: cfg.DoNotTrack, ReleaseCheck: cfg.ReleaseCheck, Version: version}
 }
 
 // Lock names what decides a setting the Owner cannot change.
@@ -74,21 +80,39 @@ func Effective(env Environment, stored *bool) Setting {
 type State struct {
 	Telemetry          Setting
 	NoticeAcknowledged bool
+	// LatestRelease is the bare version of a newer stable release, empty when there is none.
+	LatestRelease string
 }
 
 // Module is the Instance state and the rules around it.
 type Module struct {
-	ent *ent.Client
-	env Environment
-	now func() time.Time
+	ent    *ent.Client
+	env    Environment
+	now    func() time.Time
+	source ReleaseSource
+	log    *slog.Logger
 }
 
+// Option configures the module.
+type Option func(*Module)
+
+// WithReleaseSource sets where the Release check asks for the newest release. Without one
+// the check does nothing.
+func WithReleaseSource(s ReleaseSource) Option { return func(m *Module) { m.source = s } }
+
+// WithLogger sets the logger of the Release check's lines; the default is slog's.
+func WithLogger(l *slog.Logger) Option { return func(m *Module) { m.log = l } }
+
 // New builds the module; a nil clock means time.Now.
-func New(client *ent.Client, env Environment, now func() time.Time) *Module {
+func New(client *ent.Client, env Environment, now func() time.Time, opts ...Option) *Module {
 	if now == nil {
 		now = time.Now
 	}
-	return &Module{ent: client, env: env, now: now}
+	m := &Module{ent: client, env: env, now: now, log: slog.Default()}
+	for _, o := range opts {
+		o(m)
+	}
+	return m
 }
 
 // Ensure returns the Instance state row, creating it (with a fresh random Instance id)
@@ -132,7 +156,11 @@ func (m *Module) State(ctx context.Context) (State, error) {
 	if err != nil {
 		return State{}, err
 	}
-	return State{Telemetry: Effective(m.env, row.TelemetryEnabled), NoticeAcknowledged: row.NoticeAcknowledgedAt != nil}, nil
+	return State{
+		Telemetry:          Effective(m.env, row.TelemetryEnabled),
+		NoticeAcknowledged: row.NoticeAcknowledgedAt != nil,
+		LatestRelease:      m.newer(row.LatestRelease),
+	}, nil
 }
 
 // SetTelemetry stores the Owner's choice; ErrTelemetryLocked when the environment decides.

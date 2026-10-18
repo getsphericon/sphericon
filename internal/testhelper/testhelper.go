@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -56,6 +57,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/go-testfixtures/testfixtures/v3"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -122,10 +124,12 @@ func initBaseline() {
 }
 
 type TestEnv struct {
-	DB     *ent.Client // transaction-bound; rolled back when the test finishes
-	SQLDB  *sql.DB     // the same txdb connection the ent client and bus ride
-	Bus    *events.Bus // domain-event bus over SQLDB (nested savepoint per WithinTx)
-	Server http.Handler
+	// Instance is the module the server shares: run its Release check with CheckRelease.
+	Instance *instance.Module
+	DB       *ent.Client // transaction-bound; rolled back when the test finishes
+	SQLDB    *sql.DB     // the same txdb connection the ent client and bus ride
+	Bus      *events.Bus // domain-event bus over SQLDB (nested savepoint per WithinTx)
+	Server   http.Handler
 	// Internal is the handler of the internal listener (ADR 0026), built like the
 	// composition root builds it: the service endpoints and nothing else. Nil on an
 	// unlicensed instance, where no listener would be bound.
@@ -170,7 +174,14 @@ type setup struct {
 	unlicensed bool
 	// volumeFloor is the Staff console's rate floor; zero is the default.
 	volumeFloor int
+	// version is the running version the Instance module judges releases against; the
+	// test build is "dev", which is no release.
+	version string
 }
+
+// WithRunningVersion sets the version the Instance's Release check compares against, so a
+// test runs as a release build ("0.1.0") instead of the "dev" test build.
+func WithRunningVersion(v string) Option { return func(s *setup) { s.version = v } }
 
 // WithoutLicense builds the instance with no EE license key, like a plain core
 // self-host. Setup's default is an instance licensed for every EE feature.
@@ -219,7 +230,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	cfg := *baseCfg
 	cfg.RateLimits = config.RateLimits{}
-	st := &setup{cfg: &cfg, now: time.Now}
+	st := &setup{cfg: &cfg, now: time.Now, version: buildinfo.Current().Version}
 	for _, opt := range opts {
 		opt(st)
 	}
@@ -307,9 +318,12 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build staff API")
 	accountLink, _, err := accountlink.FromConfig(&cfg)
 	require.NoError(t, err, "build account link")
+	source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
+	require.NoError(t, err, "build release source")
+	inst := instance.New(client, instance.EnvironmentOf(&cfg, st.version), st.now, instance.WithReleaseSource(source))
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
-		Instance: instance.New(client, instance.EnvironmentOf(&cfg), st.now),
+		Instance: inst,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,
@@ -324,7 +338,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{
-		DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
+		Instance: inst, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
 		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}
 }

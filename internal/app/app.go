@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/erasure"
@@ -57,6 +58,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/telemetry"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samber/do/v2"
@@ -349,6 +351,9 @@ func (a *App) start(ctx context.Context) error {
 		return err
 	}
 	if _, err := inst.Ensure(ctx); err != nil {
+		return err
+	}
+	if err := inst.AnnounceRelease(ctx); err != nil {
 		return err
 	}
 	// The metrics listener is bound first: a bind failure (port in use) must fail the
@@ -902,8 +907,12 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
+		inst, err := do.Invoke[*instance.Module](i)
+		if err != nil {
+			return nil, err
+		}
 		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL,
-			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention}, edition.Jobs(bus.Bus, sys.EmailSender))
+			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention}, edition.Jobs(bus.Bus, sys.EmailSender), inst.Jobs())
 		if err != nil {
 			return nil, err
 		}
@@ -964,7 +973,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return instance.New(client.Client, instance.EnvironmentOf(cfg), nil), nil
+		source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
+		if err != nil {
+			return nil, err
+		}
+		return instance.New(client.Client, instance.EnvironmentOf(cfg, buildinfo.Current().Version), nil, instance.WithReleaseSource(source)), nil
 	})
 
 	// Attempts counts failed logins per account (ADR 0025) over the raw client.

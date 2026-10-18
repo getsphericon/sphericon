@@ -12,6 +12,7 @@ import {
   SecondFactorGraceBanner,
   secondFactorStanding,
 } from '../components/SecondFactorNotice.tsx'
+import { UpdateBanner } from '../components/UpdateBanner.tsx'
 import { UserMenu } from '../components/UserMenu.tsx'
 import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceHold, SiteWorkspaceResource } from '../generated/site/types.gen.ts'
@@ -174,6 +175,7 @@ export function WorkspaceLayout() {
       sidebar={<AppNavbar slug={slug} />}
       banner={
         <>
+          <UpdateBanner />
           <InstanceNotice />
           {current?.suspendedAt ? (
             <SuspensionBanner

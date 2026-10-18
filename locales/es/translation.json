@@ -456,7 +456,11 @@
       "switchLabel": "Enviar el informe anónimo de uso",
       "title": "Informe de uso"
     },
-    "title": "Instancia"
+    "title": "Instancia",
+    "update": {
+      "description": "Ya está disponible la versión {{version}} de sphericon. Ejecuta `sphericon upgrade` para actualizar esta instancia o consulta la guía de actualización de tu despliegue.",
+      "title": "Hay una nueva versión disponible"
+    }
   },
   "login": {
     "codeLabel": "Código de autenticación",
