@@ -2,6 +2,10 @@ name: CI
 
 on:
   pull_request:
+  # A pull request only restores caches saved on its own branch or on the default one:
+  # a run on main is what seeds the Go cache for every new pull request.
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -40,6 +44,11 @@ jobs:
 
       - name: Setup mise
         uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Cache Go
+        uses: $/.github/actions/go-cache
+        with:
+          scope: generated
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -111,6 +120,11 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
 
+      - name: Cache Go
+        uses: $/.github/actions/go-cache
+        with:
+          scope: test
+
       # The task starts the `db` mise daemon (Postgres preset) itself.
       - name: Run tests
         run: mise run test
@@ -127,6 +141,11 @@ jobs:
       # The toolchain also provides atlas and the mailpit binary the suite starts.
       - name: Setup mise
         uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Cache Go
+        uses: $/.github/actions/go-cache
+        with:
+          scope: e2e
 
       # Separate from `test` so a slow or flaky run does not block the fast
       # checks. The task starts the `db` daemon and rebuilds the e2e database.

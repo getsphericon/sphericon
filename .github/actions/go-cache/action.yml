@@ -1,0 +1,33 @@
+name: Go cache
+description: >
+  Restore and save the Go module cache and build cache. Go comes from mise, so
+  actions/setup-go (which would install a second toolchain) is not used. Every run
+  saves a fresh entry under a key ending in the commit, and restores the newest
+  entry for the same dependencies: the build cache only ever grows by the
+  packages that changed.
+
+inputs:
+  scope:
+    description: Jobs build different things (tags, coverage); each keeps its own cache.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Locate Go caches
+      id: paths
+      shell: bash
+      run: |
+        echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+        echo "mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Go modules and build outputs
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ${{ steps.paths.outputs.build }}
+          ${{ steps.paths.outputs.mod }}
+        key: go-${{ inputs.scope }}-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock') }}-${{ github.sha }}
+        restore-keys: |
+          go-${{ inputs.scope }}-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock') }}-
+          go-${{ inputs.scope }}-${{ runner.os }}-
