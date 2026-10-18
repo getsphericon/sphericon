@@ -91,6 +91,26 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Collect"],
@@ -194,6 +214,26 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "RFC 7807 service unavailable response: the database cannot be reached. The request changed nothing; retry it after `Retry-After` seconds with the same `clientEventId`s.",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Collect"],
@@ -240,6 +280,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 255
+          },
+          "clientEventId": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "A client-chosen id that makes a retry safe. It is unique within the Workspace: sending\nan event again with the same id changes nothing, so a client that did not see the answer\n(a network error, a `503`) resends the whole batch. Generate it once per event, when the\nevent happens (a UUID), and reuse it on every retry. An event without one is not deduplicated."
           },
           "properties": {
             "type": "object",
