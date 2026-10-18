@@ -12,7 +12,7 @@ Every Workspace-owned entity (GLOSSARY "Workspace") is reached through a **scope
   - `internal/accounts`: `User` (identity, credentials, profile), the Membership lookup that resolves `/w/{slug}` to a scope, the Workspace row itself (the tenant root is not Workspace-owned, so it has no wrapper; `Scoped.Workspace(ctx)` is the generated read), workspace creation, and the pending Invitation lookup by token.
   - `internal/api/auth`: authentication (credentials check, API-token prefix lookup, collect-key lookup) and the construction of the external and collect scopes.
   - `internal/oauthserver`: OAuth clients, codes and token issue.
-  - `internal/suspension` (Workspace suspension) and `internal/accounts` (slug resolution; operator tooling addresses a Workspace by slug).
+  - `internal/suspension` (Workspace suspension) and `internal/accounts` (slug resolution; command-line tooling addresses a Workspace by slug).
   - `internal/events`: the bus (transactional outbox) and its subscribers (persist, suppression, automations, webhooks).
   - `internal/consent`: signed unsubscribe/confirm token handling. The Workspace comes from the token, not a login, and the code runs on the bus's raw transaction client (`bus.WithinTx`), re-scoped with `tx.Scoped(<token's Workspace>)`.
   - `internal/jobs`: job entry points, which load the row that names the Workspace (broadcast, recipient, automation run, sending domain, Workspace) and scope from it.

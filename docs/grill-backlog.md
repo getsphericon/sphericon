@@ -100,7 +100,7 @@ flows through the `read` tools that feed a BYO-agent.
 
 The largest AI-first ambition: a system that **watches, recommends, and — under policy —
 forms artifacts** — analyzing what's happening and drafting segments / automations /
-broadcasts on the fly, so one operator does the work of a marketing team. A shift from
+broadcasts on the fly, so one marketer does the work of a marketing team. A shift from
 _reactive_ (agent does what asked) to _proactive_ (agent forms hypotheses and drafts).
 **The AI never sends** — its entire output is authoring-side artifacts (see AI/MCP plane:
 "AI is an author, not a sender"); pulling the send/activate trigger stays a human action.

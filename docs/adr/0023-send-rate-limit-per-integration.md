@@ -13,7 +13,7 @@ We add a **Send rate limit** to the **Integration** (GLOSSARY) and a new reversi
 
 - **The ceiling lives on the Integration**, because the provider account is what actually limits: `max per second`
   and `max per rolling 24 hours`. Defaults come from the provider where it reports them (SES `GetAccount`); an
-  operator-set value overrides; SMTP has no default (unlimited) because the remote limit is unknown. An Integration
+  a value a user sets overrides; SMTP has no default (unlimited) because the remote limit is unknown. An Integration
   belongs to one Workspace, so one Workspace's backlog cannot slow another's.
 - **Provider quota refresh.** SES `GetAccount` is read when the Integration is saved and then hourly by the
   existing periodic job, because SES quotas grow as an account matures. If the call fails (missing

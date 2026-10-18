@@ -14,7 +14,7 @@ ADR settles how both are built. It adds no new freeze path: both only set and cl
 ### One licensed feature
 
 The Staff member, its console and the detector ship under a single license feature, `staff`
-(`ee/licensekey`). They are meaningful only together, for a SaaS operator.
+(`ee/licensekey`). They are meaningful only together, for the SaaS.
 
 ### Staff member identity and surface
 
@@ -25,7 +25,7 @@ The Staff member, its console and the detector ship under a single license featu
   attempts limited by [[0025-rate-limiting-hybrid-store-workspace-key]]. A lost TOTP is reset
   only through the CLI.
 - Login hardening reuses the ADR 0025 machinery: failed password and TOTP attempts feed one
-  `auth_attempt` counter per address under its own kind, `operator_login`, so a Staff member and a
+  `auth_attempt` counter per address under its own kind, `staff_login`, so a Staff member and a
   User of the same address never share a counter. The delay answers the standard 429 even for a
   correct password or code, a started session resets the counter (the password step does not),
   and the per-IP login cap covers both `/staff` login steps. `sphericon staff reset-totp

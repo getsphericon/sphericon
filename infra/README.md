@@ -161,9 +161,9 @@ the environment). To recreate, run sections 4 to 6 again, with these effects:
 - **SES**: the identity is created again with new DKIM tokens, so verification repeats after the
   nameservers propagate. Production access is per account and region and is kept.
 
-**Pending, operator only:** none of this has been applied yet. The smoke test, a destroy and
+**Pending, needs the account owner:** none of this has been applied yet. The smoke test, a destroy and
 recreate following only this runbook, the ALB URL rewrite, `max_connections` of the real instance
-and a password-reset email passing DKIM and SPF need the operator's account and registrar.
+and a password-reset email passing DKIM and SPF need the account owner's access to the AWS account and the registrar.
 
 ## 8. Troubleshooting
 
@@ -191,5 +191,5 @@ and a password-reset email passing DKIM and SPF need the operator's account and 
   is granted; check the identity status first. The app uses the SES API
   (`SPHERICON_SYSTEM_EMAIL_PROVIDER=ses`, see the env table in `docs/self-hosting.md`).
 - **State lock errors.** The lock is a `.tflock` object next to the state in the bucket; run one
-  operator at a time. After a crashed run, `mise run infra -- force-unlock <id>`.
+  person at a time. After a crashed run, `mise run infra -- force-unlock <id>`.
 - **`no credentials for profile`.** `aws login --profile sphericon` (sessions expire).
