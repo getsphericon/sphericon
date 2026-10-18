@@ -6,10 +6,11 @@ import {
   RouterProvider,
 } from '@tanstack/react-router'
 import { HttpResponse } from 'msw'
-import { beforeEach, expect, test } from 'vitest'
+import { beforeEach, expect, test, vi } from 'vitest'
 
 import {
   handleSiteContactsDelete,
+  handleSiteContactsExport,
   handleSiteContactsGet,
   handleSiteEventsList,
   handleSiteMembershipsList,
@@ -28,6 +29,14 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { ContactDetailPage } from './detail.tsx'
+
+const saved = vi.hoisted((): (string | undefined)[] => [])
+
+vi.mock('file-saver', () => ({
+  saveAs: (_data: Blob | string, filename?: string) => {
+    saved.push(filename)
+  },
+}))
 
 const DETAIL_ROUTE = routeMount(contactsDetailRoute, { slug: 'test', contactId: '9' })
 const NOW = '2026-01-01T00:00:00Z'
@@ -216,4 +225,27 @@ test('an admin erases a contact only after confirming the irreversible action', 
   await expect
     .poll(() => navigate.mock.calls.at(-1)?.[0])
     .toMatchObject({ to: contactsRoute.to, params: { slug: 'test' } })
+})
+
+test('exporting a contact saves the document under the filename the server suggested', async () => {
+  worker.use(
+    handleSiteContactsGet({ body: ADA }),
+    NO_EVENTS,
+    handleSiteContactsExport(() =>
+      HttpResponse.json(
+        { id: '9' },
+        {
+          headers: {
+            'Content-Disposition':
+              'attachment; filename="export.json"; filename*=UTF-8\'\'%D0%90%D0%B4%D0%B0.json',
+          },
+        },
+      ),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+  await screen.getByRole('button', { name: 'Export data' }).click()
+
+  await expect.poll(() => saved).toEqual(['Ада.json'])
 })
