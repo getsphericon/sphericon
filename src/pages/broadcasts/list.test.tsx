@@ -95,7 +95,10 @@ test('deleting a broadcast asks for confirmation, deletes it and refreshes the l
   worker.use(
     handleSiteBroadcastsList(() => {
       listFetches++
-      return HttpResponse.json({ items: deleted.length ? [HELD] : [DRAFT, HELD], totalItems: 2 })
+      return HttpResponse.json({
+        items: deleted.length > 0 ? [HELD] : [DRAFT, HELD],
+        totalItems: 2,
+      })
     }),
     handleSiteBroadcastsDelete(({ params }) => {
       deleted.push(params.id)

@@ -167,7 +167,7 @@ test('editing shows an error alert when the segment cannot be loaded', async () 
 })
 
 test('editing shows no form while the segment loads, then the loaded values', async () => {
-  const gate = Promise.withResolvers<void>()
+  const gate = Promise.withResolvers<undefined>()
   serveCatalogue()
   worker.use(
     handleSiteSegmentsGet(async () => {
@@ -179,7 +179,7 @@ test('editing shows no form while the segment loads, then the loaded values', as
   const { screen } = await renderWithRouter(<SegmentEditPage />, EDIT_ROUTE)
 
   await expect.element(screen.getByLabelText('Name', { exact: false })).not.toBeInTheDocument()
-  gate.resolve()
+  gate.resolve(undefined)
 
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Mail users')
 })

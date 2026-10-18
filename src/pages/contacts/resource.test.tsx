@@ -166,7 +166,7 @@ test('editing shows an error alert when the contact cannot be loaded', async () 
 })
 
 test('editing shows no form while the contact loads, then the loaded values', async () => {
-  const gate = Promise.withResolvers<void>()
+  const gate = Promise.withResolvers<undefined>()
   worker.use(
     handleSiteContactsGet(async () => {
       await gate.promise
@@ -177,7 +177,7 @@ test('editing shows no form while the contact loads, then the loaded values', as
   const { screen } = await renderWithRouter(<ContactEditPage />, EDIT_ROUTE)
 
   await expect.element(screen.getByLabelText('Email')).not.toBeInTheDocument()
-  gate.resolve()
+  gate.resolve(undefined)
 
   await expect.element(screen.getByLabelText('Email')).toHaveValue('ada@example.com')
 })

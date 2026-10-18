@@ -63,7 +63,7 @@ test('deleting a contact asks for confirmation, deletes it and refreshes the lis
   worker.use(
     handleSiteContactsList(() => {
       listFetches++
-      return HttpResponse.json({ items: deleted.length ? [BOB] : [ALICE, BOB], totalItems: 2 })
+      return HttpResponse.json({ items: deleted.length > 0 ? [BOB] : [ALICE, BOB], totalItems: 2 })
     }),
     handleSiteContactsDelete(({ params }) => {
       deleted.push(params.id)

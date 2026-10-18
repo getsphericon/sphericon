@@ -9,7 +9,7 @@ import { configDefaults, defineConfig } from 'vitest/config'
 
 const require = createRequire(import.meta.url)
 
-const SUPPORTED_LOCALES = ['en', 'ru', 'es']
+const SUPPORTED_LOCALES = new Set(['en', 'ru', 'es'])
 
 // Dev-only: substitute the {{APP_LOCALE}} sentinels in index.html the same way
 // the Go backend does at serve time in prod (internal/server/spa.go). Applied
@@ -21,7 +21,7 @@ function devLocalePlugin(): Plugin {
     apply: 'serve',
     transformIndexHtml(html) {
       const env = process.env.APP_LOCALE ?? 'en'
-      const locale = SUPPORTED_LOCALES.includes(env) ? env : 'en'
+      const locale = SUPPORTED_LOCALES.has(env) ? env : 'en'
       // Only an explicit `false` turns the gate off, as in the backend's config.
       const verification = process.env.REQUIRE_EMAIL_VERIFICATION === 'false' ? 'false' : 'true'
       return html

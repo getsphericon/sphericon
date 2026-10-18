@@ -131,7 +131,7 @@ export function SuspensionActions({
         variant="light"
         loading={unsuspend.isPending}
         onClick={() =>
-          modals.openConfirmModal({
+          void modals.openConfirmModal({
             title: t(($) => $.console.workspace.unsuspend.title),
             children: t(($) => $.console.workspace.unsuspend.description),
             labels: {
@@ -188,7 +188,7 @@ export function ExemptionAction({ workspaceId, exempt }: { workspaceId: string; 
       variant="light"
       loading={mutation.isPending}
       onClick={() =>
-        modals.openConfirmModal({
+        void modals.openConfirmModal({
           title: exempt
             ? t(($) => $.console.workspace.abuse.unexemptTitle)
             : t(($) => $.console.workspace.abuse.exemptTitle),

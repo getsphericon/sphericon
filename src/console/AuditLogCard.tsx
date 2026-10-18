@@ -14,12 +14,14 @@ const PAGE_SIZE = 25
 function ActorLabel({ entry }: { entry: OperatorAuditEntryResource }) {
   const { t } = useTranslation()
   const { kind, name, id } = entry.actor
-  if (kind === 'system') return <>{t(($) => $.console.workspace.auditLog.actorSystem)}</>
+  if (kind === 'system') {
+    return t(($) => $.console.workspace.auditLog.actorSystem)
+  }
   if (kind === 'api_token') {
-    return <>{name ?? t(($) => $.console.workspace.auditLog.actorToken, { id: id ?? '' })}</>
+    return name ?? t(($) => $.console.workspace.auditLog.actorToken, { id: id ?? '' })
   }
   // An Operator arrives already as "sphericon staff", with no id.
-  return <>{name ?? id ?? ''}</>
+  return name ?? id ?? ''
 }
 
 function targetLabel({ target }: OperatorAuditEntryResource) {
@@ -47,7 +49,9 @@ function AuditPage({
     }),
   )
 
-  if (query.isLoading) return <Loader size="sm" />
+  if (query.isLoading) {
+    return <Loader size="sm" />
+  }
   if (query.isError) {
     return (
       <ApiErrorAlert

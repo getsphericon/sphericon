@@ -1,12 +1,9 @@
-import { isRuleGroupType, type RuleGroupType } from 'react-querybuilder'
+import { isRuleGroupType } from 'react-querybuilder'
+import type { RuleGroupType } from 'react-querybuilder'
 import * as z from 'zod'
 
-import {
-  SiteSegmentCombinator,
-  type SiteSegmentRuleGroup,
-  type SiteSegmentRuleNode,
-  SiteSegmentOperator,
-} from '../../generated/site/types.gen.ts'
+import { SiteSegmentCombinator, SiteSegmentOperator } from '../../generated/site/types.gen.ts'
+import type { SiteSegmentRuleGroup, SiteSegmentRuleNode } from '../../generated/site/types.gen.ts'
 import { zSiteSegmentRuleGroup } from '../../generated/site/zod.gen.ts'
 
 // A Segment is always a rule: the empty group matches every contact.
@@ -43,10 +40,16 @@ export function toGroup(query: RuleGroupType): SiteSegmentRuleGroup {
     combinator: combinatorByName.get(query.combinator) ?? SiteSegmentCombinator.AND,
     ...(query.not === undefined ? {} : { not: query.not }),
     rules: query.rules.flatMap((node): SiteSegmentRuleNode[] => {
-      if (typeof node === 'string') return []
-      if (isRuleGroupType(node)) return [toGroup(node)]
+      if (typeof node === 'string') {
+        return []
+      }
+      if (isRuleGroupType(node)) {
+        return [toGroup(node)]
+      }
       const operator = operatorByName.get(node.operator)
-      if (!operator) return []
+      if (!operator) {
+        return []
+      }
       return [
         {
           kind: 'rule',

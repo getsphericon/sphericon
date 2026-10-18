@@ -1,15 +1,20 @@
 import { Loader, Stack, Text } from '@mantine/core'
 import { useCounter } from '@mantine/hooks'
-import { type QueryKey, type UseQueryOptions, useQuery } from '@tanstack/react-query'
-import { DataTable, type DataTableColumn } from 'mantine-datatable'
+import { useQuery } from '@tanstack/react-query'
+import type { QueryKey, UseQueryOptions } from '@tanstack/react-query'
+import { DataTable } from 'mantine-datatable'
+import type { DataTableColumn } from 'mantine-datatable'
 import type { ReactNode } from 'react'
 
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import { ApiErrorAlert } from './ApiErrorAlert.tsx'
 
-type Page = { items: object[]; totalItems: number }
+interface Page {
+  items: object[]
+  totalItems: number
+}
 
-type PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey extends QueryKey> = {
+interface PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey extends QueryKey> {
   // The generated list query options, called with the page to load.
   options: (paging: {
     page: number

@@ -12,7 +12,7 @@ const FLUSH_DELAY_MS = 200
 // and every exported entry point below short-circuits to a no-op on the server.
 const isBrowser = typeof window !== 'undefined'
 
-export type TrackerConfig = {
+export interface TrackerConfig {
   collectKey: string
   baseUrl: string
 }
@@ -23,15 +23,15 @@ type IdentifyInput = Omit<CollectIdentifyInput, 'visitorId'>
 type EventProperties = CollectEventInput['properties']
 
 type QueueCommand =
-  | ['init', TrackerConfig]
-  | ['identify', IdentifyInput]
+  | ['init', Partial<TrackerConfig>]
+  | ['identify', IdentifyInput?]
   | ['track', string, EventProperties | undefined]
 
 type QueueApi = QueueCommand[] & {
   push: (...items: QueueCommand[]) => number
 }
 
-type Runtime = {
+interface Runtime {
   config: TrackerConfig
   visitorId: string
   pendingEvents: CollectEventInput[]
@@ -46,7 +46,7 @@ declare global {
 
 let runtime: Runtime | null = null
 
-function normalizeConfig(config: TrackerConfig | null | undefined): TrackerConfig | null {
+function normalizeConfig(config: Partial<TrackerConfig> | null | undefined): TrackerConfig | null {
   const collectKey = config?.collectKey?.trim()
 
   if (!collectKey) {
@@ -122,7 +122,7 @@ function collectUrl(config: TrackerConfig, path: string): string {
 }
 
 function flushSoon(): void {
-  if (!runtime || runtime.flushTimer !== null) {
+  if (runtime?.flushTimer !== null) {
     return
   }
 
@@ -145,7 +145,7 @@ async function flushEvents(): Promise<void> {
     return
   }
 
-  const events = runtime.pendingEvents.splice(0, runtime.pendingEvents.length)
+  const events = runtime.pendingEvents.splice(0)
   const body: CollectEventsInput = { events }
 
   await fetch(collectUrl(runtime.config, '/collect/events'), {
@@ -177,7 +177,7 @@ function processQueueCommand(command: QueueCommand): void {
     return
   }
 
-  void track(command[1], command[2] ?? null)
+  track(command[1], command[2] ?? null)
 }
 
 function createQueueApi(initial: QueueCommand[]): QueueApi {
@@ -247,7 +247,7 @@ export async function identify(payload: IdentifyInput): Promise<void> {
   }).catch(() => undefined)
 }
 
-export async function track(action: string, properties?: EventProperties): Promise<void> {
+export function track(action: string, properties?: EventProperties): void {
   if (!runtime) {
     if (isBrowser) {
       const queue = (window._omq ??= [])
@@ -274,5 +274,5 @@ export function trackPageView(input: {
   referrer: string
   locale: string
 }): void {
-  void track('page.view', input)
+  track('page.view', input)
 }

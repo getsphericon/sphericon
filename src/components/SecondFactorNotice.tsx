@@ -22,7 +22,9 @@ export function secondFactorStanding(
   now: number,
 ): SecondFactorStanding {
   const endsAt = workspace?.secondFactorGraceEndsAt
-  if (!endsAt) return { kind: 'clear' }
+  if (!endsAt) {
+    return { kind: 'clear' }
+  }
   return Date.parse(endsAt) <= now ? { kind: 'blocked' } : { kind: 'grace', endsAt }
 }
 

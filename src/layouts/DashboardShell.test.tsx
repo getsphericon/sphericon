@@ -31,7 +31,7 @@ function mountShell() {
     id: 'shell',
     component: () => (
       <DashboardShell
-        sidebar={<Link to={secondRoute.to}>Go second</Link>}
+        sidebar={<Link to={SECOND_PATH}>Go second</Link>}
         headerRight={<span>{HEADER_SLOT}</span>}
         banner={<span>{BANNER_SLOT}</span>}
       />

@@ -32,6 +32,48 @@ export default defineConfig({
   rules: {
     'typescript/no-explicit-any': 'error',
     'typescript/no-restricted-types': 'error',
+    'typescript/no-misused-promises': 'error',
+    'typescript/no-deprecated': 'error',
+    'typescript/only-throw-error': [
+      'error',
+      {
+        allow: [
+          {
+            from: 'package',
+            package: '@tanstack/router-core',
+            name: ['Redirect', 'NotFoundError'],
+          },
+        ],
+      },
+    ],
+    'typescript/require-await': 'error',
+    'typescript/prefer-nullish-coalescing': [
+      'error',
+      { ignorePrimitives: { string: true, boolean: true, number: true } },
+    ],
+    'typescript/prefer-optional-chain': 'error',
+    'typescript/no-unnecessary-condition': 'error',
+    'typescript/strict-void-return': 'error',
+    'typescript/no-invalid-void-type': 'error',
+    'typescript/no-import-type-side-effects': 'error',
+    'typescript/consistent-type-definitions': 'error',
+    'import/consistent-type-specifier-style': 'error',
+    'eslint/eqeqeq': 'error',
+    'eslint/no-eq-null': 'error',
+    'eslint/curly': 'error',
+    'eslint/object-shorthand': 'error',
+    'eslint/no-promise-executor-return': 'error',
+    'eslint/no-use-before-define': ['error', { functions: false }],
+    'react/display-name': 'error',
+    'react/button-has-type': 'error',
+    'react/jsx-no-useless-fragment': 'error',
+    'react/no-object-type-as-default-prop': 'error',
+    'unicorn/explicit-length-check': 'error',
+    'unicorn/prefer-set-has': 'error',
+    'unicorn/prefer-query-selector': 'error',
+    'unicorn/prefer-dom-node-append': 'error',
+    'unicorn/no-array-callback-reference': 'error',
+    'unicorn/no-unnecessary-array-splice-count': 'error',
     // The only disabled rule: tsconfig uses jsx "react-jsx" (automatic runtime), where
     // importing React in scope is unnecessary; oxlint has no option to detect this.
     'react/react-in-jsx-scope': 'off',
@@ -64,6 +106,12 @@ export default defineConfig({
       },
     ],
   },
+  overrides: [
+    {
+      files: ['src/**', 'packages/**'],
+      rules: { 'react-hooks/rules-of-hooks': 'error' },
+    },
+  ],
   ignorePatterns: [
     'dist',
     'src/generated',

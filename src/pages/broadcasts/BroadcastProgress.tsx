@@ -11,7 +11,9 @@ const MINUTES_PER_HOUR = 60
 // rate, so a precise countdown would claim more than the server knows.
 function remainingText(t: TFunction, completionAt: string): string {
   const minutes = Math.round((Date.parse(completionAt) - Date.now()) / MS_PER_MINUTE)
-  if (minutes < 1) return t(($) => $.broadcasts.progress.almostDone)
+  if (minutes < 1) {
+    return t(($) => $.broadcasts.progress.almostDone)
+  }
   if (minutes < MINUTES_PER_HOUR) {
     return t(($) => $.broadcasts.progress.remainingMinutes, { count: minutes })
   }

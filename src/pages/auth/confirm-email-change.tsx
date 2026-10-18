@@ -17,7 +17,9 @@ export function ConfirmEmailChangePage() {
   // Fire once on mount; the ref guards against StrictMode's double-invoke.
   const fired = useRef(false)
   useEffect(() => {
-    if (fired.current) return
+    if (fired.current) {
+      return
+    }
     fired.current = true
     mutate({ body: { token } })
   }, [mutate, token])

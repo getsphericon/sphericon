@@ -77,7 +77,9 @@ function BillingLink({
   billingUrl: string | null | undefined
 }) {
   const { t } = useTranslation()
-  if (!billingUrl) return null
+  if (!billingUrl) {
+    return null
+  }
   return role === 'member' ? (
     <Text size="sm" mt="xs">
       {t(($) => $.workspaceHold.billingContact)}
@@ -177,7 +179,7 @@ export function WorkspaceLayout() {
               supportEmail={current.supportEmail}
             />
           ) : null}
-          {otherHolds.length && current ? (
+          {otherHolds.length > 0 && current ? (
             <HoldBanner
               variant="generic"
               holds={otherHolds}
@@ -185,7 +187,7 @@ export function WorkspaceLayout() {
               billingUrl={current.billingUrl}
             />
           ) : null}
-          {billingHolds.length && current ? (
+          {billingHolds.length > 0 && current ? (
             <HoldBanner
               variant="billing"
               holds={billingHolds}

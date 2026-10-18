@@ -3,7 +3,7 @@ import type { QueryKey, UseMutationOptions } from '@tanstack/react-query'
 import { useDeleteConfirmation } from './useDeleteConfirmation.tsx'
 import { useResourceMutation } from './useResourceMutation.ts'
 
-type DeleteResourceOptions<TData, TError, TCtx> = {
+interface DeleteResourceOptions<TData, TError, TCtx> {
   // The generated delete mutation, called with { path: { slug, id } }.
   mutation: UseMutationOptions<TData, TError, { path: { slug: string; id: string } }, TCtx>
   slug: string

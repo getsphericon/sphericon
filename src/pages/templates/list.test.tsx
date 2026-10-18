@@ -71,7 +71,7 @@ test('deleting a template asks for confirmation, deletes it and refreshes the li
     handleSiteTemplatesList(() => {
       listFetches++
       return HttpResponse.json({
-        items: deleted.length ? [RECEIPT] : [WELCOME, RECEIPT],
+        items: deleted.length > 0 ? [RECEIPT] : [WELCOME, RECEIPT],
         totalItems: 2,
       })
     }),
