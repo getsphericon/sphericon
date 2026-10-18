@@ -2,6 +2,8 @@ import { Button, Card, Group, Loader, SimpleGrid, Stack, Text, Title } from '@ma
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import { parse } from 'content-disposition-header'
+import { saveAs } from 'file-saver'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -24,7 +26,12 @@ import { Route as contactsDetailRoute } from '../../routes/workspaces/$slug/cont
 import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
 import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 import { formatDateTime } from '../../utils/datetime.ts'
-import { dispositionFilename, saveBlob } from '../../utils/download.ts'
+
+// The filename the server suggested in Content-Disposition (RFC 6266, `filename*` included).
+function exportFilename(response: Response): string | undefined {
+  const header = response.headers.get('Content-Disposition')
+  return header ? parse(header).parameters.filename : undefined
+}
 
 const EVENTS_PAGE_SIZE = 10
 
@@ -107,9 +114,9 @@ export function ContactDetailPage() {
         throwOnError: true,
       }),
     onSuccess: ({ data, response }) =>
-      saveBlob(
+      saveAs(
         new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-        dispositionFilename(response),
+        exportFilename(response),
       ),
     onError: (error) =>
       notifications.show({
