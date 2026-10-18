@@ -5,7 +5,7 @@ import "entgo.io/ent/schema"
 // Audited opts a Workspace-owned entity into the Audit log (ADR 0022): the generated
 // scoped client wraps its create, update and delete in a transaction and publishes an
 // `audit.entry` with a before/after diff for every write made under a User, API token,
-// Operator or system actor. Scopes built from a secret (ingest) are never audited.
+// Staff member or system actor. Scopes built from a secret (ingest) are never audited.
 type Audited struct {
 	// Action is the entity's part of the action name `<Action>.<verb>`, e.g. "tag".
 	Action string

@@ -280,7 +280,7 @@ test('a billing hold change is shown as billing activity, attributed to spherico
         items: [
           entry({
             id: '8',
-            actor: { kind: 'operator', name: 'sphericon staff' },
+            actor: { kind: 'staff', name: 'sphericon staff' },
             action: 'hold.create',
             billing: true,
             target: { type: 'hold', name: 'billing' },

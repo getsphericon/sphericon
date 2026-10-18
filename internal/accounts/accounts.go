@@ -78,7 +78,7 @@ func (a *Accounts) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
 }
 
 // MembershipsOf lists a User's Memberships with their User and Workspace loaded, and
-// the Workspace's Operator holds (every row, by key: expiry is the caller's to apply),
+// the Workspace's Staff holds (every row, by key: expiry is the caller's to apply),
 // oldest Workspace first.
 func (a *Accounts) MembershipsOf(ctx context.Context, userID int64) ([]*ent.Membership, error) {
 	return a.ent.Membership.Query().
@@ -467,7 +467,7 @@ func RecordUserAction(ctx context.Context, tx *ent.Client, pub events.Publisher,
 }
 
 // RecordActionOnUser publishes action by actor on the User u into the log of every
-// Workspace u holds a Membership in (an operator acting on a User), and none
+// Workspace u holds a Membership in (a staff member acting on a User), and none
 // anywhere else.
 func RecordActionOnUser(ctx context.Context, tx *ent.Client, pub events.Publisher, actor events.Actor, u *ent.User, action string, diff map[string]any) error {
 	memberships, err := tx.Membership.Query().Where(membership.UserID(u.ID)).All(ctx)

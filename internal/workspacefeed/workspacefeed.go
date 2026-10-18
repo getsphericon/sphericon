@@ -2,7 +2,7 @@
 // Workspaces (ADR 0009). A Workspace takes the next position whenever it is created,
 // an owner is added, removed or transferred, or an owner's email or verification
 // changes. The service endpoint reads Workspaces in the order of that position
-// (ee/operator), so what a caller saved as its cursor always names a place in the
+// (ee/staff), so what a caller saved as its cursor always names a place in the
 // order of changes.
 //
 // Two ent hooks keep it so no write path can forget it. Hook runs on every transaction

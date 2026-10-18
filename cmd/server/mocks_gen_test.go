@@ -5,7 +5,7 @@ package main
 
 import (
 	"context"
-	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"sync"
@@ -152,60 +152,60 @@ func (mock *workspaceOpsMock) UnsuspendWorkspaceCalls() []struct {
 	return calls
 }
 
-// Ensure, that operatorOpsMock does implement operatorOps.
+// Ensure, that staffOpsMock does implement staffOps.
 // If this is not the case, regenerate this file with moq.
-var _ operatorOps = &operatorOpsMock{}
+var _ staffOps = &staffOpsMock{}
 
-// operatorOpsMock is a mock implementation of operatorOps.
+// staffOpsMock is a mock implementation of staffOps.
 //
-//	func TestSomethingThatUsesoperatorOps(t *testing.T) {
+//	func TestSomethingThatUsesstaffOps(t *testing.T) {
 //
-//		// make and configure a mocked operatorOps
-//		mockedoperatorOps := &operatorOpsMock{
-//			CreateOperatorFunc: func(ctx context.Context, email string) (string, error) {
-//				panic("mock out the CreateOperator method")
+//		// make and configure a mocked staffOps
+//		mockedstaffOps := &staffOpsMock{
+//			CreateStaffMemberFunc: func(ctx context.Context, email string) (string, error) {
+//				panic("mock out the CreateStaffMember method")
 //			},
-//			ResetOperatorTOTPFunc: func(ctx context.Context, email string) error {
-//				panic("mock out the ResetOperatorTOTP method")
+//			ResetStaffTOTPFunc: func(ctx context.Context, email string) error {
+//				panic("mock out the ResetStaffTOTP method")
 //			},
 //		}
 //
-//		// use mockedoperatorOps in code that requires operatorOps
+//		// use mockedstaffOps in code that requires staffOps
 //		// and then make assertions.
 //
 //	}
-type operatorOpsMock struct {
-	// CreateOperatorFunc mocks the CreateOperator method.
-	CreateOperatorFunc func(ctx context.Context, email string) (string, error)
+type staffOpsMock struct {
+	// CreateStaffMemberFunc mocks the CreateStaffMember method.
+	CreateStaffMemberFunc func(ctx context.Context, email string) (string, error)
 
-	// ResetOperatorTOTPFunc mocks the ResetOperatorTOTP method.
-	ResetOperatorTOTPFunc func(ctx context.Context, email string) error
+	// ResetStaffTOTPFunc mocks the ResetStaffTOTP method.
+	ResetStaffTOTPFunc func(ctx context.Context, email string) error
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// CreateOperator holds details about calls to the CreateOperator method.
-		CreateOperator []struct {
+		// CreateStaffMember holds details about calls to the CreateStaffMember method.
+		CreateStaffMember []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Email is the email argument value.
 			Email string
 		}
-		// ResetOperatorTOTP holds details about calls to the ResetOperatorTOTP method.
-		ResetOperatorTOTP []struct {
+		// ResetStaffTOTP holds details about calls to the ResetStaffTOTP method.
+		ResetStaffTOTP []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Email is the email argument value.
 			Email string
 		}
 	}
-	lockCreateOperator    sync.RWMutex
-	lockResetOperatorTOTP sync.RWMutex
+	lockCreateStaffMember sync.RWMutex
+	lockResetStaffTOTP    sync.RWMutex
 }
 
-// CreateOperator calls CreateOperatorFunc.
-func (mock *operatorOpsMock) CreateOperator(ctx context.Context, email string) (string, error) {
-	if mock.CreateOperatorFunc == nil {
-		panic("operatorOpsMock.CreateOperatorFunc: method is nil but operatorOps.CreateOperator was just called")
+// CreateStaffMember calls CreateStaffMemberFunc.
+func (mock *staffOpsMock) CreateStaffMember(ctx context.Context, email string) (string, error) {
+	if mock.CreateStaffMemberFunc == nil {
+		panic("staffOpsMock.CreateStaffMemberFunc: method is nil but staffOps.CreateStaffMember was just called")
 	}
 	callInfo := struct {
 		Ctx   context.Context
@@ -214,17 +214,17 @@ func (mock *operatorOpsMock) CreateOperator(ctx context.Context, email string) (
 		Ctx:   ctx,
 		Email: email,
 	}
-	mock.lockCreateOperator.Lock()
-	mock.calls.CreateOperator = append(mock.calls.CreateOperator, callInfo)
-	mock.lockCreateOperator.Unlock()
-	return mock.CreateOperatorFunc(ctx, email)
+	mock.lockCreateStaffMember.Lock()
+	mock.calls.CreateStaffMember = append(mock.calls.CreateStaffMember, callInfo)
+	mock.lockCreateStaffMember.Unlock()
+	return mock.CreateStaffMemberFunc(ctx, email)
 }
 
-// CreateOperatorCalls gets all the calls that were made to CreateOperator.
+// CreateStaffMemberCalls gets all the calls that were made to CreateStaffMember.
 // Check the length with:
 //
-//	len(mockedoperatorOps.CreateOperatorCalls())
-func (mock *operatorOpsMock) CreateOperatorCalls() []struct {
+//	len(mockedstaffOps.CreateStaffMemberCalls())
+func (mock *staffOpsMock) CreateStaffMemberCalls() []struct {
 	Ctx   context.Context
 	Email string
 } {
@@ -232,16 +232,16 @@ func (mock *operatorOpsMock) CreateOperatorCalls() []struct {
 		Ctx   context.Context
 		Email string
 	}
-	mock.lockCreateOperator.RLock()
-	calls = mock.calls.CreateOperator
-	mock.lockCreateOperator.RUnlock()
+	mock.lockCreateStaffMember.RLock()
+	calls = mock.calls.CreateStaffMember
+	mock.lockCreateStaffMember.RUnlock()
 	return calls
 }
 
-// ResetOperatorTOTP calls ResetOperatorTOTPFunc.
-func (mock *operatorOpsMock) ResetOperatorTOTP(ctx context.Context, email string) error {
-	if mock.ResetOperatorTOTPFunc == nil {
-		panic("operatorOpsMock.ResetOperatorTOTPFunc: method is nil but operatorOps.ResetOperatorTOTP was just called")
+// ResetStaffTOTP calls ResetStaffTOTPFunc.
+func (mock *staffOpsMock) ResetStaffTOTP(ctx context.Context, email string) error {
+	if mock.ResetStaffTOTPFunc == nil {
+		panic("staffOpsMock.ResetStaffTOTPFunc: method is nil but staffOps.ResetStaffTOTP was just called")
 	}
 	callInfo := struct {
 		Ctx   context.Context
@@ -250,17 +250,17 @@ func (mock *operatorOpsMock) ResetOperatorTOTP(ctx context.Context, email string
 		Ctx:   ctx,
 		Email: email,
 	}
-	mock.lockResetOperatorTOTP.Lock()
-	mock.calls.ResetOperatorTOTP = append(mock.calls.ResetOperatorTOTP, callInfo)
-	mock.lockResetOperatorTOTP.Unlock()
-	return mock.ResetOperatorTOTPFunc(ctx, email)
+	mock.lockResetStaffTOTP.Lock()
+	mock.calls.ResetStaffTOTP = append(mock.calls.ResetStaffTOTP, callInfo)
+	mock.lockResetStaffTOTP.Unlock()
+	return mock.ResetStaffTOTPFunc(ctx, email)
 }
 
-// ResetOperatorTOTPCalls gets all the calls that were made to ResetOperatorTOTP.
+// ResetStaffTOTPCalls gets all the calls that were made to ResetStaffTOTP.
 // Check the length with:
 //
-//	len(mockedoperatorOps.ResetOperatorTOTPCalls())
-func (mock *operatorOpsMock) ResetOperatorTOTPCalls() []struct {
+//	len(mockedstaffOps.ResetStaffTOTPCalls())
+func (mock *staffOpsMock) ResetStaffTOTPCalls() []struct {
 	Ctx   context.Context
 	Email string
 } {
@@ -268,9 +268,9 @@ func (mock *operatorOpsMock) ResetOperatorTOTPCalls() []struct {
 		Ctx   context.Context
 		Email string
 	}
-	mock.lockResetOperatorTOTP.RLock()
-	calls = mock.calls.ResetOperatorTOTP
-	mock.lockResetOperatorTOTP.RUnlock()
+	mock.lockResetStaffTOTP.RLock()
+	calls = mock.calls.ResetStaffTOTP
+	mock.lockResetStaffTOTP.RUnlock()
 	return calls
 }
 
@@ -284,13 +284,13 @@ var _ serviceCredentialOps = &serviceCredentialOpsMock{}
 //
 //		// make and configure a mocked serviceCredentialOps
 //		mockedserviceCredentialOps := &serviceCredentialOpsMock{
-//			IssueServiceCredentialFunc: func(ctx context.Context, in operator.IssueInput) (*operator.Issued, error) {
+//			IssueServiceCredentialFunc: func(ctx context.Context, in staff.IssueInput) (*staff.Issued, error) {
 //				panic("mock out the IssueServiceCredential method")
 //			},
 //			RevokeServiceCredentialFunc: func(ctx context.Context, id int64) error {
 //				panic("mock out the RevokeServiceCredential method")
 //			},
-//			RotateServiceCredentialFunc: func(ctx context.Context, id int64, expiresAt *time.Time) (*operator.Issued, error) {
+//			RotateServiceCredentialFunc: func(ctx context.Context, id int64, expiresAt *time.Time) (*staff.Issued, error) {
 //				panic("mock out the RotateServiceCredential method")
 //			},
 //			ServiceCredentialsFunc: func(ctx context.Context, name string) ([]*ent.ServiceCredential, error) {
@@ -304,13 +304,13 @@ var _ serviceCredentialOps = &serviceCredentialOpsMock{}
 //	}
 type serviceCredentialOpsMock struct {
 	// IssueServiceCredentialFunc mocks the IssueServiceCredential method.
-	IssueServiceCredentialFunc func(ctx context.Context, in operator.IssueInput) (*operator.Issued, error)
+	IssueServiceCredentialFunc func(ctx context.Context, in staff.IssueInput) (*staff.Issued, error)
 
 	// RevokeServiceCredentialFunc mocks the RevokeServiceCredential method.
 	RevokeServiceCredentialFunc func(ctx context.Context, id int64) error
 
 	// RotateServiceCredentialFunc mocks the RotateServiceCredential method.
-	RotateServiceCredentialFunc func(ctx context.Context, id int64, expiresAt *time.Time) (*operator.Issued, error)
+	RotateServiceCredentialFunc func(ctx context.Context, id int64, expiresAt *time.Time) (*staff.Issued, error)
 
 	// ServiceCredentialsFunc mocks the ServiceCredentials method.
 	ServiceCredentialsFunc func(ctx context.Context, name string) ([]*ent.ServiceCredential, error)
@@ -322,7 +322,7 @@ type serviceCredentialOpsMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// In is the in argument value.
-			In operator.IssueInput
+			In staff.IssueInput
 		}
 		// RevokeServiceCredential holds details about calls to the RevokeServiceCredential method.
 		RevokeServiceCredential []struct {
@@ -355,13 +355,13 @@ type serviceCredentialOpsMock struct {
 }
 
 // IssueServiceCredential calls IssueServiceCredentialFunc.
-func (mock *serviceCredentialOpsMock) IssueServiceCredential(ctx context.Context, in operator.IssueInput) (*operator.Issued, error) {
+func (mock *serviceCredentialOpsMock) IssueServiceCredential(ctx context.Context, in staff.IssueInput) (*staff.Issued, error) {
 	if mock.IssueServiceCredentialFunc == nil {
 		panic("serviceCredentialOpsMock.IssueServiceCredentialFunc: method is nil but serviceCredentialOps.IssueServiceCredential was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
-		In  operator.IssueInput
+		In  staff.IssueInput
 	}{
 		Ctx: ctx,
 		In:  in,
@@ -378,11 +378,11 @@ func (mock *serviceCredentialOpsMock) IssueServiceCredential(ctx context.Context
 //	len(mockedserviceCredentialOps.IssueServiceCredentialCalls())
 func (mock *serviceCredentialOpsMock) IssueServiceCredentialCalls() []struct {
 	Ctx context.Context
-	In  operator.IssueInput
+	In  staff.IssueInput
 } {
 	var calls []struct {
 		Ctx context.Context
-		In  operator.IssueInput
+		In  staff.IssueInput
 	}
 	mock.lockIssueServiceCredential.RLock()
 	calls = mock.calls.IssueServiceCredential
@@ -427,7 +427,7 @@ func (mock *serviceCredentialOpsMock) RevokeServiceCredentialCalls() []struct {
 }
 
 // RotateServiceCredential calls RotateServiceCredentialFunc.
-func (mock *serviceCredentialOpsMock) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*operator.Issued, error) {
+func (mock *serviceCredentialOpsMock) RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*staff.Issued, error) {
 	if mock.RotateServiceCredentialFunc == nil {
 		panic("serviceCredentialOpsMock.RotateServiceCredentialFunc: method is nil but serviceCredentialOps.RotateServiceCredential was just called")
 	}

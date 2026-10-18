@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
-// workspaceOps is what the `workspace` operator commands need from the app. The
+// workspaceOps is what the `workspace` staff member commands need from the app. The
 // app implements it (internal/app); tests use a fake.
 type workspaceOps interface {
 	SuspendWorkspace(ctx context.Context, slug string, by suspension.Actor, reason string) (bool, error)
@@ -20,8 +20,8 @@ type workspaceOps interface {
 const workspaceUsage = "usage: sphericon workspace suspend <slug> <reason...> | unsuspend <slug>"
 
 // runWorkspace executes `sphericon workspace <suspend|unsuspend> …` (ADR 0007): the bare
-// operator toggle for a Workspace's outbound-sending freeze. Everything above this
-// mechanism (the automated detector, an Operator console) is EE.
+// staff member toggle for a Workspace's outbound-sending freeze. Everything above this
+// mechanism (the automated detector, a Staff console) is EE.
 func runWorkspace(ctx context.Context, ops workspaceOps, args []string, out io.Writer) error {
 	if len(args) < 2 {
 		return errors.New(workspaceUsage)

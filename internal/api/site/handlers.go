@@ -187,7 +187,7 @@ type Deps struct {
 	// AccountLink mints the Owner's Account link token; nil when the installation is
 	// not configured for it, which leaves the operation answering 404.
 	AccountLink *accountlink.Link
-	// HoldsHonoured reports whether Operator holds are shown to Owners: the same
+	// HoldsHonoured reports whether Staff holds are shown to Owners: the same
 	// license gate the send path applies (ADR 0009). Nil is always.
 	HoldsHonoured func() bool
 	// RequireEmailVerification is the email verification gate (ADR 0030): when false,

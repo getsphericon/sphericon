@@ -137,7 +137,7 @@ export const zSiteApplyTagInput = z.object({
 export const zSiteAuditActorKind = z.enum([
   'user',
   'api_token',
-  'operator',
+  'staff',
   'system'
 ]);
 
@@ -380,12 +380,12 @@ export const zSiteLoginSecondFactorInput = z.object({
 });
 
 /**
- * A rolling 24-hour Send rate limit the operator may set
+ * A rolling 24-hour Send rate limit the staff member may set
  */
 export const zSiteMaxPerDay = z.int().gte(1).lte(100000000);
 
 /**
- * A per-second Send rate limit the operator may set
+ * A per-second Send rate limit the staff member may set
  */
 export const zSiteMaxPerSecond = z.int().gte(1).lte(10000);
 
@@ -1266,7 +1266,7 @@ export const zSiteWebhookEndpointResource = z.object({
 });
 
 /**
- * An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's
+ * A Staff hold on the Workspace's outbound sending (ADR 0009), as the Workspace's
  * members see it. It is not a suspension: it is set from outside, carries its own
  * message, and lifts by itself at its expiry.
  */
@@ -1384,7 +1384,7 @@ export const zSiteApiTokenResourceParentKey = z.string();
 export const zSiteAuditFilterAction = z.string();
 
 /**
- * Only entries by the actor with this id (a User id or an API token id); ignored for the operator kind
+ * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
  */
 export const zSiteAuditFilterActorId = z.string();
 

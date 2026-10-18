@@ -150,9 +150,9 @@ func (e *ContactCreated) Project() Projection {
 type ContactErased struct {
 	WorkspaceID    int64  `json:"workspaceId"`
 	SubjectID      string `json:"subjectId"`
-	IdentifierKind string `json:"identifierKind"` // what the operator identified the person by
-	OperatorKind   string `json:"operatorKind"`   // user|api_token
-	OperatorID     int64  `json:"operatorId"`
+	IdentifierKind string `json:"identifierKind"` // what the staff member identified the person by
+	StaffKind      string `json:"staffKind"`      // user|api_token
+	StaffID        int64  `json:"staffId"`
 }
 
 func (*ContactErased) EventName() string  { return NameContactErased }
@@ -161,8 +161,8 @@ func (e *ContactErased) Workspace() int64 { return e.WorkspaceID }
 func (e *ContactErased) Project() Projection {
 	return Projection{Action: NameContactErased, Properties: map[string]any{
 		"identifierKind": e.IdentifierKind,
-		"operatorKind":   e.OperatorKind,
-		"operatorId":     e.OperatorID,
+		"staffKind":      e.StaffKind,
+		"staffId":        e.StaffID,
 	}}
 }
 

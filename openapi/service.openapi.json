@@ -3,7 +3,7 @@
   "info": {
     "title": "Sphericon Service API",
     "version": "1.0.0",
-    "description": "The Operator surface a service calls with a Service credential (ADR 0026). It is served only by the internal listener, never on the public port."
+    "description": "The Staff surface a service calls with a Service credential (ADR 0026). It is served only by the internal listener, never on the public port."
   },
   "tags": [
     {
@@ -955,7 +955,7 @@
             "description": "When the hold was last set or renewed"
           }
         },
-        "description": "An Operator hold: one reversible freeze of a Workspace's outbound sending (ADR 0009)"
+        "description": "A Staff hold: one reversible freeze of a Workspace's outbound sending (ADR 0009)"
       },
       "HoldSetResult": {
         "type": "object",

@@ -679,7 +679,7 @@ export type SiteApplyTagInput = {
  */
 export type SiteAuditActor = {
   /**
-   * The kind of actor; an operator is shown to the customer as "sphericon staff"
+   * The kind of actor; a staff member is shown to the customer as "sphericon staff"
    */
   kind: SiteAuditActorKind;
   /**
@@ -698,7 +698,7 @@ export type SiteAuditActor = {
 export const SiteAuditActorKind = {
   USER: 'user',
   API_TOKEN: 'api_token',
-  OPERATOR: 'operator',
+  STAFF: 'staff',
   SYSTEM: 'system'
 } as const;
 
@@ -1642,12 +1642,12 @@ export type SiteLoginSecondFactorInput = {
 };
 
 /**
- * A rolling 24-hour Send rate limit the operator may set
+ * A rolling 24-hour Send rate limit the staff member may set
  */
 export type SiteMaxPerDay = number;
 
 /**
- * A per-second Send rate limit the operator may set
+ * A per-second Send rate limit the staff member may set
  */
 export type SiteMaxPerSecond = number;
 
@@ -2589,7 +2589,7 @@ export type SiteWebhookEndpointResource = {
 };
 
 /**
- * An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's
+ * A Staff hold on the Workspace's outbound sending (ADR 0009), as the Workspace's
  * members see it. It is not a suspension: it is set from outside, carries its own
  * message, and lifts by itself at its expiry.
  */
@@ -2671,7 +2671,7 @@ export type SiteWorkspaceResource = {
    */
   billingUrl?: string | null;
   /**
-   * The Operator holds active now, oldest key first; empty while nothing holds sending.
+   * The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed.
    */
@@ -2735,7 +2735,7 @@ export type SiteApiTokenResourceParentKey = string;
 export type SiteAuditFilterAction = string;
 
 /**
- * Only entries by the actor with this id (a User id or an API token id); ignored for the operator kind
+ * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
  */
 export type SiteAuditFilterActorId = string;
 
@@ -3751,7 +3751,7 @@ export type SiteAuditListData = {
      */
     actorKind?: SiteAuditActorKind;
     /**
-     * Only entries by the actor with this id (a User id or an API token id); ignored for the operator kind
+     * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
      */
     actorId?: string;
     /**
@@ -3835,7 +3835,7 @@ export type SiteAuditExportData = {
      */
     actorKind?: SiteAuditActorKind;
     /**
-     * Only entries by the actor with this id (a User id or an API token id); ignored for the operator kind
+     * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
      */
     actorId?: string;
     /**

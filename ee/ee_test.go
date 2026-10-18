@@ -12,7 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/internal/accounts"
 )
 
@@ -32,41 +32,41 @@ var (
 	attempts   = accounts.NewAttempts(nil)
 )
 
-func TestTheOperatorSecretIsRequiredOnlyWithTheOperatorLicense(t *testing.T) {
-	unset := operator.Config{SessionTTL: time.Hour, Attempts: attempts}
+func TestTheStaffSecretIsRequiredOnlyWithTheStaffLicense(t *testing.T) {
+	unset := staff.Config{SessionTTL: time.Hour, Attempts: attempts}
 
 	e, err := ee.New(nil, licenseFor(t, licensekey.FeatureAudit), nil, siteSecret, unset)
-	require.NoError(t, err, "an instance without the operator license needs no operator secret")
-	assert.Nil(t, e.Operator(nil, nil), "and has no operator surface")
+	require.NoError(t, err, "an instance without the operator license needs no staff secret")
+	assert.Nil(t, e.StaffMember(nil, nil), "and has no staff surface")
 
 	_, err = ee.New(nil, licenseFor(t, licensekey.FeatureOperator), nil, siteSecret, unset)
 	require.Error(t, err)
 }
 
-func TestTheOperatorSecretMustDifferFromTheSiteSecretAndBeLongEnough(t *testing.T) {
+func TestTheStaffSecretMustDifferFromTheSiteSecretAndBeLongEnough(t *testing.T) {
 	lic := licenseFor(t, licensekey.FeatureOperator)
 
-	_, err := ee.New(nil, lic, nil, siteSecret, operator.Config{Secret: siteSecret, SessionTTL: time.Hour, Attempts: attempts})
-	require.Error(t, err, "an Operator session must never verify as a User's")
+	_, err := ee.New(nil, lic, nil, siteSecret, staff.Config{Secret: siteSecret, SessionTTL: time.Hour, Attempts: attempts})
+	require.Error(t, err, "a StaffMember session must never verify as a User's")
 
-	_, err = ee.New(nil, lic, nil, siteSecret, operator.Config{Secret: "short", SessionTTL: time.Hour, Attempts: attempts})
+	_, err = ee.New(nil, lic, nil, siteSecret, staff.Config{Secret: "short", SessionTTL: time.Hour, Attempts: attempts})
 	require.Error(t, err)
 
-	e, err := ee.New(nil, lic, nil, siteSecret, operator.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
+	e, err := ee.New(nil, lic, nil, siteSecret, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
 	require.NoError(t, err)
-	assert.NotNil(t, e.Operator(nil, nil))
+	assert.NotNil(t, e.StaffMember(nil, nil))
 }
 
-func TestTheOperatorLoginCounterIsRequiredWithTheOperatorLicense(t *testing.T) {
+func TestTheStaffLoginCounterIsRequiredWithTheStaffLicense(t *testing.T) {
 	lic := licenseFor(t, licensekey.FeatureOperator)
 
-	_, err := ee.New(nil, lic, nil, siteSecret, operator.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour})
+	_, err := ee.New(nil, lic, nil, siteSecret, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour})
 
 	require.Error(t, err, "a missing counter must not silently leave the login unthrottled")
 }
 
 func TestTheEditionRegistersTheAbuseDetectorNextToTheOtherJobs(t *testing.T) {
-	e, err := ee.New(nil, licenseFor(t, licensekey.FeatureOperator), nil, siteSecret, operator.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
+	e, err := ee.New(nil, licenseFor(t, licensekey.FeatureOperator), nil, siteSecret, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
 	require.NoError(t, err)
 
 	jobs := e.Jobs(nil, nil)

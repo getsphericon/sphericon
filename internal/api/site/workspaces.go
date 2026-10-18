@@ -41,7 +41,7 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 }
 
 // workspaceResource is the Membership's Workspace as the Membership's User sees it,
-// with their grace end under the Two-factor requirement (ADR 0020) and the Operator
+// with their grace end under the Two-factor requirement (ADR 0020) and the Staff member
 // holds active now (ADR 0009), read through s, the Workspace's scope. The Membership's
 // User and Workspace edges must be loaded.
 func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {

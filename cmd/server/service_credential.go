@@ -11,15 +11,15 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 )
 
 // serviceCredentialOps is what the `service-credential` commands need from the app. The
 // app implements it (internal/app); tests use a fake.
 type serviceCredentialOps interface {
-	IssueServiceCredential(ctx context.Context, in operator.IssueInput) (*operator.Issued, error)
-	RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*operator.Issued, error)
+	IssueServiceCredential(ctx context.Context, in staff.IssueInput) (*staff.Issued, error)
+	RotateServiceCredential(ctx context.Context, id int64, expiresAt *time.Time) (*staff.Issued, error)
 	RevokeServiceCredential(ctx context.Context, id int64) error
 	ServiceCredentials(ctx context.Context, name string) ([]*ent.ServiceCredential, error)
 }
@@ -63,7 +63,7 @@ func runServiceCredential(ctx context.Context, ops serviceCredentialOps, now fun
 		if len(pos) != 2 {
 			return errors.New(serviceCredentialUsage)
 		}
-		return createServiceCredential(ctx, ops, out, operator.IssueInput{Name: pos[0], Scopes: parseScopes(pos[1]), ExpiresAt: expiresAt})
+		return createServiceCredential(ctx, ops, out, staff.IssueInput{Name: pos[0], Scopes: parseScopes(pos[1]), ExpiresAt: expiresAt})
 	case "rotate":
 		id, err := parseID(pos)
 		if err != nil {
@@ -103,7 +103,7 @@ func runServiceCredential(ctx context.Context, ops serviceCredentialOps, now fun
 	return nil
 }
 
-func createServiceCredential(ctx context.Context, ops serviceCredentialOps, out io.Writer, in operator.IssueInput) error {
+func createServiceCredential(ctx context.Context, ops serviceCredentialOps, out io.Writer, in staff.IssueInput) error {
 	issued, err := ops.IssueServiceCredential(ctx, in)
 	if err != nil {
 		return serviceCredentialError(err, 0)
@@ -112,7 +112,7 @@ func createServiceCredential(ctx context.Context, ops serviceCredentialOps, out 
 	return nil
 }
 
-func showIssued(out io.Writer, c *operator.Issued) {
+func showIssued(out io.Writer, c *staff.Issued) {
 	_, _ = fmt.Fprintf(out, "service credential %d created for %q\nscopes: %s\nexpires: %s\nvalue (shown once, only a hash is stored): %s\n",
 		c.ID, c.Name, joinScopes(c.Scopes), formatTime(c.ExpiresAt, "never"), c.Value)
 }
@@ -144,7 +144,7 @@ func formatTime(t *time.Time, none string) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
-func joinScopes(scopes []operator.Scope) string {
+func joinScopes(scopes []staff.Scope) string {
 	parts := make([]string, len(scopes))
 	for i, s := range scopes {
 		parts[i] = string(s)
@@ -152,11 +152,11 @@ func joinScopes(scopes []operator.Scope) string {
 	return strings.Join(parts, ",")
 }
 
-func parseScopes(list string) []operator.Scope {
-	var scopes []operator.Scope
+func parseScopes(list string) []staff.Scope {
+	var scopes []staff.Scope
 	for part := range strings.SplitSeq(list, ",") {
 		if part = strings.TrimSpace(part); part != "" {
-			scopes = append(scopes, operator.Scope(part))
+			scopes = append(scopes, staff.Scope(part))
 		}
 	}
 	return scopes
@@ -191,15 +191,15 @@ func parseInterleaved(fs *flag.FlagSet, args []string) ([]string, error) {
 
 func serviceCredentialError(err error, id int64) error {
 	switch {
-	case errors.Is(err, operator.ErrNotLicensed):
+	case errors.Is(err, staff.ErrNotLicensed):
 		return errors.New(noLicense)
-	case errors.Is(err, operator.ErrInvalidScope):
+	case errors.Is(err, staff.ErrInvalidScope):
 		return fmt.Errorf("a service credential needs one or more known scopes (usage:read, workspaces:read, holds:write)")
-	case errors.Is(err, operator.ErrInvalidCredential):
+	case errors.Is(err, staff.ErrInvalidCredential):
 		return errors.New("a service credential needs a name and an expiry in the future")
-	case errors.Is(err, operator.ErrCredentialNotFound):
+	case errors.Is(err, staff.ErrCredentialNotFound):
 		return fmt.Errorf("no service credential %d; nothing changed", id)
-	case errors.Is(err, operator.ErrCredentialInactive):
+	case errors.Is(err, staff.ErrCredentialInactive):
 		return fmt.Errorf("service credential %d is revoked or expired; nothing changed", id)
 	}
 	return err

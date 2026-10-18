@@ -314,12 +314,13 @@
         "warningDetail": "{{metric}}: {{rate}} на {{domain}}",
         "warningNotifiedAt": "Владельцы предупреждены"
       },
-      "actorOperator": "Оператор {{id}}",
       "actors": {
         "cli": "Командная строка",
-        "operator": "Оператор",
+        "staff": "",
         "system": "Автоматический детектор"
       },
+      "actorStaff": "Сотрудник {{id}}",
+      "actorStaffMember": "",
       "auditLog": {
         "action": "Действие",
         "actor": "Кто",
@@ -669,7 +670,8 @@
       "from": "С",
       "ip": "IP-адрес",
       "kindApiToken": "API-токен",
-      "kindOperator": "Сотрудник sphericon",
+      "kindStaff": "Сотрудник sphericon",
+      "kindStaffMember": "",
       "kindSystem": "Система",
       "kindUser": "Пользователь",
       "loadError": "Не удалось загрузить журнал аудита",

@@ -1,8 +1,8 @@
 import { QueryClient } from '@tanstack/react-query'
 import { expect, test } from 'vitest'
 
-import { handleOperatorMeGet } from './generated/operator/msw.gen.ts'
 import { handleSiteWorkspacesList } from './generated/site/msw.gen.ts'
+import { handleStaffMeGet } from './generated/staff/msw.gen.ts'
 import { createAppRouter } from './router.ts'
 import { Route as consoleHomeRoute } from './routes/console/_authed/index.tsx'
 import { Route as consoleLoginRoute } from './routes/console/login.tsx'
@@ -84,9 +84,9 @@ test('an unknown workspace slug with no workspaces goes to login', async () => {
   expect(router.state.location.pathname).toBe(loginRoute.to)
 })
 
-test('the console sends a visitor without an Operator session to the console login', async () => {
+test('the console sends a visitor without a staff member session to the console login', async () => {
   const router = newRouter()
-  worker.use(handleOperatorMeGet(() => problem(401, { detail: 'unauthorized' })))
+  worker.use(handleStaffMeGet(() => problem(401, { detail: 'unauthorized' })))
 
   await router.navigate({ to: consoleHomeRoute.to })
 
@@ -95,16 +95,16 @@ test('the console sends a visitor without an Operator session to the console log
 
 test('the console is inert without the license: its 404 also leads to the login', async () => {
   const router = newRouter()
-  worker.use(handleOperatorMeGet(() => problem(404, { detail: 'not found' })))
+  worker.use(handleStaffMeGet(() => problem(404, { detail: 'not found' })))
 
   await router.navigate({ to: consoleHomeRoute.to })
 
   expect(router.state.location.pathname).toBe(consoleLoginRoute.fullPath)
 })
 
-test('the console opens for a signed-in Operator', async () => {
+test('the console opens for a signed-in staff member', async () => {
   const router = newRouter()
-  worker.use(handleOperatorMeGet({ body: { id: '1', email: 'ops@example.com' } }))
+  worker.use(handleStaffMeGet({ body: { id: '1', email: 'ops@example.com' } }))
 
   await router.navigate({ to: consoleHomeRoute.to })
 

@@ -81,10 +81,10 @@ func TestSiteWorkspacesListExposesSuspension(t *testing.T) {
 	assert.Equal(t, "complaint rate above 0.3%", reason)
 }
 
-// Every member sees the Operator holds on their Workspace (ADR 0009), told apart from a
+// Every member sees the Staff holds on their Workspace (ADR 0009), told apart from a
 // suspension: the resource lists the active holds with the setter's message as given, a
 // lapsed hold is not listed, and an unaffected Workspace lists none.
-func TestSiteWorkspacesListExposesActiveOperatorHolds(t *testing.T) {
+func TestSiteWorkspacesListExposesActiveStaffHolds(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	const message = "Sending is paused for now."
@@ -119,7 +119,7 @@ func TestSiteWorkspacesListShowsNoHoldsForAnUnaffectedWorkspace(t *testing.T) {
 
 // Holds are honoured only with the `operator` license, on the send path and in what a
 // Workspace is shown alike: an unlicensed instance lists none.
-func TestSiteWorkspacesListShowsNoHoldsWithoutTheOperatorLicense(t *testing.T) {
+func TestSiteWorkspacesListShowsNoHoldsWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
 		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").

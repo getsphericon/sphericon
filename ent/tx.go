@@ -50,8 +50,6 @@ type Tx struct {
 	OAuthClient *OAuthClientClient
 	// OAuthCode is the client for interacting with the OAuthCode builders.
 	OAuthCode *OAuthCodeClient
-	// Operator is the client for interacting with the Operator builders.
-	Operator *OperatorClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
 	// OutboxMessage is the client for interacting with the OutboxMessage builders.
@@ -68,6 +66,8 @@ type Tx struct {
 	SendingDomain *SendingDomainClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
 	ServiceCredential *ServiceCredentialClient
+	// StaffMember is the client for interacting with the StaffMember builders.
+	StaffMember *StaffMemberClient
 	// Suppression is the client for interacting with the Suppression builders.
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
@@ -233,7 +233,6 @@ func (tx *Tx) init() {
 	tx.Membership = NewMembershipClient(tx.config)
 	tx.OAuthClient = NewOAuthClientClient(tx.config)
 	tx.OAuthCode = NewOAuthCodeClient(tx.config)
-	tx.Operator = NewOperatorClient(tx.config)
 	tx.OutboundMessage = NewOutboundMessageClient(tx.config)
 	tx.OutboxMessage = NewOutboxMessageClient(tx.config)
 	tx.OutboxOffset = NewOutboxOffsetClient(tx.config)
@@ -242,6 +241,7 @@ func (tx *Tx) init() {
 	tx.SendLimiter = NewSendLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
 	tx.ServiceCredential = NewServiceCredentialClient(tx.config)
+	tx.StaffMember = NewStaffMemberClient(tx.config)
 	tx.Suppression = NewSuppressionClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Unsubscribe = NewUnsubscribeClient(tx.config)

@@ -2,10 +2,10 @@
 status: accepted
 ---
 
-# Operator console and abuse detector: one EE feature on the suspension mechanism
+# Staff console and abuse detector: one EE feature on the suspension mechanism
 
-[[0007-workspace-suspension-in-core]] left the Operator console and the automated detector as
-closed EE, and [[0008-operator-separate-identity]] fixed the Operator as a separate identity. This
+[[0007-workspace-suspension-in-core]] left the Staff console and the automated detector as
+closed EE, and [[0008-operator-separate-identity]] fixed the Staff member as a separate identity. This
 ADR settles how both are built. It adds no new freeze path: both only set and clear the core
 `suspended` state.
 
@@ -13,38 +13,38 @@ ADR settles how both are built. It adds no new freeze path: both only set and cl
 
 ### One licensed feature
 
-The Operator, its console and the detector ship under a single license feature, `operator`
+The Staff member, its console and the detector ship under a single license feature, `operator`
 (`ee/licensekey`). They are meaningful only together, for a SaaS operator.
 
-### Operator identity and surface
+### Staff member identity and surface
 
-- Own ent table `operator`, written and read only from `ee/`. No self-signup: the first Operator
-  and every later one is created by `sphericon operator create <email>`.
+- Own ent table `operator`, written and read only from `ee/`. No self-signup: the first Staff member
+  and every later one is created by `sphericon staff create <email>`.
 - Password plus mandatory TOTP (two-step login of [[0020-session-expiry-epoch-and-two-step-login]]),
   a separate cookie and JWT secret, a shorter session than a customer's with no "remember me",
   attempts limited by [[0025-rate-limiting-hybrid-store-workspace-key]]. A lost TOTP is reset
   only through the CLI.
 - Login hardening reuses the ADR 0025 machinery: failed password and TOTP attempts feed one
-  `auth_attempt` counter per address under its own kind, `operator_login`, so an Operator and a
+  `auth_attempt` counter per address under its own kind, `operator_login`, so a Staff member and a
   User of the same address never share a counter. The delay answers the standard 429 even for a
   correct password or code, a started session resets the counter (the password step does not),
-  and the per-IP login cap covers both `/operator` login steps. `sphericon operator reset-totp
-  <email>` clears the TOTP and ends the Operator's sessions; the Operator re-enrols at next
+  and the per-IP login cap covers both `/staff` login steps. `sphericon staff reset-totp
+  <email>` clears the TOTP and ends the Staff member's sessions; the Staff member re-enrols at next
   login. No endpoint resets a second factor.
-- A fourth API surface, `/operator/*`: its own TypeSpec spec, ogen server and handler package.
+- A fourth API surface, `/staff/*`: its own TypeSpec spec, ogen server and handler package.
   The console is a lazily loaded route subtree in the same SPA; without the license the surface
   answers 404.
-- One Operator role. Roles wait for a second support person.
-- Operator handlers need the raw `*ent.Client`, so `ee/operator` joins the closed list in AGENTS.md.
+- One Staff member role. Roles wait for a second support person.
+- Staff member handlers need the raw `*ent.Client`, so `ee/staff` joins the closed list in AGENTS.md.
 
-### Service credential: the machine identity of the Operator surface
+### Service credential: the machine identity of the Staff surface
 
-A service that is not a person calls the Operator surface with a **Service credential**
-([[0009-usage-metering-and-operator-holds]]). It sits next to the human Operator, not inside it: no
+A service that is not a person calls the Staff surface with a **Service credential**
+([[0009-usage-metering-and-operator-holds]]). It sits next to the human Staff member, not inside it: no
 password, no cookie, no TOTP, no console access.
 
-- Own ent table `service_credential`, written and read only from `ee/operator`, with no Workspace and
-  no Membership (like the Operator). It is a bearer value `omsc_<prefix>_<secret>`; only the SHA-256 of
+- Own ent table `service_credential`, written and read only from `ee/staff`, with no Workspace and
+  no Membership (like the Staff member). It is a bearer value `smsc_<prefix>_<secret>`; only the SHA-256 of
   the secret is stored (the secret is 40 random characters and is checked on every request, so a slow
   password hash would add cost and no strength).
 - Created, rotated and revoked **only by the command line** (`sphericon service-credential
@@ -64,9 +64,9 @@ password, no cookie, no TOTP, no console access.
 - Rate limited per credential (`SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE`) and per client address on failed
   authentication, by the machinery of [[0025-rate-limiting-hybrid-store-workspace-key]].
 - **Audit actor.** A write made under a credential is recorded with actor kind `service`, the
-  credential's id and its name, in the manner of an API token. Like an Operator it is staff of the
+  credential's id and its name, in the manner of an API token. Like a Staff member it is staff of the
   platform: every customer-facing read shows it as "sphericon staff" with no id
-  ([[0022-audit-log-ee-captured-at-scoped-client]]), and only the Operator console names it.
+  ([[0022-audit-log-ee-captured-at-scoped-client]]), and only the Staff console names it.
 - All of it runs under the same `operator` license feature; unlicensed, nothing is served and the
   commands refuse.
 
@@ -78,9 +78,9 @@ detector exemption. No Contacts, content or Events; impersonation stays deferred
 
 ### Actor attribution
 
-`suspended_by` becomes a structured actor: `system`, `cli`, or an Operator id. The customer
-sees an Operator action as "sphericon staff" (Audit, glossary); the internal record keeps the real
-id. Operator becomes a kind of actor in `ee/audit`.
+`suspended_by` becomes a structured actor: `system`, `cli`, or a Staff member id. The customer
+sees a Staff member action as "sphericon staff" (Audit, glossary); the internal record keeps the real
+id. Staff member becomes a kind of actor in `ee/audit`.
 
 ### Detector
 
@@ -108,7 +108,7 @@ Same idea as SES recounting only after the sender's fixes.
 
 ### Exemption
 
-An Operator may exempt a Workspace from the detector (one flag, audited). It stays visible in the
+A Staff member may exempt a Workspace from the detector (one flag, audited). It stays visible in the
 console with its rates and can still be suspended by hand.
 
 ### Notices and appeal

@@ -25,7 +25,7 @@ func TestSuspendWorkspaceRecordsAttribution(t *testing.T) {
 	require.NotNil(t, ws.SuspendedAt)
 	require.NotNil(t, ws.SuspendedByKind)
 	assert.Equal(t, workspace.SuspendedByKindCli, *ws.SuspendedByKind)
-	assert.Nil(t, ws.SuspendedByID, "only an Operator carries an id")
+	assert.Nil(t, ws.SuspendedByID, "only a StaffMember carries an id")
 	require.NotNil(t, ws.SuspensionReason)
 	assert.Equal(t, "complaint rate 0.9%", *ws.SuspensionReason)
 }
@@ -75,17 +75,17 @@ func TestSuspendWorkspaceRequiresAReason(t *testing.T) {
 	require.Error(t, err, "attribution needs a reason: the owner is told why")
 }
 
-// An Operator's real id is kept on the internal record; it is the only actor with one.
-func TestSuspendWorkspaceKeepsTheOperatorId(t *testing.T) {
+// A Staff member's real id is kept on the internal record; it is the only actor with one.
+func TestSuspendWorkspaceKeepsTheStaffId(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator("op-42"), "abuse report")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report")
 	require.NoError(t, err)
 
 	ws := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
 	require.NotNil(t, ws.SuspendedByKind)
-	assert.Equal(t, workspace.SuspendedByKindOperator, *ws.SuspendedByKind)
+	assert.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
 	require.NotNil(t, ws.SuspendedByID)
 	assert.Equal(t, "op-42", *ws.SuspendedByID)
 }
@@ -94,12 +94,12 @@ func TestSuspendWorkspaceRejectsAnInvalidActor(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Operator(""), "abuse")
-	require.Error(t, err, "an Operator without an id")
+	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember(""), "abuse")
+	require.Error(t, err, "a StaffMember without an id")
 	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Actor{}, "abuse")
 	require.Error(t, err, "no actor")
 	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.Actor{Kind: workspace.SuspendedByKindSystem, ID: "x"}, "abuse")
-	require.Error(t, err, "only an Operator has an id")
+	require.Error(t, err, "only a StaffMember has an id")
 }
 
 // A Workspace that was suspended before the test starts (fixture Hooli) is lifted and
@@ -109,7 +109,7 @@ func TestUnsuspendFixtureWorkspaceClearsTheStructuredActor(t *testing.T) {
 	ctx := context.Background()
 	ws := env.DB.Workspace.GetX(ctx, fixtures.HooliID)
 	require.NotNil(t, ws.SuspendedByKind)
-	require.Equal(t, workspace.SuspendedByKindOperator, *ws.SuspendedByKind)
+	require.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
 
 	changed, err := suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.HooliID, suspension.CLI)
 	require.NoError(t, err)

@@ -2,7 +2,7 @@ using TypeSpec.Http;
 
 namespace Sphericon;
 
-/** An Operator hold: one reversible freeze of a Workspace's outbound sending (ADR 0009) */
+/** A Staff hold: one reversible freeze of a Workspace's outbound sending (ADR 0009) */
 model HoldResource {
   /** The key the setter chose; unique per Workspace */
   key: string;

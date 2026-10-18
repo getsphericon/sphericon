@@ -270,7 +270,7 @@ export default interface Resources {
         "secretLabel": "Or enter this key",
         "startOver": "Start over",
         "submitButton": "Sign in",
-        "title": "Operator sign in",
+        "title": "Staff sign in",
         "verifyButton": "Verify"
       },
       "menu": {
@@ -308,10 +308,11 @@ export default interface Resources {
           "warningDetail": "{{metric}} rate {{rate}} on {{domain}}",
           "warningNotifiedAt": "Owners warned"
         },
-        "actorOperator": "Operator {{id}}",
+        "actorStaff": "Staff member {{id}}",
+        "actorStaffMember": "console.workspace.actorStaffMember",
         "actors": {
           "cli": "Command line",
-          "operator": "Operator",
+          "staff": "console.workspace.actors.staff",
           "system": "Automated detector"
         },
         "auditLog": {
@@ -336,7 +337,7 @@ export default interface Resources {
           "reasonCode": "Reason code",
           "setBy": "Set by",
           "since": "Since",
-          "title": "Operator holds"
+          "title": "Staff holds"
         },
         "id": "ID",
         "loadError": "Could not load the workspace",
@@ -647,7 +648,8 @@ export default interface Resources {
         "from": "From",
         "ip": "IP address",
         "kindApiToken": "API token",
-        "kindOperator": "sphericon staff",
+        "kindStaff": "sphericon staff",
+        "kindStaffMember": "settings.auditLog.kindStaffMember",
         "kindSystem": "System",
         "kindUser": "User",
         "loadError": "Failed to load the audit log",

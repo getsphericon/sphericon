@@ -1,7 +1,7 @@
 // Package telemetry wires OpenTelemetry traces, metrics and logs for the process.
 //
 // The SDK is built by otelconf from OpenTelemetry's declarative configuration:
-// the operator points OTEL_CONFIG_FILE at a YAML file and decides there which
+// the staff member points OTEL_CONFIG_FILE at a YAML file and decides there which
 // signals go to which destination (any exporter, several at once, sampling,
 // views). Without the file the process exports nothing over OTLP, so there is
 // zero overhead out of the box (and in the test suite).
@@ -131,7 +131,7 @@ func loadConfig() (*otelconf.OpenTelemetryConfiguration, error) {
 }
 
 // addResource identifies the build on every signal. Attributes the file already
-// sets are the operator's and stay as they are.
+// sets are the staff member's and stay as they are.
 func addResource(otelCfg *otelconf.OpenTelemetryConfiguration, cfg *config.Config, env string, build BuildInfo) {
 	if otelCfg.Resource == nil {
 		otelCfg.Resource = &otelconf.Resource{}

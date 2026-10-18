@@ -10,7 +10,7 @@ enum ServiceScope {
   /** Read the Workspaces and their owners */
   workspacesRead: "workspaces:read",
 
-  /** Set and clear Operator holds */
+  /** Set and clear Staff holds */
   holdsWrite: "holds:write",
 }
 

@@ -348,9 +348,9 @@ type SuspendedByKind string
 
 // SuspendedByKind values.
 const (
-	SuspendedByKindSystem   SuspendedByKind = "system"
-	SuspendedByKindCli      SuspendedByKind = "cli"
-	SuspendedByKindOperator SuspendedByKind = "operator"
+	SuspendedByKindSystem SuspendedByKind = "system"
+	SuspendedByKindCli    SuspendedByKind = "cli"
+	SuspendedByKindStaff  SuspendedByKind = "staff"
 )
 
 func (sbk SuspendedByKind) String() string {
@@ -360,7 +360,7 @@ func (sbk SuspendedByKind) String() string {
 // SuspendedByKindValidator is a validator for the "suspended_by_kind" field enum values. It is called by the builders before save.
 func SuspendedByKindValidator(sbk SuspendedByKind) error {
 	switch sbk {
-	case SuspendedByKindSystem, SuspendedByKindCli, SuspendedByKindOperator:
+	case SuspendedByKindSystem, SuspendedByKindCli, SuspendedByKindStaff:
 		return nil
 	default:
 		return fmt.Errorf("workspace: invalid enum value for suspended_by_kind field: %q", sbk)

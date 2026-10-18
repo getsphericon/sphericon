@@ -61,7 +61,7 @@ The module returns a typed outcome and the caller decides what to do with it:
   GLOSSARY "Sent"), `Skipped` (Suppression, Unsubscribe, missing Confirmation), or a permanent
   failure of that one message (e.g. a render error on that contact's data). Temporary provider
   failures are retryable errors, retried by the caller's queue.
-- **Per-source (`Held`, reversible):** Workspace suspension, Operator hold, an unverified Sending
+- **Per-source (`Held`, reversible):** Workspace suspension, Staff hold, an unverified Sending
   domain, a missing Integration. The caller must **not** burn recipients on these: a Broadcast
   pauses with its remaining recipients still pending, Automation Enrollments are held, a
   Transactional request gets a 4xx. Treating a freeze as a per-recipient skip would consume the
@@ -133,10 +133,10 @@ Outbound message row. Queueing it would add latency to password resets and OTPs 
 
 ## Consequences
 
-- Workspace suspension and Operator hold (ADR 0007, 0009) are enforced in one place: the module's
+- Workspace suspension and Staff hold (ADR 0007, 0009) are enforced in one place: the module's
   source-level `Held` outcome. EE supplies the freeze reasons; the core only asks the question.
   A `Freezer` reads through the Workspace's scope (`Frozen(ctx, s, ws)`) and holds no raw client; the
-  Operator hold one answers from the holds whose expiry is after the clock, so a lapsed hold is
+  Staff hold one answers from the holds whose expiry is after the clock, so a lapsed hold is
   ignored at once.
 - ADR 0010's gate and ADR 0012's headers (including covering them in the DKIM `h=` list) move into
   this module and are tested once, across all three surfaces.

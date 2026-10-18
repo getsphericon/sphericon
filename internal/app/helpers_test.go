@@ -9,7 +9,7 @@ import (
 )
 
 // invokeEnt resolves the app's ent client from its container, the same instance the
-// operator methods use.
+// staff member methods use.
 func invokeEnt(a *App) (*ent.Client, error) {
 	c, err := do.Invoke[*entClient](a.injector)
 	if err != nil {

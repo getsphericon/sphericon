@@ -7,11 +7,11 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// ServiceCredential is a machine identity on the Operator surface (ADR 0026): a bearer
+// ServiceCredential is a machine identity on the Staff surface (ADR 0026): a bearer
 // credential a service presents on the internal listener, limited to named scopes. Like
-// Operator it belongs to no Workspace, so the scoped client does not cover it; it is
+// Staff member it belongs to no Workspace, so the scoped client does not cover it; it is
 // created, rotated and revoked only by the CLI and is read and written only from
-// ee/operator. Only a hash of its value is stored. A service may hold several active
+// ee/staff. Only a hash of its value is stored. A service may hold several active
 // credentials at once (the name is not unique), so a rotation needs no downtime.
 type ServiceCredential struct {
 	ent.Schema

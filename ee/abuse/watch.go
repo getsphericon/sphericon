@@ -29,7 +29,7 @@ func (w *Watch) Limits() Limits { return w.limits }
 func (w *Watch) Licensed() bool { return w.lic.Has(licensekey.FeatureOperator) }
 
 // WindowFor is what the detector counts for the Workspace at now: the trailing 24 hours,
-// or since the Operator last cleared a suspension, whichever is shorter.
+// or since the Staff member last cleared a suspension, whichever is shorter.
 func WindowFor(ws *ent.Workspace, now time.Time) reputation.Window {
 	since := now.Add(-Window)
 	if ws.ClearedAt != nil && ws.ClearedAt.After(since) {

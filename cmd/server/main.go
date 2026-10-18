@@ -58,7 +58,7 @@ func main() {
 		return
 	}
 
-	// `server workspace suspend|unsuspend <slug> …` is the operator toggle for a
+	// `server workspace suspend|unsuspend <slug> …` is the staff member toggle for a
 	// Workspace's outbound-sending freeze (ADR 0007).
 	if len(os.Args) > 1 && os.Args[1] == "workspace" {
 		if err := runWorkspaceCommand(env, os.Args[2:]); err != nil {
@@ -76,17 +76,17 @@ func main() {
 		return
 	}
 
-	// `server operator create <email>` makes a platform Operator (ADR 0026): the only way
-	// one comes to exist, since the /operator surface has no signup.
-	if len(os.Args) > 1 && os.Args[1] == "operator" {
-		if err := runOperatorCommand(env, os.Args[2:]); err != nil {
-			fatal("operator", err)
+	// `server staff member create <email>` makes a platform Staff member (ADR 0026): the only way
+	// one comes to exist, since the /staff surface has no signup.
+	if len(os.Args) > 1 && os.Args[1] == "staff" {
+		if err := runStaffCommand(env, os.Args[2:]); err != nil {
+			fatal("staff", err)
 		}
 		return
 	}
 
 	// `server service-credential create|rotate|revoke|list …` manages the Service
-	// credentials of the Operator surface (ADR 0026): no endpoint can mint or change one.
+	// credentials of the Staff surface (ADR 0026): no endpoint can mint or change one.
 	if len(os.Args) > 1 && os.Args[1] == "service-credential" {
 		if err := runServiceCredentialCommand(env, os.Args[2:]); err != nil {
 			fatal("service-credential", err)
@@ -191,10 +191,10 @@ func applyMigrations(cfg *config.Config) error {
 	return appdb.Migrate(ctx, db)
 }
 
-// runWorkspaceCommand boots the minimal operator app (no listener, no event router,
+// runWorkspaceCommand boots the minimal staff member app (no listener, no event router,
 // no workers) and runs one workspace command against it.
 func runWorkspaceCommand(env string, args []string) error {
-	a, err := app.NewOperator(env)
+	a, err := app.NewStaffMember(env)
 	if err != nil {
 		return err
 	}
@@ -204,9 +204,9 @@ func runWorkspaceCommand(env string, args []string) error {
 	return runWorkspace(ctx, a, args, os.Stdout)
 }
 
-// runUserCommand boots the minimal operator app and runs one user command against it.
+// runUserCommand boots the minimal staff member app and runs one user command against it.
 func runUserCommand(env string, args []string) error {
-	a, err := app.NewOperator(env)
+	a, err := app.NewStaffMember(env)
 	if err != nil {
 		return err
 	}
@@ -216,10 +216,10 @@ func runUserCommand(env string, args []string) error {
 	return runUser(ctx, a, args, os.Stdout)
 }
 
-// runServiceCredentialCommand boots the minimal operator app and runs one
+// runServiceCredentialCommand boots the minimal staff member app and runs one
 // service-credential command against it.
 func runServiceCredentialCommand(env string, args []string) error {
-	a, err := app.NewOperator(env)
+	a, err := app.NewStaffMember(env)
 	if err != nil {
 		return err
 	}
@@ -229,15 +229,15 @@ func runServiceCredentialCommand(env string, args []string) error {
 	return runServiceCredential(ctx, a, time.Now, args, os.Stdout)
 }
 
-// runOperatorCommand boots the minimal operator app and runs one operator command
+// runStaffCommand boots the minimal staff member app and runs one staff member command
 // against it.
-func runOperatorCommand(env string, args []string) error {
-	a, err := app.NewOperator(env)
+func runStaffCommand(env string, args []string) error {
+	a, err := app.NewStaffMember(env)
 	if err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	defer func() { _ = a.Shutdown(ctx) }()
-	return runOperator(ctx, a, args, os.Stdout)
+	return runStaff(ctx, a, args, os.Stdout)
 }

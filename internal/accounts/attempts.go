@@ -20,7 +20,7 @@ type Kind = authattempt.Kind
 
 const (
 	KindLogin         = authattempt.KindLogin
-	KindOperatorLogin = authattempt.KindOperatorLogin
+	KindStaffLogin    = authattempt.KindStaffLogin
 	KindPasswordReset = authattempt.KindPasswordReset
 	KindRegister      = authattempt.KindRegister
 	KindEmailChange   = authattempt.KindEmailChange
@@ -75,7 +75,7 @@ func WithRule(kind Kind, rule Rule) AttemptsOption {
 func WithRateLimits(limits config.RateLimits) AttemptsOption {
 	return func(a *Attempts) {
 		a.rules[KindLogin] = LoginRule(limits.LoginFailures)
-		a.rules[KindOperatorLogin] = LoginRule(limits.LoginFailures)
+		a.rules[KindStaffLogin] = LoginRule(limits.LoginFailures)
 		a.rules[KindPasswordReset] = ResetRule(limits.ForgotAddress)
 		// The notice to the owner of a Taken address (ADR 0031) shares the reset budget:
 		// one limit for every mail a stranger can make us send to an address.
@@ -90,7 +90,7 @@ func NewAttempts(client *ent.Client, opts ...AttemptsOption) *Attempts {
 	// job's) still knows when a row is stale.
 	a := &Attempts{ent: client, now: time.Now, rules: map[Kind]Rule{
 		KindLogin:         LoginRule(0),
-		KindOperatorLogin: LoginRule(0),
+		KindStaffLogin:    LoginRule(0),
 		KindPasswordReset: ResetRule(0),
 		KindRegister:      ResetRule(0),
 		KindEmailChange:   ResetRule(0),

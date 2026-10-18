@@ -33,7 +33,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
-	"github.com/getsphericon/sphericon/ent/operator"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
@@ -42,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -95,8 +95,6 @@ type Client struct {
 	OAuthClient *OAuthClientClient
 	// OAuthCode is the client for interacting with the OAuthCode builders.
 	OAuthCode *OAuthCodeClient
-	// Operator is the client for interacting with the Operator builders.
-	Operator *OperatorClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
 	// OutboxMessage is the client for interacting with the OutboxMessage builders.
@@ -113,6 +111,8 @@ type Client struct {
 	SendingDomain *SendingDomainClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
 	ServiceCredential *ServiceCredentialClient
+	// StaffMember is the client for interacting with the StaffMember builders.
+	StaffMember *StaffMemberClient
 	// Suppression is the client for interacting with the Suppression builders.
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
@@ -158,7 +158,6 @@ func (c *Client) init() {
 	c.Membership = NewMembershipClient(c.config)
 	c.OAuthClient = NewOAuthClientClient(c.config)
 	c.OAuthCode = NewOAuthCodeClient(c.config)
-	c.Operator = NewOperatorClient(c.config)
 	c.OutboundMessage = NewOutboundMessageClient(c.config)
 	c.OutboxMessage = NewOutboxMessageClient(c.config)
 	c.OutboxOffset = NewOutboxOffsetClient(c.config)
@@ -167,6 +166,7 @@ func (c *Client) init() {
 	c.SendLimiter = NewSendLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
 	c.ServiceCredential = NewServiceCredentialClient(c.config)
+	c.StaffMember = NewStaffMemberClient(c.config)
 	c.Suppression = NewSuppressionClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Unsubscribe = NewUnsubscribeClient(c.config)
@@ -285,7 +285,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Membership:         NewMembershipClient(cfg),
 		OAuthClient:        NewOAuthClientClient(cfg),
 		OAuthCode:          NewOAuthCodeClient(cfg),
-		Operator:           NewOperatorClient(cfg),
 		OutboundMessage:    NewOutboundMessageClient(cfg),
 		OutboxMessage:      NewOutboxMessageClient(cfg),
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
@@ -294,6 +293,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		SendLimiter:        NewSendLimiterClient(cfg),
 		SendingDomain:      NewSendingDomainClient(cfg),
 		ServiceCredential:  NewServiceCredentialClient(cfg),
+		StaffMember:        NewStaffMemberClient(cfg),
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
@@ -339,7 +339,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Membership:         NewMembershipClient(cfg),
 		OAuthClient:        NewOAuthClientClient(cfg),
 		OAuthCode:          NewOAuthCodeClient(cfg),
-		Operator:           NewOperatorClient(cfg),
 		OutboundMessage:    NewOutboundMessageClient(cfg),
 		OutboxMessage:      NewOutboxMessageClient(cfg),
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
@@ -348,6 +347,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		SendLimiter:        NewSendLimiterClient(cfg),
 		SendingDomain:      NewSendingDomainClient(cfg),
 		ServiceCredential:  NewServiceCredentialClient(cfg),
+		StaffMember:        NewStaffMemberClient(cfg),
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
@@ -388,10 +388,10 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.OutboxMessage,
-		c.OutboxOffset, c.RecoveryCode, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.Suppression, c.Tag, c.Unsubscribe, c.Usage, c.User,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
+		c.RecoveryCode, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
+		c.StaffMember, c.Suppression, c.Tag, c.Unsubscribe, c.Usage, c.User, c.Visitor,
+		c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -404,10 +404,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.Operator, c.OutboundMessage, c.OutboxMessage,
-		c.OutboxOffset, c.RecoveryCode, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.Suppression, c.Tag, c.Unsubscribe, c.Usage, c.User,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
+		c.RecoveryCode, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
+		c.StaffMember, c.Suppression, c.Tag, c.Unsubscribe, c.Usage, c.User, c.Visitor,
+		c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -452,8 +452,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OAuthClient.mutate(ctx, m)
 	case *OAuthCodeMutation:
 		return c.OAuthCode.mutate(ctx, m)
-	case *OperatorMutation:
-		return c.Operator.mutate(ctx, m)
 	case *OutboundMessageMutation:
 		return c.OutboundMessage.mutate(ctx, m)
 	case *OutboxMessageMutation:
@@ -470,6 +468,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SendingDomain.mutate(ctx, m)
 	case *ServiceCredentialMutation:
 		return c.ServiceCredential.mutate(ctx, m)
+	case *StaffMemberMutation:
+		return c.StaffMember.mutate(ctx, m)
 	case *SuppressionMutation:
 		return c.Suppression.mutate(ctx, m)
 	case *TagMutation:
@@ -3333,139 +3333,6 @@ func (c *OAuthCodeClient) mutate(ctx context.Context, m *OAuthCodeMutation) (Val
 	}
 }
 
-// OperatorClient is a client for the Operator schema.
-type OperatorClient struct {
-	config
-}
-
-// NewOperatorClient returns a client for the Operator from the given config.
-func NewOperatorClient(c config) *OperatorClient {
-	return &OperatorClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `operator.Hooks(f(g(h())))`.
-func (c *OperatorClient) Use(hooks ...Hook) {
-	c.hooks.Operator = append(c.hooks.Operator, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `operator.Intercept(f(g(h())))`.
-func (c *OperatorClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Operator = append(c.inters.Operator, interceptors...)
-}
-
-// Create returns a builder for creating a Operator entity.
-func (c *OperatorClient) Create() *OperatorCreate {
-	mutation := newOperatorMutation(c.config, OpCreate)
-	return &OperatorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Operator entities.
-func (c *OperatorClient) CreateBulk(builders ...*OperatorCreate) *OperatorCreateBulk {
-	return &OperatorCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *OperatorClient) MapCreateBulk(slice any, setFunc func(*OperatorCreate, int)) *OperatorCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &OperatorCreateBulk{err: fmt.Errorf("calling to OperatorClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*OperatorCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &OperatorCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Operator.
-func (c *OperatorClient) Update() *OperatorUpdate {
-	mutation := newOperatorMutation(c.config, OpUpdate)
-	return &OperatorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *OperatorClient) UpdateOne(_m *Operator) *OperatorUpdateOne {
-	mutation := newOperatorMutation(c.config, OpUpdateOne, withOperator(_m))
-	return &OperatorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *OperatorClient) UpdateOneID(id int64) *OperatorUpdateOne {
-	mutation := newOperatorMutation(c.config, OpUpdateOne, withOperatorID(id))
-	return &OperatorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Operator.
-func (c *OperatorClient) Delete() *OperatorDelete {
-	mutation := newOperatorMutation(c.config, OpDelete)
-	return &OperatorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *OperatorClient) DeleteOne(_m *Operator) *OperatorDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *OperatorClient) DeleteOneID(id int64) *OperatorDeleteOne {
-	builder := c.Delete().Where(operator.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &OperatorDeleteOne{builder}
-}
-
-// Query returns a query builder for Operator.
-func (c *OperatorClient) Query() *OperatorQuery {
-	return &OperatorQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeOperator},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Operator entity by its id.
-func (c *OperatorClient) Get(ctx context.Context, id int64) (*Operator, error) {
-	return c.Query().Where(operator.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *OperatorClient) GetX(ctx context.Context, id int64) *Operator {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *OperatorClient) Hooks() []Hook {
-	return c.hooks.Operator
-}
-
-// Interceptors returns the client interceptors.
-func (c *OperatorClient) Interceptors() []Interceptor {
-	return c.inters.Operator
-}
-
-func (c *OperatorClient) mutate(ctx context.Context, m *OperatorMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&OperatorCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&OperatorUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&OperatorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&OperatorDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Operator mutation op: %q", m.Op())
-	}
-}
-
 // OutboundMessageClient is a client for the OutboundMessage schema.
 type OutboundMessageClient struct {
 	config
@@ -4623,6 +4490,139 @@ func (c *ServiceCredentialClient) mutate(ctx context.Context, m *ServiceCredenti
 		return (&ServiceCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ServiceCredential mutation op: %q", m.Op())
+	}
+}
+
+// StaffMemberClient is a client for the StaffMember schema.
+type StaffMemberClient struct {
+	config
+}
+
+// NewStaffMemberClient returns a client for the StaffMember from the given config.
+func NewStaffMemberClient(c config) *StaffMemberClient {
+	return &StaffMemberClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `staffmember.Hooks(f(g(h())))`.
+func (c *StaffMemberClient) Use(hooks ...Hook) {
+	c.hooks.StaffMember = append(c.hooks.StaffMember, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `staffmember.Intercept(f(g(h())))`.
+func (c *StaffMemberClient) Intercept(interceptors ...Interceptor) {
+	c.inters.StaffMember = append(c.inters.StaffMember, interceptors...)
+}
+
+// Create returns a builder for creating a StaffMember entity.
+func (c *StaffMemberClient) Create() *StaffMemberCreate {
+	mutation := newStaffMemberMutation(c.config, OpCreate)
+	return &StaffMemberCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of StaffMember entities.
+func (c *StaffMemberClient) CreateBulk(builders ...*StaffMemberCreate) *StaffMemberCreateBulk {
+	return &StaffMemberCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StaffMemberClient) MapCreateBulk(slice any, setFunc func(*StaffMemberCreate, int)) *StaffMemberCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StaffMemberCreateBulk{err: fmt.Errorf("calling to StaffMemberClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StaffMemberCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StaffMemberCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for StaffMember.
+func (c *StaffMemberClient) Update() *StaffMemberUpdate {
+	mutation := newStaffMemberMutation(c.config, OpUpdate)
+	return &StaffMemberUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StaffMemberClient) UpdateOne(_m *StaffMember) *StaffMemberUpdateOne {
+	mutation := newStaffMemberMutation(c.config, OpUpdateOne, withStaffMember(_m))
+	return &StaffMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StaffMemberClient) UpdateOneID(id int64) *StaffMemberUpdateOne {
+	mutation := newStaffMemberMutation(c.config, OpUpdateOne, withStaffMemberID(id))
+	return &StaffMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for StaffMember.
+func (c *StaffMemberClient) Delete() *StaffMemberDelete {
+	mutation := newStaffMemberMutation(c.config, OpDelete)
+	return &StaffMemberDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *StaffMemberClient) DeleteOne(_m *StaffMember) *StaffMemberDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *StaffMemberClient) DeleteOneID(id int64) *StaffMemberDeleteOne {
+	builder := c.Delete().Where(staffmember.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StaffMemberDeleteOne{builder}
+}
+
+// Query returns a query builder for StaffMember.
+func (c *StaffMemberClient) Query() *StaffMemberQuery {
+	return &StaffMemberQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeStaffMember},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a StaffMember entity by its id.
+func (c *StaffMemberClient) Get(ctx context.Context, id int64) (*StaffMember, error) {
+	return c.Query().Where(staffmember.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StaffMemberClient) GetX(ctx context.Context, id int64) *StaffMember {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *StaffMemberClient) Hooks() []Hook {
+	return c.hooks.StaffMember
+}
+
+// Interceptors returns the client interceptors.
+func (c *StaffMemberClient) Interceptors() []Interceptor {
+	return c.inters.StaffMember
+}
+
+func (c *StaffMemberClient) mutate(ctx context.Context, m *StaffMemberMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StaffMemberCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StaffMemberUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StaffMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StaffMemberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown StaffMember mutation op: %q", m.Op())
 	}
 }
 
@@ -6271,18 +6271,18 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
+		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode,
 		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, Segment,
-		SendLimiter, SendingDomain, ServiceCredential, Suppression, Tag, Unsubscribe,
-		Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Hook
+		SendLimiter, SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
+		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode, Operator,
+		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode,
 		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, Segment,
-		SendLimiter, SendingDomain, ServiceCredential, Suppression, Tag, Unsubscribe,
-		Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		SendLimiter, SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
+		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

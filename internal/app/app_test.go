@@ -204,16 +204,16 @@ func TestRunJobsStartsTheWorkerPool(t *testing.T) {
 	assert.Empty(t, a.Shutdown(context.Background()).Errors, "workers stop cleanly")
 }
 
-func TestNewOperatorIsMinimal(t *testing.T) {
+func TestNewStaffIsMinimal(t *testing.T) {
 	baseline(t)
 	t.Setenv("SPHERICON_METRICS_ADDR", freeAddr(t))
-	a, err := NewOperator("test")
+	a, err := NewStaffMember("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 
 	require.NotNil(t, a.Config)
 	assert.Nil(t, a.Server)
-	assert.Nil(t, a.Metrics, "operator commands expose no metrics listener")
+	assert.Nil(t, a.Metrics, "staff commands expose no metrics listener")
 	assert.Nil(t, a.events)
 	assert.Nil(t, a.jobs)
 }
@@ -277,7 +277,7 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	t.Setenv("SPHERICON_SMTP_USER", "")
 	t.Setenv("SPHERICON_SMTP_PASS", "")
 	baseline(t)
-	a, err := NewOperator("test")
+	a, err := NewStaffMember("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ownedWorkspace(t, a, "app-suspend-test", "owner@app-suspend.test")
@@ -288,12 +288,12 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 		return client.Workspace.Query().Where(workspace.Slug("app-suspend-test")).OnlyX(ctx)
 	}
 
-	changed, err := a.SuspendWorkspace(ctx, "app-suspend-test", suspension.Operator("op-42"), "complaint rate")
+	changed, err := a.SuspendWorkspace(ctx, "app-suspend-test", suspension.StaffMember("op-42"), "complaint rate")
 	require.NoError(t, err)
 	assert.True(t, changed)
 	ws := state()
 	require.NotNil(t, ws.SuspendedAt)
-	assert.Equal(t, workspace.SuspendedByKindOperator, *ws.SuspendedByKind)
+	assert.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
 	assert.Equal(t, "op-42", *ws.SuspendedByID)
 	assert.Equal(t, "complaint rate", *ws.SuspensionReason)
 	assert.Len(t, sink.recipients(), 1, "the owner is told")
@@ -324,7 +324,7 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 	t.Setenv("SPHERICON_SMTP_HOST", "127.0.0.1")
 	t.Setenv("SPHERICON_SMTP_PORT", fmt.Sprint(port))
 	baseline(t)
-	a, err := NewOperator("test")
+	a, err := NewStaffMember("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ownedWorkspace(t, a, "app-suspend-fail-test", "owner@app-suspend-fail.test")
@@ -341,7 +341,7 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 
 func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 	baseline(t)
-	a, err := NewOperator("test")
+	a, err := NewStaffMember("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ctx := context.Background()
@@ -357,11 +357,11 @@ func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 	assert.ErrorContains(t, err, "an actor is required")
 }
 
-// The operator command resets a fixture User's Second factor for real (this app
+// The staff member command resets a fixture User's Second factor for real (this app
 // commits outside the per-test transaction), on a database of the test's own.
 func TestResetSecondFactorByEmail(t *testing.T) {
 	baseline(t)
-	a, err := NewOperator("test")
+	a, err := NewStaffMember("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ctx := context.Background()
@@ -386,7 +386,7 @@ func TestResetSecondFactorByEmail(t *testing.T) {
 		require.NoError(t, err)
 		entry := ev.(*events.AuditEntry)
 		require.Equal(t, events.ActionUserSecondFactorReset, entry.Action)
-		assert.Equal(t, events.ActorOperator, entry.Actor.Kind)
+		assert.Equal(t, events.ActorStaff, entry.Actor.Kind)
 		workspaces = append(workspaces, entry.WorkspaceID)
 	}
 	assert.ElementsMatch(t, []int64{fixtures.GlobexID, fixtures.UmbrellaID}, workspaces,

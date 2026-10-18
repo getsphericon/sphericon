@@ -7,7 +7,7 @@ import (
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee/operator"
+	"github.com/getsphericon/sphericon/ee/staff"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/credentials"
 )
@@ -41,9 +41,9 @@ func (env *TestEnv) serviceClientOn(t *testing.T, transport ht.Client, value str
 // IssueServiceCredential issues a Service credential through the same module the
 // command line uses and returns the value to present: the issuing helper of the tests.
 // The credential belongs to the service called name and carries exactly scopes.
-func (env *TestEnv) IssueServiceCredential(t *testing.T, name string, scopes ...operator.Scope) string {
+func (env *TestEnv) IssueServiceCredential(t *testing.T, name string, scopes ...staff.Scope) string {
 	t.Helper()
-	issued, err := env.Operators.IssueServiceCredential(t.Context(), operator.IssueInput{Name: name, Scopes: scopes})
+	issued, err := env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{Name: name, Scopes: scopes})
 	require.NoError(t, err)
 	return issued.Value
 }

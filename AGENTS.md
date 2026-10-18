@@ -22,11 +22,11 @@ hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `internal/api/{site,external}/resources` packages and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock — regenerate instead.
 
 ```
-typespec/{site,external,collect,operator,service}   ──tsp compile──▶  openapi/*.openapi.json
+typespec/{site,external,collect,staff,service}   ──tsp compile──▶  openapi/*.openapi.json
   openapi/site      ──ogen──▶ gen/site       (Go server)   ──openapi-ts──▶ src/generated/site (TS client + react-query + zod)
   openapi/external  ──ogen──▶ gen/external    (Go server)
   openapi/collect   ──ogen──▶ gen/collect     (Go server)  ──openapi-ts──▶ packages/analytics/src/generated/collect (types only)
-  openapi/operator  ──ogen──▶ gen/operator    (Go server)  ──openapi-ts──▶ src/generated/operator (TS client + react-query + zod)
+  openapi/staff  ──ogen──▶ gen/staff    (Go server)  ──openapi-ts──▶ src/generated/staff (TS client + react-query + zod)
   openapi/service   ──ogen──▶ gen/service     (Go server, internal listener only)
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
@@ -195,13 +195,13 @@ the wall clock; it injects the clock.
   - `/site/*` — frontend SPA API. Auth: **JWT cookie** (issued by the `login` operation through `auth.Sessions`, ADR 0020). Handlers in `internal/api/site`.
   - `/api/*` — external/public API. Auth: **Bearer api-token** (workspace-scoped). Handlers in `internal/api/external`.
   - `/collect/*` — tracking ingestion from customer sites. Auth: **x-collect-key** header. Handlers in `internal/api/collect`.
-  - `/operator/*` — platform staff (the **Operator**, ADR 0026), Enterprise (license feature `operator`; unlicensed = 404).
-    Auth: its own **JWT cookie** (`OPERATOR_JWT`, `SPHERICON_OPERATOR_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/operator`.
-  - `/service/*` — the service endpoints of the Operator surface, called by a platform service with a
-    **Service credential** (ADR 0026): **Bearer** `omsc_…`, limited to scopes (`usage:read`,
+  - `/staff/*` — platform staff (the **Staff member**, ADR 0026), Enterprise (license feature `operator`; unlicensed = 404).
+    Auth: its own **JWT cookie** (`STAFF_JWT`, `SPHERICON_STAFF_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/staff`.
+  - `/service/*` — the service endpoints of the Staff surface, called by a platform service with a
+    **Service credential** (ADR 0026): **Bearer** `smsc_…`, limited to scopes (`usage:read`,
     `workspaces:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
     the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style): the public mux answers 404 for it.
-    Handlers and security handler in `ee/operator` (`service.go`); every operation names its scopes in
+    Handlers and security handler in `ee/staff` (`service.go`); every operation names its scopes in
     `ServiceOperationScopes` (no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
     `env.IssueServiceCredential`.
 - Auth security handlers live in `internal/api/auth/auth.go`. External requests carry a
@@ -238,18 +238,18 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   6. the Workspace comes from a secret rather than a login: the SES hook ingest key
      (`internal/server/hooks_ses.go`), signed unsubscribe/confirm tokens
      (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token);
-  7. the platform Operator (ADR 0026): `ee/operator` scopes over the one Workspace the console
+  7. the platform Staff member (ADR 0026): `ee/staff` scopes over the one Workspace the console
      is looking at, in two reads, each after the Workspace row is loaded and each through
      the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
      `audit.Log.Entries`) and its deliverability rates (`Module.WorkspaceDeliverability`, via
      `reputation.Rates`); and the service endpoints (a Service credential) scope over the one
-     Workspace a call names, after its row is loaded, to set, clear and list its Operator holds
+     Workspace a call names, after its row is loaded, to set, clear and list its Staff holds
      (`Module.SetHold`, `ClearHold`, `ActiveHolds`; the send path and the site API read them
      through `holds.Active` / `holds.Freezer`, which hold no raw client); the abuse detector
      (ADR 0026) scopes over the Workspace being judged, after its row is loaded, to read the
      rates (`abuse.Watch`, which the console's `Module.WorkspaceAbuse` and the `/site`
      dashboard's warning also read through the `site.AbuseWatch` seam); and the service usage
-     read (`Module.WorkspaceUsage`, `ee/operator/service_usage.go`), scoped over the one
+     read (`Module.WorkspaceUsage`, `ee/staff/service_usage.go`), scoped over the one
      Workspace a call names, after its row is loaded, to read its stored Usage figures.
 - **The raw `*ent.Client` is allowed only in:** `internal/accounts` (User, Membership,
   Workspace incl. slug resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
@@ -264,13 +264,13 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/abuse` (the hourly
   abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
   exempt, then scopes to judge each, and writes its notice markers by id), `ee/usage` (the periodic
-  usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `operator` license, that keeps the contacts peak as Contacts change), `ee/operator` (the
-  platform Operator, ADR 0026: the Operator table, and the Workspace rows, suspension state and
+  usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `operator` license, that keeps the contacts peak as Contacts change), `ee/staff` (the
+  platform Staff member, ADR 0026: the Staff member table, and the Workspace rows, suspension state and
   rates the console shows as tenant metadata; Workspace data goes through the scopes of
   list item 7), `internal/workspacefeed` (the ent hook, installed on every client, that gives
   a Workspace the next feed position when it is created or an owner is added, removed,
   transferred or changes email or verification: it must reach the Workspace a User or
-  Membership change belongs to; `ee/operator` serves the feed in `Module.WorkspaceFeed`) and the composition roots
+  Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`) and the composition roots
   (`internal/app`, `internal/db`, `internal/testhelper`). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`.
   `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes

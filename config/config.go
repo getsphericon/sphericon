@@ -108,16 +108,16 @@ type Config struct {
 	// AccountLinkSigningKey is the base64 Ed25519 seed that signs the Account link
 	// token (SPHERICON_ACCOUNT_LINK_SIGNING_KEY).
 	AccountLinkSigningKey string
-	// OperatorJWTSecret signs the Operator session and login challenge (SPHERICON_OPERATOR_JWT_SECRET,
+	// StaffJWTSecret signs the Staff member session and login challenge (SPHERICON_STAFF_JWT_SECRET,
 	// ADR 0026). It is required, and must differ from SPHERICON_JWT_SECRET, only when the license
 	// has the `operator` feature; ee.New validates it there.
-	OperatorJWTSecret string
-	// OperatorSessionTTL is the lifetime of an Operator session (SPHERICON_OPERATOR_SESSION_TTL,
+	StaffJWTSecret string
+	// StaffSessionTTL is the lifetime of a Staff member session (SPHERICON_STAFF_SESSION_TTL,
 	// default 4h, no refresh, no remember-me): shorter than a customer's.
-	OperatorSessionTTL time.Duration
-	// OperatorHoldMaxExpiry is how far ahead a service may set an Operator hold's expiry
-	// (SPHERICON_OPERATOR_HOLD_MAX_EXPIRY, default 720h): it is refused beyond it.
-	OperatorHoldMaxExpiry time.Duration
+	StaffSessionTTL time.Duration
+	// StaffHoldMaxExpiry is how far ahead a service may set a Staff hold's expiry
+	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY, default 720h): it is refused beyond it.
+	StaffHoldMaxExpiry time.Duration
 	// AbuseVolumeFloor is the fewest sends in the 24-hour window, per Sending domain, for
 	// the abuse detector to judge a rate (SPHERICON_ABUSE_VOLUME_FLOOR, default 1000; ADR 0026).
 	AbuseVolumeFloor int
@@ -182,7 +182,7 @@ type Config struct {
 	MetricsAddr string
 
 	// InternalAddr (host:port) is where the opt-in internal listener binds: the only
-	// place the service endpoints of the Operator surface are served (ADR 0026). Empty
+	// place the service endpoints of the Staff surface are served (ADR 0026). Empty
 	// (the default) means no listener and no route for them anywhere; it must differ
 	// from the public PORT and from SPHERICON_METRICS_ADDR. Nothing is served either without the
 	// `operator` license.
@@ -225,9 +225,9 @@ type environment struct {
 	AccountLinkURL        string `env:"SPHERICON_ACCOUNT_LINK_URL"`
 	AccountLinkSigningKey string `env:"SPHERICON_ACCOUNT_LINK_SIGNING_KEY"`
 
-	OperatorJWTSecret     string        `env:"SPHERICON_OPERATOR_JWT_SECRET"`
-	OperatorSessionTTL    time.Duration `env:"SPHERICON_OPERATOR_SESSION_TTL" envDefault:"4h"`
-	OperatorHoldMaxExpiry time.Duration `env:"SPHERICON_OPERATOR_HOLD_MAX_EXPIRY" envDefault:"720h"`
+	StaffJWTSecret     string        `env:"SPHERICON_STAFF_JWT_SECRET"`
+	StaffSessionTTL    time.Duration `env:"SPHERICON_STAFF_SESSION_TTL" envDefault:"4h"`
+	StaffHoldMaxExpiry time.Duration `env:"SPHERICON_STAFF_HOLD_MAX_EXPIRY" envDefault:"720h"`
 
 	AbuseVolumeFloor            int     `env:"SPHERICON_ABUSE_VOLUME_FLOOR" envDefault:"1000"`
 	AbuseWarnComplaintPercent   float64 `env:"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT" envDefault:"0.1"`
@@ -331,9 +331,9 @@ func Load(envName string) (*Config, error) {
 		AccountLinkURL:        e.AccountLinkURL,
 		AccountLinkSigningKey: e.AccountLinkSigningKey,
 
-		OperatorJWTSecret:     e.OperatorJWTSecret,
-		OperatorSessionTTL:    e.OperatorSessionTTL,
-		OperatorHoldMaxExpiry: e.OperatorHoldMaxExpiry,
+		StaffJWTSecret:     e.StaffJWTSecret,
+		StaffSessionTTL:    e.StaffSessionTTL,
+		StaffHoldMaxExpiry: e.StaffHoldMaxExpiry,
 
 		AbuseVolumeFloor:            e.AbuseVolumeFloor,
 		AbuseWarnComplaintPercent:   e.AbuseWarnComplaintPercent,
@@ -475,11 +475,11 @@ func (c *Config) validate(envName string) error {
 	if c.SessionTTL <= 0 {
 		return fmt.Errorf("SPHERICON_SESSION_TTL must be positive")
 	}
-	if c.OperatorSessionTTL <= 0 {
-		return fmt.Errorf("SPHERICON_OPERATOR_SESSION_TTL must be positive")
+	if c.StaffSessionTTL <= 0 {
+		return fmt.Errorf("SPHERICON_STAFF_SESSION_TTL must be positive")
 	}
-	if c.OperatorHoldMaxExpiry <= 0 {
-		return fmt.Errorf("SPHERICON_OPERATOR_HOLD_MAX_EXPIRY must be positive")
+	if c.StaffHoldMaxExpiry <= 0 {
+		return fmt.Errorf("SPHERICON_STAFF_HOLD_MAX_EXPIRY must be positive")
 	}
 	if c.AbuseVolumeFloor <= 0 {
 		return fmt.Errorf("SPHERICON_ABUSE_VOLUME_FLOOR must be positive")

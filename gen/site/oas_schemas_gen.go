@@ -3775,7 +3775,7 @@ func (s *SiteApplyTagInput) SetName(val string) {
 // The actor of an Audit entry.
 // Ref: #/components/schemas/SiteAuditActor
 type SiteAuditActor struct {
-	// The kind of actor; an operator is shown to the customer as "sphericon staff".
+	// The kind of actor; a staff member is shown to the customer as "sphericon staff".
 	Kind SiteAuditActorKind `json:"kind"`
 	// The actor's id (a User id or an API token id); absent for the system.
 	ID OptNilString `json:"id"`
@@ -3820,7 +3820,7 @@ type SiteAuditActorKind string
 const (
 	SiteAuditActorKindUser     SiteAuditActorKind = "user"
 	SiteAuditActorKindAPIToken SiteAuditActorKind = "api_token"
-	SiteAuditActorKindOperator SiteAuditActorKind = "operator"
+	SiteAuditActorKindStaff    SiteAuditActorKind = "staff"
 	SiteAuditActorKindSystem   SiteAuditActorKind = "system"
 )
 
@@ -3829,7 +3829,7 @@ func (SiteAuditActorKind) AllValues() []SiteAuditActorKind {
 	return []SiteAuditActorKind{
 		SiteAuditActorKindUser,
 		SiteAuditActorKindAPIToken,
-		SiteAuditActorKindOperator,
+		SiteAuditActorKindStaff,
 		SiteAuditActorKindSystem,
 	}
 }
@@ -3841,7 +3841,7 @@ func (s SiteAuditActorKind) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case SiteAuditActorKindAPIToken:
 		return []byte(s), nil
-	case SiteAuditActorKindOperator:
+	case SiteAuditActorKindStaff:
 		return []byte(s), nil
 	case SiteAuditActorKindSystem:
 		return []byte(s), nil
@@ -3859,8 +3859,8 @@ func (s *SiteAuditActorKind) UnmarshalText(data []byte) error {
 	case SiteAuditActorKindAPIToken:
 		*s = SiteAuditActorKindAPIToken
 		return nil
-	case SiteAuditActorKindOperator:
-		*s = SiteAuditActorKindOperator
+	case SiteAuditActorKindStaff:
+		*s = SiteAuditActorKindStaff
 		return nil
 	case SiteAuditActorKindSystem:
 		*s = SiteAuditActorKindSystem
@@ -11771,8 +11771,8 @@ type SiteWebhooksUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteWebhooksUpdateUnprocessableEntity) siteWebhooksUpdateRes() {}
 
-// An Operator hold on the Workspace's outbound sending (ADR 0009), as the Workspace's members see it.
-// It is not a suspension: it is set from outside, carries its own message, and lifts by itself at its
+// A Staff hold on the Workspace's outbound sending (ADR 0009), as the Workspace's members see it. It
+// is not a suspension: it is set from outside, carries its own message, and lifts by itself at its
 // expiry.
 // Ref: #/components/schemas/SiteWorkspaceHold
 type SiteWorkspaceHold struct {
@@ -11870,7 +11870,7 @@ type SiteWorkspaceResource struct {
 	// The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
 	// instance configured none, and then no billing text is shown.
 	BillingUrl OptNilString `json:"billingUrl"`
-	// The Operator holds active now, oldest key first; empty while nothing holds sending. Any one freezes
+	// The Staff holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
 	// When an Owner or Admin switched on the Two-factor requirement (ADR 0020); absent while every member

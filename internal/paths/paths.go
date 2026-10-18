@@ -3,9 +3,9 @@
 // it, and the cookie and rate-limit rules of that surface key on it.
 package paths
 
-// Operator is the prefix of the platform Operator API (ADR 0026).
-const Operator = "/operator"
+// Staff member is the prefix of the platform Staff member API (ADR 0026).
+const StaffMember = "/staff"
 
-// Service is the prefix of the service endpoints of the Operator surface, served only
+// Service is the prefix of the service endpoints of the Staff surface, served only
 // by the internal listener (ADR 0026).
 const Service = "/service"

@@ -44,11 +44,11 @@ func TestWebhooksConsumerForwardsAuditEntriesAsAuditEntry(t *testing.T) {
 	assert.JSONEq(t, `{"workspaceId":1,"actor":{"kind":"user"},"action":"membership.update","targetType":"membership"}`, string(payload.Data))
 }
 
-// A forwarded entry shows an Operator only as "sphericon staff", like every read surface:
+// A forwarded entry shows a Staff member only as "sphericon staff", like every read surface:
 // the staff id never reaches a customer's SIEM (ADR 0022).
-func TestWebhooksConsumerMasksTheOperatorIdentity(t *testing.T) {
+func TestWebhooksConsumerMasksTheStaffIdentity(t *testing.T) {
 	data, err := json.Marshal(&AuditEntry{
-		WorkspaceID: 1, Actor: Actor{Kind: ActorOperator, ID: "op-42", Name: "Jane Staff"},
+		WorkspaceID: 1, Actor: Actor{Kind: ActorStaff, ID: "op-42", Name: "Jane Staff"},
 		Action: ActionWorkspaceSuspend, TargetType: "workspace",
 	})
 	require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestWebhooksConsumerMasksTheOperatorIdentity(t *testing.T) {
 		Actor Actor `json:"actor"`
 	}
 	require.NoError(t, json.Unmarshal(payload.Data, &entry))
-	assert.Equal(t, Actor{Kind: ActorOperator, Name: OperatorLabel}, entry.Actor)
+	assert.Equal(t, Actor{Kind: ActorStaff, Name: StaffLabel}, entry.Actor)
 	assert.NotContains(t, string(body), "op-42")
 	assert.NotContains(t, string(body), "Jane Staff")
 }

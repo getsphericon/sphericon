@@ -46,7 +46,7 @@ func TestAuditEntryIsNotProjectedToAnEvent(t *testing.T) {
 	assert.False(t, events.IsUnprojected(events.NameContactCreated))
 }
 
-// The seam records only human, token, operator and system actors: ingest (and no
+// The seam records only human, token, staff member and system actors: ingest (and no
 // actor) never reaches the log.
 func TestRecordAuditSkipsIngestAndAnonymousActors(t *testing.T) {
 	env := testhelper.Setup(t)

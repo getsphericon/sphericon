@@ -12,7 +12,7 @@ import (
 type Source string
 
 const (
-	// SourceManual is the operator-set value on the Integration.
+	// SourceManual is the staff member-set value on the Integration.
 	SourceManual Source = "manual"
 	// SourceProvider is the value the provider reports (SES GetSendQuota).
 	SourceProvider Source = "provider"
@@ -27,7 +27,7 @@ type Value struct {
 
 // Effective is an Integration's ceilings as enforced: per second and per rolling
 // 24 hours. Per ADR 0023 each is the minimum of the available values; when two
-// sources give the same number the operator's manual value is reported.
+// sources give the same number the staff member's manual value is reported.
 type Effective struct {
 	PerSecond Value
 	PerDay    Value
@@ -67,7 +67,7 @@ func (e Effective) Limits() Limits {
 // Unlimited reports whether no ceiling applies at all.
 func (e Effective) Unlimited() bool { return !e.Limits().Any() }
 
-// Warning names something an operator should look at on an Integration's limit. The
+// Warning names something a staff member should look at on an Integration's limit. The
 // values are the API's warning enum, so each surface converts with a plain cast.
 type Warning string
 

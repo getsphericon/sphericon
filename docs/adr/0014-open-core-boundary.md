@@ -25,7 +25,7 @@ conflated — conflating them is what produces a boundary that feels weak and ar
   org-shape features belong here.
 - **(b) Managed service** — the planned SaaS: managed hosting and deliverability-as-a-service
   (shared/warm sending domains, pooled/dedicated IP). Not a feature; a separate revenue line,
-  run outside this repository and reaching the core only through the Operator surface
+  run outside this repository and reaching the core only through the Staff surface
   (ADR 0009). Never a `license key` gate.
 - **(c) Professional services** — done-for-you migration, deliverability setup, compliance
   documentation, support/SLA. Sold by people, bundled with enterprise or cloud contracts.

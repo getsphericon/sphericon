@@ -913,7 +913,7 @@ func (s SiteAuditActorKind) Validate() error {
 		return nil
 	case "api_token":
 		return nil
-	case "operator":
+	case "staff":
 		return nil
 	case "system":
 		return nil

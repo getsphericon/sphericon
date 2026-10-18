@@ -157,7 +157,8 @@ type SiteAuditExportParams struct {
 	To OptTimestamp `json:",omitempty,omitzero"`
 	// Only entries by this kind of actor.
 	ActorKind OptSiteAuditActorKind `json:",omitempty,omitzero"`
-	// Only entries by the actor with this id (a User id or an API token id); ignored for the operator kind.
+	// Only entries by the actor with this id (a User id or an API token id); ignored for the staff member
+	// kind.
 	ActorId OptString `json:",omitempty,omitzero"`
 	// Only entries with exactly this action, e.g. membership.update.
 	Action OptString `json:",omitempty,omitzero"`
@@ -785,7 +786,8 @@ type SiteAuditListParams struct {
 	To OptTimestamp `json:",omitempty,omitzero"`
 	// Only entries by this kind of actor.
 	ActorKind OptSiteAuditActorKind `json:",omitempty,omitzero"`
-	// Only entries by the actor with this id (a User id or an API token id); ignored for the operator kind.
+	// Only entries by the actor with this id (a User id or an API token id); ignored for the staff member
+	// kind.
 	ActorId OptString `json:",omitempty,omitzero"`
 	// Only entries with exactly this action, e.g. membership.update.
 	Action OptString `json:",omitempty,omitzero"`

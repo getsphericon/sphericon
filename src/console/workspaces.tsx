@@ -8,13 +8,13 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
-import { operatorWorkspacesListOptions } from '../generated/operator/@tanstack/react-query.gen.ts'
-import type { OperatorWorkspaceReview } from '../generated/operator/types.gen.ts'
+import { staffWorkspacesListOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
+import type { StaffWorkspaceReview } from '../generated/staff/types.gen.ts'
 import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
 
 const PAGE_SIZE = 25
-const REVIEWS: OperatorWorkspaceReview[] = ['warned', 'systemFrozen']
+const REVIEWS: StaffWorkspaceReview[] = ['warned', 'systemFrozen']
 
 // The Workspace list: every tenant's metadata (never its Contacts, content or
 // Events), searchable by slug, a row opens the Workspace.
@@ -24,10 +24,10 @@ export function ConsoleWorkspacesPage() {
   const [search, setSearch] = useState('')
   const [debounced] = useDebouncedValue(search.trim(), 250)
   const [page, setPage] = useState(1)
-  const [review, setReview] = useState<OperatorWorkspaceReview | null>(null)
+  const [review, setReview] = useState<StaffWorkspaceReview | null>(null)
 
   const workspacesQuery = useQuery({
-    ...operatorWorkspacesListOptions({
+    ...staffWorkspacesListOptions({
       // An empty search is no filter: the request schema takes an absent key, not undefined.
       query: {
         page,

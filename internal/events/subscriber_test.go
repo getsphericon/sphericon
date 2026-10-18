@@ -85,7 +85,7 @@ func TestWebhooksConsumerCarriesTheErasedSubject(t *testing.T) {
 	d := newDispatcher()
 	handler := webhooksConsumer(nil, d)
 
-	require.NoError(t, handler(msgFor(t, &ContactErased{WorkspaceID: 1, SubjectID: "user-9", IdentifierKind: "contact_id", OperatorKind: "user", OperatorID: 4})))
+	require.NoError(t, handler(msgFor(t, &ContactErased{WorkspaceID: 1, SubjectID: "user-9", IdentifierKind: "contact_id", StaffKind: "user", StaffID: 4})))
 
 	require.Len(t, d.DispatchCalls(), 1)
 	assert.Equal(t, NameContactErased, d.DispatchCalls()[0].EventName)

@@ -13,8 +13,8 @@ import (
 // guessing attack on one account hits one counter, and it lives in Postgres so the
 // count is exact across replicas. It has no Workspace (a User is not Workspace-owned)
 // and no edge to User: rows are written for unknown emails too, so the table cannot
-// be used to enumerate accounts. Only internal/accounts and ee/operator (through
-// accounts.Attempts) read and write it. An Operator's failures count under their own
+// be used to enumerate accounts. Only internal/accounts and ee/staff (through
+// accounts.Attempts) read and write it. A Staff member's failures count under their own
 // kind, so they never share a counter with a User of the same address.
 type AuthAttempt struct {
 	ent.Schema
@@ -40,7 +40,7 @@ func (AuthAttempt) Fields() []ent.Field {
 			NotEmpty().
 			Immutable(),
 		field.Enum("kind").
-			Values("login", "operator_login", "password_reset", "register", "email_change").
+			Values("login", "staff_login", "password_reset", "register", "email_change").
 			Immutable(),
 		// Failures since the window opened.
 		field.Int("failures").

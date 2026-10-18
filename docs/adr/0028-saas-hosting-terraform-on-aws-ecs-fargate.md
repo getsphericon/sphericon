@@ -16,7 +16,7 @@ standby).
 ## Decisions
 
 - **One AWS account, region `us-east-2`** (US-first audience), everything in it: compute,
-  database, DNS, email, secrets, state. Operator access is the `sphericon` CLI profile from
+  database, DNS, email, secrets, state. Staff member access is the `sphericon` CLI profile from
   `aws login` (session credentials); no long-lived keys are stored anywhere.
 - **Plain ECS on Fargate (ARM64) behind an Application Load Balancer.** App Runner is closed to new
   customers. ECS Express Mode (`aws_ecs_express_gateway_service`) was evaluated and rejected: it

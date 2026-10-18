@@ -16,9 +16,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apicollect "github.com/getsphericon/sphericon/internal/api/collect"
@@ -39,7 +39,7 @@ import (
 // New composes the HTTP handler. client is the raw ent client: only the pieces whose
 // Workspace is not known up front take it (auth, OAuth, tracking, provider hooks);
 // the site, external and collect handlers get none (ADR 0017).
-func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, external, mcp, operator http.Handler) (http.Handler, error) {
+func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
 	mux := http.NewServeMux()
 
@@ -69,15 +69,15 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 		mux.Handle("GET "+accountlink.JWKSPath, jwksHandler(site.AccountLink.JWKS()))
 	}
 
-	// Operator API — /operator (ADR 0026): the platform staff surface, its own cookie and
+	// Staff member API — /staff (ADR 0026): the platform staff surface, its own cookie and
 	// secret. Without the `operator` license there is no handler and the whole prefix
 	// answers 404, so it never falls through to the SPA shell below.
-	if operator == nil {
-		operator = http.NotFoundHandler()
+	if staff == nil {
+		staff = http.NotFoundHandler()
 	}
-	mux.Handle(operatorPrefix+"/", operator)
+	mux.Handle(staffPrefix+"/", staff)
 
-	// The service endpoints of the Operator surface are served only by the internal
+	// The service endpoints of the Staff surface are served only by the internal
 	// listener (ADR 0026). The public port has no route for them: the prefix is a 404
 	// here, so it never falls through to the SPA shell below either.
 	mux.Handle(paths.Service+"/", http.NotFoundHandler())
@@ -146,25 +146,25 @@ func NewExternalAPI(client *ent.Client, deps apiexternal.Deps) (http.Handler, er
 	)
 }
 
-// operatorPrefix mounts the Operator surface (ADR 0026).
-const operatorPrefix = paths.Operator
+// staffPrefix mounts the Staff surface (ADR 0026).
+const staffPrefix = paths.StaffMember
 
-// OperatorSurface is the Enterprise Operator API (ee/operator), built into an ogen
+// StaffSurface is the Enterprise Staff member API (ee/staff), built into an ogen
 // server here so it renders errors like the other surfaces.
-type OperatorSurface interface {
-	Server(opts ...operatorapi.ServerOption) (http.Handler, error)
+type StaffSurface interface {
+	Server(opts ...staffapi.ServerOption) (http.Handler, error)
 }
 
-// NewOperatorAPI builds the /operator ogen server with RFC 7807 errors. A nil surface
+// NewStaffAPI builds the /staff ogen server with RFC 7807 errors. A nil surface
 // (no `operator` license) yields a nil handler, which New mounts as a 404.
-func NewOperatorAPI(surface OperatorSurface) (http.Handler, error) {
+func NewStaffAPI(surface StaffSurface) (http.Handler, error) {
 	if surface == nil {
 		return nil, nil
 	}
-	return surface.Server(operatorapi.WithErrorHandler(problemErrorHandler))
+	return surface.Server(staffapi.WithErrorHandler(problemErrorHandler))
 }
 
-// ServiceSurface is the service endpoints of the Operator surface (ee/operator), built
+// ServiceSurface is the service endpoints of the Staff surface (ee/staff), built
 // into an ogen server here so it renders errors like the other surfaces.
 type ServiceSurface interface {
 	Server(opts ...serviceapi.ServerOption) (http.Handler, error)
@@ -341,15 +341,15 @@ func requestID(next http.Handler) http.Handler {
 }
 
 // cookiePath reports whether a path is authenticated by a session cookie (the SPA
-// API and the Operator API), the only surfaces exposed to CSRF.
+// API and the Staff member API), the only surfaces exposed to CSRF.
 func cookiePath(path string) bool {
-	return strings.HasPrefix(path, "/site/") || strings.HasPrefix(path, operatorPrefix+"/")
+	return strings.HasPrefix(path, "/site/") || strings.HasPrefix(path, staffPrefix+"/")
 }
 
 // corsMiddleware applies three rs/cors policies by path:
 //   - /collect/: echoes any origin without credentials (the collect key is
 //     public, cookies are first-party on the customer's own domain);
-//   - /site/ and /operator/ (cookie auth): credentials only for the configured
+//   - /site/ and /staff/ (cookie auth): credentials only for the configured
 //     allowlist. The SPA is served same-origin, so with no allowlist there are no
 //     CORS headers at all;
 //   - everything else (external API, MCP, OAuth: bearer tokens): echoes any origin

@@ -83,7 +83,7 @@ func TestPreHijackingAnAttackerWhoRegisteredTheInviteesAddressGainsNothing(t *te
 }
 
 // An Invitation that proves an address is a Verified email like a registration link
-// does, so the Operator reading the Audit log sees who proved what (ADR 0030).
+// does, so the Staff member reading the Audit log sees who proved what (ADR 0030).
 func TestAcceptingAnInvitationThatVerifiesTheAddressIsAuditedAsEmailVerified(t *testing.T) {
 	for name, prepare := range map[string]func(*testing.T, *testhelper.TestEnv){
 		"new address":        func(*testing.T, *testhelper.TestEnv) {},

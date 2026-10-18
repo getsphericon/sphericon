@@ -65,7 +65,7 @@ func (Workspace) Fields() []ent.Field {
 		// Workspace suspension (ADR 0007): a reversible freeze of ALL outbound sending
 		// for reputation protection. Set => every Outbound send returns a Hold. Login,
 		// reads and /collect keep working. Attribution records who set it (the
-		// automated abuse detector, actor "system", or a platform Operator's id) and
+		// automated abuse detector, actor "system", or a platform Staff member's id) and
 		// why, so the owner sees the notice and can appeal.
 		// EE advanced retention (ADR 0014, ADR 0022): audit entries older than this many
 		// days are pruned by ee/retention, and only under a license that includes the
@@ -90,10 +90,10 @@ func (Workspace) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		// Who set it: the structured actor of ADR 0026. The kind is system (the automated
-		// abuse detector), cli (the operator command) or operator; only an operator has an
+		// abuse detector), cli (the staff member command) or staff member; only a staff member has an
 		// id (the real staff identity, never shown to the customer).
 		field.Enum("suspended_by_kind").
-			Values("system", "cli", "operator").
+			Values("system", "cli", "staff").
 			Optional().
 			Nillable(),
 		field.String("suspended_by_id").
@@ -102,12 +102,12 @@ func (Workspace) Fields() []ent.Field {
 		field.String("suspension_reason").
 			Optional().
 			Nillable(),
-		// When an Operator last lifted a suspension (ADR 0026): the abuse detector counts
+		// When a Staff member last lifted a suspension (ADR 0026): the abuse detector counts
 		// only Events after it, so a cleared sender is not frozen again for old data.
 		field.Time("cleared_at").
 			Optional().
 			Nillable(),
-		// Set and cleared only by an Operator: an exempt Workspace is neither warned nor
+		// Set and cleared only by a Staff member: an exempt Workspace is neither warned nor
 		// frozen by the abuse detector (it can still be suspended by hand).
 		field.Bool("abuse_exempt").
 			Default(false),

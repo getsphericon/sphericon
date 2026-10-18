@@ -17,12 +17,12 @@ import (
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/audit"
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/operator"
 	"github.com/getsphericon/sphericon/ee/retention"
+	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ee/usage"
 	"github.com/getsphericon/sphericon/ent"
-	operatorapi "github.com/getsphericon/sphericon/gen/operator"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
+	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -42,38 +42,38 @@ type Edition struct {
 	Audit *audit.Log
 	// Consumers are the extra bus subscribers (events.RegisterSubscribers).
 	Consumers []events.Consumer
-	// Operators is the platform Operator store and its login (ADR 0026); every call
+	// Staff members is the platform Staff member store and its login (ADR 0026); every call
 	// refuses without the `operator` license.
-	Operators *operator.Module
+	StaffMembers *staff.Module
 
-	operatorSessions *operator.Sessions
-	abuseCfg         abuse.Config
-	now              func() time.Time
+	staffSessions *staff.Sessions
+	abuseCfg      abuse.Config
+	now           func() time.Time
 }
 
 // New builds the Edition for a license. Subscribers are always registered and each
 // checks the license itself, so a key added later needs no rewiring and an unlicensed
-// instance stores nothing. The Operator configuration is validated only when the
+// instance stores nothing. The Staff member configuration is validated only when the
 // `operator` feature is licensed: an unlicensed instance needs none of it.
-func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, siteSecret string, operatorCfg operator.Config) (*Edition, error) {
+func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, siteSecret string, staffCfg staff.Config) (*Edition, error) {
 	auditLog := audit.NewLog(lic)
 	e := &Edition{
-		lic:       lic,
-		client:    client,
-		Audit:     auditLog,
-		Consumers: []events.Consumer{audit.Consumer(client, lic)},
-		Operators: operator.NewModule(client, lic, auditLog, cipher, operatorCfg),
+		lic:          lic,
+		client:       client,
+		Audit:        auditLog,
+		Consumers:    []events.Consumer{audit.Consumer(client, lic)},
+		StaffMembers: staff.NewModule(client, lic, auditLog, cipher, staffCfg),
 	}
-	e.abuseCfg = abuse.Config{Limits: operatorCfg.Abuse, SupportEmail: operatorCfg.SupportEmail}
-	e.now = operatorCfg.Clock
+	e.abuseCfg = abuse.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
+	e.now = staffCfg.Clock
 	if e.now == nil {
 		e.now = time.Now
 	}
 	if lic.Has(licensekey.FeatureOperator) {
-		if err := operatorCfg.Validate(siteSecret); err != nil {
+		if err := staffCfg.Validate(siteSecret); err != nil {
 			return nil, err
 		}
-		e.operatorSessions = operator.NewSessions(client, lic, operatorCfg)
+		e.staffSessions = staff.NewSessions(client, lic, staffCfg)
 	}
 	return e, nil
 }
@@ -88,34 +88,34 @@ func (e *Edition) Hooks() []entgo.Hook {
 	return []entgo.Hook{usage.Hook(e.lic, e.now)}
 }
 
-// Operator is the /operator API (ADR 0026) for the composition root to mount, or nil
+// Staff member is the /staff API (ADR 0026) for the composition root to mount, or nil
 // without the `operator` license, in which case the whole surface answers 404.
 //
 // The surface suspends Workspaces through the core mechanism, so it takes the event bus
 // and the system (platform) sender that tells the owner. The bus is built after the
 // Edition (it carries the Edition's consumers), hence they come here and not to New.
-func (e *Edition) Operator(bus *events.Bus, sender messaging.EmailSender) interface {
-	Server(opts ...operatorapi.ServerOption) (http.Handler, error)
+func (e *Edition) StaffMember(bus *events.Bus, sender messaging.EmailSender) interface {
+	Server(opts ...staffapi.ServerOption) (http.Handler, error)
 } {
-	if e.operatorSessions == nil {
+	if e.staffSessions == nil {
 		return nil
 	}
-	return operator.NewSurface(e.Operators, e.operatorSessions, bus, sender)
+	return staff.NewSurface(e.StaffMembers, e.staffSessions, bus, sender)
 }
 
-// Service is the service endpoints of the Operator surface (ADR 0026) for the
+// Service is the service endpoints of the Staff surface (ADR 0026) for the
 // composition root to mount on the internal listener, or nil without the `operator`
 // license, in which case no listener is bound and nothing is served.
 func (e *Edition) Service(bus *events.Bus) interface {
 	Server(opts ...serviceapi.ServerOption) (http.Handler, error)
 } {
-	if e.operatorSessions == nil {
+	if e.staffSessions == nil {
 		return nil
 	}
-	return operator.NewServiceSurface(e.Operators, bus)
+	return staff.NewServiceSurface(e.StaffMembers, bus)
 }
 
-// Freezer is the Operator holds' seat on the send chokepoint (ADR 0009, 0015): any
+// Freezer is the Staff holds' seat on the send chokepoint (ADR 0009, 0015): any
 // active hold freezes a Workspace's sending, and a lapsed one is ignored at once. It
 // honours holds only with the `operator` license, so an unlicensed instance never
 // freezes on a row it could not have written.
@@ -123,7 +123,7 @@ func (e *Edition) Freezer() outbound.Freezer {
 	return holds.Freezer{Now: e.now, Enabled: e.HoldsHonoured}
 }
 
-// HoldsHonoured reports whether Operator holds are honoured at all (the `operator`
+// HoldsHonoured reports whether Staff holds are honoured at all (the `operator`
 // license): the send path's Freezer and every read of a hold shown to a Workspace
 // agree on it.
 func (e *Edition) HoldsHonoured() bool { return e.lic.Has(licensekey.FeatureOperator) }
@@ -137,7 +137,7 @@ func (e *Edition) Abuse(bus *events.Bus, sender messaging.EmailSender) *abuse.De
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
 // without the `operator` license.
-func (e *Edition) AbuseWatch() site.AbuseWatch { return siteWatch{e.Operators.Watch()} }
+func (e *Edition) AbuseWatch() site.AbuseWatch { return siteWatch{e.StaffMembers.Watch()} }
 
 type siteWatch struct{ watch *abuse.Watch }
 

@@ -7,13 +7,13 @@ namespace Sphericon;
 enum AuditActorKind {
   user,
   api_token,
-  operator,
+  staff,
   system,
 }
 
 /** The actor of an Audit entry */
 model AuditActor {
-  /** The kind of actor; an operator is shown as "sphericon staff" */
+  /** The kind of actor; a staff member is shown as "sphericon staff" */
   kind: AuditActorKind;
 
   /** The actor's id (a User id or an API token id); absent for the system */
@@ -84,7 +84,7 @@ model AuditFilter {
   /** Only entries by this kind of actor */
   @query actorKind?: AuditActorKind;
 
-  /** Only entries by the actor with this id (a User id or an API token id); ignored for the operator kind */
+  /** Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind */
   @query actorId?: string;
 
   /** Only entries with exactly this action, e.g. membership.update */
