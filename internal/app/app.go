@@ -980,7 +980,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return instance.New(client.Client, instance.EnvironmentOf(cfg, buildinfo.Current().Version), nil, instance.WithReleaseSource(source)), nil
+		return instance.New(client.Client, instance.EnvironmentOf(cfg), instance.HostOf(cfg, buildinfo.Current().Version), nil, instance.WithReleaseSource(source)), nil
 	})
 
 	// Attempts counts failed logins per account (ADR 0025) over the raw client.

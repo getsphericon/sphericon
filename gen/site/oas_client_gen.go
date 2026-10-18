@@ -297,6 +297,14 @@ type Invoker interface {
 	//
 	// GET /instance
 	SiteInstanceGetState(ctx context.Context) (SiteInstanceGetStateRes, error)
+	// SiteInstancePreviewTelemetryReport invokes SiteInstance_previewTelemetryReport operation.
+	//
+	// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
+	// schema describes, built by the code that sends it. Works whether or not sending is on. Refused to
+	// everyone but the Owners of the oldest Workspace.
+	//
+	// GET /instance/telemetry/preview
+	SiteInstancePreviewTelemetryReport(ctx context.Context) (SiteInstancePreviewTelemetryReportRes, error)
 	// SiteInstanceSetTelemetry invokes SiteInstance_setTelemetry operation.
 	//
 	// Switch the Telemetry report on or off. Answers 409 while the environment decides.
@@ -6545,6 +6553,121 @@ func (c *Client) sendSiteInstanceGetState(ctx context.Context) (res SiteInstance
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteInstanceGetStateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteInstancePreviewTelemetryReport invokes SiteInstance_previewTelemetryReport operation.
+//
+// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
+// schema describes, built by the code that sends it. Works whether or not sending is on. Refused to
+// everyone but the Owners of the oldest Workspace.
+//
+// GET /instance/telemetry/preview
+func (c *Client) SiteInstancePreviewTelemetryReport(ctx context.Context) (SiteInstancePreviewTelemetryReportRes, error) {
+	res, err := c.sendSiteInstancePreviewTelemetryReport(ctx)
+	return res, err
+}
+
+func (c *Client) sendSiteInstancePreviewTelemetryReport(ctx context.Context) (res SiteInstancePreviewTelemetryReportRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteInstance_previewTelemetryReport"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/instance/telemetry/preview"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteInstancePreviewTelemetryReportOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/instance/telemetry/preview"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteInstancePreviewTelemetryReportOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteInstancePreviewTelemetryReportResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

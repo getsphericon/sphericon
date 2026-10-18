@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Text } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -9,6 +9,7 @@ import { useInstanceState } from '../hooks/useInstanceState.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as instanceRoute } from '../routes/account/instance.tsx'
 import { ButtonLink } from './RouterLink.tsx'
+import { TelemetryReportActions } from './TelemetryReportActions.tsx'
 
 // InstanceNotice tells an Owner of the oldest Workspace, once, that the Instance sends an
 // anonymous Telemetry report (ADR 0032) and lets them decide. It shows until acknowledged
@@ -28,11 +29,14 @@ export function InstanceNotice() {
   return (
     <Alert color="blue" title={t(($) => $.instance.notice.title)} mb="md">
       <Group justify="space-between" align="flex-end">
-        <Text size="sm" maw={720}>
-          {state.data.telemetry.locked
-            ? t(($) => $.instance.notice.descriptionLocked)
-            : t(($) => $.instance.notice.description)}
-        </Text>
+        <Stack gap="xs">
+          <Text size="sm" maw={720}>
+            {state.data.telemetry.locked
+              ? t(($) => $.instance.notice.descriptionLocked)
+              : t(($) => $.instance.notice.description)}
+          </Text>
+          <TelemetryReportActions size="xs" />
+        </Stack>
         <Group gap="xs">
           <ButtonLink to={instanceRoute.to} size="xs" variant="light">
             {t(($) => $.instance.notice.settings)}

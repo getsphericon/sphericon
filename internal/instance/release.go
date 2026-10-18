@@ -23,13 +23,13 @@ type ReleaseSource interface {
 // checking is whether the Release check runs at all: it is switched on and the running
 // build is a release.
 func (m *Module) checking() bool {
-	return m.env.ReleaseCheck && buildinfo.IsRelease(m.env.Version)
+	return m.env.ReleaseCheck && buildinfo.IsRelease(m.host.AppVersion)
 }
 
 // isNewer is whether latest is a stable release strictly newer than the running version.
 func (m *Module) isNewer(latest string) bool {
 	v := buildinfo.Semver(latest)
-	return semver.IsValid(v) && semver.Prerelease(v) == "" && semver.Compare(v, buildinfo.Semver(m.env.Version)) > 0
+	return semver.IsValid(v) && semver.Prerelease(v) == "" && semver.Compare(v, buildinfo.Semver(m.host.AppVersion)) > 0
 }
 
 // newer is the stored release when it is still newer than the running version (an Instance
@@ -95,7 +95,7 @@ func (m *Module) AnnounceRelease(ctx context.Context) error {
 
 func (m *Module) announce(ctx context.Context, latest string) {
 	m.log.InfoContext(ctx, "a newer release is available; run `sphericon upgrade --check` for details",
-		"latest", latest, "running", buildinfo.Bare(m.env.Version))
+		"latest", latest, "running", buildinfo.Bare(m.host.AppVersion))
 }
 
 // ReleaseCheckArgs is the daily tick of the Release check.

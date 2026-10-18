@@ -29,7 +29,7 @@ func TestIsOwnerPassesToTheNextOldestWorkspaceWhenTheOldestIsDeleted(t *testing.
 	require.NoError(t, err)
 	// No workspace-feed guard: this database has no feed reader.
 	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
-	mod := instance.New(client, instance.Environment{}, nil)
+	mod := instance.New(client, instance.Environment{}, testHost, nil)
 
 	for _, u := range []struct {
 		id        int64

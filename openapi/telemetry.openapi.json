@@ -84,7 +84,7 @@
           "contacts",
           "emailsSent30d",
           "usedBroadcasts30d",
-          "usedAutomations30d",
+          "automationsActive",
           "usedTracker30d",
           "usedExternalApi30d",
           "webhooksConfigured",
@@ -99,7 +99,8 @@
           },
           "instanceId": {
             "type": "string",
-            "format": "uuid",
+            "minLength": 1,
+            "maxLength": 64,
             "description": "A random value stored in the Instance's database, derived from nothing."
           },
           "appVersion": {
@@ -169,9 +170,9 @@
             "type": "boolean",
             "description": "A Broadcast was sent in the last 30 days."
           },
-          "usedAutomations30d": {
+          "automationsActive": {
             "type": "boolean",
-            "description": "An Automation was active in the last 30 days."
+            "description": "At least one Automation is active."
           },
           "usedTracker30d": {
             "type": "boolean",

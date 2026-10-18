@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
@@ -14,7 +13,7 @@ import (
 func sampleReport() telemetryapi.TelemetryReport {
 	return telemetryapi.TelemetryReport{
 		SchemaVersion:      1,
-		InstanceId:         uuid.MustParse("6f1c1d0e-8a5b-4f43-9a52-2b1f2f6a7c10"),
+		InstanceId:         "6f1c1d0e-8a5b-4f43-9a52-2b1f2f6a7c10",
 		AppVersion:         "1.4.2",
 		Edition:            telemetryapi.TelemetryEditionCore,
 		Os:                 "linux",

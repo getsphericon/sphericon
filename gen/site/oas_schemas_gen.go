@@ -3089,21 +3089,22 @@ func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 	s.RetryAfter = val
 }
 
-func (*ProblemDetails) siteAnalyticsOverviewRes()         {}
-func (*ProblemDetails) siteAuthConfirmEmailChangeRes()    {}
-func (*ProblemDetails) siteAuthResetPasswordRes()         {}
-func (*ProblemDetails) siteAuthSecondFactorRes()          {}
-func (*ProblemDetails) siteAuthVerifyEmailRes()           {}
-func (*ProblemDetails) siteEventsActionsRes()             {}
-func (*ProblemDetails) siteEventsListRes()                {}
-func (*ProblemDetails) siteInstanceAcknowledgeNoticeRes() {}
-func (*ProblemDetails) siteInstanceGetStateRes()          {}
-func (*ProblemDetails) siteIntegrationsListRes()          {}
-func (*ProblemDetails) siteInvitationsListRes()           {}
-func (*ProblemDetails) siteMembershipsListRes()           {}
-func (*ProblemDetails) sitePublicInvitationsLookupRes()   {}
-func (*ProblemDetails) sitePublicUnsubscribesPerformRes() {}
-func (*ProblemDetails) siteTokensListRes()                {}
+func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
+func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
+func (*ProblemDetails) siteAuthResetPasswordRes()              {}
+func (*ProblemDetails) siteAuthSecondFactorRes()               {}
+func (*ProblemDetails) siteAuthVerifyEmailRes()                {}
+func (*ProblemDetails) siteEventsActionsRes()                  {}
+func (*ProblemDetails) siteEventsListRes()                     {}
+func (*ProblemDetails) siteInstanceAcknowledgeNoticeRes()      {}
+func (*ProblemDetails) siteInstanceGetStateRes()               {}
+func (*ProblemDetails) siteInstancePreviewTelemetryReportRes() {}
+func (*ProblemDetails) siteIntegrationsListRes()               {}
+func (*ProblemDetails) siteInvitationsListRes()                {}
+func (*ProblemDetails) siteMembershipsListRes()                {}
+func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
+func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
+func (*ProblemDetails) siteTokensListRes()                     {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -6875,6 +6876,19 @@ func (s *SiteForgotPasswordInput) GetEmail() EmailAddress {
 func (s *SiteForgotPasswordInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
+
+type SiteInstancePreviewTelemetryReportOK map[string]jx.Raw
+
+func (s *SiteInstancePreviewTelemetryReportOK) init() SiteInstancePreviewTelemetryReportOK {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+func (*SiteInstancePreviewTelemetryReportOK) siteInstancePreviewTelemetryReportRes() {}
 
 type SiteInstanceSetTelemetryConflict ProblemDetails
 

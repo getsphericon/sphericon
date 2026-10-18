@@ -157,6 +157,10 @@ type SiteInstanceGetStateRes interface {
 	siteInstanceGetStateRes()
 }
 
+type SiteInstancePreviewTelemetryReportRes interface {
+	siteInstancePreviewTelemetryReportRes()
+}
+
 type SiteInstanceSetTelemetryRes interface {
 	siteInstanceSetTelemetryRes()
 }

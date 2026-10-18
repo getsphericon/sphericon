@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/telemetryschema"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -33,6 +35,9 @@ func requireInstanceForbidden(t *testing.T, c *siteapi.Client) {
 	ack, err := c.SiteInstanceAcknowledgeNotice(t.Context())
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.ProblemDetails{}, ack)
+	preview, err := c.SiteInstancePreviewTelemetryReport(t.Context())
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.ProblemDetails{}, preview)
 }
 
 func TestSiteInstanceStateDefaultsToOnAndUnacknowledged(t *testing.T) {
@@ -204,4 +209,23 @@ func TestSiteInstanceRefusesToChangeALockedSetting(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, row.TelemetryEnabled)
 	assert.True(t, instanceState(t, john).Telemetry.Enabled)
+}
+
+func TestSiteInstancePreviewIsTheValidReportAndWorksWithSendingOff(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.DoNotTrack = true }))
+	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	require.False(t, instanceState(t, john).Telemetry.Enabled)
+
+	res, err := john.SiteInstancePreviewTelemetryReport(t.Context())
+
+	require.NoError(t, err)
+	preview, ok := res.(*siteapi.SiteInstancePreviewTelemetryReportOK)
+	require.True(t, ok, "expected the report, got %T", res)
+	body, err := json.Marshal(preview)
+	require.NoError(t, err)
+	require.NoError(t, telemetryschema.Validate(body))
+	row, err := env.DB.InstanceState.Get(t.Context(), 1)
+	require.NoError(t, err)
+	assert.JSONEq(t, `"`+row.InstanceID+`"`, string((*preview)["instanceId"]))
+	assert.JSONEq(t, `"1-9"`, string((*preview)["workspaces"]))
 }

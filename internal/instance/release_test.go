@@ -26,7 +26,7 @@ func logged(t *testing.T, running string, src instance.ReleaseSource) (*instance
 	env := testhelper.Setup(t)
 	buf := &bytes.Buffer{}
 	log := slog.New(slog.NewTextHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	mod := instance.New(env.DB, instance.Environment{ReleaseCheck: true, Version: running}, nil,
+	mod := instance.New(env.DB, instance.Environment{ReleaseCheck: true}, instance.Host{AppVersion: running}, nil,
 		instance.WithReleaseSource(src), instance.WithLogger(log))
 	return mod, buf
 }

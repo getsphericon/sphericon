@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 )
 
 // stateID is the id of the one Instance state row.
@@ -30,14 +31,11 @@ type Environment struct {
 	DoNotTrack bool
 	// ReleaseCheck is SPHERICON_RELEASE_CHECK; it never depends on the two above.
 	ReleaseCheck bool
-	// Version is the running version. The module never reads the build globally.
-	Version string
 }
 
-// EnvironmentOf reads the Instance switches from the configuration; version is the running
-// version (buildinfo's at the composition root).
-func EnvironmentOf(cfg *config.Config, version string) Environment {
-	return Environment{Telemetry: cfg.Telemetry, DoNotTrack: cfg.DoNotTrack, ReleaseCheck: cfg.ReleaseCheck, Version: version}
+// EnvironmentOf reads the Instance switches from the configuration.
+func EnvironmentOf(cfg *config.Config) Environment {
+	return Environment{Telemetry: cfg.Telemetry, DoNotTrack: cfg.DoNotTrack, ReleaseCheck: cfg.ReleaseCheck}
 }
 
 // Lock names what decides a setting the Owner cannot change.
@@ -88,6 +86,7 @@ type State struct {
 type Module struct {
 	ent    *ent.Client
 	env    Environment
+	host   Host
 	now    func() time.Time
 	source ReleaseSource
 	log    *slog.Logger
@@ -103,12 +102,13 @@ func WithReleaseSource(s ReleaseSource) Option { return func(m *Module) { m.sour
 // WithLogger sets the logger of the Release check's lines; the default is slog's.
 func WithLogger(l *slog.Logger) Option { return func(m *Module) { m.log = l } }
 
-// New builds the module; a nil clock means time.Now.
-func New(client *ent.Client, env Environment, now func() time.Time, opts ...Option) *Module {
+// New builds the module; a nil clock means time.Now. The host is what the Telemetry report
+// says about the running binary; its AppVersion is the version the Release check compares to.
+func New(client *ent.Client, env Environment, host Host, now func() time.Time, opts ...Option) *Module {
 	if now == nil {
 		now = time.Now
 	}
-	m := &Module{ent: client, env: env, now: now, log: slog.Default()}
+	m := &Module{ent: client, env: env, host: host, now: now, log: slog.Default()}
 	for _, o := range opts {
 		o(m)
 	}
@@ -118,11 +118,21 @@ func New(client *ent.Client, env Environment, now func() time.Time, opts ...Opti
 // Ensure returns the Instance state row, creating it (with a fresh random Instance id)
 // when this is the first start. Safe to call concurrently and repeatedly.
 func (m *Module) Ensure(ctx context.Context) (*ent.InstanceState, error) {
-	err := m.ent.InstanceState.Create().SetID(stateID).OnConflictColumns(instancestate.FieldID).DoNothing().Exec(ctx)
+	return ensureRow(ctx, m.ent)
+}
+
+func ensureRow(ctx context.Context, client *ent.Client) (*ent.InstanceState, error) {
+	err := client.InstanceState.Create().SetID(stateID).OnConflictColumns(instancestate.FieldID).DoNothing().Exec(ctx)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
-	return m.ent.InstanceState.Get(ctx, stateID)
+	return client.InstanceState.Get(ctx, stateID)
+}
+
+// Report is the Telemetry report as the Instance would send it now, whether or not sending
+// is on: the same builder the daily sender uses.
+func (m *Module) Report(ctx context.Context) (telemetryapi.TelemetryReport, error) {
+	return BuildReport(ctx, m.ent, m.host, m.now())
 }
 
 // IsOwner reports whether the User is an Owner of the oldest existing Workspace: the next

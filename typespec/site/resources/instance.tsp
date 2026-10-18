@@ -76,4 +76,18 @@ namespace SiteInstance {
         @body body: SiteInstanceState;
       }
     | ForbiddenProblem;
+
+  /**
+   * The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the
+   * published schema describes, built by the code that sends it. Works whether or not sending is
+   * on. Refused to everyone but the Owners of the oldest Workspace.
+   */
+  @get
+  @route("/telemetry/preview")
+  op previewTelemetryReport():
+    | {
+        @statusCode statusCode: 200;
+        @body body: Record<unknown>;
+      }
+    | ForbiddenProblem;
 }

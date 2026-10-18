@@ -446,6 +446,13 @@
       "title": "Informe anónimo de uso"
     },
     "ownersOnly": "Solo los propietarios del espacio de trabajo más antiguo pueden gestionar la instancia.",
+    "report": {
+      "loadError": "No se pudo generar el informe.",
+      "preview": "Ver el informe",
+      "previewDescription": "Esto es exactamente lo que esta instancia enviaría ahora. Se muestra aunque el envío esté desactivado, y abrirlo no envía nada.",
+      "previewTitle": "Vista previa del informe de uso",
+      "schema": "Qué contiene el informe"
+    },
     "telemetry": {
       "description": "Enviar al proyecto un informe anónimo al día con la versión, el despliegue y el tamaño aproximado de esta instancia. Nunca contiene nombres, direcciones ni cifras exactas.",
       "errorTitle": "No se pudo actualizar el informe de uso",

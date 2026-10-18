@@ -320,7 +320,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build account link")
 	source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
 	require.NoError(t, err, "build release source")
-	inst := instance.New(client, instance.EnvironmentOf(&cfg, st.version), st.now, instance.WithReleaseSource(source))
+	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version), st.now, instance.WithReleaseSource(source))
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
 		Instance: inst,
