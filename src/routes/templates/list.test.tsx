@@ -43,25 +43,25 @@ test('shows an error alert when the list fails to load', async () => {
   await expect.element(screen.getByText('Failed to load templates')).toBeInTheDocument()
 })
 
-test('New template navigates to the create page', async () => {
+test('New template links to the create page', async () => {
   worker.use(handleSiteTemplatesList({ body: page([], 0) }))
 
-  const { screen, navigate } = await renderWithRouter(<TemplatesListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'New template' }).click()
+  const { screen } = await renderWithRouter(<TemplatesListPage />, LIST_ROUTE)
 
-  expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ params: SLUG }))
+  await expect
+    .element(screen.getByRole('link', { name: 'New template' }))
+    .toHaveAttribute('href', '/workspaces/test/templates/new')
 })
 
-test('Edit navigates to the template edit page', async () => {
+test('Edit links to the template edit page', async () => {
   worker.use(handleSiteTemplatesList({ body: page([WELCOME], 1) }))
 
-  const { screen, navigate } = await renderWithRouter(<TemplatesListPage />, LIST_ROUTE)
+  const { screen } = await renderWithRouter(<TemplatesListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Welcome')).toBeInTheDocument()
-  await screen.getByRole('button', { name: 'Edit' }).click()
 
-  expect(navigate).toHaveBeenCalledWith(
-    expect.objectContaining({ params: { slug: 'test', templateId: '1' } }),
-  )
+  await expect
+    .element(screen.getByRole('link', { name: 'Edit' }))
+    .toHaveAttribute('href', '/workspaces/test/templates/1/edit')
 })
 
 test('deleting a template asks for confirmation, deletes it and refreshes the list', async () => {

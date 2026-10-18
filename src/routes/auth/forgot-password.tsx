@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next'
 import { siteAuthForgotPasswordMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { loginRoute } from '../../router.tsx'
-import { getRateLimitWait } from '../../utils/apiErrors.ts'
 
 export function ForgotPasswordPage() {
   const { t } = useTranslation()
@@ -18,15 +17,6 @@ export function ForgotPasswordPage() {
   // hour, so a single confirmation state covers all of them — no account
   // enumeration. The one failure a visitor sees is the per-IP 429.
   const mutation = useMutation(siteAuthForgotPasswordMutation())
-
-  // The per-IP 429 can ask for up to an hour: say how long, like the login screen.
-  const rateLimitMessage = (error: unknown) => {
-    const wait = getRateLimitWait(error)
-    if (!wait) return undefined
-    return wait.unit === 'minutes'
-      ? t(($) => $.forgotPassword.rateLimitedMinutes, { count: wait.count })
-      : t(($) => $.forgotPassword.rateLimitedSeconds, { count: wait.count })
-  }
 
   const handleSubmit = (values: { email: string }) => {
     mutation.mutate({ body: { email: values.email.trim() } })
@@ -59,11 +49,10 @@ export function ForgotPasswordPage() {
         <Stack>
           {mutation.isError && (
             <Alert color="red">
-              {rateLimitMessage(mutation.error) ??
-                apiErrorMessage(
-                  mutation.error,
-                  t(($) => $.notifications.errorMessage),
-                )}
+              {apiErrorMessage(
+                mutation.error,
+                t(($) => $.notifications.errorMessage),
+              )}
             </Alert>
           )}
           <TextInput

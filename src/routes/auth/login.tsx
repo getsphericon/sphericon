@@ -25,7 +25,7 @@ import type { SiteLoginInput, SiteLoginResult } from '../../generated/site/types
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { forgotPasswordRoute, indexRoute, registerRoute } from '../../router.tsx'
-import { getRateLimitWait, isEmailVerificationRequiredError } from '../../utils/apiErrors.ts'
+import { isEmailVerificationRequiredError } from '../../utils/apiErrors.ts'
 
 export function LoginPage() {
   const { t } = useTranslation()
@@ -35,15 +35,6 @@ export function LoginPage() {
   const { redirect } = useSearch({ strict: false })
 
   const apiErrorMessage = useApiErrorMessage()
-
-  // How long to wait, when the throttle says so (ADR 0025).
-  const rateLimitMessage = (error: unknown) => {
-    const wait = getRateLimitWait(error)
-    if (!wait) return undefined
-    return wait.unit === 'minutes'
-      ? t(($) => $.login.rateLimitedMinutes, { count: wait.count })
-      : t(($) => $.login.rateLimitedSeconds, { count: wait.count })
-  }
 
   const form = useForm<SiteLoginInput>({
     initialValues: {
@@ -71,12 +62,10 @@ export function LoginPage() {
     notifications.show({
       color: 'red',
       title: t(($) => $.login.errorTitle),
-      message:
-        rateLimitMessage(error) ??
-        apiErrorMessage(
-          error,
-          t(($) => $.login.errorMessage),
-        ),
+      message: apiErrorMessage(
+        error,
+        t(($) => $.login.errorMessage),
+      ),
     })
 
   const signedIn = () =>

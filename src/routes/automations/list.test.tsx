@@ -72,21 +72,20 @@ test('shows an error alert when the list fails to load', async () => {
   await expect.element(screen.getByText('Failed to load automations').first()).toBeInTheDocument()
 })
 
-test('New automation and Edit navigate to the create and edit pages', async () => {
+test('New automation and Edit link to the create and edit pages', async () => {
   worker.use(
     handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
   )
 
-  const { screen, navigate } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Welcome flow')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'New automation' }).click()
-  expect(navigate).toHaveBeenLastCalledWith(expect.objectContaining({ params: { slug: 'test' } }))
-
-  await screen.getByRole('button', { name: 'Edit' }).click()
-  expect(navigate).toHaveBeenLastCalledWith(
-    expect.objectContaining({ params: { slug: 'test', automationId: '1' } }),
-  )
+  await expect
+    .element(screen.getByRole('link', { name: 'New automation' }))
+    .toHaveAttribute('href', '/workspaces/test/automations/new')
+  await expect
+    .element(screen.getByRole('link', { name: 'Edit' }))
+    .toHaveAttribute('href', '/workspaces/test/automations/1/edit')
 })
 
 test('activating a draft automation calls the API and refreshes the list', async () => {

@@ -28,7 +28,7 @@ import type {
   SiteIntegrationConfigInput,
   SiteIntegrationResource,
 } from '../../generated/site/types.gen.ts'
-import { useCurrentRole } from '../../hooks/useCurrentRole.ts'
+import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from './auditFilter.ts'
@@ -107,7 +107,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
   const role = useCurrentRole(slug)
-  const canManage = role === 'owner' || role === 'admin'
+  const canManageIntegrations = canManage(role)
 
   const queryKey = siteIntegrationsListQueryKey({ path: { slug: slug } })
   const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { slug: slug } }))
@@ -163,7 +163,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
         </Alert>
       ) : null}
 
-      {canManage ? (
+      {canManageIntegrations ? (
         <form
           onSubmit={form.onSubmit((values) =>
             createMutation.mutate({
@@ -332,7 +332,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
             title: '',
             render: (record) => (
               <Group gap="xs" wrap="nowrap">
-                {canManage ? (
+                {canManageIntegrations ? (
                   <Button size="compact-sm" variant="light" onClick={() => setEditing(record)}>
                     {t(($) => $.settings.integrations.limits.edit)}
                   </Button>
@@ -342,7 +342,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
                   targetType={AUDIT_TARGET_INTEGRATION}
                   targetId={record.id}
                 />
-                {canManage ? (
+                {canManageIntegrations ? (
                   <Button
                     size="compact-sm"
                     color="red"

@@ -60,35 +60,33 @@ test('shows an error alert when the list fails to load', async () => {
   await expect.element(screen.getByText('Failed to load broadcasts')).toBeInTheDocument()
 })
 
-test('New broadcast navigates to the create page', async () => {
+test('New broadcast links to the create page', async () => {
   worker.use(handleSiteBroadcastsList(() => HttpResponse.json({ items: [], totalItems: 0 })))
 
-  const { screen, navigate } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'New broadcast' }).click()
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
 
-  expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ params: { slug: 'test' } }))
+  await expect
+    .element(screen.getByRole('link', { name: 'New broadcast' }))
+    .toHaveAttribute('href', '/workspaces/test/broadcasts/new')
 })
 
-test('Report and Edit navigate with the broadcast id; Edit is only enabled for drafts', async () => {
+test('Report and Edit link with the broadcast id; Edit is only enabled for drafts', async () => {
   worker.use(
     handleSiteBroadcastsList(() => HttpResponse.json({ items: [DRAFT, HELD], totalItems: 2 })),
   )
 
-  const { screen, navigate } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
 
-  await expect.element(screen.getByRole('button', { name: 'Edit' }).nth(1)).toBeDisabled()
-
-  await screen.getByRole('button', { name: 'Report' }).first().click()
-  expect(navigate).toHaveBeenLastCalledWith(
-    expect.objectContaining({ params: { slug: 'test', broadcastId: '1' } }),
-  )
-
-  await screen.getByRole('button', { name: 'Edit' }).first().click()
-  expect(navigate).toHaveBeenLastCalledWith(
-    expect.objectContaining({ params: { slug: 'test', broadcastId: '1' } }),
-  )
-  expect(navigate).toHaveBeenCalledTimes(2)
+  await expect
+    .element(screen.getByRole('link', { name: 'Edit' }).nth(1))
+    .toHaveAttribute('data-disabled')
+  await expect
+    .element(screen.getByRole('link', { name: 'Report' }).first())
+    .toHaveAttribute('href', '/workspaces/test/broadcasts/1/report')
+  await expect
+    .element(screen.getByRole('link', { name: 'Edit' }).first())
+    .toHaveAttribute('href', '/workspaces/test/broadcasts/1/edit')
 })
 
 test('deleting a broadcast asks for confirmation, deletes it and refreshes the list', async () => {

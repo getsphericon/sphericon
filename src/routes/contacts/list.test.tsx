@@ -47,13 +47,14 @@ test('shows an error alert when the list fails to load', async () => {
   await expect.element(screen.getByText('Failed to load contacts')).toBeInTheDocument()
 })
 
-test('Add contact navigates to the create page', async () => {
+test('Add contact links to the create page', async () => {
   worker.use(handleSiteContactsList({ body: page([], 0) }))
 
-  const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Add contact' }).click()
+  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
 
-  expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ params: { slug: 'test' } }))
+  await expect
+    .element(screen.getByRole('link', { name: 'Add contact' }))
+    .toHaveAttribute('href', '/workspaces/test/contacts/new')
 })
 
 test('deleting a contact asks for confirmation, deletes it and refreshes the list', async () => {

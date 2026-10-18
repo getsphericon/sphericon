@@ -19,8 +19,3 @@ export function useSetSecondFactorRequirement() {
     forbiddenMessage: t(($) => $.secondFactorRequirement.forbidden),
   })
 }
-
-// canManageSecondFactorRequirement reports whether the role may switch it.
-export function canManageSecondFactorRequirement(role: string | undefined) {
-  return role === 'owner' || role === 'admin'
-}

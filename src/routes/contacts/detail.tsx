@@ -16,7 +16,7 @@ import {
   siteEventsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteContactsExport } from '../../generated/site/sdk.gen.ts'
-import { useCurrentRole } from '../../hooks/useCurrentRole.ts'
+import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { contactsDetailRoute, contactsEditRoute, contactsRoute } from '../../router.tsx'
@@ -53,7 +53,7 @@ export function ContactDetailPage() {
   const role = useCurrentRole(slug)
   // Erasure is irreversible, so it is offered to owners and admins only (the API
   // refuses everyone else with 403).
-  const canErase = role === 'owner' || role === 'admin'
+  const canErase = canManage(role)
   const [page, setPage] = useState(1)
 
   // The component instance is reused across contactId changes, so reset the

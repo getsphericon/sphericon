@@ -1,20 +1,16 @@
-import { Badge, Button, Group, Loader, Stack, Text } from '@mantine/core'
-import { useCounter } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { Badge, Button, Group, Stack } from '@mantine/core'
 import type { TFunction } from 'i18next'
-import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { PagedTable } from '../../components/PagedTable.tsx'
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteBroadcastsDeleteMutation,
   siteBroadcastsListOptions,
   siteBroadcastsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
-import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import {
   broadcastsCreateRoute,
   broadcastsEditRoute,
@@ -22,8 +18,6 @@ import {
   broadcastsRoute,
 } from '../../router.tsx'
 import { BroadcastHoldBadge } from './BroadcastHold.tsx'
-
-const PAGE_SIZE = 10
 
 const STATUS_COLORS: Record<SiteBroadcastStatus, string> = {
   draft: 'gray',
@@ -43,58 +37,29 @@ function StatusBadge({ t, status }: { t: TFunction; status: SiteBroadcastStatus 
 
 export function BroadcastsListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-  const confirmDelete = useDeleteConfirmation()
   const { slug } = broadcastsRoute.useParams()
-  const [page, pageHandlers] = useCounter(1, { min: 1 })
 
-  const broadcastsList = useQuery(
-    siteBroadcastsListOptions({
-      path: { slug: slug },
-      query: { page, pageSize: PAGE_SIZE },
-    }),
-  )
-
-  const deleteBroadcastMutation = useResourceMutation({
+  const deleteBroadcast = useDeleteResource({
     mutation: siteBroadcastsDeleteMutation(),
-    invalidate: [siteBroadcastsListQueryKey({ path: { slug: slug } })],
+    slug,
+    listQueryKey: siteBroadcastsListQueryKey({ path: { slug } }),
     successMessage: t(($) => $.notifications.broadcastDeleted),
     errorTitle: t(($) => $.alerts.broadcastDeleteErrorTitle),
   })
 
-  const totalItems = broadcastsList.data?.totalItems ?? 0
-  const records = broadcastsList.data?.items ?? []
-
-  const onDeleteClick = (id: string) => {
-    deleteBroadcastMutation.reset()
-    confirmDelete({
-      onConfirm: () => {
-        deleteBroadcastMutation.mutate({ path: { slug: slug, id } })
-      },
-    })
-  }
-
   return (
     <Stack>
       <Group justify="flex-end">
-        <Button onClick={() => navigate({ to: broadcastsCreateRoute.to, params: { slug } })}>
+        <ButtonLink to={broadcastsCreateRoute.to} params={{ slug }}>
           {t(($) => $.broadcasts.addBroadcast)}
-        </Button>
+        </ButtonLink>
       </Group>
 
-      {broadcastsList.isError ? (
-        <ApiErrorAlert
-          error={broadcastsList.error}
-          title={t(($) => $.alerts.broadcastLoadErrorTitle)}
-          fallback={t(($) => $.alerts.broadcastLoadErrorTitle)}
-        />
-      ) : null}
-
-      {broadcastsList.isLoading ? <Loader /> : null}
-
-      <DataTable
-        withTableBorder
-        records={records}
+      <PagedTable
+        options={(query) => siteBroadcastsListOptions({ path: { slug }, query })}
+        loadErrorTitle={t(($) => $.alerts.broadcastLoadErrorTitle)}
+        noRecordsText={t(($) => $.broadcasts.noRecords)}
+        emptyState={t(($) => $.broadcasts.emptyState)}
         columns={[
           { accessor: 'name', title: t(($) => $.broadcasts.nameLabel) },
           {
@@ -122,35 +87,27 @@ export function BroadcastsListPage() {
             title: t(($) => $.table.actions),
             render: (record) => (
               <Group gap="xs">
-                <Button
+                <ButtonLink
                   size="compact-sm"
                   variant="light"
-                  onClick={() =>
-                    navigate({
-                      to: broadcastsReportRoute.to,
-                      params: { slug, broadcastId: record.id },
-                    })
-                  }
+                  to={broadcastsReportRoute.to}
+                  params={{ slug, broadcastId: record.id }}
                 >
                   {t(($) => $.broadcasts.report)}
-                </Button>
-                <Button
+                </ButtonLink>
+                <ButtonLink
                   size="compact-sm"
                   disabled={record.status !== 'draft'}
-                  onClick={() =>
-                    navigate({
-                      to: broadcastsEditRoute.to,
-                      params: { slug, broadcastId: record.id },
-                    })
-                  }
+                  to={broadcastsEditRoute.to}
+                  params={{ slug, broadcastId: record.id }}
                 >
                   {t(($) => $.actions.edit)}
-                </Button>
+                </ButtonLink>
                 <Button
                   size="compact-sm"
                   color="red"
                   variant="light"
-                  onClick={() => onDeleteClick(record.id)}
+                  onClick={() => deleteBroadcast(record.id)}
                 >
                   {t(($) => $.actions.delete)}
                 </Button>
@@ -158,17 +115,7 @@ export function BroadcastsListPage() {
             ),
           },
         ]}
-        totalRecords={totalItems}
-        recordsPerPage={PAGE_SIZE}
-        page={page}
-        onPageChange={pageHandlers.set}
-        fetching={broadcastsList.isFetching}
-        noRecordsText={t(($) => $.broadcasts.noRecords)}
       />
-
-      {!broadcastsList.isLoading && totalItems === 0 ? (
-        <Text>{t(($) => $.broadcasts.emptyState)}</Text>
-      ) : null}
     </Stack>
   )
 }

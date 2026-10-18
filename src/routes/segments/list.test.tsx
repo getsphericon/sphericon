@@ -41,25 +41,25 @@ test('shows an error alert when the list fails to load', async () => {
   await expect.element(screen.getByText('Failed to load segments')).toBeInTheDocument()
 })
 
-test('Add segment navigates to the create page', async () => {
+test('Add segment links to the create page', async () => {
   worker.use(handleSiteSegmentsList({ body: page([], 0) }))
 
-  const { screen, navigate } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Add segment' }).click()
+  const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
 
-  expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ params: SLUG }))
+  await expect
+    .element(screen.getByRole('link', { name: 'Add segment' }))
+    .toHaveAttribute('href', '/workspaces/test/segments/new')
 })
 
-test('Edit navigates to the segment edit page', async () => {
+test('Edit links to the segment edit page', async () => {
   worker.use(handleSiteSegmentsList({ body: page([VIPS], 1) }))
 
-  const { screen, navigate } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
+  const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
-  await screen.getByRole('button', { name: 'Edit' }).click()
 
-  expect(navigate).toHaveBeenCalledWith(
-    expect.objectContaining({ params: { slug: 'test', segmentId: '1' } }),
-  )
+  await expect
+    .element(screen.getByRole('link', { name: 'Edit' }))
+    .toHaveAttribute('href', '/workspaces/test/segments/1/edit')
 })
 
 test('deleting a segment asks for confirmation, deletes it and refreshes the list', async () => {

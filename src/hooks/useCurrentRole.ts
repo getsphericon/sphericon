@@ -15,3 +15,9 @@ export function useCurrentRole(slug: string): SiteMembershipRole | undefined {
   const members = useQuery(siteMembershipsListOptions({ path: { slug } }))
   return members.data?.find((member) => member.userId === me.data?.id)?.role
 }
+
+// Owners and Admins manage a Workspace's settings, integrations and Contact erasure; the API
+// refuses everyone else with 403.
+export function canManage(role: SiteMembershipRole | undefined) {
+  return role === 'owner' || role === 'admin'
+}

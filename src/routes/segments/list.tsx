@@ -1,76 +1,41 @@
-import { Button, Group, Loader, Stack, Text } from '@mantine/core'
-import { useCounter } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { DataTable } from 'mantine-datatable'
+import { Button, Group, Stack } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { PagedTable } from '../../components/PagedTable.tsx'
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteSegmentsDeleteMutation,
   siteSegmentsListOptions,
   siteSegmentsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
-import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { segmentsCreateRoute, segmentsEditRoute, segmentsRoute } from '../../router.tsx'
-
-const PAGE_SIZE = 10
 
 export function SegmentsListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-  const confirmDelete = useDeleteConfirmation()
   const { slug } = segmentsRoute.useParams()
-  const [page, pageHandlers] = useCounter(1, { min: 1 })
 
-  const segmentsList = useQuery(
-    siteSegmentsListOptions({
-      path: { slug: slug },
-      query: { page, pageSize: PAGE_SIZE },
-    }),
-  )
-
-  const deleteSegmentMutation = useResourceMutation({
+  const deleteSegment = useDeleteResource({
     mutation: siteSegmentsDeleteMutation(),
-    invalidate: [siteSegmentsListQueryKey({ path: { slug: slug } })],
+    slug,
+    listQueryKey: siteSegmentsListQueryKey({ path: { slug } }),
     successMessage: t(($) => $.notifications.segmentDeleted),
     errorTitle: t(($) => $.alerts.segmentDeleteErrorTitle),
   })
 
-  const totalItems = segmentsList.data?.totalItems ?? 0
-  const records = segmentsList.data?.items ?? []
-
-  const onDeleteClick = (segmentId: string) => {
-    deleteSegmentMutation.reset()
-    confirmDelete({
-      onConfirm: () => {
-        deleteSegmentMutation.mutate({ path: { slug: slug, id: segmentId } })
-      },
-    })
-  }
-
   return (
     <Stack>
       <Group justify="flex-end">
-        <Button onClick={() => navigate({ to: segmentsCreateRoute.to, params: { slug } })}>
+        <ButtonLink to={segmentsCreateRoute.to} params={{ slug }}>
           {t(($) => $.segments.addSegment)}
-        </Button>
+        </ButtonLink>
       </Group>
 
-      {segmentsList.isError ? (
-        <ApiErrorAlert
-          error={segmentsList.error}
-          title={t(($) => $.alerts.segmentLoadErrorTitle)}
-          fallback={t(($) => $.alerts.segmentLoadErrorTitle)}
-        />
-      ) : null}
-
-      {segmentsList.isLoading ? <Loader /> : null}
-
-      <DataTable
-        withTableBorder
-        records={records}
+      <PagedTable
+        options={(query) => siteSegmentsListOptions({ path: { slug }, query })}
+        loadErrorTitle={t(($) => $.alerts.segmentLoadErrorTitle)}
+        noRecordsText={t(($) => $.segments.noRecords)}
+        emptyState={t(($) => $.segments.emptyState)}
         columns={[
           { accessor: 'name', title: t(($) => $.segments.nameLabel) },
           {
@@ -78,22 +43,18 @@ export function SegmentsListPage() {
             title: t(($) => $.table.actions),
             render: (record) => (
               <Group gap="xs">
-                <Button
+                <ButtonLink
                   size="compact-sm"
-                  onClick={() =>
-                    navigate({
-                      to: segmentsEditRoute.to,
-                      params: { slug, segmentId: record.id },
-                    })
-                  }
+                  to={segmentsEditRoute.to}
+                  params={{ slug, segmentId: record.id }}
                 >
                   {t(($) => $.actions.edit)}
-                </Button>
+                </ButtonLink>
                 <Button
                   size="compact-sm"
                   color="red"
                   variant="light"
-                  onClick={() => onDeleteClick(record.id)}
+                  onClick={() => deleteSegment(record.id)}
                 >
                   {t(($) => $.actions.delete)}
                 </Button>
@@ -101,17 +62,7 @@ export function SegmentsListPage() {
             ),
           },
         ]}
-        totalRecords={totalItems}
-        recordsPerPage={PAGE_SIZE}
-        page={page}
-        onPageChange={pageHandlers.set}
-        fetching={segmentsList.isFetching}
-        noRecordsText={t(($) => $.segments.noRecords)}
       />
-
-      {!segmentsList.isLoading && totalItems === 0 ? (
-        <Text>{t(($) => $.segments.emptyState)}</Text>
-      ) : null}
     </Stack>
   )
 }

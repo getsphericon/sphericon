@@ -1,17 +1,12 @@
-import { Badge, Loader, Stack, Text, Title } from '@mantine/core'
-import { useCounter } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
+import { Badge, Stack, Text, Title } from '@mantine/core'
 import type { TFunction } from 'i18next'
-import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { PagedTable } from '../../components/PagedTable.tsx'
 import { siteTransactionalEmailsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteTransactionalEmailStatus } from '../../generated/site/types.gen.ts'
 import { transactionalEmailsRoute } from '../../router.tsx'
 import { formatDateTime } from '../../utils/datetime.ts'
-
-const PAGE_SIZE = 20
 
 const STATUS_COLORS: Record<SiteTransactionalEmailStatus, string> = {
   pending: 'yellow',
@@ -31,17 +26,6 @@ function StatusBadge({ t, status }: { t: TFunction; status: SiteTransactionalEma
 export function TransactionalEmailsListPage() {
   const { t } = useTranslation()
   const { slug } = transactionalEmailsRoute.useParams()
-  const [page, pageHandlers] = useCounter(1, { min: 1 })
-
-  const list = useQuery(
-    siteTransactionalEmailsListOptions({
-      path: { slug: slug },
-      query: { page, pageSize: PAGE_SIZE },
-    }),
-  )
-
-  const totalItems = list.data?.totalItems ?? 0
-  const records = list.data?.items ?? []
 
   return (
     <Stack>
@@ -50,19 +34,11 @@ export function TransactionalEmailsListPage() {
         {t(($) => $.transactionalEmails.subtitle)}
       </Text>
 
-      {list.isError ? (
-        <ApiErrorAlert
-          error={list.error}
-          title={t(($) => $.alerts.transactionalEmailsLoadErrorTitle)}
-          fallback={t(($) => $.alerts.transactionalEmailsLoadErrorTitle)}
-        />
-      ) : null}
-
-      {list.isLoading ? <Loader /> : null}
-
-      <DataTable
-        withTableBorder
-        records={records}
+      <PagedTable
+        pageSize={20}
+        options={(query) => siteTransactionalEmailsListOptions({ path: { slug }, query })}
+        loadErrorTitle={t(($) => $.alerts.transactionalEmailsLoadErrorTitle)}
+        noRecordsText={t(($) => $.transactionalEmails.noRecords)}
         columns={[
           { accessor: 'destination', title: t(($) => $.transactionalEmails.destinationLabel) },
           {
@@ -81,12 +57,6 @@ export function TransactionalEmailsListPage() {
             render: (record) => formatDateTime(record.createdAt),
           },
         ]}
-        totalRecords={totalItems}
-        recordsPerPage={PAGE_SIZE}
-        page={page}
-        onPageChange={pageHandlers.set}
-        fetching={list.isFetching}
-        noRecordsText={t(($) => $.transactionalEmails.noRecords)}
       />
     </Stack>
   )

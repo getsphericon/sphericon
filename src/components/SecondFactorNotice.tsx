@@ -2,10 +2,8 @@ import { Alert, Button, Card, Divider, Group, Stack, Text, Title } from '@mantin
 import { useTranslation } from 'react-i18next'
 
 import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
-import {
-  canManageSecondFactorRequirement,
-  useSetSecondFactorRequirement,
-} from '../hooks/useSetSecondFactorRequirement.ts'
+import { canManage } from '../hooks/useCurrentRole.ts'
+import { useSetSecondFactorRequirement } from '../hooks/useSetSecondFactorRequirement.ts'
 import { securityRoute } from '../router.tsx'
 import { formatDate } from '../utils/datetime.ts'
 import { ButtonLink } from './RouterLink.tsx'
@@ -64,7 +62,7 @@ export function SecondFactorBlocked({
         <Group>
           <ButtonLink to={securityRoute.to}>{t(($) => $.secondFactorRequirement.setUp)}</ButtonLink>
         </Group>
-        {workspace?.secondFactorRequiredAt && canManageSecondFactorRequirement(workspace.role) ? (
+        {workspace?.secondFactorRequiredAt && canManage(workspace.role) ? (
           <TurnRequirementOff slug={workspace.slug} />
         ) : null}
       </Stack>

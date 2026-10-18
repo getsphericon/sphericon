@@ -1,11 +1,8 @@
-import { Badge, Button, Group, Loader, Stack, Text } from '@mantine/core'
-import { useCounter } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { DataTable } from 'mantine-datatable'
+import { Badge, Button, Group, Stack } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { PagedTable } from '../../components/PagedTable.tsx'
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteAutomationsActivateMutation,
   siteAutomationsDeactivateMutation,
@@ -13,31 +10,20 @@ import {
   siteAutomationsListOptions,
   siteAutomationsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { automationsCreateRoute, automationsEditRoute, automationsRoute } from '../../router.tsx'
 
-const PAGE_SIZE = 10
-
 export function AutomationsListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-  const confirmDelete = useDeleteConfirmation()
   const { slug } = automationsRoute.useParams()
-  const [page, pageHandlers] = useCounter(1, { min: 1 })
 
-  const automationsList = useQuery(
-    siteAutomationsListOptions({
-      path: { slug: slug },
-      query: { page, pageSize: PAGE_SIZE },
-    }),
-  )
+  const listQueryKey = siteAutomationsListQueryKey({ path: { slug } })
 
-  const listQueryKey = siteAutomationsListQueryKey({ path: { slug: slug } })
-
-  const deleteMutation = useResourceMutation({
+  const deleteAutomation = useDeleteResource({
     mutation: siteAutomationsDeleteMutation(),
-    invalidate: [listQueryKey],
+    slug,
+    listQueryKey,
     successMessage: t(($) => $.notifications.automationDeleted),
     errorTitle: t(($) => $.alerts.automationDeleteErrorTitle),
   })
@@ -56,35 +42,19 @@ export function AutomationsListPage() {
     errorTitle: t(($) => $.alerts.automationStatusErrorTitle),
   })
 
-  const totalItems = automationsList.data?.totalItems ?? 0
-  const records = automationsList.data?.items ?? []
-
-  const onDeleteClick = (id: string) => {
-    deleteMutation.reset()
-    confirmDelete({ onConfirm: () => deleteMutation.mutate({ path: { slug: slug, id } }) })
-  }
-
   return (
     <Stack>
       <Group justify="flex-end">
-        <Button onClick={() => navigate({ to: automationsCreateRoute.to, params: { slug } })}>
+        <ButtonLink to={automationsCreateRoute.to} params={{ slug }}>
           {t(($) => $.automations.addAutomation)}
-        </Button>
+        </ButtonLink>
       </Group>
 
-      {automationsList.isError ? (
-        <ApiErrorAlert
-          error={automationsList.error}
-          title={t(($) => $.alerts.automationLoadErrorTitle)}
-          fallback={t(($) => $.alerts.automationLoadErrorTitle)}
-        />
-      ) : null}
-
-      {automationsList.isLoading ? <Loader /> : null}
-
-      <DataTable
-        withTableBorder
-        records={records}
+      <PagedTable
+        options={(query) => siteAutomationsListOptions({ path: { slug }, query })}
+        loadErrorTitle={t(($) => $.alerts.automationLoadErrorTitle)}
+        noRecordsText={t(($) => $.automations.noRecords)}
+        emptyState={t(($) => $.automations.emptyState)}
         columns={[
           { accessor: 'name', title: t(($) => $.automations.nameLabel) },
           { accessor: 'triggerEvent', title: t(($) => $.automations.triggerColumn) },
@@ -110,9 +80,7 @@ export function AutomationsListPage() {
                     variant="light"
                     color="orange"
                     loading={deactivateMutation.isPending}
-                    onClick={() =>
-                      deactivateMutation.mutate({ path: { slug: slug, id: record.id } })
-                    }
+                    onClick={() => deactivateMutation.mutate({ path: { slug, id: record.id } })}
                   >
                     {t(($) => $.automations.deactivate)}
                   </Button>
@@ -122,27 +90,23 @@ export function AutomationsListPage() {
                     variant="light"
                     color="teal"
                     loading={activateMutation.isPending}
-                    onClick={() => activateMutation.mutate({ path: { slug: slug, id: record.id } })}
+                    onClick={() => activateMutation.mutate({ path: { slug, id: record.id } })}
                   >
                     {t(($) => $.automations.activate)}
                   </Button>
                 )}
-                <Button
+                <ButtonLink
                   size="compact-sm"
-                  onClick={() =>
-                    navigate({
-                      to: automationsEditRoute.to,
-                      params: { slug, automationId: record.id },
-                    })
-                  }
+                  to={automationsEditRoute.to}
+                  params={{ slug, automationId: record.id }}
                 >
                   {t(($) => $.actions.edit)}
-                </Button>
+                </ButtonLink>
                 <Button
                   size="compact-sm"
                   color="red"
                   variant="light"
-                  onClick={() => onDeleteClick(record.id)}
+                  onClick={() => deleteAutomation(record.id)}
                 >
                   {t(($) => $.actions.delete)}
                 </Button>
@@ -150,17 +114,7 @@ export function AutomationsListPage() {
             ),
           },
         ]}
-        totalRecords={totalItems}
-        recordsPerPage={PAGE_SIZE}
-        page={page}
-        onPageChange={pageHandlers.set}
-        fetching={automationsList.isFetching}
-        noRecordsText={t(($) => $.automations.noRecords)}
       />
-
-      {!automationsList.isLoading && totalItems === 0 ? (
-        <Text>{t(($) => $.automations.emptyState)}</Text>
-      ) : null}
     </Stack>
   )
 }

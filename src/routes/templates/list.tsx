@@ -1,72 +1,41 @@
-import { Button, Group, Loader, Stack, Text } from '@mantine/core'
-import { useCounter } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { DataTable } from 'mantine-datatable'
+import { Button, Group, Stack } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { PagedTable } from '../../components/PagedTable.tsx'
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteTemplatesDeleteMutation,
   siteTemplatesListOptions,
   siteTemplatesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
-import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { templatesCreateRoute, templatesEditRoute, templatesRoute } from '../../router.tsx'
-
-const PAGE_SIZE = 10
 
 export function TemplatesListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-  const confirmDelete = useDeleteConfirmation()
   const { slug } = templatesRoute.useParams()
-  const [page, pageHandlers] = useCounter(1, { min: 1 })
 
-  const templatesList = useQuery(
-    siteTemplatesListOptions({
-      path: { slug: slug },
-      query: { page, pageSize: PAGE_SIZE },
-    }),
-  )
-
-  const deleteMutation = useResourceMutation({
+  const deleteTemplate = useDeleteResource({
     mutation: siteTemplatesDeleteMutation(),
-    invalidate: [siteTemplatesListQueryKey({ path: { slug: slug } })],
+    slug,
+    listQueryKey: siteTemplatesListQueryKey({ path: { slug } }),
     successMessage: t(($) => $.notifications.templateDeleted),
     errorTitle: t(($) => $.alerts.templateDeleteErrorTitle),
   })
 
-  const totalItems = templatesList.data?.totalItems ?? 0
-  const records = templatesList.data?.items ?? []
-
-  const onDeleteClick = (id: string) => {
-    deleteMutation.reset()
-    confirmDelete({ onConfirm: () => deleteMutation.mutate({ path: { slug: slug, id } }) })
-  }
-
   return (
     <Stack>
       <Group justify="flex-end">
-        <Button onClick={() => navigate({ to: templatesCreateRoute.to, params: { slug } })}>
+        <ButtonLink to={templatesCreateRoute.to} params={{ slug }}>
           {t(($) => $.templates.addTemplate)}
-        </Button>
+        </ButtonLink>
       </Group>
 
-      {templatesList.isError ? (
-        <ApiErrorAlert
-          error={templatesList.error}
-          title={t(($) => $.alerts.templateLoadErrorTitle)}
-          fallback={t(($) => $.alerts.templateLoadErrorTitle)}
-        />
-      ) : null}
-
-      {templatesList.isLoading ? <Loader /> : null}
-
-      <DataTable
-        withTableBorder
-        records={records}
+      <PagedTable
+        options={(query) => siteTemplatesListOptions({ path: { slug }, query })}
+        loadErrorTitle={t(($) => $.alerts.templateLoadErrorTitle)}
+        noRecordsText={t(($) => $.templates.noRecords)}
+        emptyState={t(($) => $.templates.emptyState)}
         columns={[
           { accessor: 'name', title: t(($) => $.templates.nameLabel) },
           { accessor: 'subject', title: t(($) => $.templates.subjectLabel) },
@@ -75,19 +44,18 @@ export function TemplatesListPage() {
             title: t(($) => $.table.actions),
             render: (record) => (
               <Group gap="xs">
-                <Button
+                <ButtonLink
                   size="compact-sm"
-                  onClick={() =>
-                    navigate({ to: templatesEditRoute.to, params: { slug, templateId: record.id } })
-                  }
+                  to={templatesEditRoute.to}
+                  params={{ slug, templateId: record.id }}
                 >
                   {t(($) => $.actions.edit)}
-                </Button>
+                </ButtonLink>
                 <Button
                   size="compact-sm"
                   color="red"
                   variant="light"
-                  onClick={() => onDeleteClick(record.id)}
+                  onClick={() => deleteTemplate(record.id)}
                 >
                   {t(($) => $.actions.delete)}
                 </Button>
@@ -95,17 +63,7 @@ export function TemplatesListPage() {
             ),
           },
         ]}
-        totalRecords={totalItems}
-        recordsPerPage={PAGE_SIZE}
-        page={page}
-        onPageChange={pageHandlers.set}
-        fetching={templatesList.isFetching}
-        noRecordsText={t(($) => $.templates.noRecords)}
       />
-
-      {!templatesList.isLoading && totalItems === 0 ? (
-        <Text>{t(($) => $.templates.emptyState)}</Text>
-      ) : null}
     </Stack>
   )
 }

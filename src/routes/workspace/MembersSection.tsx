@@ -29,7 +29,7 @@ import {
   siteUserGetMeOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteInvitableRole, SiteMembershipRole } from '../../generated/site/types.gen.ts'
-import { useCurrentRole } from '../../hooks/useCurrentRole.ts'
+import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { formatDate } from '../../utils/datetime.ts'
@@ -43,7 +43,7 @@ export function MembersSection({ slug }: { slug: string }) {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const role = useCurrentRole(slug)
   const me = useQuery(siteUserGetMeOptions())
-  const canManage = role === 'owner' || role === 'admin'
+  const canManageMembers = canManage(role)
 
   const membersKey = siteMembershipsListQueryKey({ path: { slug } })
   const invitesKey = siteInvitationsListQueryKey({ path: { slug } })
@@ -161,7 +161,7 @@ export function MembersSection({ slug }: { slug: string }) {
             title: '',
             render: (record) => (
               <Group gap="xs" wrap="nowrap" justify="flex-end">
-                {canManage && record.userId !== me.data?.id ? (
+                {canManageMembers && record.userId !== me.data?.id ? (
                   <Button
                     size="compact-sm"
                     color="orange"
