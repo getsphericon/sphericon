@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"slices"
 	"strings"
 )
 
@@ -20,16 +19,17 @@ type Systemd struct {
 
 var environmentFile = regexp.MustCompile(`(\S+) \(ignore_errors=(yes|no)\)`)
 
-// Run is Options.Run: `migrate` goes through systemd-run, everything else runs directly.
+// Run is Options.Run: `migrate` (and `migrate --status --json`, which reads the database)
+// goes through systemd-run, everything else runs directly.
 func (s Systemd) Run(ctx context.Context, bin string, args []string, stdout io.Writer) error {
-	if !slices.Equal(args, []string{"migrate"}) {
+	if len(args) == 0 || args[0] != "migrate" {
 		return execRun(ctx, bin, args, stdout)
 	}
 	props, err := s.properties(ctx)
 	if err != nil {
 		return err
 	}
-	return execRun(ctx, "systemd-run", append(props, bin, "migrate"), stdout)
+	return execRun(ctx, "systemd-run", append(props, append([]string{bin}, args...)...), stdout)
 }
 
 // properties reads the service's User and EnvironmentFiles into systemd-run arguments.

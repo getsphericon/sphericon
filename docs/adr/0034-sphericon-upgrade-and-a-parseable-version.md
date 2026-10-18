@@ -32,6 +32,14 @@ neither the command, a diagnosis, nor the guard's message can say what runs wher
   sequence above. `--version vX.Y.Z` pins a release, a downgrade is refused, and `--from <dir>` takes
   an archive and `checksums.txt` already on the machine, so a host without internet access
   upgrades with no network call; it lists the archives a Major crossing still needs before starting.
+- **The walk asks the release it is about to install.** The table of Majors (`db.Majors`) lives in
+  the new binary, not the running one, so `upgrade` stages the target, verifies it and runs its
+  `migrate --status --json` (through the service's unit with `--restart`, like `migrate`), which
+  prints the database's state and that table. The walk installs the Floor of every Major above the
+  database's that lies after the running release and before the target, oldest first, then the
+  target. Nothing beyond the target's own archive is needed, so it works offline; the GitHub
+  Release carries no extra metadata file. With `--from` (any source) every archive of the plan is
+  checked before the first step and a missing one refuses the Upgrade, naming it.
 - **The notes travel in the binary.** `CHANGELOG.md` is embedded, so the new binary prints its own
   `Upgrade:` entries offline. A commit with `!` or `BREAKING CHANGE:` must carry an `Upgrade:`
   line inside its `BREAKING CHANGE:` footer saying what the Self-hoster does (release-please renders

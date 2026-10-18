@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,24 +13,26 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	appdb "github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 
 // runMigrate is `sphericon migrate`: it applies the pending migrations with no time limit,
 // or with --status only prints what would run.
 func runMigrate(env string, args []string, out io.Writer) error {
-	status := false
-	for _, a := range args {
-		if a != "--status" {
-			return fmt.Errorf("unknown argument %q (usage: migrate [--status])", a)
-		}
-		status = true
+	const usage = "usage: migrate [--status [--json]]"
+	fs := flag.NewFlagSet("migrate", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	status := fs.Bool("status", false, "print the schema's state and the pending migrations; change nothing")
+	asJSON := fs.Bool("json", false, "with --status, print the schema state and the table of Majors as JSON (what `upgrade` reads)")
+	if err := fs.Parse(args); err != nil || fs.NArg() > 0 || (*asJSON && !*status) {
+		return fmt.Errorf("unknown arguments %q (%s)", args, usage)
 	}
 	cfg, err := config.Load(env)
 	if err != nil {
 		return err
 	}
-	if status {
-		return printMigrationStatus(context.Background(), cfg, out)
+	if *status {
+		return printMigrationStatus(context.Background(), cfg, out, *asJSON)
 	}
 	applied, err := applyMigrations(context.Background(), cfg)
 	if err != nil {
@@ -85,7 +89,7 @@ func guardStart(ctx context.Context, cfg *config.Config) error {
 
 // printMigrationStatus prints the schema's state, the newest the binary knows and the
 // pending migrations, and changes nothing.
-func printMigrationStatus(ctx context.Context, cfg *config.Config, out io.Writer) error {
+func printMigrationStatus(ctx context.Context, cfg *config.Config, out io.Writer, asJSON bool) error {
 	db, err := sql.Open("pgx", cfg.DatabaseURL)
 	if err != nil {
 		return err
@@ -97,8 +101,21 @@ func printMigrationStatus(ctx context.Context, cfg *config.Config, out io.Writer
 	if err != nil {
 		return err
 	}
+	if asJSON {
+		return writeBoundaries(out, st)
+	}
 	writeMigrationStatus(out, st)
 	return nil
+}
+
+// writeBoundaries prints what the Major walk of `upgrade` reads from the release it is about
+// to install: the database's state and this binary's table of Majors.
+func writeBoundaries(out io.Writer, st appdb.SchemaStatus) error {
+	b := upgrade.Boundaries{State: upgrade.MajorFloor{Major: st.State.Major, Floor: st.State.Floor}}
+	for _, m := range appdb.Majors {
+		b.Majors = append(b.Majors, upgrade.MajorFloor{Major: m.Major, Floor: m.Floor})
+	}
+	return json.NewEncoder(out).Encode(b)
 }
 
 func writeMigrationStatus(out io.Writer, st appdb.SchemaStatus) {

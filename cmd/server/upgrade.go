@@ -74,7 +74,7 @@ func runUpgrade(ctx context.Context, args []string, out io.Writer) error {
 		sd := upgrade.Systemd{Service: *service, Out: out}
 		opts.Run, opts.PostSwap = sd.Run, sd.PostSwap
 	}
-	_, err = upgrade.Step(ctx, opts)
+	_, err = upgrade.Walk(ctx, opts)
 	return err
 }
 
