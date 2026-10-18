@@ -1018,12 +1018,6 @@ func register(injector do.Injector, env string, o options) {
 		return erasure.New(bus.Bus), nil
 	})
 
-	// The Presets of the Instance: the built-in ones (the Instance directory of custom
-	// ones is read here too once it is configured, ADR 0037).
-	do.Provide(injector, func(i do.Injector) (*preset.Registry, error) {
-		return preset.Load(nil)
-	})
-
 	do.Provide(injector, func(i do.Injector) (*integrations.Module, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
