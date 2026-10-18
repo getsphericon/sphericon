@@ -104,6 +104,11 @@ func projectRoot() string {
 	return filepath.Join(filepath.Dir(file), "..", "..")
 }
 
+// schemaHash digests everything that decides the schema a template holds.
+func schemaHash() (string, error) {
+	return hashTrees(projectRoot(), "ent/schema", "internal/events/bus.go", "go.mod")
+}
+
 // hashTrees digests the names (relative to root, so a checkout's location does not
 // matter) and contents of the given files and directories.
 func hashTrees(root string, paths ...string) (string, error) {

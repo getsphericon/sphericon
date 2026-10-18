@@ -222,8 +222,8 @@ github.com/mitchellh/go-wordwrap v1.0.1 h1:TLuKupo69TCn6TQSyGxwI1EblZZEsQ0vMlAFQ
 github.com/mitchellh/go-wordwrap v1.0.1/go.mod h1:R62XHJLzvMFRBbcrT7m7WgmE1eOyTSsCt+hzestvNj0=
 github.com/modelcontextprotocol/go-sdk v1.8.0 h1:KIvahhYqwtbeniWVPs3TcXEA7b8jEtwfBpOTAI+Urx4=
 github.com/modelcontextprotocol/go-sdk v1.8.0/go.mod h1:dL7u98E/zjJTGzEq+j30jQ8K2k1mb6LeAH4inEcSGts=
-github.com/mokevnin/pgcleaner v0.1.0 h1:NYXGM9Uu7SVHShl24iQ1uH05xsqL+yEBPoWYFqaV4U4=
-github.com/mokevnin/pgcleaner v0.1.0/go.mod h1:u5lx+jegDP742k+/wcOw0m4I2H+EKy0Qb9EijGKVYfs=
+github.com/mokevnin/pgcleaner v0.2.0 h1:yAmmfY3QWjymysJqsl7kxM7QbOc52HNTpkq+RhR8KHA=
+github.com/mokevnin/pgcleaner v0.2.0/go.mod h1:u5lx+jegDP742k+/wcOw0m4I2H+EKy0Qb9EijGKVYfs=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/narqo/go-badge v0.0.0-20230821190521-c9a75c019a59 h1:kbREB9muGo4sHLoZJD/E/IV8yK3Y15eEA9mYi/ztRsk=

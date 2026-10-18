@@ -176,7 +176,7 @@ else
     # pgtestdb's per-test databases belong to a test that may be running in any checkout.
     case "$d" in testdb_tpl_*) echo "keep    database $d (pgtestdb)"; continue ;; esac
     # A live checkout's test process databases: `<test db>_w<i>` and `<test db>_tpl_<hash>`
-    # (internal/testhelper/workerdb.go). They go with the checkout's `<test db>`.
+    # (pgcleaner.WithTemplate, wired in internal/testhelper). They go with the checkout's `<test db>`.
     base=${d%_w[0-9]*}; base=${base%_tpl_*}
     if [ "$base" != "$d" ] && grep -qxF "$base" "$keep"; then continue; fi
     if [ -z "$apply" ]; then echo "would drop database $d"; continue; fi

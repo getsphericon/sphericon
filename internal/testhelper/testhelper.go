@@ -65,7 +65,7 @@ import (
 )
 
 // Every test process (one per package) leases a database of its own, cloned from a
-// template at the fixture state (workerdb.go), so packages run in parallel without sharing
+// schema-only template (see initBaseline), so packages run in parallel without sharing
 // rows or locks. Each test then asks the cleaner for a database: a real transaction that is
 // rolled back when the test ends (pgcleaner's Transaction strategy, go-txdb underneath), so
 // tests are fully isolated and the DB stays at the fixture state. No hand-rolled
@@ -88,14 +88,27 @@ func initBaseline() {
 			loadErr = err
 			return
 		}
-		url, err := leaseWorkerDatabase(context.Background(), cfg, projectRoot)
+		version, err := schemaHash()
 		if err != nil {
 			loadErr = err
 			return
 		}
-		// The fixtures go in at the start of every process, not into the template: their
-		// relative dates must be relative to now.
-		if err := loadFixturesInto(context.Background(), cfg, url, projectRoot); err != nil {
+		// Every process leases a database of its own, cloned from a schema-only template
+		// (pgcleaner.WithTemplate), so packages run in parallel without sharing rows or
+		// locks. The fixtures go in at the start of every process, not into the template:
+		// their relative dates must be relative to now.
+		cleaner = pgcleaner.New(cfg.DatabaseURL,
+			pgcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, url string) error {
+				built := *cfg
+				built.DatabaseURL = url
+				return migrateSchema(ctx, sqlDB, &built)
+			}),
+			pgcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
+				return loadFixtures(ctx, sqlDB, cfg, projectRoot)
+			}),
+		)
+		url, err := cleaner.URL(context.Background())
+		if err != nil {
 			loadErr = err
 			return
 		}
@@ -107,7 +120,6 @@ func initBaseline() {
 			return
 		}
 		baseCfg = cfg
-		cleaner = pgcleaner.New(url)
 	})
 }
 
@@ -398,7 +410,7 @@ func migrateBaseline(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, pro
 
 // migrateSchema creates the ent schema, the domain-event outbox and river's tables in an
 // empty database. The worker databases are cloned from a template that has just this
-// (workerdb.go). cfg.DatabaseURL must name the database sqlDB is open on.
+// (pgcleaner.WithTemplate). cfg.DatabaseURL must name the database sqlDB is open on.
 func migrateSchema(ctx context.Context, sqlDB *sql.DB, cfg *config.Config) error {
 	if err := db.NewEntClient(sqlDB).Schema.Create(ctx); err != nil {
 		return err
@@ -419,16 +431,6 @@ func migrateSchema(ctx context.Context, sqlDB *sql.DB, cfg *config.Config) error
 	}
 	defer pool.Close()
 	return jobs.Migrate(ctx, pool)
-}
-
-// loadFixturesInto opens the database at url, loads the fixtures into it and closes it.
-func loadFixturesInto(ctx context.Context, cfg *config.Config, url, projectRoot string) error {
-	sqlDB, err := sql.Open("pgx", url)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = sqlDB.Close() }()
-	return loadFixtures(ctx, sqlDB, cfg, projectRoot)
 }
 
 // loadFixtures replaces the contents of every fixture table with the committed rows. It
