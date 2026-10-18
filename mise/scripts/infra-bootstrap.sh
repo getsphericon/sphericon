@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # One-time, idempotent bootstrap of the hosted deployment (ADR 0028). Creates, only when missing:
 #  - the private S3 state bucket (versioned, encrypted, public access blocked, TLS only), and
-#  - the Secrets Manager secret `sphericon/app` with JWT_SECRET, ENCRYPTION_KEY, BOOTSTRAP_TOKEN
-#    and an empty LICENSE_KEY. An existing secret is never changed, so ENCRYPTION_KEY is never
+#  - the Secrets Manager secret `sphericon/app` with SPHERICON_JWT_SECRET, SPHERICON_ENCRYPTION_KEY, SPHERICON_BOOTSTRAP_TOKEN
+#    and an empty SPHERICON_LICENSE_KEY. An existing secret is never changed, so SPHERICON_ENCRYPTION_KEY is never
 #    rotated. The values are generated here and never printed.
 # Bucket settings are re-applied on every run (they are idempotent).
 set -euo pipefail
@@ -40,7 +40,7 @@ else
   key="$(cd "$here/../.." && go run ./cmd/server genkey)"
   # The value goes through stdin, not argv.
   jq -nc --arg jwt "$(random)" --arg enc "$key" --arg boot "$(random)" \
-    '{JWT_SECRET:$jwt,ENCRYPTION_KEY:$enc,BOOTSTRAP_TOKEN:$boot,LICENSE_KEY:""}' |
+    '{SPHERICON_JWT_SECRET:$jwt,SPHERICON_ENCRYPTION_KEY:$enc,SPHERICON_BOOTSTRAP_TOKEN:$boot,SPHERICON_LICENSE_KEY:""}' |
     aws secretsmanager create-secret --name "$INFRA_APP_SECRET" \
       --description "Sphericon app secrets, created once by infra:bootstrap" \
       --secret-string file:///dev/stdin >/dev/null

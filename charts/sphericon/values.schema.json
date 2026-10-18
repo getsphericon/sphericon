@@ -6,7 +6,7 @@
     "existingSecret": {
       "type": "string",
       "minLength": 1,
-      "description": "Existing Secret with DATABASE_URL, JWT_SECRET and ENCRYPTION_KEY"
+      "description": "Existing Secret with DATABASE_URL, SPHERICON_JWT_SECRET and SPHERICON_ENCRYPTION_KEY"
     },
     "image": {
       "type": "object",

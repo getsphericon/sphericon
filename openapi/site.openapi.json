@@ -331,7 +331,7 @@
     "/auth/register": {
       "post": {
         "operationId": "SiteAuth_register",
-        "description": "Create an Unverified User (ADR 0030): no password, no session, no Workspace.\nA verification email with the link to the set-password screen is on its way\n(202), and 202 is the answer for every address, taken or not (ADR 0031): the\nowner of a taken address gets a notice by mail instead. With\n`REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the\nrequest must carry a password (422 otherwise), creates a Verified User with its\nfirst Workspace at once (202, no session: the User signs in next), and a taken\naddress answers 409.",
+        "description": "Create an Unverified User (ADR 0030): no password, no session, no Workspace.\nA verification email with the link to the set-password screen is on its way\n(202), and 202 is the answer for every address, taken or not (ADR 0031): the\nowner of a taken address gets a notice by mail instead. With\n`SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the\nrequest must carry a password (422 otherwise), creates a Verified User with its\nfirst Workspace at once (202, no session: the User signs in next), and a taken\naddress answers 409.",
         "parameters": [],
         "responses": {
           "202": {
@@ -9382,7 +9382,7 @@
             "description": "Required when the install does not require email verification, where it makes\nthe account usable at once. Otherwise ignored and never stored: the password is\nset by the verification link."
           }
         },
-        "description": "Register with a name and an email: no password is taken before the address is\nproven (ADR 0030). Only an install with `REQUIRE_EMAIL_VERIFICATION=false` takes a\npassword here."
+        "description": "Register with a name and an email: no password is taken before the address is\nproven (ADR 0030). Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a\npassword here."
       },
       "SiteResendVerificationInput": {
         "type": "object",
@@ -10583,12 +10583,12 @@
           "supportEmail": {
             "type": "string",
             "nullable": true,
-            "description": "Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance\nconfigured none."
+            "description": "Where to appeal a suspension by email (SPHERICON_SUPPORT_EMAIL); absent when the instance\nconfigured none."
           },
           "billingUrl": {
             "type": "string",
             "nullable": true,
-            "description": "The billing site a member under a hold is pointed to (BILLING_URL); absent when the\ninstance configured none, and then no billing text is shown."
+            "description": "The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the\ninstance configured none, and then no billing text is shown."
           },
           "holds": {
             "type": "array",

@@ -1,10 +1,10 @@
 # Prometheus metrics are served on an opt-in internal listener, never on the public port
 
 `/metrics` used to be mounted unauthenticated on the public mux, with protection delegated to the
-ingress. It is now served only by a dedicated listener bound to `METRICS_ADDR` (`host:port`,
+ingress. It is now served only by a dedicated listener bound to `SPHERICON_METRICS_ADDR` (`host:port`,
 empty by default = no listener, same shape as RudderStack's opt-in Prometheus port). There is no
 `/metrics` route on the public mux, no token and no allowlist: the network boundary is the
-control. A `METRICS_ADDR` equal to the public `PORT` is a configuration error, and a bind failure
+control. A `SPHERICON_METRICS_ADDR` equal to the public `PORT` is a configuration error, and a bind failure
 is fatal, because an operator who asked for metrics must not silently run without them.
 `/healthz` and `/readyz` stay unauthenticated on the public port (orchestrator probes cannot send
 credentials).

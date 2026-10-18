@@ -28,7 +28,7 @@ Legend: 🔴 launch-blocker / "can't send otherwise" · 🟡 parity with drip.co
   `imported`); confirmation email respects Suppression + `everything`; GET=page/POST=confirm.
   → ADR 0013; CONTEXT: _Confirmation_, _Send-eligibility_.
 - ✅ **`/metrics` exposure** — no longer on the public mux: opt-in internal listener on
-  `METRICS_ADDR` (off by default, no auth, network boundary is the control); metric labels
+  `SPHERICON_METRICS_ADDR` (off by default, no auth, network boundary is the control); metric labels
   limited to bounded technical dimensions, never tenant/personal identifiers. → ADR 0018.
 
 ## Queue

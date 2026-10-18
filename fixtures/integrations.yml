@@ -1,5 +1,5 @@
 # Workspace acme (id 1). config_encrypted is sealed at load time via the encrypt
-# template func using the loading env's ENCRYPTION_KEY, so the blob is valid in both
+# template func using the loading env's SPHERICON_ENCRYPTION_KEY, so the blob is valid in both
 # the test DB and the dev DB (their keys differ; a static ciphertext could not be).
 # The SMTP integration is the workspace default (points at the dev Mailpit); the SES
 # one is disabled. Exactly one is_default per (workspace, channel) — see the partial

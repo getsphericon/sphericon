@@ -8,7 +8,7 @@ Site sessions are stateless JWT cookies. go-pkgz's `Parse` ignores an expired `e
 own middleware to refresh), and the site security handler only calls `Parse`, so the 1h token TTL
 was never enforced: a stolen cookie stayed valid until the signing secret changed. We keep go-pkgz
 for what it does well (JWT signing and parsing) and add: (1) `exp` enforced in the site security
-handler, with one `SESSION_TTL` (default 24h) for token and cookie and no refresh; (2) a
+handler, with one `SPHERICON_SESSION_TTL` (default 24h) for token and cookie and no refresh; (2) a
 `session_epoch` on the User, written into the token when `auth.Sessions.Issue` mints it and checked
 on every request; a password change or reset, an email change, enrolling or disabling a Second
 factor, regenerating Recovery codes, a Second factor reset and "sign out everywhere" bump it

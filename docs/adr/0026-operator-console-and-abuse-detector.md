@@ -57,11 +57,11 @@ password, no cookie, no TOTP, no console access.
   expiry and a last-used time, which `list` shows. A revoked or expired credential is refused.
 - **Served only on an internal listener**, in the manner of the metrics listener
   ([[0018-metrics-opt-in-internal-listener]]): the service endpoints are a separate TypeSpec
-  surface and ogen server (`/service`), bound to `INTERNAL_ADDR`, empty by default and then no
-  listener and no route anywhere; an address equal to the public `PORT` (or `METRICS_ADDR`) is a
+  surface and ogen server (`/service`), bound to `SPHERICON_INTERNAL_ADDR`, empty by default and then no
+  listener and no route anywhere; an address equal to the public `PORT` (or `SPHERICON_METRICS_ADDR`) is a
   configuration error and a bind failure is fatal. The public port answers 404 for `/service`. The
   network boundary is the first control and the credential the second.
-- Rate limited per credential (`RATE_LIMIT_SERVICE_PER_MINUTE`) and per client address on failed
+- Rate limited per credential (`SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE`) and per client address on failed
   authentication, by the machinery of [[0025-rate-limiting-hybrid-store-workspace-key]].
 - **Audit actor.** A write made under a credential is recorded with actor kind `service`, the
   credential's id and its name, in the manner of an API token. Like an Operator it is staff of the
@@ -115,7 +115,7 @@ console with its rates and can still be suspended by hand.
 
 Warning and freeze emails go from the platform sender (`SMTP_*`), not the Workspace's Integration
 (which is held), to every owner. The `/site` banner shows the reason and a support contact
-(`SUPPORT_EMAIL`). Appeal is an email; there is no in-app form or ticketing.
+(`SPHERICON_SUPPORT_EMAIL`). Appeal is an email; there is no in-app form or ticketing.
 
 ## Considered options
 

@@ -8159,7 +8159,7 @@ func (s *SiteRecoveryCodesInput) SetCurrentPassword(val string) {
 }
 
 // Register with a name and an email: no password is taken before the address is proven (ADR 0030).
-// Only an install with `REQUIRE_EMAIL_VERIFICATION=false` takes a password here.
+// Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a password here.
 // Ref: #/components/schemas/SiteRegisterInput
 type SiteRegisterInput struct {
 	Name  string       `json:"name"`
@@ -11864,10 +11864,11 @@ type SiteWorkspaceResource struct {
 	SuspendedAt OptNilTimestamp `json:"suspendedAt"`
 	// Why sending was suspended, shown to the owner; present only while suspended.
 	SuspensionReason OptNilString `json:"suspensionReason"`
-	// Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance configured none.
+	// Where to appeal a suspension by email (SPHERICON_SUPPORT_EMAIL); absent when the instance configured
+	// none.
 	SupportEmail OptNilString `json:"supportEmail"`
-	// The billing site a member under a hold is pointed to (BILLING_URL); absent when the instance
-	// configured none, and then no billing text is shown.
+	// The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
+	// instance configured none, and then no billing text is shown.
 	BillingUrl OptNilString `json:"billingUrl"`
 	// The Operator holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.

@@ -23,7 +23,7 @@ func newTestCipher(t *testing.T) *secrets.Cipher {
 	return c
 }
 
-// envCipher builds the cipher over the test environment's ENCRYPTION_KEY — the
+// envCipher builds the cipher over the test environment's SPHERICON_ENCRYPTION_KEY — the
 // same key the fixtures were sealed with — so fixture-stored configs decrypt.
 func envCipher(t *testing.T) *secrets.Cipher {
 	t.Helper()

@@ -1799,7 +1799,7 @@ export type SiteRecoveryCodesInput = {
 
 /**
  * Register with a name and an email: no password is taken before the address is
- * proven (ADR 0030). Only an install with `REQUIRE_EMAIL_VERIFICATION=false` takes a
+ * proven (ADR 0030). Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a
  * password here.
  */
 export type SiteRegisterInput = {
@@ -2661,12 +2661,12 @@ export type SiteWorkspaceResource = {
    */
   suspensionReason?: string | null;
   /**
-   * Where to appeal a suspension by email (SUPPORT_EMAIL); absent when the instance
+   * Where to appeal a suspension by email (SPHERICON_SUPPORT_EMAIL); absent when the instance
    * configured none.
    */
   supportEmail?: string | null;
   /**
-   * The billing site a member under a hold is pointed to (BILLING_URL); absent when the
+   * The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
    * instance configured none, and then no billing text is shown.
    */
   billingUrl?: string | null;

@@ -215,7 +215,7 @@ func TestBodyLimitCapsCollectSeparatelyAndRendersProblem413(t *testing.T) {
 
 func TestCrossOriginGuardTrustsAppAndAllowlistedOrigins(t *testing.T) {
 	ok := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
-	// APP_URL may carry a trailing slash or path; only its origin counts.
+	// SPHERICON_APP_URL may carry a trailing slash or path; only its origin counts.
 	guard, err := crossOriginGuard("https://sphericon.example/", []string{"https://app.example"})
 	require.NoError(t, err)
 	h := guard(ok)

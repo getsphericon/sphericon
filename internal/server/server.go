@@ -406,7 +406,7 @@ func corsMiddleware(origins []string) func(http.Handler) http.Handler {
 // for the same protection. Bearer and secret-key surfaces (collect, API, MCP, OAuth, hooks,
 // tracking) are cross-origin by design and pass through untouched.
 //
-// The app origin (APP_URL, which may carry a path or trailing slash) and the
+// The app origin (SPHERICON_APP_URL, which may carry a path or trailing slash) and the
 // credentialed-CORS allowlist are trusted: an origin allowed to send cookies
 // cross-origin must also be allowed to write.
 func crossOriginGuard(appURL string, allowed []string) (func(http.Handler) http.Handler, error) {

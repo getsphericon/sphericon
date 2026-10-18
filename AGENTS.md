@@ -113,7 +113,7 @@ pgtestdb drops each when its test ends.
 its next merge of main plus `mise daemons stop`. Several tasks in one command need `:::` between
 them (`mise run check:fe ::: check:deps`); otherwise the extra names become arguments.
 
-Run Go tests only through `mise run test`: it sets `APP_ENV=test` and the test DB, and a bare
+Run Go tests only through `mise run test`: it sets `SPHERICON_ENV=test` and the test DB, and a bare
 `go test` opens the dev database and fails.
 
 Test packages run in parallel, each process on a database of its own, through
@@ -179,7 +179,7 @@ the wall clock; it injects the clock.
   `cmd/server/migrate_test.go` tells you when it is due. Do not edit those files by hand.
 - `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the outbox and
   river migrations (they were created at boot) needs a `db:reset`.
-- Test DB is separate (`APP_ENV=test`); tests get it from the migrations, see "Common commands".
+- Test DB is separate (`SPHERICON_ENV=test`); tests get it from the migrations, see "Common commands".
 
 ## Backend architecture
 
@@ -196,11 +196,11 @@ the wall clock; it injects the clock.
   - `/api/*` — external/public API. Auth: **Bearer api-token** (workspace-scoped). Handlers in `internal/api/external`.
   - `/collect/*` — tracking ingestion from customer sites. Auth: **x-collect-key** header. Handlers in `internal/api/collect`.
   - `/operator/*` — platform staff (the **Operator**, ADR 0026), Enterprise (license feature `operator`; unlicensed = 404).
-    Auth: its own **JWT cookie** (`OPERATOR_JWT`, `OPERATOR_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/operator`.
+    Auth: its own **JWT cookie** (`OPERATOR_JWT`, `SPHERICON_OPERATOR_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/operator`.
   - `/service/*` — the service endpoints of the Operator surface, called by a platform service with a
     **Service credential** (ADR 0026): **Bearer** `omsc_…`, limited to scopes (`usage:read`,
     `workspaces:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
-    the internal listener** (`INTERNAL_ADDR`, opt-in, ADR 0018 style): the public mux answers 404 for it.
+    the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style): the public mux answers 404 for it.
     Handlers and security handler in `ee/operator` (`service.go`); every operation names its scopes in
     `ServiceOperationScopes` (no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
     `env.IssueServiceCredential`.
@@ -282,7 +282,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
 - **Lint:** `forbidigo` (`.golangci.yml`) bans entity-level `entity.Update()` repo-wide,
   because a loaded entity still carries the raw client. Update by id instead:
   `s.Tag().UpdateOneID(id)`. There are no exclusions.
-- **Enterprise Edition (`ee/`)**: same binary, gated by the runtime license key (`LICENSE_KEY`,
+- **Enterprise Edition (`ee/`)**: same binary, gated by the runtime license key (`SPHERICON_LICENSE_KEY`,
   verified by `ee/licensekey`; empty = plain core, a bad key fails boot). `ee.New` builds the
   `Edition` (extra bus consumers + read seams) in `internal/app` and in `testhelper.Setup`
   (`WithoutLicense()` for the unlicensed case); core reaches EE only through interfaces
@@ -340,7 +340,7 @@ stays path-based). In prod the ingress in front of the binary does the same rewr
 `backend` (real Go server under air on `:3300`, hot reload), `frontend` (Vite on `:5173`),
 `caddy` (:443). Inspect with `mise daemons ls|logs|status`. Migrations run via atlas
 (`mise run db:migrate`); the backend does not self-migrate. Dev defaults (JWT secret, dev
-`ENCRYPTION_KEY`, SMTP) live in the `[env]` table of `.mise.toml`; personal overrides go in
+`SPHERICON_ENCRYPTION_KEY`, SMTP) live in the `[env]` table of `.mise.toml`; personal overrides go in
 the gitignored `.env` (read by the app) or `.mise.local.toml`.
 
 **Ports and origins per checkout.** Every daemon declares `port = { auto = true, base = <port> }`:
@@ -352,7 +352,7 @@ stack fails to start with an error naming the daemon and the other project. Pin 
 in its `.mise.local.toml` (`[daemons.backend]` ... `port = 3601`, the same for `frontend`,
 `mailpit` and `caddy`; SMTP, metrics and Caddy's admin/HTTP ports follow from them). mise
 resolves the ports at config load, so
-`[env]` templates them (`PORT`, `SMTP_PORT`, `METRICS_ADDR`, `APP_URL`, `APP_HOST`, `API_HOST`), and
+`[env]` templates them (`PORT`, `SPHERICON_SMTP_PORT`, `SPHERICON_METRICS_ADDR`, `SPHERICON_APP_URL`, `APP_HOST`, `API_HOST`), and
 the Caddyfile (`{$BACKEND_PORT}`, `{$APP_HOST}`, ...), `vite.config.ts` and the `ready_cmd`s read the
 exported `<NAME>_PORT` (`ready_port` cannot be templated). Ports with no daemon of their own (SMTP,
 metrics) are the base plus that same offset; Caddy's admin API (`CADDY_ADMIN`, 2019 + offset, what
@@ -361,7 +361,7 @@ the primary checkout, 4000 + offset elsewhere) are per instance too. A linked wo
 `https://<dir-name>.sphericon.localhost:<caddy port>` (API: `https://api.<dir-name>.sphericon.localhost:<caddy port>`):
 browser cookies are shared across the ports of one host, so a per-worktree host keeps the session
 cookies apart; `*.localhost` resolves to loopback and Caddy's internal CA signs each name.
-`mise env | grep APP_URL` prints it. Caddy stays the edge instead of pitchfork's own proxy
+`mise env | grep SPHERICON_APP_URL` prints it. Caddy stays the edge instead of pitchfork's own proxy
 (`proxy = "<label>"`, stable per-worktree hostnames) because that proxy needs per-machine setup
 (`pitchfork proxy setup`: DNS, trust store, ports), would still leave the primary on Caddy's :443,
 and Caddy already does the `/api` rewrite and the path routing in one file.

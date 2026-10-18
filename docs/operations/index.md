@@ -28,7 +28,7 @@ no Redis, no object storage and no separate worker. That shapes everything below
   live in the same database. A single database backup therefore captures the whole instance.
 - **The process is stateless.** Replacing the binary or the container loses nothing. Two things
   outside the database must be kept safe, because the database alone cannot recover them:
-  `ENCRYPTION_KEY` and `JWT_SECRET` (see [Backup and restore](./backup#secrets)).
+  `SPHERICON_ENCRYPTION_KEY` and `SPHERICON_JWT_SECRET` (see [Backup and restore](./backup#secrets)).
 - **Background work runs inside the same process.** Job workers and event consumers start with
   the server, so scaling out means running more replicas of the same image against the same
   database.
@@ -45,7 +45,7 @@ Treat these as a way of reasoning, not as benchmarks. Measure on your own traffi
   pooler in front of PostgreSQL is not recommended.
 - **One replica is a sound starting point.** Add a second replica for availability, not for
   speed, until you see saturation. With more than one replica, run migrations as a separate
-  step and leave `AUTO_MIGRATE` off (see [Upgrading](./upgrading#migrate)).
+  step and leave `SPHERICON_DB_AUTO_MIGRATE` off (see [Upgrading](./upgrading#migrate)).
 - **Memory and CPU are modest.** The process serves the API, the SPA and the tracker, and
   renders email. Sending volume is bounded by your provider (SMTP or Amazon SES) and its rate
   limits, not by the process.

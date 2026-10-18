@@ -29,7 +29,7 @@ const timeLayout = "2006-01-02 15:04:05-07"
 //     within a window relative to time.Now(); frozen dates render an empty chart.
 //     {{daysAgo 2}} / {{daysAhead 3}} keep seeded data inside the window forever.
 //   - Encrypted columns can't be static. integration.config_encrypted and
-//     webhook_endpoint.secret_encrypted are sealed with the env's ENCRYPTION_KEY,
+//     webhook_endpoint.secret_encrypted are sealed with the env's SPHERICON_ENCRYPTION_KEY,
 //     which differs between test and dev — one static ciphertext can't decrypt
 //     under both. {{encrypt "<json>"}} seals at load time with the current env's
 //     cipher, so the blob is always valid for the database being loaded.

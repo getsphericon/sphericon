@@ -8,7 +8,7 @@ a restore, which is why every upgrade starts with a backup.
 
 1. Read the notes for every version between yours and the target
    ([per-version notes](#per-version-notes)).
-2. Take a database dump and confirm it finished. Keep `ENCRYPTION_KEY` and `JWT_SECRET`
+2. Take a database dump and confirm it finished. Keep `SPHERICON_ENCRYPTION_KEY` and `SPHERICON_JWT_SECRET`
    unchanged; see [Backup and restore](./backup).
 
    ```sh
@@ -20,10 +20,10 @@ a restore, which is why every upgrade starts with a backup.
 
 ## Upgrade {#migrate}
 
-**Single replica.** Replace the image or binary and restart. With `AUTO_MIGRATE=true` the
+**Single replica.** Replace the image or binary and restart. With `SPHERICON_DB_AUTO_MIGRATE=true` the
 process applies pending migrations on startup.
 
-**Multiple replicas.** Do not use `AUTO_MIGRATE`: replicas would race. Run the migration once,
+**Multiple replicas.** Do not use `SPHERICON_DB_AUTO_MIGRATE`: replicas would race. Run the migration once,
 then roll the servers.
 
 1. Run the new version's migration step against the production database. It applies pending
@@ -31,9 +31,9 @@ then roll the servers.
 
    ```sh
    docker run --rm \
-     -e APP_ENV=production \
+     -e SPHERICON_ENV=production \
      -e DATABASE_URL="postgres://app@db.example.com:5432/sphericon?sslmode=require" \
-     -e JWT_SECRET="$JWT_SECRET" \
+     -e SPHERICON_JWT_SECRET="$SPHERICON_JWT_SECRET" \
      ghcr.io/getsphericon/sphericon:<new-version> migrate
    ```
 
@@ -43,7 +43,7 @@ then roll the servers.
 
    On Kubernetes use the in-repo Helm chart (`charts/sphericon`): it runs `migrate` as a
    pre-install/pre-upgrade hook Job, so the Deployment only rolls after it succeeds. Create a
-   Secret with `DATABASE_URL`, `JWT_SECRET` and `ENCRYPTION_KEY` first and pass its name as
+   Secret with `DATABASE_URL`, `SPHERICON_JWT_SECRET` and `SPHERICON_ENCRYPTION_KEY` first and pass its name as
    `existingSecret` (the chart refuses to render without it). Metrics stay off unless you set
    `metrics.enabled`; `metrics.serviceMonitor.enabled` adds a Prometheus Operator
    ServiceMonitor that scrapes the internal listener only.

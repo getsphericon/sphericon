@@ -23,9 +23,9 @@ owner is told by mail instead.
   address has an account. That cannot be avoided, since joining a Verified User's address needs its
   session, and the holder of the link is the one invited.
 - **Budgets:** the notice and the verify mail share the forgot-password per-address budget
-  (`RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR`), taken under a Kind of its own for
+  (`SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR`), taken under a Kind of its own for
   registration and for email change, so a stranger cannot mail-bomb an owner through either.
-- **The exception** is `REQUIRE_EMAIL_VERIFICATION=false`: the password arrives with the request and
+- **The exception** is `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false`: the password arrives with the request and
   no mail is sent, so registration keeps answering 409. An operator who turns the gate off accepts
   that enumeration.
 

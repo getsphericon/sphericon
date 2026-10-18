@@ -28,7 +28,7 @@ var (
 )
 
 func main() {
-	env := os.Getenv("APP_ENV")
+	env := os.Getenv("SPHERICON_ENV")
 	if env == "" {
 		env = "development"
 	}
@@ -38,7 +38,7 @@ func main() {
 		return
 	}
 
-	// `server genkey` prints a fresh ENCRYPTION_KEY, so a binary or image install
+	// `server genkey` prints a fresh SPHERICON_ENCRYPTION_KEY, so a binary or image install
 	// can bootstrap without the Go toolchain.
 	if len(os.Args) > 1 && os.Args[1] == "genkey" {
 		key, err := secrets.GenerateKeysetBase64()

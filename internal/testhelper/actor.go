@@ -146,7 +146,7 @@ func (env *TestEnv) siteClient(t *testing.T, jwtValue string) *siteapi.Client {
 // SiteToken mints the session token a login issues for the fixture user with the
 // given email: the go-pkgz claims, stamped by the production apiauth.StampUser
 // (User id and current session epoch), signed with the test config's secret and
-// valid for SESSION_TTL from the env's clock. edit, when not nil, changes the
+// valid for SPHERICON_SESSION_TTL from the env's clock. edit, when not nil, changes the
 // claims before signing, for tests of tokens a login never issues (expired,
 // without an epoch). The token is fixed at minting: a later epoch bump ends it.
 func (env *TestEnv) SiteToken(t *testing.T, email string, edit func(*gptoken.Claims)) string {

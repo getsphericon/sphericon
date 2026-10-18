@@ -5,8 +5,8 @@ locals {
 
   # Connection budget. db.t4g.micro (1 GiB) allows LEAST(DBInstanceClassMemory/9531392, 5000)
   # connections, in practice about 85-110 (RDS reserves 3 for superusers; read the real value with
-  # `SHOW max_connections`). Every process opens two pools: database/sql (DB_MAX_OPEN_CONNS: ent,
-  # the event bus and the job workers' own queries) and river's pgx pool (PGX_MAX_CONNS: fetch,
+  # `SHOW max_connections`). Every process opens two pools: database/sql (SPHERICON_DB_MAX_OPEN_CONNS: ent,
+  # the event bus and the job workers' own queries) and river's pgx pool (SPHERICON_PGX_MAX_CONNS: fetch,
   # completion, LISTEN and leader election). One process peaks at 10 + 10 = 20.
   #
   # river runs 20 workers, but they do their database work through the database/sql pool and hold
@@ -20,26 +20,26 @@ locals {
   # permanently (3 x 20 = 60), still fits; beyond that lower the pools or move to a larger class.
   # No transaction-mode pooler: river relies on LISTEN/NOTIFY.
   plain_env = merge({
-    APP_URL           = "https://${local.app_host}"
-    MCP_URL           = "https://${local.mcp_host}"
-    PORT              = tostring(var.app_port)
-    OTEL_SERVICE_NAME = var.otel_service_name
-    DB_MAX_OPEN_CONNS = tostring(var.db_max_open_conns)
-    PGX_MAX_CONNS     = tostring(var.pgx_max_conns)
+    SPHERICON_APP_URL           = "https://${local.app_host}"
+    SPHERICON_MCP_URL           = "https://${local.mcp_host}"
+    PORT                        = tostring(var.app_port)
+    OTEL_SERVICE_NAME           = var.otel_service_name
+    SPHERICON_DB_MAX_OPEN_CONNS = tostring(var.db_max_open_conns)
+    SPHERICON_PGX_MAX_CONNS     = tostring(var.pgx_max_conns)
 
-    SYSTEM_EMAIL_PROVIDER = "ses"
-    SYSTEM_EMAIL_FROM     = local.system_email_from
-    SES_REGION            = var.region
+    SPHERICON_SYSTEM_EMAIL_PROVIDER = "ses"
+    SPHERICON_SYSTEM_EMAIL_FROM     = local.system_email_from
+    SPHERICON_SES_REGION            = var.region
     },
     # The internal listener exists only when a source security group is named (ADR 0028).
-    local.internal_listener ? { INTERNAL_ADDR = ":${var.internal_port}" } : {},
+    local.internal_listener ? { SPHERICON_INTERNAL_ADDR = ":${var.internal_port}" } : {},
   )
 
   # ECS resolves "<secret arn>:<json key>::" to one key of a JSON secret at task start.
   secret_env = merge(
-    { for k in ["JWT_SECRET", "ENCRYPTION_KEY", "BOOTSTRAP_TOKEN", "LICENSE_KEY"] :
+    { for k in ["SPHERICON_JWT_SECRET", "SPHERICON_ENCRYPTION_KEY", "SPHERICON_BOOTSTRAP_TOKEN", "SPHERICON_LICENSE_KEY"] :
     k => "${data.aws_secretsmanager_secret.app.arn}:${k}::" },
-    { for k in ["DATABASE_URL", "SES_ACCESS_KEY_ID", "SES_SECRET_ACCESS_KEY"] :
+    { for k in ["DATABASE_URL", "SPHERICON_SES_ACCESS_KEY_ID", "SPHERICON_SES_SECRET_ACCESS_KEY"] :
     k => "${aws_secretsmanager_secret.runtime.arn}:${k}::" },
   )
 
@@ -147,7 +147,7 @@ resource "terraform_data" "migrate" {
 
 # One service: HTTP, river and watermill all run in this process, so there is no worker.
 # Rolling deploy: the new task starts first (200%), the old one drains after it is healthy (100%).
-# AUTO_MIGRATE stays unset: terraform_data.migrate migrates once, before this resource.
+# SPHERICON_DB_AUTO_MIGRATE stays unset: terraform_data.migrate migrates once, before this resource.
 resource "aws_ecs_service" "web" {
   name            = var.name
   cluster         = aws_ecs_cluster.this.id

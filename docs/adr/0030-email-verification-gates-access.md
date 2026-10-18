@@ -11,7 +11,7 @@ password is discarded (this wins over keeping it). This closes account pre-hijac
 registers a victim's address first (and knows its password) can no longer be attached to the
 Workspaces the victim is later invited to.
 
-`REQUIRE_EMAIL_VERIFICATION` (default `true`) turns the gate off for a self-hosted install
+`SPHERICON_REQUIRE_EMAIL_VERIFICATION` (default `true`) turns the gate off for a self-hosted install
 without outbound mail, so registration yields a verified User at once; the SaaS runs it on. It is
 an explicit operator choice, never inferred from whether SMTP is configured, because a mail
 misconfiguration must not silently disable the protection.
@@ -33,5 +33,5 @@ misconfiguration must not silently disable the protection.
 - Registering and the invite lookup's `hasAccount` used to reveal whether an address is taken;
   ADR 0031 closes that.
 - Unverified Users hold their address until pruned: a daily job deletes those with no Membership
-  older than `UNVERIFIED_USER_RETENTION_DAYS` (default 7, `0` disables). A pending Invitation to
+  older than `SPHERICON_UNVERIFIED_USER_RETENTION_DAYS` (default 7, `0` disables). A pending Invitation to
   a pruned address is untouched; accepting it follows the new-address path.

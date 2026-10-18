@@ -463,7 +463,7 @@ _Avoid_: Duplicate email, existing account
 **Unverified User**:
 A User whose email is not yet a Verified email: a registration awaiting its verify link. It
 cannot log in, owns nothing and is not attached to any Workspace. A daily job deletes one that
-holds no Membership once it is older than `UNVERIFIED_USER_RETENTION_DAYS` (default 7), freeing
+holds no Membership once it is older than `SPHERICON_UNVERIFIED_USER_RETENTION_DAYS` (default 7), freeing
 its address; a pending Invitation to that address is kept.
 _Avoid_: Pending account, inactive user
 

@@ -3,7 +3,7 @@
 // recipient-facing campaign content, which is authored per workspace.
 //
 // Locale is a property of the deployment (a SaaS instance runs per country),
-// fixed at process start via APP_LOCALE — there is no per-request or per-user
+// fixed at process start via SPHERICON_APP_LOCALE — there is no per-request or per-user
 // locale. So the translator is a process-global, configured once at boot
 // (Configure) and read-only thereafter. English is the default and the fallback
 // for any message a non-English catalog is missing.
@@ -43,7 +43,7 @@ func init() {
 		}
 	}
 	// Default to English until Configure runs. This keeps tests (which never set
-	// APP_LOCALE) asserting the English strings, and makes T safe before boot.
+	// SPHERICON_APP_LOCALE) asserting the English strings, and makes T safe before boot.
 	active = goi18n.NewLocalizer(bundle, "en")
 }
 

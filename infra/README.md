@@ -39,7 +39,7 @@ secret is printed or put in arguments.
 - [ ] **SES production access**: a new account starts in the SES sandbox (delivers only to
       verified addresses, low quota). Request production access in the SES console (Account
       dashboard) for `us-east-2`.
-- [ ] **`LICENSE_KEY`** (optional): `mise run infra:license < key.txt`. Empty runs the open-source
+- [ ] **`SPHERICON_LICENSE_KEY`** (optional): `mise run infra:license < key.txt`. Empty runs the open-source
       core.
 
 ## 3. Bootstrap (once, idempotent)
@@ -50,8 +50,8 @@ mise run infra:bootstrap
 
 It creates, only when missing: the state bucket `sphericon-tfstate-<account id>` (private,
 versioned, encrypted, public access blocked, TLS only) and the secret `sphericon/app` holding
-`JWT_SECRET`, `ENCRYPTION_KEY` (from `sphericon genkey`), `BOOTSTRAP_TOKEN` and an empty
-`LICENSE_KEY`. An existing secret is never changed, so **`ENCRYPTION_KEY` is never rotated**: it
+`SPHERICON_JWT_SECRET`, `SPHERICON_ENCRYPTION_KEY` (from `sphericon genkey`), `SPHERICON_BOOTSTRAP_TOKEN` and an empty
+`SPHERICON_LICENSE_KEY`. An existing secret is never changed, so **`SPHERICON_ENCRYPTION_KEY` is never rotated**: it
 protects stored provider credentials, and a new key makes them unreadable. Values are generated in
 the script and never printed. Re-running it is safe.
 
@@ -71,7 +71,7 @@ Optional: `image_repository` (default `ghcr.io/getsphericon/sphericon`), `otel_s
 `internal_port` (see below). There are no secret variables.
 
 The internal listener is off by default. Set `internal_listener_source_security_group_id` to the id
-of a security group in the same VPC and the task gets `INTERNAL_ADDR=:<internal_port>` (default
+of a security group in the same VPC and the task gets `SPHERICON_INTERNAL_ADDR=:<internal_port>` (default
 `3400`) plus one ingress rule on the app security group, from that group only; the load balancer and
 the internet never reach the port. A caller reaches it at the task's private address on that port,
 and needs the `operator` license feature (see [self-hosting](../docs/self-hosting.md#service-credentials)).
@@ -154,7 +154,7 @@ Destroy removes the service, the database **and all its data**, the zone, the SE
 runtime secret and the records. The state bucket and `sphericon/app` stay (never delete them with
 the environment). To recreate, run sections 4 to 6 again, with these effects:
 
-- **`ENCRYPTION_KEY`** is unchanged (it is in `sphericon/app`). The database is new, so nothing is
+- **`SPHERICON_ENCRYPTION_KEY`** is unchanged (it is in `sphericon/app`). The database is new, so nothing is
   lost.
 - **Nameservers**: the zone is created again with different nameservers. Update the registrar
   before the full apply, or the certificate never validates.
@@ -189,7 +189,7 @@ and a password-reset email passing DKIM and SPF need the operator's account and 
   the logs.
 - **Email not delivered.** The SES sandbox accepts only verified recipients until production access
   is granted; check the identity status first. The app uses the SES API
-  (`SYSTEM_EMAIL_PROVIDER=ses`, see the env table in `docs/self-hosting.md`).
+  (`SPHERICON_SYSTEM_EMAIL_PROVIDER=ses`, see the env table in `docs/self-hosting.md`).
 - **State lock errors.** The lock is a `.tflock` object next to the state in the bucket; run one
   operator at a time. After a crashed run, `mise run infra -- force-unlock <id>`.
 - **`no credentials for profile`.** `aws login --profile sphericon` (sessions expire).

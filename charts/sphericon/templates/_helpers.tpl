@@ -25,18 +25,18 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{/* Shared container environment: plain settings (secrets come from envFrom). */}}
 {{- define "sphericon.env" -}}
-- name: APP_ENV
+- name: SPHERICON_ENV
   value: production
 - name: PORT
   value: {{ .Values.containerPort | quote }}
-- name: AUTO_MIGRATE
+- name: SPHERICON_DB_AUTO_MIGRATE
   value: "false"
 {{- with .Values.appUrl }}
-- name: APP_URL
+- name: SPHERICON_APP_URL
   value: {{ . | quote }}
 {{- end }}
 {{- if .Values.metrics.enabled }}
-- name: METRICS_ADDR
+- name: SPHERICON_METRICS_ADDR
   value: {{ printf "0.0.0.0:%d" (int .Values.metrics.port) | quote }}
 {{- end }}
 {{- with .Values.extraEnv }}

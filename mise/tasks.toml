@@ -16,7 +16,7 @@ depends = ["install", "db:seed"]
 run = [{ task = "worktrees:gc --apply" }]
 
 [dev]
-description = "Start the whole dev stack (https://sphericon.localhost in the primary checkout, `mise env | grep APP_URL` elsewhere)"
+description = "Start the whole dev stack (https://sphericon.localhost in the primary checkout, `mise env | grep SPHERICON_APP_URL` elsewhere)"
 depends = ["db:up"]
 run = "mise daemons start caddy"
 
@@ -64,7 +64,7 @@ run = "go run ./cmd/db drop"
 ["db:drop-test"]
 description = "Drop the test database"
 depends = ["db:up"]
-env = { APP_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
+env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 run = "go run ./cmd/db drop"
 
 ["db:migrate-atlas"]
@@ -100,7 +100,7 @@ description = "Write the migrations for river versions the migrations/ directory
 run = ["go run ./cmd/db river-migration", "atlas migrate hash --env local"]
 
 ["gen:encryption-key"]
-description = "Mint a fresh ENCRYPTION_KEY (base64 Tink keyset) to paste into your .env"
+description = "Mint a fresh SPHERICON_ENCRYPTION_KEY (base64 Tink keyset) to paste into your .env"
 run = "go run ./cmd/server genkey"
 
 # --- worktrees ----------------------------------------------------------------------
@@ -193,14 +193,14 @@ exit "$status"
 [test]
 description = "Go tests, packages in parallel, each on a database of its own (creates the test DB first); shuffled when CI is set, cached results otherwise; pass packages/flags after `--`"
 depends = ["db:up"]
-env = { APP_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
+env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 usage = 'arg "[go_test_args]" var=#true default="./..." help="packages and flags for go test"'
 run = 'eval "set -- $usage_go_test_args"; go test ${CI:+-shuffle=on} "$@"'
 
 ["test:cover"]
 description = "Go tests with coverage over cmd/ and internal/ (ee/ too), failing under the total in .testcoverage.yml"
 depends = ["db:up"]
-env = { APP_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
+env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 run = [
   "go test -shuffle=on ./... -coverpkg=./cmd/...,./internal/...,./ee/... -coverprofile=cover.out -covermode=atomic",
   "go tool go-test-coverage --config=.testcoverage.yml",
@@ -209,7 +209,7 @@ run = [
 ["test:e2e"]
 description = "End-to-end suite (ADR 0024): rebuilds the dedicated e2e DB, starts its own Mailpit, boots the app in-process; pass `go test` flags after `--`; HOLD=true keeps the stack up after the run for inspection"
 depends = ["db:up"]
-env = { APP_ENV = "e2e", DATABASE_URL = "{{env.E2E_DB_URL}}", METRICS_ADDR = "" }
+env = { SPHERICON_ENV = "e2e", DATABASE_URL = "{{env.E2E_DB_URL}}", SPHERICON_METRICS_ADDR = "" }
 usage = 'arg "[go_test_args]" var=#true default="./e2e/..." help="packages and flags for go test"'
 run = [
   "go run ./cmd/db drop",
@@ -454,11 +454,11 @@ description = "Terraform for the hosted deployment with credentials from the `aw
 run = "mise/scripts/infra.sh"
 
 ["infra:bootstrap"]
-description = "Once, idempotent: the S3 state bucket and the app secret (ENCRYPTION_KEY, JWT_SECRET, BOOTSTRAP_TOKEN; never rotated)"
+description = "Once, idempotent: the S3 state bucket and the app secret (SPHERICON_ENCRYPTION_KEY, SPHERICON_JWT_SECRET, SPHERICON_BOOTSTRAP_TOKEN; never rotated)"
 run = "mise/scripts/infra-bootstrap.sh"
 
 ["infra:license"]
-description = "Store the optional EE LICENSE_KEY (read from stdin) in the app secret"
+description = "Store the optional EE SPHERICON_LICENSE_KEY (read from stdin) in the app secret"
 run = "mise/scripts/infra-license.sh"
 
 ["check:security"]

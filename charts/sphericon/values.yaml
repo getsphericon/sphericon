@@ -8,16 +8,16 @@ imagePullSecrets: []
 
 replicaCount: 2
 
-# REQUIRED. Name of an existing Secret with the keys DATABASE_URL, JWT_SECRET and
-# ENCRYPTION_KEY. The chart never creates it: the migrate hook Job runs before regular
+# REQUIRED. Name of an existing Secret with the keys DATABASE_URL, SPHERICON_JWT_SECRET and
+# SPHERICON_ENCRYPTION_KEY. The chart never creates it: the migrate hook Job runs before regular
 # resources, so the Secret must already exist.
 existingSecret: ''
 
-# Public base URL of the instance (APP_URL).
+# Public base URL of the instance (SPHERICON_APP_URL).
 appUrl: ''
 
 # Extra plain environment variables for the Deployment and the migrate Job
-# (name/value or valueFrom entries, e.g. SMTP_HOST, APP_LOCALE).
+# (name/value or valueFrom entries, e.g. SPHERICON_SMTP_HOST, SPHERICON_APP_LOCALE).
 extraEnv: []
 
 service:
@@ -27,7 +27,7 @@ service:
 # Port the application listens on (PORT).
 containerPort: 3000
 
-# Opt-in internal Prometheus listener (METRICS_ADDR, ADR 0018). Off by default. It is never
+# Opt-in internal Prometheus listener (SPHERICON_METRICS_ADDR, ADR 0018). Off by default. It is never
 # exposed through the public Service or the Ingress.
 metrics:
   enabled: false

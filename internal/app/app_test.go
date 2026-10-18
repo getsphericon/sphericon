@@ -157,7 +157,7 @@ func TestNewWiresConfigAndServer(t *testing.T) {
 
 func TestNewFailsOnABadEncryptionKey(t *testing.T) {
 	baseline(t)
-	t.Setenv("ENCRYPTION_KEY", "not-a-keyset")
+	t.Setenv("SPHERICON_ENCRYPTION_KEY", "not-a-keyset")
 	_, err := New("test")
 	require.Error(t, err)
 }
@@ -206,7 +206,7 @@ func TestRunJobsStartsTheWorkerPool(t *testing.T) {
 
 func TestNewOperatorIsMinimal(t *testing.T) {
 	baseline(t)
-	t.Setenv("METRICS_ADDR", freeAddr(t))
+	t.Setenv("SPHERICON_METRICS_ADDR", freeAddr(t))
 	a, err := NewOperator("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
@@ -231,7 +231,7 @@ func freeAddr(t *testing.T) string {
 
 func TestStopShutsDownTheMetricsServer(t *testing.T) {
 	baseline(t)
-	t.Setenv("METRICS_ADDR", freeAddr(t))
+	t.Setenv("SPHERICON_METRICS_ADDR", freeAddr(t))
 	a, err := New("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
@@ -272,10 +272,10 @@ func ownedWorkspace(t *testing.T, a *App, slug, ownerEmail string) {
 
 func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	sink := newSMTPSink(t)
-	t.Setenv("SMTP_HOST", "127.0.0.1")
-	t.Setenv("SMTP_PORT", fmt.Sprint(sink.port))
-	t.Setenv("SMTP_USER", "")
-	t.Setenv("SMTP_PASS", "")
+	t.Setenv("SPHERICON_SMTP_HOST", "127.0.0.1")
+	t.Setenv("SPHERICON_SMTP_PORT", fmt.Sprint(sink.port))
+	t.Setenv("SPHERICON_SMTP_USER", "")
+	t.Setenv("SPHERICON_SMTP_PASS", "")
 	baseline(t)
 	a, err := NewOperator("test")
 	require.NoError(t, err)
@@ -321,8 +321,8 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 	require.NoError(t, err)
 	port := ln.Addr().(*net.TCPAddr).Port
 	require.NoError(t, ln.Close())
-	t.Setenv("SMTP_HOST", "127.0.0.1")
-	t.Setenv("SMTP_PORT", fmt.Sprint(port))
+	t.Setenv("SPHERICON_SMTP_HOST", "127.0.0.1")
+	t.Setenv("SPHERICON_SMTP_PORT", fmt.Sprint(port))
 	baseline(t)
 	a, err := NewOperator("test")
 	require.NoError(t, err)
@@ -425,7 +425,7 @@ func TestBuildSystemSender(t *testing.T) {
 		assert.Equal(t, "noreply@example.test", addr)
 	})
 
-	t.Run("falls back to SMTP_FROM when no system From is set", func(t *testing.T) {
+	t.Run("falls back to SPHERICON_SMTP_FROM when no system From is set", func(t *testing.T) {
 		cfg := *base
 		cfg.SystemEmailFrom = ""
 		sender, err := buildSystemSender(&cfg, catalog)

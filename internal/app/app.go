@@ -67,11 +67,11 @@ import (
 type App struct {
 	Config *config.Config
 	Server *http.Server
-	// Metrics is the opt-in Prometheus listener (ADR 0018); nil when METRICS_ADDR
+	// Metrics is the opt-in Prometheus listener (ADR 0018); nil when SPHERICON_METRICS_ADDR
 	// is empty and for the operator app.
 	Metrics *telemetry.MetricsServer
 	// Internal is the opt-in internal listener of the service endpoints (ADR 0026); nil
-	// when INTERNAL_ADDR is empty, without the `operator` license, and for the operator app.
+	// when SPHERICON_INTERNAL_ADDR is empty, without the `operator` license, and for the operator app.
 	Internal *sidelistener.Server
 
 	injector       *do.RootScope
@@ -197,7 +197,7 @@ func WithE2EDKIMLookup() Option {
 }
 
 // WithListener makes the App serve on a listener the caller already opened (a free
-// port, say). The configured public URL (APP_URL, the base of unsubscribe, confirm
+// port, say). The configured public URL (SPHERICON_APP_URL, the base of unsubscribe, confirm
 // and tracking links) and PORT are derived from the listener's address, so the order
 // is: open the listener, then New, then Start. Close closes the listener.
 func WithListener(ln net.Listener) Option {

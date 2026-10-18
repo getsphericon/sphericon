@@ -2,8 +2,8 @@
 # never appear in a container definition, a plan or an environment listing:
 #
 #  - var.app_secret_name (sphericon/app): created once, outside Terraform, by `mise run
-#    infra:bootstrap` (JWT_SECRET, ENCRYPTION_KEY, BOOTSTRAP_TOKEN, LICENSE_KEY). Only its ARN is
-#    read here. ENCRYPTION_KEY is never rotated.
+#    infra:bootstrap` (SPHERICON_JWT_SECRET, SPHERICON_ENCRYPTION_KEY, SPHERICON_BOOTSTRAP_TOKEN, SPHERICON_LICENSE_KEY). Only its ARN is
+#    read here. SPHERICON_ENCRYPTION_KEY is never rotated.
 #  - <name>/runtime: composed here from resources Terraform creates (DATABASE_URL, the SES send
 #    key). These values are in the state, which is why the state bucket is private and encrypted.
 
@@ -21,8 +21,8 @@ resource "aws_secretsmanager_secret" "runtime" {
 resource "aws_secretsmanager_secret_version" "runtime" {
   secret_id = aws_secretsmanager_secret.runtime.id
   secret_string = jsonencode({
-    DATABASE_URL          = "postgres://${aws_db_instance.pg.username}:${random_password.db.result}@${aws_db_instance.pg.address}:${aws_db_instance.pg.port}/${aws_db_instance.pg.db_name}?sslmode=require"
-    SES_ACCESS_KEY_ID     = aws_iam_access_key.ses.id
-    SES_SECRET_ACCESS_KEY = aws_iam_access_key.ses.secret
+    DATABASE_URL                    = "postgres://${aws_db_instance.pg.username}:${random_password.db.result}@${aws_db_instance.pg.address}:${aws_db_instance.pg.port}/${aws_db_instance.pg.db_name}?sslmode=require"
+    SPHERICON_SES_ACCESS_KEY_ID     = aws_iam_access_key.ses.id
+    SPHERICON_SES_SECRET_ACCESS_KEY = aws_iam_access_key.ses.secret
   })
 }

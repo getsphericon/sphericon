@@ -41,11 +41,11 @@ type Link struct {
 func New(address, seed, issuer string) (*Link, error) {
 	u, err := url.Parse(address)
 	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
-		return nil, fmt.Errorf("ACCOUNT_LINK_URL must be an absolute http(s) URL")
+		return nil, fmt.Errorf("SPHERICON_ACCOUNT_LINK_URL must be an absolute http(s) URL")
 	}
 	raw, err := base64.StdEncoding.DecodeString(seed)
 	if err != nil || len(raw) != ed25519.SeedSize {
-		return nil, fmt.Errorf("ACCOUNT_LINK_SIGNING_KEY must be a base64 %d-byte Ed25519 seed (e.g. `openssl rand -base64 32`)", ed25519.SeedSize)
+		return nil, fmt.Errorf("SPHERICON_ACCOUNT_LINK_SIGNING_KEY must be a base64 %d-byte Ed25519 seed (e.g. `openssl rand -base64 32`)", ed25519.SeedSize)
 	}
 	key := ed25519.NewKeyFromSeed(raw)
 	pub := key.Public().(ed25519.PublicKey)
