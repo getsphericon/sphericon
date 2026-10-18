@@ -142,6 +142,12 @@ type Handler interface {
 	//
 	// DELETE /workspaces/{slug}/automations/{id}
 	SiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (SiteAutomationsDeleteRes, error)
+	// SiteAutomationsDryRunHttpStep implements SiteAutomations_dryRunHttpStep operation.
+	//
+	// Render an HTTP step's body for a Contact and validate it, calling nothing.
+	//
+	// POST /workspaces/{slug}/automations/dry-run-http-step
+	SiteAutomationsDryRunHttpStep(ctx context.Context, req *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (SiteAutomationsDryRunHttpStepRes, error)
 	// SiteAutomationsGet implements SiteAutomations_get operation.
 	//
 	// Get a resource by ID for the site UI.

@@ -2691,6 +2691,52 @@ func (o OptSiteAuditActorKind) Or(d SiteAuditActorKind) SiteAuditActorKind {
 	return d
 }
 
+// NewOptSiteAutomationHttpErrorKind returns new OptSiteAutomationHttpErrorKind with value set to v.
+func NewOptSiteAutomationHttpErrorKind(v SiteAutomationHttpErrorKind) OptSiteAutomationHttpErrorKind {
+	return OptSiteAutomationHttpErrorKind{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteAutomationHttpErrorKind is optional SiteAutomationHttpErrorKind.
+type OptSiteAutomationHttpErrorKind struct {
+	Value SiteAutomationHttpErrorKind
+	Set   bool
+}
+
+// IsSet returns true if OptSiteAutomationHttpErrorKind was set.
+func (o OptSiteAutomationHttpErrorKind) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteAutomationHttpErrorKind) Reset() {
+	var v SiteAutomationHttpErrorKind
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteAutomationHttpErrorKind) SetTo(v SiteAutomationHttpErrorKind) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteAutomationHttpErrorKind) Get() (v SiteAutomationHttpErrorKind, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAutomationHttpErrorKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteInstanceTelemetryLock returns new OptSiteInstanceTelemetryLock with value set to v.
 func NewOptSiteInstanceTelemetryLock(v SiteInstanceTelemetryLock) OptSiteInstanceTelemetryLock {
 	return OptSiteInstanceTelemetryLock{
@@ -2823,6 +2869,52 @@ func (o OptSiteSuppressionChannel) Get() (v SiteSuppressionChannel, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteSuppressionChannel) Or(d SiteSuppressionChannel) SiteSuppressionChannel {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteWebhookFailure returns new OptSiteWebhookFailure with value set to v.
+func NewOptSiteWebhookFailure(v SiteWebhookFailure) OptSiteWebhookFailure {
+	return OptSiteWebhookFailure{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteWebhookFailure is optional SiteWebhookFailure.
+type OptSiteWebhookFailure struct {
+	Value SiteWebhookFailure
+	Set   bool
+}
+
+// IsSet returns true if OptSiteWebhookFailure was set.
+func (o OptSiteWebhookFailure) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteWebhookFailure) Reset() {
+	var v SiteWebhookFailure
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteWebhookFailure) SetTo(v SiteWebhookFailure) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteWebhookFailure) Get() (v SiteWebhookFailure, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteWebhookFailure) Or(d SiteWebhookFailure) SiteWebhookFailure {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -4319,6 +4411,71 @@ type SiteAuthVerifyEmailOK struct{}
 
 func (*SiteAuthVerifyEmailOK) siteAuthVerifyEmailRes() {}
 
+// Closed error kind of an HTTP step's body.
+// Ref: #/components/schemas/SiteAutomationHttpErrorKind
+type SiteAutomationHttpErrorKind string
+
+const (
+	SiteAutomationHttpErrorKindInvalidBody SiteAutomationHttpErrorKind = "invalid_body"
+)
+
+// AllValues returns all SiteAutomationHttpErrorKind values.
+func (SiteAutomationHttpErrorKind) AllValues() []SiteAutomationHttpErrorKind {
+	return []SiteAutomationHttpErrorKind{
+		SiteAutomationHttpErrorKindInvalidBody,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAutomationHttpErrorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAutomationHttpErrorKindInvalidBody:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAutomationHttpErrorKind) UnmarshalText(data []byte) error {
+	switch SiteAutomationHttpErrorKind(data) {
+	case SiteAutomationHttpErrorKindInvalidBody:
+		*s = SiteAutomationHttpErrorKindInvalidBody
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One request header of an HTTP step. The value is a secret: it is never returned.
+// Ref: #/components/schemas/SiteAutomationHttpHeader
+type SiteAutomationHttpHeader struct {
+	// Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
+	Name string `json:"name"`
+	// Header value. Omit it when editing to keep the stored value of the header with this name.
+	Value OptString `json:"value"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteAutomationHttpHeader) GetName() string {
+	return s.Name
+}
+
+// GetValue returns the value of Value.
+func (s *SiteAutomationHttpHeader) GetValue() OptString {
+	return s.Value
+}
+
+// SetName sets the value of Name.
+func (s *SiteAutomationHttpHeader) SetName(val string) {
+	s.Name = val
+}
+
+// SetValue sets the value of Value.
+func (s *SiteAutomationHttpHeader) SetValue(val OptString) {
+	s.Value = val
+}
+
 // Automation resource used by the site UI.
 // Ref: #/components/schemas/SiteAutomationResource
 type SiteAutomationResource struct {
@@ -4465,12 +4622,27 @@ type SiteAutomationStep struct {
 	Type SiteAutomationStepType `json:"type"`
 	// Email subject (email steps).
 	Subject OptString `json:"subject"`
-	// Email body as MJML (email steps).
+	// Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
+	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
 	Body OptString `json:"body"`
 	// Delay before the next step, in seconds (wait steps).
 	Seconds OptInt32 `json:"seconds"`
 	// Tag name to apply or remove (apply_tag and remove_tag steps).
 	Tag OptString `json:"tag"`
+	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
+	ID OptString `json:"id"`
+	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
+	Headers []SiteAutomationHttpHeader `json:"headers"`
+	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
+	// Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (HTTP steps).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (HTTP steps, read only).
+	HasSecret OptBool `json:"hasSecret"`
 }
 
 // GetType returns the value of Type.
@@ -4498,6 +4670,36 @@ func (s *SiteAutomationStep) GetTag() OptString {
 	return s.Tag
 }
 
+// GetID returns the value of ID.
+func (s *SiteAutomationStep) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *SiteAutomationStep) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *SiteAutomationStep) GetHeaders() []SiteAutomationHttpHeader {
+	return s.Headers
+}
+
+// GetSecret returns the value of Secret.
+func (s *SiteAutomationStep) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *SiteAutomationStep) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *SiteAutomationStep) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
 // SetType sets the value of Type.
 func (s *SiteAutomationStep) SetType(val SiteAutomationStepType) {
 	s.Type = val
@@ -4523,6 +4725,36 @@ func (s *SiteAutomationStep) SetTag(val OptString) {
 	s.Tag = val
 }
 
+// SetID sets the value of ID.
+func (s *SiteAutomationStep) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *SiteAutomationStep) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *SiteAutomationStep) SetHeaders(val []SiteAutomationHttpHeader) {
+	s.Headers = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *SiteAutomationStep) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *SiteAutomationStep) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *SiteAutomationStep) SetHasSecret(val OptBool) {
+	s.HasSecret = val
+}
+
 // Kind of automation step.
 // Ref: #/components/schemas/SiteAutomationStepType
 type SiteAutomationStepType string
@@ -4532,6 +4764,7 @@ const (
 	SiteAutomationStepTypeWait      SiteAutomationStepType = "wait"
 	SiteAutomationStepTypeApplyTag  SiteAutomationStepType = "apply_tag"
 	SiteAutomationStepTypeRemoveTag SiteAutomationStepType = "remove_tag"
+	SiteAutomationStepTypeHTTP      SiteAutomationStepType = "http"
 )
 
 // AllValues returns all SiteAutomationStepType values.
@@ -4541,6 +4774,7 @@ func (SiteAutomationStepType) AllValues() []SiteAutomationStepType {
 		SiteAutomationStepTypeWait,
 		SiteAutomationStepTypeApplyTag,
 		SiteAutomationStepTypeRemoveTag,
+		SiteAutomationStepTypeHTTP,
 	}
 }
 
@@ -4554,6 +4788,8 @@ func (s SiteAutomationStepType) MarshalText() ([]byte, error) {
 	case SiteAutomationStepTypeApplyTag:
 		return []byte(s), nil
 	case SiteAutomationStepTypeRemoveTag:
+		return []byte(s), nil
+	case SiteAutomationStepTypeHTTP:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -4574,6 +4810,9 @@ func (s *SiteAutomationStepType) UnmarshalText(data []byte) error {
 		return nil
 	case SiteAutomationStepTypeRemoveTag:
 		*s = SiteAutomationStepTypeRemoveTag
+		return nil
+	case SiteAutomationStepTypeHTTP:
+		*s = SiteAutomationStepTypeHTTP
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -4620,6 +4859,18 @@ func (*SiteAutomationsDeleteNoContent) siteAutomationsDeleteRes() {}
 type SiteAutomationsDeleteNotFound ProblemDetails
 
 func (*SiteAutomationsDeleteNotFound) siteAutomationsDeleteRes() {}
+
+type SiteAutomationsDryRunHttpStepBadRequest ProblemDetails
+
+func (*SiteAutomationsDryRunHttpStepBadRequest) siteAutomationsDryRunHttpStepRes() {}
+
+type SiteAutomationsDryRunHttpStepNotFound ProblemDetails
+
+func (*SiteAutomationsDryRunHttpStepNotFound) siteAutomationsDryRunHttpStepRes() {}
+
+type SiteAutomationsDryRunHttpStepUnprocessableEntity ProblemDetails
+
+func (*SiteAutomationsDryRunHttpStepUnprocessableEntity) siteAutomationsDryRunHttpStepRes() {}
 
 type SiteAutomationsGetBadRequest ProblemDetails
 
@@ -6564,6 +6815,78 @@ func (s *SiteDnsRecordType) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+// Request body for rendering an HTTP step's body for a Contact.
+// Ref: #/components/schemas/SiteDryRunHttpStepInput
+type SiteDryRunHttpStepInput struct {
+	// The Liquid JSON body to render.
+	Body string `json:"body"`
+	// The Contact whose values fill the template.
+	ContactId EntityId `json:"contactId"`
+}
+
+// GetBody returns the value of Body.
+func (s *SiteDryRunHttpStepInput) GetBody() string {
+	return s.Body
+}
+
+// GetContactId returns the value of ContactId.
+func (s *SiteDryRunHttpStepInput) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// SetBody sets the value of Body.
+func (s *SiteDryRunHttpStepInput) SetBody(val string) {
+	s.Body = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *SiteDryRunHttpStepInput) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
+// Ref: #/components/schemas/SiteDryRunHttpStepResult
+type SiteDryRunHttpStepResult struct {
+	// The rendered, valid JSON body. Absent when errorKind is set.
+	Body OptString `json:"body"`
+	// Why the body could not be rendered.
+	ErrorKind OptSiteAutomationHttpErrorKind `json:"errorKind"`
+	// Human-readable detail of the error.
+	Detail OptString `json:"detail"`
+}
+
+// GetBody returns the value of Body.
+func (s *SiteDryRunHttpStepResult) GetBody() OptString {
+	return s.Body
+}
+
+// GetErrorKind returns the value of ErrorKind.
+func (s *SiteDryRunHttpStepResult) GetErrorKind() OptSiteAutomationHttpErrorKind {
+	return s.ErrorKind
+}
+
+// GetDetail returns the value of Detail.
+func (s *SiteDryRunHttpStepResult) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetBody sets the value of Body.
+func (s *SiteDryRunHttpStepResult) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetErrorKind sets the value of ErrorKind.
+func (s *SiteDryRunHttpStepResult) SetErrorKind(val OptSiteAutomationHttpErrorKind) {
+	s.ErrorKind = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *SiteDryRunHttpStepResult) SetDetail(val OptString) {
+	s.Detail = val
+}
+
+func (*SiteDryRunHttpStepResult) siteAutomationsDryRunHttpStepRes() {}
 
 // Request a change of the login email. The new address must be confirmed via a link sent to it before
 // the change takes effect.
@@ -11797,12 +12120,15 @@ type SiteWebhookEndpointResource struct {
 	ID EntityId `json:"id"`
 	// Destination URL events are POSTed to.
 	URL string `json:"url"`
-	// HMAC signing secret (used to verify the X-sphericon-Signature header).
+	// HMAC signing secret (receivers verify the webhook-id, webhook-timestamp and webhook-signature
+	// headers, the Standard Webhooks scheme).
 	Secret string `json:"secret"`
 	// Event names this endpoint receives; empty means all events.
 	EventTypes []string `json:"eventTypes"`
 	// Whether the endpoint receives deliveries.
 	Enabled bool `json:"enabled"`
+	// Present while deliveries are failing; cleared by the next 2xx.
+	Failure OptSiteWebhookFailure `json:"failure"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -11832,6 +12158,11 @@ func (s *SiteWebhookEndpointResource) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *SiteWebhookEndpointResource) GetEnabled() bool {
 	return s.Enabled
+}
+
+// GetFailure returns the value of Failure.
+func (s *SiteWebhookEndpointResource) GetFailure() OptSiteWebhookFailure {
+	return s.Failure
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11869,6 +12200,11 @@ func (s *SiteWebhookEndpointResource) SetEnabled(val bool) {
 	s.Enabled = val
 }
 
+// SetFailure sets the value of Failure.
+func (s *SiteWebhookEndpointResource) SetFailure(val OptSiteWebhookFailure) {
+	s.Failure = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteWebhookEndpointResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -11882,6 +12218,130 @@ func (s *SiteWebhookEndpointResource) SetUpdatedAt(val Timestamp) {
 func (*SiteWebhookEndpointResource) siteWebhooksCreateRes() {}
 func (*SiteWebhookEndpointResource) siteWebhooksGetRes()    {}
 func (*SiteWebhookEndpointResource) siteWebhooksUpdateRes() {}
+
+// Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in time),
+// `blocked_address` (the URL names an address this instance does not permit), `http_status` (a non-2xx
+// answer, see `status`) and `network` (any other transport failure).
+// Ref: #/components/schemas/SiteWebhookErrorKind
+type SiteWebhookErrorKind string
+
+const (
+	SiteWebhookErrorKindTimeout        SiteWebhookErrorKind = "timeout"
+	SiteWebhookErrorKindBlockedAddress SiteWebhookErrorKind = "blocked_address"
+	SiteWebhookErrorKindHTTPStatus     SiteWebhookErrorKind = "http_status"
+	SiteWebhookErrorKindNetwork        SiteWebhookErrorKind = "network"
+)
+
+// AllValues returns all SiteWebhookErrorKind values.
+func (SiteWebhookErrorKind) AllValues() []SiteWebhookErrorKind {
+	return []SiteWebhookErrorKind{
+		SiteWebhookErrorKindTimeout,
+		SiteWebhookErrorKindBlockedAddress,
+		SiteWebhookErrorKindHTTPStatus,
+		SiteWebhookErrorKindNetwork,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteWebhookErrorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteWebhookErrorKindTimeout:
+		return []byte(s), nil
+	case SiteWebhookErrorKindBlockedAddress:
+		return []byte(s), nil
+	case SiteWebhookErrorKindHTTPStatus:
+		return []byte(s), nil
+	case SiteWebhookErrorKindNetwork:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteWebhookErrorKind) UnmarshalText(data []byte) error {
+	switch SiteWebhookErrorKind(data) {
+	case SiteWebhookErrorKindTimeout:
+		*s = SiteWebhookErrorKindTimeout
+		return nil
+	case SiteWebhookErrorKindBlockedAddress:
+		*s = SiteWebhookErrorKindBlockedAddress
+		return nil
+	case SiteWebhookErrorKindHTTPStatus:
+		*s = SiteWebhookErrorKindHTTPStatus
+		return nil
+	case SiteWebhookErrorKindNetwork:
+		*s = SiteWebhookErrorKindNetwork
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The failure state of an endpoint that is currently failing; absent while it is healthy.
+// Ref: #/components/schemas/SiteWebhookFailure
+type SiteWebhookFailure struct {
+	// Deliveries that failed in a row.
+	ConsecutiveFailures int32 `json:"consecutiveFailures"`
+	// When the current run of failures began.
+	Since Timestamp `json:"since"`
+	// When the latest delivery failed.
+	LastFailureAt Timestamp `json:"lastFailureAt"`
+	// Kind of the latest failure.
+	Kind SiteWebhookErrorKind `json:"kind"`
+	// HTTP status of the latest failure; present only for kind `http_status`.
+	Status OptInt32 `json:"status"`
+}
+
+// GetConsecutiveFailures returns the value of ConsecutiveFailures.
+func (s *SiteWebhookFailure) GetConsecutiveFailures() int32 {
+	return s.ConsecutiveFailures
+}
+
+// GetSince returns the value of Since.
+func (s *SiteWebhookFailure) GetSince() Timestamp {
+	return s.Since
+}
+
+// GetLastFailureAt returns the value of LastFailureAt.
+func (s *SiteWebhookFailure) GetLastFailureAt() Timestamp {
+	return s.LastFailureAt
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteWebhookFailure) GetKind() SiteWebhookErrorKind {
+	return s.Kind
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteWebhookFailure) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// SetConsecutiveFailures sets the value of ConsecutiveFailures.
+func (s *SiteWebhookFailure) SetConsecutiveFailures(val int32) {
+	s.ConsecutiveFailures = val
+}
+
+// SetSince sets the value of Since.
+func (s *SiteWebhookFailure) SetSince(val Timestamp) {
+	s.Since = val
+}
+
+// SetLastFailureAt sets the value of LastFailureAt.
+func (s *SiteWebhookFailure) SetLastFailureAt(val Timestamp) {
+	s.LastFailureAt = val
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteWebhookFailure) SetKind(val SiteWebhookErrorKind) {
+	s.Kind = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteWebhookFailure) SetStatus(val OptInt32) {
+	s.Status = val
+}
 
 type SiteWebhooksCreateNotFound ProblemDetails
 

@@ -80,6 +80,12 @@ type Invoker interface {
 	//
 	// DELETE /automations/{id}
 	AutomationsDelete(ctx context.Context, params AutomationsDeleteParams) (AutomationsDeleteRes, error)
+	// AutomationsDryRunHttpStep invokes Automations_dryRunHttpStep operation.
+	//
+	// Render an HTTP step's body for a Contact and validate it, calling nothing.
+	//
+	// POST /automations/dry-run-http-step
+	AutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput) (AutomationsDryRunHttpStepRes, error)
 	// AutomationsGet invokes Automations_get operation.
 	//
 	// Get a resource by ID.
@@ -1889,6 +1895,122 @@ func (c *Client) sendAutomationsDelete(ctx context.Context, params AutomationsDe
 
 	stage = "DecodeResponse"
 	result, err := decodeAutomationsDeleteResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// AutomationsDryRunHttpStep invokes Automations_dryRunHttpStep operation.
+//
+// Render an HTTP step's body for a Contact and validate it, calling nothing.
+//
+// POST /automations/dry-run-http-step
+func (c *Client) AutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput) (AutomationsDryRunHttpStepRes, error) {
+	res, err := c.sendAutomationsDryRunHttpStep(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendAutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput) (res AutomationsDryRunHttpStepRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Automations_dryRunHttpStep"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/automations/dry-run-http-step"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, AutomationsDryRunHttpStepOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/automations/dry-run-http-step"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeAutomationsDryRunHttpStepRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, AutomationsDryRunHttpStepOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeAutomationsDryRunHttpStepResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

@@ -7,7 +7,9 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"strings"
+	"net/http/httptest"
+	"net/url"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -16,6 +18,7 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertest"
 	"github.com/riverqueue/river/rivertype"
+	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -25,13 +28,17 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/dnstest"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // riverEnv is a real river client over the test database. The workers read and
@@ -61,7 +68,7 @@ func newRiverEnv(t *testing.T) *riverEnv {
 	require.NoError(t, err)
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs))
-	client, err := jobs.NewClient(pool, env.DB, mod, cipher, env.SystemMail, nil, registry.Default(), cfg.AppURL, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
+	client, err := jobs.NewClient(pool, env.DB, mod, cipher, env.Bus, env.SystemMail, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
 	require.NoError(t, err)
 	e := &riverEnv{TestEnv: env, pool: pool, client: client, cipher: cipher, cfg: cfg, sender: fs}
 	e.clearQueue(t)
@@ -241,26 +248,51 @@ func TestMemberInviteWorker(t *testing.T) {
 	require.Error(t, jobs.NewMemberInviteWorker(nil).Work(context.Background(), job(jobs.SendMemberInviteArgs{})))
 }
 
-// recordingDoer captures webhook deliveries and answers with a fixed status.
-type recordingDoer struct {
+// webhookReceiver is an httptest server the Instance allowlist permits: the real hardened
+// client reaches it, and it records what it got and answers with the status set.
+type webhookReceiver struct {
+	srv    *httptest.Server
+	allow  webhook.Allowlist
 	mu     sync.Mutex
 	status int
-	err    error
-	urls   []string
 	bodies []string
+	verify []error
 }
 
-func (d *recordingDoer) Do(req *http.Request) (*http.Response, error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.err != nil {
-		return nil, d.err
-	}
-	b, _ := io.ReadAll(req.Body)
-	d.urls = append(d.urls, req.URL.String())
-	d.bodies = append(d.bodies, string(b))
-	return &http.Response{StatusCode: d.status, Body: io.NopCloser(strings.NewReader("")), Header: http.Header{}}, nil
+func newWebhookReceiver(t *testing.T) *webhookReceiver {
+	t.Helper()
+	r := &webhookReceiver{status: http.StatusOK}
+	r.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		body, _ := io.ReadAll(req.Body)
+		wh, _ := standardwebhooks.NewWebhook(webhookSecret)
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		r.bodies = append(r.bodies, string(body))
+		r.verify = append(r.verify, wh.Verify(body, req.Header))
+		w.WriteHeader(r.status)
+	}))
+	t.Cleanup(r.srv.Close)
+	u, err := url.Parse(r.srv.URL)
+	require.NoError(t, err)
+	r.allow, err = webhook.ParseAllowlist(u.Host)
+	require.NoError(t, err)
+	return r
 }
+
+func (r *webhookReceiver) setStatus(status int) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.status = status
+}
+
+func (r *webhookReceiver) received() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return slices.Clone(r.bodies)
+}
+
+// webhookSecret is the signing secret of the WebhookCodebasics fixture.
+const webhookSecret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
 
 func TestDeliverWebhookWorker(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -272,22 +304,233 @@ func TestDeliverWebhookWorker(t *testing.T) {
 	args := func(id int64) jobs.DeliverWebhookArgs {
 		return jobs.DeliverWebhookArgs{EndpointID: id, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{"a":1}`)}
 	}
+	rcv := newWebhookReceiver(t)
+	worker := func(allow webhook.Allowlist) *jobs.DeliverWebhookWorker {
+		return jobs.NewDeliverWebhookWorker(env.DB, cipher, webhook.NewClientAllowing(2*time.Second, allow), time.Now, env.Bus, env.SystemMail)
+	}
+	ws := env.DB.Scoped(fixtures.AcmeID)
+	_, err = ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
+	require.NoError(t, err)
 
-	doer := &recordingDoer{status: 200}
-	w := jobs.NewDeliverWebhookWorker(env.DB, cipher, doer)
-	require.NoError(t, w.Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
-	assert.Equal(t, []string{fixtures.WebhookCodebasicsURL}, doer.urls)
-	assert.JSONEq(t, `{"a":1}`, doer.bodies[0])
+	// A delivery reaches the receiver, which verifies the signature with the endpoint secret.
+	require.NoError(t, worker(rcv.allow).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
+	require.Len(t, rcv.received(), 1)
+	assert.JSONEq(t, `{"a":1}`, rcv.received()[0])
+	assert.NoError(t, rcv.verify[0])
 
 	// Deleted or disabled since enqueue: dropped without a request.
-	require.NoError(t, w.Work(ctx, job(args(424242))))
-	require.NoError(t, w.Work(ctx, job(args(101))))
-	assert.Len(t, doer.urls, 1)
+	require.NoError(t, worker(rcv.allow).Work(ctx, job(args(424242))))
+	require.NoError(t, worker(rcv.allow).Work(ctx, job(args(fixtures.WebhookCodebasicsDisabledID))))
+	assert.Len(t, rcv.received(), 1)
 
-	// A non-2xx answer and a transport failure both surface so river retries.
-	require.Error(t, jobs.NewDeliverWebhookWorker(env.DB, cipher, &recordingDoer{status: 500}).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
-	require.Error(t, jobs.NewDeliverWebhookWorker(env.DB, cipher, &recordingDoer{err: errors.New("dial")}).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
+	// A non-2xx answer surfaces so river retries.
+	rcv.mu.Lock()
+	rcv.status = http.StatusInternalServerError
+	rcv.mu.Unlock()
+	require.Error(t, worker(rcv.allow).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
+	assert.Len(t, rcv.received(), 2)
 
+	// With the allowlist unset the loopback receiver is refused and gets nothing.
+	require.Error(t, worker(webhook.Allowlist{}).Work(ctx, job(args(fixtures.WebhookCodebasicsID))))
+	assert.Len(t, rcv.received(), 2)
+}
+
+// A failed delivery is remembered on the endpoint with a closed error kind, the run of
+// failures keeps its start, and a 2xx clears it all. The clock is injected.
+func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
+	env := testhelper.Setup(t)
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
+	require.NoError(t, err)
+	ctx := context.Background()
+	rcv := newWebhookReceiver(t)
+	ws := env.DB.Scoped(fixtures.AcmeID)
+	_, err = ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
+	require.NoError(t, err)
+
+	clock := time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)
+	worker := func(allow webhook.Allowlist, timeout time.Duration) *jobs.DeliverWebhookWorker {
+		return jobs.NewDeliverWebhookWorker(env.DB, cipher, webhook.NewClientAllowing(timeout, allow), func() time.Time { return clock }, env.Bus, env.SystemMail)
+	}
+	deliver := func(w *jobs.DeliverWebhookWorker) error {
+		return w.Work(ctx, job(jobs.DeliverWebhookArgs{EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`)}))
+	}
+	state := func() *ent.WebhookEndpoint {
+		return ws.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).OnlyX(ctx)
+	}
+
+	// A healthy endpoint carries no failure state.
+	require.NoError(t, deliver(worker(rcv.allow, 2*time.Second)))
+	assert.Nil(t, state().ConsecutiveFailures)
+
+	// A non-2xx answer: the run begins, with the status.
+	rcv.setStatus(http.StatusServiceUnavailable)
+	require.Error(t, deliver(worker(rcv.allow, 2*time.Second)))
+	e := state()
+	require.NotNil(t, e.ConsecutiveFailures)
+	assert.Equal(t, 1, *e.ConsecutiveFailures)
+	assert.True(t, clock.Equal(*e.FailingSince))
+	assert.True(t, clock.Equal(*e.LastFailureAt))
+	assert.Equal(t, webhookendpoint.LastErrorKindHTTPStatus, *e.LastErrorKind)
+	assert.Equal(t, http.StatusServiceUnavailable, *e.LastErrorStatus)
+	assert.True(t, e.Enabled, "a failure alone does not disable (that is the disable rule's job)")
+
+	// A later failure of another kind extends the run, which keeps its start.
+	began := clock
+	clock = clock.Add(90 * time.Minute)
+	require.Error(t, deliver(worker(webhook.Allowlist{}, 2*time.Second)))
+	e = state()
+	assert.Equal(t, 2, *e.ConsecutiveFailures)
+	assert.True(t, began.Equal(*e.FailingSince))
+	assert.True(t, clock.Equal(*e.LastFailureAt))
+	assert.Equal(t, webhookendpoint.LastErrorKindBlockedAddress, *e.LastErrorKind)
+	assert.Nil(t, e.LastErrorStatus)
+
+	// A receiver that does not answer in time is a timeout.
+	release := make(chan struct{})
+	slow := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+		case <-release:
+		}
+	}))
+	t.Cleanup(slow.Close)
+	t.Cleanup(func() { close(release) })
+	_, err = ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(slow.URL).Save(ctx)
+	require.NoError(t, err)
+	slowURL, err := url.Parse(slow.URL)
+	require.NoError(t, err)
+	slowAllow, err := webhook.ParseAllowlist(slowURL.Host)
+	require.NoError(t, err)
+	require.Error(t, deliver(worker(slowAllow, 50*time.Millisecond)))
+	assert.Equal(t, webhookendpoint.LastErrorKindTimeout, *state().LastErrorKind)
+
+	// A 2xx resets the state.
+	_, err = ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
+	require.NoError(t, err)
+	rcv.setStatus(http.StatusOK)
+	require.NoError(t, deliver(worker(rcv.allow, 2*time.Second)))
+	e = state()
+	assert.Nil(t, e.ConsecutiveFailures)
+	assert.Nil(t, e.FailingSince)
+	assert.Nil(t, e.LastErrorKind)
+	assert.Nil(t, e.LastErrorStatus)
+	assert.Nil(t, e.LastFailureAt)
+}
+
+// disableHarness delivers to the WebhookCodebasics endpoint pointed at a receiver the test
+// controls, with an injected clock, and reads back what a delivery left behind.
+type disableHarness struct {
+	t     *testing.T
+	env   *testhelper.TestEnv
+	rcv   *webhookReceiver
+	clock time.Time
+	w     *jobs.DeliverWebhookWorker
+}
+
+func newDisableHarness(t *testing.T) *disableHarness {
+	t.Helper()
+	env := testhelper.Setup(t)
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
+	require.NoError(t, err)
+	h := &disableHarness{t: t, env: env, rcv: newWebhookReceiver(t), clock: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
+	_, err = env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(h.rcv.srv.URL).Save(context.Background())
+	require.NoError(t, err)
+	h.w = jobs.NewDeliverWebhookWorker(env.DB, cipher, webhook.NewClientAllowing(2*time.Second, h.rcv.allow), func() time.Time { return h.clock }, env.Bus, env.SystemMail)
+	return h
+}
+
+// run puts the endpoint mid-run: failures already in a row, the first of them failingFor ago.
+func (h *disableHarness) run(failures int, failingFor time.Duration) {
+	h.t.Helper()
+	_, err := h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).
+		SetConsecutiveFailures(failures).SetFailingSince(h.clock.Add(-failingFor)).Save(context.Background())
+	require.NoError(h.t, err)
+}
+
+func (h *disableHarness) deliver() error {
+	return h.w.Work(context.Background(), job(jobs.DeliverWebhookArgs{
+		EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`),
+	}))
+}
+
+func (h *disableHarness) endpoint() *ent.WebhookEndpoint {
+	return h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).OnlyX(context.Background())
+}
+
+// A 410 retires the endpoint on that delivery, whatever the run of failures so far.
+func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
+	h := newDisableHarness(t)
+	ctx := context.Background()
+	owners, err := h.env.DB.Scoped(fixtures.AcmeID).Membership().Query().Where(membership.RoleEQ(membership.RoleOwner)).WithUser().All(ctx)
+	require.NoError(t, err)
+	require.NotEmpty(t, owners)
+
+	h.rcv.setStatus(http.StatusGone)
+	require.Error(t, h.deliver(), "river still sees the failed delivery")
+
+	e := h.endpoint()
+	assert.False(t, e.Enabled)
+	require.NotNil(t, e.DisabledReason)
+	assert.Equal(t, webhookendpoint.DisabledReasonGone, *e.DisabledReason)
+
+	// One mail to each owner, through the platform sender; the notice names the endpoint's origin only.
+	msgs := h.env.SystemMail.Messages()
+	assert.Len(t, msgs, len(owners))
+	for _, m := range msgs {
+		assert.Contains(t, m.Subject, "webhook")
+		assert.Contains(t, m.Text, "410")
+		assert.Contains(t, m.Text, h.rcv.srv.URL)
+	}
+
+	// The Audit entry is the system actor's, and is the only one: the counter writes are not audited.
+	var entries []*events.AuditEntry
+	for _, ev := range h.env.OutboxEvents(t, events.NameAuditEntry) {
+		a := ev.(*events.AuditEntry)
+		if a.Action == "webhook_endpoint.update" {
+			entries = append(entries, a)
+		}
+	}
+	require.Len(t, entries, 1)
+	assert.Equal(t, events.ActorSystem, entries[0].Actor.Kind)
+	assert.Contains(t, entries[0].Diff, "enabled")
+
+	// A delivery that was already enqueued finds the endpoint off: no request, no second mail.
+	before := len(h.rcv.received())
+	require.NoError(t, h.deliver())
+	assert.Len(t, h.rcv.received(), before)
+	assert.Len(t, h.env.SystemMail.Messages(), len(owners))
+}
+
+// A run of failures disables only when it has both reached the count and lasted the window.
+func TestDeliverWebhookWorkerDisablesOnPersistentFailure(t *testing.T) {
+	h := newDisableHarness(t)
+	h.rcv.setStatus(http.StatusServiceUnavailable)
+
+	// The count is reached inside the window (a restart in the middle of a burst): still enabled.
+	h.run(jobs.WebhookDisableFailures-1, jobs.WebhookDisableWindow-time.Minute)
+	require.Error(t, h.deliver())
+	e := h.endpoint()
+	assert.Equal(t, jobs.WebhookDisableFailures, *e.ConsecutiveFailures)
+	assert.True(t, e.Enabled)
+
+	// The window has passed but the count is not there: still enabled.
+	h.run(jobs.WebhookDisableFailures-2, 2*jobs.WebhookDisableWindow)
+	require.Error(t, h.deliver())
+	assert.True(t, h.endpoint().Enabled)
+	assert.Empty(t, h.env.SystemMail.Messages())
+
+	// Both: disabled, with the reason, and the owners told.
+	h.run(jobs.WebhookDisableFailures-1, jobs.WebhookDisableWindow)
+	require.Error(t, h.deliver())
+	e = h.endpoint()
+	assert.False(t, e.Enabled)
+	require.NotNil(t, e.DisabledReason)
+	assert.Equal(t, webhookendpoint.DisabledReasonPersistentFailure, *e.DisabledReason)
+	assert.NotEmpty(t, h.env.SystemMail.Messages())
 }
 
 func TestVerifySendingDomainWorker(t *testing.T) {

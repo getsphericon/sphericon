@@ -201,6 +201,15 @@ func (UnimplementedHandler) SiteAutomationsDelete(ctx context.Context, params Si
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAutomationsDryRunHttpStep implements SiteAutomations_dryRunHttpStep operation.
+//
+// Render an HTTP step's body for a Contact and validate it, calling nothing.
+//
+// POST /workspaces/{slug}/automations/dry-run-http-step
+func (UnimplementedHandler) SiteAutomationsDryRunHttpStep(ctx context.Context, req *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (r SiteAutomationsDryRunHttpStepRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAutomationsGet implements SiteAutomations_get operation.
 //
 // Get a resource by ID for the site UI.

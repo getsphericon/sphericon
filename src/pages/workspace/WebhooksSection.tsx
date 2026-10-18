@@ -7,6 +7,8 @@ import {
   Group,
   Loader,
   MultiSelect,
+  Stack,
+  Text,
   TextInput,
   Title,
 } from '@mantine/core'
@@ -22,7 +24,10 @@ import {
   siteWebhooksListQueryKey,
   siteWebhooksUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteWebhookEndpointResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteWebhookEndpointResource,
+  SiteWebhookFailure,
+} from '../../generated/site/types.gen.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from './auditFilter.ts'
@@ -38,6 +43,25 @@ const EVENT_OPTIONS = [
   'email.unsubscribed',
   'audit.entry',
 ]
+
+function FailureText({ failure }: { failure: SiteWebhookFailure }) {
+  const { t } = useTranslation()
+  const reason = {
+    timeout: t(($) => $.settings.webhooks.errorTimeout),
+    blocked_address: t(($) => $.settings.webhooks.errorBlockedAddress),
+    http_status: t(($) => $.settings.webhooks.errorHttpStatus, { status: failure.status ?? 0 }),
+    network: t(($) => $.settings.webhooks.errorNetwork),
+  }[failure.kind]
+  return (
+    <Text size="xs" c="dimmed">
+      {t(($) => $.settings.webhooks.failureSummary, {
+        reason,
+        count: failure.consecutiveFailures,
+        since: new Date(failure.since).toLocaleString(),
+      })}
+    </Text>
+  )
+}
 
 export function WebhooksSection({ slug }: { slug: string }) {
   const { t } = useTranslation()
@@ -144,11 +168,21 @@ export function WebhooksSection({ slug }: { slug: string }) {
             accessor: 'enabled',
             title: t(($) => $.settings.webhooks.statusColumn),
             render: (record) => (
-              <Badge variant="light" color={record.enabled ? 'teal' : 'gray'}>
-                {record.enabled
-                  ? t(($) => $.settings.webhooks.enabled)
-                  : t(($) => $.settings.webhooks.disabled)}
-              </Badge>
+              <Stack gap={2}>
+                <Badge variant="light" color={record.enabled ? 'teal' : 'gray'}>
+                  {record.enabled
+                    ? t(($) => $.settings.webhooks.enabled)
+                    : t(($) => $.settings.webhooks.disabled)}
+                </Badge>
+                {record.failure ? (
+                  <>
+                    <Badge variant="light" color="red">
+                      {t(($) => $.settings.webhooks.failing)}
+                    </Badge>
+                    <FailureText failure={record.failure} />
+                  </>
+                ) : null}
+              </Stack>
             ),
           },
           {

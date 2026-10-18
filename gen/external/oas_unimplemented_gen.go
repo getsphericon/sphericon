@@ -94,6 +94,15 @@ func (UnimplementedHandler) AutomationsDelete(ctx context.Context, params Automa
 	return r, ht.ErrNotImplemented
 }
 
+// AutomationsDryRunHttpStep implements Automations_dryRunHttpStep operation.
+//
+// Render an HTTP step's body for a Contact and validate it, calling nothing.
+//
+// POST /automations/dry-run-http-step
+func (UnimplementedHandler) AutomationsDryRunHttpStep(ctx context.Context, req *DryRunHttpStepInput) (r AutomationsDryRunHttpStepRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // AutomationsGet implements Automations_get operation.
 //
 // Get a resource by ID.

@@ -43,6 +43,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteAutomationsCreateOperation:                    []string{},
 	SiteAutomationsDeactivateOperation:                []string{},
 	SiteAutomationsDeleteOperation:                    []string{},
+	SiteAutomationsDryRunHttpStepOperation:            []string{},
 	SiteAutomationsGetOperation:                       []string{},
 	SiteAutomationsListOperation:                      []string{},
 	SiteAutomationsUpdateOperation:                    []string{},

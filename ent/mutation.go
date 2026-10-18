@@ -32099,22 +32099,30 @@ func (m *VisitorMutation) ResetEdge(name string) error {
 // WebhookEndpointMutation represents an operation that mutates the WebhookEndpoint nodes in the graph.
 type WebhookEndpointMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int64
-	created_at        *time.Time
-	updated_at        *time.Time
-	url               *string
-	secret_encrypted  *string
-	event_types       *[]string
-	appendevent_types []string
-	enabled           *bool
-	clearedFields     map[string]struct{}
-	workspace         *int64
-	clearedworkspace  bool
-	done              bool
-	oldValue          func(context.Context) (*WebhookEndpoint, error)
-	predicates        []predicate.WebhookEndpoint
+	op                      Op
+	typ                     string
+	id                      *int64
+	created_at              *time.Time
+	updated_at              *time.Time
+	url                     *string
+	secret_encrypted        *string
+	event_types             *[]string
+	appendevent_types       []string
+	enabled                 *bool
+	consecutive_failures    *int
+	addconsecutive_failures *int
+	failing_since           *time.Time
+	last_error_kind         *webhookendpoint.LastErrorKind
+	last_error_status       *int
+	addlast_error_status    *int
+	last_failure_at         *time.Time
+	disabled_reason         *webhookendpoint.DisabledReason
+	clearedFields           map[string]struct{}
+	workspace               *int64
+	clearedworkspace        bool
+	done                    bool
+	oldValue                func(context.Context) (*WebhookEndpoint, error)
+	predicates              []predicate.WebhookEndpoint
 }
 
 var _ ent.Mutation = (*WebhookEndpointMutation)(nil)
@@ -32502,6 +32510,342 @@ func (m *WebhookEndpointMutation) ResetEnabled() {
 	m.enabled = nil
 }
 
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (m *WebhookEndpointMutation) SetConsecutiveFailures(i int) {
+	m.consecutive_failures = &i
+	m.addconsecutive_failures = nil
+}
+
+// ConsecutiveFailures returns the value of the "consecutive_failures" field in the mutation.
+func (m *WebhookEndpointMutation) ConsecutiveFailures() (r int, exists bool) {
+	v := m.consecutive_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConsecutiveFailures returns the old "consecutive_failures" field's value of the WebhookEndpoint entity.
+// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointMutation) OldConsecutiveFailures(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConsecutiveFailures is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConsecutiveFailures requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConsecutiveFailures: %w", err)
+	}
+	return oldValue.ConsecutiveFailures, nil
+}
+
+// AddConsecutiveFailures adds i to the "consecutive_failures" field.
+func (m *WebhookEndpointMutation) AddConsecutiveFailures(i int) {
+	if m.addconsecutive_failures != nil {
+		*m.addconsecutive_failures += i
+	} else {
+		m.addconsecutive_failures = &i
+	}
+}
+
+// AddedConsecutiveFailures returns the value that was added to the "consecutive_failures" field in this mutation.
+func (m *WebhookEndpointMutation) AddedConsecutiveFailures() (r int, exists bool) {
+	v := m.addconsecutive_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (m *WebhookEndpointMutation) ClearConsecutiveFailures() {
+	m.consecutive_failures = nil
+	m.addconsecutive_failures = nil
+	m.clearedFields[webhookendpoint.FieldConsecutiveFailures] = struct{}{}
+}
+
+// ConsecutiveFailuresCleared returns if the "consecutive_failures" field was cleared in this mutation.
+func (m *WebhookEndpointMutation) ConsecutiveFailuresCleared() bool {
+	_, ok := m.clearedFields[webhookendpoint.FieldConsecutiveFailures]
+	return ok
+}
+
+// ResetConsecutiveFailures resets all changes to the "consecutive_failures" field.
+func (m *WebhookEndpointMutation) ResetConsecutiveFailures() {
+	m.consecutive_failures = nil
+	m.addconsecutive_failures = nil
+	delete(m.clearedFields, webhookendpoint.FieldConsecutiveFailures)
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (m *WebhookEndpointMutation) SetFailingSince(t time.Time) {
+	m.failing_since = &t
+}
+
+// FailingSince returns the value of the "failing_since" field in the mutation.
+func (m *WebhookEndpointMutation) FailingSince() (r time.Time, exists bool) {
+	v := m.failing_since
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailingSince returns the old "failing_since" field's value of the WebhookEndpoint entity.
+// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointMutation) OldFailingSince(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailingSince is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailingSince requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailingSince: %w", err)
+	}
+	return oldValue.FailingSince, nil
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (m *WebhookEndpointMutation) ClearFailingSince() {
+	m.failing_since = nil
+	m.clearedFields[webhookendpoint.FieldFailingSince] = struct{}{}
+}
+
+// FailingSinceCleared returns if the "failing_since" field was cleared in this mutation.
+func (m *WebhookEndpointMutation) FailingSinceCleared() bool {
+	_, ok := m.clearedFields[webhookendpoint.FieldFailingSince]
+	return ok
+}
+
+// ResetFailingSince resets all changes to the "failing_since" field.
+func (m *WebhookEndpointMutation) ResetFailingSince() {
+	m.failing_since = nil
+	delete(m.clearedFields, webhookendpoint.FieldFailingSince)
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (m *WebhookEndpointMutation) SetLastErrorKind(wek webhookendpoint.LastErrorKind) {
+	m.last_error_kind = &wek
+}
+
+// LastErrorKind returns the value of the "last_error_kind" field in the mutation.
+func (m *WebhookEndpointMutation) LastErrorKind() (r webhookendpoint.LastErrorKind, exists bool) {
+	v := m.last_error_kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastErrorKind returns the old "last_error_kind" field's value of the WebhookEndpoint entity.
+// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointMutation) OldLastErrorKind(ctx context.Context) (v *webhookendpoint.LastErrorKind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastErrorKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastErrorKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastErrorKind: %w", err)
+	}
+	return oldValue.LastErrorKind, nil
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (m *WebhookEndpointMutation) ClearLastErrorKind() {
+	m.last_error_kind = nil
+	m.clearedFields[webhookendpoint.FieldLastErrorKind] = struct{}{}
+}
+
+// LastErrorKindCleared returns if the "last_error_kind" field was cleared in this mutation.
+func (m *WebhookEndpointMutation) LastErrorKindCleared() bool {
+	_, ok := m.clearedFields[webhookendpoint.FieldLastErrorKind]
+	return ok
+}
+
+// ResetLastErrorKind resets all changes to the "last_error_kind" field.
+func (m *WebhookEndpointMutation) ResetLastErrorKind() {
+	m.last_error_kind = nil
+	delete(m.clearedFields, webhookendpoint.FieldLastErrorKind)
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (m *WebhookEndpointMutation) SetLastErrorStatus(i int) {
+	m.last_error_status = &i
+	m.addlast_error_status = nil
+}
+
+// LastErrorStatus returns the value of the "last_error_status" field in the mutation.
+func (m *WebhookEndpointMutation) LastErrorStatus() (r int, exists bool) {
+	v := m.last_error_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastErrorStatus returns the old "last_error_status" field's value of the WebhookEndpoint entity.
+// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointMutation) OldLastErrorStatus(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastErrorStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastErrorStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastErrorStatus: %w", err)
+	}
+	return oldValue.LastErrorStatus, nil
+}
+
+// AddLastErrorStatus adds i to the "last_error_status" field.
+func (m *WebhookEndpointMutation) AddLastErrorStatus(i int) {
+	if m.addlast_error_status != nil {
+		*m.addlast_error_status += i
+	} else {
+		m.addlast_error_status = &i
+	}
+}
+
+// AddedLastErrorStatus returns the value that was added to the "last_error_status" field in this mutation.
+func (m *WebhookEndpointMutation) AddedLastErrorStatus() (r int, exists bool) {
+	v := m.addlast_error_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (m *WebhookEndpointMutation) ClearLastErrorStatus() {
+	m.last_error_status = nil
+	m.addlast_error_status = nil
+	m.clearedFields[webhookendpoint.FieldLastErrorStatus] = struct{}{}
+}
+
+// LastErrorStatusCleared returns if the "last_error_status" field was cleared in this mutation.
+func (m *WebhookEndpointMutation) LastErrorStatusCleared() bool {
+	_, ok := m.clearedFields[webhookendpoint.FieldLastErrorStatus]
+	return ok
+}
+
+// ResetLastErrorStatus resets all changes to the "last_error_status" field.
+func (m *WebhookEndpointMutation) ResetLastErrorStatus() {
+	m.last_error_status = nil
+	m.addlast_error_status = nil
+	delete(m.clearedFields, webhookendpoint.FieldLastErrorStatus)
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (m *WebhookEndpointMutation) SetLastFailureAt(t time.Time) {
+	m.last_failure_at = &t
+}
+
+// LastFailureAt returns the value of the "last_failure_at" field in the mutation.
+func (m *WebhookEndpointMutation) LastFailureAt() (r time.Time, exists bool) {
+	v := m.last_failure_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastFailureAt returns the old "last_failure_at" field's value of the WebhookEndpoint entity.
+// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointMutation) OldLastFailureAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastFailureAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastFailureAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastFailureAt: %w", err)
+	}
+	return oldValue.LastFailureAt, nil
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (m *WebhookEndpointMutation) ClearLastFailureAt() {
+	m.last_failure_at = nil
+	m.clearedFields[webhookendpoint.FieldLastFailureAt] = struct{}{}
+}
+
+// LastFailureAtCleared returns if the "last_failure_at" field was cleared in this mutation.
+func (m *WebhookEndpointMutation) LastFailureAtCleared() bool {
+	_, ok := m.clearedFields[webhookendpoint.FieldLastFailureAt]
+	return ok
+}
+
+// ResetLastFailureAt resets all changes to the "last_failure_at" field.
+func (m *WebhookEndpointMutation) ResetLastFailureAt() {
+	m.last_failure_at = nil
+	delete(m.clearedFields, webhookendpoint.FieldLastFailureAt)
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (m *WebhookEndpointMutation) SetDisabledReason(wr webhookendpoint.DisabledReason) {
+	m.disabled_reason = &wr
+}
+
+// DisabledReason returns the value of the "disabled_reason" field in the mutation.
+func (m *WebhookEndpointMutation) DisabledReason() (r webhookendpoint.DisabledReason, exists bool) {
+	v := m.disabled_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisabledReason returns the old "disabled_reason" field's value of the WebhookEndpoint entity.
+// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointMutation) OldDisabledReason(ctx context.Context) (v *webhookendpoint.DisabledReason, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisabledReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisabledReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisabledReason: %w", err)
+	}
+	return oldValue.DisabledReason, nil
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (m *WebhookEndpointMutation) ClearDisabledReason() {
+	m.disabled_reason = nil
+	m.clearedFields[webhookendpoint.FieldDisabledReason] = struct{}{}
+}
+
+// DisabledReasonCleared returns if the "disabled_reason" field was cleared in this mutation.
+func (m *WebhookEndpointMutation) DisabledReasonCleared() bool {
+	_, ok := m.clearedFields[webhookendpoint.FieldDisabledReason]
+	return ok
+}
+
+// ResetDisabledReason resets all changes to the "disabled_reason" field.
+func (m *WebhookEndpointMutation) ResetDisabledReason() {
+	m.disabled_reason = nil
+	delete(m.clearedFields, webhookendpoint.FieldDisabledReason)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *WebhookEndpointMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -32563,7 +32907,7 @@ func (m *WebhookEndpointMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WebhookEndpointMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, webhookendpoint.FieldCreatedAt)
 	}
@@ -32584,6 +32928,24 @@ func (m *WebhookEndpointMutation) Fields() []string {
 	}
 	if m.enabled != nil {
 		fields = append(fields, webhookendpoint.FieldEnabled)
+	}
+	if m.consecutive_failures != nil {
+		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
+	}
+	if m.failing_since != nil {
+		fields = append(fields, webhookendpoint.FieldFailingSince)
+	}
+	if m.last_error_kind != nil {
+		fields = append(fields, webhookendpoint.FieldLastErrorKind)
+	}
+	if m.last_error_status != nil {
+		fields = append(fields, webhookendpoint.FieldLastErrorStatus)
+	}
+	if m.last_failure_at != nil {
+		fields = append(fields, webhookendpoint.FieldLastFailureAt)
+	}
+	if m.disabled_reason != nil {
+		fields = append(fields, webhookendpoint.FieldDisabledReason)
 	}
 	return fields
 }
@@ -32607,6 +32969,18 @@ func (m *WebhookEndpointMutation) Field(name string) (ent.Value, bool) {
 		return m.EventTypes()
 	case webhookendpoint.FieldEnabled:
 		return m.Enabled()
+	case webhookendpoint.FieldConsecutiveFailures:
+		return m.ConsecutiveFailures()
+	case webhookendpoint.FieldFailingSince:
+		return m.FailingSince()
+	case webhookendpoint.FieldLastErrorKind:
+		return m.LastErrorKind()
+	case webhookendpoint.FieldLastErrorStatus:
+		return m.LastErrorStatus()
+	case webhookendpoint.FieldLastFailureAt:
+		return m.LastFailureAt()
+	case webhookendpoint.FieldDisabledReason:
+		return m.DisabledReason()
 	}
 	return nil, false
 }
@@ -32630,6 +33004,18 @@ func (m *WebhookEndpointMutation) OldField(ctx context.Context, name string) (en
 		return m.OldEventTypes(ctx)
 	case webhookendpoint.FieldEnabled:
 		return m.OldEnabled(ctx)
+	case webhookendpoint.FieldConsecutiveFailures:
+		return m.OldConsecutiveFailures(ctx)
+	case webhookendpoint.FieldFailingSince:
+		return m.OldFailingSince(ctx)
+	case webhookendpoint.FieldLastErrorKind:
+		return m.OldLastErrorKind(ctx)
+	case webhookendpoint.FieldLastErrorStatus:
+		return m.OldLastErrorStatus(ctx)
+	case webhookendpoint.FieldLastFailureAt:
+		return m.OldLastFailureAt(ctx)
+	case webhookendpoint.FieldDisabledReason:
+		return m.OldDisabledReason(ctx)
 	}
 	return nil, fmt.Errorf("unknown WebhookEndpoint field %s", name)
 }
@@ -32688,6 +33074,48 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEnabled(v)
 		return nil
+	case webhookendpoint.FieldConsecutiveFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConsecutiveFailures(v)
+		return nil
+	case webhookendpoint.FieldFailingSince:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailingSince(v)
+		return nil
+	case webhookendpoint.FieldLastErrorKind:
+		v, ok := value.(webhookendpoint.LastErrorKind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastErrorKind(v)
+		return nil
+	case webhookendpoint.FieldLastErrorStatus:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastErrorStatus(v)
+		return nil
+	case webhookendpoint.FieldLastFailureAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastFailureAt(v)
+		return nil
+	case webhookendpoint.FieldDisabledReason:
+		v, ok := value.(webhookendpoint.DisabledReason)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisabledReason(v)
+		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint field %s", name)
 }
@@ -32696,6 +33124,12 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *WebhookEndpointMutation) AddedFields() []string {
 	var fields []string
+	if m.addconsecutive_failures != nil {
+		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
+	}
+	if m.addlast_error_status != nil {
+		fields = append(fields, webhookendpoint.FieldLastErrorStatus)
+	}
 	return fields
 }
 
@@ -32704,6 +33138,10 @@ func (m *WebhookEndpointMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *WebhookEndpointMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case webhookendpoint.FieldConsecutiveFailures:
+		return m.AddedConsecutiveFailures()
+	case webhookendpoint.FieldLastErrorStatus:
+		return m.AddedLastErrorStatus()
 	}
 	return nil, false
 }
@@ -32713,6 +33151,20 @@ func (m *WebhookEndpointMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *WebhookEndpointMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case webhookendpoint.FieldConsecutiveFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConsecutiveFailures(v)
+		return nil
+	case webhookendpoint.FieldLastErrorStatus:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLastErrorStatus(v)
+		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint numeric field %s", name)
 }
@@ -32723,6 +33175,24 @@ func (m *WebhookEndpointMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(webhookendpoint.FieldEventTypes) {
 		fields = append(fields, webhookendpoint.FieldEventTypes)
+	}
+	if m.FieldCleared(webhookendpoint.FieldConsecutiveFailures) {
+		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
+	}
+	if m.FieldCleared(webhookendpoint.FieldFailingSince) {
+		fields = append(fields, webhookendpoint.FieldFailingSince)
+	}
+	if m.FieldCleared(webhookendpoint.FieldLastErrorKind) {
+		fields = append(fields, webhookendpoint.FieldLastErrorKind)
+	}
+	if m.FieldCleared(webhookendpoint.FieldLastErrorStatus) {
+		fields = append(fields, webhookendpoint.FieldLastErrorStatus)
+	}
+	if m.FieldCleared(webhookendpoint.FieldLastFailureAt) {
+		fields = append(fields, webhookendpoint.FieldLastFailureAt)
+	}
+	if m.FieldCleared(webhookendpoint.FieldDisabledReason) {
+		fields = append(fields, webhookendpoint.FieldDisabledReason)
 	}
 	return fields
 }
@@ -32740,6 +33210,24 @@ func (m *WebhookEndpointMutation) ClearField(name string) error {
 	switch name {
 	case webhookendpoint.FieldEventTypes:
 		m.ClearEventTypes()
+		return nil
+	case webhookendpoint.FieldConsecutiveFailures:
+		m.ClearConsecutiveFailures()
+		return nil
+	case webhookendpoint.FieldFailingSince:
+		m.ClearFailingSince()
+		return nil
+	case webhookendpoint.FieldLastErrorKind:
+		m.ClearLastErrorKind()
+		return nil
+	case webhookendpoint.FieldLastErrorStatus:
+		m.ClearLastErrorStatus()
+		return nil
+	case webhookendpoint.FieldLastFailureAt:
+		m.ClearLastFailureAt()
+		return nil
+	case webhookendpoint.FieldDisabledReason:
+		m.ClearDisabledReason()
 		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint nullable field %s", name)
@@ -32769,6 +33257,24 @@ func (m *WebhookEndpointMutation) ResetField(name string) error {
 		return nil
 	case webhookendpoint.FieldEnabled:
 		m.ResetEnabled()
+		return nil
+	case webhookendpoint.FieldConsecutiveFailures:
+		m.ResetConsecutiveFailures()
+		return nil
+	case webhookendpoint.FieldFailingSince:
+		m.ResetFailingSince()
+		return nil
+	case webhookendpoint.FieldLastErrorKind:
+		m.ResetLastErrorKind()
+		return nil
+	case webhookendpoint.FieldLastErrorStatus:
+		m.ResetLastErrorStatus()
+		return nil
+	case webhookendpoint.FieldLastFailureAt:
+		m.ResetLastFailureAt()
+		return nil
+	case webhookendpoint.FieldDisabledReason:
+		m.ResetDisabledReason()
 		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint field %s", name)

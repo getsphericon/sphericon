@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/go-faster/jx"
+	"github.com/samber/lo"
 )
 
 // Converter maps ent entities to site API resources. goverter generates the
@@ -300,6 +301,14 @@ func automationSteps(def string) []siteapi.SiteAutomationStep {
 			step.Seconds = siteapi.NewOptInt32(int32(s.Seconds))
 		case automations.StepApplyTag, automations.StepRemoveTag:
 			step.Tag = siteapi.NewOptString(s.Tag)
+		case automations.StepHTTP:
+			// Masked: the URL, header values and signing secret never leave the server.
+			step.ID = siteapi.NewOptString(s.ID)
+			step.Body = siteapi.NewOptString(s.Body)
+			step.HasSecret = siteapi.NewOptBool(s.Secret != "")
+			step.Headers = lo.Map(s.Headers, func(h automations.Header, _ int) siteapi.SiteAutomationHttpHeader {
+				return siteapi.SiteAutomationHttpHeader{Name: h.Name}
+			})
 		default:
 			step.Subject = siteapi.NewOptString(s.Subject)
 			step.Body = siteapi.NewOptString(s.Body)
@@ -319,6 +328,14 @@ func AutomationSteps(steps []siteapi.SiteAutomationStep) []automations.Step {
 			Body:    s.Body.Or(""),
 			Seconds: int(s.Seconds.Or(0)),
 			Tag:     s.Tag.Or(""),
+
+			ID:  s.ID.Or(""),
+			URL: s.URL.Or(""),
+			Headers: lo.Map(s.Headers, func(h siteapi.SiteAutomationHttpHeader, _ int) automations.Header {
+				return automations.Header{Name: h.Name, Value: h.Value.Or("")}
+			}),
+			Secret:      s.Secret.Or(""),
+			ClearSecret: s.ClearSecret.Or(false),
 		})
 	}
 	return out

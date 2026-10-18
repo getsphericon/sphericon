@@ -2491,6 +2491,70 @@
         }
       }
     },
+    "/workspaces/{slug}/automations/dry-run-http-step": {
+      "post": {
+        "operationId": "SiteAutomations_dryRunHttpStep",
+        "description": "Render an HTTP step's body for a Contact and validate it, calling nothing",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteAutomationResourceParentKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDryRunHttpStepResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Automations"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteDryRunHttpStepInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{slug}/automations/{id}": {
       "get": {
         "operationId": "SiteAutomations_get",
@@ -8083,6 +8147,26 @@
         },
         "description": "What an audited change was done to"
       },
+      "SiteAutomationHttpErrorKind": {
+        "type": "string",
+        "enum": ["invalid_body"],
+        "description": "Closed error kind of an HTTP step's body"
+      },
+      "SiteAutomationHttpHeader": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon."
+          },
+          "value": {
+            "type": "string",
+            "description": "Header value. Omit it when editing to keep the stored value of the header with this name."
+          }
+        },
+        "description": "One request header of an HTTP step. The value is a secret: it is never returned."
+      },
       "SiteAutomationResource": {
         "type": "object",
         "required": ["id", "name", "status", "triggerEvent", "steps", "createdAt", "updatedAt"],
@@ -8160,7 +8244,7 @@
           },
           "body": {
             "type": "string",
-            "description": "Email body as MJML (email steps)"
+            "description": "Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)"
           },
           "seconds": {
             "type": "integer",
@@ -8170,13 +8254,40 @@
           "tag": {
             "type": "string",
             "description": "Tag name to apply or remove (apply_tag and remove_tag steps)"
+          },
+          "id": {
+            "type": "string",
+            "description": "Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets."
+          },
+          "url": {
+            "type": "string",
+            "description": "Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https."
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAutomationHttpHeader"
+            },
+            "description": "Up to 5 request headers (HTTP steps). On read, only the names are returned."
+          },
+          "secret": {
+            "type": "string",
+            "description": "Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret."
+          },
+          "clearSecret": {
+            "type": "boolean",
+            "description": "Remove the signing secret on save (HTTP steps)"
+          },
+          "hasSecret": {
+            "type": "boolean",
+            "description": "Whether a signing secret is stored (HTTP steps, read only)"
           }
         },
         "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds."
       },
       "SiteAutomationStepType": {
         "type": "string",
-        "enum": ["email", "wait", "apply_tag", "remove_tag"],
+        "enum": ["email", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
       },
       "SiteBroadcastProgress": {
@@ -8908,6 +9019,47 @@
           }
         },
         "description": "A DNS record the user publishes to authenticate a sending domain"
+      },
+      "SiteDryRunHttpStepInput": {
+        "type": "object",
+        "required": ["body", "contactId"],
+        "properties": {
+          "body": {
+            "type": "string",
+            "description": "The Liquid JSON body to render"
+          },
+          "contactId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Contact whose values fill the template"
+          }
+        },
+        "description": "Request body for rendering an HTTP step's body for a Contact"
+      },
+      "SiteDryRunHttpStepResult": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "description": "The rendered, valid JSON body. Absent when errorKind is set."
+          },
+          "errorKind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAutomationHttpErrorKind"
+              }
+            ],
+            "description": "Why the body could not be rendered"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Human-readable detail of the error"
+          }
+        },
+        "description": "The body rendered for a Contact, or the kind of error that stopped it. Nothing is called."
       },
       "SiteEmailChangeInput": {
         "type": "object",
@@ -10662,7 +10814,7 @@
           },
           "secret": {
             "type": "string",
-            "description": "HMAC signing secret (used to verify the X-sphericon-Signature header)"
+            "description": "HMAC signing secret (receivers verify the webhook-id, webhook-timestamp and webhook-signature headers, the Standard Webhooks scheme)"
           },
           "eventTypes": {
             "type": "array",
@@ -10674,6 +10826,14 @@
           "enabled": {
             "type": "boolean",
             "description": "Whether the endpoint receives deliveries"
+          },
+          "failure": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteWebhookFailure"
+              }
+            ],
+            "description": "Present while deliveries are failing; cleared by the next 2xx"
           },
           "createdAt": {
             "allOf": [
@@ -10693,6 +10853,52 @@
           }
         },
         "description": "Webhook endpoint resource used by the site UI"
+      },
+      "SiteWebhookErrorKind": {
+        "type": "string",
+        "enum": ["timeout", "blocked_address", "http_status", "network"],
+        "description": "Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in\ntime), `blocked_address` (the URL names an address this instance does not permit),\n`http_status` (a non-2xx answer, see `status`) and `network` (any other transport\nfailure)."
+      },
+      "SiteWebhookFailure": {
+        "type": "object",
+        "required": ["consecutiveFailures", "since", "lastFailureAt", "kind"],
+        "properties": {
+          "consecutiveFailures": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Deliveries that failed in a row"
+          },
+          "since": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the current run of failures began"
+          },
+          "lastFailureAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the latest delivery failed"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteWebhookErrorKind"
+              }
+            ],
+            "description": "Kind of the latest failure"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status of the latest failure; present only for kind `http_status`"
+          }
+        },
+        "description": "The failure state of an endpoint that is currently failing; absent while it is healthy."
       },
       "SiteWorkspaceHold": {
         "type": "object",

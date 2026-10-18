@@ -3,6 +3,7 @@
 package webhookendpoint
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -28,6 +29,18 @@ const (
 	FieldEventTypes = "event_types"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
+	// FieldConsecutiveFailures holds the string denoting the consecutive_failures field in the database.
+	FieldConsecutiveFailures = "consecutive_failures"
+	// FieldFailingSince holds the string denoting the failing_since field in the database.
+	FieldFailingSince = "failing_since"
+	// FieldLastErrorKind holds the string denoting the last_error_kind field in the database.
+	FieldLastErrorKind = "last_error_kind"
+	// FieldLastErrorStatus holds the string denoting the last_error_status field in the database.
+	FieldLastErrorStatus = "last_error_status"
+	// FieldLastFailureAt holds the string denoting the last_failure_at field in the database.
+	FieldLastFailureAt = "last_failure_at"
+	// FieldDisabledReason holds the string denoting the disabled_reason field in the database.
+	FieldDisabledReason = "disabled_reason"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// Table holds the table name of the webhookendpoint in the database.
@@ -51,6 +64,12 @@ var Columns = []string{
 	FieldSecretEncrypted,
 	FieldEventTypes,
 	FieldEnabled,
+	FieldConsecutiveFailures,
+	FieldFailingSince,
+	FieldLastErrorKind,
+	FieldLastErrorStatus,
+	FieldLastFailureAt,
+	FieldDisabledReason,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -75,6 +94,54 @@ var (
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
 	DefaultEnabled bool
 )
+
+// LastErrorKind defines the type for the "last_error_kind" enum field.
+type LastErrorKind string
+
+// LastErrorKind values.
+const (
+	LastErrorKindTimeout        LastErrorKind = "timeout"
+	LastErrorKindBlockedAddress LastErrorKind = "blocked_address"
+	LastErrorKindHTTPStatus     LastErrorKind = "http_status"
+	LastErrorKindNetwork        LastErrorKind = "network"
+)
+
+func (lek LastErrorKind) String() string {
+	return string(lek)
+}
+
+// LastErrorKindValidator is a validator for the "last_error_kind" field enum values. It is called by the builders before save.
+func LastErrorKindValidator(lek LastErrorKind) error {
+	switch lek {
+	case LastErrorKindTimeout, LastErrorKindBlockedAddress, LastErrorKindHTTPStatus, LastErrorKindNetwork:
+		return nil
+	default:
+		return fmt.Errorf("webhookendpoint: invalid enum value for last_error_kind field: %q", lek)
+	}
+}
+
+// DisabledReason defines the type for the "disabled_reason" enum field.
+type DisabledReason string
+
+// DisabledReason values.
+const (
+	DisabledReasonGone              DisabledReason = "gone"
+	DisabledReasonPersistentFailure DisabledReason = "persistent_failure"
+)
+
+func (dr DisabledReason) String() string {
+	return string(dr)
+}
+
+// DisabledReasonValidator is a validator for the "disabled_reason" field enum values. It is called by the builders before save.
+func DisabledReasonValidator(dr DisabledReason) error {
+	switch dr {
+	case DisabledReasonGone, DisabledReasonPersistentFailure:
+		return nil
+	default:
+		return fmt.Errorf("webhookendpoint: invalid enum value for disabled_reason field: %q", dr)
+	}
+}
 
 // OrderOption defines the ordering options for the WebhookEndpoint queries.
 type OrderOption func(*sql.Selector)
@@ -112,6 +179,36 @@ func BySecretEncrypted(opts ...sql.OrderTermOption) OrderOption {
 // ByEnabled orders the results by the enabled field.
 func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
+}
+
+// ByConsecutiveFailures orders the results by the consecutive_failures field.
+func ByConsecutiveFailures(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConsecutiveFailures, opts...).ToFunc()
+}
+
+// ByFailingSince orders the results by the failing_since field.
+func ByFailingSince(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailingSince, opts...).ToFunc()
+}
+
+// ByLastErrorKind orders the results by the last_error_kind field.
+func ByLastErrorKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastErrorKind, opts...).ToFunc()
+}
+
+// ByLastErrorStatus orders the results by the last_error_status field.
+func ByLastErrorStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastErrorStatus, opts...).ToFunc()
+}
+
+// ByLastFailureAt orders the results by the last_failure_at field.
+func ByLastFailureAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastFailureAt, opts...).ToFunc()
+}
+
+// ByDisabledReason orders the results by the disabled_reason field.
+func ByDisabledReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDisabledReason, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

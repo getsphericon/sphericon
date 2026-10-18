@@ -24,6 +24,7 @@ const (
 	SiteAutomationsCreateOperation                    OperationName = "SiteAutomationsCreate"
 	SiteAutomationsDeactivateOperation                OperationName = "SiteAutomationsDeactivate"
 	SiteAutomationsDeleteOperation                    OperationName = "SiteAutomationsDelete"
+	SiteAutomationsDryRunHttpStepOperation            OperationName = "SiteAutomationsDryRunHttpStep"
 	SiteAutomationsGetOperation                       OperationName = "SiteAutomationsGet"
 	SiteAutomationsListOperation                      OperationName = "SiteAutomationsList"
 	SiteAutomationsUpdateOperation                    OperationName = "SiteAutomationsUpdate"

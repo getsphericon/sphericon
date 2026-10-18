@@ -61,6 +61,26 @@ test('lists endpoints, showing all events and the enabled state', async () => {
   await expect.element(screen.getByText('Disabled', { exact: true })).toBeInTheDocument()
 })
 
+test('lists a failing endpoint with its last error', async () => {
+  worker.use(
+    list([
+      endpoint({
+        failure: {
+          consecutiveFailures: 7,
+          since: '2026-01-01T00:00:00Z',
+          lastFailureAt: '2026-01-02T00:00:00Z',
+          kind: 'http_status',
+          status: 503,
+        },
+      }),
+    ]),
+  )
+  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+
+  await expect.element(screen.getByText('Failing', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText(/HTTP 503: 7 deliveries failed/)).toBeInTheDocument()
+})
+
 test('creates an endpoint from the form', async () => {
   const bodies: unknown[] = []
   worker.use(

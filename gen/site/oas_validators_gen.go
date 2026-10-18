@@ -679,6 +679,15 @@ func (s *SiteAuthRegisterUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s SiteAutomationHttpErrorKind) Validate() error {
+	switch s {
+	case "invalid_body":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SiteAutomationResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -774,6 +783,8 @@ func (s SiteAutomationStepType) Validate() error {
 		return nil
 	case "remove_tag":
 		return nil
+	case "http":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -844,6 +855,30 @@ func (s *SiteAutomationsDeleteBadRequest) Validate() error {
 }
 
 func (s *SiteAutomationsDeleteNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAutomationsDryRunHttpStepBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAutomationsDryRunHttpStepNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAutomationsDryRunHttpStepUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1952,6 +1987,36 @@ func (s SiteDnsRecordType) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
+}
+
+func (s *SiteDryRunHttpStepResult) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.ErrorKind.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "errorKind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
 }
 
 func (s *SiteEmailChangeInput) Validate() error {
@@ -4903,6 +4968,62 @@ func (s *SiteWebhookEndpointResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "eventTypes",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Failure.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "failure",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteWebhookErrorKind) Validate() error {
+	switch s {
+	case "timeout":
+		return nil
+	case "blocked_address":
+		return nil
+	case "http_status":
+		return nil
+	case "network":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SiteWebhookFailure) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
 			Error: err,
 		})
 	}

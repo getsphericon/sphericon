@@ -81,5 +81,9 @@ if verification fails, and use the timestamp to refuse stale replays.
 - Endpoints that resolve to private, loopback, link-local or cloud-metadata addresses are refused,
   so you cannot point a webhook at an internal service. Use a public URL, or a tunnel for local
   development.
+- An endpoint disables itself, and the workspace owners are emailed, when it answers `410 Gone`, or
+  when at least 20 deliveries in a row have failed over more than 2 hours. The workspace's Audit
+  log records the change by the `system` actor. Enabling the endpoint again clears its failure
+  history.
 - Deliveries run on the same durable PostgreSQL job queue as sending, so a restart does not lose
   them. There is no ordering guarantee between events.

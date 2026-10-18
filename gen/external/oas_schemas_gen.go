@@ -722,6 +722,71 @@ type AuthTokensListUnauthorized ProblemDetails
 
 func (*AuthTokensListUnauthorized) authTokensListRes() {}
 
+// Closed error kind of an HTTP step's body.
+// Ref: #/components/schemas/AutomationHttpErrorKind
+type AutomationHttpErrorKind string
+
+const (
+	AutomationHttpErrorKindInvalidBody AutomationHttpErrorKind = "invalid_body"
+)
+
+// AllValues returns all AutomationHttpErrorKind values.
+func (AutomationHttpErrorKind) AllValues() []AutomationHttpErrorKind {
+	return []AutomationHttpErrorKind{
+		AutomationHttpErrorKindInvalidBody,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AutomationHttpErrorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AutomationHttpErrorKindInvalidBody:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AutomationHttpErrorKind) UnmarshalText(data []byte) error {
+	switch AutomationHttpErrorKind(data) {
+	case AutomationHttpErrorKindInvalidBody:
+		*s = AutomationHttpErrorKindInvalidBody
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One request header of an HTTP step. The value is a secret: it is never returned.
+// Ref: #/components/schemas/AutomationHttpHeader
+type AutomationHttpHeader struct {
+	// Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
+	Name string `json:"name"`
+	// Header value. Omit it when editing to keep the stored value of the header with this name.
+	Value OptString `json:"value"`
+}
+
+// GetName returns the value of Name.
+func (s *AutomationHttpHeader) GetName() string {
+	return s.Name
+}
+
+// GetValue returns the value of Value.
+func (s *AutomationHttpHeader) GetValue() OptString {
+	return s.Value
+}
+
+// SetName sets the value of Name.
+func (s *AutomationHttpHeader) SetName(val string) {
+	s.Name = val
+}
+
+// SetValue sets the value of Value.
+func (s *AutomationHttpHeader) SetValue(val OptString) {
+	s.Value = val
+}
+
 // An Automation: an event-triggered, ordered sequence of steps. Created automations are always draft;
 // activating is a separate, send-class operation.
 // Ref: #/components/schemas/AutomationResource
@@ -869,12 +934,27 @@ type AutomationStep struct {
 	Type AutomationStepType `json:"type"`
 	// Email subject (email steps).
 	Subject OptString `json:"subject"`
-	// Email body as MJML (email steps).
+	// Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
+	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
 	Body OptString `json:"body"`
 	// Delay before the next step, in seconds (wait steps).
 	Seconds OptInt32 `json:"seconds"`
 	// Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps).
 	Tag OptString `json:"tag"`
+	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
+	ID OptString `json:"id"`
+	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
+	Headers []AutomationHttpHeader `json:"headers"`
+	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
+	// Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (HTTP steps).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (HTTP steps, read only).
+	HasSecret OptBool `json:"hasSecret"`
 }
 
 // GetType returns the value of Type.
@@ -902,6 +982,36 @@ func (s *AutomationStep) GetTag() OptString {
 	return s.Tag
 }
 
+// GetID returns the value of ID.
+func (s *AutomationStep) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *AutomationStep) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *AutomationStep) GetHeaders() []AutomationHttpHeader {
+	return s.Headers
+}
+
+// GetSecret returns the value of Secret.
+func (s *AutomationStep) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *AutomationStep) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *AutomationStep) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
 // SetType sets the value of Type.
 func (s *AutomationStep) SetType(val AutomationStepType) {
 	s.Type = val
@@ -927,6 +1037,36 @@ func (s *AutomationStep) SetTag(val OptString) {
 	s.Tag = val
 }
 
+// SetID sets the value of ID.
+func (s *AutomationStep) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *AutomationStep) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *AutomationStep) SetHeaders(val []AutomationHttpHeader) {
+	s.Headers = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *AutomationStep) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *AutomationStep) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *AutomationStep) SetHasSecret(val OptBool) {
+	s.HasSecret = val
+}
+
 // Kind of automation step.
 // Ref: #/components/schemas/AutomationStepType
 type AutomationStepType string
@@ -936,6 +1076,7 @@ const (
 	AutomationStepTypeWait      AutomationStepType = "wait"
 	AutomationStepTypeApplyTag  AutomationStepType = "apply_tag"
 	AutomationStepTypeRemoveTag AutomationStepType = "remove_tag"
+	AutomationStepTypeHTTP      AutomationStepType = "http"
 )
 
 // AllValues returns all AutomationStepType values.
@@ -945,6 +1086,7 @@ func (AutomationStepType) AllValues() []AutomationStepType {
 		AutomationStepTypeWait,
 		AutomationStepTypeApplyTag,
 		AutomationStepTypeRemoveTag,
+		AutomationStepTypeHTTP,
 	}
 }
 
@@ -958,6 +1100,8 @@ func (s AutomationStepType) MarshalText() ([]byte, error) {
 	case AutomationStepTypeApplyTag:
 		return []byte(s), nil
 	case AutomationStepTypeRemoveTag:
+		return []byte(s), nil
+	case AutomationStepTypeHTTP:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -978,6 +1122,9 @@ func (s *AutomationStepType) UnmarshalText(data []byte) error {
 		return nil
 	case AutomationStepTypeRemoveTag:
 		*s = AutomationStepTypeRemoveTag
+		return nil
+	case AutomationStepTypeHTTP:
+		*s = AutomationStepTypeHTTP
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -1040,6 +1187,22 @@ func (*AutomationsDeleteUnauthorized) automationsDeleteRes() {}
 type AutomationsDeleteUnprocessableEntity ProblemDetails
 
 func (*AutomationsDeleteUnprocessableEntity) automationsDeleteRes() {}
+
+type AutomationsDryRunHttpStepBadRequest ProblemDetails
+
+func (*AutomationsDryRunHttpStepBadRequest) automationsDryRunHttpStepRes() {}
+
+type AutomationsDryRunHttpStepNotFound ProblemDetails
+
+func (*AutomationsDryRunHttpStepNotFound) automationsDryRunHttpStepRes() {}
+
+type AutomationsDryRunHttpStepUnauthorized ProblemDetails
+
+func (*AutomationsDryRunHttpStepUnauthorized) automationsDryRunHttpStepRes() {}
+
+type AutomationsDryRunHttpStepUnprocessableEntity ProblemDetails
+
+func (*AutomationsDryRunHttpStepUnprocessableEntity) automationsDryRunHttpStepRes() {}
 
 type AutomationsGetBadRequest ProblemDetails
 
@@ -4012,6 +4175,78 @@ func (s *DnsRecordType) UnmarshalText(data []byte) error {
 	}
 }
 
+// Request body for rendering an HTTP step's body for a Contact.
+// Ref: #/components/schemas/DryRunHttpStepInput
+type DryRunHttpStepInput struct {
+	// The Liquid JSON body to render.
+	Body string `json:"body"`
+	// The Contact whose values fill the template.
+	ContactId EntityId `json:"contactId"`
+}
+
+// GetBody returns the value of Body.
+func (s *DryRunHttpStepInput) GetBody() string {
+	return s.Body
+}
+
+// GetContactId returns the value of ContactId.
+func (s *DryRunHttpStepInput) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// SetBody sets the value of Body.
+func (s *DryRunHttpStepInput) SetBody(val string) {
+	s.Body = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *DryRunHttpStepInput) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
+// Ref: #/components/schemas/DryRunHttpStepResult
+type DryRunHttpStepResult struct {
+	// The rendered, valid JSON body. Absent when errorKind is set.
+	Body OptString `json:"body"`
+	// Why the body could not be rendered.
+	ErrorKind OptAutomationHttpErrorKind `json:"errorKind"`
+	// Human-readable detail of the error.
+	Detail OptString `json:"detail"`
+}
+
+// GetBody returns the value of Body.
+func (s *DryRunHttpStepResult) GetBody() OptString {
+	return s.Body
+}
+
+// GetErrorKind returns the value of ErrorKind.
+func (s *DryRunHttpStepResult) GetErrorKind() OptAutomationHttpErrorKind {
+	return s.ErrorKind
+}
+
+// GetDetail returns the value of Detail.
+func (s *DryRunHttpStepResult) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetBody sets the value of Body.
+func (s *DryRunHttpStepResult) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetErrorKind sets the value of ErrorKind.
+func (s *DryRunHttpStepResult) SetErrorKind(val OptAutomationHttpErrorKind) {
+	s.ErrorKind = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *DryRunHttpStepResult) SetDetail(val OptString) {
+	s.Detail = val
+}
+
+func (*DryRunHttpStepResult) automationsDryRunHttpStepRes() {}
+
 type EmailAddress string
 
 type EmailsSendConflict ProblemDetails
@@ -5094,6 +5329,52 @@ func (o OptAuditActorKind) Get() (v AuditActorKind, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptAuditActorKind) Or(d AuditActorKind) AuditActorKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptAutomationHttpErrorKind returns new OptAutomationHttpErrorKind with value set to v.
+func NewOptAutomationHttpErrorKind(v AutomationHttpErrorKind) OptAutomationHttpErrorKind {
+	return OptAutomationHttpErrorKind{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAutomationHttpErrorKind is optional AutomationHttpErrorKind.
+type OptAutomationHttpErrorKind struct {
+	Value AutomationHttpErrorKind
+	Set   bool
+}
+
+// IsSet returns true if OptAutomationHttpErrorKind was set.
+func (o OptAutomationHttpErrorKind) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAutomationHttpErrorKind) Reset() {
+	var v AutomationHttpErrorKind
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAutomationHttpErrorKind) SetTo(v AutomationHttpErrorKind) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAutomationHttpErrorKind) Get() (v AutomationHttpErrorKind, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAutomationHttpErrorKind) Or(d AutomationHttpErrorKind) AutomationHttpErrorKind {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6694,6 +6975,52 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// NewOptWebhookFailure returns new OptWebhookFailure with value set to v.
+func NewOptWebhookFailure(v WebhookFailure) OptWebhookFailure {
+	return OptWebhookFailure{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptWebhookFailure is optional WebhookFailure.
+type OptWebhookFailure struct {
+	Value WebhookFailure
+	Set   bool
+}
+
+// IsSet returns true if OptWebhookFailure was set.
+func (o OptWebhookFailure) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptWebhookFailure) Reset() {
+	var v WebhookFailure
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptWebhookFailure) SetTo(v WebhookFailure) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptWebhookFailure) Get() (v WebhookFailure, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptWebhookFailure) Or(d WebhookFailure) WebhookFailure {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // Request body for previewing a rule definition's audience.
 // Ref: #/components/schemas/PreviewSegmentInput
 type PreviewSegmentInput struct {
@@ -6983,73 +7310,74 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
-func (*ProblemDetailsHeaders) authMeGetRes()              {}
-func (*ProblemDetailsHeaders) authTokensBootstrapRes()    {}
-func (*ProblemDetailsHeaders) authTokensCreateRes()       {}
-func (*ProblemDetailsHeaders) authTokensDeleteRes()       {}
-func (*ProblemDetailsHeaders) authTokensListRes()         {}
-func (*ProblemDetailsHeaders) automationsActivateRes()    {}
-func (*ProblemDetailsHeaders) automationsCreateRes()      {}
-func (*ProblemDetailsHeaders) automationsDeactivateRes()  {}
-func (*ProblemDetailsHeaders) automationsDeleteRes()      {}
-func (*ProblemDetailsHeaders) automationsGetRes()         {}
-func (*ProblemDetailsHeaders) automationsListRes()        {}
-func (*ProblemDetailsHeaders) automationsUpdateRes()      {}
-func (*ProblemDetailsHeaders) broadcastsCreateRes()       {}
-func (*ProblemDetailsHeaders) broadcastsDeleteRes()       {}
-func (*ProblemDetailsHeaders) broadcastsGetRes()          {}
-func (*ProblemDetailsHeaders) broadcastsListRes()         {}
-func (*ProblemDetailsHeaders) broadcastsReportRes()       {}
-func (*ProblemDetailsHeaders) broadcastsScheduleRes()     {}
-func (*ProblemDetailsHeaders) broadcastsSetAudienceRes()  {}
-func (*ProblemDetailsHeaders) broadcastsTestSendRes()     {}
-func (*ProblemDetailsHeaders) broadcastsUnscheduleRes()   {}
-func (*ProblemDetailsHeaders) broadcastsUpdateRes()       {}
-func (*ProblemDetailsHeaders) contactsBatchUpsertRes()    {}
-func (*ProblemDetailsHeaders) contactsCreateRes()         {}
-func (*ProblemDetailsHeaders) contactsDeleteRes()         {}
-func (*ProblemDetailsHeaders) contactsGetRes()            {}
-func (*ProblemDetailsHeaders) contactsListRes()           {}
-func (*ProblemDetailsHeaders) contactsUpdateRes()         {}
-func (*ProblemDetailsHeaders) customFieldsListRes()       {}
-func (*ProblemDetailsHeaders) emailsSendRes()             {}
-func (*ProblemDetailsHeaders) eventActionsListRes()       {}
-func (*ProblemDetailsHeaders) eventsBatchSubmitRes()      {}
-func (*ProblemDetailsHeaders) eventsCreateRes()           {}
-func (*ProblemDetailsHeaders) integrationsCreateRes()     {}
-func (*ProblemDetailsHeaders) integrationsDeleteRes()     {}
-func (*ProblemDetailsHeaders) integrationsGetRes()        {}
-func (*ProblemDetailsHeaders) integrationsListRes()       {}
-func (*ProblemDetailsHeaders) integrationsUpdateRes()     {}
-func (*ProblemDetailsHeaders) segmentsCreateRes()         {}
-func (*ProblemDetailsHeaders) segmentsDeleteRes()         {}
-func (*ProblemDetailsHeaders) segmentsGetRes()            {}
-func (*ProblemDetailsHeaders) segmentsListRes()           {}
-func (*ProblemDetailsHeaders) segmentsPreviewRes()        {}
-func (*ProblemDetailsHeaders) segmentsUpdateRes()         {}
-func (*ProblemDetailsHeaders) sendingDomainRatesListRes() {}
-func (*ProblemDetailsHeaders) sendingDomainsCreateRes()   {}
-func (*ProblemDetailsHeaders) sendingDomainsDeleteRes()   {}
-func (*ProblemDetailsHeaders) sendingDomainsGetRes()      {}
-func (*ProblemDetailsHeaders) sendingDomainsListRes()     {}
-func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()   {}
-func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()   {}
-func (*ProblemDetailsHeaders) suppressionsCreateRes()     {}
-func (*ProblemDetailsHeaders) tagsApplyRes()              {}
-func (*ProblemDetailsHeaders) tagsListForContactRes()     {}
-func (*ProblemDetailsHeaders) tagsListRes()               {}
-func (*ProblemDetailsHeaders) tagsRemoveRes()             {}
-func (*ProblemDetailsHeaders) templatesCreateRes()        {}
-func (*ProblemDetailsHeaders) templatesDeleteRes()        {}
-func (*ProblemDetailsHeaders) templatesGetRes()           {}
-func (*ProblemDetailsHeaders) templatesListRes()          {}
-func (*ProblemDetailsHeaders) templatesUpdateRes()        {}
-func (*ProblemDetailsHeaders) unsubscribesCreateRes()     {}
-func (*ProblemDetailsHeaders) webhooksCreateRes()         {}
-func (*ProblemDetailsHeaders) webhooksDeleteRes()         {}
-func (*ProblemDetailsHeaders) webhooksGetRes()            {}
-func (*ProblemDetailsHeaders) webhooksListRes()           {}
-func (*ProblemDetailsHeaders) webhooksUpdateRes()         {}
+func (*ProblemDetailsHeaders) authMeGetRes()                 {}
+func (*ProblemDetailsHeaders) authTokensBootstrapRes()       {}
+func (*ProblemDetailsHeaders) authTokensCreateRes()          {}
+func (*ProblemDetailsHeaders) authTokensDeleteRes()          {}
+func (*ProblemDetailsHeaders) authTokensListRes()            {}
+func (*ProblemDetailsHeaders) automationsActivateRes()       {}
+func (*ProblemDetailsHeaders) automationsCreateRes()         {}
+func (*ProblemDetailsHeaders) automationsDeactivateRes()     {}
+func (*ProblemDetailsHeaders) automationsDeleteRes()         {}
+func (*ProblemDetailsHeaders) automationsDryRunHttpStepRes() {}
+func (*ProblemDetailsHeaders) automationsGetRes()            {}
+func (*ProblemDetailsHeaders) automationsListRes()           {}
+func (*ProblemDetailsHeaders) automationsUpdateRes()         {}
+func (*ProblemDetailsHeaders) broadcastsCreateRes()          {}
+func (*ProblemDetailsHeaders) broadcastsDeleteRes()          {}
+func (*ProblemDetailsHeaders) broadcastsGetRes()             {}
+func (*ProblemDetailsHeaders) broadcastsListRes()            {}
+func (*ProblemDetailsHeaders) broadcastsReportRes()          {}
+func (*ProblemDetailsHeaders) broadcastsScheduleRes()        {}
+func (*ProblemDetailsHeaders) broadcastsSetAudienceRes()     {}
+func (*ProblemDetailsHeaders) broadcastsTestSendRes()        {}
+func (*ProblemDetailsHeaders) broadcastsUnscheduleRes()      {}
+func (*ProblemDetailsHeaders) broadcastsUpdateRes()          {}
+func (*ProblemDetailsHeaders) contactsBatchUpsertRes()       {}
+func (*ProblemDetailsHeaders) contactsCreateRes()            {}
+func (*ProblemDetailsHeaders) contactsDeleteRes()            {}
+func (*ProblemDetailsHeaders) contactsGetRes()               {}
+func (*ProblemDetailsHeaders) contactsListRes()              {}
+func (*ProblemDetailsHeaders) contactsUpdateRes()            {}
+func (*ProblemDetailsHeaders) customFieldsListRes()          {}
+func (*ProblemDetailsHeaders) emailsSendRes()                {}
+func (*ProblemDetailsHeaders) eventActionsListRes()          {}
+func (*ProblemDetailsHeaders) eventsBatchSubmitRes()         {}
+func (*ProblemDetailsHeaders) eventsCreateRes()              {}
+func (*ProblemDetailsHeaders) integrationsCreateRes()        {}
+func (*ProblemDetailsHeaders) integrationsDeleteRes()        {}
+func (*ProblemDetailsHeaders) integrationsGetRes()           {}
+func (*ProblemDetailsHeaders) integrationsListRes()          {}
+func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
+func (*ProblemDetailsHeaders) segmentsCreateRes()            {}
+func (*ProblemDetailsHeaders) segmentsDeleteRes()            {}
+func (*ProblemDetailsHeaders) segmentsGetRes()               {}
+func (*ProblemDetailsHeaders) segmentsListRes()              {}
+func (*ProblemDetailsHeaders) segmentsPreviewRes()           {}
+func (*ProblemDetailsHeaders) segmentsUpdateRes()            {}
+func (*ProblemDetailsHeaders) sendingDomainRatesListRes()    {}
+func (*ProblemDetailsHeaders) sendingDomainsCreateRes()      {}
+func (*ProblemDetailsHeaders) sendingDomainsDeleteRes()      {}
+func (*ProblemDetailsHeaders) sendingDomainsGetRes()         {}
+func (*ProblemDetailsHeaders) sendingDomainsListRes()        {}
+func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()      {}
+func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()      {}
+func (*ProblemDetailsHeaders) suppressionsCreateRes()        {}
+func (*ProblemDetailsHeaders) tagsApplyRes()                 {}
+func (*ProblemDetailsHeaders) tagsListForContactRes()        {}
+func (*ProblemDetailsHeaders) tagsListRes()                  {}
+func (*ProblemDetailsHeaders) tagsRemoveRes()                {}
+func (*ProblemDetailsHeaders) templatesCreateRes()           {}
+func (*ProblemDetailsHeaders) templatesDeleteRes()           {}
+func (*ProblemDetailsHeaders) templatesGetRes()              {}
+func (*ProblemDetailsHeaders) templatesListRes()             {}
+func (*ProblemDetailsHeaders) templatesUpdateRes()           {}
+func (*ProblemDetailsHeaders) unsubscribesCreateRes()        {}
+func (*ProblemDetailsHeaders) webhooksCreateRes()            {}
+func (*ProblemDetailsHeaders) webhooksDeleteRes()            {}
+func (*ProblemDetailsHeaders) webhooksGetRes()               {}
+func (*ProblemDetailsHeaders) webhooksListRes()              {}
+func (*ProblemDetailsHeaders) webhooksUpdateRes()            {}
 
 // A rate as the (numerator, denominator, rate) triple (ADR 0011). The rate is null when the
 // denominator is zero: an undefined rate is never reported as 0.
@@ -10183,6 +10511,130 @@ func (s *UpsertContactsResult) SetResults(val []ContactBatchItemResult) {
 
 func (*UpsertContactsResult) contactsBatchUpsertRes() {}
 
+// Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in time),
+// `blocked_address` (the URL names an address this instance does not permit), `http_status` (a non-2xx
+// answer, see `status`) and `network` (any other transport failure).
+// Ref: #/components/schemas/WebhookErrorKind
+type WebhookErrorKind string
+
+const (
+	WebhookErrorKindTimeout        WebhookErrorKind = "timeout"
+	WebhookErrorKindBlockedAddress WebhookErrorKind = "blocked_address"
+	WebhookErrorKindHTTPStatus     WebhookErrorKind = "http_status"
+	WebhookErrorKindNetwork        WebhookErrorKind = "network"
+)
+
+// AllValues returns all WebhookErrorKind values.
+func (WebhookErrorKind) AllValues() []WebhookErrorKind {
+	return []WebhookErrorKind{
+		WebhookErrorKindTimeout,
+		WebhookErrorKindBlockedAddress,
+		WebhookErrorKindHTTPStatus,
+		WebhookErrorKindNetwork,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WebhookErrorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case WebhookErrorKindTimeout:
+		return []byte(s), nil
+	case WebhookErrorKindBlockedAddress:
+		return []byte(s), nil
+	case WebhookErrorKindHTTPStatus:
+		return []byte(s), nil
+	case WebhookErrorKindNetwork:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WebhookErrorKind) UnmarshalText(data []byte) error {
+	switch WebhookErrorKind(data) {
+	case WebhookErrorKindTimeout:
+		*s = WebhookErrorKindTimeout
+		return nil
+	case WebhookErrorKindBlockedAddress:
+		*s = WebhookErrorKindBlockedAddress
+		return nil
+	case WebhookErrorKindHTTPStatus:
+		*s = WebhookErrorKindHTTPStatus
+		return nil
+	case WebhookErrorKindNetwork:
+		*s = WebhookErrorKindNetwork
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The failure state of an endpoint that is currently failing; absent while it is healthy.
+// Ref: #/components/schemas/WebhookFailure
+type WebhookFailure struct {
+	// Deliveries that failed in a row.
+	ConsecutiveFailures int32 `json:"consecutiveFailures"`
+	// When the current run of failures began.
+	Since Timestamp `json:"since"`
+	// When the latest delivery failed.
+	LastFailureAt Timestamp `json:"lastFailureAt"`
+	// Kind of the latest failure.
+	Kind WebhookErrorKind `json:"kind"`
+	// HTTP status of the latest failure; present only for kind `http_status`.
+	Status OptInt32 `json:"status"`
+}
+
+// GetConsecutiveFailures returns the value of ConsecutiveFailures.
+func (s *WebhookFailure) GetConsecutiveFailures() int32 {
+	return s.ConsecutiveFailures
+}
+
+// GetSince returns the value of Since.
+func (s *WebhookFailure) GetSince() Timestamp {
+	return s.Since
+}
+
+// GetLastFailureAt returns the value of LastFailureAt.
+func (s *WebhookFailure) GetLastFailureAt() Timestamp {
+	return s.LastFailureAt
+}
+
+// GetKind returns the value of Kind.
+func (s *WebhookFailure) GetKind() WebhookErrorKind {
+	return s.Kind
+}
+
+// GetStatus returns the value of Status.
+func (s *WebhookFailure) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// SetConsecutiveFailures sets the value of ConsecutiveFailures.
+func (s *WebhookFailure) SetConsecutiveFailures(val int32) {
+	s.ConsecutiveFailures = val
+}
+
+// SetSince sets the value of Since.
+func (s *WebhookFailure) SetSince(val Timestamp) {
+	s.Since = val
+}
+
+// SetLastFailureAt sets the value of LastFailureAt.
+func (s *WebhookFailure) SetLastFailureAt(val Timestamp) {
+	s.LastFailureAt = val
+}
+
+// SetKind sets the value of Kind.
+func (s *WebhookFailure) SetKind(val WebhookErrorKind) {
+	s.Kind = val
+}
+
+// SetStatus sets the value of Status.
+func (s *WebhookFailure) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
 // Outbound webhook endpoint. The HMAC signing secret is deliberately absent: it is never returned
 // through the external API (view it in the app).
 // Ref: #/components/schemas/WebhookResource
@@ -10195,6 +10647,8 @@ type WebhookResource struct {
 	EventTypes []string `json:"eventTypes"`
 	// Whether the endpoint receives deliveries.
 	Enabled bool `json:"enabled"`
+	// Present while deliveries are failing; cleared by the next 2xx.
+	Failure OptWebhookFailure `json:"failure"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -10219,6 +10673,11 @@ func (s *WebhookResource) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *WebhookResource) GetEnabled() bool {
 	return s.Enabled
+}
+
+// GetFailure returns the value of Failure.
+func (s *WebhookResource) GetFailure() OptWebhookFailure {
+	return s.Failure
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -10249,6 +10708,11 @@ func (s *WebhookResource) SetEventTypes(val []string) {
 // SetEnabled sets the value of Enabled.
 func (s *WebhookResource) SetEnabled(val bool) {
 	s.Enabled = val
+}
+
+// SetFailure sets the value of Failure.
+func (s *WebhookResource) SetFailure(val OptWebhookFailure) {
+	s.Failure = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

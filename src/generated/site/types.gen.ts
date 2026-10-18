@@ -800,6 +800,30 @@ export type SiteAuditTarget = {
 };
 
 /**
+ * Closed error kind of an HTTP step's body
+ */
+export const SiteAutomationHttpErrorKind = { INVALID_BODY: 'invalid_body' } as const;
+
+/**
+ * Closed error kind of an HTTP step's body
+ */
+export type SiteAutomationHttpErrorKind = typeof SiteAutomationHttpErrorKind[keyof typeof SiteAutomationHttpErrorKind];
+
+/**
+ * One request header of an HTTP step. The value is a secret: it is never returned.
+ */
+export type SiteAutomationHttpHeader = {
+  /**
+   * Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
+   */
+  name: string;
+  /**
+   * Header value. Omit it when editing to keep the stored value of the header with this name.
+   */
+  value?: string;
+};
+
+/**
  * Automation resource used by the site UI
  */
 export type SiteAutomationResource = {
@@ -857,7 +881,7 @@ export type SiteAutomationStep = {
    */
   subject?: string;
   /**
-   * Email body as MJML (email steps)
+   * Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)
    */
   body?: string;
   /**
@@ -868,6 +892,30 @@ export type SiteAutomationStep = {
    * Tag name to apply or remove (apply_tag and remove_tag steps)
    */
   tag?: string;
+  /**
+   * Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
+   */
+  id?: string;
+  /**
+   * Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https.
+   */
+  url?: string;
+  /**
+   * Up to 5 request headers (HTTP steps). On read, only the names are returned.
+   */
+  headers?: Array<SiteAutomationHttpHeader>;
+  /**
+   * Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret.
+   */
+  secret?: string;
+  /**
+   * Remove the signing secret on save (HTTP steps)
+   */
+  clearSecret?: boolean;
+  /**
+   * Whether a signing secret is stored (HTTP steps, read only)
+   */
+  hasSecret?: boolean;
 };
 
 /**
@@ -877,7 +925,8 @@ export const SiteAutomationStepType = {
   EMAIL: 'email',
   WAIT: 'wait',
   APPLY_TAG: 'apply_tag',
-  REMOVE_TAG: 'remove_tag'
+  REMOVE_TAG: 'remove_tag',
+  HTTP: 'http'
 } as const;
 
 /**
@@ -1360,6 +1409,38 @@ export type SiteDnsRecord = {
    * The record value to publish
    */
   value: string;
+};
+
+/**
+ * Request body for rendering an HTTP step's body for a Contact
+ */
+export type SiteDryRunHttpStepInput = {
+  /**
+   * The Liquid JSON body to render
+   */
+  body: string;
+  /**
+   * The Contact whose values fill the template
+   */
+  contactId: EntityId;
+};
+
+/**
+ * The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
+ */
+export type SiteDryRunHttpStepResult = {
+  /**
+   * The rendered, valid JSON body. Absent when errorKind is set.
+   */
+  body?: string;
+  /**
+   * Why the body could not be rendered
+   */
+  errorKind?: SiteAutomationHttpErrorKind;
+  /**
+   * Human-readable detail of the error
+   */
+  detail?: string;
 };
 
 /**
@@ -2635,7 +2716,7 @@ export type SiteWebhookEndpointResource = {
    */
   url: string;
   /**
-   * HMAC signing secret (used to verify the X-sphericon-Signature header)
+   * HMAC signing secret (receivers verify the webhook-id, webhook-timestamp and webhook-signature headers, the Standard Webhooks scheme)
    */
   secret: string;
   /**
@@ -2647,6 +2728,10 @@ export type SiteWebhookEndpointResource = {
    */
   enabled: boolean;
   /**
+   * Present while deliveries are failing; cleared by the next 2xx
+   */
+  failure?: SiteWebhookFailure;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -2654,6 +2739,53 @@ export type SiteWebhookEndpointResource = {
    * Last update timestamp
    */
   updatedAt: Timestamp;
+};
+
+/**
+ * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
+ * time), `blocked_address` (the URL names an address this instance does not permit),
+ * `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
+ * failure).
+ */
+export const SiteWebhookErrorKind = {
+  TIMEOUT: 'timeout',
+  BLOCKED_ADDRESS: 'blocked_address',
+  HTTP_STATUS: 'http_status',
+  NETWORK: 'network'
+} as const;
+
+/**
+ * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
+ * time), `blocked_address` (the URL names an address this instance does not permit),
+ * `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
+ * failure).
+ */
+export type SiteWebhookErrorKind = typeof SiteWebhookErrorKind[keyof typeof SiteWebhookErrorKind];
+
+/**
+ * The failure state of an endpoint that is currently failing; absent while it is healthy.
+ */
+export type SiteWebhookFailure = {
+  /**
+   * Deliveries that failed in a row
+   */
+  consecutiveFailures: number;
+  /**
+   * When the current run of failures began
+   */
+  since: Timestamp;
+  /**
+   * When the latest delivery failed
+   */
+  lastFailureAt: Timestamp;
+  /**
+   * Kind of the latest failure
+   */
+  kind: SiteWebhookErrorKind;
+  /**
+   * HTTP status of the latest failure; present only for kind `http_status`
+   */
+  status?: number;
 };
 
 /**
@@ -4237,6 +4369,44 @@ export type SiteAutomationsCreateResponses = {
 };
 
 export type SiteAutomationsCreateResponse = SiteAutomationsCreateResponses[keyof SiteAutomationsCreateResponses];
+
+export type SiteAutomationsDryRunHttpStepData = {
+  body: SiteDryRunHttpStepInput;
+  path: {
+    /**
+     * URL-safe unique slug; the route key for nested workspace resources
+     */
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/automations/dry-run-http-step';
+};
+
+export type SiteAutomationsDryRunHttpStepErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteAutomationsDryRunHttpStepError = SiteAutomationsDryRunHttpStepErrors[keyof SiteAutomationsDryRunHttpStepErrors];
+
+export type SiteAutomationsDryRunHttpStepResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteDryRunHttpStepResult;
+};
+
+export type SiteAutomationsDryRunHttpStepResponse = SiteAutomationsDryRunHttpStepResponses[keyof SiteAutomationsDryRunHttpStepResponses];
 
 export type SiteAutomationsDeleteData = {
   body?: never;
