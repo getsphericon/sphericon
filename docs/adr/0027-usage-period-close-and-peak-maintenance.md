@@ -25,7 +25,7 @@ invisible to a self-hosted install.
   answered (in flight) are never in it: the open period reports them as their own `in_flight_sends`
   figure (0 in a snapshot), so an unanswered send is not billed as sent.
 - **`contacts` is a peak, so it cannot be recomputed**: an ent hook, installed on every client
-  (the long-lived one and the bus's transaction client) only with the `operator` license, raises
+  (the long-lived one and the bus's transaction client) only with the `staff` license, raises
   the open period's peak in the same transaction as the Contact change that identifies, gives an
   email Destination to, clears the email of, or erases a Contact. A change that can lower the count
   records the count first. A new period's peak starts at the Contacts there are at the period's
@@ -36,7 +36,7 @@ invisible to a self-hosted install.
 - **Snapshots are independent of retention.** The retention job (ADR 0014) removes Audit entries
   only and never touches the usage table, so a closed snapshot outlives the Events it was computed
   from and old invoices stay reproducible by their closed figure.
-- **Unlicensed means invisible.** Without the `operator` license the job does nothing, the hook is
+- **Unlicensed means invisible.** Without the `staff` license the job does nothing, the hook is
   not installed (no row is ever written), the Freezer on the send chokepoint never freezes, no
   listener is bound for the service endpoints and the public port answers 404 for them. Send
   outcomes are identical to a core without any of this.

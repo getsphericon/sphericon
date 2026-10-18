@@ -68,10 +68,10 @@ type App struct {
 	Config *config.Config
 	Server *http.Server
 	// Metrics is the opt-in Prometheus listener (ADR 0018); nil when SPHERICON_METRICS_ADDR
-	// is empty and for the staff member app.
+	// is empty and for the command app.
 	Metrics *telemetry.MetricsServer
 	// Internal is the opt-in internal listener of the service endpoints (ADR 0026); nil
-	// when SPHERICON_INTERNAL_ADDR is empty, without the `operator` license, and for the staff member app.
+	// when SPHERICON_INTERNAL_ADDR is empty, without the `staff` license, and for the command app.
 	Internal *sidelistener.Server
 
 	injector       *do.RootScope
@@ -161,7 +161,7 @@ type outboundModule struct{ *outbound.Module }
 type externalAPI struct{ http.Handler }
 
 // internalHandler is the internal listener's handler (ADR 0026); its Handler is nil
-// without the `operator` license.
+// without the `staff` license.
 type internalHandler struct{ http.Handler }
 
 // mcpHandler is the /mcp surface (ADR 0016), projected from the external contract.
@@ -270,7 +270,7 @@ func New(env string, opts ...Option) (*App, error) {
 	}
 
 	// The internal listener exists only when an address is configured and the
-	// `operator` license gives it something to serve (ADR 0026).
+	// `staff` license gives it something to serve (ADR 0026).
 	var internal *sidelistener.Server
 	if cfg.InternalAddr != "" {
 		ih, err := do.Invoke[*internalHandler](injector)
@@ -307,7 +307,7 @@ func New(env string, opts ...Option) (*App, error) {
 	}, nil
 }
 
-// ErrNotServable: Start was called on an app that has no servers (the staff member app).
+// ErrNotServable: Start was called on an app that has no servers (the command app).
 var ErrNotServable = errors.New("app: this app has no servers to start")
 
 // ErrAlreadyStarted: Start was called a second time; an App starts once.
@@ -353,7 +353,7 @@ func (a *App) start(ctx context.Context) error {
 		}
 	}()
 	// The internal listener is bound before anything else is served for the same
-	// reason: a staff member who asked for it must not silently run without it.
+	// reason: a self-hoster who asked for it must not silently run without it.
 	if err := a.Internal.Listen(ctx); err != nil {
 		return err
 	}
@@ -460,11 +460,11 @@ func (a *App) stop(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
-// NewStaffMember builds the minimal app the staff member commands need (config, database,
+// NewCommandApp builds the minimal app the commands need (config, database,
 // ent client, system sender) without the HTTP server, the event router or the job
 // workers. Providers are lazy, so only what a command invokes is ever constructed;
 // that keeps `sphericon workspace …` quick to start and to shut down.
-func NewStaffMember(env string) (*App, error) {
+func NewCommandApp(env string) (*App, error) {
 	injector := do.New()
 	register(injector, env, options{})
 
@@ -567,7 +567,7 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 
 // CreateStaffMember makes a platform Staff member (ADR 0026) and returns its one-time password:
 // the only way a Staff member comes to exist (there is no signup). It refuses a duplicate
-// email and an instance without the `operator` license.
+// email and an instance without the `staff` license.
 func (a *App) CreateStaffMember(ctx context.Context, email string) (string, error) {
 	edition, err := do.Invoke[*ee.Edition](a.injector)
 	if err != nil {
@@ -724,7 +724,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		// The platform's own SMTP relay is staff member-configured, not tenant input, so it may
+		// The platform's own SMTP relay is self-hoster-configured, not tenant input, so it may
 		// be a private host even where Workspace Integrations may not.
 		sender, err := buildSystemSender(cfg, registry.Default())
 		if err != nil {
@@ -1129,7 +1129,7 @@ func register(injector do.Injector, env string, o options) {
 	})
 
 	// The handler of the internal listener (ADR 0026): the service endpoints of the
-	// Staff surface. Nil without the `operator` license.
+	// Staff surface. Nil without the `staff` license.
 	do.Provide(injector, func(i do.Injector) (*internalHandler, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -1188,7 +1188,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		staffAPI, err := server.NewStaffAPI(edition.StaffMember(bus.Bus, sys.EmailSender))
+		staffAPI, err := server.NewStaffAPI(edition.Staff(bus.Bus, sys.EmailSender))
 		if err != nil {
 			return nil, err
 		}

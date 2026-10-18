@@ -15,7 +15,7 @@ adds the per-person path that ADR 0019's "evidentiary Events are never deleted" 
 
 - **Delete is erasure.** One primitive, no soft variant that keeps PII. Single Contact only;
   accepts a contact id or an email, or a `visitor_id` for an anonymous Visitor with no Contact.
-  Operator action (the Workspace is the controller): Site UI (owner/admin only, enforceable in core
+  Workspace action (the Workspace is the controller): Site UI (owner/admin only, enforceable in core
   through `scopedWithRoleFor`) and External API with a new `contacts:erase` scope, separate from
   `contacts:write`; MCP inherits it (ADR 0016). This replaces the existing CRUD contact DELETE
   (and its `contacts:write` scope); there is no second delete path.
@@ -40,12 +40,12 @@ adds the per-person path that ADR 0019's "evidentiary Events are never deleted" 
 - **Synchronous, one transaction**, which also cancels in-flight work: active runs and unsent
   broadcast recipients of the Contact are removed, and send workers re-check the Contact exists.
   A message already handed to the provider is not recalled.
-- **Proof without PII:** an immutable system Event `contact.erased` (Workspace, time, operator,
+- **Proof without PII:** an immutable system Event `contact.erased` (Workspace, time, requester,
   identifier kind; stored with no email and no contact id) is the accountability record. Its
   webhook delivery additionally carries the Contact's `subject_id` (the customer's own id), or the
   sphericon contact id when there was none, so the customer can erase downstream copies; the
   identifier lives only in the delivered payload, never on the stored Event. No direct downstream
-  integrations. In EE the Audit log additionally records the operator's delete.
+  integrations. In EE the Audit log additionally records the requester's delete.
 - **Not blocked on re-creation.** A returning person (Identify, import) becomes a new Contact;
   eligibility still refuses mail through the surviving opt-outs. A tombstone would itself be PII.
 - **Export:** one Contact, streamed JSON download, no job and no file storage. Contents: Contact,

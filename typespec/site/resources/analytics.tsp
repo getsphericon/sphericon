@@ -112,7 +112,7 @@ model SiteAnalyticsOverview {
   timeseries: SiteAnalyticsPoint[];
 
   /** Present while the Workspace is in the abuse detector's warning tier; absent
-   * otherwise and without the `operator` license */
+   * otherwise and without the `staff` license */
   abuseWarning?: SiteAbuseWarning | null;
 }
 

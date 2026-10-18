@@ -36,15 +36,15 @@ func TestTheStaffSecretIsRequiredOnlyWithTheStaffLicense(t *testing.T) {
 	unset := staff.Config{SessionTTL: time.Hour, Attempts: attempts}
 
 	e, err := ee.New(nil, licenseFor(t, licensekey.FeatureAudit), nil, siteSecret, unset)
-	require.NoError(t, err, "an instance without the operator license needs no staff secret")
-	assert.Nil(t, e.StaffMember(nil, nil), "and has no staff surface")
+	require.NoError(t, err, "an instance without the staff license needs no staff secret")
+	assert.Nil(t, e.Staff(nil, nil), "and has no staff surface")
 
-	_, err = ee.New(nil, licenseFor(t, licensekey.FeatureOperator), nil, siteSecret, unset)
+	_, err = ee.New(nil, licenseFor(t, licensekey.FeatureStaff), nil, siteSecret, unset)
 	require.Error(t, err)
 }
 
 func TestTheStaffSecretMustDifferFromTheSiteSecretAndBeLongEnough(t *testing.T) {
-	lic := licenseFor(t, licensekey.FeatureOperator)
+	lic := licenseFor(t, licensekey.FeatureStaff)
 
 	_, err := ee.New(nil, lic, nil, siteSecret, staff.Config{Secret: siteSecret, SessionTTL: time.Hour, Attempts: attempts})
 	require.Error(t, err, "a StaffMember session must never verify as a User's")
@@ -54,11 +54,11 @@ func TestTheStaffSecretMustDifferFromTheSiteSecretAndBeLongEnough(t *testing.T) 
 
 	e, err := ee.New(nil, lic, nil, siteSecret, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
 	require.NoError(t, err)
-	assert.NotNil(t, e.StaffMember(nil, nil))
+	assert.NotNil(t, e.Staff(nil, nil))
 }
 
 func TestTheStaffLoginCounterIsRequiredWithTheStaffLicense(t *testing.T) {
-	lic := licenseFor(t, licensekey.FeatureOperator)
+	lic := licenseFor(t, licensekey.FeatureStaff)
 
 	_, err := ee.New(nil, lic, nil, siteSecret, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour})
 
@@ -66,7 +66,7 @@ func TestTheStaffLoginCounterIsRequiredWithTheStaffLicense(t *testing.T) {
 }
 
 func TestTheEditionRegistersTheAbuseDetectorNextToTheOtherJobs(t *testing.T) {
-	e, err := ee.New(nil, licenseFor(t, licensekey.FeatureOperator), nil, siteSecret, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
+	e, err := ee.New(nil, licenseFor(t, licensekey.FeatureStaff), nil, siteSecret, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
 	require.NoError(t, err)
 
 	jobs := e.Jobs(nil, nil)

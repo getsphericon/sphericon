@@ -3506,7 +3506,7 @@ type SiteAnalyticsOverview struct {
 	// Daily engagement series, oldest first, one point per day in the range.
 	Timeseries []SiteAnalyticsPoint `json:"timeseries"`
 	// Present while the Workspace is in the abuse detector's warning tier; absent otherwise and without
-	// the `operator` license.
+	// the `staff` license.
 	AbuseWarning OptNilSiteAbuseWarning `json:"abuseWarning"`
 }
 

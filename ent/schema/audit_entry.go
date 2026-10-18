@@ -40,7 +40,7 @@ func (AuditEntry) Fields() []ent.Field {
 			Immutable(),
 		field.Time("occurred_at").
 			Immutable(),
-		// user | api_token | staff member | system (ingest is never recorded).
+		// user | api_token | staff | system (ingest is never recorded).
 		field.String("actor_kind").
 			NotEmpty().
 			Immutable(),

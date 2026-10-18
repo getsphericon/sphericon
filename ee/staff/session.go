@@ -26,7 +26,7 @@ const SessionCookie = "STAFF_JWT"
 const sessionIssuer = "sphericon-staff"
 
 // cookiePath confines the cookie to the Staff surface.
-const cookiePath = paths.StaffMember
+const cookiePath = paths.Staff
 
 const (
 	claimStaffID = "oid"
@@ -103,7 +103,7 @@ func (s *Sessions) cookie(value string, maxAge int) *http.Cookie {
 // Verify checks a raw session token (signature, issuer, expiry, Staff member id and epoch)
 // and returns the Staff member it belongs to, or ErrUnauthorized.
 func (s *Sessions) Verify(ctx context.Context, raw string) (*ent.StaffMember, error) {
-	if !s.lic.Has(licensekey.FeatureOperator) {
+	if !s.lic.Has(licensekey.FeatureStaff) {
 		return nil, ErrUnauthorized
 	}
 	claims, err := s.tokens.Parse(raw)

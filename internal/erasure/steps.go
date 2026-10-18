@@ -175,7 +175,7 @@ func publishErased(ctx context.Context, s *ent.Scoped, t *Target, pub events.Pur
 		WorkspaceID:    s.WorkspaceID(),
 		SubjectID:      t.SubjectID,
 		IdentifierKind: t.IdentifierKind,
-		StaffKind:      t.StaffMember.Kind,
-		StaffID:        t.StaffMember.ID,
+		RequesterKind:  t.Requester.Kind,
+		RequesterID:    t.Requester.ID,
 	})
 }

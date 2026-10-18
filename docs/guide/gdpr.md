@@ -3,7 +3,7 @@
 If you send to people in the EU, your Workspace is the data controller and sphericon is your processor.
 When a contact asks what you hold about them (access, GDPR Art. 15/20) or asks you to delete them
 (erasure, Art. 17), you answer it from your Workspace. There is no self-service form for the
-contact: both actions are operator actions. The design is recorded in
+contact: both actions are done by your own team. The design is recorded in
 [ADR 0021](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0021-gdpr-erasure-and-export.md).
 
 ## Access request: export one contact
@@ -85,8 +85,8 @@ Application logs carry no email addresses or phone numbers, so there is nothing 
 
 ## Downstream cleanup: the `contact.erased` webhook
 
-Each Erasure records one immutable `contact.erased` event: when it happened, which operator (a user
-or an API token) did it, and what kind of identifier was used. The stored event holds no email and
+Each Erasure records one immutable `contact.erased` event: when it happened, which requester (a user
+or an API token) made it, and what kind of identifier was used. The stored event holds no email and
 no contact id, so it is not personal data; keep it as your proof that the request was honored.
 
 To let you erase your own copies (CRM, warehouse, product database), the same event is delivered to
@@ -101,8 +101,8 @@ select `contact.erased`). The delivery body is the standard webhook payload; its
     "workspaceId": 42,
     "subjectId": "user-1234",
     "identifierKind": "contact_id",
-    "operatorKind": "api_token",
-    "operatorId": 7
+    "requesterKind": "api_token",
+    "requesterId": 7
   }
 }
 ```

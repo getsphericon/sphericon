@@ -20,6 +20,6 @@ func New(allowPrivateSMTP bool) *messaging.Catalog {
 	)
 }
 
-// Default is the catalog for destinations the staff member configured (the platform's own
+// Default is the catalog for destinations the self-hoster configured (the platform's own
 // mail) and for tests: SMTP may reach private hosts.
 func Default() *messaging.Catalog { return New(true) }

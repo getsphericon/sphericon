@@ -147,7 +147,7 @@ func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteCo
 		return &v, nil
 	}
 	err = h.erasure.Erase(ctx, scoped, erasure.ByContactID(id),
-		erasure.StaffMember{Kind: erasure.StaffUser, ID: auth.GetSiteAuth(ctx).UserID})
+		erasure.Requester{Kind: erasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if errors.Is(err, erasure.ErrNotFound) {
 		v := siteapi.SiteContactsDeleteNotFound(problem(http.StatusNotFound, "contact not found"))
 		return &v, nil

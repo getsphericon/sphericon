@@ -37,7 +37,7 @@ func NewSurface(m *Module, s *Sessions, bus *events.Bus, sender messaging.EmailS
 // composition root owns (the RFC 7807 error handler).
 func (s *Surface) Server(opts ...staffapi.ServerOption) (http.Handler, error) {
 	return staffapi.NewServer(s.handlers, s.security,
-		append([]staffapi.ServerOption{staffapi.WithPathPrefix(paths.StaffMember)}, opts...)...)
+		append([]staffapi.ServerOption{staffapi.WithPathPrefix(paths.Staff)}, opts...)...)
 }
 
 // Handlers implements staffapi.Handler.

@@ -28,9 +28,9 @@ const (
 	// FeatureRetention unlocks the advanced-retention control (ADR 0014): a per-Workspace
 	// window after which Enterprise records, today the Audit log, are pruned.
 	FeatureRetention Feature = "retention"
-	// FeatureOperator unlocks the Operator, its /operator surface and console, and the
+	// FeatureStaff unlocks the Staff member, its /staff surface and console, and the
 	// abuse detector (ADR 0026): one feature, meaningful only together.
-	FeatureOperator Feature = "operator"
+	FeatureStaff Feature = "staff"
 )
 
 // ProductionKey is the Ed25519 public key production licenses are verified against.

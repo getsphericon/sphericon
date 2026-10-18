@@ -194,7 +194,7 @@ func applyMigrations(cfg *config.Config) error {
 // runWorkspaceCommand boots the minimal staff member app (no listener, no event router,
 // no workers) and runs one workspace command against it.
 func runWorkspaceCommand(env string, args []string) error {
-	a, err := app.NewStaffMember(env)
+	a, err := app.NewCommandApp(env)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func runWorkspaceCommand(env string, args []string) error {
 
 // runUserCommand boots the minimal staff member app and runs one user command against it.
 func runUserCommand(env string, args []string) error {
-	a, err := app.NewStaffMember(env)
+	a, err := app.NewCommandApp(env)
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func runUserCommand(env string, args []string) error {
 // runServiceCredentialCommand boots the minimal staff member app and runs one
 // service-credential command against it.
 func runServiceCredentialCommand(env string, args []string) error {
-	a, err := app.NewStaffMember(env)
+	a, err := app.NewCommandApp(env)
 	if err != nil {
 		return err
 	}
@@ -232,7 +232,7 @@ func runServiceCredentialCommand(env string, args []string) error {
 // runStaffCommand boots the minimal staff member app and runs one staff member command
 // against it.
 func runStaffCommand(env string, args []string) error {
-	a, err := app.NewStaffMember(env)
+	a, err := app.NewCommandApp(env)
 	if err != nil {
 		return err
 	}

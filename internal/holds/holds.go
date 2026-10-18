@@ -58,7 +58,7 @@ func Live(rows []*ent.Hold, now time.Time) []*ent.Hold {
 type Freezer struct {
 	// Now is the clock; nil is time.Now.
 	Now func() time.Time
-	// Enabled reports whether holds are honoured at all (the `operator` license); nil
+	// Enabled reports whether holds are honoured at all (the `staff` license); nil
 	// is always.
 	Enabled func() bool
 }

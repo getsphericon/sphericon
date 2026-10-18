@@ -117,7 +117,7 @@ func TestSiteWorkspacesListShowsNoHoldsForAnUnaffectedWorkspace(t *testing.T) {
 	assert.Empty(t, workspaceOf(t, c, fixtures.AcmeSlug).Holds, "another Workspace's hold does not leak")
 }
 
-// Holds are honoured only with the `operator` license, on the send path and in what a
+// Holds are honoured only with the `staff` license, on the send path and in what a
 // Workspace is shown alike: an unlicensed instance lists none.
 func TestSiteWorkspacesListShowsNoHoldsWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())

@@ -64,7 +64,7 @@ func deleteContact(t *testing.T, env *testhelper.TestEnv, id int64) {
 
 func refreshAt(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureOperator), now))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), now))
 }
 
 func TestContactsIsThePeakReachedAndSurvivesLaterDeletions(t *testing.T) {
@@ -99,7 +99,7 @@ func TestContactsDoesNotCountAnErasedContact(t *testing.T) {
 	now := at(2027, time.February, 10, 12)
 	env, _, base := contactsEnv(t, now)
 	require.NoError(t, erasure.New(env.Bus).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
-		erasure.ByContactID(fixtures.ContactAliceID), erasure.StaffMember{Kind: erasure.StaffAPIToken, ID: 1}))
+		erasure.ByContactID(fixtures.ContactAliceID), erasure.Requester{Kind: erasure.RequesterAPIToken, ID: 1}))
 	addContact(t, env, "after-erasure@example.com")
 
 	refreshAt(t, env, now)

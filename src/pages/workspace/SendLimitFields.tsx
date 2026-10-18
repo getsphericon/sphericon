@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { zSiteMaxPerDay, zSiteMaxPerSecond } from '../../generated/site/zod.gen.ts'
 
-// A limit field holds a number, or an empty string when the staff member left it blank
+// A limit field holds a number, or an empty string when the user left it blank
 // (blank means "no limit").
 export interface SendLimitValues {
   maxPerSecond: number | string

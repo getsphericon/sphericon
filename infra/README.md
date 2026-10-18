@@ -74,7 +74,7 @@ The internal listener is off by default. Set `internal_listener_source_security_
 of a security group in the same VPC and the task gets `SPHERICON_INTERNAL_ADDR=:<internal_port>` (default
 `3400`) plus one ingress rule on the app security group, from that group only; the load balancer and
 the internet never reach the port. A caller reaches it at the task's private address on that port,
-and needs the `operator` license feature (see [self-hosting](../docs/self-hosting.md#service-credentials)).
+and needs the `staff` license feature (see [self-hosting](../docs/self-hosting.md#service-credentials)).
 Unset, there is no variable in the task, no rule and no open port, and a plan shows no changes.
 
 ```sh

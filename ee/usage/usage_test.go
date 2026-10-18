@@ -94,7 +94,7 @@ func TestEmailsSentCountsOnePerRecipientOverAllSurfacesAndNeverASkippedOrFailedO
 	message(t, env, "failed", outboundmessage.KindBroadcast, outboundmessage.StatusFailed, at(2027, time.January, 6, 10))
 	message(t, env, "feb", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.February, 1, 0))
 
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureOperator), feb.Add(time.Hour)))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour)))
 
 	f := figure(t, env, jan)
 	assert.EqualValues(t, 3, f.Value)
@@ -107,7 +107,7 @@ func TestLiveUsageReportsSendsStillInFlightApartFromEmailsSent(t *testing.T) {
 	message(t, env, "sent", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.February, 2, 9))
 	message(t, env, "in-flight", outboundmessage.KindBroadcast, outboundmessage.StatusPending, at(2027, time.February, 10, 11))
 
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureOperator), now))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), now))
 
 	f := figure(t, env, feb)
 	assert.EqualValues(t, 1, f.Value, "an in-flight send is not yet sent")
@@ -120,7 +120,7 @@ func TestLiveUsageReportsSendsStillInFlightApartFromEmailsSent(t *testing.T) {
 
 func TestLiveUsageIsRefreshedAndNeverRecountedOnRead(t *testing.T) {
 	env := testhelper.Setup(t)
-	lic := licenseFor(t, licensekey.FeatureOperator)
+	lic := licenseFor(t, licensekey.FeatureStaff)
 	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, at(2027, time.February, 10, 12)))
 	message(t, env, "late", outboundmessage.KindTransactional, outboundmessage.StatusSent, at(2027, time.February, 10, 13))
 
@@ -132,7 +132,7 @@ func TestLiveUsageIsRefreshedAndNeverRecountedOnRead(t *testing.T) {
 
 func TestAClosedSnapshotNeverChangesAndARerunIsTheSame(t *testing.T) {
 	env := testhelper.Setup(t)
-	lic := licenseFor(t, licensekey.FeatureOperator)
+	lic := licenseFor(t, licensekey.FeatureStaff)
 	message(t, env, "one", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.January, 3, 10))
 	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, feb.Add(time.Minute)))
 	closed := figure(t, env, jan)
@@ -149,7 +149,7 @@ func TestAClosedSnapshotNeverChangesAndARerunIsTheSame(t *testing.T) {
 
 func TestALateRunClosesEveryElapsedPeriodWithTheSameFiguresAsAnOnTimeRun(t *testing.T) {
 	env := testhelper.Setup(t)
-	lic := licenseFor(t, licensekey.FeatureOperator)
+	lic := licenseFor(t, licensekey.FeatureStaff)
 	message(t, env, "jan", outboundmessage.KindBroadcast, outboundmessage.StatusSent, at(2027, time.January, 3, 10))
 	message(t, env, "feb1", outboundmessage.KindAutomation, outboundmessage.StatusSent, at(2027, time.February, 3, 10))
 	message(t, env, "feb2", outboundmessage.KindAutomation, outboundmessage.StatusSent, at(2027, time.February, 4, 10))
@@ -167,7 +167,7 @@ func TestALateRunClosesEveryElapsedPeriodWithTheSameFiguresAsAnOnTimeRun(t *test
 
 func TestAMessageInFlightAtTheCloseIsCountedInThePeriodItWasSentIn(t *testing.T) {
 	env := testhelper.Setup(t)
-	lic := licenseFor(t, licensekey.FeatureOperator)
+	lic := licenseFor(t, licensekey.FeatureStaff)
 	claimed := at(2027, time.January, 31, 23)
 	message(t, env, "in-flight", outboundmessage.KindBroadcast, outboundmessage.StatusPending, claimed)
 	require.NoError(t, usage.Refresh(t.Context(), env.DB, lic, feb.Add(time.Minute)))
@@ -197,7 +197,7 @@ func TestNothingIsMaterializedWithoutTheStaffLicense(t *testing.T) {
 
 func TestListPagesEveryWorkspaceByIdAndDefaultsNothingItselfToARowlessPeriod(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureOperator), feb.Add(time.Hour)))
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour)))
 
 	first, err := usage.List(t.Context(), env.DB, feb, pagination.Params{Page: 1, PageSize: 1})
 	require.NoError(t, err)
@@ -225,7 +225,7 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 		})
 	})
 
-	err := usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureOperator), feb.Add(time.Hour))
+	err := usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour))
 
 	require.ErrorIs(t, err, boom, "the failure is still reported")
 	page, listErr := usage.List(t.Context(), env.DB, feb, pagination.Params{Page: 1, PageSize: pagination.MaxPageSize})

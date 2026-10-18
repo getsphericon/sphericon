@@ -110,7 +110,7 @@ type Config struct {
 	AccountLinkSigningKey string
 	// StaffJWTSecret signs the Staff member session and login challenge (SPHERICON_STAFF_JWT_SECRET,
 	// ADR 0026). It is required, and must differ from SPHERICON_JWT_SECRET, only when the license
-	// has the `operator` feature; ee.New validates it there.
+	// has the `staff` feature; ee.New validates it there.
 	StaffJWTSecret string
 	// StaffSessionTTL is the lifetime of a Staff member session (SPHERICON_STAFF_SESSION_TTL,
 	// default 4h, no refresh, no remember-me): shorter than a customer's.
@@ -185,7 +185,7 @@ type Config struct {
 	// place the service endpoints of the Staff surface are served (ADR 0026). Empty
 	// (the default) means no listener and no route for them anywhere; it must differ
 	// from the public PORT and from SPHERICON_METRICS_ADDR. Nothing is served either without the
-	// `operator` license.
+	// `staff` license.
 	InternalAddr string
 
 	// System (platform) transactional email — sphericon's OWN sender, distinct from a

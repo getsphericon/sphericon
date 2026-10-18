@@ -14,10 +14,10 @@ import (
 // when the Workspace does not exist. With WorkspaceDeliverability it is one of the
 // two places this package builds a Workspace scope (AGENTS.md, scope list item 7).
 //
-// It is gated by the `operator` feature alone: the console is the Staff member's tool and
+// It is gated by the `staff` feature alone: the console is the Staff member's tool and
 // the Audit log is one of its cards (ADR 0026). The separate `audit` license decides
 // whether entries are recorded at all (the subscriber discards them without it), so an
-// instance with `operator` but no `audit` simply shows an empty log.
+// instance with `staff` but no `audit` simply shows an empty log.
 func (m *Module) AuditEntries(ctx context.Context, workspaceID, cursor int64, limit int) ([]*ent.AuditEntry, int64, error) {
 	if err := m.licensed(); err != nil {
 		return nil, 0, err

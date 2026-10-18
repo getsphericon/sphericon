@@ -168,7 +168,7 @@ func TestFreezersHoldAfterTheCoreSuspensionCheck(t *testing.T) {
 
 // Send and Preflight read one gate: with the real holds.Freezer they agree on an
 // active hold, a lapsed one and a hold the license does not honour.
-func TestSendAndPreflightAgreeOnAnStaffHold(t *testing.T) {
+func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)

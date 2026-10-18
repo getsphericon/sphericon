@@ -290,7 +290,7 @@ func TestExternalContactsEraseDoesNotBlockReappearance(t *testing.T) {
 }
 
 // Erasure leaves one PII-free contact.erased Event (ADR 0021): the outbox message that
-// projects it names the Workspace, the staff member and the identifier kind, and the
+// projects it names the Workspace, the requester and the identifier kind, and the
 // customer's subject_id rides only in that message, which the webhook delivers.
 func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -306,8 +306,8 @@ func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 	require.NoError(t, json.Unmarshal(envelopes[0].Data, &data))
 	assert.Equal(t, "user-erin-300", data["subjectId"], "the customer's own id, for their downstream erasure")
 	assert.Equal(t, "contact_id", data["identifierKind"])
-	assert.Equal(t, "api_token", data["staffKind"])
-	assert.NotZero(t, data["staffId"])
+	assert.Equal(t, "api_token", data["requesterKind"])
+	assert.NotZero(t, data["requesterId"])
 	assert.NotContains(t, data, "email")
 	assert.NotContains(t, data, "contactId")
 
@@ -324,7 +324,7 @@ func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 	assert.NotNil(t, stored.OccurredAt)
 	assert.NotContains(t, stored.Properties, "subjectId")
 	assert.Equal(t, "contact_id", stored.Properties["identifierKind"])
-	assert.Equal(t, "api_token", stored.Properties["staffKind"])
+	assert.Equal(t, "api_token", stored.Properties["requesterKind"])
 }
 
 // A Contact with no subject_id is identified downstream by its sphericon id.

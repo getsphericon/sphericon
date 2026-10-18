@@ -31,7 +31,7 @@ const serviceCredentialUsage = `usage: sphericon service-credential <command>
   list [<name>]
 scopes: usage:read, workspaces:read, holds:write`
 
-const noLicense = "this instance has no operator license (feature `operator`)"
+const noLicense = "this instance has no staff license (feature `staff`)"
 
 // runServiceCredential executes the `service-credential` commands (ADR 0026), the only
 // way a Service credential is created, rotated or revoked: no endpoint can. A value is
