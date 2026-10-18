@@ -1,6 +1,6 @@
 import { ProblemCode } from '../generated/site/types.gen.ts'
 
-export type ApiErrorLike = {
+export interface ApiErrorLike {
   detail?: string | null
   form?: string | null
   title?: string | null
@@ -56,7 +56,9 @@ export function isRateLimitedError(error: unknown) {
 // The seconds a 429 problem asks the caller to wait (`retryAfter`, the body twin of
 // the Retry-After header), or undefined when the error carries none.
 function getRetryAfterSeconds(error: unknown) {
-  if (!isApiErrorLike(error)) return undefined
+  if (!isApiErrorLike(error)) {
+    return undefined
+  }
   const { retryAfter } = error
   return typeof retryAfter === 'number' && retryAfter > 0 ? retryAfter : undefined
 }
@@ -66,13 +68,17 @@ function getRetryAfterSeconds(error: unknown) {
 // 429 or carries no wait. Screens pick their own localized sentence from it.
 export function getRateLimitWait(error: unknown) {
   const seconds = getRetryAfterSeconds(error)
-  if (!isRateLimitedError(error) || seconds === undefined) return undefined
+  if (!isRateLimitedError(error) || seconds === undefined) {
+    return undefined
+  }
   return seconds >= 60
     ? ({ unit: 'minutes', count: Math.ceil(seconds / 60) } as const)
     : ({ unit: 'seconds', count: seconds } as const)
 }
 
 export function getApiErrorMessage(error: unknown, fallback: string) {
-  if (!isApiErrorLike(error)) return fallback
+  if (!isApiErrorLike(error)) {
+    return fallback
+  }
   return error.detail ?? error.form ?? error.error ?? error.title ?? fallback
 }

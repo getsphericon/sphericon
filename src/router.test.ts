@@ -35,7 +35,7 @@ function serveWorkspaces(slugs: string[] | 'unauthorized') {
   worker.use(
     slugs === 'unauthorized'
       ? handleSiteWorkspacesList(() => problem(401, { detail: 'unauthorized' }))
-      : handleSiteWorkspacesList({ body: slugs.map(workspace) }),
+      : handleSiteWorkspacesList({ body: slugs.map((slug) => workspace(slug)) }),
   )
 }
 

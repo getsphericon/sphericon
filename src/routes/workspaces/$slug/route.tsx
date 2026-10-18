@@ -11,7 +11,9 @@ export const Route = createFileRoute('/workspaces/$slug')({
     const workspaces = await requireWorkspaces(context.queryClient)
     if (!workspaces.some((w) => w.slug === params.slug)) {
       const [fallback] = workspaces
-      if (!fallback) throw redirect({ to: loginRoute.to })
+      if (!fallback) {
+        throw redirect({ to: loginRoute.to })
+      }
       throw redirect({ to: overviewRoute.to, params: { slug: fallback.slug } })
     }
     return { workspaces }

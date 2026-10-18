@@ -22,7 +22,7 @@ function ConsoleNavbar() {
         label={t(($) => $.console.nav.workspaces)}
         leftSection={<IconHome size={18} />}
         active={Boolean(matchRoute({ to: consoleHomeRoute.to }))}
-        onClick={() => navigate({ to: consoleHomeRoute.to })}
+        onClick={() => void navigate({ to: consoleHomeRoute.to })}
       />
     </Stack>
   )

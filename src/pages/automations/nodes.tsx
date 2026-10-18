@@ -1,9 +1,5 @@
-import {
-  type PaletteItem,
-  sharedProperties,
-  type UISchema,
-  type WBIcon,
-} from '@workflowbuilder/sdk'
+import { sharedProperties } from '@workflowbuilder/sdk'
+import type { PaletteItem, UISchema, WBIcon } from '@workflowbuilder/sdk'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 

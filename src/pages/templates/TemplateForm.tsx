@@ -37,7 +37,7 @@ export function TemplateForm({
           <Button
             variant="default"
             type="button"
-            onClick={() => navigate({ to: templatesRoute.to, params: { slug } })}
+            onClick={() => void navigate({ to: templatesRoute.to, params: { slug } })}
           >
             {t(($) => $.actions.cancel)}
           </Button>

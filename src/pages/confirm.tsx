@@ -29,7 +29,9 @@ export function ConfirmSubscription({
   const mutation = useMutation(sitePublicConfirmationsPerformMutation())
 
   const confirm = () => {
-    if (token) mutation.mutate({ path: { token } })
+    if (token) {
+      mutation.mutate({ path: { token } })
+    }
   }
 
   // Expired before the page was opened (no token / expired=1) or while it sat open (410).

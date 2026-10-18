@@ -43,7 +43,7 @@ export type ResourceValues<TPayload> = {
   [K in keyof TPayload]?: string | object | null | undefined
 }
 
-export type ResourceFormSchema<TPayload> = {
+export interface ResourceFormSchema<TPayload> {
   // Form values with every field blank.
   blank: FormValues
   create: z.ZodType<TPayload, FormValues>
@@ -59,8 +59,10 @@ export function resourceFormSchema<TSchema extends StringFieldsSchema>(
   // for which isOptional() is false (it parses undefined), so match the wrapper itself.
   const clearedOnUpdate = (field: string) => {
     const shape = schema.shape[field]
-    if (!(shape instanceof z.ZodExactOptional)) return undefined
-    return shape.isNullable() ? null : ''
+    if (!(shape instanceof z.ZodExactOptional)) {
+      return undefined
+    }
+    return shape.safeParse(null).success ? null : ''
   }
   const decoder = formCodec(clearedOnUpdate)
   const form = (codec: typeof decoder) => codec.pipe(schema)
@@ -75,7 +77,9 @@ export function resourceFormSchema<TSchema extends StringFieldsSchema>(
         Object.fromEntries(
           fields.map((field) => {
             const value = values.get(field)
-            if (typeof value === 'string') return [field, value]
+            if (typeof value === 'string') {
+              return [field, value]
+            }
             return [field, value === undefined || value === null ? null : JSON.stringify(value)]
           }),
         ),

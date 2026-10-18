@@ -1,7 +1,8 @@
 import type { WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import { expect, test } from 'vitest'
 
-import { type AutomationStep, graphToSteps, stepsToGraph } from './definition.ts'
+import { graphToSteps, stepsToGraph } from './definition.ts'
+import type { AutomationStep } from './definition.ts'
 
 const STEPS: AutomationStep[] = [
   { type: 'email', subject: 'Hello', body: '<mjml/>' },

@@ -32,7 +32,7 @@ export function ContactForm({
           <Button
             variant="default"
             type="button"
-            onClick={() => navigate({ to: contactsRoute.to, params: { slug } })}
+            onClick={() => void navigate({ to: contactsRoute.to, params: { slug } })}
           >
             {t(($) => $.actions.cancel)}
           </Button>

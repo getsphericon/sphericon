@@ -42,8 +42,11 @@ export function RegisterPage() {
   const registerMutation = useMutation({
     ...siteAuthRegisterMutation(),
     onSuccess: (_data, variables) => {
-      if (collectsPassword) setCreated(true)
-      else setSentTo(variables.body.email)
+      if (collectsPassword) {
+        setCreated(true)
+      } else {
+        setSentTo(variables.body.email)
+      }
     },
     onError: (error) => {
       notifications.show({

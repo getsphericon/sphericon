@@ -7,7 +7,9 @@ import { Route as overviewRoute } from './workspaces/$slug/index.tsx'
 export const Route = createFileRoute('/')({
   beforeLoad: async ({ context }) => {
     const [first] = await requireWorkspaces(context.queryClient)
-    if (!first) throw redirect({ to: loginRoute.to })
+    if (!first) {
+      throw redirect({ to: loginRoute.to })
+    }
     throw redirect({ to: overviewRoute.to, params: { slug: first.slug } })
   },
 })

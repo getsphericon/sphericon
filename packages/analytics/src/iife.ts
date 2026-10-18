@@ -13,7 +13,7 @@ function configFromScript(): TrackerConfig | undefined {
     return undefined
   }
 
-  return { collectKey, baseUrl: script?.dataset.collectUrl ?? '' }
+  return { collectKey, baseUrl: script.dataset.collectUrl ?? '' }
 }
 
 initTracking(configFromScript())

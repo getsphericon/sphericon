@@ -40,8 +40,12 @@ const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
 }
 
 function stepProperties(step: AutomationStep): Record<string, unknown> {
-  if (step.type === 'wait') return { seconds: step.seconds ?? 0 }
-  if (step.type === 'apply_tag' || step.type === 'remove_tag') return { tag: step.tag ?? '' }
+  if (step.type === 'wait') {
+    return { seconds: step.seconds ?? 0 }
+  }
+  if (step.type === 'apply_tag' || step.type === 'remove_tag') {
+    return { tag: step.tag ?? '' }
+  }
   return { subject: step.subject ?? '', body: step.body ?? '' }
 }
 
@@ -80,7 +84,7 @@ function asText(value: unknown): string {
 }
 
 function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
-  const props: Record<string, unknown> = node.data.properties ?? {}
+  const props: Record<string, unknown> = node.data.properties
   if (node.data.type === WAIT_NODE_TYPE) {
     return { type: 'wait', seconds: Math.trunc(Number(props.seconds)) || 0 }
   }
@@ -106,19 +110,25 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
 // the caller can warn instead of silently losing them.
 export function graphToSteps(graph: AutomationGraph): { steps: AutomationStep[]; dropped: number } {
   const { nodes, edges } = graph
-  if (nodes.length === 0) return { steps: [], dropped: 0 }
+  if (nodes.length === 0) {
+    return { steps: [], dropped: 0 }
+  }
 
   const byId = new Map(nodes.map((n) => [n.id, n]))
   const outgoing = new Map<string, string[]>()
   const indegree = new Map<string, number>(nodes.map((n) => [n.id, 0]))
   for (const e of edges) {
-    if (!byId.has(e.source) || !byId.has(e.target)) continue
+    if (!byId.has(e.source) || !byId.has(e.target)) {
+      continue
+    }
     outgoing.set(e.source, [...(outgoing.get(e.source) ?? []), e.target])
     indegree.set(e.target, (indegree.get(e.target) ?? 0) + 1)
   }
 
   const root = nodes.find((n) => (indegree.get(n.id) ?? 0) === 0) ?? nodes[0]
-  if (!root) return { steps: [], dropped: 0 }
+  if (!root) {
+    return { steps: [], dropped: 0 }
+  }
   const steps: AutomationStep[] = []
   const visited = new Set<string>()
   let current: string | undefined = root.id
@@ -126,7 +136,9 @@ export function graphToSteps(graph: AutomationGraph): { steps: AutomationStep[];
     visited.add(current)
     const node = byId.get(current)
     const step = node ? nodeToStep(node) : null
-    if (step) steps.push(step)
+    if (step) {
+      steps.push(step)
+    }
     current = outgoing.get(current)?.[0]
   }
 

@@ -1,7 +1,8 @@
 import { AppShell, Burger, Group, Title } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { Outlet, useLocation } from '@tanstack/react-router'
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ThemeToggle } from '../components/ThemeToggle.tsx'

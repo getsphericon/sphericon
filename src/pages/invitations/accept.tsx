@@ -51,7 +51,7 @@ export function AcceptInvitationPage() {
   const mutation = useMutation({
     ...sitePublicInvitationsAcceptMutation(),
     onSuccess: (_data, variables) => {
-      const joined = Object.keys(variables.body ?? {}).length === 0
+      const joined = Object.keys(variables.body).length === 0
       notifications.show({
         color: 'teal',
         title: t(($) => $.acceptInvitation.successTitle),

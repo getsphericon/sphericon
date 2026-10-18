@@ -1,4 +1,5 @@
-import { Group, NumberInput, type NumberInputProps } from '@mantine/core'
+import { Group, NumberInput } from '@mantine/core'
+import type { NumberInputProps } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { zSiteMaxPerDay, zSiteMaxPerSecond } from '../../generated/site/zod.gen.ts'

@@ -1,14 +1,10 @@
 import { Loader, Stack, Title } from '@mantine/core'
 import { schemaResolver, useForm } from '@mantine/form'
-import {
-  type QueryKey,
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useQuery,
-} from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
+import type { QueryKey, UseMutationOptions, UseQueryOptions } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
-import { type ComponentType, type ReactNode } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type * as z from 'zod'
 
@@ -42,13 +38,13 @@ function useResourceForm<TPayload>(
 // What a resource's form component receives. `form` validates through the resource's form
 // schema and `onSubmit` is handed the normalized API payload; the component only renders
 // fields and buttons.
-export type ResourceFormProps<TPayload> = {
+export interface ResourceFormProps<TPayload> {
   form: ResourceForm<TPayload>
   isPending: boolean
   onSubmit: (payload: TPayload) => void
 }
 
-export type ResourceTexts = {
+export interface ResourceTexts {
   createTitle: string
   editTitle: string
   created: string
@@ -61,13 +57,13 @@ export type ResourceTexts = {
 // get a create page and an edit page that own load/error states, hydration, validation,
 // normalization, mutation, invalidation and post-create navigation. The generic parameters
 // are inferred from the generated pieces; callers never write them.
-export type ResourceDescription<
+export interface ResourceDescription<
   TPayload,
   TResource extends ResourceValues<TPayload>,
   TCreated extends { id: string },
   TError extends ApiErrorLike,
   TGetKey extends QueryKey,
-> = {
+> {
   // Form values <-> API payload, derived from the generated zod schema (resourceFormSchema).
   schema: ResourceFormSchema<TPayload>
   // The resource's field-rendering form.
@@ -100,7 +96,7 @@ export type ResourceDescription<
   ) => { to: string; params: Record<string, string> }
 }
 
-export type ResourceEditPageProps<TResource> = {
+export interface ResourceEditPageProps<TResource> {
   // Extra content rendered under the form, given the loaded resource (e.g. delivery actions).
   children?: (loaded: TResource) => ReactNode
 }
@@ -192,7 +188,9 @@ export function defineResource<
 
     const query = useQuery(resource.getOptions({ path: { slug, id } }))
 
-    if (query.isLoading) return <Loader />
+    if (query.isLoading) {
+      return <Loader />
+    }
     if (query.isError || !query.data) {
       return (
         <ApiErrorAlert

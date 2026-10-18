@@ -83,14 +83,14 @@ export function UserMenu({
       <Menu.Dropdown>
         <Menu.Item
           leftSection={<IconUser size={16} />}
-          onClick={() => navigate({ to: profileRoute.to })}
+          onClick={() => void navigate({ to: profileRoute.to })}
         >
           {t(($) => $.userMenu.profile)}
         </Menu.Item>
         {slug ? (
           <Menu.Item
             leftSection={<IconSettings size={16} />}
-            onClick={() => navigate({ to: settingsRoute.to, params: { slug } })}
+            onClick={() => void navigate({ to: settingsRoute.to, params: { slug } })}
           >
             {t(($) => $.userMenu.workspaceSettings)}
           </Menu.Item>

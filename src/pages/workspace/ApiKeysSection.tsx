@@ -63,8 +63,8 @@ export function ApiKeysSection({ slug }: { slug: string }) {
   const confirmRevoke = useDeleteConfirmation()
   const [newSecret, setNewSecret] = useState<string | null>(null)
 
-  const queryKey = siteTokensListQueryKey({ path: { slug: slug } })
-  const tokensQuery = useQuery(siteTokensListOptions({ path: { slug: slug } }))
+  const queryKey = siteTokensListQueryKey({ path: { slug } })
+  const tokensQuery = useQuery(siteTokensListOptions({ path: { slug } }))
 
   const form = useForm<{ name: string; scopes: string[] }>({
     initialValues: { name: '', scopes: [] },
@@ -92,7 +92,7 @@ export function ApiKeysSection({ slug }: { slug: string }) {
     confirmRevoke({
       title: t(($) => $.settings.tokens.revokeConfirmTitle),
       description: t(($) => $.settings.tokens.revokeConfirmDescription),
-      onConfirm: () => deleteMutation.mutate({ path: { slug: slug, id } }),
+      onConfirm: () => deleteMutation.mutate({ path: { slug, id } }),
     })
   }
 
@@ -134,7 +134,7 @@ export function ApiKeysSection({ slug }: { slug: string }) {
       <form
         onSubmit={form.onSubmit((values) =>
           createMutation.mutate({
-            path: { slug: slug },
+            path: { slug },
             body: { name: values.name.trim(), scopes: values.scopes },
           }),
         )}

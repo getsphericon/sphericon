@@ -33,13 +33,8 @@ import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from './auditFilter.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
-import {
-  NO_LIMITS,
-  SendLimitFields,
-  type SendLimitValues,
-  toLimit,
-  useSendLimitValidators,
-} from './SendLimitFields.tsx'
+import { NO_LIMITS, SendLimitFields, toLimit, useSendLimitValidators } from './SendLimitFields.tsx'
+import type { SendLimitValues } from './SendLimitFields.tsx'
 import { SendLimitModal } from './SendLimitModal.tsx'
 import { SendLimitStatus } from './SendLimitStatus.tsx'
 
@@ -109,8 +104,8 @@ export function IntegrationsSection({ slug }: { slug: string }) {
   const role = useCurrentRole(slug)
   const canManageIntegrations = canManage(role)
 
-  const queryKey = siteIntegrationsListQueryKey({ path: { slug: slug } })
-  const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { slug: slug } }))
+  const queryKey = siteIntegrationsListQueryKey({ path: { slug } })
+  const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { slug } }))
 
   const validateLimits = useSendLimitValidators()
   const form = useForm<IntegrationFormValues>({
@@ -137,7 +132,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
     confirmDelete({
       title: t(($) => $.settings.integrations.deleteConfirmTitle),
       description: t(($) => $.settings.integrations.deleteConfirmDescription),
-      onConfirm: () => deleteMutation.mutate({ path: { slug: slug, id } }),
+      onConfirm: () => deleteMutation.mutate({ path: { slug, id } }),
     })
   }
 
@@ -167,7 +162,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
         <form
           onSubmit={form.onSubmit((values) =>
             createMutation.mutate({
-              path: { slug: slug },
+              path: { slug },
               body: {
                 name: values.name.trim(),
                 isDefault: values.isDefault,

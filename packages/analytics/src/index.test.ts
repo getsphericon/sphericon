@@ -19,7 +19,7 @@ function clearVisitorCookie() {
 
 type FetchStub = ReturnType<typeof vi.fn<typeof fetch>>
 
-type SentBody = {
+interface SentBody {
   visitorId: string
   email?: string | null
   phone?: string | null
@@ -39,7 +39,9 @@ function sentBodies(stub: FetchStub, path: string): SentBody[] {
 
 function sentBody(stub: FetchStub, path: string): SentBody {
   const [body] = sentBodies(stub, path)
-  if (!body) throw new Error(`no request sent to ${path}`)
+  if (!body) {
+    throw new Error(`no request sent to ${path}`)
+  }
   return body
 }
 
@@ -68,8 +70,8 @@ test('batches tracked events into one authenticated POST after the flush delay',
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
 
-  await track('signup', { plan: 'pro' })
-  await track('click')
+  track('signup', { plan: 'pro' })
+  track('click')
   expect(fetchStub).not.toHaveBeenCalled()
 
   await vi.advanceTimersByTimeAsync(200)
@@ -88,7 +90,7 @@ test('reuses the visitor id from the cookie and persists a new one', async () =>
   document.cookie = 'om_vid=existing-visitor; Path=/'
   const first = await loadTracker()
   first.initTracking(CONFIG)
-  await first.track('a')
+  first.track('a')
   await vi.advanceTimersByTimeAsync(200)
   expect(sentBody(fetchStub, '/collect/events').events[0]?.visitorId).toBe('existing-visitor')
 
@@ -127,9 +129,9 @@ test('events that failed to send are re-queued and retried on the next flush', a
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
 
-  await track('first')
+  track('first')
   await vi.advanceTimersByTimeAsync(200)
-  await track('second')
+  track('second')
   await vi.advanceTimersByTimeAsync(200)
 
   const bodies = sentBodies(fetchStub, '/collect/events')
@@ -140,7 +142,7 @@ test('events that failed to send are re-queued and retried on the next flush', a
 test('calls made before init are queued on window._omq and replayed by init', async () => {
   const { initTracking, track, identify } = await loadTracker()
 
-  await track('early', { a: 1 })
+  track('early', { a: 1 })
   await identify({ subjectId: 's1' })
   expect(window._omq).toHaveLength(2)
 
@@ -186,7 +188,7 @@ test('init without a usable collect key does not start tracking', async () => {
   const { initTracking, track } = await loadTracker()
 
   initTracking({ collectKey: ' ', baseUrl: '' })
-  await track('ignored')
+  track('ignored')
   await vi.advanceTimersByTimeAsync(200)
 
   expect(fetchStub).not.toHaveBeenCalled()
@@ -197,7 +199,7 @@ test('a second init is ignored', async () => {
   initTracking(CONFIG)
   initTracking({ collectKey: 'other', baseUrl: 'https://other.example' })
 
-  await track('x')
+  track('x')
   await vi.advanceTimersByTimeAsync(200)
 
   expect(firstCall(fetchStub).url).toBe('https://collect.example/collect/events')
@@ -206,7 +208,7 @@ test('a second init is ignored', async () => {
 test('pagehide flushes pending events without waiting for the timer', async () => {
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
-  await track('leaving')
+  track('leaving')
 
   window.dispatchEvent(new Event('pagehide'))
 
@@ -229,7 +231,7 @@ test('falls back to a generated visitor id when crypto.randomUUID is unavailable
   vi.stubGlobal('crypto', {})
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
-  await track('a')
+  track('a')
   await vi.advanceTimersByTimeAsync(200)
 
   const visitorId = sentBody(fetchStub, '/collect/events').events[0]?.visitorId
@@ -241,7 +243,7 @@ test('an empty visitor cookie is replaced by a new id', async () => {
   document.cookie = 'om_vid=; Path=/'
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
-  await track('a')
+  track('a')
   await vi.advanceTimersByTimeAsync(200)
 
   expect(sentBody(fetchStub, '/collect/events').events[0]?.visitorId).toMatch(/.+/)

@@ -1,5 +1,4 @@
 import {
-  type AnyRoute,
   createMemoryHistory,
   createRootRoute,
   createRoute,
@@ -7,12 +6,14 @@ import {
   Outlet,
   RouterProvider,
 } from '@tanstack/react-router'
+import type { AnyRoute } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
-import { type MockInstance, vi } from 'vitest'
+import { vi } from 'vitest'
+import type { MockInstance } from 'vitest'
 
 import { renderWithProviders } from './renderWithProviders.tsx'
 
-type RenderWithRouterOptions = {
+interface RenderWithRouterOptions {
   // Memory-history entry the router starts on. The default carries a `slug`
   // param so components calling useParams({ strict: false }) see one, matching
   // the app's workspace-scoped routes.
@@ -29,13 +30,15 @@ type RenderWithRouterOptions = {
 // leaf. Guards and layouts are the app's business, not the page's.
 function mirroredTree(route: AnyRoute, ui: ReactNode) {
   const chain: AnyRoute[] = []
-  for (let r = route; !r.isRoot; r = r.options.getParentRoute()) chain.unshift(r)
+  for (let r = route; !r.isRoot; r = r.options.getParentRoute()) {
+    chain.unshift(r)
+  }
 
   const root = createRootRoute()
   const routes: AnyRoute[] = []
   for (const [index, { options }] of chain.entries()) {
     const parent: AnyRoute = routes[index - 1] ?? root
-    const component = index === chain.length - 1 ? () => <>{ui}</> : Outlet
+    const component = index === chain.length - 1 ? () => ui : Outlet
     const getParentRoute = () => parent
     routes.push(
       'path' in options
@@ -49,9 +52,7 @@ function mirroredTree(route: AnyRoute, ui: ReactNode) {
 
 function flatTree(path: string, ui: ReactNode) {
   const root = createRootRoute()
-  return root.addChildren([
-    createRoute({ getParentRoute: () => root, path, component: () => <>{ui}</> }),
-  ])
+  return root.addChildren([createRoute({ getParentRoute: () => root, path, component: () => ui })])
 }
 
 // renderWithRouter mounts `ui` inside a minimal in-memory TanStack router so

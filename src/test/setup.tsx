@@ -27,9 +27,13 @@ createAppRouter(new QueryClient())
 const unhandled: string[] = []
 
 function isApiFrame({ data }: { data: unknown }) {
-  if (typeof data !== 'object' || data === null || !('request' in data)) return false
+  if (typeof data !== 'object' || data === null || !('request' in data)) {
+    return false
+  }
   const { request } = data
-  if (!(request instanceof Request)) return false
+  if (!(request instanceof Request)) {
+    return false
+  }
   const { pathname } = new URL(request.url)
   return pathname.startsWith('/site/') || pathname.startsWith('/operator/')
 }
@@ -52,7 +56,9 @@ beforeAll(() =>
 // Give them that beat while the test's handlers are still installed, or they would be answered
 // by the next test's handlers and reported as unmocked there.
 afterEach(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 20))
+  await new Promise((resolve) => {
+    setTimeout(resolve, 20)
+  })
   worker.resetHandlers()
   const messages = unhandled.splice(0)
   if (messages.length > 0) {

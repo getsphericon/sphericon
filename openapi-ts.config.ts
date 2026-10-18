@@ -1,4 +1,5 @@
-import { defineConfig, type UserConfig } from '@hey-api/openapi-ts'
+import { defineConfig } from '@hey-api/openapi-ts'
+import type { UserConfig } from '@hey-api/openapi-ts'
 
 // The generated TS types declare optional props as `field?: T` and tsconfig enables
 // exactOptionalPropertyTypes. Zod's `.optional()` / `.nullish()` output `field?: T | undefined`,
@@ -40,7 +41,7 @@ const surface = (name: 'site' | 'operator'): UserConfig => ({
                 return ctx.applyModifiers(result, opts)
               }
               const { chain } = ctx.applyModifiers(result, { ...opts, optional: false })
-              return { chain: ctx.$(ctx.symbols.z).attr('exactOptional').call(chain) }
+              return { chain: ctx.$(ctx.plugin.imports.z).attr('exactOptional').call(chain) }
             },
           }),
       },

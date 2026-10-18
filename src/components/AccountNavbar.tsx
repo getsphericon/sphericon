@@ -19,19 +19,19 @@ export function AccountNavbar() {
       <NavLink
         label={t(($) => $.account.backToDashboard)}
         leftSection={<IconArrowLeft size={18} />}
-        onClick={() => navigate({ to: indexRoute.to })}
+        onClick={() => void navigate({ to: indexRoute.to })}
       />
       <NavLink
         label={t(($) => $.account.profile)}
         leftSection={<IconUser size={18} />}
         active={Boolean(matchRoute({ to: profileRoute.to }))}
-        onClick={() => navigate({ to: profileRoute.to })}
+        onClick={() => void navigate({ to: profileRoute.to })}
       />
       <NavLink
         label={t(($) => $.account.security)}
         leftSection={<IconShieldLock size={18} />}
         active={Boolean(matchRoute({ to: securityRoute.to }))}
-        onClick={() => navigate({ to: securityRoute.to })}
+        onClick={() => void navigate({ to: securityRoute.to })}
       />
     </Stack>
   )

@@ -9,7 +9,7 @@ useOpenapi({ spec })
 
 export default {
   extends: DefaultTheme,
-  async enhanceApp({ app }) {
+  enhanceApp({ app }) {
     theme.enhanceApp({ app })
   },
 }

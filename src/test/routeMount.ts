@@ -6,7 +6,9 @@ import type { AnyRoute } from '@tanstack/react-router'
 export function routeMount(route: AnyRoute, params: Record<string, string> = {}) {
   const initialPath = route.fullPath.replaceAll(/\$(\w+)/g, (_: string, name: string) => {
     const value = params[name]
-    if (value === undefined) throw new Error(`missing route param ${name}`)
+    if (value === undefined) {
+      throw new Error(`missing route param ${name}`)
+    }
     return encodeURIComponent(value)
   })
   return { route, path: route.fullPath, initialPath }

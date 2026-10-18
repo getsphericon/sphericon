@@ -94,7 +94,7 @@ test('an accept failure shows the API error and stays on the page', async () => 
 })
 
 test('shows a loading state while the invitation is looked up', async () => {
-  worker.use(handleSitePublicInvitationsLookup(() => new Promise<Response>(() => undefined)))
+  worker.use(handleSitePublicInvitationsLookup(() => new Promise<Response>(() => {})))
   const { screen } = await renderWithRouter(<AcceptInvitationPage />, MOUNT)
 
   await expect.element(screen.getByText('Loading invitation…')).toBeInTheDocument()

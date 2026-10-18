@@ -36,8 +36,12 @@ export function BroadcastForm({
 
   const applyTemplate = (id: string | null) => {
     const tpl = templates.find((x) => x.id === id)
-    if (!tpl) return
-    if (tpl.subject) form.setFieldValue('subject', tpl.subject)
+    if (!tpl) {
+      return
+    }
+    if (tpl.subject) {
+      form.setFieldValue('subject', tpl.subject)
+    }
     form.setFieldValue('body', tpl.body)
   }
 
@@ -94,7 +98,7 @@ export function BroadcastForm({
           <Button
             variant="default"
             type="button"
-            onClick={() => navigate({ to: broadcastsRoute.to, params: { slug } })}
+            onClick={() => void navigate({ to: broadcastsRoute.to, params: { slug } })}
           >
             {t(($) => $.actions.cancel)}
           </Button>
