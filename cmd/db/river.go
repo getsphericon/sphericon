@@ -81,13 +81,13 @@ func generateRiverMigration(dir string) error {
 		out.WriteString("-- The SQL is river's own (https://github.com/riverqueue/river" + riverVersion() + "), licensed\n")
 		out.WriteString("-- under the Mozilla Public License 2.0, unmodified apart from the goose markers.\n\n")
 		fmt.Fprintf(&out, "-- river main migration %03d\n", v)
-		out.WriteString(gooseStatements(riverSQL(string(sqlUp))))
+		out.WriteString(gooseBlock(riverSQL(string(sqlUp))))
 		out.WriteString("\n-- river records its own migrations; record this one too, or a later river migrate re-runs it.\n")
 		out.WriteString(riverRecord(v) + "\n")
 
 		out.WriteString("\n-- +goose Down\n")
 		out.WriteString(riverForget(v) + "\n\n")
-		out.WriteString(gooseStatements(riverSQL(string(sqlDown))))
+		out.WriteString(gooseBlock(riverSQL(string(sqlDown))))
 
 		name := filepath.Join(dir, fmt.Sprintf("%s_river_%03d.sql", base.Add(time.Duration(i)*time.Second).Format("20060102150405"), v))
 		if err := os.WriteFile(name, []byte(out.String()), 0o644); err != nil {
@@ -170,90 +170,9 @@ func riverFile(fsys fs.FS, version int, direction string) string {
 	return matches[0]
 }
 
-// dollarQuote matches the opening of a dollar-quoted body ($$ or $tag$).
-var dollarQuote = regexp.MustCompile(`\$[A-Za-z_]*\$`)
-
-// gooseStatements returns the SQL with every statement that holds a dollar-quoted body
-// wrapped in goose's StatementBegin/End: goose would otherwise split the body at its
-// inner semicolons.
-func gooseStatements(sqlText string) string {
-	var out strings.Builder
-	for _, stmt := range splitStatements(sqlText) {
-		if dollarQuote.MatchString(stmt) {
-			out.WriteString("-- +goose StatementBegin\n" + stmt + "\n-- +goose StatementEnd\n\n")
-		} else {
-			out.WriteString(stmt + "\n\n")
-		}
-	}
-	return strings.TrimRight(out.String(), "\n") + "\n"
-}
-
-// splitStatements splits SQL at the semicolons that end a statement: not those inside
-// a quoted string, a comment or a dollar-quoted body. Each statement keeps its
-// terminating semicolon and the comments that precede it.
-func splitStatements(sqlText string) []string {
-	var (
-		stmts []string
-		cur   strings.Builder
-		i     int
-	)
-	flush := func() {
-		if s := strings.TrimSpace(cur.String()); s != "" && !commentOnly(s) {
-			stmts = append(stmts, s)
-		}
-		cur.Reset()
-	}
-	for i < len(sqlText) {
-		switch {
-		case strings.HasPrefix(sqlText[i:], "--"):
-			end := strings.IndexByte(sqlText[i:], '\n')
-			if end < 0 {
-				end = len(sqlText) - i
-			}
-			cur.WriteString(sqlText[i : i+end])
-			i += end
-		case sqlText[i] == '\'':
-			j := i + 1
-			for j < len(sqlText) {
-				if sqlText[j] == '\'' {
-					if j+1 < len(sqlText) && sqlText[j+1] == '\'' {
-						j += 2
-						continue
-					}
-					break
-				}
-				j++
-			}
-			cur.WriteString(sqlText[i:min(j+1, len(sqlText))])
-			i = min(j+1, len(sqlText))
-		case sqlText[i] == '$' && dollarQuote.FindStringIndex(sqlText[i:]) != nil && dollarQuote.FindStringIndex(sqlText[i:])[0] == 0:
-			tag := dollarQuote.FindString(sqlText[i:])
-			end := strings.Index(sqlText[i+len(tag):], tag)
-			stop := len(sqlText)
-			if end >= 0 {
-				stop = i + len(tag) + end + len(tag)
-			}
-			cur.WriteString(sqlText[i:stop])
-			i = stop
-		case sqlText[i] == ';':
-			cur.WriteByte(';')
-			i++
-			flush()
-		default:
-			cur.WriteByte(sqlText[i])
-			i++
-		}
-	}
-	flush()
-	return stmts
-}
-
-// commentOnly reports whether the text holds nothing but comments and whitespace.
-func commentOnly(s string) bool {
-	for _, line := range strings.Split(s, "\n") {
-		if line = strings.TrimSpace(line); line != "" && !strings.HasPrefix(line, "--") {
-			return false
-		}
-	}
-	return true
+// gooseBlock wraps river's SQL in one StatementBegin/End. river runs a version as a single
+// multi-statement query, so goose does too, instead of splitting it at the semicolons that
+// sit inside the dollar-quoted bodies of river's functions.
+func gooseBlock(sqlText string) string {
+	return "-- +goose StatementBegin\n" + strings.TrimSpace(sqlText) + "\n-- +goose StatementEnd\n"
 }
