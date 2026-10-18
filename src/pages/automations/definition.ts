@@ -80,7 +80,7 @@ function asText(value: unknown): string {
 }
 
 function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
-  const props = (node.data.properties ?? {}) as Record<string, unknown>
+  const props: Record<string, unknown> = node.data.properties ?? {}
   if (node.data.type === WAIT_NODE_TYPE) {
     return { type: 'wait', seconds: Math.trunc(Number(props.seconds)) || 0 }
   }
