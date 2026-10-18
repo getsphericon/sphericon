@@ -15,12 +15,14 @@ import (
 // runUpgrade is `sphericon upgrade --from <dir> [--version vX.Y.Z] [--yes]`: it installs a
 // release already on the machine over the running binary (ADR 0034).
 func runUpgrade(ctx context.Context, args []string, out io.Writer) error {
-	const usage = "usage: upgrade --from <dir> [--version vX.Y.Z] [--yes]"
+	const usage = "usage: upgrade --from <dir> [--version vX.Y.Z] [--yes] [--restart]"
 	fs := flag.NewFlagSet("upgrade", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	from := fs.String("from", "", "directory with a release archive and checksums.txt")
 	version := fs.String("version", "", "release to install (default: the newest in --from)")
 	yes := fs.Bool("yes", false, "go past the Upgrade notes")
+	restart := fs.Bool("restart", false, "migrate in a transient unit, then restart the systemd service")
+	service := fs.String("service", "sphericon", "systemd unit that --restart restarts")
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("%w (%s)", err, usage)
 	}
@@ -31,13 +33,18 @@ func runUpgrade(ctx context.Context, args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	_, err = upgrade.Step(ctx, upgrade.Options{
+	opts := upgrade.Options{
 		Source:  upgrade.DirSource(*from),
 		Target:  target,
 		Current: buildinfo.Current().Version,
 		Version: *version,
 		Yes:     *yes,
 		Out:     out,
-	})
+	}
+	if *restart {
+		sd := upgrade.Systemd{Service: *service, Out: out}
+		opts.Run, opts.PostSwap = sd.Run, sd.PostSwap
+	}
+	_, err = upgrade.Step(ctx, opts)
 	return err
 }
