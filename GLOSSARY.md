@@ -597,6 +597,12 @@ A random identifier an Instance generates for itself at first start. It is deriv
 Instance be told apart over time.
 _Avoid_: Install id, machine id, license id
 
+**License key**:
+The signed token that switches an Instance's Enterprise features on, with an optional expiry. With
+none, or after it has expired, the Instance runs the core alone and loses no data; a key that does
+not verify is a mistake and stops the start.
+_Avoid_: Licence, serial, activation code
+
 **Release check**:
 The Instance asking where the newest published release is, so an owner can be told one exists.
 It sends nothing about the Instance and is independent of the Telemetry report.
