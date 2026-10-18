@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
-	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/telemetry"
@@ -52,7 +50,7 @@ func main() {
 	// `server migrate` applies pending migrations and exits — handy for a
 	// separate orchestration step (init container, release job, manual run).
 	if len(os.Args) > 1 && os.Args[1] == "migrate" {
-		if err := runMigrate(env); err != nil {
+		if err := runMigrate(env, os.Args[2:], os.Stdout); err != nil {
 			fatal("migrate", err)
 		}
 		return
@@ -122,10 +120,9 @@ func main() {
 	// Opt-in self-migration on startup, so the single binary/image can come up
 	// against a fresh database with no extra step.
 	if cfg.AutoMigrate {
-		if err := applyMigrations(cfg); err != nil {
+		if err := migrateOnStart(cfg); err != nil {
 			fatal("auto-migrate", err)
 		}
-		slog.Info("migrations applied")
 	}
 
 	application, err := app.New(env)
@@ -163,32 +160,6 @@ func main() {
 func fatal(msg string, err error) {
 	slog.Error(msg, "err", err)
 	os.Exit(1)
-}
-
-func runMigrate(env string) error {
-	cfg, err := config.Load(env)
-	if err != nil {
-		return err
-	}
-	if err := applyMigrations(cfg); err != nil {
-		return err
-	}
-	slog.Info("migrations applied")
-	return nil
-}
-
-// applyMigrations opens a short-lived connection (separate from the app's DI
-// pool) and applies the embedded migrations with goose.
-func applyMigrations(cfg *config.Config) error {
-	db, err := sql.Open("pgx", cfg.DatabaseURL)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = db.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-	return appdb.Migrate(ctx, db)
 }
 
 // runWorkspaceCommand boots the minimal staff member app (no listener, no event router,
