@@ -2,8 +2,8 @@
 
 `internal/testhelper.Setup(t)` is the standard fixture. It migrates schema + loads
 committed YAML fixtures from `fixtures/` **once per process**, then each test runs inside
-a **go-txdb** transaction that rolls back on cleanup (full isolation, DB stays at fixture
-state). Tests drive the real server in-memory through **actors** (typed ogen clients, see
+a transaction that rolls back on cleanup (`pgcleaner`'s `Transaction` strategy, go-txdb underneath:
+full isolation, DB stays at fixture state). Tests drive the real server in-memory through **actors** (typed ogen clients, see
 below) — no sockets. See `internal/api/site/contacts_test.go`.
 
 A test that needs a **real commit** (code that opens its own connection, the outbox router, concurrent

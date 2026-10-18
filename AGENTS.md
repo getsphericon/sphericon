@@ -371,7 +371,7 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
 - **Tests never clean up by hand, and never reset state at their start.** A test that needs a real
   commit (the outbox router, concurrent workers, a whole app) takes a database of its own from
   `testhelper.RealDB`, `RealDBURL` or `EmptyDBURL` (pgtestdb), dropped when the test ends; every
-  other test rides the go-txdb transaction that rolls back. A `t.Cleanup` that deletes rows, a purge
+  other test rides the transaction `pgcleaner` hands out, which rolls back. A `t.Cleanup` that deletes rows, a purge
   or a reset at the top of a test means a test is committing outside its transaction: fix that test.
 - **No tests of built-in behaviour.** A test exercises sphericon's own code. One whose only subject is a
   Mantine component, the standard library or another dependency (a copy button showing "Copied", a
