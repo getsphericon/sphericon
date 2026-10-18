@@ -15,7 +15,7 @@ this is the actual policy.
 
 Consequence: segment conditions that look back past the window are capped by it, and this is
 documented as a product limit, not a bug. Deleting an Event is irreversible, so the window is an
-operator choice with a documented default rather than a hidden constant.
+self-hoster choice with a documented default rather than a hidden constant.
 
 ## Considered options
 
@@ -24,5 +24,5 @@ operator choice with a documented default rather than a hidden constant.
   `(transaction_id, offset)`. Revisit only if `events` reaches hundreds of millions of rows.
 - **Delete by age regardless of kind** (rejected): would destroy consent proof and the audit
   trail behind every Suppression and unsubscribe.
-- **Documentation-only, operators run `DELETE`** (rejected): unsafe against the outbox consumer
+- **Documentation-only, self-hosters run `DELETE`** (rejected): unsafe against the outbox consumer
   cursors and leaves every self-hosted instance growing forever.

@@ -13,7 +13,7 @@ Workspaces the victim is later invited to.
 
 `SPHERICON_REQUIRE_EMAIL_VERIFICATION` (default `true`) turns the gate off for a self-hosted install
 without outbound mail, so registration yields a verified User at once; the SaaS runs it on. It is
-an explicit operator choice, never inferred from whether SMTP is configured, because a mail
+an explicit self-hoster choice, never inferred from whether SMTP is configured, because a mail
 misconfiguration must not silently disable the protection.
 
 ## Considered Options

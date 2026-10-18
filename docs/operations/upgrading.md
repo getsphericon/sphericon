@@ -73,10 +73,10 @@ whether fixing forward is cheaper than losing that window.
 sphericon is versioned with release-please from Conventional Commits. The authoritative list of
 changes for each release is the
 [GitHub releases page](https://github.com/getsphericon/sphericon/releases). The table below records
-only what needs an operator's attention beyond "run `migrate`": a new required setting, a
+only what needs a self-hoster's attention beyond "run `migrate`": a new required setting, a
 removed one, a slow migration, a changed default.
 
-| Version | Operator action                                                             |
+| Version | Self-hoster action                                                          |
 | ------- | --------------------------------------------------------------------------- |
 | 0.x     | Pre-release series. No special steps are recorded beyond running `migrate`. |
 

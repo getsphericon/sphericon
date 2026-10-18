@@ -26,7 +26,7 @@ owner is told by mail instead.
   (`SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR`), taken under a Kind of its own for
   registration and for email change, so a stranger cannot mail-bomb an owner through either.
 - **The exception** is `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false`: the password arrives with the request and
-  no mail is sent, so registration keeps answering 409. An operator who turns the gate off accepts
+  no mail is sent, so registration keeps answering 409. A self-hoster who turns the gate off accepts
   that enumeration.
 
 ## Considered Options

@@ -35,7 +35,7 @@ Out of scope:
 
 - vulnerabilities in third-party dependencies with no demonstrable impact on sphericon
   (report those upstream);
-- findings that need a compromised operator, database or host, or physical access;
+- findings that need a compromised self-hoster, database or host, or physical access;
 - denial of service through volumetric traffic, and missing rate limits on their own;
 - social engineering, phishing, and attacks on the maintainers or on users' infrastructure;
 - misconfiguration of a deployment that contradicts the documented hardening guidance;

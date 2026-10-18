@@ -5,7 +5,7 @@ status: accepted
 # Outbound send: one module, one message record, two outcome scopes
 
 Every email sphericon sends **on a Workspace's behalf** — Broadcast, Automation step, Transactional,
-and the operator's test send of a Broadcast — passes through **one module, Outbound send**, which
+and a user's test send of a Broadcast — passes through **one module, Outbound send**, which
 owns everything between "this message is wanted" and "the
 provider accepted it": Send-eligibility, the Workspace freeze check, the Sending-domain gate,
 rendering, the unsubscribe footer and RFC 8058 headers, DKIM signing, the provider call, and the

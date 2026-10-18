@@ -5,7 +5,7 @@ ingress. It is now served only by a dedicated listener bound to `SPHERICON_METRI
 empty by default = no listener, same shape as RudderStack's opt-in Prometheus port). There is no
 `/metrics` route on the public mux, no token and no allowlist: the network boundary is the
 control. A `SPHERICON_METRICS_ADDR` equal to the public `PORT` is a configuration error, and a bind failure
-is fatal, because an operator who asked for metrics must not silently run without them.
+is fatal, because a self-hoster who asked for metrics must not silently run without them.
 `/healthz` and `/readyz` stay unauthenticated on the public port (orchestrator probes cannot send
 credentials).
 

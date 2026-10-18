@@ -15,7 +15,7 @@ The endpoint speaks Streamable HTTP and is stateless. Create an API token under
 **Settings → API keys** (see [scopes](/guide/api#tokens-and-scopes)), then point your client at
 `https://sphericon.example.com/mcp` with the token as a Bearer credential.
 
-If the operator serves MCP from its own host (`SPHERICON_MCP_URL`, for example `https://mcp.sphericon.example.com`),
+If you serve MCP from its own host (`SPHERICON_MCP_URL`, for example `https://mcp.sphericon.example.com`),
 use `${SPHERICON_MCP_URL}/mcp` instead; sign-in and consent still happen on the app host.
 
 Claude Code:

@@ -10,7 +10,7 @@ automation, `/collect` tracking, unified identity, segments, broadcasts, transac
 double opt-in, self-serve DKIM/DNS verification, per-domain deliverability metrics. What is
 gated is the **organizational shape** around that product: security/governance for a company
 with compliance obligations, embedding for a platform reselling us, and scale-infra for a
-high-volume operator. A solo self-hoster hits **no** paywall on product value; a small company
+high-volume sender. A solo self-hoster hits **no** paywall on product value; a small company
 hits one only on governance it wouldn't have without a security team.
 
 This is a **greenfield** decision: nothing is shipped yet, so the boundary is _established here_,
@@ -72,7 +72,7 @@ Org-shape features that a small self-hoster does not need, so gating them does n
   defensible lane for a CDP+automation product, and it is in EE by design from the start.
 - **Scale-infra** (gated by _form_, not product value): dedicated-IP / warmup automation and
   data-residency / advanced-retention controls. These matter only to a high-volume or regulated
-  operator; the send path itself stays free.
+  sender; the send path itself stays free.
 
 Because this is greenfield, the split is designed in from day one: `ee/` exists as a separate
 directory from the first commit, and no feature is ever born free-then-moved. The list above is
