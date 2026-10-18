@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
+	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -80,6 +81,7 @@ const (
 	TypeOutboxMessage      = "OutboxMessage"
 	TypeOutboxOffset       = "OutboxOffset"
 	TypeRecoveryCode       = "RecoveryCode"
+	TypeSchemaState        = "SchemaState"
 	TypeSegment            = "Segment"
 	TypeSendLimiter        = "SendLimiter"
 	TypeSendingDomain      = "SendingDomain"
@@ -21798,6 +21800,536 @@ func (m *RecoveryCodeMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown RecoveryCode edge %s", name)
+}
+
+// SchemaStateMutation represents an operation that mutates the SchemaState nodes in the graph.
+type SchemaStateMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int64
+	created_at    *time.Time
+	updated_at    *time.Time
+	major         *int
+	addmajor      *int
+	floor         *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*SchemaState, error)
+	predicates    []predicate.SchemaState
+}
+
+var _ ent.Mutation = (*SchemaStateMutation)(nil)
+
+// schemastateOption allows management of the mutation configuration using functional options.
+type schemastateOption func(*SchemaStateMutation)
+
+// newSchemaStateMutation creates new mutation for the SchemaState entity.
+func newSchemaStateMutation(c config, op Op, opts ...schemastateOption) *SchemaStateMutation {
+	m := &SchemaStateMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSchemaState,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSchemaStateID sets the ID field of the mutation.
+func withSchemaStateID(id int64) schemastateOption {
+	return func(m *SchemaStateMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SchemaState
+		)
+		m.oldValue = func(ctx context.Context) (*SchemaState, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SchemaState.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSchemaState sets the old SchemaState of the mutation.
+func withSchemaState(node *SchemaState) schemastateOption {
+	return func(m *SchemaStateMutation) {
+		m.oldValue = func(context.Context) (*SchemaState, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SchemaStateMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SchemaStateMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SchemaState entities.
+func (m *SchemaStateMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SchemaStateMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SchemaStateMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SchemaState.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SchemaStateMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SchemaStateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SchemaState entity.
+// If the SchemaState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SchemaStateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SchemaStateMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SchemaStateMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SchemaStateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SchemaState entity.
+// If the SchemaState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SchemaStateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SchemaStateMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetMajor sets the "major" field.
+func (m *SchemaStateMutation) SetMajor(i int) {
+	m.major = &i
+	m.addmajor = nil
+}
+
+// Major returns the value of the "major" field in the mutation.
+func (m *SchemaStateMutation) Major() (r int, exists bool) {
+	v := m.major
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMajor returns the old "major" field's value of the SchemaState entity.
+// If the SchemaState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SchemaStateMutation) OldMajor(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMajor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMajor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMajor: %w", err)
+	}
+	return oldValue.Major, nil
+}
+
+// AddMajor adds i to the "major" field.
+func (m *SchemaStateMutation) AddMajor(i int) {
+	if m.addmajor != nil {
+		*m.addmajor += i
+	} else {
+		m.addmajor = &i
+	}
+}
+
+// AddedMajor returns the value that was added to the "major" field in this mutation.
+func (m *SchemaStateMutation) AddedMajor() (r int, exists bool) {
+	v := m.addmajor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMajor resets all changes to the "major" field.
+func (m *SchemaStateMutation) ResetMajor() {
+	m.major = nil
+	m.addmajor = nil
+}
+
+// SetFloor sets the "floor" field.
+func (m *SchemaStateMutation) SetFloor(s string) {
+	m.floor = &s
+}
+
+// Floor returns the value of the "floor" field in the mutation.
+func (m *SchemaStateMutation) Floor() (r string, exists bool) {
+	v := m.floor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFloor returns the old "floor" field's value of the SchemaState entity.
+// If the SchemaState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SchemaStateMutation) OldFloor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFloor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFloor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFloor: %w", err)
+	}
+	return oldValue.Floor, nil
+}
+
+// ResetFloor resets all changes to the "floor" field.
+func (m *SchemaStateMutation) ResetFloor() {
+	m.floor = nil
+}
+
+// Where appends a list predicates to the SchemaStateMutation builder.
+func (m *SchemaStateMutation) Where(ps ...predicate.SchemaState) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SchemaStateMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SchemaStateMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SchemaState, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SchemaStateMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SchemaStateMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SchemaState).
+func (m *SchemaStateMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SchemaStateMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, schemastate.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, schemastate.FieldUpdatedAt)
+	}
+	if m.major != nil {
+		fields = append(fields, schemastate.FieldMajor)
+	}
+	if m.floor != nil {
+		fields = append(fields, schemastate.FieldFloor)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SchemaStateMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case schemastate.FieldCreatedAt:
+		return m.CreatedAt()
+	case schemastate.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case schemastate.FieldMajor:
+		return m.Major()
+	case schemastate.FieldFloor:
+		return m.Floor()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SchemaStateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case schemastate.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case schemastate.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case schemastate.FieldMajor:
+		return m.OldMajor(ctx)
+	case schemastate.FieldFloor:
+		return m.OldFloor(ctx)
+	}
+	return nil, fmt.Errorf("unknown SchemaState field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SchemaStateMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case schemastate.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case schemastate.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case schemastate.FieldMajor:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMajor(v)
+		return nil
+	case schemastate.FieldFloor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFloor(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SchemaState field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SchemaStateMutation) AddedFields() []string {
+	var fields []string
+	if m.addmajor != nil {
+		fields = append(fields, schemastate.FieldMajor)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SchemaStateMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case schemastate.FieldMajor:
+		return m.AddedMajor()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SchemaStateMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case schemastate.FieldMajor:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMajor(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SchemaState numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SchemaStateMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SchemaStateMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SchemaStateMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown SchemaState nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SchemaStateMutation) ResetField(name string) error {
+	switch name {
+	case schemastate.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case schemastate.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case schemastate.FieldMajor:
+		m.ResetMajor()
+		return nil
+	case schemastate.FieldFloor:
+		m.ResetFloor()
+		return nil
+	}
+	return fmt.Errorf("unknown SchemaState field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SchemaStateMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SchemaStateMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SchemaStateMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SchemaStateMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SchemaStateMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SchemaStateMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SchemaStateMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown SchemaState unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SchemaStateMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown SchemaState edge %s", name)
 }
 
 // SegmentMutation represents an operation that mutates the Segment nodes in the graph.

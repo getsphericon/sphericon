@@ -779,6 +779,20 @@ var (
 			},
 		},
 	}
+	// SchemaStateColumns holds the columns for the "schema_state" table.
+	SchemaStateColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "major", Type: field.TypeInt},
+		{Name: "floor", Type: field.TypeString},
+	}
+	// SchemaStateTable holds the schema information for the "schema_state" table.
+	SchemaStateTable = &schema.Table{
+		Name:       "schema_state",
+		Columns:    SchemaStateColumns,
+		PrimaryKey: []*schema.Column{SchemaStateColumns[0]},
+	}
 	// SegmentsColumns holds the columns for the "segments" table.
 	SegmentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1223,6 +1237,7 @@ var (
 		OauthCodesTable,
 		OutboundMessagesTable,
 		RecoveryCodesTable,
+		SchemaStateTable,
 		SegmentsTable,
 		SendLimitersTable,
 		SendingDomainsTable,
@@ -1323,6 +1338,9 @@ func init() {
 	RecoveryCodesTable.ForeignKeys[0].RefTable = UsersTable
 	RecoveryCodesTable.Annotation = &entsql.Annotation{
 		Table: "recovery_codes",
+	}
+	SchemaStateTable.Annotation = &entsql.Annotation{
+		Table: "schema_state",
 	}
 	SegmentsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SegmentsTable.Annotation = &entsql.Annotation{

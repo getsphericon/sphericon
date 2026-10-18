@@ -72,6 +72,9 @@ type OutboxOffset func(*sql.Selector)
 // RecoveryCode is the predicate function for recoverycode builders.
 type RecoveryCode func(*sql.Selector)
 
+// SchemaState is the predicate function for schemastate builders.
+type SchemaState func(*sql.Selector)
+
 // Segment is the predicate function for segment builders.
 type Segment func(*sql.Selector)
 

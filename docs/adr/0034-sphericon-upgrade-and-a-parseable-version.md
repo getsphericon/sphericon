@@ -23,10 +23,11 @@ neither the command, a diagnosis, nor the guard's message can say what runs wher
   notes of every release between the two versions and, if there are any, waits for `--yes`. It
   refuses to run inside a container or Kubernetes and says which command to use instead.
 - **It reaches the database through the service, not by itself.** Its shell does not carry the
-  service's environment, so the documented systemd setup has a `sphericon-migrate.service`
-  (oneshot, same user and environment file) that `upgrade --restart` starts before it runs
-  `systemctl restart sphericon`; a failed migration stops there with the old version still serving.
-  Without `--restart` it prints the two commands.
+  service's environment, so `upgrade --restart` reads the service's `User` and `EnvironmentFile`
+  with `systemctl show` and runs the new binary's `migrate` as a transient unit
+  (`systemd-run --wait --collect` with those properties), so there is no second unit file to
+  install; then it swaps and runs `systemctl restart sphericon`. A failed migration stops there
+  with the old version still serving. Without `--restart` it prints the commands.
 - **Across Majors it walks** to the last release of each Major, then to the target; every step is the
   sequence above. `--version vX.Y.Z` pins a release, a downgrade is refused, and `--from <dir>` takes
   an archive and `checksums.txt` already on the machine, so a host without internet access
@@ -51,6 +52,9 @@ neither the command, a diagnosis, nor the guard's message can say what runs wher
 
 - **`sphericon upgrade` runs `migrate` itself.** Rejected: it runs from a shell that has none of
   the service's environment, so it would need the database URL given a second time.
+- **A `sphericon-migrate.service` oneshot unit next to the service.** Rejected: a second file to
+  install and keep in step with the first; a transient unit built from the service's own
+  properties has nothing to install.
 - **Restart by default.** Rejected: a command that restarts a service nobody told it about
   surprises; the flag names it.
 - **A second update check with its own switch and an email to a configured address.** Rejected:

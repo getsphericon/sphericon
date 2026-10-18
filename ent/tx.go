@@ -58,6 +58,8 @@ type Tx struct {
 	OutboxOffset *OutboxOffsetClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
 	RecoveryCode *RecoveryCodeClient
+	// SchemaState is the client for interacting with the SchemaState builders.
+	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
 	Segment *SegmentClient
 	// SendLimiter is the client for interacting with the SendLimiter builders.
@@ -237,6 +239,7 @@ func (tx *Tx) init() {
 	tx.OutboxMessage = NewOutboxMessageClient(tx.config)
 	tx.OutboxOffset = NewOutboxOffsetClient(tx.config)
 	tx.RecoveryCode = NewRecoveryCodeClient(tx.config)
+	tx.SchemaState = NewSchemaStateClient(tx.config)
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendLimiter = NewSendLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
