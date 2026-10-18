@@ -9,7 +9,9 @@ import {
   handleSiteWorkspacesSetSecondFactorRequirement,
 } from '../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
-import { overviewRoute, securityRoute, workspaceRoute } from '../router.tsx'
+import { Route as securityRoute } from '../routes/account/security.tsx'
+import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
+import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
 import { page } from '../test/payloads.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'

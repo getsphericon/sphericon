@@ -1,0 +1,70 @@
+import { HttpResponse } from 'msw'
+import { expect, test } from 'vitest'
+
+import { handleSiteBroadcastsGet } from '../../generated/site/msw.gen.ts'
+import { Route as broadcastsReportRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/report.tsx'
+import { problem } from '../../test/problem.ts'
+import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { routeMount } from '../../test/routeMount.ts'
+import { worker } from '../../test/worker.ts'
+import { BroadcastReportPage } from './report.tsx'
+
+const REPORT_ROUTE = routeMount(broadcastsReportRoute, { slug: 'test', broadcastId: '5' })
+
+const STATS = {
+  recipientsTotal: 200,
+  sentCount: 190,
+  openedCount: 80,
+  clickedCount: 20,
+  unsubscribedCount: 3,
+  failedCount: 10,
+  deliveryRate: 0.95,
+  openRate: 0.5,
+  clickRate: 0.125,
+  clickToOpenRate: 0.25,
+  unsubscribeRate: 0.015,
+  failureRate: 0.05,
+}
+
+const BROADCAST = {
+  id: '5',
+  name: 'Big news',
+  subject: 'Read this',
+  status: 'sent',
+  stats: STATS,
+}
+
+test('renders the broadcast header, counters and rates', async () => {
+  worker.use(handleSiteBroadcastsGet(() => HttpResponse.json(BROADCAST)))
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Big news')).toBeInTheDocument()
+  await expect.element(screen.getByText('Read this')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sent', { exact: true }).first()).toBeInTheDocument()
+  await expect.element(screen.getByText('200')).toBeInTheDocument()
+  await expect.element(screen.getByText('95%')).toBeInTheDocument()
+  await expect.element(screen.getByText('12.5%')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is on hold')).not.toBeInTheDocument()
+})
+
+test('shows the hold alert when the broadcast is on hold', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({ ...BROADCAST, status: 'sending', holdReason: 'no_integration' }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Sending is on hold')).toBeInTheDocument()
+  await expect.element(screen.getByText(/No email provider is configured/)).toBeInTheDocument()
+})
+
+test('shows an error alert when the broadcast fails to load', async () => {
+  worker.use(handleSiteBroadcastsGet(() => problem(500)))
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Failed to load broadcasts')).toBeInTheDocument()
+})

@@ -8,6 +8,8 @@ const config: KnipConfig = {
     '@jsonforms/react',
     '@typespec/.*',
     'npm-check-updates',
+    // Run by `mise run generate:routes` (tsr generate), which knip cannot see.
+    '@tanstack/router-cli',
   ],
   ignoreExportsUsedInFile: true,
   workspaces: {

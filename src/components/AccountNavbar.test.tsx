@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 
-import { indexRoute, profileRoute } from '../router.tsx'
+import { Route as profileRoute } from '../routes/account/index.tsx'
+import { Route as indexRoute } from '../routes/index.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { AccountNavbar } from './AccountNavbar.tsx'
 

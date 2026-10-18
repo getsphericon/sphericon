@@ -3,7 +3,9 @@ import { IconArrowLeft, IconShieldLock, IconUser } from '@tabler/icons-react'
 import { useMatchRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { indexRoute, profileRoute, securityRoute } from '../router.tsx'
+import { Route as profileRoute } from '../routes/account/index.tsx'
+import { Route as securityRoute } from '../routes/account/security.tsx'
+import { Route as indexRoute } from '../routes/index.tsx'
 
 // AccountNavbar is the sidebar for the workspace-independent account area:
 // a way back to the workspace dashboard plus account sections.

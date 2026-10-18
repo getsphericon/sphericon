@@ -9,7 +9,7 @@ import {
 import { expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 
-import { loginRoute } from '../router.tsx'
+import { Route as loginRoute } from '../routes/login.tsx'
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
 import { DashboardShell } from './DashboardShell.tsx'
 

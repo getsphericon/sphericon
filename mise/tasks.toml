@@ -276,6 +276,10 @@ depends = [
 description = "OpenAPI -> TS clients (site and operator clients, collect types, one config)"
 run = "pnpm exec openapi-ts -f openapi-ts.config.ts"
 
+["generate:routes"]
+description = "src/routes -> src/routeTree.gen.ts (TanStack Router file-based route tree)"
+run = "pnpm exec tsr generate"
+
 ["generate:i18n-types"]
 run = "pnpm run i18n:types"
 
@@ -306,10 +310,11 @@ description = "fixtures/*.yml -> Go (fixture catalog constants for `# fixture: N
 run = "go run ./cmd/fixturegen"
 
 [generate]
-description = "Full cycle: typespec -> openapi -> backend -> test mocks -> fixture catalog -> frontend -> i18n types -> format"
+description = "Full cycle: typespec -> openapi -> backend -> test mocks -> fixture catalog -> frontend (clients, route tree) -> i18n types -> format"
 run = [
   { task = "generate:typespec" },
   { task = "generate:openapi" },
+  { task = "generate:routes" },
   { task = "generate:backend" },
   { task = "generate:mocks" },
   { task = "generate:fixtures" },

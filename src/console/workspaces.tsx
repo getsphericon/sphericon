@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { operatorWorkspacesListOptions } from '../generated/operator/@tanstack/react-query.gen.ts'
 import type { OperatorWorkspaceReview } from '../generated/operator/types.gen.ts'
-import { consoleWorkspaceRoute } from '../router.tsx'
+import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
 
 const PAGE_SIZE = 25

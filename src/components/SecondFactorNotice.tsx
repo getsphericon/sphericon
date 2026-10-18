@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
 import { canManage } from '../hooks/useCurrentRole.ts'
 import { useSetSecondFactorRequirement } from '../hooks/useSetSecondFactorRequirement.ts'
-import { securityRoute } from '../router.tsx'
+import { Route as securityRoute } from '../routes/account/security.tsx'
 import { formatDate } from '../utils/datetime.ts'
 import { ButtonLink } from './RouterLink.tsx'
 

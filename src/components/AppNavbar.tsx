@@ -13,17 +13,15 @@ import {
 import { useMatchRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import {
-  activityRoute,
-  automationsRoute,
-  broadcastsRoute,
-  contactsRoute,
-  overviewRoute,
-  segmentsRoute,
-  settingsRoute,
-  templatesRoute,
-  transactionalEmailsRoute,
-} from '../router.tsx'
+import { Route as activityRoute } from '../routes/workspaces/$slug/activity.tsx'
+import { Route as automationsRoute } from '../routes/workspaces/$slug/automations/index.tsx'
+import { Route as broadcastsRoute } from '../routes/workspaces/$slug/broadcasts/index.tsx'
+import { Route as contactsRoute } from '../routes/workspaces/$slug/contacts/index.tsx'
+import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
+import { Route as segmentsRoute } from '../routes/workspaces/$slug/segments/index.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
+import { Route as templatesRoute } from '../routes/workspaces/$slug/templates/index.tsx'
+import { Route as transactionalEmailsRoute } from '../routes/workspaces/$slug/transactional-emails/index.tsx'
 
 // AppNavbar renders the workspace-scoped sidebar. Active sections are built
 // real now; roadmap sections are disabled placeholders that signal direction.

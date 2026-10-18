@@ -23,7 +23,7 @@ import {
 } from '../generated/operator/@tanstack/react-query.gen.ts'
 import type { OperatorEnrolment, OperatorLoginResult } from '../generated/operator/types.gen.ts'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage.ts'
-import { consoleHomeRoute } from '../router.tsx'
+import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 
 // What the password step granted: a code to enter, plus the secret to add to an
 // authenticator app when the Operator has no TOTP yet (first login).
