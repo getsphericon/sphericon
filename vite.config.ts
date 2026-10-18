@@ -92,7 +92,16 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**', 'packages/analytics/src/**'],
-      exclude: ['**/generated/**', '**/*.test.*', 'src/test/**', 'src/main.tsx'],
+      // The route files are declarations: the router plugin compiles each into lazy-loading
+      // glue whose branches no test calls, and the guards in them delegate to src/guards.ts.
+      exclude: [
+        '**/generated/**',
+        '**/*.test.*',
+        'src/test/**',
+        'src/main.tsx',
+        'src/routes/**',
+        'src/routeTree.gen.ts',
+      ],
       reporter: ['text-summary', 'html'],
       // Current coverage is ~99% lines / ~93% branches; the floor sits a little below so
       // CI catches regressions without flaking on small changes.
