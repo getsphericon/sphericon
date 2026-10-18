@@ -18,6 +18,7 @@ import {
 import { Route as profileRoute } from '../routes/account/index.tsx'
 import { Route as loginRoute } from '../routes/login.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
+import { MenuItemLink } from './RouterLink.tsx'
 
 // UserMenu is the header account dropdown: profile, workspace settings, logout.
 // `slug` is the active workspace (absent in the account layout); the workspace
@@ -81,19 +82,17 @@ export function UserMenu({
       </Menu.Target>
 
       <Menu.Dropdown>
-        <Menu.Item
-          leftSection={<IconUser size={16} />}
-          onClick={() => navigate({ to: profileRoute.to })}
-        >
+        <MenuItemLink to={profileRoute.to} leftSection={<IconUser size={16} />}>
           {t(($) => $.userMenu.profile)}
-        </Menu.Item>
+        </MenuItemLink>
         {slug ? (
-          <Menu.Item
+          <MenuItemLink
+            to={settingsRoute.to}
+            params={{ slug }}
             leftSection={<IconSettings size={16} />}
-            onClick={() => navigate({ to: settingsRoute.to, params: { slug } })}
           >
             {t(($) => $.userMenu.workspaceSettings)}
-          </Menu.Item>
+          </MenuItemLink>
         ) : null}
         {slug && accountLink ? (
           <Menu.Item

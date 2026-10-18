@@ -1,7 +1,7 @@
 import { Button, Group, Stack, Textarea, TextInput } from '@mantine/core'
-import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteCreateEmailTemplateInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$slug/route.tsx'
@@ -13,7 +13,6 @@ export function TemplateForm({
   onSubmit,
 }: ResourceFormProps<SiteCreateEmailTemplateInput>) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { slug } = workspaceRoute.useParams()
 
   return (
@@ -34,13 +33,9 @@ export function TemplateForm({
         />
 
         <Group justify="flex-end">
-          <Button
-            variant="default"
-            type="button"
-            onClick={() => navigate({ to: templatesRoute.to, params: { slug } })}
-          >
+          <ButtonLink variant="default" to={templatesRoute.to} params={{ slug }}>
             {t(($) => $.actions.cancel)}
-          </Button>
+          </ButtonLink>
           <Button type="submit" loading={isPending}>
             {t(($) => $.actions.save)}
           </Button>

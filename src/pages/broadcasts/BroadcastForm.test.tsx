@@ -70,11 +70,11 @@ test('the template picker is hidden when the workspace has no templates', async 
   expect(screen.getByText('Start from template').elements()).toHaveLength(0)
 })
 
-test('Cancel returns to the broadcasts list of the current workspace', async () => {
+test('Cancel links back to the broadcasts list of the current workspace', async () => {
   serve([])
-  const { screen, navigate } = await renderWithRouter(<BroadcastCreatePage />, mount)
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
 
-  await screen.getByRole('button', { name: 'Cancel' }).click()
-
-  expect(navigate).toHaveBeenCalledWith({ to: broadcastsRoute.to, params: { slug: 'test' } })
+  await expect
+    .element(screen.getByRole('link', { name: 'Cancel' }))
+    .toHaveAttribute('href', routeMount(broadcastsRoute, { slug: 'test' }).initialPath)
 })

@@ -10,6 +10,7 @@ import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
 import { Route as templatesRoute } from '../routes/workspaces/$slug/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$slug/transactional-emails/index.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
+import { routeMount } from '../test/routeMount.ts'
 import { AppNavbar } from './AppNavbar.tsx'
 
 const SECTIONS = [
@@ -24,10 +25,10 @@ const SECTIONS = [
   ['Settings', settingsRoute],
 ] as const
 
-test.each(SECTIONS)('%s navigates to its workspace-scoped route', async (label, target) => {
-  const { screen, navigate } = await renderWithRouter(<AppNavbar slug="acme" />)
+test.each(SECTIONS)('%s links to its workspace-scoped route', async (label, target) => {
+  const { screen } = await renderWithRouter(<AppNavbar slug="acme" />)
 
-  await screen.getByText(label, { exact: true }).click()
-
-  expect(navigate).toHaveBeenCalledWith({ to: target.to, params: { slug: 'acme' } })
+  await expect
+    .element(screen.getByRole('link', { name: label, exact: true }))
+    .toHaveAttribute('href', routeMount(target, { slug: 'acme' }).initialPath)
 })
