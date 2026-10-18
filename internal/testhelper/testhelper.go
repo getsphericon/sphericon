@@ -443,6 +443,14 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 		return err
 	}
 
+	// "Now" is the database's clock, not Go's: the first test of a package may run inside a
+	// testing/synctest bubble, where time.Now() starts in the year 2000, and every fixture
+	// of the process would be dated around it.
+	var now time.Time
+	if err := sqlDB.QueryRowContext(ctx, `SELECT now()`).Scan(&now); err != nil {
+		return err
+	}
+
 	loader, err := testfixtures.New(
 		testfixtures.Database(sqlDB),
 		testfixtures.Dialect("postgres"),
@@ -450,7 +458,7 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 		// renders the files when its option is applied. Fixtures use templating
 		// for relative dates and load-time encryption (internal/fixtures).
 		testfixtures.Template(),
-		testfixtures.TemplateFuncs(fixtures.TemplateFuncs(cipher)),
+		testfixtures.TemplateFuncs(fixtures.TemplateFuncs(cipher, now)),
 		testfixtures.Directory(filepath.Join(projectRoot, "fixtures")),
 		// ResetSequencesTo keeps the explicit fixture ids clear of app-inserted rows.
 		testfixtures.ResetSequencesTo(100000),

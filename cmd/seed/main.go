@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"time"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -36,7 +37,7 @@ func main() {
 		// templating + sequence handling as the test loader (internal/testhelper)
 		// so dev and test load identical fixtures.
 		testfixtures.Template(),
-		testfixtures.TemplateFuncs(fixtures.TemplateFuncs(cipher)),
+		testfixtures.TemplateFuncs(fixtures.TemplateFuncs(cipher, time.Now())),
 		testfixtures.Directory("fixtures"),
 		testfixtures.ResetSequencesTo(100000),
 	)
