@@ -23,7 +23,7 @@ func TestWorkspaceSuspendJoinsTheReasonWords(t *testing.T) {
 	ops := opsReporting(true)
 	var out bytes.Buffer
 
-	require.NoError(t, runWorkspace(context.Background(), ops, []string{"suspend", "acme", "complaint", "rate", "too", "high"}, &out))
+	require.NoError(t, execute(ops, &out, "workspace", "suspend", "acme", "complaint", "rate", "too", "high"))
 
 	calls := ops.SuspendWorkspaceCalls()
 	require.Len(t, calls, 1)
@@ -36,7 +36,7 @@ func TestWorkspaceSuspendJoinsTheReasonWords(t *testing.T) {
 func TestWorkspaceSuspendNeedsASlugAndAReason(t *testing.T) {
 	ops := opsReporting(false)
 	for _, args := range [][]string{{"suspend"}, {"suspend", "acme"}} {
-		err := runWorkspace(context.Background(), ops, args, &bytes.Buffer{})
+		err := execute(ops, &bytes.Buffer{}, append([]string{"workspace"}, args...)...)
 		require.Error(t, err, "args %v", args)
 	}
 	assert.Empty(t, ops.SuspendWorkspaceCalls())
@@ -46,7 +46,7 @@ func TestWorkspaceUnsuspendReportsNoChange(t *testing.T) {
 	ops := opsReporting(false)
 	var out bytes.Buffer
 
-	require.NoError(t, runWorkspace(context.Background(), ops, []string{"unsuspend", "acme"}, &out))
+	require.NoError(t, execute(ops, &out, "workspace", "unsuspend", "acme"))
 
 	calls := ops.UnsuspendWorkspaceCalls()
 	require.Len(t, calls, 1)
@@ -55,6 +55,6 @@ func TestWorkspaceUnsuspendReportsNoChange(t *testing.T) {
 }
 
 func TestWorkspaceUnknownSubcommand(t *testing.T) {
-	require.Error(t, runWorkspace(context.Background(), opsReporting(false), []string{"delete", "acme"}, &bytes.Buffer{}))
-	require.Error(t, runWorkspace(context.Background(), opsReporting(false), nil, &bytes.Buffer{}))
+	require.Error(t, execute(opsReporting(false), &bytes.Buffer{}, "workspace", "delete", "acme"))
+	require.Error(t, execute(opsReporting(false), &bytes.Buffer{}, "workspace"))
 }

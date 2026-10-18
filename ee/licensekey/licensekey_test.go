@@ -46,7 +46,7 @@ func TestParse(t *testing.T) {
 	require.NoError(t, err, "no key is the unlicensed core, not an error")
 	assert.False(t, l.Has(licensekey.FeatureAudit))
 
-	for name, key := range map[string]string{"expired": expired, "forged": forged, "garbage": "nonsense", "bad base64": "!!.!!"} {
+	for name, key := range map[string]string{"expired": expired, "forged": forged, "garbage": "nonsense", "bad base64": "!!.!!.!!"} {
 		_, err := licensekey.Parse(key, pub, now)
 		assert.ErrorIs(t, err, licensekey.ErrInvalid, name)
 	}

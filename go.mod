@@ -17,6 +17,7 @@ require (
 	github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6
 	github.com/emersion/go-smtp v0.25.0
 	github.com/foxcpp/go-mockdns v1.3.0
+	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-chi/httprate v0.16.1
 	github.com/go-crypt/crypt v0.14.15
 	github.com/go-faster/errors v0.8.0
@@ -57,6 +58,7 @@ require (
 	github.com/standard-webhooks/standard-webhooks/libraries v0.0.1
 	github.com/stretchr/testify v1.12.1
 	github.com/tink-crypto/tink-go/v2 v2.9.0
+	github.com/urfave/cli/v3 v3.14.0
 	github.com/wneessen/go-mail v0.8.1
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.72.0
 	go.opentelemetry.io/contrib/otelconf v0.27.0

@@ -105,6 +105,8 @@ github.com/foxcpp/go-mockdns v1.3.0 h1:p4PKLZnM1Ii78JzsxJxcYQ5sQT3lIdiPM/vT1SaL9
 github.com/foxcpp/go-mockdns v1.3.0/go.mod h1:IhLeSFGed3mJIAXPH2aiRQB+kqz7oqu8ld2qVbOu7Wk=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
+github.com/go-chi/chi/v5 v5.5.0 h1:xdKQ1dJmVJsmgahrXSKhUx8NyVPzpwdlyrrQFpMPJgg=
+github.com/go-chi/chi/v5 v5.5.0/go.mod h1:d1IG7GtKPSjPyBP365PH8sAGVHk3qfB/IhjFNRH1wWM=
 github.com/go-chi/httprate v0.16.1 h1:q2M8FmDsI4oEr1oRX43N+VeA0Ujd1tb/EasrSzXy87o=
 github.com/go-chi/httprate v0.16.1/go.mod h1:A8lo+qRhk+s9LiuP5saS7XCGDXRXMcrueq0NfIuCa/I=
 github.com/go-crypt/crypt v0.14.15 h1:q1i5OMpL05r935IxWmXgpDAVF0nvi4SMoHhGXLBQUEQ=
@@ -341,6 +343,8 @@ github.com/tidwall/sjson v1.2.5 h1:kLy8mja+1c9jlljvWTlSazM7cKDRfJuR/bOJhcY5NcY=
 github.com/tidwall/sjson v1.2.5/go.mod h1:Fvgq9kS/6ociJEDnK0Fk1cpYF4FIW6ZF7LAe+6jwd28=
 github.com/tink-crypto/tink-go/v2 v2.9.0 h1:uvjgS1IYDB4zhDK0Zow8ZFB73IjzMAoSqW0JkFnvkrc=
 github.com/tink-crypto/tink-go/v2 v2.9.0/go.mod h1:aNXZeyxjQU9iqAeARRNmbESXUW6Mao1HRCCTY8B1TFM=
+github.com/urfave/cli/v3 v3.14.0 h1:a8414NQlHJs0c/iBsulKLzlES0n/lEAskbL2LKpU4/s=
+github.com/urfave/cli/v3 v3.14.0/go.mod h1:vXn6HxPNccJSzQr2QvwVncOKrgYGIHU0HY5h8B2nQj4=
 github.com/vladopajic/go-test-coverage/v2 v2.20.0 h1:KNX7oVN5LnvoI/79S64GLWhXeftitYdFgACFqaiU0/w=
 github.com/vladopajic/go-test-coverage/v2 v2.20.0/go.mod h1:dFVDUbXAIJnaQO6o/myqWshWaJJm+sanRJ1jORsDsEk=
 github.com/wneessen/go-mail v0.8.1 h1:tVcncj02/QySVFw3zr/kXOzZcuFQqBNT6K+Rbgm/pcM=

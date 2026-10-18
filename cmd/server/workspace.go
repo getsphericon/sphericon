@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"strings"
+
+	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
@@ -17,43 +17,55 @@ type workspaceOps interface {
 	UnsuspendWorkspace(ctx context.Context, slug string, by suspension.Actor) (bool, error)
 }
 
-const workspaceUsage = "usage: sphericon workspace suspend <slug> <reason...> | unsuspend <slug>"
-
-// runWorkspace executes `sphericon workspace <suspend|unsuspend> …` (ADR 0007): the bare
+// workspaceCommand is `sphericon workspace suspend|unsuspend` (ADR 0007): the bare
 // staff member toggle for a Workspace's outbound-sending freeze. Everything above this
 // mechanism (the automated detector, a Staff console) is EE.
-func runWorkspace(ctx context.Context, ops workspaceOps, args []string, out io.Writer) error {
-	if len(args) < 2 {
-		return errors.New(workspaceUsage)
-	}
-	slug := args[1]
-	switch args[0] {
-	case "suspend":
-		reason := strings.TrimSpace(strings.Join(args[2:], " "))
-		if reason == "" {
-			return fmt.Errorf("a reason is required: the owner is told why\n%s", workspaceUsage)
-		}
-		changed, err := ops.SuspendWorkspace(ctx, slug, suspension.CLI, reason)
-		if err != nil {
-			return err
-		}
-		if !changed {
-			_, _ = fmt.Fprintf(out, "workspace %q is already suspended; nothing changed\n", slug)
-			return nil
-		}
-		_, _ = fmt.Fprintf(out, "workspace %q suspended: outbound sending is frozen and the owner has been notified\n", slug)
-	case "unsuspend":
-		changed, err := ops.UnsuspendWorkspace(ctx, slug, suspension.CLI)
-		if err != nil {
-			return err
-		}
-		if !changed {
-			_, _ = fmt.Fprintf(out, "workspace %q is not suspended; nothing changed\n", slug)
-			return nil
-		}
-		_, _ = fmt.Fprintf(out, "workspace %q unsuspended: held sends will resume\n", slug)
-	default:
-		return fmt.Errorf("unknown workspace command %q\n%s", args[0], workspaceUsage)
-	}
-	return nil
+func workspaceCommand(d deps) *cli.Command {
+	return group("workspace", "freeze or resume a Workspace's outbound sending",
+		&cli.Command{
+			Name:      "suspend",
+			Usage:     "freeze outbound sending; the owner is told the reason",
+			ArgsUsage: "<slug> <reason...>",
+			Arguments: []cli.Argument{
+				&cli.StringArg{Name: "slug", Required: true},
+				&cli.StringArgs{Name: "reason", Min: 1, Max: -1},
+			},
+			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+				slug := cmd.StringArg("slug")
+				reason := strings.TrimSpace(strings.Join(cmd.StringArgs("reason"), " "))
+				if reason == "" {
+					return fmt.Errorf("a reason is required: the owner is told why")
+				}
+				changed, err := ops.SuspendWorkspace(ctx, slug, suspension.CLI, reason)
+				if err != nil {
+					return err
+				}
+				if !changed {
+					_, _ = fmt.Fprintf(out(cmd), "workspace %q is already suspended; nothing changed\n", slug)
+					return nil
+				}
+				_, _ = fmt.Fprintf(out(cmd), "workspace %q suspended: outbound sending is frozen and the owner has been notified\n", slug)
+				return nil
+			}),
+		},
+		&cli.Command{
+			Name:      "unsuspend",
+			Usage:     "resume outbound sending",
+			ArgsUsage: "<slug>",
+			Arguments: []cli.Argument{&cli.StringArg{Name: "slug", Required: true}},
+			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
+				slug := cmd.StringArg("slug")
+				changed, err := ops.UnsuspendWorkspace(ctx, slug, suspension.CLI)
+				if err != nil {
+					return err
+				}
+				if !changed {
+					_, _ = fmt.Fprintf(out(cmd), "workspace %q is not suspended; nothing changed\n", slug)
+					return nil
+				}
+				_, _ = fmt.Fprintf(out(cmd), "workspace %q unsuspended: held sends will resume\n", slug)
+				return nil
+			}),
+		},
+	)
 }
