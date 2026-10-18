@@ -83,3 +83,32 @@
   workspace_id: 1
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
+
+# An Acme Integration per built-in provider Preset: an SMTP relay whose provider reports
+# bounces and complaints to the Integration's hook.
+- id: 20 # fixture: IntegrationAcmePostmark
+  ingest_key: omik_test_integrationacmepostmark
+  name: Postmark relay
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"smtp.postmarkapp.example\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: postmark
+  params_encrypted: '{{ encrypt "{\"user\":\"postmark-user\",\"secret\":\"postmark-test-token-0123456789\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'
+- id: 21 # fixture: IntegrationAcmeMailgun
+  ingest_key: omik_test_integrationacmemailgun
+  name: Mailgun relay
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"smtp.mailgun.example\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: mailgun
+  params_encrypted: '{{ encrypt "{\"signing_key\":\"mailgun-test-signing-key-0123456789\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'
