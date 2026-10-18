@@ -5,15 +5,11 @@ import { useTranslation } from 'react-i18next'
 // Why a broadcast can be held (Outbound send, ADR 0015). The API sends the reason as
 // a plain string, so an unknown one falls back to the generic explanation.
 const HOLD_REASONS = ['no_integration', 'unverified_domain', 'workspace_suspended'] as const
-type HoldReason = (typeof HOLD_REASONS)[number]
-
-function isHoldReason(reason: string): reason is HoldReason {
-  return (HOLD_REASONS as readonly string[]).includes(reason)
-}
 
 function holdExplanation(t: TFunction, reason: string): string {
-  return isHoldReason(reason)
-    ? t(($) => $.broadcasts.hold.reasons[reason])
+  const known = HOLD_REASONS.find((r) => r === reason)
+  return known
+    ? t(($) => $.broadcasts.hold.reasons[known])
     : t(($) => $.broadcasts.hold.description)
 }
 

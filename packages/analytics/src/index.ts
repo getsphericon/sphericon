@@ -181,17 +181,15 @@ function processQueueCommand(command: QueueCommand): void {
 }
 
 function createQueueApi(initial: QueueCommand[]): QueueApi {
-  const queue = initial as QueueApi
-
-  queue.push = (...items: QueueCommand[]) => {
+  const push = (...items: QueueCommand[]) => {
     for (const item of items) {
       processQueueCommand(item)
     }
 
-    return queue.length
+    return initial.length
   }
 
-  return queue
+  return Object.assign(initial, { push })
 }
 
 export function initTracking(config?: TrackerConfig): void {
