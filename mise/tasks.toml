@@ -429,10 +429,29 @@ helm template r "$chart" --set existingSecret=sphericon-secrets \
   --set ingress.enabled=true --set ingress.tls.enabled=true --set ingress.tls.secretName=tls \
   --set metrics.enabled=true --set metrics.serviceMonitor.enabled=true \
   --set metrics.prometheusRule.enabled=true | $kc
+# The release packages the chart with chart version = app version.
+mise run release:chart -- 9.9.9
 # Every alert in the rules needs a runbook section named after it.
 for alert in $(sed -n 's/^ *- alert: *//p' "$chart/files/alerts.yaml"); do
   grep -q "^## $alert\$" docs/operations/runbook.md || { echo "error: no runbook section for $alert"; exit 1; }
 done
+'''
+
+["release:chart"]
+description = "Package the Helm chart with chart version = app version (no leading v) and push it to an OCI registry path; without a registry only package and verify"
+usage = '''
+arg "<version>" help="app and chart version, no leading v"
+arg "[registry]" help="oci://host/path to push to"
+'''
+run = '''
+set -eu
+version=$usage_version
+out=$(mktemp -d)
+helm package charts/sphericon --version "$version" --app-version "$version" --destination "$out"
+pkg="$out/sphericon-$version.tgz"
+test "$(helm show chart "$pkg" | sed -n 's/^appVersion: *//p' | tr -d '"')" = "$version" \
+  || { echo "error: packaged appVersion is not $version"; exit 1; }
+if [ -n "${usage_registry:-}" ]; then helm push "$pkg" "$usage_registry"; fi
 '''
 
 ["check:infra"]
