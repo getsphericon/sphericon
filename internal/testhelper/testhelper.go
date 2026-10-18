@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -63,11 +64,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// The Baseline is applied ONCE per test process, lazily, by the cleaner's setup:
-// migrate schema + load fixtures (committed). Each test then asks the cleaner for a
-// database: a real transaction that is rolled back when the test ends (pgcleaner's
-// Transaction strategy, go-txdb underneath), so tests are fully isolated and the DB
-// stays at the fixture state. No hand-rolled transaction plumbing.
+// Every test process (one per package) leases a database of its own, cloned from a
+// template at the fixture state (workerdb.go), so packages run in parallel without sharing
+// rows or locks. Each test then asks the cleaner for a database: a real transaction that is
+// rolled back when the test ends (pgcleaner's Transaction strategy, go-txdb underneath), so
+// tests are fully isolated and the DB stays at the fixture state. No hand-rolled
+// transaction plumbing.
 var (
 	once    sync.Once
 	baseCfg *config.Config
@@ -86,10 +88,26 @@ func initBaseline() {
 			loadErr = err
 			return
 		}
+		url, err := leaseWorkerDatabase(context.Background(), cfg, projectRoot)
+		if err != nil {
+			loadErr = err
+			return
+		}
+		// The fixtures go in at the start of every process, not into the template: their
+		// relative dates must be relative to now.
+		if err := loadFixturesInto(context.Background(), cfg, url, projectRoot); err != nil {
+			loadErr = err
+			return
+		}
+		// A test that loads the config itself (to open a pool of its own) must reach this
+		// process's database, not the shared one.
+		cfg.DatabaseURL = url
+		if err := os.Setenv("DATABASE_URL", url); err != nil {
+			loadErr = err
+			return
+		}
 		baseCfg = cfg
-		cleaner = pgcleaner.New(cfg.DatabaseURL, pgcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
-			return migrateBaseline(ctx, sqlDB, cfg, projectRoot)
-		}))
+		cleaner = pgcleaner.New(url)
 	})
 }
 
@@ -369,18 +387,26 @@ func (c injectClient) Do(r *http.Request) (*http.Response, error) {
 }
 
 // migrateBaseline brings an empty database to the fixture state every test starts from:
-// the ent schema, the domain-event outbox, river's tables and the committed fixtures.
-// The shared test database gets it once per process (initBaseline); a pgtestdb template
-// gets it once per schema change (RealDB). cfg.DatabaseURL must name the database sqlDB
-// is open on.
+// the schema, then the committed fixtures. A pgtestdb template gets it once per schema
+// change (RealDB). cfg.DatabaseURL must name the database sqlDB is open on.
 func migrateBaseline(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projectRoot string) error {
+	if err := migrateSchema(ctx, sqlDB, cfg); err != nil {
+		return err
+	}
+	return loadFixtures(ctx, sqlDB, cfg, projectRoot)
+}
+
+// migrateSchema creates the ent schema, the domain-event outbox and river's tables in an
+// empty database. The worker databases are cloned from a template that has just this
+// (workerdb.go). cfg.DatabaseURL must name the database sqlDB is open on.
+func migrateSchema(ctx context.Context, sqlDB *sql.DB, cfg *config.Config) error {
 	if err := db.NewEntClient(sqlDB).Schema.Create(ctx); err != nil {
 		return err
 	}
 
 	// The domain-event outbox topic table is a watermill-sql table, not part
-	// of the ent schema, so create it here too (once per process, on the real
-	// DB) — otherwise the transactional publisher hits "relation does not exist".
+	// of the ent schema, so create it here too, otherwise the transactional
+	// publisher hits "relation does not exist".
 	if err := events.InitSchema(ctx, sqlDB); err != nil {
 		return err
 	}
@@ -392,10 +418,24 @@ func migrateBaseline(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, pro
 		return err
 	}
 	defer pool.Close()
-	if err := jobs.Migrate(ctx, pool); err != nil {
+	return jobs.Migrate(ctx, pool)
+}
+
+// loadFixturesInto opens the database at url, loads the fixtures into it and closes it.
+func loadFixturesInto(ctx context.Context, cfg *config.Config, url, projectRoot string) error {
+	sqlDB, err := sql.Open("pgx", url)
+	if err != nil {
 		return err
 	}
+	defer func() { _ = sqlDB.Close() }()
+	return loadFixtures(ctx, sqlDB, cfg, projectRoot)
+}
 
+// loadFixtures replaces the contents of every fixture table with the committed rows. It
+// runs at the start of every test process, never once into a template: fixtures use
+// templating for relative dates, which must be relative to now, not to when a template was
+// built.
+func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projectRoot string) error {
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	if err != nil {
 		return err

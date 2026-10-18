@@ -175,6 +175,10 @@ else
     case "$d" in *\"*) echo "keep    database $d (unusual name)"; continue ;; esac
     # pgtestdb's per-test databases belong to a test that may be running in any checkout.
     case "$d" in testdb_tpl_*) echo "keep    database $d (pgtestdb)"; continue ;; esac
+    # A live checkout's test process databases: `<test db>_w<i>` and `<test db>_tpl_<hash>`
+    # (internal/testhelper/workerdb.go). They go with the checkout's `<test db>`.
+    base=${d%_w[0-9]*}; base=${base%_tpl_*}
+    if [ "$base" != "$d" ] && grep -qxF "$base" "$keep"; then continue; fi
     if [ -z "$apply" ]; then echo "would drop database $d"; continue; fi
     $psql -c "drop database \"$d\" with (force)" >/dev/null && echo "dropped database $d"
   done
@@ -189,18 +193,18 @@ exit "$status"
 # --- tests -----------------------------------------------------------------------
 
 [test]
-description = "Go tests, shuffled (creates the test DB first); pass packages/flags after `--`"
+description = "Go tests, packages in parallel, each on a database of its own (creates the test DB first); shuffled when CI is set, cached results otherwise; pass packages/flags after `--`"
 depends = ["db:up"]
 env = { APP_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 usage = 'arg "[go_test_args]" var=#true default="./..." help="packages and flags for go test"'
-run = 'eval "set -- $usage_go_test_args"; go test -p 1 -shuffle=on "$@"'
+run = 'eval "set -- $usage_go_test_args"; go test ${CI:+-shuffle=on} "$@"'
 
 ["test:cover"]
 description = "Go tests with coverage over cmd/ and internal/ (ee/ too), failing under the total in .testcoverage.yml"
 depends = ["db:up"]
 env = { APP_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 run = [
-  "go test -p 1 -shuffle=on ./... -coverpkg=./cmd/...,./internal/...,./ee/... -coverprofile=cover.out -covermode=atomic",
+  "go test -shuffle=on ./... -coverpkg=./cmd/...,./internal/...,./ee/... -coverprofile=cover.out -covermode=atomic",
   "go tool go-test-coverage --config=.testcoverage.yml",
 ]
 
