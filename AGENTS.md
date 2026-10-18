@@ -115,12 +115,14 @@ them (`mise run check:fe ::: check:deps`); otherwise the extra names become argu
 Run Go tests only through `mise run test`: it sets `APP_ENV=test` and the test DB, and a bare
 `go test` opens the dev database and fails.
 
-Test packages run in parallel, each process on a database of its own: it leases `<test db>_w<i>`
-(an advisory lock on the shared test database, released when the process ends), cloned from
-`<test db>_tpl_<hash>`, a template built once per hash of the schema, fixtures and bus
-(`internal/testhelper/workerdb.go`). `DATABASE_URL` is rewritten to that database for the
-process, so a test that loads the config reaches it too. `worktrees:gc` keeps these with their
-checkout. The end-to-end suite keeps one database and `-p 1`.
+Test packages run in parallel, each process on a database of its own, through
+`pgcleaner.WithTemplate` (wired in `internal/testhelper`): it leases `<test db>_w<i>` (an advisory
+lock on the shared test database, released when the process ends), cloned from
+`<test db>_tpl_<hash>`, a schema-only template built once per hash of the schema and the bus. The
+fixtures are loaded into the worker at the start of every process, because they use relative
+dates. `DATABASE_URL` is rewritten to that database for the process, so a test that loads the
+config reaches it too. `worktrees:gc` keeps these with their checkout. The end-to-end suite keeps
+one database and `-p 1`.
 
 Run a single Go test (arguments after `--` go to `go test`; the default is `./...`):
 

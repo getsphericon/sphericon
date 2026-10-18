@@ -34,10 +34,12 @@ const timeLayout = "2006-01-02 15:04:05-07"
 //     under both. {{encrypt "<json>"}} seals at load time with the current env's
 //     cipher, so the blob is always valid for the database being loaded.
 //
-// All times are anchored to a single instant per loader build so one load is
-// internally consistent.
-func TemplateFuncs(cipher *secrets.Cipher) template.FuncMap {
-	base := time.Now().UTC()
+// All times are anchored to one instant, now, so one load is internally consistent. The
+// caller names it instead of this package reading the clock: a loader that runs inside a
+// testing/synctest bubble would read the bubble's clock, which starts in the year 2000, and
+// date every fixture around it.
+func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
+	base := now.UTC()
 	at := func(d time.Duration) string { return base.Add(d).Format(timeLayout) }
 	day := 24 * time.Hour
 	return template.FuncMap{

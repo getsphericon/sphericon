@@ -14,7 +14,7 @@ import (
 // zone: it carries its UTC offset, so a server running in another zone stores the same
 // moment (the analytics series buckets by UTC day).
 func TestRelativeFixtureTimesCarryAnExplicitUTCOffset(t *testing.T) {
-	funcs := fixtures.TemplateFuncs(nil)
+	funcs := fixtures.TemplateFuncs(nil, time.Now())
 	daysAgo, ok := funcs["daysAgo"].(func(int) string)
 	require.True(t, ok)
 
