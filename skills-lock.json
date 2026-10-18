@@ -35,7 +35,7 @@
       "source": "samber/cc-skills-golang",
       "sourceType": "github",
       "skillPath": "skills/golang-samber-do/SKILL.md",
-      "computedHash": "9458c8d3719fc556090a72d1a339c975809e9f5794e12a7fab77d34417ec979f"
+      "computedHash": "e122bb67d78eb352d809f89f671ecf265225b88f08619841bd1835a202d7a6ec"
     },
     "grill-me": {
       "source": "mattpocock/skills",
@@ -167,7 +167,7 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/wizard/SKILL.md",
-      "computedHash": "3642db2041d66efa88407e958792268c5cace9e286ad0a93ae218bffc8aae448"
+      "computedHash": "49298bed80e7f722b071ad5d64798c75eb705bbbe0635b9bbffd08cd6fb81647"
     },
     "writing-for-agents": {
       "source": "mattpocock/skills",
