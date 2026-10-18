@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
-	"github.com/riverqueue/river/rivermigrate"
 	"github.com/riverqueue/river/rivertype"
 	"github.com/riverqueue/rivercontrib/otelriver"
 
@@ -249,17 +248,5 @@ func (c *Client) OnEvent(ctx context.Context, workspaceID, contactID int64, acti
 		ContactID:   contactID,
 		Action:      action,
 	}, nil)
-	return err
-}
-
-// Migrate applies river's own schema (river_job, river_leader, …). This is run
-// out of band from Atlas on purpose: Atlas diffs against the ent-derived schema
-// and would otherwise try to drop river's tables. See cmd/db `river-up`.
-func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
-	migrator, err := rivermigrate.New(riverpgxv5.New(pool), nil)
-	if err != nil {
-		return err
-	}
-	_, err = migrator.Migrate(ctx, rivermigrate.DirectionUp, nil)
 	return err
 }

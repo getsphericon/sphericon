@@ -57,8 +57,6 @@ func newRiverEnv(t *testing.T) *riverEnv {
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
-	require.NoError(t, jobs.Migrate(ctx, pool))
-
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	fs := &fakeSender{}

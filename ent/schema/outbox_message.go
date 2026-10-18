@@ -9,11 +9,12 @@ import (
 )
 
 // OutboxMessage is one row of the domain-event outbox, the watermill-sql messages table of
-// the domain_events topic (ADR 0019). watermill owns the table: internal/events.InitSchema
-// creates it, because its primary key is (transaction_id, offset) and the subscribers' query
-// depends on that index order, which an ent id cannot express. Skip keeps it out of both
-// ent's and Atlas's migrations; ent only generates the client, so the code and the tests
-// that read or prune the outbox use it instead of SQL. The id is the table's "offset".
+// the domain_events topic (ADR 0019). watermill owns the table's shape: its primary key is
+// (transaction_id, offset) and the subscribers' query depends on that index order, which an
+// ent id cannot express, so the migration (migrations/*_domain_events_outbox.sql) is
+// written by hand. Skip keeps it out of ent's own diff; ent only generates the client, so
+// the code and the tests that read or prune the outbox use it instead of SQL. The id is the
+// table's "offset".
 type OutboxMessage struct {
 	ent.Schema
 }

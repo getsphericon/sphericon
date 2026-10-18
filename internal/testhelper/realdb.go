@@ -75,12 +75,7 @@ func serverConfig(t *testing.T) pgtestdb.Config {
 type baselineMigrator struct{}
 
 func (baselineMigrator) Hash() (string, error) {
-	return hashTrees(projectRoot(),
-		"ent/schema",
-		"fixtures",
-		"internal/events/bus.go",
-		"go.mod",
-	)
+	return hashTrees(projectRoot(), "migrations", "fixtures")
 }
 
 func (baselineMigrator) Migrate(ctx context.Context, sqlDB *sql.DB, conf pgtestdb.Config) error {
@@ -104,9 +99,11 @@ func projectRoot() string {
 	return filepath.Join(filepath.Dir(file), "..", "..")
 }
 
-// schemaHash digests everything that decides the schema a template holds.
+// schemaHash digests everything that decides the schema a template holds: the migrations, which
+// are the only thing that creates it (an ent/schema edit shows up here once `mise run
+// db:generate` has written its migration).
 func schemaHash() (string, error) {
-	return hashTrees(projectRoot(), "ent/schema", "internal/events/bus.go", "go.mod")
+	return hashTrees(projectRoot(), "migrations")
 }
 
 // hashTrees digests the names (relative to root, so a checkout's location does not

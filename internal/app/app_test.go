@@ -22,7 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/suspension"
@@ -198,9 +197,6 @@ func TestRunEventsStopsWhenTheContextIsCancelled(t *testing.T) {
 
 func TestRunJobsStartsTheWorkerPool(t *testing.T) {
 	a := newApp(t)
-	pool, err := do.Invoke[*pgxPool](a.injector)
-	require.NoError(t, err)
-	require.NoError(t, jobs.Migrate(context.Background(), pool.Pool), "river's own schema")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	require.NoError(t, a.runJobs(ctx))

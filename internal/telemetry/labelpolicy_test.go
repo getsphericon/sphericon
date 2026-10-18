@@ -42,8 +42,6 @@ var forbiddenLabel = regexp.MustCompile(`(?i)workspace|slug|contact|email|recipi
 // river runtime. Any tenant-bearing label or label value would show up here.
 func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 	ctx := context.Background()
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
 
 	// Global providers must be installed before the instrumented components are built.
 	testhelper.InstallOtel(t, func(ctx context.Context) (func(context.Context) error, error) {
@@ -56,6 +54,10 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 	t.Cleanup(func() { _ = srv.Shutdown(context.Background()) })
 
 	env := testhelper.Setup(t)
+	// Loaded after Setup: it points DATABASE_URL at this process's database, where river's
+	// tables are, and the job runtime below opens its own pool on it.
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
 	workspace := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
 	contactEmail := fixtures.ContactAliceEmail
 
@@ -133,7 +135,6 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
-	require.NoError(t, jobs.Migrate(ctx, pool))
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
 	mod := outbound.New(env.Bus, nil, tracking.New("test-secret", "http://local"))

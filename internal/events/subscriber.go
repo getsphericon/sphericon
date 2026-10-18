@@ -280,8 +280,8 @@ func automationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 }
 
 // NewSubscriber builds a watermill-sql subscriber for the outbox topic under a
-// dedicated consumer group (its own offset cursor). InitializeSchema is false —
-// InitSchema creates the message + offsets tables at boot.
+// dedicated consumer group (its own offset cursor). InitializeSchema is false: the
+// migrations create the message + offsets tables.
 func NewSubscriber(db *sql.DB, consumerGroup string) (message.Subscriber, error) {
 	return watermillsql.NewSubscriber(watermillsql.BeginnerFromStdSQL(db), watermillsql.SubscriberConfig{
 		SchemaAdapter:    outboxSchema,

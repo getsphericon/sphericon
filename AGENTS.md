@@ -166,8 +166,20 @@ the wall clock; it injects the clock.
 - Migrations are managed by **Atlas** (`atlas.hcl`, dir `migrations/`), run natively, diffed from the ent schema: `mise run db:generate name=<desc>` then `mise run db:migrate`.
   Atlas reads its target/dev DB URLs from the environment (`DATABASE_URL` / `ATLAS_DEV_URL`),
   using a scratch `<PGDATABASE>_atlas` database on the same server instead of `docker://`.
-- `mise run db:reset` / `db:reset-test` to rebuild local DBs.
-- Test DB is separate (`APP_ENV=test`); tests create schema via `ent` `Schema.Create`, not Atlas.
+- **`migrations/` is the whole schema**: the app tables (diffed from ent), river's tables and the
+  domain-event outbox (watermill-sql's two tables, a hand-written migration: `ent/schema/outbox_*.go`
+  model them as skipped entities, ent's diff leaves them alone). Nothing creates schema at boot: the
+  server runs the same goose migrations (`internal/db.Migrate`, `sphericon migrate`), and the
+  tests' template databases are built by that same function, so tests run against the schema
+  production gets. After an `ent/schema` edit the tests fail until `mise run db:generate` has written
+  its migration.
+- river's tables are one migration per river version (`*_river_00N.sql`, river applies each version
+  in a transaction of its own), written by `mise run db:river-migration` from the river version in
+  `go.mod`; after a river upgrade run it again and `rivermigrate.Validate` in
+  `cmd/server/migrate_test.go` tells you when it is due. Do not edit those files by hand.
+- `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the outbox and
+  river migrations (they were created at boot) needs a `db:reset`.
+- Test DB is separate (`APP_ENV=test`); tests get it from the migrations, see "Common commands".
 
 ## Backend architecture
 
@@ -417,6 +429,10 @@ Default five-label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, 
 ### Domain docs
 
 Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/agents/domain.md`.
+
+### Worktrees
+
+Created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Never create a branch in the primary checkout: only in a worktree, and only when needed. See `docs/agents/worktrees.md`.
 
 ### Advisor before /to-spec
 

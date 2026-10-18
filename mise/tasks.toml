@@ -72,15 +72,9 @@ description = "Apply Atlas migrations"
 depends = ["db:up"]
 run = "atlas migrate apply --env local --allow-dirty"
 
-["db:migrate-river"]
-description = "Apply river's own schema (river_job, ...), out of band from Atlas"
-depends = ["db:up"]
-run = "go run ./cmd/db river-up"
-
 ["db:migrate"]
-description = "Apply Atlas migrations, then river's schema"
+description = "Apply the migrations: the app schema, river's tables and the domain-event outbox"
 depends = ["db:migrate-atlas"]
-run = "go run ./cmd/db river-up"
 
 ["db:seed"]
 description = "Load seed data into the dev database"
@@ -100,6 +94,10 @@ description = "Generate an Atlas migration from the ent schema (ent's own diff e
 depends = ["db:up"]
 usage = 'arg "<name>" help="migration name"'
 run = 'go run ./cmd/db generate "${usage_name}"'
+
+["db:river-migration"]
+description = "Write the migrations for river versions the migrations/ directory lacks (after a river upgrade); river's SQL comes from the go.mod version"
+run = ["go run ./cmd/db river-migration", "atlas migrate hash --env local"]
 
 ["gen:encryption-key"]
 description = "Mint a fresh ENCRYPTION_KEY (base64 Tink keyset) to paste into your .env"
@@ -217,7 +215,6 @@ run = [
   "go run ./cmd/db drop",
   "go run ./cmd/db create",
   "atlas migrate apply --env local --allow-dirty",
-  "go run ./cmd/db river-up",
   '''eval "set -- $usage_go_test_args"; go test -tags e2e -count=1 -p 1 -shuffle=on "$@"''',
 ]
 
