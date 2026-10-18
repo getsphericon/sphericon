@@ -43,7 +43,7 @@ func Boot() (*Env, func(), error) {
 		return nil, nil, err
 	}
 
-	// The listener comes first: the public URL (APP_URL) is derived from its address.
+	// The listener comes first: the public URL (SPHERICON_APP_URL) is derived from its address.
 	ln, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		stopMailpit()

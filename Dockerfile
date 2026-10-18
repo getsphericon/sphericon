@@ -35,7 +35,7 @@ COPY --from=gobuild /sphericon /usr/local/bin/sphericon
 WORKDIR /app
 USER sphericon
 # Containers are production deployments: enforce the strict secret checks by default.
-ENV APP_ENV=production
+ENV SPHERICON_ENV=production
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD wget -qO- "http://localhost:${PORT:-3000}/healthz" || exit 1

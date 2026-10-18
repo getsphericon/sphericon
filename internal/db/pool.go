@@ -29,7 +29,7 @@ func ConfigurePool(sqlDB *sql.DB, p config.DBPool) {
 	sqlDB.SetConnMaxLifetime(p.ConnMaxLifetime)
 }
 
-// NewPGXPool opens the river pool capped at PGX_MAX_CONNS.
+// NewPGXPool opens the river pool capped at SPHERICON_PGX_MAX_CONNS.
 func NewPGXPool(ctx context.Context, url string, p config.DBPool) (*pgxpool.Pool, error) {
 	pgxCfg, err := pgxpool.ParseConfig(url)
 	if err != nil {

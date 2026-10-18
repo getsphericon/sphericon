@@ -199,7 +199,7 @@ current go-pkgz/auth email+password flow, which does neither natively.
   Membership), not Workspace-scoped.
 - **Passkeys (WebAuthn)** — passwordless / phishing-resistant login as an additional
   credential on the same User. Lib: `github.com/go-webauthn/webauthn` (needs a
-  `credential`-style table keyed to User; `APP_URL` origin becomes the WebAuthn RP ID).
+  `credential`-style table keyed to User; `SPHERICON_APP_URL` origin becomes the WebAuthn RP ID).
   Sequence 2FA first — it establishes the "extra User credential" schema passkeys build on.
 
 ### Self-hosting lifecycle — core, not EE
@@ -218,7 +218,7 @@ usage signal; plan and document them together, not as two disconnected features.
 - **Update / migration / Postgres runbook** — a documented, versioned upgrade path (doc home:
   [Operations: Upgrading](./operations/upgrading), linked from the migrations section of
   `docs/self-hosting.md`). Keep two runbooks distinct — the user lumps them, the plan must not:
-  - _App upgrade_ — pull the new image/binary, run `./sphericon migrate` (or `AUTO_MIGRATE` on a
+  - _App upgrade_ — pull the new image/binary, run `./sphericon migrate` (or `SPHERICON_DB_AUTO_MIGRATE` on a
     single replica), roll servers. Migrations are embedded and forward-only.
   - _Postgres major upgrade_ — a DBA operation (`pg_upgrade` or dump/restore across majors),
     independent of the app release. The doc says "14+"; compose ships `postgres:16`.

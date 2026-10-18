@@ -17,7 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// envCipher is the cipher over the test environment's ENCRYPTION_KEY, the key the
+// envCipher is the cipher over the test environment's SPHERICON_ENCRYPTION_KEY, the key the
 // fixtures were sealed with, so a fixture Integration's config decrypts.
 func envCipher(t *testing.T) *secrets.Cipher {
 	t.Helper()

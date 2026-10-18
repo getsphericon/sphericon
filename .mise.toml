@@ -46,32 +46,32 @@ experimental = true
 # DATABASE_URL in .env: the app reads .env too, but real env vars win). Personal overrides go
 # in the gitignored .env (read by the app) or .mise.local.toml (read by mise).
 [env]
-APP_ENV = "development"
+SPHERICON_ENV = "development"
 # The primary checkout is https://sphericon.localhost on :443. A linked worktree gets its own
 # origin, https://<dir-name>.sphericon.localhost:<caddy port>: browser cookies are shared across
 # ports of one host, so a per-worktree host keeps the session cookies apart.
 APP_HOST = "{% if env.CADDY_PORT == '443' %}sphericon.localhost{% else %}{{ config_root | basename | lower | replace(from='_', to='-') }}.sphericon.localhost{% endif %}"
 API_HOST = "api.{{ env.APP_HOST }}"
-APP_URL = "https://{{ env.APP_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
+SPHERICON_APP_URL = "https://{{ env.APP_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
 # Caddy's admin API (2019 + offset) and HTTP listener (80 in the primary checkout, otherwise
 # 4000 + offset, clear of every other base + offset range).
 CADDY_ADMIN = "127.0.0.1:{{ env.CADDY_PORT | int - 443 + 2019 }}"
 CADDY_HTTP_PORT = "{% if env.CADDY_PORT == '443' %}80{% else %}{{ env.CADDY_PORT | int + 3557 }}{% endif %}"
-APP_LOCALE = "en"
+SPHERICON_APP_LOCALE = "en"
 PORT = "{{ env.BACKEND_PORT }}"
 # Opt-in Prometheus listener (ADR 0018); never reachable through Caddy. Every daemon port is
 # its base plus the checkout's slot offset (0 in the primary checkout, one offset for all
 # daemons), so ports with no daemon of their own (this one, SMTP) are derived from it.
-METRICS_ADDR = "127.0.0.1:{{ env.BACKEND_PORT | int - 3300 + 9090 }}"
+SPHERICON_METRICS_ADDR = "127.0.0.1:{{ env.BACKEND_PORT | int - 3300 + 9090 }}"
 CGO_ENABLED = "0"
 # Dev-only secret so a fresh clone authenticates out of the box.
-JWT_SECRET = "dev-secret-change-in-production"
+SPHERICON_JWT_SECRET = "dev-secret-change-in-production"
 # Dev-only Operator secret (read only with the `operator` license); never the site's.
-OPERATOR_JWT_SECRET = "dev-operator-secret-change-in-production"
+SPHERICON_OPERATOR_JWT_SECRET = "dev-operator-secret-change-in-production"
 # Dev-only Tink keyset (same one the old .env.docker.sample shipped); never use in prod.
-ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5EiIaIIOWohIqGhyD2NeiOazlLrnrHqCirukTjCjD1iMFPqiEGAEQARiGprHOCSAB"
-SMTP_HOST = "127.0.0.1"
-SMTP_PORT = "{{ env.MAILPIT_PORT | int - 8025 + 1025 }}"
+SPHERICON_ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5EiIaIIOWohIqGhyD2NeiOazlLrnrHqCirukTjCjD1iMFPqiEGAEQARiGprHOCSAB"
+SPHERICON_SMTP_HOST = "127.0.0.1"
+SPHERICON_SMTP_PORT = "{{ env.MAILPIT_PORT | int - 8025 + 1025 }}"
 # One Postgres serves every checkout: the primary checkout's `db` daemon (below), started
 # by `mise run db:up`. A daemon declared in a linked worktree would export its own offset port
 # and database, so the connection is spelled out here, from the checkout's directory name:
@@ -112,7 +112,7 @@ version = "18"
 port = 15432
 
 [daemons.mailpit]
-run = "exec mailpit --listen 0.0.0.0:$MAILPIT_PORT --smtp 0.0.0.0:$SMTP_PORT"
+run = "exec mailpit --listen 0.0.0.0:$MAILPIT_PORT --smtp 0.0.0.0:$SPHERICON_SMTP_PORT"
 port = { auto = true, base = 8025 }
 ready_cmd = "nc -z 127.0.0.1 $MAILPIT_PORT"
 proxy = false

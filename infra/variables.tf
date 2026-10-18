@@ -1,5 +1,5 @@
 variable "region" {
-  description = "AWS region of everything, SES included (SES_REGION follows it)."
+  description = "AWS region of everything, SES included (SPHERICON_SES_REGION follows it)."
   type        = string
   default     = "us-east-2"
 }
@@ -62,7 +62,7 @@ variable "app_port" {
 }
 
 variable "internal_listener_source_security_group_id" {
-  description = "Security group (same VPC) allowed to reach the app's internal listener. Empty (the default) exposes nothing: no INTERNAL_ADDR, no port, no rule."
+  description = "Security group (same VPC) allowed to reach the app's internal listener. Empty (the default) exposes nothing: no SPHERICON_INTERNAL_ADDR, no port, no rule."
   type        = string
   default     = ""
 
@@ -73,7 +73,7 @@ variable "internal_listener_source_security_group_id" {
 }
 
 variable "internal_port" {
-  description = "Port of the internal listener (INTERNAL_ADDR), used only when internal_listener_source_security_group_id is set."
+  description = "Port of the internal listener (SPHERICON_INTERNAL_ADDR), used only when internal_listener_source_security_group_id is set."
   type        = number
   default     = 3400
 
@@ -108,19 +108,19 @@ variable "db_allocated_storage" {
 }
 
 variable "db_max_open_conns" {
-  description = "DB_MAX_OPEN_CONNS: the database/sql pool of one process. See the connection budget in ecs.tf."
+  description = "SPHERICON_DB_MAX_OPEN_CONNS: the database/sql pool of one process. See the connection budget in ecs.tf."
   type        = number
   default     = 10
 }
 
 variable "pgx_max_conns" {
-  description = "PGX_MAX_CONNS: the river pool of one process. See the connection budget in ecs.tf."
+  description = "SPHERICON_PGX_MAX_CONNS: the river pool of one process. See the connection budget in ecs.tf."
   type        = number
   default     = 10
 }
 
 variable "app_secret_name" {
-  description = "Name of the Secrets Manager secret that `mise run infra:bootstrap` creates once (JWT_SECRET, ENCRYPTION_KEY, BOOTSTRAP_TOKEN, LICENSE_KEY). Terraform reads only its ARN; the values never pass through Terraform."
+  description = "Name of the Secrets Manager secret that `mise run infra:bootstrap` creates once (SPHERICON_JWT_SECRET, SPHERICON_ENCRYPTION_KEY, SPHERICON_BOOTSTRAP_TOKEN, SPHERICON_LICENSE_KEY). Terraform reads only its ARN; the values never pass through Terraform."
   type        = string
   default     = "sphericon/app"
 }
@@ -134,7 +134,7 @@ variable "mail_from_label" {
 }
 
 variable "system_email_from" {
-  description = "SYSTEM_EMAIL_FROM: sender address of platform mail (password reset, invitations). Must be on the apex domain, which is the verified SES identity. Null means noreply@<domain>."
+  description = "SPHERICON_SYSTEM_EMAIL_FROM: sender address of platform mail (password reset, invitations). Must be on the apex domain, which is the verified SES identity. Null means noreply@<domain>."
   type        = string
   default     = null
 }

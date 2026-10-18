@@ -45,7 +45,7 @@ const Issuer = "sphericon staff"
 // challengeTTL is how long the password step's challenge stays valid.
 const challengeTTL = 5 * time.Minute
 
-// minSecretLength is the shortest OPERATOR_JWT_SECRET accepted.
+// minSecretLength is the shortest SPHERICON_OPERATOR_JWT_SECRET accepted.
 const minSecretLength = 32
 
 var (
@@ -82,10 +82,10 @@ func (e *ThrottledError) Error() string {
 
 // Config is what the Operator needs from the instance.
 type Config struct {
-	// Secret signs the Operator session and challenge tokens (OPERATOR_JWT_SECRET). It
+	// Secret signs the Operator session and challenge tokens (SPHERICON_OPERATOR_JWT_SECRET). It
 	// is never the site's JWT secret.
 	Secret string
-	// SessionTTL is the lifetime of an Operator session (OPERATOR_SESSION_TTL).
+	// SessionTTL is the lifetime of an Operator session (SPHERICON_OPERATOR_SESSION_TTL).
 	SessionTTL time.Duration
 	// SecureCookies sets the cookie's Secure attribute (the instance is served over HTTPS).
 	SecureCookies bool
@@ -100,10 +100,10 @@ type Config struct {
 	// the same volume floor the detector judges by. Zero is abuse.DefaultLimits.
 	Abuse abuse.Limits
 	// SupportEmail is the support contact an owner is given with a suspension notice
-	// (SUPPORT_EMAIL).
+	// (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// HoldMaxExpiry is how far ahead an Operator hold's expiry may be set
-	// (OPERATOR_HOLD_MAX_EXPIRY); zero is DefaultHoldMaxExpiry.
+	// (SPHERICON_OPERATOR_HOLD_MAX_EXPIRY); zero is DefaultHoldMaxExpiry.
 	HoldMaxExpiry time.Duration
 }
 
@@ -111,13 +111,13 @@ type Config struct {
 // only when the feature is licensed: an unlicensed instance needs none of it.
 func (c Config) Validate(siteSecret string) error {
 	if len(c.Secret) < minSecretLength {
-		return fmt.Errorf("OPERATOR_JWT_SECRET is required with the operator license and must be at least %d characters (e.g. `openssl rand -hex 32`)", minSecretLength)
+		return fmt.Errorf("SPHERICON_OPERATOR_JWT_SECRET is required with the operator license and must be at least %d characters (e.g. `openssl rand -hex 32`)", minSecretLength)
 	}
 	if subtle.ConstantTimeCompare([]byte(c.Secret), []byte(siteSecret)) == 1 {
-		return errors.New("OPERATOR_JWT_SECRET must differ from JWT_SECRET: an Operator session must never verify as a User's")
+		return errors.New("SPHERICON_OPERATOR_JWT_SECRET must differ from SPHERICON_JWT_SECRET: an Operator session must never verify as a User's")
 	}
 	if c.SessionTTL <= 0 {
-		return errors.New("OPERATOR_SESSION_TTL must be positive")
+		return errors.New("SPHERICON_OPERATOR_SESSION_TTL must be positive")
 	}
 	if c.Attempts == nil {
 		return errors.New("the Operator login needs its failed-attempt counter: a missing one would leave it unthrottled")

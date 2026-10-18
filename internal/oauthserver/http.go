@@ -39,7 +39,7 @@ const (
 )
 
 // ResourceURL is the canonical URI of the protected MCP resource, served from
-// the MCP origin (the app origin unless MCP_URL gives MCP its own host).
+// the MCP origin (the app origin unless SPHERICON_MCP_URL gives MCP its own host).
 func ResourceURL(mcpOrigin string) string { return strings.TrimSuffix(mcpOrigin, "/") + mcpPath }
 
 // ResourceMetadataURL is where /mcp points unauthenticated clients (RFC 9728),

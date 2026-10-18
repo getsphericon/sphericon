@@ -15,7 +15,7 @@
 // metrics from the globals alone.
 //
 // Metrics are also exposed as a Prometheus /metrics endpoint (pull), served only
-// by the opt-in listener on METRICS_ADDR (see MetricsServer, ADR 0018), never on
+// by the opt-in listener on SPHERICON_METRICS_ADDR (see MetricsServer, ADR 0018), never on
 // the public port. That reader is attached to the same MeterProvider whatever the
 // file says, so a file without a meter_provider section still serves /metrics.
 package telemetry

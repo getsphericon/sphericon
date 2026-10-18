@@ -27,7 +27,7 @@ const sessionIssuer = "sphericon"
 
 // Sessions issues and clears the site session (ADR 0020): a JWT signed with the
 // instance secret, carried in an HttpOnly, SameSite=Lax cookie that lives as long as
-// the token (SESSION_TTL, no refresh). It is the one place a session is minted; the
+// the token (SPHERICON_SESSION_TTL, no refresh). It is the one place a session is minted; the
 // login operation, and later the Second factor step, hand its cookie to the client.
 type Sessions struct {
 	tokens *gptoken.Service

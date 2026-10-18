@@ -1,5 +1,5 @@
 output "app_url" {
-  description = "Public URL of the web app (APP_URL)."
+  description = "Public URL of the web app (SPHERICON_APP_URL)."
   value       = "https://${local.app_host}"
 }
 

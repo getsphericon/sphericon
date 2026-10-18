@@ -140,7 +140,7 @@ type TestEnv struct {
 	jwtSecret string // for tokens a test needs in a state the Tracker never mints
 
 	now        func() time.Time // the clock the server checks site session expiry against
-	sessionTTL time.Duration    // SESSION_TTL, the lifetime of the site tokens tests mint
+	sessionTTL time.Duration    // SPHERICON_SESSION_TTL, the lifetime of the site tokens tests mint
 
 	// Captured sends from the inline jobs adapter, for assertions.
 	SystemMail   *CapturingSender // platform mail (welcome, …)

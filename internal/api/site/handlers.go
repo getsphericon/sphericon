@@ -104,7 +104,7 @@ type Handlers struct {
 	holdsHonoured  func() bool
 	billingURL     string
 	// requireVerification is the email verification gate (ADR 0030): off only on an
-	// install that set REQUIRE_EMAIL_VERIFICATION=false.
+	// install that set SPHERICON_REQUIRE_EMAIL_VERIFICATION=false.
 	requireVerification bool
 	// challenges signs the login challenge on the env clock (ADR 0020).
 	challenges *authtoken.Signer
@@ -170,13 +170,13 @@ type Deps struct {
 	AppURL         string
 	Audit          AuditLog
 	AbuseWatch     AbuseWatch
-	// SupportEmail is where a suspended Workspace's owner appeals (SUPPORT_EMAIL).
+	// SupportEmail is where a suspended Workspace's owner appeals (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
-	// BillingURL is the billing site a member under a hold is pointed to (BILLING_URL).
+	// BillingURL is the billing site a member under a hold is pointed to (SPHERICON_BILLING_URL).
 	BillingURL string
 	Analytics  *analytics.Module
 	// Sessions issues the session cookie on login (ADR 0020). The composition
-	// root (server.New) builds it from the instance secret and SESSION_TTL.
+	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
 	// SecondFactor enrolls and verifies a User's TOTP Second factor (ADR 0020).
 	SecondFactor *secondfactor.Module

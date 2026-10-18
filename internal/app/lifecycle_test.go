@@ -91,7 +91,7 @@ func TestStartUnwindsWhenTheMetricsAddressIsTaken(t *testing.T) {
 	taken, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = taken.Close() })
-	t.Setenv("METRICS_ADDR", taken.Addr().String())
+	t.Setenv("SPHERICON_METRICS_ADDR", taken.Addr().String())
 	ln, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	a, err := New("test", WithListener(ln))

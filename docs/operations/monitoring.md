@@ -8,14 +8,14 @@ section of the [runbook](./runbook).
 
 ## Probes
 
-| Endpoint       | Port           | Use it for                                                          |
-| -------------- | -------------- | ------------------------------------------------------------------- |
-| `GET /healthz` | `PORT`         | Liveness. Always `200` while the process serves; touches nothing.   |
-| `GET /readyz`  | `PORT`         | Readiness. Pings the database; `503` when it is unreachable.        |
-| `GET /metrics` | `METRICS_ADDR` | Prometheus exposition. Opt-in, served on its own internal listener. |
+| Endpoint       | Port                     | Use it for                                                          |
+| -------------- | ------------------------ | ------------------------------------------------------------------- |
+| `GET /healthz` | `PORT`                   | Liveness. Always `200` while the process serves; touches nothing.   |
+| `GET /readyz`  | `PORT`                   | Readiness. Pings the database; `503` when it is unreachable.        |
+| `GET /metrics` | `SPHERICON_METRICS_ADDR` | Prometheus exposition. Opt-in, served on its own internal listener. |
 
 `/metrics` is never served on the public port and has no authentication: the network boundary
-is the control. Enable it with `METRICS_ADDR` (see
+is the control. Enable it with `SPHERICON_METRICS_ADDR` (see
 [Prometheus metrics](../self-hosting#prometheus-metrics)) or, with the Helm chart,
 `metrics.enabled=true`, and keep the port off your public ingress.
 
@@ -85,7 +85,7 @@ Queues are `default`, `broadcasts` and `webhooks`. Snoozed jobs count as `ok`.
 | `db_pool_open`                | gauge | `pool` | Connections open (in use plus idle).                                                                                                                                      |
 | `db_pool_in_use`              | gauge | `pool` | Connections in use.                                                                                                                                                       |
 | `db_pool_idle`                | gauge | `pool` | Idle connections.                                                                                                                                                         |
-| `db_pool_max`                 | gauge | `pool` | Configured maximum (`DB_MAX_OPEN_CONNS`, `PGX_MAX_CONNS`).                                                                                                                |
+| `db_pool_max`                 | gauge | `pool` | Configured maximum (`SPHERICON_DB_MAX_OPEN_CONNS`, `SPHERICON_PGX_MAX_CONNS`).                                                                                            |
 | `db_pool_wait_count`          | gauge | `pool` | `sql` pool only: cumulative requests that waited for a connection (`sql.DBStats.WaitCount`); use `increase()`.                                                            |
 | `db_pool_empty_acquire_count` | gauge | `pool` | `pgx` pool only: cumulative acquires that found the pool empty and waited for a connection to be released or opened (`pgxpool.Stat.EmptyAcquireCount`); use `increase()`. |
 

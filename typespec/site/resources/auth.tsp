@@ -3,7 +3,7 @@ using TypeSpec.Http;
 namespace Sphericon;
 
 /** Register with a name and an email: no password is taken before the address is
- * proven (ADR 0030). Only an install with `REQUIRE_EMAIL_VERIFICATION=false` takes a
+ * proven (ADR 0030). Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a
  * password here. */
 model SiteRegisterInput {
   name: string;
@@ -80,7 +80,7 @@ namespace SiteAuth {
    * A verification email with the link to the set-password screen is on its way
    * (202), and 202 is the answer for every address, taken or not (ADR 0031): the
    * owner of a taken address gets a notice by mail instead. With
-   * `REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the
+   * `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the
    * request must carry a password (422 otherwise), creates a Verified User with its
    * first Workspace at once (202, no session: the User signs in next), and a taken
    * address answers 409. */

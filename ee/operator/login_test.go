@@ -177,7 +177,7 @@ func TestTheSessionIsShorterThanACustomersAndHasNoRememberMe(t *testing.T) {
 	ttl := time.Duration(cookie.MaxAge) * time.Second
 
 	assert.Positive(t, ttl)
-	assert.Less(t, ttl, 24*time.Hour, "shorter than SESSION_TTL's default")
+	assert.Less(t, ttl, 24*time.Hour, "shorter than SPHERICON_SESSION_TTL's default")
 
 	h.clock.t = h.clock.t.Add(ttl + time.Second)
 	requireProblem(t, h.me(t, cookie.Value), http.StatusUnauthorized)

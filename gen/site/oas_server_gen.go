@@ -80,9 +80,9 @@ type Handler interface {
 	// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
 	// with the link to the set-password screen is on its way (202), and 202 is the answer for every
 	// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
-	// `REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must carry a
-	// password (422 otherwise), creates a Verified User with its first Workspace at once (202, no session:
-	// the User signs in next), and a taken address answers 409.
+	// `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
+	// carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
+	// session: the User signs in next), and a taken address answers 409.
 	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, req *SiteRegisterInput) (SiteAuthRegisterRes, error)

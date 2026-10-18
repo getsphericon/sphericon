@@ -88,10 +88,10 @@ type Config struct {
 	CORSOrigins    []string
 	JWTSecret      string
 	// SessionTTL is the lifetime of a site session: both the token's exp and the
-	// cookie's Max-Age (SESSION_TTL, default 24h, no refresh; ADR 0020).
+	// cookie's Max-Age (SPHERICON_SESSION_TTL, default 24h, no refresh; ADR 0020).
 	SessionTTL time.Duration
 	AppURL     string
-	// MCPURL is the public origin of a dedicated MCP host (MCP_URL); empty means the
+	// MCPURL is the public origin of a dedicated MCP host (SPHERICON_MCP_URL); empty means the
 	// MCP resource lives on AppURL. Read it through MCPOrigin.
 	MCPURL        string
 	SMTPHost      string
@@ -103,45 +103,45 @@ type Config struct {
 	// LicenseKey is the offline EE license key (ADR 0014). Empty runs the plain core.
 	LicenseKey string
 	// AccountLinkURL is the address of the external account page the Owner's Account
-	// link opens (ACCOUNT_LINK_URL). The link is enabled only with AccountLinkSigningKey too.
+	// link opens (SPHERICON_ACCOUNT_LINK_URL). The link is enabled only with AccountLinkSigningKey too.
 	AccountLinkURL string
 	// AccountLinkSigningKey is the base64 Ed25519 seed that signs the Account link
-	// token (ACCOUNT_LINK_SIGNING_KEY).
+	// token (SPHERICON_ACCOUNT_LINK_SIGNING_KEY).
 	AccountLinkSigningKey string
-	// OperatorJWTSecret signs the Operator session and login challenge (OPERATOR_JWT_SECRET,
-	// ADR 0026). It is required, and must differ from JWT_SECRET, only when the license
+	// OperatorJWTSecret signs the Operator session and login challenge (SPHERICON_OPERATOR_JWT_SECRET,
+	// ADR 0026). It is required, and must differ from SPHERICON_JWT_SECRET, only when the license
 	// has the `operator` feature; ee.New validates it there.
 	OperatorJWTSecret string
-	// OperatorSessionTTL is the lifetime of an Operator session (OPERATOR_SESSION_TTL,
+	// OperatorSessionTTL is the lifetime of an Operator session (SPHERICON_OPERATOR_SESSION_TTL,
 	// default 4h, no refresh, no remember-me): shorter than a customer's.
 	OperatorSessionTTL time.Duration
 	// OperatorHoldMaxExpiry is how far ahead a service may set an Operator hold's expiry
-	// (OPERATOR_HOLD_MAX_EXPIRY, default 720h): it is refused beyond it.
+	// (SPHERICON_OPERATOR_HOLD_MAX_EXPIRY, default 720h): it is refused beyond it.
 	OperatorHoldMaxExpiry time.Duration
 	// AbuseVolumeFloor is the fewest sends in the 24-hour window, per Sending domain, for
-	// the abuse detector to judge a rate (ABUSE_VOLUME_FLOOR, default 1000; ADR 0026).
+	// the abuse detector to judge a rate (SPHERICON_ABUSE_VOLUME_FLOOR, default 1000; ADR 0026).
 	AbuseVolumeFloor int
 	// The abuse detector's limits, in percent (ADR 0026): a warning at the first pair, a
 	// freeze at the second. Defaults: warn 0.1% complaints / 5% bounces, freeze 0.3% / 10%.
 	AbuseWarnComplaintPercent, AbuseWarnBouncePercent     float64
 	AbuseFreezeComplaintPercent, AbuseFreezeBouncePercent float64
 	// SupportEmail is the support contact shown with a suspension and in the owner notices
-	// (SUPPORT_EMAIL): where an owner appeals. Empty shows none.
+	// (SPHERICON_SUPPORT_EMAIL): where an owner appeals. Empty shows none.
 	SupportEmail string
 	// BillingURL is the billing site a Workspace member under a hold is pointed to
-	// (BILLING_URL). Empty (the self-host default) shows no link and no billing text.
+	// (SPHERICON_BILLING_URL). Empty (the self-host default) shows no link and no billing text.
 	BillingURL  string
 	AutoMigrate bool
 	BodyLimits  BodyLimits
 	RateLimits  RateLimits
 	// OutboxFloor is the minimum age of a domain-event outbox row before the
-	// prune job may delete it (OUTBOX_RETENTION_FLOOR_DAYS, default 7; ADR 0019).
+	// prune job may delete it (SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS, default 7; ADR 0019).
 	OutboxFloor time.Duration
 	// EventsRetention is the age past which analytical Events are deleted
-	// (EVENTS_RETENTION_DAYS, default 400, 0 disables; ADR 0019).
+	// (SPHERICON_EVENTS_RETENTION_DAYS, default 400, 0 disables; ADR 0019).
 	EventsRetention time.Duration
 	// UnverifiedUserRetention is the age past which an Unverified User with no Membership
-	// is deleted (UNVERIFIED_USER_RETENTION_DAYS, default 7, 0 disables; ADR 0030).
+	// is deleted (SPHERICON_UNVERIFIED_USER_RETENTION_DAYS, default 7, 0 disables; ADR 0030).
 	UnverifiedUserRetention time.Duration
 	DBPool                  DBPool
 	// IsDev is true for non-production envs (development/test). Used to relax
@@ -149,7 +149,7 @@ type Config struct {
 	// trusts seeded domains instead of hitting real DNS (ADR 0010).
 	IsDev bool
 	// SMTPAllowPrivateHosts lets a Workspace's SMTP Integration point at a loopback or
-	// private address and any port (SMTP_ALLOW_PRIVATE_HOSTS). Off in production by
+	// private address and any port (SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS). Off in production by
 	// default, so a tenant cannot use the server to reach internal hosts; on in
 	// development and tests, where the relay is a local Mailpit.
 	SMTPAllowPrivateHosts bool
@@ -161,7 +161,7 @@ type Config struct {
 	Locale string
 
 	// RequireEmailVerification keeps the email verification gate on (ADR 0030). Only an
-	// explicit REQUIRE_EMAIL_VERIFICATION=false turns it off, for a self-hosted install
+	// explicit SPHERICON_REQUIRE_EMAIL_VERIFICATION=false turns it off, for a self-hosted install
 	// without outbound mail; the default and any other value keep it on. It is never
 	// inferred from the SMTP settings.
 	RequireEmailVerification bool
@@ -184,7 +184,7 @@ type Config struct {
 	// InternalAddr (host:port) is where the opt-in internal listener binds: the only
 	// place the service endpoints of the Operator surface are served (ADR 0026). Empty
 	// (the default) means no listener and no route for them anywhere; it must differ
-	// from the public PORT and from METRICS_ADDR. Nothing is served either without the
+	// from the public PORT and from SPHERICON_METRICS_ADDR. Nothing is served either without the
 	// `operator` license.
 	InternalAddr string
 
@@ -201,85 +201,85 @@ type Config struct {
 
 // environment is every variable Load reads, with the defaults that do not depend on
 // the environment name. Those that do (rate limits in the e2e profile, the log
-// format, SMTP_ALLOW_PRIVATE_HOSTS) are seeded into the variable map by seedDefaults.
+// format, SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS) are seeded into the variable map by seedDefaults.
 type environment struct {
 	DatabaseURL string `env:"DATABASE_URL,required,notEmpty"`
 	Port        string `env:"PORT" envDefault:"3000"`
-	AppURL      string `env:"APP_URL" envDefault:"http://localhost:3000"`
-	MCPURL      string `env:"MCP_URL"`
+	AppURL      string `env:"SPHERICON_APP_URL" envDefault:"http://localhost:3000"`
+	MCPURL      string `env:"SPHERICON_MCP_URL"`
 
-	CollectSiteKey string        `env:"COLLECT_SITE_KEY"`
-	BootstrapToken string        `env:"BOOTSTRAP_TOKEN"`
-	CORSOrigins    string        `env:"CORS_ORIGINS"`
-	JWTSecret      string        `env:"JWT_SECRET"`
-	SessionTTL     time.Duration `env:"SESSION_TTL" envDefault:"24h"`
-	EncryptionKey  string        `env:"ENCRYPTION_KEY"`
-	LicenseKey     string        `env:"LICENSE_KEY"`
+	CollectSiteKey string        `env:"SPHERICON_COLLECT_SITE_KEY"`
+	BootstrapToken string        `env:"SPHERICON_BOOTSTRAP_TOKEN"`
+	CORSOrigins    string        `env:"SPHERICON_CORS_ORIGINS"`
+	JWTSecret      string        `env:"SPHERICON_JWT_SECRET"`
+	SessionTTL     time.Duration `env:"SPHERICON_SESSION_TTL" envDefault:"24h"`
+	EncryptionKey  string        `env:"SPHERICON_ENCRYPTION_KEY"`
+	LicenseKey     string        `env:"SPHERICON_LICENSE_KEY"`
 
-	SMTPHost string `env:"SMTP_HOST"`
-	SMTPPort int    `env:"SMTP_PORT" envDefault:"1025"`
-	SMTPUser string `env:"SMTP_USER"`
-	SMTPPass string `env:"SMTP_PASS"`
-	SMTPFrom string `env:"SMTP_FROM"`
+	SMTPHost string `env:"SPHERICON_SMTP_HOST"`
+	SMTPPort int    `env:"SPHERICON_SMTP_PORT" envDefault:"1025"`
+	SMTPUser string `env:"SPHERICON_SMTP_USER"`
+	SMTPPass string `env:"SPHERICON_SMTP_PASS"`
+	SMTPFrom string `env:"SPHERICON_SMTP_FROM"`
 
-	AccountLinkURL        string `env:"ACCOUNT_LINK_URL"`
-	AccountLinkSigningKey string `env:"ACCOUNT_LINK_SIGNING_KEY"`
+	AccountLinkURL        string `env:"SPHERICON_ACCOUNT_LINK_URL"`
+	AccountLinkSigningKey string `env:"SPHERICON_ACCOUNT_LINK_SIGNING_KEY"`
 
-	OperatorJWTSecret     string        `env:"OPERATOR_JWT_SECRET"`
-	OperatorSessionTTL    time.Duration `env:"OPERATOR_SESSION_TTL" envDefault:"4h"`
-	OperatorHoldMaxExpiry time.Duration `env:"OPERATOR_HOLD_MAX_EXPIRY" envDefault:"720h"`
+	OperatorJWTSecret     string        `env:"SPHERICON_OPERATOR_JWT_SECRET"`
+	OperatorSessionTTL    time.Duration `env:"SPHERICON_OPERATOR_SESSION_TTL" envDefault:"4h"`
+	OperatorHoldMaxExpiry time.Duration `env:"SPHERICON_OPERATOR_HOLD_MAX_EXPIRY" envDefault:"720h"`
 
-	AbuseVolumeFloor            int     `env:"ABUSE_VOLUME_FLOOR" envDefault:"1000"`
-	AbuseWarnComplaintPercent   float64 `env:"ABUSE_WARN_COMPLAINT_PERCENT" envDefault:"0.1"`
-	AbuseWarnBouncePercent      float64 `env:"ABUSE_WARN_BOUNCE_PERCENT" envDefault:"5"`
-	AbuseFreezeComplaintPercent float64 `env:"ABUSE_FREEZE_COMPLAINT_PERCENT" envDefault:"0.3"`
-	AbuseFreezeBouncePercent    float64 `env:"ABUSE_FREEZE_BOUNCE_PERCENT" envDefault:"10"`
+	AbuseVolumeFloor            int     `env:"SPHERICON_ABUSE_VOLUME_FLOOR" envDefault:"1000"`
+	AbuseWarnComplaintPercent   float64 `env:"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT" envDefault:"0.1"`
+	AbuseWarnBouncePercent      float64 `env:"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT" envDefault:"5"`
+	AbuseFreezeComplaintPercent float64 `env:"SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT" envDefault:"0.3"`
+	AbuseFreezeBouncePercent    float64 `env:"SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT" envDefault:"10"`
 
-	SupportEmail string `env:"SUPPORT_EMAIL"`
-	BillingURL   string `env:"BILLING_URL"`
-	AutoMigrate  bool   `env:"AUTO_MIGRATE"`
+	SupportEmail string `env:"SPHERICON_SUPPORT_EMAIL"`
+	BillingURL   string `env:"SPHERICON_BILLING_URL"`
+	AutoMigrate  bool   `env:"SPHERICON_DB_AUTO_MIGRATE"`
 
-	MaxBodyBytes         int64 `env:"MAX_BODY_BYTES" envDefault:"1048576"`
-	CollectMaxBodyBytes  int64 `env:"COLLECT_MAX_BODY_BYTES" envDefault:"512000"`
-	CollectMaxEventBytes int64 `env:"COLLECT_MAX_EVENT_BYTES" envDefault:"32768"`
+	MaxBodyBytes         int64 `env:"SPHERICON_MAX_BODY_BYTES" envDefault:"1048576"`
+	CollectMaxBodyBytes  int64 `env:"SPHERICON_COLLECT_MAX_BODY_BYTES" envDefault:"512000"`
+	CollectMaxEventBytes int64 `env:"SPHERICON_COLLECT_MAX_EVENT_BYTES" envDefault:"32768"`
 
-	RateLimitHuman         int `env:"RATE_LIMIT_HUMAN_PER_MINUTE"`
-	RateLimitAPIBurst      int `env:"RATE_LIMIT_API_BURST_PER_SECOND"`
-	RateLimitAPIPerMinute  int `env:"RATE_LIMIT_API_PER_MINUTE"`
-	RateLimitFailedAuth    int `env:"RATE_LIMIT_FAILED_AUTH_PER_MINUTE"`
-	RateLimitTracking      int `env:"RATE_LIMIT_TRACKING_PER_MINUTE"`
-	RateLimitLoginFailures int `env:"RATE_LIMIT_LOGIN_FAILURES"`
-	RateLimitLoginIP       int `env:"RATE_LIMIT_LOGIN_IP_PER_MINUTE"`
-	RateLimitCollect       int `env:"RATE_LIMIT_COLLECT_PER_MINUTE"`
-	RateLimitCollectIP     int `env:"RATE_LIMIT_COLLECT_IP_PER_MINUTE"`
-	RateLimitService       int `env:"RATE_LIMIT_SERVICE_PER_MINUTE"`
-	RateLimitForgotAddress int `env:"RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR"`
-	RateLimitForgotIP      int `env:"RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR"`
+	RateLimitHuman         int `env:"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE"`
+	RateLimitAPIBurst      int `env:"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND"`
+	RateLimitAPIPerMinute  int `env:"SPHERICON_RATE_LIMIT_API_PER_MINUTE"`
+	RateLimitFailedAuth    int `env:"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE"`
+	RateLimitTracking      int `env:"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE"`
+	RateLimitLoginFailures int `env:"SPHERICON_RATE_LIMIT_LOGIN_FAILURES"`
+	RateLimitLoginIP       int `env:"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE"`
+	RateLimitCollect       int `env:"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE"`
+	RateLimitCollectIP     int `env:"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE"`
+	RateLimitService       int `env:"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE"`
+	RateLimitForgotAddress int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR"`
+	RateLimitForgotIP      int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR"`
 
-	OutboxFloorDays             int `env:"OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7"`
-	EventsRetentionDays         int `env:"EVENTS_RETENTION_DAYS" envDefault:"400"`
-	UnverifiedUserRetentionDays int `env:"UNVERIFIED_USER_RETENTION_DAYS" envDefault:"7"`
+	OutboxFloorDays             int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7"`
+	EventsRetentionDays         int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400"`
+	UnverifiedUserRetentionDays int `env:"SPHERICON_UNVERIFIED_USER_RETENTION_DAYS" envDefault:"7"`
 
-	DBMaxOpenConns    int           `env:"DB_MAX_OPEN_CONNS" envDefault:"15"`
-	DBMaxIdleConns    *int          `env:"DB_MAX_IDLE_CONNS"`
-	DBConnMaxLifetime time.Duration `env:"DB_CONN_MAX_LIFETIME" envDefault:"30m"`
-	PGXMaxConns       int32         `env:"PGX_MAX_CONNS" envDefault:"25"`
+	DBMaxOpenConns    int           `env:"SPHERICON_DB_MAX_OPEN_CONNS" envDefault:"15"`
+	DBMaxIdleConns    *int          `env:"SPHERICON_DB_MAX_IDLE_CONNS"`
+	DBConnMaxLifetime time.Duration `env:"SPHERICON_DB_CONN_MAX_LIFETIME" envDefault:"30m"`
+	PGXMaxConns       int32         `env:"SPHERICON_PGX_MAX_CONNS" envDefault:"25"`
 
-	SMTPAllowPrivateHosts    bool   `env:"SMTP_ALLOW_PRIVATE_HOSTS"`
-	Locale                   string `env:"APP_LOCALE" envDefault:"en"`
-	RequireEmailVerification string `env:"REQUIRE_EMAIL_VERIFICATION"`
+	SMTPAllowPrivateHosts    bool   `env:"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS"`
+	Locale                   string `env:"SPHERICON_APP_LOCALE" envDefault:"en"`
+	RequireEmailVerification string `env:"SPHERICON_REQUIRE_EMAIL_VERIFICATION"`
 
-	LogLevel        string `env:"LOG_LEVEL" envDefault:"info"`
-	LogFormat       string `env:"LOG_FORMAT"`
+	LogLevel        string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
+	LogFormat       string `env:"SPHERICON_LOG_FORMAT"`
 	OtelServiceName string `env:"OTEL_SERVICE_NAME" envDefault:"sphericon"`
-	MetricsAddr     string `env:"METRICS_ADDR"`
-	InternalAddr    string `env:"INTERNAL_ADDR"`
+	MetricsAddr     string `env:"SPHERICON_METRICS_ADDR"`
+	InternalAddr    string `env:"SPHERICON_INTERNAL_ADDR"`
 
-	SystemEmailProvider string `env:"SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
-	SystemEmailFrom     string `env:"SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
-	SESRegion           string `env:"SES_REGION"`
-	SESAccessKeyID      string `env:"SES_ACCESS_KEY_ID"`
-	SESSecretAccessKey  string `env:"SES_SECRET_ACCESS_KEY"`
+	SystemEmailProvider string `env:"SPHERICON_SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
+	SystemEmailFrom     string `env:"SPHERICON_SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
+	SESRegion           string `env:"SPHERICON_SES_REGION"`
+	SESAccessKeyID      string `env:"SPHERICON_SES_ACCESS_KEY_ID"`
+	SESSecretAccessKey  string `env:"SPHERICON_SES_SECRET_ACCESS_KEY"`
 }
 
 // Load reads the configuration from the process environment layered over the .env
@@ -392,10 +392,10 @@ func Load(envName string) (*Config, error) {
 	}
 
 	if isE2E(envName) {
-		// The suite never scrapes metrics; a global METRICS_ADDR (the dev stack's) would
+		// The suite never scrapes metrics; a global SPHERICON_METRICS_ADDR (the dev stack's) would
 		// make concurrent runs, or a running dev stack, collide on the port.
 		cfg.MetricsAddr = ""
-		cfg.InternalAddr = "" // likewise a global INTERNAL_ADDR
+		cfg.InternalAddr = "" // likewise a global SPHERICON_INTERNAL_ADDR
 	}
 
 	if err := cfg.validate(envName); err != nil {
@@ -424,7 +424,7 @@ func readEnvFiles(files []string) (map[string]string, error) {
 // seedDefaults fills the variables whose default depends on the environment name,
 // unless the process or a file set them (an empty value counts as unset): the rate
 // limits (all disabled in the e2e profile, which polls freely), the log format
-// (human-readable in development, JSON elsewhere) and SMTP_ALLOW_PRIVATE_HOSTS.
+// (human-readable in development, JSON elsewhere) and SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS.
 func seedDefaults(vars map[string]string, envName string) {
 	limits := DefaultRateLimits
 	if isE2E(envName) {
@@ -435,21 +435,21 @@ func seedDefaults(vars map[string]string, envName string) {
 		logFormat = "text"
 	}
 	for key, value := range map[string]string{
-		"RATE_LIMIT_HUMAN_PER_MINUTE":                     strconv.Itoa(limits.Human),
-		"RATE_LIMIT_API_BURST_PER_SECOND":                 strconv.Itoa(limits.APIBurst),
-		"RATE_LIMIT_API_PER_MINUTE":                       strconv.Itoa(limits.APIPerMinute),
-		"RATE_LIMIT_FAILED_AUTH_PER_MINUTE":               strconv.Itoa(limits.FailedAuth),
-		"RATE_LIMIT_TRACKING_PER_MINUTE":                  strconv.Itoa(limits.Tracking),
-		"RATE_LIMIT_LOGIN_FAILURES":                       strconv.Itoa(limits.LoginFailures),
-		"RATE_LIMIT_LOGIN_IP_PER_MINUTE":                  strconv.Itoa(limits.LoginIP),
-		"RATE_LIMIT_COLLECT_PER_MINUTE":                   strconv.Itoa(limits.Collect),
-		"RATE_LIMIT_COLLECT_IP_PER_MINUTE":                strconv.Itoa(limits.CollectIP),
-		"RATE_LIMIT_SERVICE_PER_MINUTE":                   strconv.Itoa(limits.ServicePerMinute),
-		"RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR": strconv.Itoa(limits.ForgotAddress),
-		"RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR":          strconv.Itoa(limits.ForgotIP),
-		"LOG_FORMAT":                                      logFormat,
+		"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE":                     strconv.Itoa(limits.Human),
+		"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND":                 strconv.Itoa(limits.APIBurst),
+		"SPHERICON_RATE_LIMIT_API_PER_MINUTE":                       strconv.Itoa(limits.APIPerMinute),
+		"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE":               strconv.Itoa(limits.FailedAuth),
+		"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE":                  strconv.Itoa(limits.Tracking),
+		"SPHERICON_RATE_LIMIT_LOGIN_FAILURES":                       strconv.Itoa(limits.LoginFailures),
+		"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE":                  strconv.Itoa(limits.LoginIP),
+		"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE":                   strconv.Itoa(limits.Collect),
+		"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE":                strconv.Itoa(limits.CollectIP),
+		"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE":                   strconv.Itoa(limits.ServicePerMinute),
+		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR": strconv.Itoa(limits.ForgotAddress),
+		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR":          strconv.Itoa(limits.ForgotIP),
+		"SPHERICON_LOG_FORMAT":                                      logFormat,
 		// Allowed in development, tests and the e2e suite (a local Mailpit), refused in production.
-		"SMTP_ALLOW_PRIVATE_HOSTS": strconv.FormatBool(isDevEnv(envName) || isE2E(envName)),
+		"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS": strconv.FormatBool(isDevEnv(envName) || isE2E(envName)),
 	} {
 		if vars[key] == "" {
 			vars[key] = value
@@ -458,14 +458,14 @@ func seedDefaults(vars map[string]string, envName string) {
 }
 
 // SecureCookies reports whether session cookies carry the Secure attribute: whenever the
-// instance is served over HTTPS (APP_URL reflects the public scheme, even though a proxy
+// instance is served over HTTPS (SPHERICON_APP_URL reflects the public scheme, even though a proxy
 // terminates TLS and the Go server listens on plain HTTP). Local http dev stays false,
 // where a Secure cookie would never be sent back.
 func (c *Config) SecureCookies() bool { return strings.HasPrefix(c.AppURL, "https://") }
 
 // validate enforces invariants that depend on the deployment environment.
 func (c *Config) validate(envName string) error {
-	// Outside development/test, an empty JWT_SECRET silently signs auth tokens
+	// Outside development/test, an empty SPHERICON_JWT_SECRET silently signs auth tokens
 	// with an empty key — refuse to boot rather than ship that footgun.
 	if !isDevEnv(envName) && !isE2E(envName) {
 		if err := validateJWTSecret(c.JWTSecret); err != nil {
@@ -473,89 +473,89 @@ func (c *Config) validate(envName string) error {
 		}
 	}
 	if c.SessionTTL <= 0 {
-		return fmt.Errorf("SESSION_TTL must be positive")
+		return fmt.Errorf("SPHERICON_SESSION_TTL must be positive")
 	}
 	if c.OperatorSessionTTL <= 0 {
-		return fmt.Errorf("OPERATOR_SESSION_TTL must be positive")
+		return fmt.Errorf("SPHERICON_OPERATOR_SESSION_TTL must be positive")
 	}
 	if c.OperatorHoldMaxExpiry <= 0 {
-		return fmt.Errorf("OPERATOR_HOLD_MAX_EXPIRY must be positive")
+		return fmt.Errorf("SPHERICON_OPERATOR_HOLD_MAX_EXPIRY must be positive")
 	}
 	if c.AbuseVolumeFloor <= 0 {
-		return fmt.Errorf("ABUSE_VOLUME_FLOOR must be positive")
+		return fmt.Errorf("SPHERICON_ABUSE_VOLUME_FLOOR must be positive")
 	}
 	if !(0 < c.AbuseWarnComplaintPercent && c.AbuseWarnComplaintPercent < c.AbuseFreezeComplaintPercent && c.AbuseFreezeComplaintPercent <= 100) {
-		return fmt.Errorf("ABUSE_WARN_COMPLAINT_PERCENT must be above 0 and below ABUSE_FREEZE_COMPLAINT_PERCENT, which is at most 100")
+		return fmt.Errorf("SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT, which is at most 100")
 	}
 	if !(0 < c.AbuseWarnBouncePercent && c.AbuseWarnBouncePercent < c.AbuseFreezeBouncePercent && c.AbuseFreezeBouncePercent <= 100) {
-		return fmt.Errorf("ABUSE_WARN_BOUNCE_PERCENT must be above 0 and below ABUSE_FREEZE_BOUNCE_PERCENT, which is at most 100")
+		return fmt.Errorf("SPHERICON_ABUSE_WARN_BOUNCE_PERCENT must be above 0 and below SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT, which is at most 100")
 	}
 	if (c.AccountLinkURL == "") != (c.AccountLinkSigningKey == "") {
-		return fmt.Errorf("ACCOUNT_LINK_URL and ACCOUNT_LINK_SIGNING_KEY must be set together")
+		return fmt.Errorf("SPHERICON_ACCOUNT_LINK_URL and SPHERICON_ACCOUNT_LINK_SIGNING_KEY must be set together")
 	}
 	if c.BodyLimits.Default <= 0 {
-		return fmt.Errorf("MAX_BODY_BYTES must be positive")
+		return fmt.Errorf("SPHERICON_MAX_BODY_BYTES must be positive")
 	}
 	if c.BodyLimits.Collect <= 0 {
-		return fmt.Errorf("COLLECT_MAX_BODY_BYTES must be positive")
+		return fmt.Errorf("SPHERICON_COLLECT_MAX_BODY_BYTES must be positive")
 	}
 	if c.BodyLimits.CollectEvent <= 0 {
-		return fmt.Errorf("COLLECT_MAX_EVENT_BYTES must be positive")
+		return fmt.Errorf("SPHERICON_COLLECT_MAX_EVENT_BYTES must be positive")
 	}
 	for name, limit := range map[string]int{
-		"RATE_LIMIT_HUMAN_PER_MINUTE":       c.RateLimits.Human,
-		"RATE_LIMIT_API_BURST_PER_SECOND":   c.RateLimits.APIBurst,
-		"RATE_LIMIT_API_PER_MINUTE":         c.RateLimits.APIPerMinute,
-		"RATE_LIMIT_FAILED_AUTH_PER_MINUTE": c.RateLimits.FailedAuth,
+		"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE":       c.RateLimits.Human,
+		"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND":   c.RateLimits.APIBurst,
+		"SPHERICON_RATE_LIMIT_API_PER_MINUTE":         c.RateLimits.APIPerMinute,
+		"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE": c.RateLimits.FailedAuth,
 	} {
 		if limit < 0 {
 			return fmt.Errorf("%s must not be negative (0 disables)", name)
 		}
 	}
 	if c.RateLimits.Tracking < 0 {
-		return fmt.Errorf("RATE_LIMIT_TRACKING_PER_MINUTE must not be negative (0 disables)")
+		return fmt.Errorf("SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.LoginFailures < 0 {
-		return fmt.Errorf("RATE_LIMIT_LOGIN_FAILURES must not be negative (0 disables)")
+		return fmt.Errorf("SPHERICON_RATE_LIMIT_LOGIN_FAILURES must not be negative (0 disables)")
 	}
 	if c.RateLimits.LoginIP < 0 {
-		return fmt.Errorf("RATE_LIMIT_LOGIN_IP_PER_MINUTE must not be negative (0 disables)")
+		return fmt.Errorf("SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.Collect < 0 {
-		return fmt.Errorf("RATE_LIMIT_COLLECT_PER_MINUTE must not be negative (0 disables)")
+		return fmt.Errorf("SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.CollectIP < 0 {
-		return fmt.Errorf("RATE_LIMIT_COLLECT_IP_PER_MINUTE must not be negative (0 disables)")
+		return fmt.Errorf("SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.ServicePerMinute < 0 {
-		return fmt.Errorf("RATE_LIMIT_SERVICE_PER_MINUTE must not be negative (0 disables)")
+		return fmt.Errorf("SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE must not be negative (0 disables)")
 	}
 	if c.RateLimits.ForgotAddress < 0 {
-		return fmt.Errorf("RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR must not be negative (0 disables)")
+		return fmt.Errorf("SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR must not be negative (0 disables)")
 	}
 	if c.RateLimits.ForgotIP < 0 {
-		return fmt.Errorf("RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR must not be negative (0 disables)")
+		return fmt.Errorf("SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR must not be negative (0 disables)")
 	}
 	if c.OutboxFloor < 0 {
-		return fmt.Errorf("OUTBOX_RETENTION_FLOOR_DAYS must not be negative")
+		return fmt.Errorf("SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS must not be negative")
 	}
 	if c.EventsRetention < 0 {
-		return fmt.Errorf("EVENTS_RETENTION_DAYS must not be negative")
+		return fmt.Errorf("SPHERICON_EVENTS_RETENTION_DAYS must not be negative")
 	}
 	if c.UnverifiedUserRetention < 0 {
-		return fmt.Errorf("UNVERIFIED_USER_RETENTION_DAYS must not be negative")
+		return fmt.Errorf("SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative")
 	}
 	if c.DBPool.MaxOpenConns <= 0 {
-		return fmt.Errorf("DB_MAX_OPEN_CONNS must be positive")
+		return fmt.Errorf("SPHERICON_DB_MAX_OPEN_CONNS must be positive")
 	}
 	if c.DBPool.MaxIdleConns < 0 || c.DBPool.MaxIdleConns > c.DBPool.MaxOpenConns {
-		return fmt.Errorf("DB_MAX_IDLE_CONNS must be between 0 and DB_MAX_OPEN_CONNS")
+		return fmt.Errorf("SPHERICON_DB_MAX_IDLE_CONNS must be between 0 and SPHERICON_DB_MAX_OPEN_CONNS")
 	}
 	if c.DBPool.ConnMaxLifetime <= 0 {
-		return fmt.Errorf("DB_CONN_MAX_LIFETIME must be positive")
+		return fmt.Errorf("SPHERICON_DB_CONN_MAX_LIFETIME must be positive")
 	}
 	if c.DBPool.PGXMaxConns <= 0 {
-		return fmt.Errorf("PGX_MAX_CONNS must be positive")
+		return fmt.Errorf("SPHERICON_PGX_MAX_CONNS must be positive")
 	}
 	if err := c.validateMetricsAddr(); err != nil {
 		return err
@@ -563,22 +563,22 @@ func (c *Config) validate(envName string) error {
 	return c.validateInternalAddr()
 }
 
-// validateMetricsAddr rejects a malformed METRICS_ADDR and one sharing the public
+// validateMetricsAddr rejects a malformed SPHERICON_METRICS_ADDR and one sharing the public
 // PORT (the public server binds every interface, so any host collides).
 func (c *Config) validateMetricsAddr() error {
-	_, err := c.listenPort("METRICS_ADDR", c.MetricsAddr)
+	_, err := c.listenPort("SPHERICON_METRICS_ADDR", c.MetricsAddr)
 	return err
 }
 
-// validateInternalAddr rejects a malformed INTERNAL_ADDR and one sharing the public
+// validateInternalAddr rejects a malformed SPHERICON_INTERNAL_ADDR and one sharing the public
 // PORT or the metrics listener's port: the internal listener is a server of its own.
 func (c *Config) validateInternalAddr() error {
-	port, err := c.listenPort("INTERNAL_ADDR", c.InternalAddr)
+	port, err := c.listenPort("SPHERICON_INTERNAL_ADDR", c.InternalAddr)
 	if err != nil || port == 0 {
 		return err
 	}
-	if metrics, err := c.listenPort("METRICS_ADDR", c.MetricsAddr); err == nil && metrics == port {
-		return fmt.Errorf("INTERNAL_ADDR must not use the METRICS_ADDR port (%d)", port)
+	if metrics, err := c.listenPort("SPHERICON_METRICS_ADDR", c.MetricsAddr); err == nil && metrics == port {
+		return fmt.Errorf("SPHERICON_INTERNAL_ADDR must not use the SPHERICON_METRICS_ADDR port (%d)", port)
 	}
 	return nil
 }
@@ -604,7 +604,7 @@ func (c *Config) listenPort(name, addr string) (int, error) {
 	return port, nil
 }
 
-// minJWTSecretLength is the shortest JWT_SECRET accepted outside development
+// minJWTSecretLength is the shortest SPHERICON_JWT_SECRET accepted outside development
 // (32 characters = 256 bits when the secret is hex/random, the HS256 key size).
 const minJWTSecretLength = 32
 
@@ -614,21 +614,21 @@ var placeholderSecretMarkers = []string{"change-me", "changeme", "change-in-prod
 
 func validateJWTSecret(secret string) error {
 	if secret == "" {
-		return fmt.Errorf("JWT_SECRET is required outside development")
+		return fmt.Errorf("SPHERICON_JWT_SECRET is required outside development")
 	}
 	if len(secret) < minJWTSecretLength {
-		return fmt.Errorf("JWT_SECRET must be at least %d characters outside development (e.g. `openssl rand -hex 32`)", minJWTSecretLength)
+		return fmt.Errorf("SPHERICON_JWT_SECRET must be at least %d characters outside development (e.g. `openssl rand -hex 32`)", minJWTSecretLength)
 	}
 	lower := strings.ToLower(secret)
 	for _, m := range placeholderSecretMarkers {
 		if strings.Contains(lower, m) {
-			return fmt.Errorf("JWT_SECRET looks like a placeholder; generate one with `openssl rand -hex 32`")
+			return fmt.Errorf("SPHERICON_JWT_SECRET looks like a placeholder; generate one with `openssl rand -hex 32`")
 		}
 	}
 	return nil
 }
 
-// MCPOrigin is the public origin the MCP resource is served from: MCP_URL when the
+// MCPOrigin is the public origin the MCP resource is served from: SPHERICON_MCP_URL when the
 // deployment gives MCP its own host, otherwise AppURL.
 func (c *Config) MCPOrigin() string {
 	if c.MCPURL != "" {
@@ -649,7 +649,7 @@ func (c *Config) UseListener(addr net.Addr) {
 // EnvE2E is the end-to-end profile: a non-production env whose per-policy rate
 // limits default to disabled (0), so a polling test client never trips ADR 0018/0025
 // budgets. An explicit RATE_LIMIT_* variable still wins. It tolerates a missing
-// JWT_SECRET like development does, but is not IsDev: the dev DKIM lookup stays off
+// SPHERICON_JWT_SECRET like development does, but is not IsDev: the dev DKIM lookup stays off
 // and the harness injects its own.
 const EnvE2E = "e2e"
 

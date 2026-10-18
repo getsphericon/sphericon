@@ -453,7 +453,7 @@ export const zSiteRecoveryCodesInput = z.object({
 
 /**
  * Register with a name and an email: no password is taken before the address is
- * proven (ADR 0030). Only an install with `REQUIRE_EMAIL_VERIFICATION=false` takes a
+ * proven (ADR 0030). Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a
  * password here.
  */
 export const zSiteRegisterInput = z.object({

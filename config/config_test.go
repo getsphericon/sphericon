@@ -23,13 +23,13 @@ func TestConfigLoadRequireEmailVerificationOnlyAnExplicitFalseTurnsItOff(t *test
 	for value, want := range cases {
 		t.Run("value="+value, func(t *testing.T) {
 			t.Setenv("DATABASE_URL", "postgres://x")
-			t.Setenv("REQUIRE_EMAIL_VERIFICATION", value)
+			t.Setenv("SPHERICON_REQUIRE_EMAIL_VERIFICATION", value)
 			cfg, err := Load("test")
 			if err != nil {
 				t.Fatal(err)
 			}
 			if cfg.RequireEmailVerification != want {
-				t.Fatalf("REQUIRE_EMAIL_VERIFICATION=%q: RequireEmailVerification = %v, want %v", value, cfg.RequireEmailVerification, want)
+				t.Fatalf("SPHERICON_REQUIRE_EMAIL_VERIFICATION=%q: RequireEmailVerification = %v, want %v", value, cfg.RequireEmailVerification, want)
 			}
 		})
 	}
@@ -37,7 +37,7 @@ func TestConfigLoadRequireEmailVerificationOnlyAnExplicitFalseTurnsItOff(t *test
 
 func TestConfigLoadRequireEmailVerificationIgnoresSMTPSettings(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
-	t.Setenv("SMTP_HOST", "")
+	t.Setenv("SPHERICON_SMTP_HOST", "")
 	cfg, err := Load("test")
 	if err != nil {
 		t.Fatal(err)
@@ -70,7 +70,7 @@ func TestConfigLoad_JWTSecret(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("DATABASE_URL", "postgres://x")
-			t.Setenv("JWT_SECRET", tc.jwtSecret)
+			t.Setenv("SPHERICON_JWT_SECRET", tc.jwtSecret)
 			_, err := Load(tc.env)
 			if tc.wantErr && err == nil {
 				t.Fatalf("Load(%q) with secret %q: want error, got nil", tc.env, tc.jwtSecret)
@@ -96,10 +96,10 @@ func TestConfigLoadDBPoolDefaults(t *testing.T) {
 
 func TestConfigLoadDBPoolFromEnv(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
-	t.Setenv("DB_MAX_OPEN_CONNS", "7")
-	t.Setenv("DB_MAX_IDLE_CONNS", "3")
-	t.Setenv("DB_CONN_MAX_LIFETIME", "5m")
-	t.Setenv("PGX_MAX_CONNS", "11")
+	t.Setenv("SPHERICON_DB_MAX_OPEN_CONNS", "7")
+	t.Setenv("SPHERICON_DB_MAX_IDLE_CONNS", "3")
+	t.Setenv("SPHERICON_DB_CONN_MAX_LIFETIME", "5m")
+	t.Setenv("SPHERICON_PGX_MAX_CONNS", "11")
 	cfg, err := Load("test")
 	if err != nil {
 		t.Fatal(err)
@@ -112,7 +112,7 @@ func TestConfigLoadDBPoolFromEnv(t *testing.T) {
 
 func TestConfigLoadDBPoolIdleFollowsOpen(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
-	t.Setenv("DB_MAX_OPEN_CONNS", "9")
+	t.Setenv("SPHERICON_DB_MAX_OPEN_CONNS", "9")
 	cfg, err := Load("test")
 	if err != nil {
 		t.Fatal(err)
@@ -124,10 +124,10 @@ func TestConfigLoadDBPoolIdleFollowsOpen(t *testing.T) {
 
 func TestConfigLoadDBPoolRejectsInvalid(t *testing.T) {
 	for name, env := range map[string]map[string]string{
-		"zero open":     {"DB_MAX_OPEN_CONNS": "0"},
-		"idle > open":   {"DB_MAX_OPEN_CONNS": "2", "DB_MAX_IDLE_CONNS": "3"},
-		"zero lifetime": {"DB_CONN_MAX_LIFETIME": "0s"},
-		"zero pgx":      {"PGX_MAX_CONNS": "0"},
+		"zero open":     {"SPHERICON_DB_MAX_OPEN_CONNS": "0"},
+		"idle > open":   {"SPHERICON_DB_MAX_OPEN_CONNS": "2", "SPHERICON_DB_MAX_IDLE_CONNS": "3"},
+		"zero lifetime": {"SPHERICON_DB_CONN_MAX_LIFETIME": "0s"},
+		"zero pgx":      {"SPHERICON_PGX_MAX_CONNS": "0"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Setenv("DATABASE_URL", "postgres://x")
@@ -162,7 +162,7 @@ func TestConfigLoadOutboxFloor(t *testing.T) {
 		t.Fatalf("default OutboxFloor = %v, want 7 days", cfg.OutboxFloor)
 	}
 
-	t.Setenv("OUTBOX_RETENTION_FLOOR_DAYS", "14")
+	t.Setenv("SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS", "14")
 	cfg, err = Load("test")
 	if err != nil {
 		t.Fatal(err)
@@ -171,7 +171,7 @@ func TestConfigLoadOutboxFloor(t *testing.T) {
 		t.Fatalf("OutboxFloor = %v, want 14 days", cfg.OutboxFloor)
 	}
 
-	t.Setenv("OUTBOX_RETENTION_FLOOR_DAYS", "-1")
+	t.Setenv("SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS", "-1")
 	if _, err := Load("test"); err == nil {
 		t.Fatal("a negative floor must be rejected")
 	}
@@ -187,7 +187,7 @@ func TestConfigLoadEventsRetention(t *testing.T) {
 		t.Fatalf("default EventsRetention = %v, want 400 days", cfg.EventsRetention)
 	}
 
-	t.Setenv("EVENTS_RETENTION_DAYS", "0")
+	t.Setenv("SPHERICON_EVENTS_RETENTION_DAYS", "0")
 	cfg, err = Load("test")
 	if err != nil {
 		t.Fatal(err)
@@ -196,7 +196,7 @@ func TestConfigLoadEventsRetention(t *testing.T) {
 		t.Fatalf("EventsRetention = %v, want 0 (disabled)", cfg.EventsRetention)
 	}
 
-	t.Setenv("EVENTS_RETENTION_DAYS", "-1")
+	t.Setenv("SPHERICON_EVENTS_RETENTION_DAYS", "-1")
 	if _, err := Load("test"); err == nil {
 		t.Fatal("a negative retention must be rejected")
 	}
@@ -212,7 +212,7 @@ func TestConfigLoadUnverifiedUserRetention(t *testing.T) {
 		t.Fatalf("default UnverifiedUserRetention = %v, want 7 days", cfg.UnverifiedUserRetention)
 	}
 
-	t.Setenv("UNVERIFIED_USER_RETENTION_DAYS", "0")
+	t.Setenv("SPHERICON_UNVERIFIED_USER_RETENTION_DAYS", "0")
 	cfg, err = Load("test")
 	if err != nil {
 		t.Fatal(err)
@@ -221,7 +221,7 @@ func TestConfigLoadUnverifiedUserRetention(t *testing.T) {
 		t.Fatalf("UnverifiedUserRetention = %v, want 0 (disabled)", cfg.UnverifiedUserRetention)
 	}
 
-	t.Setenv("UNVERIFIED_USER_RETENTION_DAYS", "-1")
+	t.Setenv("SPHERICON_UNVERIFIED_USER_RETENTION_DAYS", "-1")
 	if _, err := Load("test"); err == nil {
 		t.Fatal("a negative retention must be rejected")
 	}
@@ -248,16 +248,16 @@ func TestConfigLoadMetricsAddr(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("DATABASE_URL", "postgres://x")
 			t.Setenv("PORT", tc.port)
-			t.Setenv("METRICS_ADDR", tc.addr)
+			t.Setenv("SPHERICON_METRICS_ADDR", tc.addr)
 			cfg, err := Load("test")
 			if tc.wantErr {
 				if err == nil {
-					t.Fatalf("METRICS_ADDR=%q PORT=%s: want error, got nil", tc.addr, tc.port)
+					t.Fatalf("SPHERICON_METRICS_ADDR=%q PORT=%s: want error, got nil", tc.addr, tc.port)
 				}
 				return
 			}
 			if err != nil {
-				t.Fatalf("METRICS_ADDR=%q PORT=%s: unexpected error: %v", tc.addr, tc.port, err)
+				t.Fatalf("SPHERICON_METRICS_ADDR=%q PORT=%s: unexpected error: %v", tc.addr, tc.port, err)
 			}
 			if cfg.MetricsAddr != tc.addr {
 				t.Fatalf("MetricsAddr = %q, want %q", cfg.MetricsAddr, tc.addr)
@@ -289,7 +289,7 @@ func TestConfigLoadE2EProfileDisablesRateLimits(t *testing.T) {
 
 func TestConfigLoadE2EProfileHonoursExplicitRateLimit(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
-	t.Setenv("RATE_LIMIT_API_PER_MINUTE", "5")
+	t.Setenv("SPHERICON_RATE_LIMIT_API_PER_MINUTE", "5")
 	cfg, err := Load("e2e")
 	if err != nil {
 		t.Fatal(err)
@@ -301,7 +301,7 @@ func TestConfigLoadE2EProfileHonoursExplicitRateLimit(t *testing.T) {
 
 func TestConfigLoadE2EProfileIgnoresMetricsAddr(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
-	t.Setenv("METRICS_ADDR", "127.0.0.1:9090")
+	t.Setenv("SPHERICON_METRICS_ADDR", "127.0.0.1:9090")
 	cfg, err := Load("e2e")
 	if err != nil {
 		t.Fatal(err)
@@ -331,25 +331,25 @@ func TestConfigLoadInternalAddr(t *testing.T) {
 		{name: "malformed", port: "3000", addr: "3400", wantErr: true},
 		{name: "same port as PORT", port: "3000", addr: "127.0.0.1:3000", wantErr: true},
 		{name: "same port with an empty host", port: "3000", addr: ":3000", wantErr: true},
-		{name: "same address as METRICS_ADDR", port: "3000", metrics: "127.0.0.1:9090", addr: "127.0.0.1:9090", wantErr: true},
-		{name: "same port as METRICS_ADDR on another host", port: "3000", metrics: "127.0.0.1:9090", addr: "0.0.0.0:9090", wantErr: true},
+		{name: "same address as SPHERICON_METRICS_ADDR", port: "3000", metrics: "127.0.0.1:9090", addr: "127.0.0.1:9090", wantErr: true},
+		{name: "same port as SPHERICON_METRICS_ADDR on another host", port: "3000", metrics: "127.0.0.1:9090", addr: "0.0.0.0:9090", wantErr: true},
 		{name: "port out of range", port: "3000", addr: "127.0.0.1:70000", wantErr: true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("DATABASE_URL", "postgres://x")
 			t.Setenv("PORT", tc.port)
-			t.Setenv("METRICS_ADDR", tc.metrics)
-			t.Setenv("INTERNAL_ADDR", tc.addr)
+			t.Setenv("SPHERICON_METRICS_ADDR", tc.metrics)
+			t.Setenv("SPHERICON_INTERNAL_ADDR", tc.addr)
 			cfg, err := Load("test")
 			if tc.wantErr {
 				if err == nil {
-					t.Fatalf("INTERNAL_ADDR=%q PORT=%s: want error, got nil", tc.addr, tc.port)
+					t.Fatalf("SPHERICON_INTERNAL_ADDR=%q PORT=%s: want error, got nil", tc.addr, tc.port)
 				}
 				return
 			}
 			if err != nil {
-				t.Fatalf("INTERNAL_ADDR=%q PORT=%s: unexpected error: %v", tc.addr, tc.port, err)
+				t.Fatalf("SPHERICON_INTERNAL_ADDR=%q PORT=%s: unexpected error: %v", tc.addr, tc.port, err)
 			}
 			if cfg.InternalAddr != tc.addr {
 				t.Fatalf("InternalAddr = %q, want %q", cfg.InternalAddr, tc.addr)
@@ -360,7 +360,7 @@ func TestConfigLoadInternalAddr(t *testing.T) {
 
 func TestConfigLoadE2EProfileIgnoresInternalAddr(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
-	t.Setenv("INTERNAL_ADDR", "127.0.0.1:3400")
+	t.Setenv("SPHERICON_INTERNAL_ADDR", "127.0.0.1:3400")
 	cfg, err := Load("e2e")
 	if err != nil {
 		t.Fatal(err)
@@ -380,7 +380,7 @@ func TestConfigLoadSMTPAllowPrivateHostsFollowsTheEnvironmentUnlessSet(t *testin
 		t.Fatal("a non-production environment allows private SMTP hosts by default")
 	}
 
-	t.Setenv("SMTP_ALLOW_PRIVATE_HOSTS", "false")
+	t.Setenv("SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS", "false")
 	cfg, err = Load("test")
 	if err != nil {
 		t.Fatal(err)
@@ -404,11 +404,11 @@ func TestConfigLoadAbuseLimitsDefaultToTheADR(t *testing.T) {
 
 func TestConfigLoadRejectsAbuseLimitsThatCannotWork(t *testing.T) {
 	for name, env := range map[string]map[string]string{
-		"zero floor":                  {"ABUSE_VOLUME_FLOOR": "0"},
-		"warning at the freeze":       {"ABUSE_WARN_COMPLAINT_PERCENT": "0.3"},
-		"bounce warning above freeze": {"ABUSE_WARN_BOUNCE_PERCENT": "11"},
-		"freeze above 100":            {"ABUSE_FREEZE_BOUNCE_PERCENT": "101"},
-		"zero warning":                {"ABUSE_WARN_BOUNCE_PERCENT": "0"},
+		"zero floor":                  {"SPHERICON_ABUSE_VOLUME_FLOOR": "0"},
+		"warning at the freeze":       {"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT": "0.3"},
+		"bounce warning above freeze": {"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT": "11"},
+		"freeze above 100":            {"SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT": "101"},
+		"zero warning":                {"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT": "0"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Setenv("DATABASE_URL", "postgres://x")

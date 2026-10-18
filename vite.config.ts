@@ -14,16 +14,17 @@ const SUPPORTED_LOCALES = new Set(['en', 'ru', 'es'])
 // Dev-only: substitute the {{APP_LOCALE}} sentinels in index.html the same way
 // the Go backend does at serve time in prod (internal/server/spa.go). Applied
 // only in `serve` so the `build` output keeps the raw sentinels for Go to
-// replace at runtime. Drives off APP_LOCALE — the same env var the backend uses.
+// replace at runtime. Drives off SPHERICON_APP_LOCALE — the same env var the backend uses.
 function devLocalePlugin(): Plugin {
   return {
     name: 'sphericon:dev-locale',
     apply: 'serve',
     transformIndexHtml(html) {
-      const env = process.env.APP_LOCALE ?? 'en'
+      const env = process.env.SPHERICON_APP_LOCALE ?? 'en'
       const locale = SUPPORTED_LOCALES.has(env) ? env : 'en'
       // Only an explicit `false` turns the gate off, as in the backend's config.
-      const verification = process.env.REQUIRE_EMAIL_VERIFICATION === 'false' ? 'false' : 'true'
+      const verification =
+        process.env.SPHERICON_REQUIRE_EMAIL_VERIFICATION === 'false' ? 'false' : 'true'
       return html
         .replaceAll('{{APP_LOCALE}}', locale)
         .replaceAll('{{REQUIRE_EMAIL_VERIFICATION}}', verification)

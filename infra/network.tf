@@ -111,7 +111,7 @@ resource "aws_vpc_security_group_ingress_rule" "app_from_alb" {
   referenced_security_group_id = aws_security_group.alb.id
 }
 
-# The internal listener (INTERNAL_ADDR) is open to one named security group and nothing else: not
+# The internal listener (SPHERICON_INTERNAL_ADDR) is open to one named security group and nothing else: not
 # the load balancer, not the internet. Without the variable there is no rule and no port. The
 # target group and the load balancer's egress rule stay on app_port only.
 resource "aws_vpc_security_group_ingress_rule" "app_internal_from_source" {

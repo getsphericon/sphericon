@@ -24,7 +24,7 @@ func main() {
 		log.Fatal("usage: db <create|drop|river-migration|generate <name>>")
 	}
 
-	envName := os.Getenv("APP_ENV")
+	envName := os.Getenv("SPHERICON_ENV")
 	if envName == "" {
 		envName = "development"
 	}

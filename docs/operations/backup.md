@@ -6,21 +6,21 @@ back up, how, how to rehearse a restore, and what the instance does once it is r
 
 ## What to back up
 
-| Item                    | Where it lives                  | Why it matters                                                                                        |
-| ----------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| The PostgreSQL database | Your database server            | Contacts, events, Outbound messages, automations, the job queue and the event outbox.                 |
-| `ENCRYPTION_KEY`        | Your secret store / environment | Decrypts the provider credentials stored in the database. Without it a restored database cannot send. |
-| `JWT_SECRET`            | Your secret store / environment | Signs session tokens. Losing it signs every user out; it does not lose data.                          |
+| Item                       | Where it lives                  | Why it matters                                                                                        |
+| -------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| The PostgreSQL database    | Your database server            | Contacts, events, Outbound messages, automations, the job queue and the event outbox.                 |
+| `SPHERICON_ENCRYPTION_KEY` | Your secret store / environment | Decrypts the provider credentials stored in the database. Without it a restored database cannot send. |
+| `SPHERICON_JWT_SECRET`     | Your secret store / environment | Signs session tokens. Losing it signs every user out; it does not lose data.                          |
 
 ### Secrets {#secrets}
 
-Back up `ENCRYPTION_KEY` and `JWT_SECRET` **separately from the database dump**, in your secret
+Back up `SPHERICON_ENCRYPTION_KEY` and `SPHERICON_JWT_SECRET` **separately from the database dump**, in your secret
 manager or password vault, with its own access control. Do not store them next to the dump: a
 dump that travels with its key defeats the encryption of the stored provider credentials.
 
-- A restored database paired with a **different** `ENCRYPTION_KEY` cannot decrypt the stored
+- A restored database paired with a **different** `SPHERICON_ENCRYPTION_KEY` cannot decrypt the stored
   SMTP or SES credentials. You would have to re-enter every provider credential.
-- A **different** `JWT_SECRET` only invalidates existing sessions; users sign in again.
+- A **different** `SPHERICON_JWT_SECRET` only invalidates existing sessions; users sign in again.
 
 ## Minimum: scheduled `pg_dump`
 
@@ -67,18 +67,18 @@ a schedule (for example monthly) and after any change to the backup setup.
    ```
 
 2. Start the **same version** of sphericon that wrote the dump against the scratch database, with
-   the backed-up `ENCRYPTION_KEY` and `JWT_SECRET`. Point it at a throwaway SMTP sink (for
+   the backed-up `SPHERICON_ENCRYPTION_KEY` and `SPHERICON_JWT_SECRET`. Point it at a throwaway SMTP sink (for
    example Mailpit), not at your real provider, so a drill cannot send real mail. Leave
-   `AUTO_MIGRATE` off.
+   `SPHERICON_DB_AUTO_MIGRATE` off.
 
    ```sh
    docker run --rm -p 3000:3000 \
-     -e APP_ENV=production \
+     -e SPHERICON_ENV=production \
      -e DATABASE_URL="postgres://app@scratch.example.com:5432/sphericon_restore?sslmode=require" \
-     -e JWT_SECRET="$JWT_SECRET" \
-     -e ENCRYPTION_KEY="$ENCRYPTION_KEY" \
-     -e APP_URL="https://restore-drill.example.com" \
-     -e SMTP_HOST=mailpit.internal -e SMTP_PORT=1025 \
+     -e SPHERICON_JWT_SECRET="$SPHERICON_JWT_SECRET" \
+     -e SPHERICON_ENCRYPTION_KEY="$SPHERICON_ENCRYPTION_KEY" \
+     -e SPHERICON_APP_URL="https://restore-drill.example.com" \
+     -e SPHERICON_SMTP_HOST=mailpit.internal -e SPHERICON_SMTP_PORT=1025 \
      ghcr.io/getsphericon/sphericon:<version>
    ```
 

@@ -124,7 +124,7 @@ Daemons:
 > self-migrate. On Linux, binding `:443` needs `net.ipv4.ip_unprivileged_port_start=0`.
 > The old Grafana/OTLP dev container is gone: leave `OTEL_EXPORTER_OTLP_ENDPOINT` unset
 > (the dev stack serves Prometheus metrics on `127.0.0.1:9090/metrics` via the opt-in
-> `METRICS_ADDR`; see [ADR 0018](docs/adr/0018-metrics-opt-in-internal-listener.md)) or point it
+> `SPHERICON_METRICS_ADDR`; see [ADR 0018](docs/adr/0018-metrics-opt-in-internal-listener.md)) or point it
 > at your own collector.
 
 ## Deployment (production)
@@ -140,11 +140,11 @@ tagged with the version and `latest`.
 
 ```sh
 docker run -p 3000:3000 \
-  -e APP_ENV=production \
+  -e SPHERICON_ENV=production \
   -e DATABASE_URL="postgres://user:pass@host:5432/sphericon?sslmode=require" \
-  -e APP_URL="https://example.com" \
-  -e JWT_SECRET="$(openssl rand -hex 32)" \
-  -e AUTO_MIGRATE=true \
+  -e SPHERICON_APP_URL="https://example.com" \
+  -e SPHERICON_JWT_SECRET="$(openssl rand -hex 32)" \
+  -e SPHERICON_DB_AUTO_MIGRATE=true \
   ghcr.io/getsphericon/sphericon:latest
 ```
 
@@ -175,12 +175,12 @@ Two options:
 
 - **Separate step (recommended)** — run `sphericon migrate` before starting the server (an init
   container, release job, or manual step). Safe for multi-replica deploys.
-- **On startup** — set `AUTO_MIGRATE=true` and the binary applies pending migrations
+- **On startup** — set `SPHERICON_DB_AUTO_MIGRATE=true` and the binary applies pending migrations
   in-process before serving. Use only for single-replica deploys against a fresh database.
 
 > The production binary tracks applied migrations (via goose) in its own `goose_db_version` table. The
 > dev Atlas CLI flow (`mise run db:migrate`) uses Atlas's `atlas_schema_revisions` table — never
-> point `AUTO_MIGRATE` at a database previously managed by the Atlas CLI dev flow.
+> point `SPHERICON_DB_AUTO_MIGRATE` at a database previously managed by the Atlas CLI dev flow.
 
 ### Configuration
 
