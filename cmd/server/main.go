@@ -12,19 +12,13 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/buildinfo"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/telemetry"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-)
-
-// Build metadata, injected via -ldflags by the Makefile / GoReleaser.
-var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
 )
 
 func main() {
@@ -34,7 +28,13 @@ func main() {
 	}
 
 	if len(os.Args) > 1 && (os.Args[1] == "version" || os.Args[1] == "--version") {
-		slog.Info("sphericon version", "version", version, "commit", commit, "built", date)
+		args := os.Args[2:]
+		if os.Args[1] == "--version" {
+			args = nil
+		}
+		if err := runVersion(os.Stdout, args); err != nil {
+			fatal("version", err)
+		}
 		return
 	}
 
@@ -101,13 +101,14 @@ func main() {
 	// Install the configured logger process-wide; river, watermill, and every
 	// request-scoped handler emit through it from here on.
 	logging.Setup(cfg)
-	slog.Info("starting sphericon", "version", version, "commit", commit)
+	build := buildinfo.Current()
+	slog.Info("starting sphericon", "version", build.Version, "commit", build.Commit)
 
 	// Install the global OTel providers (traces + metrics). The ogen servers and
 	// job/event instrumentation pick these up from the globals. The shutdown is
 	// deferred at the top level so it runs after the HTTP server has stopped and
 	// the app has shut down (LIFO) — the last batched spans/metrics flush then.
-	telShutdown, err := telemetry.Setup(context.Background(), cfg, env, telemetry.BuildInfo{Version: version, Commit: commit})
+	telShutdown, err := telemetry.Setup(context.Background(), cfg, env, telemetry.BuildInfo{Version: build.Version, Commit: build.Commit})
 	if err != nil {
 		fatal("init telemetry", err)
 	}

@@ -24,7 +24,7 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w -X main.version={{ .Version }} -X main.commit={{ .ShortCommit }} -X main.date={{ .Date }}
+      - -s -w -X github.com/getsphericon/sphericon/internal/buildinfo.Version={{ .Version }} -X github.com/getsphericon/sphericon/internal/buildinfo.Commit={{ .ShortCommit }} -X github.com/getsphericon/sphericon/internal/buildinfo.Date={{ .Date }}
     goos:
       - linux
       - darwin
