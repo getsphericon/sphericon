@@ -65,7 +65,7 @@ func TestExternalContactsCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.ContactResource{}, got)
 
-	missing, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: "999999"})
+	missing, err := c.ContactsGet(ctx, externalapi.ContactsGetParams{ID: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.ContactsGetNotFound{}, missing)
 

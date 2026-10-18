@@ -30,7 +30,7 @@ func TestSiteContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	params := siteapi.SiteContactsUpdateParams{Slug: fixtures.AcmeSlug, ID: "1"}
+	params := siteapi.SiteContactsUpdateParams{Slug: fixtures.AcmeSlug, ID: 1}
 
 	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{FirstName: nullString()}, params)
 	require.NoError(t, err)
@@ -41,7 +41,7 @@ func TestSiteContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	assert.Equal(t, "alice@example.com", string(got.Email.Or("")), "absent email kept")
 
 	// The clear is persisted, not just echoed.
-	fetched, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{Slug: fixtures.AcmeSlug, ID: "1"})
+	fetched, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{Slug: fixtures.AcmeSlug, ID: 1})
 	require.NoError(t, err)
 	fetchedRes, ok := fetched.(*siteapi.SiteContactResource)
 	require.Truef(t, ok, "got %T", fetched)
@@ -57,7 +57,7 @@ func TestSiteContactsUpdateClearingLastAliasKeyIsAllowed(t *testing.T) {
 	ctx := context.Background()
 
 	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Email: nullEmail()},
-		siteapi.SiteContactsUpdateParams{Slug: fixtures.AcmeSlug, ID: "2"})
+		siteapi.SiteContactsUpdateParams{Slug: fixtures.AcmeSlug, ID: 2})
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteContactResource)
 	require.Truef(t, ok, "got %T", res)
@@ -69,7 +69,7 @@ func TestSiteContactsUpdateNullClearsCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	params := siteapi.SiteContactsUpdateParams{Slug: fixtures.AcmeSlug, ID: "100"}
+	params := siteapi.SiteContactsUpdateParams{Slug: fixtures.AcmeSlug, ID: 100}
 
 	var null siteapi.OptNilSiteUpdateContactInputCustomFields
 	null.SetToNull()

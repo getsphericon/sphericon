@@ -2,7 +2,6 @@ package external_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -33,7 +32,7 @@ func seedTemplate(t *testing.T, db *ent.Client, workspaceID int64) *ent.EmailTem
 }
 
 func templateID(tmpl *ent.EmailTemplate) externalapi.EntityId {
-	return externalapi.EntityId(strconv.FormatInt(tmpl.ID, 10))
+	return externalapi.EntityId(tmpl.ID)
 }
 
 // A transactional send renders the referenced template with per-call variables
@@ -170,7 +169,7 @@ func TestExternalEmailsSendMissingTemplate(t *testing.T) {
 	c := env.ExternalScoped(t, "emails:send")
 
 	res, err := c.EmailsSend(context.Background(), &externalapi.SendTransactionalEmailInput{
-		TemplateId:  "999999",
+		TemplateId:  999999,
 		Destination: "x@example.com",
 	}, externalapi.EmailsSendParams{})
 	require.NoError(t, err)

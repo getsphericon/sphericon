@@ -11686,9 +11686,9 @@ func (s *EmailsSendUnprocessableEntity) UnmarshalJSON(data []byte) error {
 
 // Encode encodes EntityId as json.
 func (s EntityId) Encode(e *jx.Encoder) {
-	unwrapped := string(s)
+	unwrapped := int64(s)
 
-	e.Str(unwrapped)
+	json.EncodeStringInt64(e, unwrapped)
 }
 
 // Decode decodes EntityId from json.
@@ -11696,10 +11696,10 @@ func (s *EntityId) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode EntityId to nil")
 	}
-	var unwrapped string
+	var unwrapped int64
 	if err := func() error {
-		v, err := d.Str()
-		unwrapped = string(v)
+		v, err := json.DecodeStringInt64(d)
+		unwrapped = v
 		if err != nil {
 			return err
 		}

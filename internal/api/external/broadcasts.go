@@ -75,11 +75,7 @@ func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.Broadca
 		res := externalapi.BroadcastsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.BroadcastsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
 		res := externalapi.BroadcastsGetNotFound(problem(http.StatusNotFound, "broadcast not found"))
@@ -97,11 +93,7 @@ func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.Update
 		res := externalapi.BroadcastsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.BroadcastsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	b, err := h.broadcasts.Update(ctx, auth.TokenScoped(ctx), id,
 		broadcasts.Fields{
 			Name: convert.StringPtr(req.Name), Subject: convert.StringPtr(req.Subject), FromName: convert.StringPtr(req.FromName),
@@ -126,12 +118,8 @@ func (h *Handlers) BroadcastsDelete(ctx context.Context, params externalapi.Broa
 		res := externalapi.BroadcastsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.BroadcastsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
-	err = h.broadcasts.DeleteDraft(ctx, auth.TokenScoped(ctx), id)
+	id := int64(params.ID)
+	err := h.broadcasts.DeleteDraft(ctx, auth.TokenScoped(ctx), id)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
 		res := externalapi.BroadcastsDeleteNotFound(problem(http.StatusNotFound, "broadcast not found"))
@@ -150,18 +138,10 @@ func (h *Handlers) BroadcastsSetAudience(ctx context.Context, req *externalapi.S
 		res := externalapi.BroadcastsSetAudienceUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.BroadcastsSetAudienceBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	var segmentID *int64
 	if !req.SegmentId.Null {
-		sid, err := parseEntityID(req.SegmentId.Value)
-		if err != nil {
-			res := externalapi.BroadcastsSetAudienceUnprocessableEntity(problem(http.StatusUnprocessableEntity, "segment not found"))
-			return &res, nil
-		}
+		sid := int64(req.SegmentId.Value)
 		segmentID = &sid
 	}
 	b, err := h.broadcasts.SetAudience(ctx, auth.TokenScoped(ctx), id, segmentID)
@@ -190,11 +170,7 @@ func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.Sche
 		res := externalapi.BroadcastsScheduleUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.BroadcastsScheduleBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	b, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, time.Time(req.ScheduledAt))
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
@@ -215,11 +191,7 @@ func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.
 		res := externalapi.BroadcastsUnscheduleUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.BroadcastsUnscheduleBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	b, err := h.broadcasts.Unschedule(ctx, auth.TokenScoped(ctx), id)
 	switch {
 	case errors.Is(err, broadcasts.ErrNotFound):
@@ -242,11 +214,7 @@ func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.Test
 		res := externalapi.BroadcastsTestSendUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.BroadcastsTestSendBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	ws := auth.TokenScoped(ctx)
 	b, err := h.broadcasts.Get(ctx, ws, id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
@@ -269,11 +237,7 @@ func (h *Handlers) BroadcastsReport(ctx context.Context, params externalapi.Broa
 		res := externalapi.BroadcastsReportUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.BroadcastsReportBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	r, err := h.broadcasts.Report(ctx, auth.TokenScoped(ctx), id)
 	if errors.Is(err, broadcasts.ErrNotFound) {
 		res := externalapi.BroadcastsReportNotFound(problem(http.StatusNotFound, "broadcast not found"))

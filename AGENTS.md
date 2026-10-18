@@ -128,13 +128,14 @@ one database and `-p 1`.
 
 **Heavy tasks queue machine-wide.** The CPU-heavy commands (`go test`, `golangci-lint`, `tsc`,
 `knip`, vitest, ent/ogen/goverter generation) run through `mise/scripts/heavy.sh`, which holds one
-of a few slots (`mkdir` locks in `${TMPDIR}/sphericon-heavy`, shared by every checkout and agent on
+of a few `flock` slots (files in `${TMPDIR}/sphericon-heavy`, shared by every checkout and agent on
 the machine) for the command's duration. A run that finds all slots busy prints `heavy: all N slots
 are busy` and waits, so ten agents starting `mise run check` together take turns instead of
 starving each other. `SPHERICON_HEAVY_SLOTS` sets how many run at once (default: a quarter of the
-cores, at least one), `SPHERICON_LOCK_DIR` moves the directory; a slot left by a killed run is
-taken over once its pid is gone. A heavy command started inside a held slot runs at once, and CI
-skips the queue. Wrap a new heavy command the same way: `mise/scripts/heavy.sh <command>`.
+cores, at least one), `SPHERICON_LOCK_DIR` moves the directory. It needs `flock` on the PATH
+(`brew install flock` on macOS; util-linux ships it), which is not pinned in mise: without it, and
+in CI, a heavy command runs at once with no queue. A heavy command started inside a held slot runs
+at once too. Wrap a new heavy command the same way: `mise/scripts/heavy.sh <command>`.
 
 Run a single Go test (arguments after `--` go to `go test`; the default is `./...`):
 
@@ -411,10 +412,10 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
 - **Agent guidance lives in this file, not in personal agent memory.** The repo has several
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory.
-- **Clean up after a merge.** Once a PR is merged, remove its worktree and delete its local and
-  remote branch (`git worktree remove <path>`, `git branch -D <branch>`,
-  `git push origin --delete <branch>`) right away, without asking. Only the worktree and branch
-  made for that PR.
+- **Land non-trivial work from its worktree, then clean up.** A change made in a worktree reaches
+  `main` with `git push origin HEAD:main` once the checks pass and `origin/main` is merged in (a
+  detached `HEAD`, never a branch). Then remove that worktree (`git worktree remove <path>`) right
+  away, without asking. Only the worktree made for that change.
 - ADR numbers are unique (`mise run check:adr`). Take the next free number when you add an ADR,
   and re-check after merging `main`: parallel branches pick the same one.
 - After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the generated output.
@@ -458,7 +459,7 @@ Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/a
 
 ### Worktrees
 
-Created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Never create a branch in the primary checkout: only in a worktree, and only when needed. See `docs/agents/worktrees.md`.
+A trivial change is committed straight to `main` in the primary checkout. Anything else is done in a worktree, created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Never create a branch, in the primary checkout or in a worktree. See `docs/agents/worktrees.md`.
 
 ### Advisor before /to-spec
 

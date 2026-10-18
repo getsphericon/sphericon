@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -75,11 +74,7 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteAutomationsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	a, err := h.automations.Get(ctx, ws, id)
 	if errors.Is(err, automations.ErrNotFound) {
 		v := siteapi.SiteAutomationsGetNotFound(problem(http.StatusNotFound, "automation not found"))
@@ -102,11 +97,7 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteAutomationsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	in := automations.UpdateInput{
 		Name:         convert.StringPtr(req.Name),
 		TriggerEvent: convert.StringPtr(req.TriggerEvent),
@@ -141,11 +132,7 @@ func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.Sit
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteAutomationsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = h.automations.Delete(ctx, ws, id)
 	if errors.Is(err, automations.ErrNotFound) {
 		v := siteapi.SiteAutomationsDeleteNotFound(problem(http.StatusNotFound, "automation not found"))
@@ -190,10 +177,7 @@ func (h *Handlers) setAutomationActive(ctx context.Context, slug string, id site
 	if err != nil {
 		return nil, err
 	}
-	parsed, err := strconv.ParseInt(string(id), 10, 64)
-	if err != nil {
-		return nil, err
-	}
+	parsed := int64(id)
 	if active {
 		return h.automations.Activate(ctx, ws, parsed)
 	}

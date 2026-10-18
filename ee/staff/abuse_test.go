@@ -2,7 +2,6 @@ package staff_test
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -23,7 +22,7 @@ import (
 
 func (h *harness) setExempt(t *testing.T, c *staffapi.Client, id int64, exempt bool) *staffapi.StaffExemptionChange {
 	t.Helper()
-	wid := staffapi.EntityId(strconv.FormatInt(id, 10))
+	wid := staffapi.EntityId(id)
 	var res any
 	var err error
 	if exempt {
@@ -63,7 +62,7 @@ func TestExemptingAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res, err := c.StaffWorkspacesExempt(t.Context(), staffapi.StaffWorkspacesExemptParams{WorkspaceId: "999999"})
+	res, err := c.StaffWorkspacesExempt(t.Context(), staffapi.StaffWorkspacesExemptParams{WorkspaceId: 999999})
 
 	require.NoError(t, err)
 	assert.IsType(t, &staffapi.StaffWorkspacesExemptNotFound{}, res)
@@ -86,12 +85,12 @@ func TestAnExemptWorkspaceStaysListedAndCanStillBeSuspendedByHand(t *testing.T) 
 func TestUnsuspendingFromTheConsoleRecordsTheClearance(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	before := h.getWorkspace(t, c, strconv.Itoa(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
+	before := h.getWorkspace(t, c, int64(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
 	require.False(t, before.Abuse.ClearedAt.Set)
 
 	h.unsuspend(t, c, fixtures.HooliID)
 
-	after := h.getWorkspace(t, c, strconv.Itoa(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
+	after := h.getWorkspace(t, c, int64(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
 	require.True(t, after.Abuse.ClearedAt.Set)
 	assert.WithinDuration(t, time.Now(), time.Time(after.Abuse.ClearedAt.Value), time.Minute)
 }
@@ -117,7 +116,7 @@ func TestTheDetailShowsTheDetectorsStandingAndLastNotices(t *testing.T) {
 	notified := time.Now().Add(-time.Hour)
 	h.env.DB.Workspace.UpdateOneID(fixtures.SoylentID).SetAbuseWarningNotifiedAt(notified).ExecX(t.Context())
 
-	detail := h.getWorkspace(t, c, strconv.Itoa(fixtures.SoylentID)).(*staffapi.StaffWorkspaceDetailResource)
+	detail := h.getWorkspace(t, c, int64(fixtures.SoylentID)).(*staffapi.StaffWorkspaceDetailResource)
 
 	require.True(t, detail.Abuse.Warning.Set, "its rates are over the limits")
 	assert.Equal(t, "mail.soylent.test", detail.Abuse.Warning.Value.Domain)
@@ -131,7 +130,7 @@ func TestAnExemptWorkspaceHasNoWarningButKeepsItsRates(t *testing.T) {
 	c, _ := h.staffSession(t)
 	h.setExempt(t, c, fixtures.SoylentID, true)
 
-	detail := h.getWorkspace(t, c, strconv.Itoa(fixtures.SoylentID)).(*staffapi.StaffWorkspaceDetailResource)
+	detail := h.getWorkspace(t, c, int64(fixtures.SoylentID)).(*staffapi.StaffWorkspaceDetailResource)
 
 	assert.False(t, detail.Abuse.Warning.Set)
 	assert.True(t, detail.Abuse.Exempt)

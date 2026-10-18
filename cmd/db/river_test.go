@@ -1,60 +1,43 @@
 package main
 
 import (
+	"database/sql"
+	"os"
 	"testing"
+	"time"
 
+	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"github.com/riverqueue/river/rivermigrate"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/config"
+	appdb "github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// A dollar-quoted body holds semicolons of its own, which goose would split at; such a
-// statement is wrapped, a plain one is not.
-func TestGooseStatementsWrapOnlyStatementsWithADollarQuotedBody(t *testing.T) {
-	got := gooseStatements(`CREATE TABLE a (id int);
+// The generated migrations, applied by goose on an empty database, leave river with
+// every one of its versions recorded: functions with dollar-quoted bodies included.
+func TestGeneratedRiverMigrationsApplyAndRiverRecognisesThem(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, generateRiverMigration(dir))
 
-CREATE OR REPLACE FUNCTION f() RETURNS int AS $$
-BEGIN
-  RETURN 1;
-END;
-$$ LANGUAGE plpgsql;
+	url := testhelper.EmptyDBURL(t)
+	sqlDB, err := sql.Open("pgx", url)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	applied, err := appdb.MigrateFS(t.Context(), sqlDB, os.DirFS(dir))
+	require.NoError(t, err)
+	require.NotZero(t, applied)
 
-DO
-$body$
-BEGIN
-  PERFORM 1;
-END;
-$body$
-LANGUAGE 'plpgsql';
-`)
-
-	assert.Equal(t, `CREATE TABLE a (id int);
-
--- +goose StatementBegin
-CREATE OR REPLACE FUNCTION f() RETURNS int AS $$
-BEGIN
-  RETURN 1;
-END;
-$$ LANGUAGE plpgsql;
--- +goose StatementEnd
-
--- +goose StatementBegin
-DO
-$body$
-BEGIN
-  PERFORM 1;
-END;
-$body$
-LANGUAGE 'plpgsql';
--- +goose StatementEnd
-`, got)
-}
-
-func TestSplitStatementsIgnoresSemicolonsInCommentsAndQuotedStrings(t *testing.T) {
-	got := splitStatements(`-- it's a comment; with an apostrophe
-SELECT 'a;b', 'it''s';
--- trailing comment only
-`)
-
-	assert.Equal(t, []string{"-- it's a comment; with an apostrophe\nSELECT 'a;b', 'it''s';"}, got)
+	pool, err := appdb.NewPGXPool(t.Context(), url, config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, PGXMaxConns: 2})
+	require.NoError(t, err)
+	t.Cleanup(pool.Close)
+	migrator, err := rivermigrate.New(riverpgxv5.New(pool), nil)
+	require.NoError(t, err)
+	res, err := migrator.Validate(t.Context(), nil)
+	require.NoError(t, err)
+	assert.True(t, res.OK, "river migrations pending: %v", res.Messages)
 }
 
 func TestRiverSQLDropsTheSchemaTemplate(t *testing.T) {

@@ -3,7 +3,6 @@ package external
 import (
 	"context"
 	"net/http"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -100,9 +99,4 @@ func problem(code int, detail string) externalapi.ProblemDetails {
 		Title:  externalapi.NewOptString(http.StatusText(code)),
 		Detail: externalapi.NewOptString(detail),
 	}
-}
-
-// parseEntityID parses an EntityId into an int64.
-func parseEntityID(id externalapi.EntityId) (int64, error) {
-	return strconv.ParseInt(string(id), 10, 64)
 }

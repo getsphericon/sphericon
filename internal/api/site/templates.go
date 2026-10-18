@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -76,11 +75,7 @@ func (h *Handlers) SiteTemplatesGet(ctx context.Context, params siteapi.SiteTemp
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteTemplatesGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	tpl, err := h.templates.Get(ctx, scoped, id)
 	if errors.Is(err, templates.ErrNotFound) {
 		v := siteapi.SiteTemplatesGetNotFound(problem(http.StatusNotFound, "template not found"))
@@ -103,11 +98,7 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.SiteUpd
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteTemplatesUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
 	tpl, err := h.templates.Update(ctx, scoped, id, templates.UpdateInput{
 		Name:    convert.StringPtr(req.Name),
@@ -139,11 +130,7 @@ func (h *Handlers) SiteTemplatesDelete(ctx context.Context, params siteapi.SiteT
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteTemplatesDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = h.templates.Delete(ctx, scoped, id)
 	if errors.Is(err, templates.ErrNotFound) {
 		v := siteapi.SiteTemplatesDeleteNotFound(problem(http.StatusNotFound, "template not found"))

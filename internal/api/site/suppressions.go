@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -93,11 +92,7 @@ func (h *Handlers) SiteSuppressionsDelete(ctx context.Context, params siteapi.Si
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteSuppressionsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = s.Suppression().DeleteOneID(id).Exec(ctx)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSuppressionsDeleteNotFound(problem(http.StatusNotFound, "suppression not found"))

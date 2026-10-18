@@ -63,7 +63,7 @@ func TestExternalSendingDomainsCreateReturnsRecordsNeverTheKey(t *testing.T) {
 	assert.Contains(t, created.DkimRecord.Value, "v=DKIM1; k=rsa; p=")
 	assert.Equal(t, "_dmarc.marketing.example.com", created.DmarcRecord.Host)
 
-	row, err := env.DB.Scoped(fixtures.AcmeID).SendingDomain().Get(ctx, mustID(t, created.ID))
+	row, err := env.DB.Scoped(fixtures.AcmeID).SendingDomain().Get(ctx, int64(created.ID))
 	require.NoError(t, err)
 	assert.NotContains(t, row.DkimPrivateKeyEncrypted, "PRIVATE KEY", "the key is sealed at rest")
 

@@ -71,7 +71,7 @@ func TestTheConsoleShowsSystemAndCLISuspensionsWithoutAnActorId(t *testing.T) {
 			c, _ := h.staffSession(t)
 			h.suspendAs(t, tc.by)
 
-			acme, ok := h.getWorkspace(t, c, strconv.Itoa(fixtures.AcmeID)).(*staffapi.StaffWorkspaceDetailResource)
+			acme, ok := h.getWorkspace(t, c, int64(fixtures.AcmeID)).(*staffapi.StaffWorkspaceDetailResource)
 			require.True(t, ok)
 			require.True(t, acme.Suspension.Set)
 			assert.Equal(t, tc.kind, acme.Suspension.Value.Actor.Kind)

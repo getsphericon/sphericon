@@ -7,7 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"net/http"
-	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -77,11 +76,7 @@ func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteConta
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteContactsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	c, err := scoped.Contact().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteContactsGetNotFound(problem(http.StatusNotFound, "contact not found"))
@@ -104,11 +99,7 @@ func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpda
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteContactsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	c, err := h.contacts.Update(ctx, scoped, id, updateContactAttributes(req))
 	var conflict *contacts.ConflictError
 	if errors.As(err, &conflict) {
@@ -141,11 +132,7 @@ func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteCo
 		return &v, nil
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteContactsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = h.erasure.Erase(ctx, scoped, erasure.ByContactID(id),
 		erasure.Requester{Kind: erasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if errors.Is(err, erasure.ErrNotFound) {

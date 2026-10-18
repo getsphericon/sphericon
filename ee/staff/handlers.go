@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -128,7 +127,7 @@ func throttled(ctx context.Context, err error) error {
 }
 
 func resource(op *ent.StaffMember) staffapi.StaffResource {
-	return staffapi.StaffResource{ID: staffapi.EntityId(strconv.FormatInt(op.ID, 10)), Email: staffapi.EmailAddress(op.Email)}
+	return staffapi.StaffResource{ID: staffapi.EntityId(op.ID), Email: staffapi.EmailAddress(op.Email)}
 }
 
 // problem is the RFC 7807 body of a refusal.
@@ -176,10 +175,7 @@ func review(p staffapi.OptStaffWorkspaceReview) Review {
 
 // StaffWorkspacesGet is one Workspace's metadata and suspension state.
 func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffapi.StaffWorkspacesGetParams) (staffapi.StaffWorkspacesGetRes, error) {
-	id, ok := workspaceID(params.WorkspaceId)
-	if !ok {
-		return workspaceNotFound(), nil
-	}
+	id := int64(params.WorkspaceId)
 	w, err := h.module.GetWorkspace(ctx, id)
 	if ent.IsNotFound(err) {
 		return workspaceNotFound(), nil
@@ -217,7 +213,7 @@ func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold, war
 	domains := make([]staffapi.StaffDomainRates, 0, len(d.Domains))
 	for _, r := range d.Domains {
 		domains = append(domains, staffapi.StaffDomainRates{
-			SendingDomainId: staffapi.EntityId(strconv.FormatInt(r.SendingDomainID, 10)),
+			SendingDomainId: staffapi.EntityId(r.SendingDomainID),
 			Domain:          r.Domain,
 			ComplaintRate:   rateResource(r.Complaint),
 			BounceRate:      rateResource(r.Bounce),
@@ -267,13 +263,6 @@ func rateResource(r Rate) staffapi.StaffRate {
 	return out
 }
 
-// workspaceID parses the path's Workspace id; false is a malformed one, which the
-// handlers answer as not found like an unknown id.
-func workspaceID(id staffapi.EntityId) (int64, bool) {
-	n, err := strconv.ParseInt(string(id), 10, 64)
-	return n, err == nil
-}
-
 func workspaceNotFound() *staffapi.StaffWorkspacesGetNotFound {
 	p := staffapi.StaffWorkspacesGetNotFound(notFoundProblem())
 	return &p
@@ -294,11 +283,7 @@ func change(w *ent.Workspace, changed bool) *staffapi.StaffSuspensionChange {
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Staff member, whose id the audit trail keeps while customers see "sphericon staff".
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffapi.StaffSuspendInput, params staffapi.StaffWorkspacesSuspendParams) (staffapi.StaffWorkspacesSuspendRes, error) {
-	id, ok := workspaceID(params.WorkspaceId)
-	if !ok {
-		p := staffapi.StaffWorkspacesSuspendNotFound(notFoundProblem())
-		return &p, nil
-	}
+	id := int64(params.WorkspaceId)
 	w, changed, err := h.module.SuspendWorkspace(ctx, h.bus, h.sender, id, Current(ctx), req.Reason)
 	if errors.Is(err, ErrReasonRequired) {
 		p := staffapi.StaffWorkspacesSuspendUnprocessableEntity{
@@ -320,11 +305,7 @@ func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffapi.Sta
 
 // StaffWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffapi.StaffWorkspacesUnsuspendParams) (staffapi.StaffWorkspacesUnsuspendRes, error) {
-	id, ok := workspaceID(params.WorkspaceId)
-	if !ok {
-		p := staffapi.StaffWorkspacesUnsuspendNotFound(notFoundProblem())
-		return &p, nil
-	}
+	id := int64(params.WorkspaceId)
 	w, changed, err := h.module.UnsuspendWorkspace(ctx, h.bus, id, Current(ctx))
 	if ent.IsNotFound(err) {
 		p := staffapi.StaffWorkspacesUnsuspendNotFound(notFoundProblem())
@@ -364,10 +345,7 @@ func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffapi.
 }
 
 func (h *Handlers) setExempt(ctx context.Context, wsID staffapi.EntityId, exempt bool) (w *ent.Workspace, changed, notFound bool, err error) {
-	id, ok := workspaceID(wsID)
-	if !ok {
-		return nil, false, true, nil
-	}
+	id := int64(wsID)
 	w, changed, err = h.module.SetAbuseExempt(ctx, h.bus, id, Current(ctx), exempt)
 	if ent.IsNotFound(err) {
 		return nil, false, true, nil
@@ -383,7 +361,7 @@ func exemptionChange(w *ent.Workspace, changed bool) *staffapi.StaffExemptionCha
 // state only. The Staff member sees the real actor id, which a customer never does.
 func workspaceResource(w *ent.Workspace) staffapi.StaffWorkspaceResource {
 	res := staffapi.StaffWorkspaceResource{
-		ID:        staffapi.EntityId(strconv.FormatInt(w.ID, 10)),
+		ID:        staffapi.EntityId(w.ID),
 		Slug:      w.Slug,
 		Name:      w.Name,
 		CreatedAt: staffapi.Timestamp(w.CreatedAt),

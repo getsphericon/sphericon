@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/samber/lo"
 
@@ -72,11 +71,7 @@ func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.Sen
 		res := externalapi.SendingDomainsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.SendingDomainsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	row, err := auth.TokenScoped(ctx).SendingDomain().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		res := externalapi.SendingDomainsGetNotFound(problem(http.StatusNotFound, "sending domain not found"))
@@ -95,11 +90,7 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 		res := externalapi.SendingDomainsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.SendingDomainsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	row, err := h.sendingDomains.Update(ctx, auth.TokenScoped(ctx), id, sendingdomains.UpdateInput{
 		Selector: convert.Ptr(req.DkimSelector),
 	})
@@ -124,12 +115,8 @@ func (h *Handlers) SendingDomainsDelete(ctx context.Context, params externalapi.
 		res := externalapi.SendingDomainsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.SendingDomainsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
-	err = h.sendingDomains.Delete(ctx, auth.TokenScoped(ctx), id)
+	id := int64(params.ID)
+	err := h.sendingDomains.Delete(ctx, auth.TokenScoped(ctx), id)
 	if ent.IsNotFound(err) {
 		res := externalapi.SendingDomainsDeleteNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &res, nil
@@ -147,13 +134,9 @@ func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.
 		res := externalapi.SendingDomainsVerifyUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.SendingDomainsVerifyBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
-	err = h.sendingDomains.Verify(ctx, s, id)
+	err := h.sendingDomains.Verify(ctx, s, id)
 	if ent.IsNotFound(err) {
 		res := externalapi.SendingDomainsVerifyNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &res, nil
@@ -180,7 +163,7 @@ func sendingDomainValidationProblem(v *sendingdomains.ValidationError) externala
 func sendingDomainResource(d *ent.SendingDomain) externalapi.SendingDomainResource {
 	rec := sendingdomains.Records(d)
 	res := externalapi.SendingDomainResource{
-		ID:           externalapi.EntityId(strconv.FormatInt(d.ID, 10)),
+		ID:           externalapi.EntityId(d.ID),
 		Domain:       d.Domain,
 		DkimSelector: d.DkimSelector,
 		Verified:     d.Verified,

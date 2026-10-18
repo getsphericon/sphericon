@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/samber/lo"
@@ -105,11 +104,7 @@ func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteToke
 		return &v, nil
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteTokensDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
 	// An unknown, foreign or already-revoked id is a 404.
 	err = apitokens.Revoke(ctx, scoped, id)

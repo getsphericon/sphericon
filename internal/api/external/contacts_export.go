@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/samber/lo"
+
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
@@ -20,11 +22,11 @@ func (h *Handlers) ContactsExport(ctx context.Context, params externalapi.Contac
 	}
 
 	s := auth.TokenScoped(ctx)
-	c, err := contactexport.Find(ctx, s, contactexport.Ref(params.ID.Get()), contactexport.Ref(params.Email.Get()))
-	if errors.Is(err, contactexport.ErrInvalidID) {
-		res := externalapi.ContactsExportBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
+	var contactID *int64
+	if v, ok := params.ID.Get(); ok {
+		contactID = lo.ToPtr(int64(v))
 	}
+	c, err := contactexport.Find(ctx, s, contactID, contactexport.Ref(params.Email.Get()))
 	if errors.Is(err, contactexport.ErrIdentifier) {
 		res := externalapi.ContactsExportBadRequest(problem(http.StatusBadRequest, "pass exactly one of id or email"))
 		return &res, nil

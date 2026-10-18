@@ -221,7 +221,7 @@ security release.
   - _App upgrade_ — pull the new image/binary, run `./sphericon migrate` (or `SPHERICON_DB_AUTO_MIGRATE` on a
     single replica), roll servers. Migrations are embedded and forward-only.
   - _Postgres major upgrade_ — a DBA operation (`pg_upgrade` or dump/restore across majors),
-    independent of the app release. The doc says "14+"; compose ships `postgres:16`.
+    independent of the app release. The doc says "14+".
 - **Usage telemetry (opt-out)** — decided in
   [ADR 0032](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0032-instance-telemetry-report-and-release-check.md): a daily anonymous Telemetry
   report on by default, switchable off by `SPHERICON_TELEMETRY` or by the owner in the app. The

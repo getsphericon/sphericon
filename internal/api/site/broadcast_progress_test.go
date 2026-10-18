@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -25,7 +24,7 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	id := int64(fixtures.BroadcastDraftID)
-	params := siteapi.SiteBroadcastsGetParams{Slug: fixtures.AcmeSlug, ID: siteapi.EntityId(strconv.FormatInt(id, 10))}
+	params := siteapi.SiteBroadcastsGetParams{Slug: fixtures.AcmeSlug, ID: siteapi.EntityId(id)}
 	get := func() siteapi.SiteBroadcastResource {
 		got, err := c.SiteBroadcastsGet(ctx, params)
 		require.NoError(t, err)

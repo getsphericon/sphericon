@@ -29,26 +29,6 @@ func (s EmailAddress) Validate() error {
 	return nil
 }
 
-func (s EntityId) Validate() error {
-	alias := (string)(s)
-	if err := (validate.String{
-		MinLength:     0,
-		MinLengthSet:  false,
-		MaxLength:     0,
-		MaxLengthSet:  false,
-		Email:         false,
-		Hostname:      false,
-		Regex:         regexMap["^[0-9]+$"],
-		MinNumeric:    0,
-		MinNumericSet: false,
-		MaxNumeric:    0,
-		MaxNumericSet: false,
-	}).Validate(string(alias)); err != nil {
-		return errors.Wrap(err, "string")
-	}
-	return nil
-}
-
 func (s *HoldInput) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -478,17 +458,6 @@ func (s *ServiceWorkspaceOwner) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.UserId.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "userId",
-			Error: err,
-		})
-	}
-	if err := func() error {
 		if err := s.Email.Validate(); err != nil {
 			return err
 		}
@@ -511,17 +480,6 @@ func (s *ServiceWorkspaceResource) Validate() error {
 	}
 
 	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.ID.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "id",
-			Error: err,
-		})
-	}
 	if err := func() error {
 		if s.Owners == nil {
 			return errors.New("nil is invalid value")
@@ -630,17 +588,6 @@ func (s *WorkspaceUsageResource) Validate() error {
 	}
 
 	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.WorkspaceId.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "workspaceId",
-			Error: err,
-		})
-	}
 	if err := func() error {
 		if s.Figures == nil {
 			return errors.New("nil is invalid value")

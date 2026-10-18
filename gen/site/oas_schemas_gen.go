@@ -1029,7 +1029,7 @@ func (s *ContactExportVisitor) SetCreatedAt(val Timestamp) {
 
 type EmailAddress string
 
-type EntityId string
+type EntityId int64
 
 // NewNilInt32 returns new NilInt32 with value set to v.
 func NewNilInt32(v int32) NilInt32 {

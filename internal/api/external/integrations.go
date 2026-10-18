@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/samber/lo"
@@ -97,11 +96,7 @@ func (h *Handlers) IntegrationsGet(ctx context.Context, params externalapi.Integ
 		res := externalapi.IntegrationsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.IntegrationsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
 	row, err := s.Integration().Get(ctx, id)
 	if ent.IsNotFound(err) {
@@ -125,11 +120,7 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 		res := externalapi.IntegrationsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.IntegrationsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 	in := integrations.UpdateInput{
 		Name:         convert.Ptr(req.Name),
 		Enabled:      convert.Ptr(req.Enabled),
@@ -173,12 +164,8 @@ func (h *Handlers) IntegrationsDelete(ctx context.Context, params externalapi.In
 		res := externalapi.IntegrationsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
 		return &res, nil
 	}
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.IntegrationsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
-	err = h.integrations.Delete(ctx, auth.TokenScoped(ctx), id)
+	id := int64(params.ID)
+	err := h.integrations.Delete(ctx, auth.TokenScoped(ctx), id)
 	if ent.IsNotFound(err) {
 		res := externalapi.IntegrationsDeleteNotFound(problem(http.StatusNotFound, "integration not found"))
 		return &res, nil
@@ -232,7 +219,7 @@ func (h *Handlers) integrationResource(row *ent.Integration, usage map[int64]int
 		return externalapi.IntegrationResource{}, err
 	}
 	res := externalapi.IntegrationResource{
-		ID:           externalapi.EntityId(strconv.FormatInt(row.ID, 10)),
+		ID:           externalapi.EntityId(row.ID),
 		Name:         row.Name,
 		Channel:      externalapi.IntegrationChannel(row.Channel.String()),
 		Provider:     externalapi.IntegrationProvider(row.Provider.String()),

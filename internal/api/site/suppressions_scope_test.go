@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -21,7 +20,7 @@ func TestSiteSuppressionsDeleteForeignIDIsNotFound(t *testing.T) {
 	ctx := context.Background()
 
 	out, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{
-		Slug: fixtures.AcmeSlug, ID: siteapi.EntityId(strconv.Itoa(fixtures.SuppressionGlobexID)),
+		Slug: fixtures.AcmeSlug, ID: siteapi.EntityId(int64(fixtures.SuppressionGlobexID)),
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNotFound{}, out)

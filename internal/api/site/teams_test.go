@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -230,5 +229,5 @@ func TestSiteMembershipsAdminCannotTouchOwner(t *testing.T) {
 }
 
 func idStr(id int64) siteapi.EntityId {
-	return siteapi.EntityId(strconv.FormatInt(id, 10))
+	return siteapi.EntityId(id)
 }

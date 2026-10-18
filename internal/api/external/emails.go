@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/oklog/ulid/v2"
 
@@ -44,11 +43,7 @@ func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransact
 		return &res, nil
 	}
 
-	templateID, err := parseEntityID(req.TemplateId)
-	if err != nil {
-		res := externalapi.EmailsSendNotFound(problem(http.StatusNotFound, "template not found"))
-		return &res, nil
-	}
+	templateID := int64(req.TemplateId)
 	// Workspace-scoped: another workspace's template id must 404, never send.
 	tmpl, err := h.templates.Get(ctx, auth.TokenScoped(ctx), templateID)
 	if errors.Is(err, templates.ErrNotFound) {
@@ -128,7 +123,7 @@ func sendResponse(id int64, status externalapi.TransactionalSendStatus, dest str
 
 // entityID renders an int64 primary key as the API's string EntityId.
 func entityID(id int64) externalapi.EntityId {
-	return externalapi.EntityId(strconv.FormatInt(id, 10))
+	return externalapi.EntityId(id)
 }
 
 // decodeVariables turns the per-call variables (raw JSON values) into the binding

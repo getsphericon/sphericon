@@ -13,7 +13,7 @@ type ConverterImpl struct{}
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAutomationResource {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
 	if source != nil {
-		siteapiSiteAutomationResource.ID = entityID((*source).ID)
+		siteapiSiteAutomationResource.ID = site.EntityId((*source).ID)
 		siteapiSiteAutomationResource.Name = (*source).Name
 		siteapiSiteAutomationResource.Status = site.SiteAutomationStatus((*source).Status)
 		siteapiSiteAutomationResource.TriggerEvent = (*source).TriggerEvent
@@ -26,8 +26,8 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAu
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) site.ContactExportBroadcastRecipient {
 	var siteapiContactExportBroadcastRecipient site.ContactExportBroadcastRecipient
 	if source != nil {
-		siteapiContactExportBroadcastRecipient.ID = entityID((*source).ID)
-		siteapiContactExportBroadcastRecipient.BroadcastId = entityID((*source).BroadcastID)
+		siteapiContactExportBroadcastRecipient.ID = site.EntityId((*source).ID)
+		siteapiContactExportBroadcastRecipient.BroadcastId = site.EntityId((*source).BroadcastID)
 		siteapiContactExportBroadcastRecipient.Status = string((*source).Status)
 		siteapiContactExportBroadcastRecipient.Error = optNilString((*source).Error)
 		siteapiContactExportBroadcastRecipient.SentAt = optNilTimestamp((*source).SentAt)
@@ -40,7 +40,7 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroadcastResource {
 	var siteapiSiteBroadcastResource site.SiteBroadcastResource
 	if source != nil {
-		siteapiSiteBroadcastResource.ID = entityID((*source).ID)
+		siteapiSiteBroadcastResource.ID = site.EntityId((*source).ID)
 		siteapiSiteBroadcastResource.Name = (*source).Name
 		siteapiSiteBroadcastResource.Subject = (*source).Subject
 		siteapiSiteBroadcastResource.FromName = optNilString((*source).FromName)
@@ -62,7 +62,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.ContactExportConfirmation {
 	var siteapiContactExportConfirmation site.ContactExportConfirmation
 	if source != nil {
-		siteapiContactExportConfirmation.ID = entityID((*source).ID)
+		siteapiContactExportConfirmation.ID = site.EntityId((*source).ID)
 		siteapiContactExportConfirmation.Channel = string((*source).Channel)
 		siteapiContactExportConfirmation.Destination = (*source).Destination
 		siteapiContactExportConfirmation.Provenance = string((*source).Provenance)
@@ -73,7 +73,7 @@ func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.Cont
 func (c *ConverterImpl) ContactToExport(source *ent.Contact) site.ContactExportContact {
 	var siteapiContactExportContact site.ContactExportContact
 	if source != nil {
-		siteapiContactExportContact.ID = entityID((*source).ID)
+		siteapiContactExportContact.ID = site.EntityId((*source).ID)
 		siteapiContactExportContact.SubjectId = optNilString((*source).SubjectID)
 		siteapiContactExportContact.Email = optNilString((*source).Email)
 		siteapiContactExportContact.Phone = optNilString((*source).Phone)
@@ -89,7 +89,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) site.ContactExportC
 func (c *ConverterImpl) ContactToResource(source *ent.Contact) site.SiteContactResource {
 	var siteapiSiteContactResource site.SiteContactResource
 	if source != nil {
-		siteapiSiteContactResource.ID = entityID((*source).ID)
+		siteapiSiteContactResource.ID = site.EntityId((*source).ID)
 		siteapiSiteContactResource.SubjectId = optNilString((*source).SubjectID)
 		siteapiSiteContactResource.Email = optNilEmailAddress((*source).Email)
 		siteapiSiteContactResource.Phone = optNilString((*source).Phone)
@@ -105,7 +105,7 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) site.SiteContactR
 func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) site.SiteCustomFieldResource {
 	var siteapiSiteCustomFieldResource site.SiteCustomFieldResource
 	if source != nil {
-		siteapiSiteCustomFieldResource.ID = entityID((*source).ID)
+		siteapiSiteCustomFieldResource.ID = site.EntityId((*source).ID)
 		siteapiSiteCustomFieldResource.Key = (*source).Key
 		siteapiSiteCustomFieldResource.Name = (*source).Name
 		siteapiSiteCustomFieldResource.Type = site.SiteCustomFieldType((*source).Type)
@@ -117,7 +117,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) site.Site
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.SiteEmailTemplateResource {
 	var siteapiSiteEmailTemplateResource site.SiteEmailTemplateResource
 	if source != nil {
-		siteapiSiteEmailTemplateResource.ID = entityID((*source).ID)
+		siteapiSiteEmailTemplateResource.ID = site.EntityId((*source).ID)
 		siteapiSiteEmailTemplateResource.Name = (*source).Name
 		siteapiSiteEmailTemplateResource.Subject = (*source).Subject
 		siteapiSiteEmailTemplateResource.Body = (*source).Body
@@ -129,7 +129,7 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.
 func (c *ConverterImpl) EventToExport(source *ent.Event) site.ContactExportEvent {
 	var siteapiContactExportEvent site.ContactExportEvent
 	if source != nil {
-		siteapiContactExportEvent.ID = entityID((*source).ID)
+		siteapiContactExportEvent.ID = site.EntityId((*source).ID)
 		siteapiContactExportEvent.SourceId = optNilString((*source).SourceID)
 		siteapiContactExportEvent.VisitorId = optNilString((*source).VisitorID)
 		siteapiContactExportEvent.SubjectId = (*source).SubjectID
@@ -145,7 +145,7 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) site.ContactExportEvent
 func (c *ConverterImpl) EventToResource(source *ent.Event) site.SiteEventResource {
 	var siteapiSiteEventResource site.SiteEventResource
 	if source != nil {
-		siteapiSiteEventResource.ID = entityID((*source).ID)
+		siteapiSiteEventResource.ID = site.EntityId((*source).ID)
 		siteapiSiteEventResource.SubjectId = (*source).SubjectID
 		siteapiSiteEventResource.Email = optNilString((*source).Email)
 		siteapiSiteEventResource.Action = (*source).Action
@@ -158,7 +158,7 @@ func (c *ConverterImpl) EventToResource(source *ent.Event) site.SiteEventResourc
 func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) site.ContactExportOutboundMessage {
 	var siteapiContactExportOutboundMessage site.ContactExportOutboundMessage
 	if source != nil {
-		siteapiContactExportOutboundMessage.ID = entityID((*source).ID)
+		siteapiContactExportOutboundMessage.ID = site.EntityId((*source).ID)
 		siteapiContactExportOutboundMessage.Kind = string((*source).Kind)
 		siteapiContactExportOutboundMessage.Channel = string((*source).Channel)
 		siteapiContactExportOutboundMessage.Destination = (*source).Destination
@@ -180,7 +180,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentResource {
 	var siteapiSiteSegmentResource site.SiteSegmentResource
 	if source != nil {
-		siteapiSiteSegmentResource.ID = entityID((*source).ID)
+		siteapiSiteSegmentResource.ID = site.EntityId((*source).ID)
 		siteapiSiteSegmentResource.Name = (*source).Name
 		siteapiSiteSegmentResource.Definition = segmentDefinition((*source).Definition)
 		siteapiSiteSegmentResource.CreatedAt = timestamp((*source).CreatedAt)
@@ -191,7 +191,7 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentR
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) site.ContactExportSuppression {
 	var siteapiContactExportSuppression site.ContactExportSuppression
 	if source != nil {
-		siteapiContactExportSuppression.ID = entityID((*source).ID)
+		siteapiContactExportSuppression.ID = site.EntityId((*source).ID)
 		siteapiContactExportSuppression.Channel = string((*source).Channel)
 		siteapiContactExportSuppression.Destination = (*source).Destination
 		siteapiContactExportSuppression.Reason = string((*source).Reason)
@@ -202,7 +202,7 @@ func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) site.Contac
 func (c *ConverterImpl) SuppressionToResource(source *ent.Suppression) site.SiteSuppressionResource {
 	var siteapiSiteSuppressionResource site.SiteSuppressionResource
 	if source != nil {
-		siteapiSiteSuppressionResource.ID = entityID((*source).ID)
+		siteapiSiteSuppressionResource.ID = site.EntityId((*source).ID)
 		siteapiSiteSuppressionResource.Channel = site.SiteSuppressionChannel((*source).Channel)
 		siteapiSiteSuppressionResource.Destination = (*source).Destination
 		siteapiSiteSuppressionResource.Reason = site.SiteSuppressionReason((*source).Reason)
@@ -214,7 +214,7 @@ func (c *ConverterImpl) SuppressionToResource(source *ent.Suppression) site.Site
 func (c *ConverterImpl) TagToExport(source *ent.Tag) site.ContactExportTag {
 	var siteapiContactExportTag site.ContactExportTag
 	if source != nil {
-		siteapiContactExportTag.ID = entityID((*source).ID)
+		siteapiContactExportTag.ID = site.EntityId((*source).ID)
 		siteapiContactExportTag.Name = (*source).Name
 		siteapiContactExportTag.CreatedAt = timestamp((*source).CreatedAt)
 	}
@@ -223,7 +223,7 @@ func (c *ConverterImpl) TagToExport(source *ent.Tag) site.ContactExportTag {
 func (c *ConverterImpl) TagToResource(source *ent.Tag) site.SiteTagResource {
 	var siteapiSiteTagResource site.SiteTagResource
 	if source != nil {
-		siteapiSiteTagResource.ID = entityID((*source).ID)
+		siteapiSiteTagResource.ID = site.EntityId((*source).ID)
 		siteapiSiteTagResource.Name = (*source).Name
 		siteapiSiteTagResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
@@ -232,7 +232,7 @@ func (c *ConverterImpl) TagToResource(source *ent.Tag) site.SiteTagResource {
 func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenResource {
 	var siteapiSiteApiTokenResource site.SiteApiTokenResource
 	if source != nil {
-		siteapiSiteApiTokenResource.ID = entityID((*source).ID)
+		siteapiSiteApiTokenResource.ID = site.EntityId((*source).ID)
 		siteapiSiteApiTokenResource.Name = (*source).Name
 		siteapiSiteApiTokenResource.Prefix = (*source).Prefix
 		if (*source).Scopes != nil {
@@ -250,10 +250,12 @@ func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenR
 func (c *ConverterImpl) TransactionalMessageToResource(source *ent.OutboundMessage) site.SiteTransactionalEmailResource {
 	var siteapiSiteTransactionalEmailResource site.SiteTransactionalEmailResource
 	if source != nil {
-		siteapiSiteTransactionalEmailResource.ID = entityID((*source).ID)
+		siteapiSiteTransactionalEmailResource.ID = site.EntityId((*source).ID)
 		siteapiSiteTransactionalEmailResource.Channel = transactionalChannel((*source).Channel)
 		siteapiSiteTransactionalEmailResource.Destination = (*source).Destination
-		siteapiSiteTransactionalEmailResource.TemplateId = requiredEntityID((*source).TemplateID)
+		if (*source).TemplateID != nil {
+			siteapiSiteTransactionalEmailResource.TemplateId = site.EntityId(*(*source).TemplateID)
+		}
 		siteapiSiteTransactionalEmailResource.ContactId = optNilEntityID((*source).ContactID)
 		siteapiSiteTransactionalEmailResource.Status = transactionalStatus((*source))
 		siteapiSiteTransactionalEmailResource.Error = transactionalError((*source))
@@ -264,7 +266,7 @@ func (c *ConverterImpl) TransactionalMessageToResource(source *ent.OutboundMessa
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) site.ContactExportUnsubscribe {
 	var siteapiContactExportUnsubscribe site.ContactExportUnsubscribe
 	if source != nil {
-		siteapiContactExportUnsubscribe.ID = entityID((*source).ID)
+		siteapiContactExportUnsubscribe.ID = site.EntityId((*source).ID)
 		siteapiContactExportUnsubscribe.Channel = string((*source).Channel)
 		siteapiContactExportUnsubscribe.Destination = (*source).Destination
 		siteapiContactExportUnsubscribe.SendingSource = (*source).SendingSource
@@ -276,7 +278,7 @@ func (c *ConverterImpl) UserToResource(source *ent.User) *site.SiteUserResource 
 	var pSiteapiSiteUserResource *site.SiteUserResource
 	if source != nil {
 		var siteapiSiteUserResource site.SiteUserResource
-		siteapiSiteUserResource.ID = entityID((*source).ID)
+		siteapiSiteUserResource.ID = site.EntityId((*source).ID)
 		siteapiSiteUserResource.Name = (*source).Name
 		siteapiSiteUserResource.Email = site.EmailAddress((*source).Email)
 		siteapiSiteUserResource.EmailVerified = emailVerified((*source).EmailVerifiedAt)
@@ -288,7 +290,7 @@ func (c *ConverterImpl) UserToResource(source *ent.User) *site.SiteUserResource 
 func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportVisitor {
 	var siteapiContactExportVisitor site.ContactExportVisitor
 	if source != nil {
-		siteapiContactExportVisitor.ID = entityID((*source).ID)
+		siteapiContactExportVisitor.ID = site.EntityId((*source).ID)
 		siteapiContactExportVisitor.VisitorId = (*source).VisitorID
 		siteapiContactExportVisitor.LastSeenAt = timestamp((*source).LastSeenAt)
 		siteapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)
@@ -298,7 +300,7 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWorkspaceResource {
 	var siteapiSiteWorkspaceResource site.SiteWorkspaceResource
 	if source != nil {
-		siteapiSiteWorkspaceResource.ID = entityID((*source).ID)
+		siteapiSiteWorkspaceResource.ID = site.EntityId((*source).ID)
 		siteapiSiteWorkspaceResource.Name = (*source).Name
 		siteapiSiteWorkspaceResource.Slug = (*source).Slug
 		siteapiSiteWorkspaceResource.CollectKey = (*source).CollectKey

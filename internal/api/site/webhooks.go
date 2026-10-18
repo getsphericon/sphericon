@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/samber/lo"
 
@@ -19,7 +18,7 @@ import (
 // UI displays for signature verification.
 func webhookResource(e webhooks.Endpoint) siteapi.SiteWebhookEndpointResource {
 	return siteapi.SiteWebhookEndpointResource{
-		ID:         siteapi.EntityId(strconv.FormatInt(e.ID, 10)),
+		ID:         siteapi.EntityId(e.ID),
 		URL:        e.URL,
 		Secret:     e.Secret,
 		EventTypes: lo.Ternary(e.EventTypes == nil, []string{}, e.EventTypes),
@@ -104,11 +103,7 @@ func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebho
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteWebhooksGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	e, err := h.webhooks.Get(ctx, scoped, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWebhooksGetNotFound(problem(http.StatusNotFound, "webhook not found"))
@@ -131,11 +126,7 @@ func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpda
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteWebhooksUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 
 	url, hasURL := req.URL.Get()
 	enabled, hasEnabled := req.Enabled.Get()
@@ -169,11 +160,7 @@ func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWe
 		return nil, err
 	}
 
-	id, err := strconv.ParseInt(string(params.ID), 10, 64)
-	if err != nil {
-		v := siteapi.SiteWebhooksDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &v, nil
-	}
+	id := int64(params.ID)
 	err = h.webhooks.Delete(ctx, scoped, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWebhooksDeleteNotFound(problem(http.StatusNotFound, "webhook not found"))

@@ -37,7 +37,7 @@ func TestSiteContactsExportIsOpenToAnyMember(t *testing.T) {
 
 	res, err := member.SiteContactsExport(context.Background(), siteapi.SiteContactsExportParams{
 		Slug: fixtures.AcmeSlug,
-		ID:   siteapi.NewOptEntityId(siteapi.EntityId("800")),
+		ID:   siteapi.NewOptEntityId(siteapi.EntityId(800)),
 	})
 	require.NoError(t, err)
 	doc := readSiteExport(t, res)
@@ -58,7 +58,7 @@ func TestSiteContactsExportByEmail(t *testing.T) {
 	require.NoError(t, err)
 	doc := readSiteExport(t, res)
 
-	assert.Equal(t, siteapi.EntityId("800"), doc.Contact.ID)
+	assert.Equal(t, siteapi.EntityId(800), doc.Contact.ID)
 	assert.Equal(t, fixtures.ContactExportSubjectEmail, doc.Contact.Email.Value)
 }
 
@@ -70,7 +70,7 @@ func TestSiteContactsExportStaysInsideTheWorkspace(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	res, err := owner.SiteContactsExport(ctx, siteapi.SiteContactsExportParams{
 		Slug: fixtures.AcmeSlug,
-		ID:   siteapi.NewOptEntityId(siteapi.EntityId("900")),
+		ID:   siteapi.NewOptEntityId(siteapi.EntityId(900)),
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsExportNotFound{}, res)
@@ -79,7 +79,7 @@ func TestSiteContactsExportStaysInsideTheWorkspace(t *testing.T) {
 	outsider := env.SiteActor(t, fixtures.OutsiderOscarEmail)
 	res, err = outsider.SiteContactsExport(ctx, siteapi.SiteContactsExportParams{
 		Slug: fixtures.AcmeSlug,
-		ID:   siteapi.NewOptEntityId(siteapi.EntityId("800")),
+		ID:   siteapi.NewOptEntityId(siteapi.EntityId(800)),
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsExportNotFound{}, res)

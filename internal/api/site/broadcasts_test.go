@@ -107,18 +107,18 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	params := siteapi.SiteBroadcastsUpdateParams{Slug: fixtures.AcmeSlug, ID: "100"}
+	params := siteapi.SiteBroadcastsUpdateParams{Slug: fixtures.AcmeSlug, ID: 100}
 
 	// Absent keys keep values: set the segment, the sender stays.
 	res, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
-		SegmentId:     siteapi.NewOptNilEntityId("1"),
-		IntegrationId: siteapi.NewOptNilEntityId("1"),
+		SegmentId:     siteapi.NewOptNilEntityId(1),
+		IntegrationId: siteapi.NewOptNilEntityId(1),
 	}, params)
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, "1", string(got.SegmentId.Or("")))
-	assert.Equal(t, "1", string(got.IntegrationId.Or("")))
+	assert.EqualValues(t, 1, got.SegmentId.Or(0))
+	assert.EqualValues(t, 1, got.IntegrationId.Or(0))
 	assert.Equal(t, "CodeBasics", got.FromName.Or(""))
 	assert.Equal(t, "hello@codebasics.dev", string(got.FromEmail.Or("")))
 
@@ -137,8 +137,8 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	assert.Empty(t, got.FromName.Or(""))
 	assert.Empty(t, got.FromEmail.Or(""))
-	assert.Empty(t, got.SegmentId.Or(""))
-	assert.Empty(t, got.IntegrationId.Or(""))
+	assert.Empty(t, got.SegmentId.Or(0))
+	assert.Empty(t, got.IntegrationId.Or(0))
 	assert.Equal(t, "Summer sale teaser", got.Name, "absent name kept")
 }
 

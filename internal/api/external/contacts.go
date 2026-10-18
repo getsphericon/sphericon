@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/samber/lo"
 
@@ -66,11 +65,7 @@ func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsG
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.ContactsGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
 	c, err := auth.TokenScoped(ctx).Contact().Get(ctx, id)
 	if ent.IsNotFound(err) {
@@ -91,11 +86,7 @@ func (h *Handlers) ContactsUpdate(ctx context.Context, req *externalapi.UpdateCo
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.ContactsUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
 	c, err := h.contacts.Update(ctx, auth.TokenScoped(ctx), id, updateContactAttributes(req))
 	var conflict *contacts.ConflictError
@@ -128,13 +119,9 @@ func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.Contac
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.ContactsDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
-	err = h.erasure.Erase(ctx, auth.TokenScoped(ctx), erasure.ByContactID(id),
+	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), erasure.ByContactID(id),
 		tokenRequester(ctx))
 	if errors.Is(err, erasure.ErrNotFound) {
 		res := externalapi.ContactsDeleteNotFound(problem(http.StatusNotFound, "contact not found"))
@@ -213,7 +200,7 @@ func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.Ups
 			results[i].Status = externalapi.ContactBatchStatusUpdated
 		}
 		if o.Err == nil {
-			results[i].ContactId = externalapi.NewOptEntityId(externalapi.EntityId(strconv.FormatInt(o.Result.Contact.ID, 10)))
+			results[i].ContactId = externalapi.NewOptEntityId(externalapi.EntityId(o.Result.Contact.ID))
 		}
 	}
 	return &externalapi.UpsertContactsResult{Results: results}, nil

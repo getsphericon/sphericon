@@ -9,8 +9,7 @@ contact, event, segment, and tracking entity belongs to exactly one Workspace.
 
 **Workspace**:
 The tenant boundary. Every domain entity belongs to exactly one Workspace, and all
-queries are scoped by it. Owns its own secret keys (collect key for browser tracking,
-ingest key for inbound provider webhooks).
+queries are scoped by it. Owns its own secret key for browser tracking (collect key).
 _Avoid_: Account, tenant, organization, project
 
 **Contact**:
@@ -317,7 +316,7 @@ A workspace-scoped, **outbound** connection to an external sending provider — 
 by design (email today via smtp/ses; sms reserved), with encrypted credentials and at most one
 default per (workspace, channel). Broadcasts and Automations send _through_ an Integration (the
 workspace default when unspecified). Sending is one half of a loop: bounces and complaints come
-back via the Ingest hook and land in Suppression.
+back via the Integration's Ingest hook and land in Suppression.
 _Avoid_: Provider (alone), ESP, sender, connector
 
 **Sending domain**:
@@ -378,9 +377,9 @@ a Key: a token is scoped, revocable, and expiring.
 _Avoid_: API key, secret, password
 
 **Key** (collect key / ingest key):
-A bare, single-purpose secret string that identifies a workspace for one job — `collect_key`
-(browser tracking ingestion) and `ingest_key` (routing inbound provider webhooks). No scopes,
-not a bearer token. The deliberate counterpart to an API token.
+A bare, single-purpose secret string for one job — a Workspace's `collect_key` (browser tracking
+ingestion) and an Integration's ingest key (the path of its Ingest hook, so it also names the
+Workspace). No scopes, not a bearer token. The deliberate counterpart to an API token.
 _Avoid_: Token (for these), API key
 
 **Staff member**:
@@ -436,10 +435,22 @@ Ingest hook.
 _Avoid_: Webhook (unqualified), callback
 
 **Ingest hook** (inbound provider webhook):
-The inbound endpoint that **receives** provider callbacks (e.g. SES bounce / complaint via SNS),
-routed by the workspace's `ingest_key`. The opposite direction from a Webhook endpoint; it
-feeds Suppression.
+The inbound endpoint of one Integration that **receives** its provider's callbacks (bounce /
+complaint), addressed by the Integration's ingest key and decoded by the Integration's Preset. The
+opposite direction from a Webhook endpoint; it feeds Suppression.
 _Avoid_: Webhook (unqualified), inbound webhook
+
+**Preset**:
+A declarative description of one provider's callbacks — how its signature is verified and how its
+payload becomes Delivery failures. Built into the binary (ses, postmark, mailgun, generic) or
+supplied by the Self-hoster for the whole Instance, never by a Workspace.
+_Avoid_: Adapter, plugin, provider (alone)
+
+**Delivery failure**:
+The one normalized shape every Preset produces: a Destination, whether it is a bounce or a
+complaint, and for a bounce whether it is permanent. Only permanent bounces and complaints enter
+Suppression.
+_Avoid_: Bounce event (it also covers complaints)
 
 **User**:
 A human who authenticates (email + password). A User reaches Workspaces through Memberships,

@@ -36,7 +36,7 @@ func (s *ApiKeyAuth) SetRoles(val []string) {
 
 type EmailAddress string
 
-type EntityId string
+type EntityId int64
 
 // NewNilFloat64 returns new NilFloat64 with value set to v.
 func NewNilFloat64(v float64) NilFloat64 {

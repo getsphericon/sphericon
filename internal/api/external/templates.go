@@ -64,11 +64,7 @@ func (h *Handlers) TemplatesGet(ctx context.Context, params externalapi.Template
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.TemplatesGetBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
 	tpl, err := h.templates.Get(ctx, scoped, id)
@@ -89,11 +85,7 @@ func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateT
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.TemplatesUpdateBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
 	tpl, err := h.templates.Update(ctx, scoped, id, templates.UpdateInput{
@@ -122,14 +114,10 @@ func (h *Handlers) TemplatesDelete(ctx context.Context, params externalapi.Templ
 		return &res, nil
 	}
 
-	id, err := parseEntityID(params.ID)
-	if err != nil {
-		res := externalapi.TemplatesDeleteBadRequest(problem(http.StatusBadRequest, "invalid id"))
-		return &res, nil
-	}
+	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
-	err = h.templates.Delete(ctx, scoped, id)
+	err := h.templates.Delete(ctx, scoped, id)
 	if errors.Is(err, templates.ErrNotFound) {
 		res := externalapi.TemplatesDeleteNotFound(problem(http.StatusNotFound, "template not found"))
 		return &res, nil
