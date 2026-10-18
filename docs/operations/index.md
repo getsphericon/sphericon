@@ -45,7 +45,7 @@ Treat these as a way of reasoning, not as benchmarks. Measure on your own traffi
   pooler in front of PostgreSQL is not recommended.
 - **One replica is a sound starting point.** Add a second replica for availability, not for
   speed, until you see saturation. With more than one replica, run migrations as a separate
-  step and leave `SPHERICON_DB_AUTO_MIGRATE` off (see [Upgrading](./upgrading#migrate)).
+  step and leave `SPHERICON_DB_AUTO_MIGRATE` off (see [Upgrading](./upgrading)).
 - **Memory and CPU are modest.** The process serves the API, the SPA and the tracker, and
   renders email. Sending volume is bounded by your provider (SMTP or Amazon SES) and its rate
   limits, not by the process.
