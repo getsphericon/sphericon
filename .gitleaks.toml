@@ -20,6 +20,8 @@ paths = [
   '''^\.env\.test$''',
   '''^\.mise\.toml$''',
   '''^\.env\.docker\.sample$''',
+  # The generic Preset's own tests carry a throwaway whsec_ secret and its signatures.
+  '''^internal/preset/builtin/generic\.yaml$''',
 ]
 
 [[allowlists]]
