@@ -65,6 +65,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteEventsListOperation:                           []string{},
 	SiteInstanceAcknowledgeNoticeOperation:            []string{},
 	SiteInstanceGetStateOperation:                     []string{},
+	SiteInstancePreviewTelemetryReportOperation:       []string{},
 	SiteInstanceSetTelemetryOperation:                 []string{},
 	SiteIntegrationsCreateOperation:                   []string{},
 	SiteIntegrationsDeleteOperation:                   []string{},

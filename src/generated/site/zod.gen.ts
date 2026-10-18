@@ -1690,6 +1690,11 @@ export const zSiteInstanceSetTelemetryBody = zSiteInstanceTelemetryInput;
  */
 export const zSiteInstanceSetTelemetryResponse = zSiteInstanceState;
 
+/**
+ * The request has succeeded.
+ */
+export const zSiteInstancePreviewTelemetryReportResponse = z.record(z.string(), z.unknown());
+
 export const zSitePublicInvitationsLookupPath = z.object({
   token: z.string()
 });

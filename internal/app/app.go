@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/erasure"
@@ -964,7 +965,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return instance.New(client.Client, instance.EnvironmentOf(cfg), nil), nil
+		return instance.New(client.Client, instance.EnvironmentOf(cfg), instance.HostOf(cfg, buildinfo.Current().Version), nil), nil
 	})
 
 	// Attempts counts failed logins per account (ADR 0025) over the raw client.

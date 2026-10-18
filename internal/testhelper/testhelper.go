@@ -309,7 +309,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build account link")
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
-		Instance: instance.New(client, instance.EnvironmentOf(&cfg), st.now),
+		Instance: instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, "dev"), st.now),
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,

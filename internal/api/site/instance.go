@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -81,4 +82,29 @@ func (h *Handlers) SiteInstanceAcknowledgeNotice(ctx context.Context) (siteapi.S
 		return nil, err
 	}
 	return instanceState(s), nil
+}
+
+// SiteInstancePreviewTelemetryReport returns the Telemetry report exactly as the Instance
+// would send it now, whether or not sending is on. It is the body of the same builder the
+// daily sender uses, so the Owner reads the real payload.
+func (h *Handlers) SiteInstancePreviewTelemetryReport(ctx context.Context) (siteapi.SiteInstancePreviewTelemetryReportRes, error) {
+	if ok, err := h.instanceOwner(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		v := instanceForbidden()
+		return &v, nil
+	}
+	report, err := h.instance.Report(ctx)
+	if err != nil {
+		return nil, err
+	}
+	body, err := json.Marshal(report)
+	if err != nil {
+		return nil, err
+	}
+	var fields siteapi.SiteInstancePreviewTelemetryReportOK
+	if err := json.Unmarshal(body, &fields); err != nil {
+		return nil, err
+	}
+	return &fields, nil
 }

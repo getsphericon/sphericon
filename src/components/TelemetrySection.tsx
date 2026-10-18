@@ -7,6 +7,7 @@ import {
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteInstanceState } from '../generated/site/types.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { TelemetryReportActions } from './TelemetryReportActions.tsx'
 
 // TelemetrySection is the switch of the anonymous Telemetry report (ADR 0032). When the
 // environment decides (SPHERICON_TELEMETRY or DO_NOT_TRACK), it is read-only and says why.
@@ -30,6 +31,7 @@ export function TelemetrySection({ state }: { state: SiteInstanceState }) {
         <Text c="dimmed" size="sm">
           {t(($) => $.instance.telemetry.description)}
         </Text>
+        <TelemetryReportActions />
         <Switch
           label={t(($) => $.instance.telemetry.switchLabel)}
           checked={telemetry.enabled}

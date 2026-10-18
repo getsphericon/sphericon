@@ -50,7 +50,8 @@ model TelemetryReport {
   schemaVersion: int32;
 
   /** A random value stored in the Instance's database, derived from nothing. */
-  @format("uuid")
+  @minLength(1)
+  @maxLength(64)
   instanceId: string;
 
   /** The release version of the running binary, for example `1.4.2`. */
@@ -94,8 +95,8 @@ model TelemetryReport {
   /** A Broadcast was sent in the last 30 days. */
   usedBroadcasts30d: boolean;
 
-  /** An Automation was active in the last 30 days. */
-  usedAutomations30d: boolean;
+  /** At least one Automation is active. */
+  automationsActive: boolean;
 
   /** The tracker recorded a visit in the last 30 days. */
   usedTracker30d: boolean;

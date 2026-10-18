@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
-	"github.com/ogen-go/ogen/json"
 	"github.com/ogen-go/ogen/validate"
 )
 
@@ -245,7 +244,7 @@ func (s *TelemetryReport) encodeFields(e *jx.Encoder) {
 	}
 	{
 		e.FieldStart("instanceId")
-		json.EncodeUUID(e, s.InstanceId)
+		e.Str(s.InstanceId)
 	}
 	{
 		e.FieldStart("appVersion")
@@ -296,8 +295,8 @@ func (s *TelemetryReport) encodeFields(e *jx.Encoder) {
 		e.Bool(s.UsedBroadcasts30d)
 	}
 	{
-		e.FieldStart("usedAutomations30d")
-		e.Bool(s.UsedAutomations30d)
+		e.FieldStart("automationsActive")
+		e.Bool(s.AutomationsActive)
 	}
 	{
 		e.FieldStart("usedTracker30d")
@@ -336,7 +335,7 @@ var jsonFieldsNameOfTelemetryReport = [19]string{
 	11: "contacts",
 	12: "emailsSent30d",
 	13: "usedBroadcasts30d",
-	14: "usedAutomations30d",
+	14: "automationsActive",
 	15: "usedTracker30d",
 	16: "usedExternalApi30d",
 	17: "webhooksConfigured",
@@ -367,8 +366,8 @@ func (s *TelemetryReport) Decode(d *jx.Decoder) error {
 		case "instanceId":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				v, err := json.DecodeUUID(d)
-				s.InstanceId = v
+				v, err := d.Str()
+				s.InstanceId = string(v)
 				if err != nil {
 					return err
 				}
@@ -508,17 +507,17 @@ func (s *TelemetryReport) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"usedBroadcasts30d\"")
 			}
-		case "usedAutomations30d":
+		case "automationsActive":
 			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				v, err := d.Bool()
-				s.UsedAutomations30d = bool(v)
+				s.AutomationsActive = bool(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"usedAutomations30d\"")
+				return errors.Wrap(err, "decode field \"automationsActive\"")
 			}
 		case "usedTracker30d":
 			requiredBitSet[1] |= 1 << 7

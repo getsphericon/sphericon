@@ -3349,6 +3349,33 @@ export type SiteInstanceSetTelemetryResponses = {
 
 export type SiteInstanceSetTelemetryResponse = SiteInstanceSetTelemetryResponses[keyof SiteInstanceSetTelemetryResponses];
 
+export type SiteInstancePreviewTelemetryReportData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/instance/telemetry/preview';
+};
+
+export type SiteInstancePreviewTelemetryReportErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+};
+
+export type SiteInstancePreviewTelemetryReportError = SiteInstancePreviewTelemetryReportErrors[keyof SiteInstancePreviewTelemetryReportErrors];
+
+export type SiteInstancePreviewTelemetryReportResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: {
+    [key: string]: unknown;
+  };
+};
+
+export type SiteInstancePreviewTelemetryReportResponse = SiteInstancePreviewTelemetryReportResponses[keyof SiteInstancePreviewTelemetryReportResponses];
+
 export type SitePublicInvitationsLookupData = {
   body?: never;
   path: {

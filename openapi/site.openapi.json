@@ -890,6 +890,37 @@
         }
       }
     },
+    "/instance/telemetry/preview": {
+      "get": {
+        "operationId": "SiteInstance_previewTelemetryReport",
+        "description": "The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the\npublished schema describes, built by the code that sends it. Works whether or not sending is\non. Refused to everyone but the Owners of the oldest Workspace.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Instance"]
+      }
+    },
     "/invitations/{token}": {
       "get": {
         "operationId": "SitePublicInvitations_lookup",

@@ -442,6 +442,13 @@ export default interface Resources {
         "title": "Anonymous usage report"
       },
       "ownersOnly": "Only the owners of the oldest workspace can manage the instance.",
+      "report": {
+        "loadError": "Could not build the report.",
+        "preview": "Preview the report",
+        "previewDescription": "This is exactly what this instance would send now. It is shown whether or not sending is on, and nothing is sent by opening it.",
+        "previewTitle": "Usage report preview",
+        "schema": "What the report contains"
+      },
       "telemetry": {
         "description": "Send the project one anonymous report a day with the version, deployment and rough size of this instance. It never contains names, addresses or exact numbers.",
         "errorTitle": "Could not update the usage report",

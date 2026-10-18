@@ -401,6 +401,17 @@ func (UnimplementedHandler) SiteInstanceGetState(ctx context.Context) (r SiteIns
 	return r, ht.ErrNotImplemented
 }
 
+// SiteInstancePreviewTelemetryReport implements SiteInstance_previewTelemetryReport operation.
+//
+// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
+// schema describes, built by the code that sends it. Works whether or not sending is on. Refused to
+// everyone but the Owners of the oldest Workspace.
+//
+// GET /instance/telemetry/preview
+func (UnimplementedHandler) SiteInstancePreviewTelemetryReport(ctx context.Context) (r SiteInstancePreviewTelemetryReportRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteInstanceSetTelemetry implements SiteInstance_setTelemetry operation.
 //
 // Switch the Telemetry report on or off. Answers 409 while the environment decides.

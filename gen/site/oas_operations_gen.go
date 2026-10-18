@@ -46,6 +46,7 @@ const (
 	SiteEventsListOperation                           OperationName = "SiteEventsList"
 	SiteInstanceAcknowledgeNoticeOperation            OperationName = "SiteInstanceAcknowledgeNotice"
 	SiteInstanceGetStateOperation                     OperationName = "SiteInstanceGetState"
+	SiteInstancePreviewTelemetryReportOperation       OperationName = "SiteInstancePreviewTelemetryReport"
 	SiteInstanceSetTelemetryOperation                 OperationName = "SiteInstanceSetTelemetry"
 	SiteIntegrationsCreateOperation                   OperationName = "SiteIntegrationsCreate"
 	SiteIntegrationsDeleteOperation                   OperationName = "SiteIntegrationsDelete"

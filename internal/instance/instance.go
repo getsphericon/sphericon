@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 )
 
 // stateID is the id of the one Instance state row.
@@ -78,27 +79,39 @@ type State struct {
 
 // Module is the Instance state and the rules around it.
 type Module struct {
-	ent *ent.Client
-	env Environment
-	now func() time.Time
+	ent  *ent.Client
+	env  Environment
+	host Host
+	now  func() time.Time
 }
 
-// New builds the module; a nil clock means time.Now.
-func New(client *ent.Client, env Environment, now func() time.Time) *Module {
+// New builds the module; a nil clock means time.Now. The host is what the Telemetry report
+// says about the running binary.
+func New(client *ent.Client, env Environment, host Host, now func() time.Time) *Module {
 	if now == nil {
 		now = time.Now
 	}
-	return &Module{ent: client, env: env, now: now}
+	return &Module{ent: client, env: env, host: host, now: now}
 }
 
 // Ensure returns the Instance state row, creating it (with a fresh random Instance id)
 // when this is the first start. Safe to call concurrently and repeatedly.
 func (m *Module) Ensure(ctx context.Context) (*ent.InstanceState, error) {
-	err := m.ent.InstanceState.Create().SetID(stateID).OnConflictColumns(instancestate.FieldID).DoNothing().Exec(ctx)
+	return ensureRow(ctx, m.ent)
+}
+
+func ensureRow(ctx context.Context, client *ent.Client) (*ent.InstanceState, error) {
+	err := client.InstanceState.Create().SetID(stateID).OnConflictColumns(instancestate.FieldID).DoNothing().Exec(ctx)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
-	return m.ent.InstanceState.Get(ctx, stateID)
+	return client.InstanceState.Get(ctx, stateID)
+}
+
+// Report is the Telemetry report as the Instance would send it now, whether or not sending
+// is on: the same builder the daily sender uses.
+func (m *Module) Report(ctx context.Context) (telemetryapi.TelemetryReport, error) {
+	return BuildReport(ctx, m.ent, m.host, m.now())
 }
 
 // IsOwner reports whether the User is an Owner of the oldest existing Workspace: the next

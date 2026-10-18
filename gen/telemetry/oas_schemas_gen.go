@@ -4,7 +4,6 @@ package telemetryapi
 
 import (
 	"github.com/go-faster/errors"
-	"github.com/google/uuid"
 )
 
 // A count rounded to its order of magnitude, never an exact number.
@@ -289,7 +288,7 @@ type TelemetryReport struct {
 	// The version of this schema the report was built against.
 	SchemaVersion int32 `json:"schemaVersion"`
 	// A random value stored in the Instance's database, derived from nothing.
-	InstanceId uuid.UUID `json:"instanceId"`
+	InstanceId string `json:"instanceId"`
 	// The release version of the running binary, for example `1.4.2`.
 	AppVersion string           `json:"appVersion"`
 	Edition    TelemetryEdition `json:"edition"`
@@ -311,8 +310,8 @@ type TelemetryReport struct {
 	EmailsSent30d OrderOfMagnitude `json:"emailsSent30d"`
 	// A Broadcast was sent in the last 30 days.
 	UsedBroadcasts30d bool `json:"usedBroadcasts30d"`
-	// An Automation was active in the last 30 days.
-	UsedAutomations30d bool `json:"usedAutomations30d"`
+	// At least one Automation is active.
+	AutomationsActive bool `json:"automationsActive"`
 	// The tracker recorded a visit in the last 30 days.
 	UsedTracker30d bool `json:"usedTracker30d"`
 	// An external API token was used in the last 30 days.
@@ -329,7 +328,7 @@ func (s *TelemetryReport) GetSchemaVersion() int32 {
 }
 
 // GetInstanceId returns the value of InstanceId.
-func (s *TelemetryReport) GetInstanceId() uuid.UUID {
+func (s *TelemetryReport) GetInstanceId() string {
 	return s.InstanceId
 }
 
@@ -393,9 +392,9 @@ func (s *TelemetryReport) GetUsedBroadcasts30d() bool {
 	return s.UsedBroadcasts30d
 }
 
-// GetUsedAutomations30d returns the value of UsedAutomations30d.
-func (s *TelemetryReport) GetUsedAutomations30d() bool {
-	return s.UsedAutomations30d
+// GetAutomationsActive returns the value of AutomationsActive.
+func (s *TelemetryReport) GetAutomationsActive() bool {
+	return s.AutomationsActive
 }
 
 // GetUsedTracker30d returns the value of UsedTracker30d.
@@ -424,7 +423,7 @@ func (s *TelemetryReport) SetSchemaVersion(val int32) {
 }
 
 // SetInstanceId sets the value of InstanceId.
-func (s *TelemetryReport) SetInstanceId(val uuid.UUID) {
+func (s *TelemetryReport) SetInstanceId(val string) {
 	s.InstanceId = val
 }
 
@@ -488,9 +487,9 @@ func (s *TelemetryReport) SetUsedBroadcasts30d(val bool) {
 	s.UsedBroadcasts30d = val
 }
 
-// SetUsedAutomations30d sets the value of UsedAutomations30d.
-func (s *TelemetryReport) SetUsedAutomations30d(val bool) {
-	s.UsedAutomations30d = val
+// SetAutomationsActive sets the value of AutomationsActive.
+func (s *TelemetryReport) SetAutomationsActive(val bool) {
+	s.AutomationsActive = val
 }
 
 // SetUsedTracker30d sets the value of UsedTracker30d.
