@@ -125,6 +125,16 @@ dates. `DATABASE_URL` is rewritten to that database for the process, so a test t
 config reaches it too. `worktrees:gc` keeps these with their checkout. The end-to-end suite keeps
 one database and `-p 1`.
 
+**Heavy tasks queue machine-wide.** The CPU-heavy commands (`go test`, `golangci-lint`, `tsc`,
+`knip`, vitest, ent/ogen/goverter generation) run through `mise/scripts/heavy.sh`, which holds one
+of a few slots (`mkdir` locks in `${TMPDIR}/sphericon-heavy`, shared by every checkout and agent on
+the machine) for the command's duration. A run that finds all slots busy prints `heavy: all N slots
+are busy` and waits, so ten agents starting `mise run check` together take turns instead of
+starving each other. `SPHERICON_HEAVY_SLOTS` sets how many run at once (default: a quarter of the
+cores, at least one), `SPHERICON_LOCK_DIR` moves the directory; a slot left by a killed run is
+taken over once its pid is gone. A heavy command started inside a held slot runs at once, and CI
+skips the queue. Wrap a new heavy command the same way: `mise/scripts/heavy.sh <command>`.
+
 Run a single Go test (arguments after `--` go to `go test`; the default is `./...`):
 
 ```sh

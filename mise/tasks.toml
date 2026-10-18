@@ -195,14 +195,14 @@ description = "Go tests, packages in parallel, each on a database of its own (cr
 depends = ["db:up"]
 env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 usage = 'arg "[go_test_args]" var=#true default="./..." help="packages and flags for go test"'
-run = 'eval "set -- $usage_go_test_args"; go test ${CI:+-shuffle=on} "$@"'
+run = 'eval "set -- $usage_go_test_args"; mise/scripts/heavy.sh go test ${CI:+-shuffle=on} "$@"'
 
 ["test:cover"]
 description = "Go tests with coverage over cmd/ and internal/ (ee/ too), failing under the total in .testcoverage.yml"
 depends = ["db:up"]
 env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 run = [
-  "go test -shuffle=on ./... -coverpkg=./cmd/...,./internal/...,./ee/... -coverprofile=cover.out -covermode=atomic",
+  "mise/scripts/heavy.sh go test -shuffle=on ./... -coverpkg=./cmd/...,./internal/...,./ee/... -coverprofile=cover.out -covermode=atomic",
   "go tool go-test-coverage --config=.testcoverage.yml",
 ]
 
@@ -215,7 +215,7 @@ run = [
   "go run ./cmd/db drop",
   "go run ./cmd/db create",
   "atlas migrate apply --env local --allow-dirty",
-  '''eval "set -- $usage_go_test_args"; go test -tags e2e -count=1 -p 1 -shuffle=on "$@"''',
+  '''eval "set -- $usage_go_test_args"; mise/scripts/heavy.sh go test -tags e2e -count=1 -p 1 -shuffle=on "$@"''',
 ]
 
 ["test:watch"]
@@ -224,7 +224,7 @@ run = "pnpm exec vitest"
 
 ["test:frontend"]
 description = "One-shot frontend run with v8 coverage and thresholds (Vitest Browser Mode, headless Chromium), used by CI; html report in coverage/"
-run = "pnpm exec vitest run --coverage"
+run = "mise/scripts/heavy.sh pnpm exec vitest run --coverage"
 
 # --- dependency updates ----------------------------------------------------------
 
@@ -283,13 +283,13 @@ run = "pnpm run i18n:types"
 ["generate:backend"]
 description = "OpenAPI/ent -> Go (ent, ogen, goverter)"
 run = [
-  "cd ent && go run -mod=mod entc.go",
-  "go tool ogen --target gen/site --package siteapi --clean openapi/site.openapi.json",
-  "go tool ogen --target gen/external --package externalapi --clean openapi/external.openapi.json",
-  "go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
-  "go tool ogen --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
-  "go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
-  "go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources",
+  "cd ent && ../mise/scripts/heavy.sh go run -mod=mod entc.go",
+  "mise/scripts/heavy.sh go tool ogen --target gen/site --package siteapi --clean openapi/site.openapi.json",
+  "mise/scripts/heavy.sh go tool ogen --target gen/external --package externalapi --clean openapi/external.openapi.json",
+  "mise/scripts/heavy.sh go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
+  "mise/scripts/heavy.sh go tool ogen --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
+  "mise/scripts/heavy.sh go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
+  "mise/scripts/heavy.sh go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources",
 ]
 
 ["generate:mocks"]
@@ -347,7 +347,7 @@ depends = [
 ["check:fe"]
 description = "tsc, oxlint, oxfmt --check, no custom CSS"
 depends = ["check:css"]
-run = ["pnpm exec tsc --noEmit", "pnpm exec oxlint", "pnpm exec oxfmt --check"]
+run = ["mise/scripts/heavy.sh pnpm exec tsc --noEmit", "pnpm exec oxlint", "pnpm exec oxfmt --check"]
 
 ["check:css"]
 description = "The project has no custom CSS: no stylesheet may be tracked (library CSS comes from node_modules)"
@@ -383,7 +383,7 @@ fi
 
 ["check:deps"]
 description = "Unused files, exports and dependencies (knip.ts)"
-run = "pnpm exec knip"
+run = "mise/scripts/heavy.sh pnpm exec knip"
 
 ["check:i18n"]
 description = "i18n key drift (read-only: --dry-run never writes, --ci exits non-zero on drift)"
@@ -395,7 +395,7 @@ run = [
 
 ["check:be"]
 description = "golangci-lint (incl. the gofmt formatter) and go.mod tidiness"
-run = ["golangci-lint run --allow-serial-runners ./...", "go mod tidy -diff"]
+run = ["mise/scripts/heavy.sh golangci-lint run --allow-serial-runners ./...", "go mod tidy -diff"]
 
 ["check:vulns"]
 description = "No call to a known-vulnerable dependency or stdlib function (network: the vulnerability database). Not part of check: a new advisory fails it with no change on our side, so the nightly workflow runs it"
