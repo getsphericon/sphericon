@@ -30,6 +30,9 @@ locals {
     SPHERICON_SYSTEM_EMAIL_PROVIDER = "ses"
     SPHERICON_SYSTEM_EMAIL_FROM     = local.system_email_from
     SPHERICON_SES_REGION            = var.region
+
+    # The hosted deployment never reports on itself (ADR 0032); `mise run check:telemetry` enforces it.
+    SPHERICON_TELEMETRY = "false"
     },
     # The internal listener exists only when a source security group is named (ADR 0028).
     local.internal_listener ? { SPHERICON_INTERNAL_ADDR = ":${var.internal_port}" } : {},
