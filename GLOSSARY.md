@@ -279,13 +279,22 @@ _Avoid_: Run, automation run, journey instance, subscription
 
 **Step**:
 One node in an Automation's **ordered, linear** sequence; an Enrollment points at exactly one
-current Step. Four kinds today: **send** (an email — it holds its _own copy_ of Message
+current Step. Five kinds today: **send** (an email — it holds its _own copy_ of Message
 content, per the marketing copy-at-author-time rule), **wait** (a delay before the next
-Step), and **apply tag** / **remove tag** (change the enrolled Contact's Tags; they send
-nothing and move straight on). The Enrollment's single "current step" pointer is deliberate: there is no branching,
+Step), **apply tag** / **remove tag** (change the enrolled Contact's Tags; they send
+nothing and move straight on), and **HTTP step** (below). The Enrollment's single "current step" pointer is deliberate: there is no branching,
 no parallel paths, no per-step conditions yet. Conditional / branching steps are a real
 future want but are **deferred until the sequence builder is real** — not modelled now.
 _Avoid_: Action, node, block, stage
+
+**HTTP step**:
+A Step kind that **sphericon calls** a third party's URL (a Slack, Zapier or CRM hook) for the
+enrolled Contact. It holds its _own_ URL, headers and a templated JSON body (the author-time copy
+rule again), and signs the request only when its author sets a secret. The Enrollment moves on
+after a 2xx; when the retries are spent it becomes `failed`, recording the status or the kind of
+error and the first 1 KiB of the response, never skipping the step. Distinct from a Webhook
+endpoint: that one is subscribed to events, this one runs when an Enrollment reaches it.
+_Avoid_: Webhook step, action
 
 **Template** (email template):
 A workspace-scoped, named, reusable piece of email content — a **starting point copied at
@@ -437,8 +446,9 @@ _Avoid_: Spam filter, auto-ban
 
 **Webhook endpoint** (outbound):
 A workspace-scoped HTTP destination that **sphericon calls** when domain events occur — subscribes
-to event types (empty = all) and signs each delivery (HMAC). Outbound only; the opposite of an
-Ingest hook.
+to event types (empty = all) and signs each delivery (HMAC). It remembers its own failures and
+**disables itself** on a 410 or after persistent failure (a 429 is not a failure), and its owners
+are told by email. Outbound only; the opposite of an Ingest hook.
 _Avoid_: Webhook (unqualified), callback
 
 **Ingest hook** (inbound provider webhook):
