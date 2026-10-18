@@ -410,10 +410,10 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
 - **Agent guidance lives in this file, not in personal agent memory.** The repo has several
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory.
-- **Clean up after a merge.** Once a PR is merged, remove its worktree and delete its local and
-  remote branch (`git worktree remove <path>`, `git branch -D <branch>`,
-  `git push origin --delete <branch>`) right away, without asking. Only the worktree and branch
-  made for that PR.
+- **Land non-trivial work from its worktree, then clean up.** A change made in a worktree reaches
+  `main` with `git push origin HEAD:main` once the checks pass and `origin/main` is merged in (a
+  detached `HEAD`, never a branch). Then remove that worktree (`git worktree remove <path>`) right
+  away, without asking. Only the worktree made for that change.
 - ADR numbers are unique (`mise run check:adr`). Take the next free number when you add an ADR,
   and re-check after merging `main`: parallel branches pick the same one.
 - After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the generated output.
