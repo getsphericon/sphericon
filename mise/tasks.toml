@@ -347,7 +347,11 @@ depends = [
 ["check:fe"]
 description = "tsc, oxlint, oxfmt --check, no custom CSS"
 depends = ["check:css"]
-run = ["mise/scripts/heavy.sh pnpm exec tsc --noEmit", "pnpm exec oxlint", "pnpm exec oxfmt --check"]
+run = [
+  "mise/scripts/heavy.sh pnpm exec tsc --noEmit",
+  "pnpm exec oxlint",
+  "pnpm exec oxfmt --check",
+]
 
 ["check:css"]
 description = "The project has no custom CSS: no stylesheet may be tracked (library CSS comes from node_modules)"
