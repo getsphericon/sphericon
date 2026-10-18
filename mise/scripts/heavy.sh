@@ -5,15 +5,19 @@
 #
 #   mise/scripts/heavy.sh <command> [args...]
 #
-# A slot is a directory in SPHERICON_LOCK_DIR: mkdir is atomic and needs no tool the
-# machine may lack (macOS has no flock(1) and ships bash 3.2). The directory holds the pid
-# of its owner, so a slot left by a killed run is taken over once that pid is gone.
-# SPHERICON_HEAVY_SLOTS is how many may run at once (default: a quarter of the cores, at
-# least one). A command started inside a held slot (a task that calls another heavy task)
-# runs at once, so nesting never deadlocks. CI has a machine of its own and skips the queue.
+# A slot is an flock(1) lock on a file in SPHERICON_LOCK_DIR; the kernel drops it when the
+# holder ends, however it ends. SPHERICON_HEAVY_SLOTS is how many may run at once (default:
+# a quarter of the cores, at least one). A command started inside a held slot (a task that
+# calls another heavy task) runs at once, so nesting never deadlocks. CI has a machine of its
+# own and skips the queue, and so does a machine without flock (`brew install flock` on
+# macOS; util-linux ships it): the command runs at once, with a warning.
 set -euo pipefail
 
 if [[ -n "${SPHERICON_HEAVY_HELD:-}" || -n "${CI:-}" ]]; then
+  exec "$@"
+fi
+if ! command -v flock >/dev/null; then
+  echo "heavy: flock not found, running without the queue (macOS: brew install flock)" >&2
   exec "$@"
 fi
 
@@ -23,38 +27,19 @@ slots="${SPHERICON_HEAVY_SLOTS:-$((cores / 4))}"
 dir="${SPHERICON_LOCK_DIR:-${TMPDIR:-/tmp}/sphericon-heavy}"
 mkdir -p "$dir"
 
-held=
-release() { [[ -z "$held" ]] || rm -rf "$held"; }
-trap release EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
-
-# take claims slot $1 and reports whether it is ours now.
-take() {
-  local slot="$dir/slot-$1" owner
-  if mkdir "$slot" 2>/dev/null; then
-    echo "$$" >"$slot/pid"
-    held="$slot"
-    return 0
-  fi
-  owner="$(cat "$slot/pid" 2>/dev/null || true)"
-  # A slot whose owner is gone (killed, or not yet written) is stale; remove it and
-  # let the next pass claim it, so two waiters never both think they took it over.
-  if [[ -n "$owner" ]] && ! kill -0 "$owner" 2>/dev/null; then
-    rm -rf "$slot"
-  fi
-  return 1
-}
-
 announced=
 while true; do
   for ((i = 1; i <= slots; i++)); do
-    if take "$i"; then
+    exec 9>"$dir/slot-$i"
+    if flock -n 9; then
       export SPHERICON_HEAVY_HELD=1
       status=0
-      "$@" || status=$?
+      # The command does not inherit the lock's descriptor: a daemon it leaves behind
+      # (the e2e Mailpit) must not keep the slot after the command ends.
+      "$@" 9>&- || status=$?
       exit "$status"
     fi
+    exec 9>&-
   done
   if [[ -z "$announced" ]]; then
     echo "heavy: all $slots slots are busy, waiting for one ($dir)" >&2

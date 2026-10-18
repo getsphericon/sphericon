@@ -8,7 +8,11 @@
 
 [install]
 description = "Install frontend and Go dependencies"
-run = ["pnpm install", "go mod download"]
+run = [
+  "pnpm install",
+  "go mod download",
+  "command -v flock >/dev/null || echo 'warning: flock not found, heavy tasks will not queue (macOS: brew install flock)'",
+]
 
 [setup]
 description = "Install deps, start Postgres, create this checkout's DBs, migrate and seed, drop the databases of deleted worktrees"
