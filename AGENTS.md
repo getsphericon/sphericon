@@ -22,12 +22,13 @@ hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `internal/api/{site,external}/resources` packages and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock — regenerate instead.
 
 ```
-typespec/{site,external,collect,staff,service}   ──tsp compile──▶  openapi/*.openapi.json
+typespec/{site,external,collect,staff,service,telemetry}   ──tsp compile──▶  openapi/*.openapi.json
   openapi/site      ──ogen──▶ gen/site       (Go server)   ──openapi-ts──▶ src/generated/site (TS client + react-query + zod)
   openapi/external  ──ogen──▶ gen/external    (Go server)
   openapi/collect   ──ogen──▶ gen/collect     (Go server)  ──openapi-ts──▶ packages/analytics/src/generated/collect (types only)
   openapi/staff  ──ogen──▶ gen/staff    (Go server)  ──openapi-ts──▶ src/generated/staff (TS client + react-query + zod)
   openapi/service   ──ogen──▶ gen/service     (Go server, internal listener only)
+  openapi/telemetry ──ogen──▶ gen/telemetry   (Go client only, `ogen.telemetry.yml`; embedded in `spec.go`, checked by `internal/telemetryschema`)
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)

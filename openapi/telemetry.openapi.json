@@ -1,0 +1,209 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sphericon Telemetry API",
+    "version": "1.0.0",
+    "description": "The anonymous Telemetry report an Instance sends once a day (ADR 0032). The receiver is a\nseparate service outside this repository; this document is the contract between the two."
+  },
+  "tags": [
+    {
+      "name": "Telemetry"
+    }
+  ],
+  "paths": {
+    "/v1/reports": {
+      "post": {
+        "operationId": "TelemetryReports_submit",
+        "description": "Receives one Telemetry report. The receiver stores no source address.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          }
+        },
+        "tags": ["Telemetry"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetryReport"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrderOfMagnitude": {
+        "type": "string",
+        "enum": [
+          "0",
+          "1-9",
+          "10-99",
+          "100-999",
+          "1000-9999",
+          "10000-99999",
+          "100000-999999",
+          "1000000+"
+        ],
+        "description": "A count rounded to its order of magnitude, never an exact number."
+      },
+      "TelemetryDeployShape": {
+        "type": "string",
+        "enum": ["docker", "kubernetes", "binary", "other"]
+      },
+      "TelemetryEdition": {
+        "type": "string",
+        "enum": ["core", "ee"]
+      },
+      "TelemetryIntegrationKind": {
+        "type": "string",
+        "enum": ["smtp", "ses"]
+      },
+      "TelemetryLocale": {
+        "type": "string",
+        "enum": ["ru", "en", "es"]
+      },
+      "TelemetryReport": {
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "instanceId",
+          "appVersion",
+          "edition",
+          "os",
+          "arch",
+          "deployShape",
+          "postgresMajor",
+          "locale",
+          "instanceAgeDays",
+          "workspaces",
+          "contacts",
+          "emailsSent30d",
+          "usedBroadcasts30d",
+          "usedAutomations30d",
+          "usedTracker30d",
+          "usedExternalApi30d",
+          "webhooksConfigured",
+          "integrationKinds"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "The version of this schema the report was built against."
+          },
+          "instanceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "A random value stored in the Instance's database, derived from nothing."
+          },
+          "appVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "The release version of the running binary, for example `1.4.2`."
+          },
+          "edition": {
+            "$ref": "#/components/schemas/TelemetryEdition"
+          },
+          "os": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "The operating system the binary runs on (Go's GOOS), for example `linux`."
+          },
+          "arch": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "The CPU architecture the binary runs on (Go's GOARCH), for example `arm64`."
+          },
+          "deployShape": {
+            "$ref": "#/components/schemas/TelemetryDeployShape"
+          },
+          "postgresMajor": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "The major version of the Postgres server, for example `17`."
+          },
+          "locale": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TelemetryLocale"
+              }
+            ],
+            "description": "The Instance's configured locale."
+          },
+          "instanceAgeDays": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "description": "Whole days since the Instance was first started."
+          },
+          "workspaces": {
+            "$ref": "#/components/schemas/OrderOfMagnitude"
+          },
+          "contacts": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderOfMagnitude"
+              }
+            ],
+            "description": "Identified Contacts, excluding erased ones."
+          },
+          "emailsSent30d": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderOfMagnitude"
+              }
+            ],
+            "description": "Emails sent in the last 30 days."
+          },
+          "usedBroadcasts30d": {
+            "type": "boolean",
+            "description": "A Broadcast was sent in the last 30 days."
+          },
+          "usedAutomations30d": {
+            "type": "boolean",
+            "description": "An Automation was active in the last 30 days."
+          },
+          "usedTracker30d": {
+            "type": "boolean",
+            "description": "The tracker recorded a visit in the last 30 days."
+          },
+          "usedExternalApi30d": {
+            "type": "boolean",
+            "description": "An external API token was used in the last 30 days."
+          },
+          "webhooksConfigured": {
+            "type": "boolean",
+            "description": "At least one webhook endpoint is configured."
+          },
+          "integrationKinds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelemetryIntegrationKind"
+            },
+            "maxItems": 8,
+            "description": "The kinds of sending Integration in use, each at most once."
+          }
+        },
+        "description": "What an Instance reports about itself. It carries no name, slug, domain, address, host, error\ntext, licence key or exact number, and nothing that identifies a Workspace or a person. A new\nfield is a change to this schema and to its documentation in the same commit.",
+        "additionalProperties": false
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://telemetry.getsphericon.app",
+      "description": "Telemetry receiver",
+      "variables": {}
+    }
+  ]
+}

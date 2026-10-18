@@ -241,7 +241,7 @@ with no release number (`dev`) is never refused as too old.
   again: `migrate` takes a database lock, so repeating it is safe.
 - **"this Upgrade needs N archive(s) the source does not have."** With `--from`, a Major crossing
   needs more archives than the directory holds. Add the files it lists and run again.
-- **"<service> is <state> after the restart."** The service did not come up on the new binary. Read
+- **`<service> is <state> after the restart.`** The service did not come up on the new binary. Read
   `journalctl -u <service>`; the previous binary is kept as `sphericon.old`.
 
 ## Roll back {#roll-back}

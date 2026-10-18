@@ -223,7 +223,7 @@ security release.
   - _Postgres major upgrade_ — a DBA operation (`pg_upgrade` or dump/restore across majors),
     independent of the app release. The doc says "14+"; compose ships `postgres:16`.
 - **Usage telemetry (opt-out)** — decided in
-  [ADR 0032](./adr/0032-instance-telemetry-report-and-release-check): a daily anonymous Telemetry
+  [ADR 0032](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0032-instance-telemetry-report-and-release-check.md): a daily anonymous Telemetry
   report on by default, switchable off by `SPHERICON_TELEMETRY` or by the owner in the app. The
   release check is a separate channel with its own switch. Not built yet.
 
