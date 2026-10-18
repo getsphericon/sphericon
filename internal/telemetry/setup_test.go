@@ -71,6 +71,25 @@ func TestSetupPullOnly(t *testing.T) {
 	require.NoError(t, stop(context.Background()))
 }
 
+// The newer release the Release check cached shows next to sphericon_build_info, and the
+// gauge disappears once there is none.
+func TestReleaseAvailableGaugeFollowsTheCachedResult(t *testing.T) {
+	isolate(t)
+	_, err := Setup(context.Background(), &config.Config{OtelServiceName: "sphericon-test"}, "test", BuildInfo{Version: "0.1.0", Commit: "abc"})
+	require.NoError(t, err)
+	var latest atomic.Value
+	latest.Store("0.2.0")
+	require.NoError(t, ObserveReleaseAvailable(func(context.Context) (string, error) { return latest.Load().(string), nil }))
+
+	_, body := scrape(t)
+	assert.Regexp(t, `sphericon_release_available\{[^}]*latest="0.2.0"[^}]*\} 1`, body)
+	assert.Contains(t, body, "sphericon_build_info")
+
+	latest.Store("")
+	_, body = scrape(t)
+	assert.NotContains(t, body, "sphericon_release_available{")
+}
+
 // With OTEL_CONFIG_FILE naming an OTLP exporter, traces and metrics push to it and shutdown
 // flushes both.
 func TestSetupWithOTLPPush(t *testing.T) {

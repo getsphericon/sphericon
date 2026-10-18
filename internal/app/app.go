@@ -356,6 +356,9 @@ func (a *App) start(ctx context.Context) error {
 	if err := inst.AnnounceRelease(ctx); err != nil {
 		return err
 	}
+	if err := telemetry.ObserveReleaseAvailable(inst.LatestRelease); err != nil {
+		return err
+	}
 	// The metrics listener is bound first: a bind failure (port in use) must fail the
 	// boot, not leave an unmonitored instance.
 	if err := a.bindMetrics(ctx); err != nil {
