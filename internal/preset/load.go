@@ -287,14 +287,29 @@ func (r *Registry) Names() []string {
 	return names
 }
 
-// Test runs the cases the Preset carries: each posts a request with its params and
-// clock and expects the Delivery failures, or the refusal, it names. The error lists
-// every case that disagreed.
+// CaseResult is the outcome of one of the Preset's own tests: Err is nil when the case
+// passed, and says how it disagreed otherwise.
+type CaseResult struct {
+	Name string
+	Err  error
+}
+
+// RunTests runs each case the Preset carries: it posts the case's request with its
+// params and clock and expects the Delivery failures, or the refusal, it names.
+func (p *Preset) RunTests(ctx context.Context) []CaseResult {
+	results := make([]CaseResult, 0, len(p.tests))
+	for _, c := range p.tests {
+		results = append(results, CaseResult{Name: c.Name, Err: p.runCase(ctx, c)})
+	}
+	return results
+}
+
+// Test runs the cases the Preset carries; the error lists every case that disagreed.
 func (p *Preset) Test(ctx context.Context) error {
 	var failed []error
-	for _, c := range p.tests {
-		if err := p.runCase(ctx, c); err != nil {
-			failed = append(failed, fmt.Errorf("preset %s, case %q: %w", p.name, c.Name, err))
+	for _, r := range p.RunTests(ctx) {
+		if r.Err != nil {
+			failed = append(failed, fmt.Errorf("preset %s, case %q: %w", p.name, r.Name, r.Err))
 		}
 	}
 	return errors.Join(failed...)

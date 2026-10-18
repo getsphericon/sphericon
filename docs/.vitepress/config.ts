@@ -37,6 +37,7 @@ export default defineConfig({
             { text: 'Deliverability and consent', link: '/guide/deliverability' },
             { text: 'API', link: '/guide/api' },
             { text: 'Webhooks', link: '/guide/webhooks' },
+            { text: 'Presets for provider callbacks', link: '/guide/presets' },
             { text: 'MCP for agents', link: '/guide/mcp' },
             { text: 'Answering a GDPR request', link: '/guide/gdpr' },
             { text: 'Self-hosting', link: '/self-hosting' },
