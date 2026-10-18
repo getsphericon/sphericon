@@ -86,6 +86,39 @@ jobs:
             pnpm lint:commits --from "$FROM" --to "$TO"
           fi
 
+  # ADR 0033: a removal or a rename reaches a minor release only through a breaking pull request,
+  # and a breaking one says what a Self-hoster does. The repository squashes with the pull request
+  # title, so the title is what release-please reads.
+  upgrade:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Cache Go
+        uses: $/.github/actions/go-cache
+        with:
+          scope: upgrade
+
+      # The title and the body are attacker-controlled text: they reach the program through
+      # the environment and a file, never through the script.
+      - name: Check migrations and breaking changes
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.md"
+          PR_BODY_FILE="$RUNNER_TEMP/pr-body.md" mise run check:upgrade
+
   tracker-size:
     runs-on: ubuntu-latest
 
