@@ -2,12 +2,13 @@ package jobs
 
 import (
 	"context"
-	"database/sql"
+
 	"log/slog"
 	"time"
 
 	"github.com/riverqueue/river"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
@@ -39,15 +40,15 @@ func (PruneEventsArgs) Kind() string { return "events_retention" }
 
 // PruneEventsWorker deletes analytical Events older than the retention window.
 // Evidentiary Events are never deleted by age. It is instance-wide, so it holds
-// the raw database handle; a zero retention disables it.
+// the raw ent client; a zero retention disables it.
 type PruneEventsWorker struct {
 	river.WorkerDefaults[PruneEventsArgs]
-	db        *sql.DB
+	ent       *ent.Client
 	retention time.Duration
 }
 
 func (w *PruneEventsWorker) Work(ctx context.Context, _ *river.Job[PruneEventsArgs]) error {
-	deleted, err := events.PruneEvents(ctx, w.db, w.retention, eventsRetentionBatch)
+	deleted, err := events.PruneEvents(ctx, w.ent, w.retention, eventsRetentionBatch)
 	if err != nil {
 		return err
 	}

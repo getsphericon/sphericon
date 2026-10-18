@@ -37,7 +37,7 @@ var (
 
 func pruneEvents(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
-	w := jobs.NewPruneEventsWorker(env.SQLDB, retention)
+	w := jobs.NewPruneEventsWorker(env.DB, retention)
 	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.PruneEventsArgs]{JobRow: &rivertype.JobRow{}}))
 }
 
@@ -86,7 +86,7 @@ func TestPruneEventsDeletesInBoundedBatches(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	// A batch of one forces several rounds; every expired row still goes.
-	deleted, err := events.PruneEvents(context.Background(), env.SQLDB, eventsRetention, 1)
+	deleted, err := events.PruneEvents(context.Background(), env.DB, eventsRetention, 1)
 
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, deleted, int64(len(expiring)))

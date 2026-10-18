@@ -53,7 +53,7 @@ func setAllCursors(t *testing.T, env *testhelper.TestEnv, txID uint64, acked int
 
 func prune(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	w := jobs.NewPruneOutboxWorker(env.SQLDB, outboxFloor)
+	w := jobs.NewPruneOutboxWorker(env.DB, outboxFloor)
 	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.PruneOutboxArgs]{JobRow: &rivertype.JobRow{}}))
 }
 

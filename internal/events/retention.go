@@ -2,10 +2,14 @@ package events
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/schema"
 )
 
@@ -15,29 +19,39 @@ import (
 // growth follows; an Event backfilled with an old occurred_at is kept until its
 // row itself ages out. A retention of zero or less disables the prune. The job is
 // idempotent: a rerun finds nothing left to delete.
-func PruneEvents(ctx context.Context, db *sql.DB, retention time.Duration, batchSize int) (int64, error) {
+func PruneEvents(ctx context.Context, client *ent.Client, retention time.Duration, batchSize int) (int64, error) {
 	if retention <= 0 {
 		return 0, nil
 	}
-	del := fmt.Sprintf(`
-		DELETE FROM events WHERE id IN (
-			SELECT id FROM events
-			WHERE created_at < now() - make_interval(secs => $1) AND %s
-			ORDER BY created_at
-			LIMIT $2)`, schema.ExpirableEventPredicate)
+	cutoff := time.Now().Add(-retention)
 	var total int64
 	for {
-		r, err := db.ExecContext(ctx, del, retention.Seconds(), batchSize)
+		ids, err := client.Event.Query().
+			Where(event.CreatedAtLT(cutoff), expirable()).
+			Order(event.ByCreatedAt()).
+			Limit(batchSize).
+			IDs(ctx)
+		if err != nil {
+			return total, fmt.Errorf("select expired events batch: %w", err)
+		}
+		if len(ids) == 0 {
+			return total, nil
+		}
+		n, err := client.Event.Delete().Where(event.IDIn(ids...)).Exec(ctx)
 		if err != nil {
 			return total, fmt.Errorf("delete expired events batch: %w", err)
 		}
-		n, err := r.RowsAffected()
-		if err != nil {
-			return total, err
-		}
-		total += n
-		if n < int64(batchSize) {
+		total += int64(n)
+		if len(ids) < batchSize {
 			return total, nil
 		}
 	}
+}
+
+// expirable is schema.ExpirableEventPredicate on the generated query: the same text the
+// partial index is declared with, so the delete can always use that index.
+func expirable() predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		s.Where(sql.P(func(b *sql.Builder) { b.WriteString(schema.ExpirableEventPredicate) }))
+	})
 }

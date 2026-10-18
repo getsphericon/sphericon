@@ -19,7 +19,7 @@ import (
 func TestOutboxLagIsReportedPerConsumerGroup(t *testing.T) {
 	env := testhelper.Setup(t)
 	metricstest.StartMetrics(t)
-	unregister, err := events.RegisterLagGauge(env.SQLDB)
+	unregister, err := events.RegisterLagGauge(env.DB)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = unregister() })
 
