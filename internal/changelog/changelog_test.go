@@ -13,9 +13,9 @@ const sample = `# Changelog
 
 ### ⚠ BREAKING CHANGES
 
-- **segments:** remove Segment type
-  Upgrade: run the segment export first,
-  then install 1.0.0.
+* **segments:** remove Segment type
+Upgrade: run the segment export first,
+then install 1.0.0.
 
 ### Features
 
@@ -23,10 +23,14 @@ const sample = `# Changelog
 
 ## [0.2.0](https://github.com/o/r/compare/v0.1.0...v0.2.0) (2026-10-20)
 
+### ⚠ BREAKING CHANGES
+
+* **config:** Upgrade: set SPHERICON_FOO before the restart
+
 ### Features
 
 - **api:** another thing
-- Upgrade: set SPHERICON_FOO before the restart
+- Upgrade: not a release note outside the breaking section
 
 ## [0.1.10](https://github.com/o/r/compare/v0.1.9...v0.1.10) (2026-10-12)
 
@@ -36,7 +40,7 @@ const sample = `# Changelog
 
 ## 0.1.0 (2026-10-10)
 
-### Features
+### ⚠ BREAKING CHANGES
 
 - **x:** **Upgrade:** first release note
 `

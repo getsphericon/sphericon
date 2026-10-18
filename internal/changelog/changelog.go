@@ -1,4 +1,6 @@
-// Package changelog reads the `Upgrade:` entries out of release-please's CHANGELOG.md: what a
+// Package changelog reads the `Upgrade:` entries out of release-please's CHANGELOG.md, where they sit in the
+// `BREAKING CHANGES` section (release-please renders the text of a `BREAKING CHANGE:` footer and no
+// other footer): what a
 // Self-hoster must do for a release (ADR 0034). The binary embeds the changelog of its own
 // release (see Embedded), so the notes are readable offline; `sphericon upgrade-notes` and
 // `sphericon upgrade` both read them through this package.
@@ -24,21 +26,31 @@ var (
 	// "## [0.2.0](compare-url) (date)" or "## 0.1.0 (date)".
 	heading = regexp.MustCompile(`^##\s+\[?v?(\d+\.\d+\.\d+[0-9A-Za-z.+-]*?)\]?(?:[\s(]|$)`)
 	// An entry may sit in a bullet, behind a bold scope ("**api:** ") and a bold marker.
-	upgradeLine = regexp.MustCompile(`^\s*(?:[-*]\s+)?(?:\*\*[^*]*:\*\*\s+)*(?:\*\*)?Upgrade:(?:\*\*)?\s*(.*)$`)
+	// "### ⚠ BREAKING CHANGES": the only section that carries Upgrade entries.
+	breakingSection = regexp.MustCompile(`^###\s+\W*BREAKING CHANGES\s*$`)
+	upgradeLine     = regexp.MustCompile(`^\s*(?:[-*]\s+)?(?:\*\*[^*]*:\*\*\s+)*(?:\*\*)?Upgrade:(?:\*\*)?\s*(.*)$`)
 )
 
 // Parse returns the releases of a changelog in file order (newest first).
 func Parse(text string) []Release {
 	var releases []Release
-	open := false // the last Upgrade line may continue on the next indented line
+	open := false     // the last Upgrade line may continue on the next line
+	breaking := false // inside the BREAKING CHANGES section of the current release
 	for line := range strings.SplitSeq(text, "\n") {
 		line = strings.TrimRight(line, "\r")
 		if m := heading.FindStringSubmatch(line); m != nil {
 			releases = append(releases, Release{Version: m[1]})
-			open = false
+			open, breaking = false, false
 			continue
 		}
 		if len(releases) == 0 {
+			continue
+		}
+		if strings.HasPrefix(line, "#") {
+			breaking, open = breakingSection.MatchString(line), false
+			continue
+		}
+		if !breaking {
 			continue
 		}
 		cur := &releases[len(releases)-1]
@@ -47,9 +59,8 @@ func Parse(text string) []Release {
 			open = true
 			continue
 		}
-		indented := strings.HasPrefix(line, " ") || strings.HasPrefix(line, "\t")
 		trimmed := strings.TrimSpace(line)
-		if open && indented && trimmed != "" && !strings.HasPrefix(trimmed, "- ") && !strings.HasPrefix(trimmed, "* ") {
+		if open && trimmed != "" && !strings.HasPrefix(trimmed, "- ") && !strings.HasPrefix(trimmed, "* ") {
 			last := len(cur.Upgrades) - 1
 			cur.Upgrades[last] += " " + trimmed
 			continue

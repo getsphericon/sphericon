@@ -186,7 +186,10 @@ the wall clock; it injects the clock.
   an Upgrade that skipped a release fails instead of losing data. CI (`mise run check:upgrade`,
   `cmd/upgradecheck`) lints the migrations a PR adds, skipping the generated river ones, and fails
   a destructive finding unless the PR title is breaking (`!`); a breaking PR title or commit needs
-  an `Upgrade:` footer, in a commit message or the PR body, saying what a Self-hoster does (the
+  an `Upgrade:` line inside its `BREAKING CHANGE:` footer, in a commit message or the PR body,
+  saying what a Self-hoster does (`BREAKING CHANGE: <what broke>` then a line `Upgrade: <what to do>`;
+  release-please renders only the text of that footer into CHANGELOG.md, never a footer of its own,
+  and `sphericon upgrade-notes` reads the `Upgrade:` lines from its BREAKING CHANGES section; the
   repository squashes with the PR title and the commit messages).
 - `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the outbox and
   river migrations (they were created at boot) needs a `db:reset`.

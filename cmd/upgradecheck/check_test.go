@@ -35,12 +35,15 @@ func TestCheckBreakingNeedsAnUpgradeFooter(t *testing.T) {
 	}{
 		{"nothing breaking", "feat: a", "", []string{"feat: a"}, false},
 		{"breaking title without a footer", "feat!: a", "", []string{"feat!: a"}, true},
-		{"footer in a commit", "feat!: a", "", []string{"feat!: a\n\nUpgrade: run sphericon migrate"}, false},
-		{"footer in the pull request body", "feat!: a", "Notes\n\nUpgrade: rename the env var", []string{"feat!: a"}, false},
+		{"bare Upgrade footer is not rendered by release-please", "feat!: a", "", []string{"feat!: a\n\nUpgrade: run sphericon migrate"}, true},
+		{"Upgrade inside the BREAKING CHANGE footer", "feat!: a", "", []string{"feat!: a\n\nBREAKING CHANGE: the column is gone\nUpgrade: run sphericon migrate"}, false},
+		{"Upgrade on the BREAKING CHANGE line", "feat!: a", "", []string{"feat!: a\n\nBREAKING CHANGE: Upgrade: run sphericon migrate"}, false},
+		{"in the pull request body", "feat!: a", "Notes\n\nBREAKING CHANGE: rename\nUpgrade: rename the env var", []string{"feat!: a"}, false},
+		{"Upgrade before the BREAKING CHANGE footer does not count", "feat!: a", "Upgrade: x\n\nBREAKING CHANGE: rename", []string{"feat!: a"}, true},
 		{"breaking commit under a plain title", "feat: a", "", []string{"feat!: a", "fix: b"}, true},
-		{"breaking commit footer satisfied by another commit", "feat: a", "", []string{"feat: a\n\nBREAKING CHANGE: x", "docs: b\n\nUpgrade: do y"}, false},
-		{"empty footer does not count", "feat!: a", "Upgrade:   ", []string{"feat!: a"}, true},
-		{"footer must start a line", "feat!: a", "see Upgrade: later", []string{"feat!: a"}, true},
+		{"breaking commit satisfied by another commit", "feat: a", "", []string{"feat: a\n\nBREAKING CHANGE: x", "docs: b\n\nBREAKING CHANGE: y\nUpgrade: do y"}, false},
+		{"empty Upgrade does not count", "feat!: a", "BREAKING CHANGE: x\nUpgrade:   ", []string{"feat!: a"}, true},
+		{"Upgrade must start a line", "feat!: a", "BREAKING CHANGE: x\nsee Upgrade: later", []string{"feat!: a"}, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := CheckBreaking(tc.title, tc.body, tc.commits)

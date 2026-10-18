@@ -1,6 +1,6 @@
 // Command upgradecheck enforces the Upgrade rules of ADR 0033 in CI: a destructive migration needs
-// a breaking pull request, and a breaking pull request or commit needs an `Upgrade:` footer that
-// says what a Self-hoster does.
+// a breaking pull request, and a breaking pull request or commit needs an `Upgrade:` line in its
+// `BREAKING CHANGE:` footer that says what a Self-hoster does.
 package main
 
 import (
@@ -15,7 +15,7 @@ import (
 var (
 	breakingSubject = regexp.MustCompile(`^[a-zA-Z]+(\([^)]*\))?!: `)
 	breakingFooter  = regexp.MustCompile(`(?m)^BREAKING[ -]CHANGE: `)
-	upgradeFooter   = regexp.MustCompile(`(?m)^Upgrade:[ \t]*\S`)
+	upgradeLine     = regexp.MustCompile(`(?m)^Upgrade:[ \t]*\S`)
 )
 
 // IsBreaking reports whether a commit message (or a pull request title) is a breaking one:
@@ -25,18 +25,27 @@ func IsBreaking(message string) bool {
 	return breakingSubject.MatchString(subject) || breakingFooter.MatchString(message)
 }
 
+// hasUpgrade reports whether a message carries an `Upgrade:` line inside its `BREAKING CHANGE:`
+// footer text: release-please renders only that text into CHANGELOG.md, never a footer of its own.
+// The line may follow the marker directly or start a later line of the footer.
+func hasUpgrade(message string) bool {
+	loc := breakingFooter.FindStringIndex(message)
+	return loc != nil && upgradeLine.MatchString(message[loc[1]:])
+}
+
 // CheckBreaking fails when the title or a commit is breaking and neither a commit message nor
-// the pull request body carries an `Upgrade:` footer.
+// the pull request body has an `Upgrade:` line in its `BREAKING CHANGE:` footer.
 func CheckBreaking(title, body string, commits []string) error {
 	breaking := IsBreaking(title) || slices.ContainsFunc(commits, IsBreaking)
 	if !breaking {
 		return nil
 	}
-	if upgradeFooter.MatchString(body) || slices.ContainsFunc(commits, upgradeFooter.MatchString) {
+	if hasUpgrade(body) || slices.ContainsFunc(commits, hasUpgrade) {
 		return nil
 	}
-	return errors.New("a breaking change needs an `Upgrade:` footer, in a commit message or the pull request body, " +
-		"that says what a Self-hoster does (for example `Upgrade: set SPHERICON_X before starting`)")
+	return errors.New("a breaking change needs an `Upgrade:` line inside its `BREAKING CHANGE:` footer, in a commit message " +
+		"or the pull request body, that says what a Self-hoster does (release-please renders only that footer into " +
+		"CHANGELOG.md), for example `BREAKING CHANGE: the env var is renamed\nUpgrade: set SPHERICON_X before starting`")
 }
 
 // Finding is one destructive or backward-incompatible diagnostic Atlas reports on a migration.

@@ -33,7 +33,8 @@ neither the command, a diagnosis, nor the guard's message can say what runs wher
   upgrades with no network call; it lists the archives a Major crossing still needs before starting.
 - **The notes travel in the binary.** `CHANGELOG.md` is embedded, so the new binary prints its own
   `Upgrade:` entries offline. A commit with `!` or `BREAKING CHANGE:` must carry an `Upgrade:`
-  footer saying what the Self-hoster does, which commitlint checks; the release notes are the only
+  line inside its `BREAKING CHANGE:` footer saying what the Self-hoster does (release-please renders
+  only that footer's text into the changelog), which `cmd/upgradecheck` checks in CI; the release notes are the only
   place for it, with no per-version table kept by hand.
 - **Helm: a chart on `ghcr.io/getsphericon/charts/sphericon`**, published as an OCI artifact at every
   release with the chart version equal to the app version, so `helm upgrade sphericon
