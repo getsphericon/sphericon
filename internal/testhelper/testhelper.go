@@ -91,56 +91,7 @@ func initBaseline() {
 			return
 		}
 		defer func() { _ = sqlDB.Close() }()
-
-		if err := db.NewEntClient(sqlDB).Schema.Create(context.Background()); err != nil {
-			loadErr = err
-			return
-		}
-
-		// The domain-event outbox topic table is a watermill-sql table, not part
-		// of the ent schema, so create it here too (once per process, on the real
-		// DB) — otherwise the transactional publisher hits "relation does not exist".
-		if err := events.InitSchema(context.Background(), sqlDB); err != nil {
-			loadErr = err
-			return
-		}
-
-		// river's own tables, so Erasure can clear the jobs that name a Contact (the
-		// queue itself stays inline in tests; see JobsOf and EnqueueJob).
-		pool, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
-		if err != nil {
-			loadErr = err
-			return
-		}
-		defer pool.Close()
-		if err := jobs.Migrate(context.Background(), pool); err != nil {
-			loadErr = err
-			return
-		}
-
-		cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-		if err != nil {
-			loadErr = err
-			return
-		}
-
-		loader, err := testfixtures.New(
-			testfixtures.Database(sqlDB),
-			testfixtures.Dialect("postgres"),
-			// Template options MUST precede Directory: Directory eagerly reads and
-			// renders the files when its option is applied. Fixtures use templating
-			// for relative dates and load-time encryption (internal/fixtures).
-			testfixtures.Template(),
-			testfixtures.TemplateFuncs(fixtures.TemplateFuncs(cipher)),
-			testfixtures.Directory(filepath.Join(projectRoot, "fixtures")),
-			// ResetSequencesTo keeps the explicit fixture ids clear of app-inserted rows.
-			testfixtures.ResetSequencesTo(100000),
-		)
-		if err != nil {
-			loadErr = err
-			return
-		}
-		if err := loader.Load(); err != nil {
+		if err := migrateBaseline(context.Background(), sqlDB, cfg, projectRoot); err != nil {
 			loadErr = err
 			return
 		}
@@ -428,4 +379,58 @@ func (c injectClient) Do(r *http.Request) (*http.Response, error) {
 	rec := httptest.NewRecorder()
 	c.handler.ServeHTTP(rec, r)
 	return rec.Result(), nil
+}
+
+// migrateBaseline brings an empty database to the fixture state every test starts from:
+// the ent schema, the domain-event outbox, river's tables and the committed fixtures.
+// The shared test database gets it once per process (initBaseline); a pgtestdb template
+// gets it once per schema change (RealDB). cfg.DatabaseURL must name the database sqlDB
+// is open on.
+func migrateBaseline(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projectRoot string) error {
+	if err := db.NewEntClient(sqlDB).Schema.Create(ctx); err != nil {
+		return err
+	}
+
+	// The domain-event outbox topic table is a watermill-sql table, not part
+	// of the ent schema, so create it here too (once per process, on the real
+	// DB) — otherwise the transactional publisher hits "relation does not exist".
+	if err := events.InitSchema(ctx, sqlDB); err != nil {
+		return err
+	}
+
+	// river's own tables, so Erasure can clear the jobs that name a Contact (the
+	// queue itself stays inline in tests; see JobsOf and EnqueueJob).
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	if err := jobs.Migrate(ctx, pool); err != nil {
+		return err
+	}
+
+	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
+	if err != nil {
+		return err
+	}
+
+	loader, err := testfixtures.New(
+		testfixtures.Database(sqlDB),
+		testfixtures.Dialect("postgres"),
+		// Template options MUST precede Directory: Directory eagerly reads and
+		// renders the files when its option is applied. Fixtures use templating
+		// for relative dates and load-time encryption (internal/fixtures).
+		testfixtures.Template(),
+		testfixtures.TemplateFuncs(fixtures.TemplateFuncs(cipher)),
+		testfixtures.Directory(filepath.Join(projectRoot, "fixtures")),
+		// ResetSequencesTo keeps the explicit fixture ids clear of app-inserted rows.
+		testfixtures.ResetSequencesTo(100000),
+	)
+	if err != nil {
+		return err
+	}
+	if err := loader.Load(); err != nil {
+		return err
+	}
+	return nil
 }

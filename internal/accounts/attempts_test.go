@@ -2,7 +2,6 @@ package accounts_test
 
 import (
 	"context"
-	"database/sql"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -11,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -184,21 +182,11 @@ func TestResetBudgetNeverRefusesWhenDisabled(t *testing.T) {
 
 // Check and count are one statement, so concurrent requests for one address cannot
 // each see a free slot and all take it. The other tests ride one go-txdb transaction,
-// which serializes statements, so this one opens its own pool on the real database
-// (and removes its row afterwards).
+// which serializes statements, so this one runs on a database of its own, with a
+// pool of real connections.
 func TestResetBudgetGrantsExactlyThresholdSlotsUnderConcurrency(t *testing.T) {
-	testhelper.Setup(t) // loads the schema into the real database once
-	cfg, err := config.Load("test")
-	require.NoError(t, err)
-	pool, err := sql.Open("pgx", cfg.DatabaseURL)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = pool.Close() })
-	client := db.NewEntClient(pool)
+	client := db.NewEntClient(testhelper.RealDB(t))
 	const email = "race@attempts.test"
-	t.Cleanup(func() {
-		_, err := client.AuthAttempt.Delete().Where(authattempt.Email(email)).Exec(context.Background())
-		assert.NoError(t, err)
-	})
 
 	a := accounts.NewAttempts(client, accounts.WithRule(accounts.KindPasswordReset, accounts.ResetRule(3)))
 	const workers = 24

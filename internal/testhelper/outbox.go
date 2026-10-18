@@ -95,13 +95,6 @@ func (env *TestEnv) OutboxCount(t *testing.T, name string, match map[string]any)
 	return n
 }
 
-// PurgeOutbox empties the outbox of a database a test wrote to for real (outside
-// the per-test transaction), such as the router tests.
-func PurgeOutbox(ctx context.Context, db *sql.DB) error {
-	_, err := db.ExecContext(ctx, `DELETE FROM watermill_domain_events`)
-	return err
-}
-
 // OutboxEnvelopesOn is OutboxEnvelopes for a database a test wrote to for real.
 func OutboxEnvelopesOn(ctx context.Context, db *sql.DB, names ...string) ([]events.Envelope, error) {
 	return readOutbox(ctx, db, names)
@@ -215,15 +208,6 @@ func (env *TestEnv) OutboxCursors(t *testing.T) map[string]OutboxCursor {
 	}
 	require.NoError(t, rows.Err())
 	return out
-}
-
-// ClearOutboxCursors removes every consumer group's offsets row in this test's
-// transaction, so a test starts from a known state whatever real-database tests
-// (the router tests) left committed.
-func (env *TestEnv) ClearOutboxCursors(t *testing.T) {
-	t.Helper()
-	_, err := env.SQLDB.ExecContext(t.Context(), `DELETE FROM watermill_offsets_domain_events`)
-	require.NoError(t, err)
 }
 
 // Abuse is the abuse detector as the composition root builds it (ADR 0026), over the

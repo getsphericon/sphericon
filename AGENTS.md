@@ -104,6 +104,9 @@ Never hand-name a scratch database. `mise run worktrees:gc` (also run by `setup`
 no live worktree's `DB_NAMES` covers and runs `mise daemons prune --yes` for dead state; it
 refuses to drop anything when it cannot enumerate or read a live worktree, including one on a
 commit from before `DB_NAMES` (merge main into it), and never touches the primary's daemon.
+It skips the `testdb_tpl_*` databases: those are pgtestdb's template and per-test databases (the
+`testhelper.RealDB` family, below), owned by a test that may be running in any checkout, and
+pgtestdb drops each when its test ends.
 `mise run worktrees:prune -- --apply` first removes the worktrees whose branch is already in
 `origin/main`. A worktree from before this setup still runs its own `db` daemon: it retires with
 its next merge of main plus `mise daemons stop`. Several tasks in one command need `:::` between
@@ -363,6 +366,11 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
   `testhelper` abstraction for tables ent doesn't model (the domain-event outbox: `env.Outbox*`,
   `env.OutboxCount`). `forbidigo` in `.golangci.yml` rejects `*sql.DB` `Exec`/`Query`/`QueryRow` in
   `_test.go` files. Inject faults with ent hooks/interceptors, never DDL or triggers.
+- **Tests never clean up by hand, and never reset state at their start.** A test that needs a real
+  commit (the outbox router, concurrent workers, a whole app) takes a database of its own from
+  `testhelper.RealDB`, `RealDBURL` or `EmptyDBURL` (pgtestdb), dropped when the test ends; every
+  other test rides the go-txdb transaction that rolls back. A `t.Cleanup` that deletes rows, a purge
+  or a reset at the top of a test means a test is committing outside its transaction: fix that test.
 - **No tests of built-in behaviour.** A test exercises sphericon's own code. One whose only subject is a
   Mantine component, the standard library or another dependency (a copy button showing "Copied", a
   library's defaults or retries) is deleted, and none is added.

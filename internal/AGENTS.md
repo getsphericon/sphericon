@@ -6,6 +6,14 @@ a **go-txdb** transaction that rolls back on cleanup (full isolation, DB stays a
 state). Tests drive the real server in-memory through **actors** (typed ogen clients, see
 below) — no sockets. See `internal/api/site/contacts_test.go`.
 
+A test that needs a **real commit** (code that opens its own connection, the outbox router, concurrent
+workers, a whole `app.App`) cannot ride a transaction. It takes a database of its own instead:
+`testhelper.RealDB(t)` (a `*sql.DB`), `RealDBURL(t)` (a URL, e.g. `t.Setenv("DATABASE_URL", ...)` for
+an app) or `EmptyDBURL(t)` (no schema, to migrate a fresh instance). pgtestdb clones it from a
+template built once per schema or fixture change and drops it when the test ends, so no test
+cleans up by hand or resets state at its start. The test role is a superuser (the fixture
+loader disables foreign-key triggers), as on the shared test database.
+
 **Build test scenarios on the committed fixtures — don't fabricate the primary
 entities inline.** Reference fixture rows through the catalog constants below
 (`fixtures.BroadcastDraftID`, `fixtures.ContactAliceID`, `fixtures.SegmentActiveID`, …),

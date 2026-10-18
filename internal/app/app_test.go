@@ -19,7 +19,6 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -106,11 +105,12 @@ func (s *smtpSink) recipients() []string {
 	return append([]string(nil), s.rcpt...)
 }
 
-// baseline makes sure the test database has its schema and fixtures (the same
-// harness every other package uses) before the app connects to it directly.
+// baseline points the app at a database of the test's own, at the fixture state: the
+// app connects directly and commits for real, outside the txdb harness every other
+// package uses. The database is dropped with the test.
 func baseline(t *testing.T) {
 	t.Helper()
-	testhelper.Setup(t)
+	t.Setenv("DATABASE_URL", testhelper.RealDBURL(t))
 }
 
 func newApp(t *testing.T) *App {
@@ -257,37 +257,21 @@ func TestStopShutsDownTheMetricsServer(t *testing.T) {
 	assert.Error(t, err, "metrics listener stopped accepting after Stop")
 }
 
-// ownedWorkspace creates a throwaway workspace with one owner on the real database
-// (the app connects outside the txdb harness) and removes it afterwards.
+// ownedWorkspace creates a workspace with one owner on the test's own database (the
+// app connects outside the txdb harness).
 func ownedWorkspace(t *testing.T, a *App, slug, ownerEmail string) {
 	t.Helper()
 	ctx := context.Background()
-	client, err := invokeEnt(a)
-	require.NoError(t, err)
-
 	database, err := invokeSQL(a)
 	require.NoError(t, err)
-	var ws *ent.Workspace
-	var u *ent.User
 	// The Workspace feed takes a position only inside a transaction.
 	require.NoError(t, events.New(database).WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		ws = tx.Workspace.Create().SetName("App Test").SetSlug(slug).
+		ws := tx.Workspace.Create().SetName("App Test").SetSlug(slug).
 			SetCollectKey("ck_" + slug).SetIngestKey("ik_" + slug).SaveX(ctx)
-		u = tx.User.Create().SetName("Owner").SetEmail(ownerEmail).SaveX(ctx)
+		u := tx.User.Create().SetName("Owner").SetEmail(ownerEmail).SaveX(ctx)
 		tx.Membership.Create().SetUserID(u.ID).SetWorkspaceID(ws.ID).SetRole(membership.RoleOwner).ExecX(ctx)
 		return nil
 	}))
-	t.Cleanup(func() {
-		// The app commits for real: its audit.entry outbox rows name a Workspace that
-		// is deleted below, and would break every later package that drains the outbox.
-		require.NoError(t, testhelper.PurgeOutbox(context.WithoutCancel(ctx), database))
-		require.NoError(t, events.New(database).WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-			_, err := tx.Membership.Delete().Where(membership.WorkspaceID(ws.ID)).Exec(ctx)
-			return err
-		}))
-		client.User.DeleteOneID(u.ID).ExecX(ctx)
-		client.Workspace.DeleteOneID(ws.ID).ExecX(ctx)
-	})
 }
 
 func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
@@ -378,8 +362,7 @@ func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 }
 
 // The operator command resets a fixture User's Second factor for real (this app
-// commits outside the per-test transaction), so the test restores Sam's factor and
-// Recovery codes and empties the outbox afterwards.
+// commits outside the per-test transaction), on a database of the test's own.
 func TestResetSecondFactorByEmail(t *testing.T) {
 	baseline(t)
 	a, err := NewOperator("test")
@@ -390,28 +373,8 @@ func TestResetSecondFactorByEmail(t *testing.T) {
 	require.NoError(t, err)
 	database, err := invokeSQL(a)
 	require.NoError(t, err)
-	require.NoError(t, testhelper.PurgeOutbox(ctx, database))
 
 	before := client.User.GetX(ctx, fixtures.SecondFactorSamID)
-	codes := client.RecoveryCode.Query().Where(recoverycode.UserID(fixtures.SecondFactorSamID)).AllX(ctx)
-	t.Cleanup(func() {
-		ctx := context.WithoutCancel(ctx)
-		require.NoError(t, testhelper.PurgeOutbox(ctx, database))
-		client.RecoveryCode.Delete().Where(recoverycode.UserID(before.ID)).ExecX(ctx)
-		for _, c := range codes {
-			create := client.RecoveryCode.Create().SetUserID(before.ID).SetCodeHash(c.CodeHash).SetCreatedAt(c.CreatedAt)
-			if c.UsedAt != nil {
-				create.SetUsedAt(*c.UsedAt)
-			}
-			create.ExecX(ctx)
-		}
-		client.User.UpdateOneID(before.ID).
-			SetSecondFactorSecretEncrypted(before.SecondFactorSecretEncrypted).
-			SetNillableSecondFactorConfirmedAt(before.SecondFactorConfirmedAt).
-			SetSecondFactorLastStep(before.SecondFactorLastStep).
-			SetSessionEpoch(before.SessionEpoch).
-			ExecX(ctx)
-	})
 
 	changed, err := a.ResetSecondFactor(ctx, fixtures.SecondFactorSamEmail)
 	require.NoError(t, err)

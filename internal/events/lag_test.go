@@ -28,7 +28,6 @@ func TestOutboxLagIsReportedPerConsumerGroup(t *testing.T) {
 	})
 	require.NoError(t, err)
 	env.AgeOutbox(t, 2*time.Minute)
-	env.ClearOutboxCursors(t)
 	rows := env.OutboxRows(t)
 	last := rows[len(rows)-1]
 	env.SetOutboxCursor(t, events.GroupPersist, last.TxID, &last.Offset)

@@ -17,7 +17,7 @@ import (
 // tables, and is safe to run again.
 func TestApplyMigrationsCreatesRiverSchemaOnEmptyDatabase(t *testing.T) {
 	cfg := &config.Config{
-		DatabaseURL: testhelper.ScratchDatabaseURL(t),
+		DatabaseURL: testhelper.EmptyDBURL(t),
 		DBPool:      config.DBPool{MaxOpenConns: 2, MaxIdleConns: 2, ConnMaxLifetime: time.Minute, PGXMaxConns: 2},
 	}
 

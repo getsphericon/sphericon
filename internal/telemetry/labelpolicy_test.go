@@ -2,7 +2,6 @@ package telemetry_test
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"regexp"
@@ -60,7 +59,7 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 	workspace := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
 	contactEmail := fixtures.ContactAliceEmail
 
-	runHandledDomainEvent(t, cfg, srv.Addr(), contactEmail)
+	runHandledDomainEvent(t, srv.Addr(), contactEmail)
 	runJob(t, env, cfg, srv.Addr(), contactEmail)
 
 	code, body := testhelper.HTTPGet(t, "http://"+srv.Addr()+"/metrics")
@@ -88,14 +87,10 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 
 // runHandledDomainEvent publishes a tenant-bearing event through the outbox and waits
 // until the real router (with the OTel middleware) has handled it.
-func runHandledDomainEvent(t *testing.T, cfg *config.Config, srvAddr, contactEmail string) {
+func runHandledDomainEvent(t *testing.T, srvAddr, contactEmail string) {
 	t.Helper()
 	ctx := context.Background()
-	sqlDB, err := sql.Open("pgx", cfg.DatabaseURL)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = sqlDB.Close() })
-	require.NoError(t, events.InitSchema(ctx, sqlDB))
-	t.Cleanup(func() { _ = testhelper.PurgeOutbox(context.WithoutCancel(ctx), sqlDB) })
+	sqlDB := testhelper.RealDB(t)
 
 	router, err := events.NewRouter()
 	require.NoError(t, err)

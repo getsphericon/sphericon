@@ -26,7 +26,6 @@ const outboxFloor = 7 * 24 * time.Hour
 func pruneEnv(t *testing.T, n int) (*testhelper.TestEnv, []int64) {
 	t.Helper()
 	env := testhelper.Setup(t)
-	env.ClearOutboxCursors(t)
 	ctx := context.Background()
 	for range n {
 		require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
@@ -88,8 +87,6 @@ func TestPruneOutboxSkipsWhenAGroupHasNoOffsetsRow(t *testing.T) {
 	env, off := pruneEnv(t, 2)
 	tx := env.OutboxRows(t)[0].TxID
 	env.AgeOutbox(t, outboxFloor+time.Hour)
-	setAllCursors(t, env, tx, off[1])
-	env.ClearOutboxCursors(t)
 	for _, g := range events.ConsumerGroups()[1:] {
 		acked := off[1]
 		env.SetOutboxCursor(t, g, tx, &acked)
