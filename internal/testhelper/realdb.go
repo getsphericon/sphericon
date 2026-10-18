@@ -69,8 +69,8 @@ func serverConfig(t *testing.T) pgtestdb.Config {
 	}
 }
 
-// baselineMigrator builds the template: the same state initBaseline gives the shared
-// database. Its hash covers every input of that state, so a schema or fixture change
+// baselineMigrator builds the template: the same state initBaseline gives each test
+// process. Its hash covers every input of that state, so a schema or fixture change
 // builds a new template and the old one is never reused.
 type baselineMigrator struct{}
 

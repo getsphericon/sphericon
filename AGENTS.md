@@ -66,7 +66,7 @@ mise run setup          # deps, db:up, migrate, seed, worktrees:gc
 mise run db:up          # ensure the one shared Postgres runs and this checkout's databases exist
 mise run dev            # db:up, then mise daemons start caddy — full dev stack (https://sphericon.localhost; a linked worktree has its own URL, see "Dev environment")
 mise run dev:down       # stop this checkout's dev stack (never the shared Postgres)
-mise run test           # creates the test DB, then `go test -p 1 ./...`
+mise run test           # creates the test DB, then `go test ./...` (packages in parallel)
 mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint (incl. gofmt) + gitleaks + jactionlint + zizmor
 mise run test:cover     # Go suite with coverage, fails under the total in .testcoverage.yml (nightly in CI)
 mise run check:vulns    # govulncheck (nightly in CI, not part of `check`)
@@ -115,14 +115,23 @@ them (`mise run check:fe ::: check:deps`); otherwise the extra names become argu
 Run Go tests only through `mise run test`: it sets `APP_ENV=test` and the test DB, and a bare
 `go test` opens the dev database and fails.
 
+Test packages run in parallel, each process on a database of its own: it leases `<test db>_w<i>`
+(an advisory lock on the shared test database, released when the process ends), cloned from
+`<test db>_tpl_<hash>`, a template built once per hash of the schema, fixtures and bus
+(`internal/testhelper/workerdb.go`). `DATABASE_URL` is rewritten to that database for the
+process, so a test that loads the config reaches it too. `worktrees:gc` keeps these with their
+checkout. The end-to-end suite keeps one database and `-p 1`.
+
 Run a single Go test (arguments after `--` go to `go test`; the default is `./...`):
 
 ```sh
 mise run test -- ./internal/api/site -run TestSiteContactsRequireAuth
 ```
 
-Go tests always run with `-shuffle=on` (the seed is printed; reproduce an order with
-`-shuffle=<seed>`), so a test must not depend on another's side effects.
+CI runs the Go tests with `-shuffle=on` (the seed is printed; reproduce an order with
+`mise run test -- -shuffle=<seed>`), so a test must not depend on another's side effects. Locally
+`mise run test` leaves shuffling off because any `-shuffle` flag disables Go's test result cache: an
+unchanged package is `(cached)` on the next run (`-count=1` forces a run).
 
 End-to-end suite (ADR 0024, `e2e/` behind the `e2e` build tag, not part of `mise run test`):
 `mise run test:e2e` rebuilds the checkout's `<PGDATABASE>_e2e` database, starts its own Mailpit and boots the
