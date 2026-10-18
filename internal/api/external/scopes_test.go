@@ -114,7 +114,7 @@ func TestOAuthScopesAreInTheTokenScopeEnum(t *testing.T) {
 
 // The workspace UI offers every token scope: its option list must be the enum.
 func TestApiKeysUIOffersEveryTokenScope(t *testing.T) {
-	src, err := os.ReadFile("../../../src/routes/workspace/ApiKeysSection.tsx")
+	src, err := os.ReadFile("../../../src/pages/workspace/ApiKeysSection.tsx")
 	require.NoError(t, err)
 	text := string(src)
 	start := strings.Index(text, "SCOPE_OPTIONS = [")
