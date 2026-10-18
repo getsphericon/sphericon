@@ -25,7 +25,10 @@ const user: SiteUserResource = {
 const noContent = () => new Response(null, { status: 204 })
 
 type Op = 'get' | 'update' | 'emailChange' | 'signOutEverywhere'
-type Call = { op: Op; body: unknown }
+interface Call {
+  op: Op
+  body: unknown
+}
 type Handler = (req: Request) => Response | Promise<Response>
 
 // Serves the profile endpoints and records every mutating call.

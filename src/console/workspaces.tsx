@@ -121,7 +121,7 @@ export function ConsoleWorkspacesPage() {
           },
         ]}
         onRowClick={({ record }) =>
-          navigate({ to: consoleWorkspaceRoute.to, params: { workspaceId: record.id } })
+          void navigate({ to: consoleWorkspaceRoute.to, params: { workspaceId: record.id } })
         }
         noRecordsText={t(($) => $.console.workspaces.empty)}
         totalRecords={workspacesQuery.data?.totalItems ?? 0}

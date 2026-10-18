@@ -20,7 +20,10 @@ import { worker } from '../../test/worker.ts'
 import { SecurityPage } from './security.tsx'
 
 type Op = 'start' | 'confirm' | 'regenerate' | 'disable'
-type Call = { op: Op; body: unknown }
+interface Call {
+  op: Op
+  body: unknown
+}
 type Handler = (req: Request) => Response | Promise<Response>
 
 const enrollment: SiteSecondFactorEnrollment = {

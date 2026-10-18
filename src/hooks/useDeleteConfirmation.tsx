@@ -3,7 +3,7 @@ import { modals } from '@mantine/modals'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-type DeleteConfirmationOptions = {
+interface DeleteConfirmationOptions {
   title?: ReactNode
   description?: ReactNode
   confirmLabel?: ReactNode

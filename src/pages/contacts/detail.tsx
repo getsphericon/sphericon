@@ -42,8 +42,12 @@ function Field({ label, value }: { label: string; value: string }) {
 // Custom field values are typed (string/number/bool/…); render scalars directly and
 // anything richer as compact JSON.
 function formatCustomValue(value: unknown): string {
-  if (value == null) return ''
-  if (typeof value === 'string') return value
+  if (value === null || value === undefined) {
+    return ''
+  }
+  if (typeof value === 'string') {
+    return value
+  }
   return JSON.stringify(value)
 }
 
@@ -67,7 +71,7 @@ export function ContactDetailPage() {
     setPage(1)
   }
 
-  const contactQuery = useQuery(siteContactsGetOptions({ path: { slug: slug, id: contactId } }))
+  const contactQuery = useQuery(siteContactsGetOptions({ path: { slug, id: contactId } }))
 
   const contact = contactQuery.data
 
@@ -76,7 +80,7 @@ export function ContactDetailPage() {
   // would miss.
   const eventsQuery = useQuery(
     siteEventsListOptions({
-      path: { slug: slug },
+      path: { slug },
       query: { page, pageSize: EVENTS_PAGE_SIZE, contactId },
     }),
   )
@@ -118,7 +122,9 @@ export function ContactDetailPage() {
       }),
   })
 
-  if (contactQuery.isLoading) return <Loader />
+  if (contactQuery.isLoading) {
+    return <Loader />
+  }
 
   if (contactQuery.isError || !contact) {
     return (

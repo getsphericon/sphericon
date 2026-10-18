@@ -23,7 +23,10 @@ const event = (id: string, over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
-type Query = { page: string | null; action: string | null }
+interface Query {
+  page: string | null
+  action: string | null
+}
 
 function serveEvents(queries: Query[], totalItems = 1) {
   worker.use(

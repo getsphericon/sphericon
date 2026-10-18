@@ -165,13 +165,13 @@ test('send and schedule are disabled for a non-draft broadcast, test send stays 
 })
 
 test('editing shows no form while the broadcast loads, then the loaded values', async () => {
-  const gate = Promise.withResolvers<void>()
+  const gate = Promise.withResolvers<undefined>()
   serve('draft', gate.promise)
 
   const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
 
   await expect.element(screen.getByLabelText(/^Name/)).not.toBeInTheDocument()
-  gate.resolve()
+  gate.resolve(undefined)
 
   await expect.element(screen.getByLabelText(/^Name/)).toHaveValue('Launch')
 })

@@ -31,7 +31,7 @@ test('confirms the new email on mount and links to sign in', async () => {
 })
 
 test('shows a loading state while the request is in flight', async () => {
-  worker.use(handleSiteAuthConfirmEmailChange(() => new Promise<never>(() => undefined)))
+  worker.use(handleSiteAuthConfirmEmailChange(() => new Promise<never>(() => {})))
   const { screen } = await renderWithRouter(<ConfirmEmailChangePage />, MOUNT)
 
   await expect.element(screen.getByText('Confirming your new email…')).toBeInTheDocument()

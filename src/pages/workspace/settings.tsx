@@ -99,7 +99,7 @@ function InstallStatus({ slug }: { slug: string }) {
   const { t } = useTranslation()
   const statusQuery = useQuery({
     ...siteEventsListOptions({
-      path: { slug: slug },
+      path: { slug },
       query: { page: 1, pageSize: 1 },
     }),
     refetchInterval: 5000,
@@ -224,7 +224,7 @@ export function SettingsPage() {
   // The Audit log filter rides in the route's search, validated by the route.
   const auditFilter = settingsRoute.useSearch()
   const setAuditFilter = (filter: AuditFilter) =>
-    navigate({ to: settingsRoute.to, params: { slug }, search: filter })
+    void navigate({ to: settingsRoute.to, params: { slug }, search: filter })
 
   return (
     <Stack>

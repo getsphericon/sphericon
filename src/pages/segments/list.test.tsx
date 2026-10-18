@@ -69,7 +69,7 @@ test('deleting a segment asks for confirmation, deletes it and refreshes the lis
     handleSiteSegmentsList(() => {
       listFetches++
       return HttpResponse.json({
-        items: deleted.length ? [TRIAL] : [VIPS, TRIAL],
+        items: deleted.length > 0 ? [TRIAL] : [VIPS, TRIAL],
         totalItems: 2,
       })
     }),

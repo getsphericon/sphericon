@@ -35,8 +35,12 @@ export function BroadcastForm({
 
   const applyTemplate = (id: string | null) => {
     const tpl = templates.find((x) => x.id === id)
-    if (!tpl) return
-    if (tpl.subject) form.setFieldValue('subject', tpl.subject)
+    if (!tpl) {
+      return
+    }
+    if (tpl.subject) {
+      form.setFieldValue('subject', tpl.subject)
+    }
     form.setFieldValue('body', tpl.body)
   }
 

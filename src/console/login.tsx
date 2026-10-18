@@ -27,7 +27,10 @@ import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 
 // What the password step granted: a code to enter, plus the secret to add to an
 // authenticator app when the Operator has no TOTP yet (first login).
-type CodeStep = { challenge: string; enrolment: OperatorEnrolment | undefined }
+interface CodeStep {
+  challenge: string
+  enrolment: OperatorEnrolment | undefined
+}
 
 export function ConsoleLoginPage() {
   const { t } = useTranslation()

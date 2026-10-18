@@ -2,12 +2,8 @@ import { Box, Stack, useComputedColorScheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  type IntegrationDataFormat,
-  type OnSaveExternal,
-  useWorkflowBuilderActions,
-  WorkflowBuilder,
-} from '@workflowbuilder/sdk'
+import { useWorkflowBuilderActions, WorkflowBuilder } from '@workflowbuilder/sdk'
+import type { IntegrationDataFormat, OnSaveExternal } from '@workflowbuilder/sdk'
 import i18next from 'i18next'
 import { useCallback, useEffect, useLayoutEffect, useMemo } from 'react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
@@ -19,10 +15,8 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { getApiErrorMessage } from '../../utils/apiErrors.ts'
-import {
-  AutomationDetailsFields,
-  type AutomationDetailsValues,
-} from './AutomationDetailsFields.tsx'
+import { AutomationDetailsFields } from './AutomationDetailsFields.tsx'
+import type { AutomationDetailsValues } from './AutomationDetailsFields.tsx'
 import { graphToSteps, stepsToGraph } from './definition.ts'
 import { useAutomationNodeTypes } from './nodes.tsx'
 
@@ -71,7 +65,7 @@ export function AutomationBuilder({ slug, automation }: AutomationBuilderProps) 
     const style = document.createElement('style')
     style.dataset.workflowBuilder = ''
     style.textContent = builderStyles
-    document.head.appendChild(style)
+    document.head.append(style)
     return () => style.remove()
   }, [])
 
@@ -85,10 +79,10 @@ export function AutomationBuilder({ slug, automation }: AutomationBuilderProps) 
     ...siteAutomationsUpdateMutation(),
     onSuccess: async (updated) => {
       await queryClient.invalidateQueries({
-        queryKey: siteAutomationsListQueryKey({ path: { slug: slug } }),
+        queryKey: siteAutomationsListQueryKey({ path: { slug } }),
       })
       await queryClient.invalidateQueries({
-        queryKey: siteAutomationsGetQueryKey({ path: { slug: slug, id: updated.id } }),
+        queryKey: siteAutomationsGetQueryKey({ path: { slug, id: updated.id } }),
       })
     },
   })
@@ -106,7 +100,7 @@ export function AutomationBuilder({ slug, automation }: AutomationBuilderProps) 
       const values = form.getValues()
       try {
         await updateMutation.mutateAsync({
-          path: { slug: slug, id: automation.id },
+          path: { slug, id: automation.id },
           body: {
             name: values.name.trim(),
             triggerEvent: values.triggerEvent,

@@ -45,7 +45,7 @@ function Root() {
   )
 }
 
-const container = document.getElementById('root')
+const container = document.querySelector('#root')
 if (!container) {
   throw new Error('Root element not found')
 }

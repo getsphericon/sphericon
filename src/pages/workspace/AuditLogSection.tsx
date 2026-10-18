@@ -37,7 +37,8 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as settingsRoute } from '../../routes/workspaces/$slug/settings.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 import { formatDateTime } from '../../utils/datetime.ts'
-import { type AuditFilter, auditQuery } from './auditFilter.ts'
+import { auditQuery } from './auditFilter.ts'
+import type { AuditFilter } from './auditFilter.ts'
 
 const PAGE_SIZE = 25
 // The API answers 402 without an Enterprise license and 403 to a plain member; in both
@@ -51,11 +52,13 @@ function isHidden(error: unknown) {
 function ActorLabel({ entry }: { entry: SiteAuditEntryResource }) {
   const { t } = useTranslation()
   const { kind, name, id } = entry.actor
-  if (kind === 'system') return <>{t(($) => $.settings.auditLog.actorSystem)}</>
-  if (kind === 'api_token') {
-    return <>{name ?? t(($) => $.settings.auditLog.actorToken, { id: id ?? '' })}</>
+  if (kind === 'system') {
+    return t(($) => $.settings.auditLog.actorSystem)
   }
-  return <>{name ?? id ?? ''}</>
+  if (kind === 'api_token') {
+    return name ?? t(($) => $.settings.auditLog.actorToken, { id: id ?? '' })
+  }
+  return name ?? id ?? ''
 }
 
 function TargetLabel({ entry }: { entry: SiteAuditEntryResource }) {
@@ -187,8 +190,12 @@ function AuditPage({
     }),
   )
 
-  if (query.isLoading) return <Loader size="sm" />
-  if (isHidden(query.error)) return null
+  if (query.isLoading) {
+    return <Loader size="sm" />
+  }
+  if (isHidden(query.error)) {
+    return null
+  }
   if (query.isError) {
     return (
       <Alert color="red" title={t(($) => $.settings.auditLog.loadError)}>
@@ -260,7 +267,7 @@ function ExportButton({ slug, filter }: { slug: string; filter: AuditFilter }) {
   const queryClient = useQueryClient()
   const exportCsv = useMutation({
     mutationFn: () =>
-      queryClient.fetchQuery({
+      queryClient.query({
         ...siteAuditExportOptions({ path: { slug }, query: auditQuery(filter) }),
         staleTime: 0,
         gcTime: 0,
@@ -330,7 +337,9 @@ function RetentionForm({ slug, days }: { slug: string; days: number | null }) {
 // nothing where the setting is not offered (a plain member, or no license).
 function RetentionControl({ slug }: { slug: string }) {
   const query = useQuery(siteAuditGetRetentionOptions({ path: { slug } }))
-  if (!query.isSuccess) return null
+  if (!query.isSuccess) {
+    return null
+  }
   return (
     <RetentionForm
       key={String(query.data.retentionDays)}
@@ -392,12 +401,20 @@ function FilterForm({
         const next: AuditFilter = {}
         for (const field of TEXT_FIELDS) {
           const value = values[field].trim()
-          if (value) next[field] = value
+          if (value) {
+            next[field] = value
+          }
         }
-        if (values.from) next.from = values.from
-        if (values.to) next.to = values.to
+        if (values.from) {
+          next.from = values.from
+        }
+        if (values.to) {
+          next.to = values.to
+        }
         const kind = auditFilterKind(values.actorKind)
-        if (kind) next.actorKind = kind
+        if (kind) {
+          next.actorKind = kind
+        }
         onChange(next)
       })}
     >
@@ -468,7 +485,9 @@ export function ChangeHistoryLink({
 }) {
   const { t } = useTranslation()
   const probe = useQuery(siteAuditListOptions({ path: { slug }, query: { limit: 1 } }))
-  if (!probe.isSuccess) return null
+  if (!probe.isSuccess) {
+    return null
+  }
 
   return (
     <ButtonLink
@@ -483,12 +502,15 @@ export function ChangeHistoryLink({
   )
 }
 
+// A stable default: a fresh `{}` per render would defeat memoisation of anything keyed on `filter`.
+const NO_FILTER: AuditFilter = {}
+
 // AuditLogSection is the Enterprise Audit log of the workspace: who changed what and
 // when, newest first, narrowed by `filter`. It renders nothing for a plain member or
 // without a license.
 export function AuditLogSection({
   slug,
-  filter = {},
+  filter = NO_FILTER,
   onFilterChange,
 }: {
   slug: string
@@ -497,7 +519,9 @@ export function AuditLogSection({
 }) {
   const { t } = useTranslation()
   const probe = useQuery(siteAuditListOptions({ path: { slug }, query: { limit: 1 } }))
-  if (isHidden(probe.error)) return null
+  if (isHidden(probe.error)) {
+    return null
+  }
   const filterKey = JSON.stringify(filter)
 
   return (

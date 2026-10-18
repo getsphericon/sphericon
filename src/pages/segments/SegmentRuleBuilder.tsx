@@ -3,14 +3,16 @@ import { QueryBuilderMantine } from '@react-querybuilder/mantine'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type Field, type Operator, QueryBuilder } from 'react-querybuilder'
+import { QueryBuilder } from 'react-querybuilder'
+import type { Field, Operator } from 'react-querybuilder'
 
 import {
   siteCustomFieldsListOptions,
   siteEventsActionsOptions,
   siteSegmentsPreviewMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { SiteSegmentOperator, type SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
+import { SiteSegmentOperator } from '../../generated/site/types.gen.ts'
+import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
 import { toGroup, toQuery } from './rules.ts'
 
 // What the backend segment engine compiles for each kind of field.
@@ -64,10 +66,10 @@ export function SegmentRuleBuilder({ slug, value, onChange }: SegmentRuleBuilder
 
   // The workspace's distinct event actions become behavioral fields
   // ("event:<action>") that compile to an EXISTS against the events log.
-  const actionsQuery = useQuery(siteEventsActionsOptions({ path: { slug: slug } }))
+  const actionsQuery = useQuery(siteEventsActionsOptions({ path: { slug } }))
   // The typed Custom field catalogue (ADR 0006) becomes targetable fields
   // ("custom:<key>") alongside the core fields — one governed attribute list.
-  const customFieldsQuery = useQuery(siteCustomFieldsListOptions({ path: { slug: slug } }))
+  const customFieldsQuery = useQuery(siteCustomFieldsListOptions({ path: { slug } }))
   const fields = useMemo<Field[]>(() => {
     const customFields = (customFieldsQuery.data?.items ?? []).map<Field>((f) => ({
       name: `custom:${f.key}`,
@@ -101,7 +103,7 @@ export function SegmentRuleBuilder({ slug, value, onChange }: SegmentRuleBuilder
           variant="light"
           size="compact-sm"
           loading={preview.isPending}
-          onClick={() => preview.mutate({ path: { slug: slug }, body: { definition: value } })}
+          onClick={() => preview.mutate({ path: { slug }, body: { definition: value } })}
         >
           {t(($) => $.segments.previewButton)}
         </Button>

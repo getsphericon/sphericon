@@ -32,7 +32,7 @@ import type {
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
 
-type ProfileFormValues = {
+interface ProfileFormValues {
   name: string
   currentPassword: string
   newPassword: string

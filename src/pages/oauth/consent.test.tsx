@@ -67,7 +67,9 @@ test('shows the client and its permissions, with sending off by default', async 
 
 test('approving without the send opt-in does not allow sending', async () => {
   const decisions: unknown[] = []
-  mockConsentApi((body) => decisions.push(body))
+  mockConsentApi((body) => {
+    decisions.push(body)
+  })
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await screen.getByRole('button', { name: 'Allow access' }).click()
@@ -84,7 +86,9 @@ test('approving without the send opt-in does not allow sending', async () => {
 
 test('ticking the send opt-in is carried to the decision', async () => {
   const decisions: unknown[] = []
-  mockConsentApi((body) => decisions.push(body))
+  mockConsentApi((body) => {
+    decisions.push(body)
+  })
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await screen.getByLabelText(/Also allow sending/).click()
@@ -96,7 +100,9 @@ test('ticking the send opt-in is carried to the decision', async () => {
 
 test('denying sends approve=false', async () => {
   const decisions: unknown[] = []
-  mockConsentApi((body) => decisions.push(body))
+  mockConsentApi((body) => {
+    decisions.push(body)
+  })
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await screen.getByRole('button', { name: 'Deny' }).click()

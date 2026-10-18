@@ -12,7 +12,10 @@ import { definitionCodec, emptyGroup } from './rules.ts'
 import { SegmentRuleBuilder } from './SegmentRuleBuilder.tsx'
 
 // A Segment is always a rule, so the payload carries a rule group.
-export type SegmentPayload = { name: string; definition: SiteSegmentRuleGroup }
+export interface SegmentPayload {
+  name: string
+  definition: SiteSegmentRuleGroup
+}
 
 export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<SegmentPayload>) {
   const { t } = useTranslation()

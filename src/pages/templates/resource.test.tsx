@@ -90,7 +90,7 @@ test('editing shows a loader, then existing values; cleared fields are sent as e
   const bodies: unknown[] = []
   let detailFetches = 0
   let listFetches = 0
-  const detailGate = Promise.withResolvers<void>()
+  const detailGate = Promise.withResolvers<undefined>()
   worker.use(
     handleSiteTemplatesUpdate(async ({ request }) => {
       bodies.push(await request.json())
@@ -102,7 +102,9 @@ test('editing shows a loader, then existing values; cleared fields are sent as e
     }),
     handleSiteTemplatesGet(async () => {
       detailFetches++
-      if (detailFetches === 1) await detailGate.promise
+      if (detailFetches === 1) {
+        await detailGate.promise
+      }
       return HttpResponse.json({ id: '7', name: 'Welcome', subject: 'Hi', body: '<p>x</p>' })
     }),
   )
@@ -117,7 +119,7 @@ test('editing shows a loader, then existing values; cleared fields are sent as e
   )
 
   await expect.element(screen.getByLabelText('Name', { exact: false })).not.toBeInTheDocument()
-  detailGate.resolve()
+  detailGate.resolve(undefined)
 
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Welcome')
   await expect.element(screen.getByLabelText('Subject')).toHaveValue('Hi')

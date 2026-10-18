@@ -26,7 +26,7 @@ import { getApiErrorMessage, isForbiddenError } from '../../utils/apiErrors.ts'
 
 // The authorization request exactly as the OAuth client sent it (the backend's
 // /oauth/authorize hands the browser here with the same query string).
-export type ConsentRequest = {
+export interface ConsentRequest {
   clientId: string
   redirectUri: string
   codeChallenge: string

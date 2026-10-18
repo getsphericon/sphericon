@@ -9,7 +9,9 @@ export const Route = createFileRoute('/console/_authed')({
   beforeLoad: async () => {
     const { operatorMeGet } = await import('../../../generated/operator/sdk.gen.ts')
     const { data } = await operatorMeGet()
-    if (!data) throw redirect({ to: consoleLoginRoute.to })
+    if (!data) {
+      throw redirect({ to: consoleLoginRoute.to })
+    }
     return { operator: data }
   },
   component: ConsoleLayout,

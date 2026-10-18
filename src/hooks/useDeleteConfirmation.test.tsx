@@ -9,7 +9,11 @@ const OPEN = 'Open'
 
 function Harness({ options }: { options: Options }) {
   const confirmDelete = useDeleteConfirmation()
-  return <button onClick={() => confirmDelete(options)}>{OPEN}</button>
+  return (
+    <button type="button" onClick={() => confirmDelete(options)}>
+      {OPEN}
+    </button>
+  )
 }
 
 test('shows the default copy and runs onConfirm when confirmed', async () => {

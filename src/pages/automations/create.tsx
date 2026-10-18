@@ -12,10 +12,8 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$slug/automations/$automationId/edit.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$slug/automations/index.tsx'
 import { Route as automationsCreateRoute } from '../../routes/workspaces/$slug/automations/new.tsx'
-import {
-  AutomationDetailsFields,
-  type AutomationDetailsValues,
-} from './AutomationDetailsFields.tsx'
+import { AutomationDetailsFields } from './AutomationDetailsFields.tsx'
+import type { AutomationDetailsValues } from './AutomationDetailsFields.tsx'
 
 // Create captures only name + trigger, then redirects into the visual builder
 // (edit) where the flow itself is designed — so the builder always has an id.
@@ -30,7 +28,7 @@ export function AutomationCreatePage() {
 
   const createMutation = useResourceMutation({
     mutation: siteAutomationsCreateMutation(),
-    invalidate: [siteAutomationsListQueryKey({ path: { slug: slug } })],
+    invalidate: [siteAutomationsListQueryKey({ path: { slug } })],
     successMessage: t(($) => $.notifications.automationCreated),
     errorTitle: t(($) => $.alerts.automationSaveErrorTitle),
     onDone: (created) =>
@@ -43,7 +41,7 @@ export function AutomationCreatePage() {
       <form
         onSubmit={form.onSubmit((values) =>
           createMutation.mutate({
-            path: { slug: slug },
+            path: { slug },
             body: { name: values.name.trim(), triggerEvent: values.triggerEvent },
           }),
         )}

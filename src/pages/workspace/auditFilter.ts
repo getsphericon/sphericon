@@ -33,7 +33,9 @@ function startOfDay(date: string) {
 // start and an exclusive end (the start of the day after `to`), in the viewer's timezone.
 export function auditQuery(filter: AuditFilter) {
   const to = filter.to ? startOfDay(filter.to) : undefined
-  if (to) to.setDate(to.getDate() + 1)
+  if (to) {
+    to.setDate(to.getDate() + 1)
+  }
   return {
     ...(filter.from ? { from: startOfDay(filter.from).toISOString() } : {}),
     ...(to ? { to: to.toISOString() } : {}),

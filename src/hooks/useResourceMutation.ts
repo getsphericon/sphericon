@@ -1,10 +1,6 @@
 import { notifications } from '@mantine/notifications'
-import {
-  type QueryKey,
-  type UseMutationOptions,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { QueryKey, UseMutationOptions } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { isForbiddenError } from '../utils/apiErrors.ts'
