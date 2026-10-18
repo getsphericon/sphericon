@@ -12,7 +12,7 @@ value stored in the database, derived from nothing.
 
 The **Release check** is a separate channel: a daily GET of the public GitHub Releases `latest`
 (prereleases excluded) that sends nothing about the Instance, feeding an admin-only banner. It has its
-own switch, so an operator who refuses telemetry still learns about a security release.
+own switch, so a self-hoster who refuses telemetry still learns about a security release.
 
 Consent: both are on by default. `SPHERICON_TELEMETRY` and `SPHERICON_RELEASE_CHECK` switch them off
 independently; `DO_NOT_TRACK=1` switches the report off and can never switch it on. An explicit
@@ -31,7 +31,7 @@ repository and stores no source address.
 - **Opt-in.** Rejected: opt-in installs report in single-digit percentages, which makes the data
   useless; the notice, the preview and the published schema carry the honesty instead.
 - **One channel and one switch for version check and report (the first ROADMAP draft).** Rejected:
-  refusing telemetry would also hide the "a release exists" banner, a security cost the operator should
+  refusing telemetry would also hide the "a release exists" banner, a security cost the self-hoster should
   not pay for privacy.
 - **PostHog SDK in the binary.** Rejected: a third-party SDK and a third party seeing every address for
   a single daily POST; our own endpoint decides what is kept.

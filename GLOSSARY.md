@@ -76,7 +76,7 @@ Unsubscribe and Suppression rows for its Destinations. It leaves a PII-free `con
 Event, stored without any Contact reference (its webhook delivery carries the customer's own
 subject_id so downstream copies can be erased). A person who later reappears (Identify, import) is a new Contact and
 is not blocked; surviving opt-outs still apply to them. The Workspace is the controller and sphericon
-the processor, so Erasure is an operator action, never a data-subject self-service form.
+the processor, so Erasure is a Workspace action, never a data-subject self-service form.
 _Avoid_: Anonymization (that is only what happens to the delivery rows), forget, purge (purge is
 bulk retention policy, a separate concern)
 
@@ -219,8 +219,8 @@ _Avoid_: Status, result (unqualified)
 **Send rate limit**:
 The ceiling an Integration puts on how fast mail may leave it: a maximum messages per second and a
 maximum messages per rolling 24 hours, mirroring what the external provider account allows.
-The provider reports its own ceiling where it can (SES) and an operator may set one; the lower of
-the two applies (the operator's on a tie), and with neither the Integration is unlimited. Applies
+The provider reports its own ceiling where it can (SES) and a user may set one; the lower of
+the two applies (the user's on a tie), and with neither the Integration is unlimited. Applies
 to Broadcast and Automation sends; Transactional sends are never delayed or deferred by it but
 still count against the 24-hour total.
 _Avoid_: Throttle (as a noun for the limit), quota
@@ -605,9 +605,27 @@ _Avoid_: Update ping, phone-home
 **Telemetry report**:
 The anonymous, exactly documented summary an Instance sends to the project: coarse facts about the
 Instance, never about a Workspace, Contact or person. On by default, switchable off by the
-operator's configuration (which then wins) or by the owner in the app. Not the operator's own
-OpenTelemetry metrics, which go to a collector the operator chooses.
+Self-hoster's configuration (which then wins) or by the owner in the app. Not the Self-hoster's own
+OpenTelemetry metrics, which go to a collector the Self-hoster chooses.
 _Avoid_: Usage ping, phone-home, analytics, tracking (that is the tracker on customer sites)
+
+**Self-hoster**:
+The person or team that runs an Instance on their own infrastructure. The app knows no such
+identity, only Users; the owner of the Instance's first Workspace may or may not be the Self-hoster.
+_Avoid_: Operator (the former name of a platform Staff member), system administrator, sysadmin,
+admin (that is a Workspace Role)
+
+**Upgrade**:
+Moving an Instance to a newer release: the new version of the app and the database changes it
+needs, applied before the new version serves anything. An Upgrade never stops an Instance that is
+running.
+_Avoid_: Update, migration (that is only the database part), deploy
+
+**Major**:
+A release that may remove what earlier releases added: a table, a column, a field of a queued job or
+event. Every release between two Majors only adds. An Upgrade may skip any releases inside a Major
+but passes through the last release of each Major it crosses; before 1.0 each `0.MINOR` is a Major.
+_Avoid_: Breaking release
 
 ## Channels & future surfaces
 
