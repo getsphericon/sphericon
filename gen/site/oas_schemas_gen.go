@@ -2829,6 +2829,52 @@ func (o OptSiteSuppressionChannel) Or(d SiteSuppressionChannel) SiteSuppressionC
 	return d
 }
 
+// NewOptSiteWebhookFailure returns new OptSiteWebhookFailure with value set to v.
+func NewOptSiteWebhookFailure(v SiteWebhookFailure) OptSiteWebhookFailure {
+	return OptSiteWebhookFailure{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteWebhookFailure is optional SiteWebhookFailure.
+type OptSiteWebhookFailure struct {
+	Value SiteWebhookFailure
+	Set   bool
+}
+
+// IsSet returns true if OptSiteWebhookFailure was set.
+func (o OptSiteWebhookFailure) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteWebhookFailure) Reset() {
+	var v SiteWebhookFailure
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteWebhookFailure) SetTo(v SiteWebhookFailure) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteWebhookFailure) Get() (v SiteWebhookFailure, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteWebhookFailure) Or(d SiteWebhookFailure) SiteWebhookFailure {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptString returns new OptString with value set to v.
 func NewOptString(v string) OptString {
 	return OptString{
@@ -11797,12 +11843,15 @@ type SiteWebhookEndpointResource struct {
 	ID EntityId `json:"id"`
 	// Destination URL events are POSTed to.
 	URL string `json:"url"`
-	// HMAC signing secret (used to verify the X-sphericon-Signature header).
+	// HMAC signing secret (receivers verify the webhook-id, webhook-timestamp and webhook-signature
+	// headers, the Standard Webhooks scheme).
 	Secret string `json:"secret"`
 	// Event names this endpoint receives; empty means all events.
 	EventTypes []string `json:"eventTypes"`
 	// Whether the endpoint receives deliveries.
 	Enabled bool `json:"enabled"`
+	// Present while deliveries are failing; cleared by the next 2xx.
+	Failure OptSiteWebhookFailure `json:"failure"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -11832,6 +11881,11 @@ func (s *SiteWebhookEndpointResource) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *SiteWebhookEndpointResource) GetEnabled() bool {
 	return s.Enabled
+}
+
+// GetFailure returns the value of Failure.
+func (s *SiteWebhookEndpointResource) GetFailure() OptSiteWebhookFailure {
+	return s.Failure
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -11869,6 +11923,11 @@ func (s *SiteWebhookEndpointResource) SetEnabled(val bool) {
 	s.Enabled = val
 }
 
+// SetFailure sets the value of Failure.
+func (s *SiteWebhookEndpointResource) SetFailure(val OptSiteWebhookFailure) {
+	s.Failure = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteWebhookEndpointResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -11882,6 +11941,130 @@ func (s *SiteWebhookEndpointResource) SetUpdatedAt(val Timestamp) {
 func (*SiteWebhookEndpointResource) siteWebhooksCreateRes() {}
 func (*SiteWebhookEndpointResource) siteWebhooksGetRes()    {}
 func (*SiteWebhookEndpointResource) siteWebhooksUpdateRes() {}
+
+// Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in time),
+// `blocked_address` (the URL names an address this instance does not permit), `http_status` (a non-2xx
+// answer, see `status`) and `network` (any other transport failure).
+// Ref: #/components/schemas/SiteWebhookErrorKind
+type SiteWebhookErrorKind string
+
+const (
+	SiteWebhookErrorKindTimeout        SiteWebhookErrorKind = "timeout"
+	SiteWebhookErrorKindBlockedAddress SiteWebhookErrorKind = "blocked_address"
+	SiteWebhookErrorKindHTTPStatus     SiteWebhookErrorKind = "http_status"
+	SiteWebhookErrorKindNetwork        SiteWebhookErrorKind = "network"
+)
+
+// AllValues returns all SiteWebhookErrorKind values.
+func (SiteWebhookErrorKind) AllValues() []SiteWebhookErrorKind {
+	return []SiteWebhookErrorKind{
+		SiteWebhookErrorKindTimeout,
+		SiteWebhookErrorKindBlockedAddress,
+		SiteWebhookErrorKindHTTPStatus,
+		SiteWebhookErrorKindNetwork,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteWebhookErrorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteWebhookErrorKindTimeout:
+		return []byte(s), nil
+	case SiteWebhookErrorKindBlockedAddress:
+		return []byte(s), nil
+	case SiteWebhookErrorKindHTTPStatus:
+		return []byte(s), nil
+	case SiteWebhookErrorKindNetwork:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteWebhookErrorKind) UnmarshalText(data []byte) error {
+	switch SiteWebhookErrorKind(data) {
+	case SiteWebhookErrorKindTimeout:
+		*s = SiteWebhookErrorKindTimeout
+		return nil
+	case SiteWebhookErrorKindBlockedAddress:
+		*s = SiteWebhookErrorKindBlockedAddress
+		return nil
+	case SiteWebhookErrorKindHTTPStatus:
+		*s = SiteWebhookErrorKindHTTPStatus
+		return nil
+	case SiteWebhookErrorKindNetwork:
+		*s = SiteWebhookErrorKindNetwork
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The failure state of an endpoint that is currently failing; absent while it is healthy.
+// Ref: #/components/schemas/SiteWebhookFailure
+type SiteWebhookFailure struct {
+	// Deliveries that failed in a row.
+	ConsecutiveFailures int32 `json:"consecutiveFailures"`
+	// When the current run of failures began.
+	Since Timestamp `json:"since"`
+	// When the latest delivery failed.
+	LastFailureAt Timestamp `json:"lastFailureAt"`
+	// Kind of the latest failure.
+	Kind SiteWebhookErrorKind `json:"kind"`
+	// HTTP status of the latest failure; present only for kind `http_status`.
+	Status OptInt32 `json:"status"`
+}
+
+// GetConsecutiveFailures returns the value of ConsecutiveFailures.
+func (s *SiteWebhookFailure) GetConsecutiveFailures() int32 {
+	return s.ConsecutiveFailures
+}
+
+// GetSince returns the value of Since.
+func (s *SiteWebhookFailure) GetSince() Timestamp {
+	return s.Since
+}
+
+// GetLastFailureAt returns the value of LastFailureAt.
+func (s *SiteWebhookFailure) GetLastFailureAt() Timestamp {
+	return s.LastFailureAt
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteWebhookFailure) GetKind() SiteWebhookErrorKind {
+	return s.Kind
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteWebhookFailure) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// SetConsecutiveFailures sets the value of ConsecutiveFailures.
+func (s *SiteWebhookFailure) SetConsecutiveFailures(val int32) {
+	s.ConsecutiveFailures = val
+}
+
+// SetSince sets the value of Since.
+func (s *SiteWebhookFailure) SetSince(val Timestamp) {
+	s.Since = val
+}
+
+// SetLastFailureAt sets the value of LastFailureAt.
+func (s *SiteWebhookFailure) SetLastFailureAt(val Timestamp) {
+	s.LastFailureAt = val
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteWebhookFailure) SetKind(val SiteWebhookErrorKind) {
+	s.Kind = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteWebhookFailure) SetStatus(val OptInt32) {
+	s.Status = val
+}
 
 type SiteWebhooksCreateNotFound ProblemDetails
 

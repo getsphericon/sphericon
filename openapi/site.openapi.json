@@ -10662,7 +10662,7 @@
           },
           "secret": {
             "type": "string",
-            "description": "HMAC signing secret (used to verify the X-sphericon-Signature header)"
+            "description": "HMAC signing secret (receivers verify the webhook-id, webhook-timestamp and webhook-signature headers, the Standard Webhooks scheme)"
           },
           "eventTypes": {
             "type": "array",
@@ -10674,6 +10674,14 @@
           "enabled": {
             "type": "boolean",
             "description": "Whether the endpoint receives deliveries"
+          },
+          "failure": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteWebhookFailure"
+              }
+            ],
+            "description": "Present while deliveries are failing; cleared by the next 2xx"
           },
           "createdAt": {
             "allOf": [
@@ -10693,6 +10701,52 @@
           }
         },
         "description": "Webhook endpoint resource used by the site UI"
+      },
+      "SiteWebhookErrorKind": {
+        "type": "string",
+        "enum": ["timeout", "blocked_address", "http_status", "network"],
+        "description": "Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in\ntime), `blocked_address` (the URL names an address this instance does not permit),\n`http_status` (a non-2xx answer, see `status`) and `network` (any other transport\nfailure)."
+      },
+      "SiteWebhookFailure": {
+        "type": "object",
+        "required": ["consecutiveFailures", "since", "lastFailureAt", "kind"],
+        "properties": {
+          "consecutiveFailures": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Deliveries that failed in a row"
+          },
+          "since": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the current run of failures began"
+          },
+          "lastFailureAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the latest delivery failed"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteWebhookErrorKind"
+              }
+            ],
+            "description": "Kind of the latest failure"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status of the latest failure; present only for kind `http_status`"
+          }
+        },
+        "description": "The failure state of an endpoint that is currently failing; absent while it is healthy."
       },
       "SiteWorkspaceHold": {
         "type": "object",

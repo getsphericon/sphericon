@@ -23,9 +23,27 @@ func webhookResource(e webhooks.Endpoint) siteapi.SiteWebhookEndpointResource {
 		Secret:     e.Secret,
 		EventTypes: lo.Ternary(e.EventTypes == nil, []string{}, e.EventTypes),
 		Enabled:    e.Enabled,
+		Failure:    webhookFailure(e),
 		CreatedAt:  siteapi.Timestamp(e.CreatedAt),
 		UpdatedAt:  siteapi.Timestamp(e.UpdatedAt),
 	}
+}
+
+// webhookFailure maps the endpoint's failure state; it is absent while the endpoint is healthy.
+func webhookFailure(e webhooks.Endpoint) siteapi.OptSiteWebhookFailure {
+	if e.ConsecutiveFailures == nil || e.FailingSince == nil || e.LastFailureAt == nil || e.LastErrorKind == nil {
+		return siteapi.OptSiteWebhookFailure{}
+	}
+	f := siteapi.SiteWebhookFailure{
+		ConsecutiveFailures: int32(*e.ConsecutiveFailures),
+		Since:               siteapi.Timestamp(*e.FailingSince),
+		LastFailureAt:       siteapi.Timestamp(*e.LastFailureAt),
+		Kind:                siteapi.SiteWebhookErrorKind(*e.LastErrorKind),
+	}
+	if e.LastErrorStatus != nil {
+		f.Status = siteapi.NewOptInt32(int32(*e.LastErrorStatus))
+	}
+	return siteapi.NewOptSiteWebhookFailure(f)
 }
 
 // webhookRuleProblem maps a webhooks rule sentinel to its 422; ok is false for any

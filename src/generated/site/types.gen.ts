@@ -2635,7 +2635,7 @@ export type SiteWebhookEndpointResource = {
    */
   url: string;
   /**
-   * HMAC signing secret (used to verify the X-sphericon-Signature header)
+   * HMAC signing secret (receivers verify the webhook-id, webhook-timestamp and webhook-signature headers, the Standard Webhooks scheme)
    */
   secret: string;
   /**
@@ -2647,6 +2647,10 @@ export type SiteWebhookEndpointResource = {
    */
   enabled: boolean;
   /**
+   * Present while deliveries are failing; cleared by the next 2xx
+   */
+  failure?: SiteWebhookFailure;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -2654,6 +2658,53 @@ export type SiteWebhookEndpointResource = {
    * Last update timestamp
    */
   updatedAt: Timestamp;
+};
+
+/**
+ * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
+ * time), `blocked_address` (the URL names an address this instance does not permit),
+ * `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
+ * failure).
+ */
+export const SiteWebhookErrorKind = {
+  TIMEOUT: 'timeout',
+  BLOCKED_ADDRESS: 'blocked_address',
+  HTTP_STATUS: 'http_status',
+  NETWORK: 'network'
+} as const;
+
+/**
+ * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
+ * time), `blocked_address` (the URL names an address this instance does not permit),
+ * `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
+ * failure).
+ */
+export type SiteWebhookErrorKind = typeof SiteWebhookErrorKind[keyof typeof SiteWebhookErrorKind];
+
+/**
+ * The failure state of an endpoint that is currently failing; absent while it is healthy.
+ */
+export type SiteWebhookFailure = {
+  /**
+   * Deliveries that failed in a row
+   */
+  consecutiveFailures: number;
+  /**
+   * When the current run of failures began
+   */
+  since: Timestamp;
+  /**
+   * When the latest delivery failed
+   */
+  lastFailureAt: Timestamp;
+  /**
+   * Kind of the latest failure
+   */
+  kind: SiteWebhookErrorKind;
+  /**
+   * HTTP status of the latest failure; present only for kind `http_status`
+   */
+  status?: number;
 };
 
 /**

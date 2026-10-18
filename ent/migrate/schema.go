@@ -1144,6 +1144,11 @@ var (
 		{Name: "secret_encrypted", Type: field.TypeString},
 		{Name: "event_types", Type: field.TypeJSON, Nullable: true},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "consecutive_failures", Type: field.TypeInt, Nullable: true},
+		{Name: "failing_since", Type: field.TypeTime, Nullable: true},
+		{Name: "last_error_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"timeout", "blocked_address", "http_status", "network"}},
+		{Name: "last_error_status", Type: field.TypeInt, Nullable: true},
+		{Name: "last_failure_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// WebhookEndpointsTable holds the schema information for the "webhook_endpoints" table.
@@ -1154,7 +1159,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "webhook_endpoints_workspaces_webhook_endpoints",
-				Columns:    []*schema.Column{WebhookEndpointsColumns[7]},
+				Columns:    []*schema.Column{WebhookEndpointsColumns[12]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1163,12 +1168,12 @@ var (
 			{
 				Name:    "webhookendpoint_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{WebhookEndpointsColumns[7]},
+				Columns: []*schema.Column{WebhookEndpointsColumns[12]},
 			},
 			{
 				Name:    "webhookendpoint_workspace_id_enabled",
 				Unique:  false,
-				Columns: []*schema.Column{WebhookEndpointsColumns[7], WebhookEndpointsColumns[6]},
+				Columns: []*schema.Column{WebhookEndpointsColumns[12], WebhookEndpointsColumns[6]},
 			},
 		},
 	}

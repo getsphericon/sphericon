@@ -825,6 +825,10 @@ const (
 	WebhookCodebasicsDisabledID = 101
 	// WebhookCodebasicsDisabledURL is from fixtures/webhook_endpoints.
 	WebhookCodebasicsDisabledURL = "https://hooks.codebasics.dev/disabled"
+	// WebhookCodebasicsFailingID is from fixtures/webhook_endpoints.
+	WebhookCodebasicsFailingID = 102
+	// WebhookCodebasicsFailingURL is from fixtures/webhook_endpoints.
+	WebhookCodebasicsFailingURL = "https://failing.codebasics.dev/hook"
 	// WebhookCodebasicsID is from fixtures/webhook_endpoints.
 	WebhookCodebasicsID = 100
 	// WebhookCodebasicsURL is from fixtures/webhook_endpoints.

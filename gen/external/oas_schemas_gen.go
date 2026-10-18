@@ -6694,6 +6694,52 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// NewOptWebhookFailure returns new OptWebhookFailure with value set to v.
+func NewOptWebhookFailure(v WebhookFailure) OptWebhookFailure {
+	return OptWebhookFailure{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptWebhookFailure is optional WebhookFailure.
+type OptWebhookFailure struct {
+	Value WebhookFailure
+	Set   bool
+}
+
+// IsSet returns true if OptWebhookFailure was set.
+func (o OptWebhookFailure) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptWebhookFailure) Reset() {
+	var v WebhookFailure
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptWebhookFailure) SetTo(v WebhookFailure) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptWebhookFailure) Get() (v WebhookFailure, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptWebhookFailure) Or(d WebhookFailure) WebhookFailure {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // Request body for previewing a rule definition's audience.
 // Ref: #/components/schemas/PreviewSegmentInput
 type PreviewSegmentInput struct {
@@ -10183,6 +10229,130 @@ func (s *UpsertContactsResult) SetResults(val []ContactBatchItemResult) {
 
 func (*UpsertContactsResult) contactsBatchUpsertRes() {}
 
+// Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in time),
+// `blocked_address` (the URL names an address this instance does not permit), `http_status` (a non-2xx
+// answer, see `status`) and `network` (any other transport failure).
+// Ref: #/components/schemas/WebhookErrorKind
+type WebhookErrorKind string
+
+const (
+	WebhookErrorKindTimeout        WebhookErrorKind = "timeout"
+	WebhookErrorKindBlockedAddress WebhookErrorKind = "blocked_address"
+	WebhookErrorKindHTTPStatus     WebhookErrorKind = "http_status"
+	WebhookErrorKindNetwork        WebhookErrorKind = "network"
+)
+
+// AllValues returns all WebhookErrorKind values.
+func (WebhookErrorKind) AllValues() []WebhookErrorKind {
+	return []WebhookErrorKind{
+		WebhookErrorKindTimeout,
+		WebhookErrorKindBlockedAddress,
+		WebhookErrorKindHTTPStatus,
+		WebhookErrorKindNetwork,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WebhookErrorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case WebhookErrorKindTimeout:
+		return []byte(s), nil
+	case WebhookErrorKindBlockedAddress:
+		return []byte(s), nil
+	case WebhookErrorKindHTTPStatus:
+		return []byte(s), nil
+	case WebhookErrorKindNetwork:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WebhookErrorKind) UnmarshalText(data []byte) error {
+	switch WebhookErrorKind(data) {
+	case WebhookErrorKindTimeout:
+		*s = WebhookErrorKindTimeout
+		return nil
+	case WebhookErrorKindBlockedAddress:
+		*s = WebhookErrorKindBlockedAddress
+		return nil
+	case WebhookErrorKindHTTPStatus:
+		*s = WebhookErrorKindHTTPStatus
+		return nil
+	case WebhookErrorKindNetwork:
+		*s = WebhookErrorKindNetwork
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The failure state of an endpoint that is currently failing; absent while it is healthy.
+// Ref: #/components/schemas/WebhookFailure
+type WebhookFailure struct {
+	// Deliveries that failed in a row.
+	ConsecutiveFailures int32 `json:"consecutiveFailures"`
+	// When the current run of failures began.
+	Since Timestamp `json:"since"`
+	// When the latest delivery failed.
+	LastFailureAt Timestamp `json:"lastFailureAt"`
+	// Kind of the latest failure.
+	Kind WebhookErrorKind `json:"kind"`
+	// HTTP status of the latest failure; present only for kind `http_status`.
+	Status OptInt32 `json:"status"`
+}
+
+// GetConsecutiveFailures returns the value of ConsecutiveFailures.
+func (s *WebhookFailure) GetConsecutiveFailures() int32 {
+	return s.ConsecutiveFailures
+}
+
+// GetSince returns the value of Since.
+func (s *WebhookFailure) GetSince() Timestamp {
+	return s.Since
+}
+
+// GetLastFailureAt returns the value of LastFailureAt.
+func (s *WebhookFailure) GetLastFailureAt() Timestamp {
+	return s.LastFailureAt
+}
+
+// GetKind returns the value of Kind.
+func (s *WebhookFailure) GetKind() WebhookErrorKind {
+	return s.Kind
+}
+
+// GetStatus returns the value of Status.
+func (s *WebhookFailure) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// SetConsecutiveFailures sets the value of ConsecutiveFailures.
+func (s *WebhookFailure) SetConsecutiveFailures(val int32) {
+	s.ConsecutiveFailures = val
+}
+
+// SetSince sets the value of Since.
+func (s *WebhookFailure) SetSince(val Timestamp) {
+	s.Since = val
+}
+
+// SetLastFailureAt sets the value of LastFailureAt.
+func (s *WebhookFailure) SetLastFailureAt(val Timestamp) {
+	s.LastFailureAt = val
+}
+
+// SetKind sets the value of Kind.
+func (s *WebhookFailure) SetKind(val WebhookErrorKind) {
+	s.Kind = val
+}
+
+// SetStatus sets the value of Status.
+func (s *WebhookFailure) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
 // Outbound webhook endpoint. The HMAC signing secret is deliberately absent: it is never returned
 // through the external API (view it in the app).
 // Ref: #/components/schemas/WebhookResource
@@ -10195,6 +10365,8 @@ type WebhookResource struct {
 	EventTypes []string `json:"eventTypes"`
 	// Whether the endpoint receives deliveries.
 	Enabled bool `json:"enabled"`
+	// Present while deliveries are failing; cleared by the next 2xx.
+	Failure OptWebhookFailure `json:"failure"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -10219,6 +10391,11 @@ func (s *WebhookResource) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *WebhookResource) GetEnabled() bool {
 	return s.Enabled
+}
+
+// GetFailure returns the value of Failure.
+func (s *WebhookResource) GetFailure() OptWebhookFailure {
+	return s.Failure
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -10249,6 +10426,11 @@ func (s *WebhookResource) SetEventTypes(val []string) {
 // SetEnabled sets the value of Enabled.
 func (s *WebhookResource) SetEnabled(val bool) {
 	s.Enabled = val
+}
+
+// SetFailure sets the value of Failure.
+func (s *WebhookResource) SetFailure(val OptWebhookFailure) {
+	s.Failure = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

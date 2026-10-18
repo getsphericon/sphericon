@@ -111,6 +111,120 @@ func (_u *WebhookEndpointUpdate) SetNillableEnabled(v *bool) *WebhookEndpointUpd
 	return _u
 }
 
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (_u *WebhookEndpointUpdate) SetConsecutiveFailures(v int) *WebhookEndpointUpdate {
+	_u.mutation.ResetConsecutiveFailures()
+	_u.mutation.SetConsecutiveFailures(v)
+	return _u
+}
+
+// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
+func (_u *WebhookEndpointUpdate) SetNillableConsecutiveFailures(v *int) *WebhookEndpointUpdate {
+	if v != nil {
+		_u.SetConsecutiveFailures(*v)
+	}
+	return _u
+}
+
+// AddConsecutiveFailures adds value to the "consecutive_failures" field.
+func (_u *WebhookEndpointUpdate) AddConsecutiveFailures(v int) *WebhookEndpointUpdate {
+	_u.mutation.AddConsecutiveFailures(v)
+	return _u
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (_u *WebhookEndpointUpdate) ClearConsecutiveFailures() *WebhookEndpointUpdate {
+	_u.mutation.ClearConsecutiveFailures()
+	return _u
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (_u *WebhookEndpointUpdate) SetFailingSince(v time.Time) *WebhookEndpointUpdate {
+	_u.mutation.SetFailingSince(v)
+	return _u
+}
+
+// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
+func (_u *WebhookEndpointUpdate) SetNillableFailingSince(v *time.Time) *WebhookEndpointUpdate {
+	if v != nil {
+		_u.SetFailingSince(*v)
+	}
+	return _u
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (_u *WebhookEndpointUpdate) ClearFailingSince() *WebhookEndpointUpdate {
+	_u.mutation.ClearFailingSince()
+	return _u
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (_u *WebhookEndpointUpdate) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpdate {
+	_u.mutation.SetLastErrorKind(v)
+	return _u
+}
+
+// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
+func (_u *WebhookEndpointUpdate) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointUpdate {
+	if v != nil {
+		_u.SetLastErrorKind(*v)
+	}
+	return _u
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (_u *WebhookEndpointUpdate) ClearLastErrorKind() *WebhookEndpointUpdate {
+	_u.mutation.ClearLastErrorKind()
+	return _u
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (_u *WebhookEndpointUpdate) SetLastErrorStatus(v int) *WebhookEndpointUpdate {
+	_u.mutation.ResetLastErrorStatus()
+	_u.mutation.SetLastErrorStatus(v)
+	return _u
+}
+
+// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
+func (_u *WebhookEndpointUpdate) SetNillableLastErrorStatus(v *int) *WebhookEndpointUpdate {
+	if v != nil {
+		_u.SetLastErrorStatus(*v)
+	}
+	return _u
+}
+
+// AddLastErrorStatus adds value to the "last_error_status" field.
+func (_u *WebhookEndpointUpdate) AddLastErrorStatus(v int) *WebhookEndpointUpdate {
+	_u.mutation.AddLastErrorStatus(v)
+	return _u
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (_u *WebhookEndpointUpdate) ClearLastErrorStatus() *WebhookEndpointUpdate {
+	_u.mutation.ClearLastErrorStatus()
+	return _u
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (_u *WebhookEndpointUpdate) SetLastFailureAt(v time.Time) *WebhookEndpointUpdate {
+	_u.mutation.SetLastFailureAt(v)
+	return _u
+}
+
+// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
+func (_u *WebhookEndpointUpdate) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointUpdate {
+	if v != nil {
+		_u.SetLastFailureAt(*v)
+	}
+	return _u
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (_u *WebhookEndpointUpdate) ClearLastFailureAt() *WebhookEndpointUpdate {
+	_u.mutation.ClearLastFailureAt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *WebhookEndpointUpdate) SetWorkspace(v *Workspace) *WebhookEndpointUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -170,6 +284,11 @@ func (_u *WebhookEndpointUpdate) check() error {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.url": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.LastErrorKind(); ok {
+		if err := webhookendpoint.LastErrorKindValidator(v); err != nil {
+			return &ValidationError{Name: "last_error_kind", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.last_error_kind": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "WebhookEndpoint.workspace"`)
 	}
@@ -216,6 +335,42 @@ func (_u *WebhookEndpointUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(webhookendpoint.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ConsecutiveFailures(); ok {
+		_spec.SetField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedConsecutiveFailures(); ok {
+		_spec.AddField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)
+	}
+	if _u.mutation.ConsecutiveFailuresCleared() {
+		_spec.ClearField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt)
+	}
+	if value, ok := _u.mutation.FailingSince(); ok {
+		_spec.SetField(webhookendpoint.FieldFailingSince, field.TypeTime, value)
+	}
+	if _u.mutation.FailingSinceCleared() {
+		_spec.ClearField(webhookendpoint.FieldFailingSince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastErrorKind(); ok {
+		_spec.SetField(webhookendpoint.FieldLastErrorKind, field.TypeEnum, value)
+	}
+	if _u.mutation.LastErrorKindCleared() {
+		_spec.ClearField(webhookendpoint.FieldLastErrorKind, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.LastErrorStatus(); ok {
+		_spec.SetField(webhookendpoint.FieldLastErrorStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedLastErrorStatus(); ok {
+		_spec.AddField(webhookendpoint.FieldLastErrorStatus, field.TypeInt, value)
+	}
+	if _u.mutation.LastErrorStatusCleared() {
+		_spec.ClearField(webhookendpoint.FieldLastErrorStatus, field.TypeInt)
+	}
+	if value, ok := _u.mutation.LastFailureAt(); ok {
+		_spec.SetField(webhookendpoint.FieldLastFailureAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastFailureAtCleared() {
+		_spec.ClearField(webhookendpoint.FieldLastFailureAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -348,6 +503,120 @@ func (_u *WebhookEndpointUpdateOne) SetNillableEnabled(v *bool) *WebhookEndpoint
 	return _u
 }
 
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (_u *WebhookEndpointUpdateOne) SetConsecutiveFailures(v int) *WebhookEndpointUpdateOne {
+	_u.mutation.ResetConsecutiveFailures()
+	_u.mutation.SetConsecutiveFailures(v)
+	return _u
+}
+
+// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
+func (_u *WebhookEndpointUpdateOne) SetNillableConsecutiveFailures(v *int) *WebhookEndpointUpdateOne {
+	if v != nil {
+		_u.SetConsecutiveFailures(*v)
+	}
+	return _u
+}
+
+// AddConsecutiveFailures adds value to the "consecutive_failures" field.
+func (_u *WebhookEndpointUpdateOne) AddConsecutiveFailures(v int) *WebhookEndpointUpdateOne {
+	_u.mutation.AddConsecutiveFailures(v)
+	return _u
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (_u *WebhookEndpointUpdateOne) ClearConsecutiveFailures() *WebhookEndpointUpdateOne {
+	_u.mutation.ClearConsecutiveFailures()
+	return _u
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (_u *WebhookEndpointUpdateOne) SetFailingSince(v time.Time) *WebhookEndpointUpdateOne {
+	_u.mutation.SetFailingSince(v)
+	return _u
+}
+
+// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
+func (_u *WebhookEndpointUpdateOne) SetNillableFailingSince(v *time.Time) *WebhookEndpointUpdateOne {
+	if v != nil {
+		_u.SetFailingSince(*v)
+	}
+	return _u
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (_u *WebhookEndpointUpdateOne) ClearFailingSince() *WebhookEndpointUpdateOne {
+	_u.mutation.ClearFailingSince()
+	return _u
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (_u *WebhookEndpointUpdateOne) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointUpdateOne {
+	_u.mutation.SetLastErrorKind(v)
+	return _u
+}
+
+// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
+func (_u *WebhookEndpointUpdateOne) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointUpdateOne {
+	if v != nil {
+		_u.SetLastErrorKind(*v)
+	}
+	return _u
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (_u *WebhookEndpointUpdateOne) ClearLastErrorKind() *WebhookEndpointUpdateOne {
+	_u.mutation.ClearLastErrorKind()
+	return _u
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (_u *WebhookEndpointUpdateOne) SetLastErrorStatus(v int) *WebhookEndpointUpdateOne {
+	_u.mutation.ResetLastErrorStatus()
+	_u.mutation.SetLastErrorStatus(v)
+	return _u
+}
+
+// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
+func (_u *WebhookEndpointUpdateOne) SetNillableLastErrorStatus(v *int) *WebhookEndpointUpdateOne {
+	if v != nil {
+		_u.SetLastErrorStatus(*v)
+	}
+	return _u
+}
+
+// AddLastErrorStatus adds value to the "last_error_status" field.
+func (_u *WebhookEndpointUpdateOne) AddLastErrorStatus(v int) *WebhookEndpointUpdateOne {
+	_u.mutation.AddLastErrorStatus(v)
+	return _u
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (_u *WebhookEndpointUpdateOne) ClearLastErrorStatus() *WebhookEndpointUpdateOne {
+	_u.mutation.ClearLastErrorStatus()
+	return _u
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (_u *WebhookEndpointUpdateOne) SetLastFailureAt(v time.Time) *WebhookEndpointUpdateOne {
+	_u.mutation.SetLastFailureAt(v)
+	return _u
+}
+
+// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
+func (_u *WebhookEndpointUpdateOne) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointUpdateOne {
+	if v != nil {
+		_u.SetLastFailureAt(*v)
+	}
+	return _u
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (_u *WebhookEndpointUpdateOne) ClearLastFailureAt() *WebhookEndpointUpdateOne {
+	_u.mutation.ClearLastFailureAt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *WebhookEndpointUpdateOne) SetWorkspace(v *Workspace) *WebhookEndpointUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -420,6 +689,11 @@ func (_u *WebhookEndpointUpdateOne) check() error {
 			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.url": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.LastErrorKind(); ok {
+		if err := webhookendpoint.LastErrorKindValidator(v); err != nil {
+			return &ValidationError{Name: "last_error_kind", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.last_error_kind": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "WebhookEndpoint.workspace"`)
 	}
@@ -483,6 +757,42 @@ func (_u *WebhookEndpointUpdateOne) sqlSave(ctx context.Context) (_node *Webhook
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(webhookendpoint.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ConsecutiveFailures(); ok {
+		_spec.SetField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedConsecutiveFailures(); ok {
+		_spec.AddField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt, value)
+	}
+	if _u.mutation.ConsecutiveFailuresCleared() {
+		_spec.ClearField(webhookendpoint.FieldConsecutiveFailures, field.TypeInt)
+	}
+	if value, ok := _u.mutation.FailingSince(); ok {
+		_spec.SetField(webhookendpoint.FieldFailingSince, field.TypeTime, value)
+	}
+	if _u.mutation.FailingSinceCleared() {
+		_spec.ClearField(webhookendpoint.FieldFailingSince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastErrorKind(); ok {
+		_spec.SetField(webhookendpoint.FieldLastErrorKind, field.TypeEnum, value)
+	}
+	if _u.mutation.LastErrorKindCleared() {
+		_spec.ClearField(webhookendpoint.FieldLastErrorKind, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.LastErrorStatus(); ok {
+		_spec.SetField(webhookendpoint.FieldLastErrorStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedLastErrorStatus(); ok {
+		_spec.AddField(webhookendpoint.FieldLastErrorStatus, field.TypeInt, value)
+	}
+	if _u.mutation.LastErrorStatusCleared() {
+		_spec.ClearField(webhookendpoint.FieldLastErrorStatus, field.TypeInt)
+	}
+	if value, ok := _u.mutation.LastFailureAt(); ok {
+		_spec.SetField(webhookendpoint.FieldLastFailureAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastFailureAtCleared() {
+		_spec.ClearField(webhookendpoint.FieldLastFailureAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
