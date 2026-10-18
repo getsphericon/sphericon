@@ -172,6 +172,19 @@ export const zSiteAuditTarget = z.object({
 });
 
 /**
+ * Closed error kind of an HTTP step's body
+ */
+export const zSiteAutomationHttpErrorKind = z.enum(['invalid_body']);
+
+/**
+ * One request header of an HTTP step. The value is a secret: it is never returned.
+ */
+export const zSiteAutomationHttpHeader = z.object({
+  name: z.string(),
+  value: z.exactOptional(z.string())
+});
+
+/**
  * Automation lifecycle status
  */
 export const zSiteAutomationStatus = z.enum(['draft', 'active']);
@@ -183,7 +196,8 @@ export const zSiteAutomationStepType = z.enum([
   'email',
   'wait',
   'apply_tag',
-  'remove_tag'
+  'remove_tag',
+  'http'
 ]);
 
 /**
@@ -195,7 +209,13 @@ export const zSiteAutomationStep = z.object({
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
   seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  tag: z.exactOptional(z.string())
+  tag: z.exactOptional(z.string()),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader)),
+  secret: z.exactOptional(z.string()),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean())
 });
 
 /**
@@ -299,6 +319,23 @@ export const zSiteDnsRecord = z.object({
   type: z.enum(['TXT']),
   host: z.string(),
   value: z.string()
+});
+
+/**
+ * Request body for rendering an HTTP step's body for a Contact
+ */
+export const zSiteDryRunHttpStepInput = z.object({
+  body: z.string(),
+  contactId: zEntityId
+});
+
+/**
+ * The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
+ */
+export const zSiteDryRunHttpStepResult = z.object({
+  body: z.exactOptional(z.string()),
+  errorKind: z.exactOptional(zSiteAutomationHttpErrorKind),
+  detail: z.exactOptional(z.string())
 });
 
 /**
@@ -1928,6 +1965,17 @@ export const zSiteAutomationsCreatePath = z.object({
  * The request has succeeded and a new resource has been created as a result.
  */
 export const zSiteAutomationsCreateResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsDryRunHttpStepBody = zSiteDryRunHttpStepInput;
+
+export const zSiteAutomationsDryRunHttpStepPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsDryRunHttpStepResponse = zSiteDryRunHttpStepResult;
 
 export const zSiteAutomationsDeletePath = z.object({
   slug: z.string(),

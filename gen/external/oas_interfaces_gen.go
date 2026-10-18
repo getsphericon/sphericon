@@ -41,6 +41,10 @@ type AutomationsDeleteRes interface {
 	automationsDeleteRes()
 }
 
+type AutomationsDryRunHttpStepRes interface {
+	automationsDryRunHttpStepRes()
+}
+
 type AutomationsGetRes interface {
 	automationsGetRes()
 }

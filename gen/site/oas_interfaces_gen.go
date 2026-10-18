@@ -69,6 +69,10 @@ type SiteAutomationsDeleteRes interface {
 	siteAutomationsDeleteRes()
 }
 
+type SiteAutomationsDryRunHttpStepRes interface {
+	siteAutomationsDryRunHttpStepRes()
+}
+
 type SiteAutomationsGetRes interface {
 	siteAutomationsGetRes()
 }

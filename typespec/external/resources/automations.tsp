@@ -16,6 +16,42 @@ enum AutomationStepType {
   wait,
   apply_tag,
   remove_tag,
+  http,
+}
+
+/** One request header of an HTTP step. The value is a secret: it is never returned. */
+model AutomationHttpHeader {
+  /** Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon. */
+  name: string;
+
+  /** Header value. Omit it when editing to keep the stored value of the header with this name. */
+  value?: string;
+}
+
+/** Closed error kind of an HTTP step's body */
+enum AutomationHttpErrorKind {
+  invalid_body,
+}
+
+/** Request body for rendering an HTTP step's body for a Contact */
+model DryRunHttpStepInput {
+  /** The Liquid JSON body to render */
+  body: string;
+
+  /** The Contact whose values fill the template */
+  contactId: EntityId;
+}
+
+/** The body rendered for a Contact, or the kind of error that stopped it. Nothing is called. */
+model DryRunHttpStepResult {
+  /** The rendered, valid JSON body. Absent when errorKind is set. */
+  body?: string;
+
+  /** Why the body could not be rendered */
+  errorKind?: AutomationHttpErrorKind;
+
+  /** Human-readable detail of the error */
+  detail?: string;
 }
 
 /** One node in an automation's ordered, linear sequence. A flat shape: email
@@ -27,7 +63,7 @@ model AutomationStep {
   /** Email subject (email steps) */
   subject?: string;
 
-  /** Email body as MJML (email steps) */
+  /** Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON) */
   body?: string;
 
   /** Delay before the next step, in seconds (wait steps) */
@@ -35,6 +71,24 @@ model AutomationStep {
 
   /** Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps) */
   tag?: string;
+
+  /** Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets. */
+  id?: string;
+
+  /** Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https. */
+  url?: string;
+
+  /** Up to 5 request headers (HTTP steps). On read, only the names are returned. */
+  headers?: AutomationHttpHeader[];
+
+  /** Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret. */
+  secret?: string;
+
+  /** Remove the signing secret on save (HTTP steps) */
+  clearSecret?: boolean;
+
+  /** Whether a signing secret is stored (HTTP steps, read only) */
+  hasSecret?: boolean;
 }
 
 /** An Automation: an event-triggered, ordered sequence of steps. Created
@@ -106,4 +160,18 @@ interface Automations
     | UnauthorizedProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
+
+  /** Render an HTTP step's body for a Contact and validate it, calling nothing */
+  @collectionAction(AutomationResource, "dry-run-http-step")
+  @autoRoute
+  dryRunHttpStep(
+    ...ResourceCollectionParameters<AutomationResource>,
+    @body body: DryRunHttpStepInput,
+  ):
+    | DryRunHttpStepResult
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
 }

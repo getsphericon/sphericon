@@ -59,6 +59,12 @@ type Handler interface {
 	//
 	// DELETE /automations/{id}
 	AutomationsDelete(ctx context.Context, params AutomationsDeleteParams) (AutomationsDeleteRes, error)
+	// AutomationsDryRunHttpStep implements Automations_dryRunHttpStep operation.
+	//
+	// Render an HTTP step's body for a Contact and validate it, calling nothing.
+	//
+	// POST /automations/dry-run-http-step
+	AutomationsDryRunHttpStep(ctx context.Context, req *DryRunHttpStepInput) (AutomationsDryRunHttpStepRes, error)
 	// AutomationsGet implements Automations_get operation.
 	//
 	// Get a resource by ID.
