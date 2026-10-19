@@ -22,7 +22,7 @@ func TestSPAFileHandler(t *testing.T) {
 		"index.html":    {Data: []byte(`<html lang="{{APP_LOCALE}}"></html>`)},
 		"assets/app.js": {Data: []byte(`console.log(1)`)},
 	}
-	h := spaFileHandler(sub, "es", true)
+	h := spaFileHandler(sub, "en", true)
 
 	// Real files are served as-is.
 	rec := serveSPA(t, h, "/assets/app.js")
@@ -33,7 +33,7 @@ func TestSPAFileHandler(t *testing.T) {
 	for _, p := range []string{"/", "/index.html", "/workspaces/acme/contacts", "/assets"} {
 		rec = serveSPA(t, h, p)
 		require.Equal(t, http.StatusOK, rec.Code, p)
-		assert.Equal(t, `<html lang="es"></html>`, rec.Body.String(), p)
+		assert.Equal(t, `<html lang="en"></html>`, rec.Body.String(), p)
 		assert.Equal(t, "text/html; charset=utf-8", rec.Header().Get("Content-Type"), p)
 	}
 }

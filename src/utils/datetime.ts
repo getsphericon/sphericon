@@ -1,8 +1,6 @@
 import { resolveLocale } from '../i18n.ts'
 
-// Dates follow the instance locale (SPHERICON_APP_LOCALE), not the browser's — an `es`
-// instance must render Spanish dates even for a visitor whose browser is set to
-// English. Native toLocaleString() defaults to navigator.language, so we pass
+// Dates follow the instance locale (SPHERICON_APP_LOCALE), not the browser's. Native toLocaleString() defaults to navigator.language, so we pass
 // the resolved app locale explicitly. Kept dependency-free (no dayjs/date-fns):
 // the app has no date-picker components, only display formatting.
 
