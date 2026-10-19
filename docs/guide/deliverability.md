@@ -53,8 +53,8 @@ unsubscribe and confirm pages redirect to the instance's own host, and everythin
 **Removing a domain.** If you delete the sending domain, rename it or remove its CNAME, links already
 in recipients' inboxes keep working through the instance's own host, but the same links on
 `track.<domain>` stop reaching Sphericon. Keep the CNAME in place for as long as old mail may still
-be opened or clicked. The design is in [ADR 0038](../adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)
-and [ADR 0036](../adr/0036-paths-embedded-in-sent-mail-and-customer-sites-outlive-a-major.md).
+be opened or clicked. The design is in [ADR 0038](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)
+and [ADR 0036](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0036-paths-embedded-in-sent-mail-and-customer-sites-outlive-a-major.md).
 
 ## Who may be mailed
 

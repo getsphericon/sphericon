@@ -57,7 +57,7 @@ filtered too. A value shorter than four characters is left alone.
 ### A changed `SPHERICON_APP_URL`
 
 Every unsubscribe, confirm and tracking link already delivered points at the origin that was
-configured when the mail was sent ([ADR 0036](../adr/0036-paths-embedded-in-sent-mail-and-customer-sites-outlive-a-major)).
+configured when the mail was sent ([ADR 0036](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0036-paths-embedded-in-sent-mail-and-customer-sites-outlive-a-major.md)).
 Each sent message records that origin; when recent mail carries a different one, `doctor` warns.
 If you moved the Instance on purpose, keep a redirect from the old origin to the new one at the
 reverse proxy; the warning goes away as newer mail replaces the old in the last 200. Mail sent
