@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -43,6 +44,14 @@ func connect(t *testing.T, env *testhelper.TestEnv, scope string) tokenResponse 
 	return decodeToken(t, rec)
 }
 
+// connector is the API token the fixture client's grant lives in.
+func connector(t *testing.T, env *testhelper.TestEnv) *ent.ApiToken {
+	t.Helper()
+	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector (MCP)")).Only(t.Context())
+	require.NoError(t, err)
+	return row
+}
+
 func refreshForm(refreshToken string) url.Values {
 	return url.Values{
 		"grant_type":    {"refresh_token"},
@@ -68,13 +77,11 @@ func TestCodeExchangeIssuesAnExpiringTokenAndARefreshToken(t *testing.T) {
 
 	assert.Equal(t, 3600, tok.ExpiresIn)
 	assert.NotEmpty(t, tok.RefreshToken)
-	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector (MCP)")).Only(t.Context())
-	require.NoError(t, err)
+	row := connector(t, env)
 	require.NotNil(t, row.ExpiresAt)
-	assert.WithinDuration(t, time.Now().Add(time.Hour), *row.ExpiresAt, time.Minute)
-	refresh, err := env.DB.OAuthRefreshToken.Query().Only(t.Context())
+	assert.WithinDuration(t, row.CreatedAt.Add(time.Hour), *row.ExpiresAt, time.Minute)
+	refresh, err := env.DB.OAuthRefreshToken.Query().Where(oauthrefreshtoken.APITokenID(row.ID)).Only(t.Context())
 	require.NoError(t, err)
-	assert.Equal(t, row.ID, refresh.APITokenID)
 	assert.Nil(t, refresh.UsedAt)
 	assert.NotEqual(t, tok.RefreshToken, refresh.TokenHash, "only the hash is stored")
 }
@@ -84,7 +91,8 @@ func TestAnExpiredAccessTokenIsRefused(t *testing.T) {
 	tok := connect(t, env, "contacts:read")
 	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
 
-	_, err := env.DB.ApiToken.Update().Where(apitoken.Name("Fixture Connector (MCP)")).SetExpiresAt(time.Now().Add(-time.Minute)).Save(t.Context())
+	row := connector(t, env)
+	_, err := env.DB.ApiToken.UpdateOneID(row.ID).SetExpiresAt(row.CreatedAt.Add(-time.Minute)).Save(t.Context())
 	require.NoError(t, err)
 
 	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
@@ -93,6 +101,7 @@ func TestAnExpiredAccessTokenIsRefused(t *testing.T) {
 func TestRefreshRotatesTheTokenInPlace(t *testing.T) {
 	env := testhelper.Setup(t)
 	first := connect(t, env, "contacts:read segments:read")
+	before := connector(t, env)
 
 	rec := exchange(t, env, refreshForm(first.RefreshToken))
 
@@ -103,18 +112,39 @@ func TestRefreshRotatesTheTokenInPlace(t *testing.T) {
 	assert.NotEqual(t, first.AccessToken, second.AccessToken)
 	assert.NotEqual(t, first.RefreshToken, second.RefreshToken)
 
-	// One connector row stays in Settings; the old secret is dead and the new one works.
-	rows, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector (MCP)")).All(t.Context())
-	require.NoError(t, err)
-	require.Len(t, rows, 1)
-	assert.Nil(t, rows[0].RevokedAt)
+	// The connector keeps its row in Settings; the old secret is dead and the new one works.
+	assert.True(t, strings.HasPrefix(second.AccessToken, "omtk_"+before.Prefix+"_"), "the prefix stays")
+	after := connector(t, env)
+	assert.Equal(t, before.ID, after.ID)
+	assert.Nil(t, after.RevokedAt)
+	assert.NotEqual(t, before.SecretHash, after.SecretHash)
 	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, first.AccessToken))
 	assert.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, second.AccessToken))
 
 	// The old refresh token is kept, used, so a replay is recognised.
-	used, err := env.DB.OAuthRefreshToken.Query().Where(oauthrefreshtoken.UsedAtNotNil()).Count(t.Context())
+	spent, err := env.DB.OAuthRefreshToken.Query().
+		Where(oauthrefreshtoken.APITokenID(before.ID), oauthrefreshtoken.UsedAtNotNil()).Exist(t.Context())
 	require.NoError(t, err)
-	assert.Equal(t, 1, used)
+	assert.True(t, spent)
+}
+
+func TestRefreshNarrowsTheGrantForGood(t *testing.T) {
+	env := testhelper.Setup(t)
+	first := connect(t, env, "contacts:read segments:read")
+	form := refreshForm(first.RefreshToken)
+	form.Set("scope", "segments:read")
+
+	rec := exchange(t, env, form)
+
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	narrowed := decodeToken(t, rec)
+	assert.Equal(t, "segments:read", narrowed.Scope)
+	assert.Equal(t, []string{"segments:read"}, connector(t, env).Scopes)
+
+	// It cannot be widened back to the original scopes.
+	wider := refreshForm(narrowed.RefreshToken)
+	wider.Set("scope", "contacts:read segments:read")
+	assert.Equal(t, "invalid_scope", decodeToken(t, exchange(t, env, wider)).Error)
 }
 
 func TestReusingARotatedRefreshTokenRevokesTheGrant(t *testing.T) {
@@ -126,9 +156,7 @@ func TestReusingARotatedRefreshTokenRevokesTheGrant(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, replay.Code)
 	assert.Equal(t, "invalid_grant", decodeToken(t, replay).Error)
-	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector (MCP)")).Only(t.Context())
-	require.NoError(t, err)
-	assert.NotNil(t, row.RevokedAt)
+	assert.NotNil(t, connector(t, env).RevokedAt)
 	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, rotated.AccessToken))
 	assert.Equal(t, http.StatusBadRequest, exchange(t, env, refreshForm(rotated.RefreshToken)).Code, "the newest refresh token died with the grant")
 }
@@ -136,8 +164,7 @@ func TestReusingARotatedRefreshTokenRevokesTheGrant(t *testing.T) {
 func TestRevokingTheConnectorInSettingsKillsItsRefreshToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	tok := connect(t, env, "contacts:read")
-	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector (MCP)")).Only(t.Context())
-	require.NoError(t, err)
+	row := connector(t, env)
 
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteTokensDelete(t.Context(), siteapi.SiteTokensDeleteParams{
 		Slug: fixtures.AcmeSlug,
@@ -191,7 +218,11 @@ func TestRefreshRefusals(t *testing.T) {
 func TestAnExpiredRefreshTokenIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	tok := connect(t, env, "contacts:read")
-	_, err := env.DB.OAuthRefreshToken.Update().SetExpiresAt(time.Now().Add(-time.Minute)).Save(t.Context())
+	row := connector(t, env)
+	_, err := env.DB.OAuthRefreshToken.Update().
+		Where(oauthrefreshtoken.APITokenID(row.ID)).
+		SetExpiresAt(row.CreatedAt.Add(-time.Minute)).
+		Save(t.Context())
 	require.NoError(t, err)
 
 	rec := exchange(t, env, refreshForm(tok.RefreshToken))
