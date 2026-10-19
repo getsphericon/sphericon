@@ -49,7 +49,7 @@ password, no cookie, no TOTP, no console access.
   password hash would add cost and no strength).
 - Created, rotated and revoked **only by the command line** (`sphericon service-credential
   create|rotate|revoke|list`). No endpoint can mint or change a credential. The value is shown once.
-- Limited to named scopes: `usage:read`, `workspaces:read`, `holds:write`. Every service operation
+- Limited to named scopes: `usage:read`, `workspaces:read`, `domains:read`, `holds:write`. Every service operation
   names the scopes it needs in one map, and an operation without an entry is refused to every
   credential, so a new endpoint cannot ship unguarded.
 - A service may hold two active credentials at once (the name is not unique), so a rotation has no

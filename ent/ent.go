@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
@@ -140,6 +141,7 @@ func checkColumn(t, c string) error {
 			staffmember.Table:        staffmember.ValidColumn,
 			suppression.Table:        suppression.ValidColumn,
 			tag.Table:                tag.ValidColumn,
+			trackinghostchange.Table: trackinghostchange.ValidColumn,
 			unsubscribe.Table:        unsubscribe.ValidColumn,
 			usage.Table:              usage.ValidColumn,
 			user.Table:               user.ValidColumn,

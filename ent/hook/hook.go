@@ -381,6 +381,18 @@ func (f TagFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TagMutation", m)
 }
 
+// The TrackingHostChangeFunc type is an adapter to allow the use of ordinary
+// function as TrackingHostChange mutator.
+type TrackingHostChangeFunc func(context.Context, *ent.TrackingHostChangeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TrackingHostChangeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TrackingHostChangeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TrackingHostChangeMutation", m)
+}
+
 // The UnsubscribeFunc type is an adapter to allow the use of ordinary
 // function as Unsubscribe mutator.
 type UnsubscribeFunc func(context.Context, *ent.UnsubscribeMutation) (ent.Value, error)

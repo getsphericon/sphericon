@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
@@ -774,6 +775,25 @@ func init() {
 	tagDescName := tagFields[1].Descriptor()
 	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
+	trackinghostchangeMixin := schema.TrackingHostChange{}.Mixin()
+	trackinghostchangeMixinFields0 := trackinghostchangeMixin[0].Fields()
+	_ = trackinghostchangeMixinFields0
+	trackinghostchangeFields := schema.TrackingHostChange{}.Fields()
+	_ = trackinghostchangeFields
+	// trackinghostchangeDescCreatedAt is the schema descriptor for created_at field.
+	trackinghostchangeDescCreatedAt := trackinghostchangeMixinFields0[0].Descriptor()
+	// trackinghostchange.DefaultCreatedAt holds the default value on creation for the created_at field.
+	trackinghostchange.DefaultCreatedAt = trackinghostchangeDescCreatedAt.Default.(func() time.Time)
+	// trackinghostchangeDescUpdatedAt is the schema descriptor for updated_at field.
+	trackinghostchangeDescUpdatedAt := trackinghostchangeMixinFields0[1].Descriptor()
+	// trackinghostchange.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	trackinghostchange.DefaultUpdatedAt = trackinghostchangeDescUpdatedAt.Default.(func() time.Time)
+	// trackinghostchange.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	trackinghostchange.UpdateDefaultUpdatedAt = trackinghostchangeDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// trackinghostchangeDescDomain is the schema descriptor for domain field.
+	trackinghostchangeDescDomain := trackinghostchangeFields[2].Descriptor()
+	// trackinghostchange.DomainValidator is a validator for the "domain" field. It is called by the builders before save.
+	trackinghostchange.DomainValidator = trackinghostchangeDescDomain.Validators[0].(func(string) error)
 	unsubscribeMixin := schema.Unsubscribe{}.Mixin()
 	unsubscribeMixinFields0 := unsubscribeMixin[0].Fields()
 	_ = unsubscribeMixinFields0

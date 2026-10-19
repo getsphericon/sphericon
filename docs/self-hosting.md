@@ -305,7 +305,7 @@ in use fails startup. The endpoints live under `/service` on that listener.
 
 A credential is created, rotated and revoked only from the command line; no endpoint can mint or
 change one. It carries a name and one or more scopes (`usage:read`, `workspaces:read`,
-`holds:write`) and an optional expiry. Its value is shown once and only a hash is stored.
+`domains:read`, `holds:write`) and an optional expiry. Its value is shown once and only a hash is stored.
 
 ```sh
 sphericon service-credential create --expires-in 8760h service-a usage:read,workspaces:read

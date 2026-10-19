@@ -25,12 +25,14 @@ const (
 	ScopeUsageRead Scope = "usage:read"
 	// ScopeWorkspacesRead reads the Workspaces and their owners.
 	ScopeWorkspacesRead Scope = "workspaces:read"
+	// ScopeDomainsRead reads the verified Tracking domain hosts.
+	ScopeDomainsRead Scope = "domains:read"
 	// ScopeHoldsWrite sets and clears Staff holds.
 	ScopeHoldsWrite Scope = "holds:write"
 )
 
 // Scopes are every scope a Service credential may carry.
-var Scopes = []Scope{ScopeUsageRead, ScopeWorkspacesRead, ScopeHoldsWrite}
+var Scopes = []Scope{ScopeUsageRead, ScopeWorkspacesRead, ScopeDomainsRead, ScopeHoldsWrite}
 
 var (
 	// ErrInvalidScope: a scope that no Service credential may carry, or none at all.

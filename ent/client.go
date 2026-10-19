@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
@@ -123,6 +124,8 @@ type Client struct {
 	Suppression *SuppressionClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// TrackingHostChange is the client for interacting with the TrackingHostChange builders.
+	TrackingHostChange *TrackingHostChangeClient
 	// Unsubscribe is the client for interacting with the Unsubscribe builders.
 	Unsubscribe *UnsubscribeClient
 	// Usage is the client for interacting with the Usage builders.
@@ -177,6 +180,7 @@ func (c *Client) init() {
 	c.StaffMember = NewStaffMemberClient(c.config)
 	c.Suppression = NewSuppressionClient(c.config)
 	c.Tag = NewTagClient(c.config)
+	c.TrackingHostChange = NewTrackingHostChangeClient(c.config)
 	c.Unsubscribe = NewUnsubscribeClient(c.config)
 	c.Usage = NewUsageClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -306,6 +310,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		StaffMember:        NewStaffMemberClient(cfg),
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
+		TrackingHostChange: NewTrackingHostChangeClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
 		Usage:              NewUsageClient(cfg),
 		User:               NewUserClient(cfg),
@@ -362,6 +367,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		StaffMember:        NewStaffMemberClient(cfg),
 		Suppression:        NewSuppressionClient(cfg),
 		Tag:                NewTagClient(cfg),
+		TrackingHostChange: NewTrackingHostChangeClient(cfg),
 		Unsubscribe:        NewUnsubscribeClient(cfg),
 		Usage:              NewUsageClient(cfg),
 		User:               NewUserClient(cfg),
@@ -403,7 +409,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Membership, c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage,
 		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
 		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
-		c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.Visitor,
+		c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -419,7 +426,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Membership, c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage,
 		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
 		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
-		c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.Visitor,
+		c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -490,6 +498,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Suppression.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
+	case *TrackingHostChangeMutation:
+		return c.TrackingHostChange.mutate(ctx, m)
 	case *UnsubscribeMutation:
 		return c.Unsubscribe.mutate(ctx, m)
 	case *UsageMutation:
@@ -5222,6 +5232,139 @@ func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
 	}
 }
 
+// TrackingHostChangeClient is a client for the TrackingHostChange schema.
+type TrackingHostChangeClient struct {
+	config
+}
+
+// NewTrackingHostChangeClient returns a client for the TrackingHostChange from the given config.
+func NewTrackingHostChangeClient(c config) *TrackingHostChangeClient {
+	return &TrackingHostChangeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `trackinghostchange.Hooks(f(g(h())))`.
+func (c *TrackingHostChangeClient) Use(hooks ...Hook) {
+	c.hooks.TrackingHostChange = append(c.hooks.TrackingHostChange, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `trackinghostchange.Intercept(f(g(h())))`.
+func (c *TrackingHostChangeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TrackingHostChange = append(c.inters.TrackingHostChange, interceptors...)
+}
+
+// Create returns a builder for creating a TrackingHostChange entity.
+func (c *TrackingHostChangeClient) Create() *TrackingHostChangeCreate {
+	mutation := newTrackingHostChangeMutation(c.config, OpCreate)
+	return &TrackingHostChangeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TrackingHostChange entities.
+func (c *TrackingHostChangeClient) CreateBulk(builders ...*TrackingHostChangeCreate) *TrackingHostChangeCreateBulk {
+	return &TrackingHostChangeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TrackingHostChangeClient) MapCreateBulk(slice any, setFunc func(*TrackingHostChangeCreate, int)) *TrackingHostChangeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TrackingHostChangeCreateBulk{err: fmt.Errorf("calling to TrackingHostChangeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TrackingHostChangeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TrackingHostChangeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TrackingHostChange.
+func (c *TrackingHostChangeClient) Update() *TrackingHostChangeUpdate {
+	mutation := newTrackingHostChangeMutation(c.config, OpUpdate)
+	return &TrackingHostChangeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TrackingHostChangeClient) UpdateOne(_m *TrackingHostChange) *TrackingHostChangeUpdateOne {
+	mutation := newTrackingHostChangeMutation(c.config, OpUpdateOne, withTrackingHostChange(_m))
+	return &TrackingHostChangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TrackingHostChangeClient) UpdateOneID(id int64) *TrackingHostChangeUpdateOne {
+	mutation := newTrackingHostChangeMutation(c.config, OpUpdateOne, withTrackingHostChangeID(id))
+	return &TrackingHostChangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TrackingHostChange.
+func (c *TrackingHostChangeClient) Delete() *TrackingHostChangeDelete {
+	mutation := newTrackingHostChangeMutation(c.config, OpDelete)
+	return &TrackingHostChangeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TrackingHostChangeClient) DeleteOne(_m *TrackingHostChange) *TrackingHostChangeDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TrackingHostChangeClient) DeleteOneID(id int64) *TrackingHostChangeDeleteOne {
+	builder := c.Delete().Where(trackinghostchange.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TrackingHostChangeDeleteOne{builder}
+}
+
+// Query returns a query builder for TrackingHostChange.
+func (c *TrackingHostChangeClient) Query() *TrackingHostChangeQuery {
+	return &TrackingHostChangeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTrackingHostChange},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TrackingHostChange entity by its id.
+func (c *TrackingHostChangeClient) Get(ctx context.Context, id int64) (*TrackingHostChange, error) {
+	return c.Query().Where(trackinghostchange.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TrackingHostChangeClient) GetX(ctx context.Context, id int64) *TrackingHostChange {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *TrackingHostChangeClient) Hooks() []Hook {
+	return c.hooks.TrackingHostChange
+}
+
+// Interceptors returns the client interceptors.
+func (c *TrackingHostChangeClient) Interceptors() []Interceptor {
+	return c.inters.TrackingHostChange
+}
+
+func (c *TrackingHostChangeClient) mutate(ctx context.Context, m *TrackingHostChangeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TrackingHostChangeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TrackingHostChangeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TrackingHostChangeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TrackingHostChangeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TrackingHostChange mutation op: %q", m.Op())
+	}
+}
+
 // UnsubscribeClient is a client for the Unsubscribe schema.
 type UnsubscribeClient struct {
 	config
@@ -6556,8 +6699,8 @@ type (
 		Hold, InstanceState, Integration, Invitation, Membership, OAuthClient,
 		OAuthCode, OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode,
 		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
-		StaffMember, Suppression, Tag, Unsubscribe, Usage, User, Visitor,
-		WebhookEndpoint, Workspace []ent.Hook
+		StaffMember, Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User,
+		Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
@@ -6565,8 +6708,8 @@ type (
 		Hold, InstanceState, Integration, Invitation, Membership, OAuthClient,
 		OAuthCode, OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode,
 		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
-		StaffMember, Suppression, Tag, Unsubscribe, Usage, User, Visitor,
-		WebhookEndpoint, Workspace []ent.Interceptor
+		StaffMember, Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User,
+		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

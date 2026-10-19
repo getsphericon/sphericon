@@ -6,11 +6,12 @@ package serviceapi
 type OperationName = string
 
 const (
-	ServiceHoldsClearOperation        OperationName = "ServiceHoldsClear"
-	ServiceHoldsListOperation         OperationName = "ServiceHoldsList"
-	ServiceHoldsSetOperation          OperationName = "ServiceHoldsSet"
-	ServiceIdentityGetOperation       OperationName = "ServiceIdentityGet"
-	ServiceUsageListOperation         OperationName = "ServiceUsageList"
-	ServiceWorkspaceFeedListOperation OperationName = "ServiceWorkspaceFeedList"
-	ServiceWorkspaceUsageGetOperation OperationName = "ServiceWorkspaceUsageGet"
+	ServiceHoldsClearOperation           OperationName = "ServiceHoldsClear"
+	ServiceHoldsListOperation            OperationName = "ServiceHoldsList"
+	ServiceHoldsSetOperation             OperationName = "ServiceHoldsSet"
+	ServiceIdentityGetOperation          OperationName = "ServiceIdentityGet"
+	ServiceTrackingHostFeedListOperation OperationName = "ServiceTrackingHostFeedList"
+	ServiceUsageListOperation            OperationName = "ServiceUsageList"
+	ServiceWorkspaceFeedListOperation    OperationName = "ServiceWorkspaceFeedList"
+	ServiceWorkspaceUsageGetOperation    OperationName = "ServiceWorkspaceUsageGet"
 )

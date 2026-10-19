@@ -10,6 +10,9 @@ enum ServiceScope {
   /** Read the Workspaces and their owners */
   workspacesRead: "workspaces:read",
 
+  /** Read the verified Tracking domain hosts */
+  domainsRead: "domains:read",
+
   /** Set and clear Staff holds */
   holdsWrite: "holds:write",
 }
