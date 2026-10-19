@@ -39,12 +39,42 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 - name: SPHERICON_METRICS_ADDR
   value: {{ printf "0.0.0.0:%d" (int .Values.metrics.port) | quote }}
 {{- end }}
+{{- include "sphericon.secretFileEnv" . }}
 {{- with .Values.extraEnv }}
 {{ toYaml . }}
 {{- end }}
 {{- end -}}
 
+{{/* Secrets as environment variables; empty when only secretFiles supplies them. */}}
 {{- define "sphericon.envFrom" -}}
+{{- if or .Values.existingSecret (not .Values.secretFiles.secretName) }}
 - secretRef:
-    name: {{ required "existingSecret is required" .Values.existingSecret }}
+    name: {{ required "existingSecret or secretFiles.secretName is required" .Values.existingSecret }}
+{{- else }}
+[]
+{{- end }}
+{{- end -}}
+
+{{/* The _FILE variables pointing at the mounted secretFiles Secret. */}}
+{{- define "sphericon.secretFileEnv" -}}
+{{- range .Values.secretFiles.keys }}
+- name: {{ printf "%s_FILE" . }}
+  value: {{ printf "/run/secrets/sphericon/%s" . | quote }}
+{{- end }}
+{{- end -}}
+
+{{- define "sphericon.secretFileMount" -}}
+{{- if .Values.secretFiles.secretName }}
+- name: secret-files
+  mountPath: /run/secrets/sphericon
+  readOnly: true
+{{- end }}
+{{- end -}}
+
+{{- define "sphericon.secretFileVolume" -}}
+{{- if .Values.secretFiles.secretName }}
+- name: secret-files
+  secret:
+    secretName: {{ .Values.secretFiles.secretName | quote }}
+{{- end }}
 {{- end -}}

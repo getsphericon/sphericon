@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -437,5 +439,77 @@ func TestConfigLoadOutboundAllowIsEmptyByDefaultAndRejectsMalformedValues(t *tes
 	_, err := Load("test")
 	if err == nil || !strings.Contains(err.Error(), "SPHERICON_OUTBOUND_ALLOW") {
 		t.Fatalf("a malformed value must fail the load naming the variable, got %v", err)
+	}
+}
+
+// secretFile writes content to a temp file and returns its path.
+func secretFile(t *testing.T, content string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "secret")
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func TestConfigLoadSecretFromFile(t *testing.T) {
+	for _, name := range secretVars {
+		t.Setenv(name, "")
+	}
+	t.Setenv("DATABASE_URL_FILE", secretFile(t, "postgres://from-file\n"))
+	t.Setenv("SPHERICON_JWT_SECRET_FILE", secretFile(t, strongSecret+"\r\n"))
+	t.Setenv("SPHERICON_ENCRYPTION_KEY_FILE", secretFile(t, "keyset"))
+	t.Setenv("SPHERICON_SMTP_PASS_FILE", secretFile(t, "smtp-pass\n"))
+	t.Setenv("SPHERICON_LICENSE_KEY_FILE", secretFile(t, "license.jwt\n"))
+
+	// "staging" has no .env file, unlike "test", whose .env.test sets the same variables.
+	cfg, err := Load("staging")
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	for name, got := range map[string][2]string{
+		"DatabaseURL":   {cfg.DatabaseURL, "postgres://from-file"},
+		"JWTSecret":     {cfg.JWTSecret, strongSecret},
+		"EncryptionKey": {cfg.EncryptionKey, "keyset"},
+		"SMTPPass":      {cfg.SMTPPass, "smtp-pass"},
+		"LicenseKey":    {cfg.LicenseKey, "license.jwt"},
+	} {
+		if got[0] != got[1] {
+			t.Errorf("%s = %q, want %q", name, got[0], got[1])
+		}
+	}
+}
+
+func TestConfigLoadExplicitSecretWinsOverFile(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://explicit")
+	t.Setenv("DATABASE_URL_FILE", filepath.Join(t.TempDir(), "missing"))
+
+	cfg, err := Load("test")
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.DatabaseURL != "postgres://explicit" {
+		t.Errorf("DatabaseURL = %q, want the explicit value", cfg.DatabaseURL)
+	}
+}
+
+func TestConfigLoadSecretFileMustBeReadableAndNotEmpty(t *testing.T) {
+	cases := map[string]string{
+		"missing": filepath.Join(t.TempDir(), "missing"),
+		"empty":   secretFile(t, ""),
+		"newline": secretFile(t, "\n"),
+	}
+	for name, path := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("SPHERICON_JWT_SECRET", strongSecret)
+			t.Setenv("SPHERICON_ENCRYPTION_KEY", "")
+			t.Setenv("SPHERICON_ENCRYPTION_KEY_FILE", path)
+
+			_, err := Load("staging")
+			if err == nil || !strings.Contains(err.Error(), "SPHERICON_ENCRYPTION_KEY_FILE") {
+				t.Fatalf("Load error = %v, want one naming SPHERICON_ENCRYPTION_KEY_FILE", err)
+			}
+		})
 	}
 }

@@ -45,10 +45,18 @@ spec:
             httpGet:
               path: /readyz
               port: http
+          {{- if .Values.secretFiles.secretName }}
+          volumeMounts:
+            {{- include "sphericon.secretFileMount" . | nindent 12 }}
+          {{- end }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+      {{- if .Values.secretFiles.secretName }}
+      volumes:
+        {{- include "sphericon.secretFileVolume" . | nindent 8 }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

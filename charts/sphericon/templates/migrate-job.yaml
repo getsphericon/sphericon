@@ -33,3 +33,11 @@ spec:
             {{- include "sphericon.envFrom" . | nindent 12 }}
           env:
             {{- include "sphericon.env" . | nindent 12 }}
+          {{- if .Values.secretFiles.secretName }}
+          volumeMounts:
+            {{- include "sphericon.secretFileMount" . | nindent 12 }}
+          {{- end }}
+      {{- if .Values.secretFiles.secretName }}
+      volumes:
+        {{- include "sphericon.secretFileVolume" . | nindent 8 }}
+      {{- end }}
