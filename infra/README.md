@@ -142,6 +142,12 @@ https://$(mise run infra -- output -raw alb_dns_name)/readyz`.
 - [ ] Database private: it has no public address (`aws rds describe-db-instances` shows
       `PubliclyAccessible: false`) and the plan output showed no secret values.
 
+Before the first apply with the default 14-day backups, the AWS account must be off the free plan:
+the free plan caps retention at 1 day (`FreeTierRestrictionError`), so set
+`-var db_backup_retention_days=1` until it is upgraded. Moving an existing database to Multi-AZ and
+`db.t4g.small` applies immediately (`apply_immediately`): expect a reboot and a few minutes of
+downtime, so apply it in a quiet hour.
+
 ## 7. Destroy and recreate
 
 The database is protected (`db_protected`, default true): deletion protection, a final snapshot
@@ -166,7 +172,7 @@ the environment). To recreate, run sections 4 to 6 again, with these effects:
 - **SES**: the identity is created again with new DKIM tokens, so verification repeats after the
   nameservers propagate. Production access is per account and region and is kept.
 
-**Pending, needs the account owner:** none of this has been applied yet. The smoke test, a destroy and
+**Pending, needs the account owner:** none of this has been applied yet. The smoke test, a destroy (with `db_protected=false`) and
 recreate following only this runbook, the ALB URL rewrite, `max_connections` of the real instance
 and a password-reset email passing DKIM and SPF need the account owner's access to the AWS account and the registrar.
 
@@ -186,7 +192,7 @@ and a password-reset email passing DKIM and SPF need the account owner's access 
   `404` problem+json means the rewrite did not apply (check the rule's transform in the console).
 - **The tracker host serves the SPA.** It must not: only `/t.js` and `/collect` have a rule.
 - **The MCP host serves the SPA.** It must not: only `/mcp` and `/.well-known/*` have a rule.
-- **Connection budget.** `db.t4g.micro` allows about 85-110 connections (read `SHOW
+- **Connection budget.** `db.t4g.small` allows about 190-225 connections (read `SHOW
   max_connections`). Each process opens two pools, 10 + 10; old plus new task during a deploy is 40
   and the migrate task adds about 4 (goose and river's migrator, 1-2 connections each). Before a
   second permanent task or another process, lower both pools or move to a larger class. No

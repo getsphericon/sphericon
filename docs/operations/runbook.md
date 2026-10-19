@@ -300,7 +300,8 @@ after any change to the backup setup and at least quarterly. It never touches pr
 4. Stop the stopwatch and record the results below, then delete the instance
    (`aws rds delete-db-instance --db-instance-identifier sphericon-drill --skip-final-snapshot`).
 
-**RPO** is the gap between the failure and the restored point: RDS archives transaction logs about
+The figures in this paragraph are AWS's documented behaviour, **not measured here**; the table is
+for the measured values. **RPO** is the gap between the failure and the restored point: RDS archives transaction logs about
 every five minutes, so point-in-time recovery loses up to about five minutes, and a Multi-AZ
 failover loses nothing (synchronous standby). **RTO** is the restore time (step 2 plus 3), plus
 repointing `DATABASE_URL` and redeploying; a Multi-AZ failover alone is 1-2 minutes with no action.

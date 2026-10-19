@@ -101,7 +101,7 @@ in plain text in a task definition, a plan or a log. One root module, one enviro
 
 ## Consequences
 
-- **Cost** is about $90-95 a month (list prices in `us-east-2`, estimates to check against the
+- **Cost** is about $98-100 a month (list prices in `us-east-2`, estimates to check against the
   bill): the ALB (about $18), Fargate ARM (about $14), RDS with storage (about $52: `db.t4g.small`
   Multi-AZ about $47, gp3 20 GB twice about $5; the test tier was about $14, so the hardening adds
   about $38 a month; backup storage up to the size of the database is free), public IPv4 addresses for the ALB
