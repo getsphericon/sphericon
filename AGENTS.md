@@ -423,7 +423,14 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
 - **Land non-trivial work from its worktree, then clean up.** A change made in a worktree reaches
   `main` with `git push origin HEAD:main` once the checks pass and `origin/main` is merged in (a
   detached `HEAD`, never a branch). Then remove that worktree (`git worktree remove <path>`) right
-  away, without asking. Only the worktree made for that change. The push prints
+  away, without asking. Only the worktree made for that change.
+  **Landing also closes the ticket.** When the user says to land or finish ("заливай", "завершай",
+  "land it"), that covers the issue the work was for: put `Closes #<n>` in the footer of the
+  commit that reaches `main` (one per ticket), then confirm with `gh issue view <n> --json state`
+  that it is closed after the push. If GitHub did not close it (the push was a merge commit
+  without the keyword, or the work came through a PR), run `gh issue close <n> --comment
+  "Implemented on main in <sha>."`. A ticket that stays open after its work is on `main` is
+  taken as unfinished by the next agent, who then redoes it. The push prints
   `Required status check "license/cla" is expected` and still succeeds: that is how the
   repository is set up, so it is expected. Do not mention it, flag it or call it a bypass.
 - ADR numbers are unique (`mise run check:adr`). Take the next free number when you add an ADR,
