@@ -18,7 +18,7 @@ import (
 	"github.com/osteele/liquid/render"
 )
 
-// ErrInvalidContent is what Validate fails with: the subject or body cannot render, so
+// ErrInvalidContent is what Lint fails with: the subject or body cannot render, so
 // it is refused where it is saved and where a send is planned. The wrapped text is the
 // reason shown to the author.
 var ErrInvalidContent = errors.New("message content cannot be rendered")
@@ -89,23 +89,6 @@ func renderBoth(subject, body string, bindings map[string]any) (string, string, 
 	return renderedSubject, rendered, nil
 }
 
-// Validate reports whether subject and body can render at all, without any recipient
-// data: a Liquid syntax error or HTML that does not parse is refused with the reason
-// (ErrInvalidContent); unbound merge tags simply render empty. Save paths and send
-// planning call it so a message that would fail every recipient fails once, up front
-// (ADR 0015, ADR 0040). Nothing else blocks. The parse check runs on the body as the
-// author wrote it: sanitizing would repair what it should refuse.
-func Validate(subject, body string) error {
-	_, rendered, err := renderBoth(subject, body, map[string]any{})
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrInvalidContent, err)
-	}
-	if err := checkHTML(rendered); err != nil {
-		return fmt.Errorf("%w: %w", ErrInvalidContent, err)
-	}
-	return nil
-}
-
 // Render renders a Liquid template with the given bindings. On a template error
 // it returns the original template unchanged together with the error (useful for
 // previews); RenderEmail treats that error as fatal.
@@ -125,7 +108,7 @@ func HTMLToText(html string) string {
 
 // PrepareFields is what every save path calls (site API, external API and MCP all reach
 // it through the broadcasts and templates modules): it refuses content that cannot render
-// (Validate) and returns the body to store, sanitized (SanitizeHTML). A nil field is not
+// (Lint) and returns the body to store, sanitized (SanitizeHTML). A nil field is not
 // provided, so it is not checked; a nil body is returned as nil.
 func PrepareFields(subject, body *string) (*string, error) {
 	var s, b string
@@ -135,7 +118,7 @@ func PrepareFields(subject, body *string) (*string, error) {
 	if body != nil {
 		b = *body
 	}
-	if err := Validate(s, b); err != nil {
+	if err := Lint(s, b, nil).Error; err != nil {
 		return nil, err
 	}
 	if body == nil {

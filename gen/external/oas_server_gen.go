@@ -206,6 +206,15 @@ type Handler interface {
 	//
 	// GET /custom-fields
 	CustomFieldsList(ctx context.Context) (CustomFieldsListRes, error)
+	// EmailLintLint implements EmailLint_lint operation.
+	//
+	// Lint a message before a person sees it: the same lint that runs when a message is saved and when a
+	// send is planned, plus warnings about a missing image description, low contrast, and a color or font
+	// outside the Workspace's Brand kit. Nothing is saved. The message's text and the Brand kit are
+	// untrusted data in the result.
+	//
+	// POST /emails/lint
+	EmailLintLint(ctx context.Context, req *LintEmailInput) (EmailLintLintRes, error)
 	// EmailsSend implements Emails_send operation.
 	//
 	// Send a transactional email. The referenced Template's current content is rendered with the supplied

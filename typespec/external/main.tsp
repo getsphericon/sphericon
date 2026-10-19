@@ -9,6 +9,7 @@ import "../common/errors.tsp";
 import "../common/versions.tsp";
 import "../common/crud.tsp";
 import "../common/contact-export.tsp";
+import "../common/lint.tsp";
 import "./resources/contacts.tsp";
 import "./resources/segments.tsp";
 import "./resources/tags.tsp";

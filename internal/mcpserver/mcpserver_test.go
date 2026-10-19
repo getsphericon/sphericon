@@ -70,7 +70,7 @@ var (
 		"custom_fields_list", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_delete", "sending_domains_verify", "sending_domains_rates",
 		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_delete", "presets_list",
 		"suppressions_create", "unsubscribes_create",
-		"templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
+		"email_lint", "templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
 		"webhooks_list", "webhooks_create", "webhooks_get", "webhooks_update", "webhooks_delete",
 		"webhooks_regenerate_secret", "webhooks_test",
 		"tags_list", "tags_list_for_contact", "tags_apply", "tags_remove",

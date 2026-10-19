@@ -61,15 +61,27 @@ var (
 	mediaQuery     = regexp.MustCompile(`^[A-Za-z0-9 ,:()._-]{1,200}$`)
 )
 
-func newPolicy(vml bool) *bluemonday.Policy {
-	p := bluemonday.NewPolicy()
-	p.AllowElements(
+// emailElements are the elements the sanitizer keeps; vmlElements are the ones it keeps only
+// inside an Outlook conditional comment. Lint reads the same lists to name an element the save
+// would strip, so the two cannot drift. (<style> is kept too: the sanitizer lifts it out and checks
+// it on its own.)
+var (
+	emailElements = []string{
 		"html", "head", "meta", "title", "body",
 		"table", "thead", "tbody", "tfoot", "tr", "td", "th", "colgroup", "col", "caption",
 		"div", "span", "p", "br", "hr", "center", "font", "blockquote", "pre", "code",
 		"h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li",
 		"b", "strong", "i", "em", "u", "s", "small", "sub", "sup", "a", "img",
-	)
+	}
+	vmlElements = []string{
+		"v:roundrect", "v:rect", "v:oval", "v:line", "v:shape", "v:image", "v:fill", "v:stroke",
+		"v:textbox", "v:background", "w:anchorlock",
+	}
+)
+
+func newPolicy(vml bool) *bluemonday.Policy {
+	p := bluemonday.NewPolicy()
+	p.AllowElements(emailElements...)
 	p.AllowAttrs("class", "id", "lang", "dir", "title", "role", "align", "valign", "width", "height",
 		"bgcolor", "border", "cellpadding", "cellspacing", "colspan", "rowspan", "color", "face", "size",
 		"aria-label", "aria-hidden").Globally()
@@ -90,8 +102,7 @@ func newPolicy(vml bool) *bluemonday.Policy {
 	if !vml {
 		return p
 	}
-	p.AllowElements("v:roundrect", "v:rect", "v:oval", "v:line", "v:shape", "v:image", "v:fill", "v:stroke",
-		"v:textbox", "v:background", "w:anchorlock")
+	p.AllowElements(vmlElements...)
 	p.AllowNoAttrs().OnElements("v:fill", "v:textbox", "v:background", "w:anchorlock")
 	p.AllowAttrs("arcsize", "strokecolor", "strokeweight", "fillcolor", "stroke", "fill", "type", "color", "origin",
 		"position", "inset", "o:title", "o:spid", "coordsize", "from", "to", "opacity", "aspect", "size").

@@ -255,7 +255,7 @@ func PlanBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module
 
 	// A template that cannot render would fail every recipient: fail the broadcast once,
 	// here, before any recipient row exists (ADR 0015).
-	if verr := emailrender.Validate(b.Subject, b.Body); verr != nil {
+	if verr := emailrender.Lint(b.Subject, b.Body, nil).Error; verr != nil {
 		_ = s.Broadcast().UpdateOneID(b.ID).SetStatus(broadcast.StatusFailed).Exec(ctx)
 		return nil, fmt.Errorf("broadcast %d: template does not render: %w", b.ID, verr)
 	}

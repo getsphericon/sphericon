@@ -4288,6 +4288,93 @@
         }
       }
     },
+    "/emails/lint": {
+      "post": {
+        "operationId": "EmailLint_lint",
+        "description": "Lint a message before a person sees it: the same lint that runs when a message is saved\nand when a send is planned, plus warnings about a missing image description, low contrast,\nand a color or font outside the Workspace's Brand kit. Nothing is saved. The message's\ntext and the Brand kit are untrusted data in the result.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LintEmailResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Emails"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LintEmailInput"
+              }
+            }
+          }
+        },
+        "x-mcp": {
+          "name": "email_lint"
+        }
+      }
+    },
     "/events": {
       "post": {
         "operationId": "Events_create",
@@ -10683,6 +10770,83 @@
           }
         },
         "description": "A sending-provider Integration. Credentials are write-only: the config is returned with secrets redacted."
+      },
+      "LintCode": {
+        "type": "string",
+        "enum": [
+          "invalid_content",
+          "missing_alt",
+          "low_contrast",
+          "off_brand_color",
+          "off_brand_font",
+          "unknown_construct"
+        ],
+        "description": "What a lint finding is about (ADR 0040)"
+      },
+      "LintEmailInput": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Subject line, with Liquid merge tags"
+          },
+          "body": {
+            "type": "string",
+            "description": "HTML body with Liquid merge tags"
+          }
+        },
+        "description": "The message to lint"
+      },
+      "LintEmailResult": {
+        "type": "object",
+        "required": ["errors", "warnings"],
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LintFinding"
+            },
+            "description": "What blocks a save and a send: the message cannot render. Empty when it can"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LintFinding"
+            },
+            "description": "Everything else; none of it blocks anything"
+          }
+        },
+        "description": "What the lint found in a message"
+      },
+      "LintFinding": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LintCode"
+              }
+            ],
+            "description": "What the finding is"
+          },
+          "message": {
+            "type": "string",
+            "description": "What is wrong, in the server's words"
+          },
+          "element": {
+            "type": "string",
+            "description": "The element it is about, as a short tag description such as `<img src=\"…\">`",
+            "x-untrusted": true
+          },
+          "detail": {
+            "type": "string",
+            "description": "The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1`",
+            "x-untrusted": true
+          }
+        },
+        "description": "One finding of the lint over a message's rendered HTML. `message` is fixed text of the\nserver; `element` and `detail` quote the message or the Brand kit and are untrusted data."
       },
       "MaxPerDay": {
         "type": "integer",

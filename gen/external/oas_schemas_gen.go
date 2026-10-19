@@ -5610,6 +5610,191 @@ type IntegrationsUpdateUnprocessableEntity ProblemDetails
 
 func (*IntegrationsUpdateUnprocessableEntity) integrationsUpdateRes() {}
 
+// What a lint finding is about (ADR 0040).
+// Ref: #/components/schemas/LintCode
+type LintCode string
+
+const (
+	LintCodeInvalidContent   LintCode = "invalid_content"
+	LintCodeMissingAlt       LintCode = "missing_alt"
+	LintCodeLowContrast      LintCode = "low_contrast"
+	LintCodeOffBrandColor    LintCode = "off_brand_color"
+	LintCodeOffBrandFont     LintCode = "off_brand_font"
+	LintCodeUnknownConstruct LintCode = "unknown_construct"
+)
+
+// AllValues returns all LintCode values.
+func (LintCode) AllValues() []LintCode {
+	return []LintCode{
+		LintCodeInvalidContent,
+		LintCodeMissingAlt,
+		LintCodeLowContrast,
+		LintCodeOffBrandColor,
+		LintCodeOffBrandFont,
+		LintCodeUnknownConstruct,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LintCode) MarshalText() ([]byte, error) {
+	switch s {
+	case LintCodeInvalidContent:
+		return []byte(s), nil
+	case LintCodeMissingAlt:
+		return []byte(s), nil
+	case LintCodeLowContrast:
+		return []byte(s), nil
+	case LintCodeOffBrandColor:
+		return []byte(s), nil
+	case LintCodeOffBrandFont:
+		return []byte(s), nil
+	case LintCodeUnknownConstruct:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LintCode) UnmarshalText(data []byte) error {
+	switch LintCode(data) {
+	case LintCodeInvalidContent:
+		*s = LintCodeInvalidContent
+		return nil
+	case LintCodeMissingAlt:
+		*s = LintCodeMissingAlt
+		return nil
+	case LintCodeLowContrast:
+		*s = LintCodeLowContrast
+		return nil
+	case LintCodeOffBrandColor:
+		*s = LintCodeOffBrandColor
+		return nil
+	case LintCodeOffBrandFont:
+		*s = LintCodeOffBrandFont
+		return nil
+	case LintCodeUnknownConstruct:
+		*s = LintCodeUnknownConstruct
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The message to lint.
+// Ref: #/components/schemas/LintEmailInput
+type LintEmailInput struct {
+	// Subject line, with Liquid merge tags.
+	Subject OptString `json:"subject"`
+	// HTML body with Liquid merge tags.
+	Body string `json:"body"`
+}
+
+// GetSubject returns the value of Subject.
+func (s *LintEmailInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetBody returns the value of Body.
+func (s *LintEmailInput) GetBody() string {
+	return s.Body
+}
+
+// SetSubject sets the value of Subject.
+func (s *LintEmailInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetBody sets the value of Body.
+func (s *LintEmailInput) SetBody(val string) {
+	s.Body = val
+}
+
+// What the lint found in a message.
+// Ref: #/components/schemas/LintEmailResult
+type LintEmailResult struct {
+	// What blocks a save and a send: the message cannot render. Empty when it can.
+	Errors []LintFinding `json:"errors"`
+	// Everything else; none of it blocks anything.
+	Warnings []LintFinding `json:"warnings"`
+}
+
+// GetErrors returns the value of Errors.
+func (s *LintEmailResult) GetErrors() []LintFinding {
+	return s.Errors
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *LintEmailResult) GetWarnings() []LintFinding {
+	return s.Warnings
+}
+
+// SetErrors sets the value of Errors.
+func (s *LintEmailResult) SetErrors(val []LintFinding) {
+	s.Errors = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *LintEmailResult) SetWarnings(val []LintFinding) {
+	s.Warnings = val
+}
+
+func (*LintEmailResult) emailLintLintRes() {}
+
+// One finding of the lint over a message's rendered HTML. `message` is fixed text of the server;
+// `element` and `detail` quote the message or the Brand kit and are untrusted data.
+// Ref: #/components/schemas/LintFinding
+type LintFinding struct {
+	// What the finding is.
+	Code LintCode `json:"code"`
+	// What is wrong, in the server's words.
+	Message string `json:"message"`
+	// The element it is about, as a short tag description such as `<img src="…">`.
+	Element OptString `json:"element"`
+	// The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1`.
+	Detail OptString `json:"detail"`
+}
+
+// GetCode returns the value of Code.
+func (s *LintFinding) GetCode() LintCode {
+	return s.Code
+}
+
+// GetMessage returns the value of Message.
+func (s *LintFinding) GetMessage() string {
+	return s.Message
+}
+
+// GetElement returns the value of Element.
+func (s *LintFinding) GetElement() OptString {
+	return s.Element
+}
+
+// GetDetail returns the value of Detail.
+func (s *LintFinding) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetCode sets the value of Code.
+func (s *LintFinding) SetCode(val LintCode) {
+	s.Code = val
+}
+
+// SetMessage sets the value of Message.
+func (s *LintFinding) SetMessage(val string) {
+	s.Message = val
+}
+
+// SetElement sets the value of Element.
+func (s *LintFinding) SetElement(val OptString) {
+	s.Element = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *LintFinding) SetDetail(val OptString) {
+	s.Detail = val
+}
+
 type MaxPerDay int32
 
 type MaxPerSecond int32
@@ -8265,6 +8450,7 @@ func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 }
 
 func (*ProblemDetails) customFieldsListRes() {}
+func (*ProblemDetails) emailLintLintRes()    {}
 func (*ProblemDetails) presetsListRes()      {}
 
 // Validation errors grouped by field.
@@ -8380,6 +8566,7 @@ func (*ProblemDetailsHeaders) contactsGetRes()               {}
 func (*ProblemDetailsHeaders) contactsListRes()              {}
 func (*ProblemDetailsHeaders) contactsUpdateRes()            {}
 func (*ProblemDetailsHeaders) customFieldsListRes()          {}
+func (*ProblemDetailsHeaders) emailLintLintRes()             {}
 func (*ProblemDetailsHeaders) emailsSendRes()                {}
 func (*ProblemDetailsHeaders) enrollmentsGetRes()            {}
 func (*ProblemDetailsHeaders) enrollmentsListRes()           {}

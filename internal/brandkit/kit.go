@@ -8,7 +8,11 @@
 // agent reads it later: a reader treats it as data, never as instructions.
 package brandkit
 
-import "time"
+import (
+	"time"
+
+	"github.com/getsphericon/sphericon/internal/emailrender"
+)
 
 // Kit is a Workspace's Brand kit. A Workspace that has not saved one has the defaults and Saved
 // false: there is no brand to lint a message against then.
@@ -48,5 +52,19 @@ func Defaults() Kit {
 		BodyFont:        "Arial, Helvetica, sans-serif",
 		ButtonTextColor: "#ffffff",
 		ButtonRadius:    4,
+	}
+}
+
+// Brand is the kit as the lint compares a message to it, or nil for a Workspace that has not saved
+// a kit: there is no brand to lint against then.
+func (k Kit) Brand() *emailrender.Brand {
+	if !k.Saved {
+		return nil
+	}
+	return &emailrender.Brand{
+		Colors:          []string{k.AccentColor, k.TextColor, k.BackgroundColor, k.ButtonTextColor},
+		Fonts:           []string{k.HeadingFont, k.BodyFont},
+		TextColor:       k.TextColor,
+		BackgroundColor: k.BackgroundColor,
 	}
 }

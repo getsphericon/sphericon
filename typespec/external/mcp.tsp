@@ -27,6 +27,8 @@ namespace Sphericon;
 @@extension(ContactsBatch.upsert, "x-mcp", #{ name: "contacts_upsert_batch" });
 @@extension(EventsBatch.submit, "x-mcp", #{ name: "events_record_batch" });
 
+@@extension(EmailLint.lint, "x-mcp", #{ name: "email_lint" });
+
 // Read-only reference data (ADR 0016).
 @@extension(CustomFields.list, "x-mcp", #{ name: "custom_fields_list" });
 @@extension(SendingDomains.list, "x-mcp", #{ name: "sending_domains_list" });

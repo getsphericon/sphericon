@@ -8170,6 +8170,47 @@
         "format": "int64",
         "description": "A primary key, written as a decimal string so JavaScript never rounds it. The format\nmakes the Go servers parse it into an int64: a malformed id is refused as a 400 before\na handler runs."
       },
+      "LintCode": {
+        "type": "string",
+        "enum": [
+          "invalid_content",
+          "missing_alt",
+          "low_contrast",
+          "off_brand_color",
+          "off_brand_font",
+          "unknown_construct"
+        ],
+        "description": "What a lint finding is about (ADR 0040)"
+      },
+      "LintFinding": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LintCode"
+              }
+            ],
+            "description": "What the finding is"
+          },
+          "message": {
+            "type": "string",
+            "description": "What is wrong, in the server's words"
+          },
+          "element": {
+            "type": "string",
+            "description": "The element it is about, as a short tag description such as `<img src=\"…\">`",
+            "x-untrusted": true
+          },
+          "detail": {
+            "type": "string",
+            "description": "The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1`",
+            "x-untrusted": true
+          }
+        },
+        "description": "One finding of the lint over a message's rendered HTML. `message` is fixed text of the\nserver; `element` and `detail` quote the message or the Brand kit and are untrusted data."
+      },
       "ProblemCode": {
         "type": "string",
         "enum": ["second_factor_required", "email_verification_required"],
@@ -8993,6 +9034,13 @@
             "nullable": true,
             "description": "Version of the editor that rendered the document; null with it"
           },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LintFinding"
+            },
+            "description": "Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it"
+          },
           "bodyText": {
             "type": "string",
             "description": "Derived plain-text body"
@@ -9762,6 +9810,13 @@
             "type": "string",
             "nullable": true,
             "description": "Version of the editor that rendered the document; null with it"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LintFinding"
+            },
+            "description": "Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it"
           },
           "createdAt": {
             "allOf": [

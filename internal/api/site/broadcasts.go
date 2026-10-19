@@ -92,6 +92,9 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		return nil, err
 	}
 	res := mapper.BroadcastToResource(b)
+	if res.Warnings, err = h.lintWarnings(ctx, ws, b.Subject, req.Body, b.Body); err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -166,6 +169,9 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 		return nil, err
 	}
 	res := mapper.BroadcastToResource(b)
+	if res.Warnings, err = h.lintWarnings(ctx, ws, b.Subject, req.Body, b.Body); err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 

@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/templates"
@@ -69,6 +70,16 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped) (Kit, error) {
 		return Kit{}, err
 	}
 	return kitOf(row), nil
+}
+
+// Lint runs the lint of ADR 0040 over a message against the Workspace's Brand kit (none saved:
+// no brand warnings). Its warnings are advice for the author; only its Error blocks.
+func (m *Module) Lint(ctx context.Context, s *ent.Scoped, subject, body string) (emailrender.Report, error) {
+	kit, err := m.Get(ctx, s)
+	if err != nil {
+		return emailrender.Report{}, err
+	}
+	return emailrender.Lint(subject, body, kit.Brand()), nil
 }
 
 // Save stores the Brand kit. The first save creates it and, in the same transaction, the starter

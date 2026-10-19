@@ -29,13 +29,13 @@ func TestRenderEmailHTML(t *testing.T) {
 	assert.Contains(t, out.Text, "Hello Alex, welcome!")
 }
 
-func TestValidateAcceptsRenderableContent(t *testing.T) {
-	require.NoError(t, emailrender.Validate("Hi {{ first_name }}", sampleHTML), "unbound merge tags are fine")
-	require.NoError(t, emailrender.Validate("s", ""), "an empty body parses")
-	require.NoError(t, emailrender.Validate("s", "plain <b>text</b> with <!-- a comment --> and &amp; entities"))
+func TestLintAcceptsRenderableContent(t *testing.T) {
+	require.NoError(t, emailrender.Lint("Hi {{ first_name }}", sampleHTML, nil).Error, "unbound merge tags are fine")
+	require.NoError(t, emailrender.Lint("s", "", nil).Error, "an empty body parses")
+	require.NoError(t, emailrender.Lint("s", "plain <b>text</b> with <!-- a comment --> and &amp; entities", nil).Error)
 }
 
-func TestValidateRefusesWhatCannotRender(t *testing.T) {
+func TestLintRefusesWhatCannotRender(t *testing.T) {
 	for name, tc := range map[string]struct{ subject, body, reason string }{
 		"liquid error in the subject": {"{% if %}", sampleHTML, "render subject"},
 		"liquid error in the body":    {"s", "<p>{% if %}broken</p>", "render body"},
@@ -45,7 +45,7 @@ func TestValidateRefusesWhatCannotRender(t *testing.T) {
 		"unclosed container":          {"s", "<table><tr><td>hi</td></tr>", "<table> is never closed"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			err := emailrender.Validate(tc.subject, tc.body)
+			err := emailrender.Lint(tc.subject, tc.body, nil).Error
 			require.ErrorIs(t, err, emailrender.ErrInvalidContent)
 			assert.ErrorContains(t, err, tc.reason)
 		})

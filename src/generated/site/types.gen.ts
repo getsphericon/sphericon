@@ -384,6 +384,46 @@ export type EmailAddress = string;
 export type EntityId = string;
 
 /**
+ * What a lint finding is about (ADR 0040)
+ */
+export const LintCode = {
+  INVALID_CONTENT: 'invalid_content',
+  MISSING_ALT: 'missing_alt',
+  LOW_CONTRAST: 'low_contrast',
+  OFF_BRAND_COLOR: 'off_brand_color',
+  OFF_BRAND_FONT: 'off_brand_font',
+  UNKNOWN_CONSTRUCT: 'unknown_construct'
+} as const;
+
+/**
+ * What a lint finding is about (ADR 0040)
+ */
+export type LintCode = typeof LintCode[keyof typeof LintCode];
+
+/**
+ * One finding of the lint over a message's rendered HTML. `message` is fixed text of the
+ * server; `element` and `detail` quote the message or the Brand kit and are untrusted data.
+ */
+export type LintFinding = {
+  /**
+   * What the finding is
+   */
+  code: LintCode;
+  /**
+   * What is wrong, in the server's words
+   */
+  message: string;
+  /**
+   * The element it is about, as a short tag description such as `<img src="…">`
+   */
+  element?: string;
+  /**
+   * The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1`
+   */
+  detail?: string;
+};
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const ProblemCode = { SECOND_FACTOR_REQUIRED: 'second_factor_required', EMAIL_VERIFICATION_REQUIRED: 'email_verification_required' } as const;
@@ -1060,6 +1100,10 @@ export type SiteBroadcastResource = {
    */
   editorVersion?: string | null;
   /**
+   * Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it
+   */
+  warnings?: Array<LintFinding>;
+  /**
    * Derived plain-text body
    */
   bodyText: string;
@@ -1591,6 +1635,10 @@ export type SiteEmailTemplateResource = {
    * Version of the editor that rendered the document; null with it
    */
   editorVersion?: string | null;
+  /**
+   * Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it
+   */
+  warnings?: Array<LintFinding>;
   /**
    * Creation timestamp
    */

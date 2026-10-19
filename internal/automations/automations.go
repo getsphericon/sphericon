@@ -128,7 +128,7 @@ func validate(steps []Step) error {
 	for _, s := range steps {
 		switch s.Type {
 		case StepEmail:
-			if err := emailrender.Validate(s.Subject, s.Body); err != nil {
+			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
 				return fmt.Errorf("%w: %w", ErrInvalidStep, err)
 			}
 		case StepHTTP:

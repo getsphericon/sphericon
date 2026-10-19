@@ -70,6 +70,9 @@ func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.SiteCre
 		return nil, err
 	}
 	res := mapper.EmailTemplateToResource(tpl)
+	if res.Warnings, err = h.lintWarnings(ctx, scoped, tpl.Subject, req.Body, tpl.Body); err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -130,6 +133,9 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.SiteUpd
 		return nil, err
 	}
 	res := mapper.EmailTemplateToResource(tpl)
+	if res.Warnings, err = h.lintWarnings(ctx, scoped, tpl.Subject, req.Body, tpl.Body); err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 

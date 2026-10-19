@@ -133,6 +133,10 @@ type CustomFieldsListRes interface {
 	customFieldsListRes()
 }
 
+type EmailLintLintRes interface {
+	emailLintLintRes()
+}
+
 type EmailsSendRes interface {
 	emailsSendRes()
 }

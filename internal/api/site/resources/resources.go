@@ -73,8 +73,12 @@ type Converter interface {
 	// Progress is derived from the recipients, which the mapper cannot see: the
 	// handler attaches it.
 	// goverter:ignore Progress
+	// Warnings are the lint of the content just saved (ADR 0040): the handler attaches them
+	// to the response of a save.
+	// goverter:ignore Warnings
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
 
+	// goverter:ignore Warnings
 	EmailTemplateToResource(source *ent.EmailTemplate) siteapi.SiteEmailTemplateResource
 
 	// The stored definition string (the executor's JSON format) is decoded into

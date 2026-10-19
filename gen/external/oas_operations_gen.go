@@ -39,6 +39,7 @@ const (
 	ContactsListOperation              OperationName = "ContactsList"
 	ContactsUpdateOperation            OperationName = "ContactsUpdate"
 	CustomFieldsListOperation          OperationName = "CustomFieldsList"
+	EmailLintLintOperation             OperationName = "EmailLintLint"
 	EmailsSendOperation                OperationName = "EmailsSend"
 	EnrollmentsGetOperation            OperationName = "EnrollmentsGet"
 	EnrollmentsListOperation           OperationName = "EnrollmentsList"

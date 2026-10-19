@@ -2254,6 +2254,199 @@ func (s *EntityId) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes LintCode as json.
+func (s LintCode) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes LintCode from json.
+func (s *LintCode) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LintCode to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch LintCode(v) {
+	case LintCodeInvalidContent:
+		*s = LintCodeInvalidContent
+	case LintCodeMissingAlt:
+		*s = LintCodeMissingAlt
+	case LintCodeLowContrast:
+		*s = LintCodeLowContrast
+	case LintCodeOffBrandColor:
+		*s = LintCodeOffBrandColor
+	case LintCodeOffBrandFont:
+		*s = LintCodeOffBrandFont
+	case LintCodeUnknownConstruct:
+		*s = LintCodeUnknownConstruct
+	default:
+		*s = LintCode(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s LintCode) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LintCode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *LintFinding) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *LintFinding) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("code")
+		s.Code.Encode(e)
+	}
+	{
+		e.FieldStart("message")
+		e.Str(s.Message)
+	}
+	{
+		if s.Element.Set {
+			e.FieldStart("element")
+			s.Element.Encode(e)
+		}
+	}
+	{
+		if s.Detail.Set {
+			e.FieldStart("detail")
+			s.Detail.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfLintFinding = [4]string{
+	0: "code",
+	1: "message",
+	2: "element",
+	3: "detail",
+}
+
+// Decode decodes LintFinding from json.
+func (s *LintFinding) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LintFinding to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "code":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Code.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"code\"")
+			}
+		case "message":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Message = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"message\"")
+			}
+		case "element":
+			if err := func() error {
+				s.Element.Reset()
+				if err := s.Element.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"element\"")
+			}
+		case "detail":
+			if err := func() error {
+				s.Detail.Reset()
+				if err := s.Detail.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"detail\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode LintFinding")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfLintFinding) {
+					name = jsonFieldsNameOfLintFinding[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *LintFinding) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LintFinding) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes int32 as json.
 func (o NilInt32) Encode(e *jx.Encoder) {
 	if o.Null {
@@ -10021,6 +10214,16 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Warnings != nil {
+			e.FieldStart("warnings")
+			e.ArrStart()
+			for _, elem := range s.Warnings {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
 		e.FieldStart("bodyText")
 		e.Str(s.BodyText)
 	}
@@ -10078,7 +10281,7 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteBroadcastResource = [19]string{
+var jsonFieldsNameOfSiteBroadcastResource = [20]string{
 	0:  "id",
 	1:  "name",
 	2:  "subject",
@@ -10087,17 +10290,18 @@ var jsonFieldsNameOfSiteBroadcastResource = [19]string{
 	5:  "body",
 	6:  "doc",
 	7:  "editorVersion",
-	8:  "bodyText",
-	9:  "segmentId",
-	10: "integrationId",
-	11: "status",
-	12: "holdReason",
-	13: "scheduledAt",
-	14: "sentAt",
-	15: "stats",
-	16: "progress",
-	17: "createdAt",
-	18: "updatedAt",
+	8:  "warnings",
+	9:  "bodyText",
+	10: "segmentId",
+	11: "integrationId",
+	12: "status",
+	13: "holdReason",
+	14: "scheduledAt",
+	15: "sentAt",
+	16: "stats",
+	17: "progress",
+	18: "createdAt",
+	19: "updatedAt",
 }
 
 // Decode decodes SiteBroadcastResource from json.
@@ -10195,8 +10399,25 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"editorVersion\"")
 			}
+		case "warnings":
+			if err := func() error {
+				s.Warnings = make([]LintFinding, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem LintFinding
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Warnings = append(s.Warnings, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"warnings\"")
+			}
 		case "bodyText":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.BodyText = string(v)
@@ -10228,7 +10449,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		case "status":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				if err := s.Status.Decode(d); err != nil {
 					return err
@@ -10268,7 +10489,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sentAt\"")
 			}
 		case "stats":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.Stats.Decode(d); err != nil {
 					return err
@@ -10288,7 +10509,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"progress\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 1
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -10298,7 +10519,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -10318,8 +10539,8 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b00100111,
-		0b10001001,
-		0b00000110,
+		0b00010010,
+		0b00001101,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -15999,6 +16220,16 @@ func (s *SiteEmailTemplateResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Warnings != nil {
+			e.FieldStart("warnings")
+			e.ArrStart()
+			for _, elem := range s.Warnings {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
@@ -16008,15 +16239,16 @@ func (s *SiteEmailTemplateResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteEmailTemplateResource = [8]string{
+var jsonFieldsNameOfSiteEmailTemplateResource = [9]string{
 	0: "id",
 	1: "name",
 	2: "subject",
 	3: "body",
 	4: "doc",
 	5: "editorVersion",
-	6: "createdAt",
-	7: "updatedAt",
+	6: "warnings",
+	7: "createdAt",
+	8: "updatedAt",
 }
 
 // Decode decodes SiteEmailTemplateResource from json.
@@ -16024,7 +16256,7 @@ func (s *SiteEmailTemplateResource) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteEmailTemplateResource to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -16094,8 +16326,25 @@ func (s *SiteEmailTemplateResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"editorVersion\"")
 			}
+		case "warnings":
+			if err := func() error {
+				s.Warnings = make([]LintFinding, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem LintFinding
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Warnings = append(s.Warnings, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"warnings\"")
+			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -16105,7 +16354,7 @@ func (s *SiteEmailTemplateResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -16123,8 +16372,9 @@ func (s *SiteEmailTemplateResource) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b11001111,
+	for i, mask := range [2]uint8{
+		0b10001111,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

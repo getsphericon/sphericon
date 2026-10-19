@@ -35,7 +35,13 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, emailrender.SanitizeHTML(got.Body), got.Body, "the stored body survives the sanitizer")
-			require.NoError(t, emailrender.Validate(subject, got.Body))
+			kit := brandedKit()
+			kit.Saved = true
+			report := emailrender.Lint(subject, got.Body, kit.Brand())
+			require.NoError(t, report.Error)
+			for _, w := range report.Warnings {
+				assert.Equal(t, emailrender.CodeLowContrast, w.Code, "a starter is made of its own Brand kit: only the test kit's orange button can warn: %v", w)
+			}
 			for _, brand := range []string{
 				"#f0f4f8", "#102030", "Verdana, sans-serif", "https://cdn.example.com/logo.png", "Acme Inc, 1 Main St",
 			} {

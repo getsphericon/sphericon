@@ -1031,6 +1031,131 @@ type EmailAddress string
 
 type EntityId int64
 
+// What a lint finding is about (ADR 0040).
+// Ref: #/components/schemas/LintCode
+type LintCode string
+
+const (
+	LintCodeInvalidContent   LintCode = "invalid_content"
+	LintCodeMissingAlt       LintCode = "missing_alt"
+	LintCodeLowContrast      LintCode = "low_contrast"
+	LintCodeOffBrandColor    LintCode = "off_brand_color"
+	LintCodeOffBrandFont     LintCode = "off_brand_font"
+	LintCodeUnknownConstruct LintCode = "unknown_construct"
+)
+
+// AllValues returns all LintCode values.
+func (LintCode) AllValues() []LintCode {
+	return []LintCode{
+		LintCodeInvalidContent,
+		LintCodeMissingAlt,
+		LintCodeLowContrast,
+		LintCodeOffBrandColor,
+		LintCodeOffBrandFont,
+		LintCodeUnknownConstruct,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LintCode) MarshalText() ([]byte, error) {
+	switch s {
+	case LintCodeInvalidContent:
+		return []byte(s), nil
+	case LintCodeMissingAlt:
+		return []byte(s), nil
+	case LintCodeLowContrast:
+		return []byte(s), nil
+	case LintCodeOffBrandColor:
+		return []byte(s), nil
+	case LintCodeOffBrandFont:
+		return []byte(s), nil
+	case LintCodeUnknownConstruct:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LintCode) UnmarshalText(data []byte) error {
+	switch LintCode(data) {
+	case LintCodeInvalidContent:
+		*s = LintCodeInvalidContent
+		return nil
+	case LintCodeMissingAlt:
+		*s = LintCodeMissingAlt
+		return nil
+	case LintCodeLowContrast:
+		*s = LintCodeLowContrast
+		return nil
+	case LintCodeOffBrandColor:
+		*s = LintCodeOffBrandColor
+		return nil
+	case LintCodeOffBrandFont:
+		*s = LintCodeOffBrandFont
+		return nil
+	case LintCodeUnknownConstruct:
+		*s = LintCodeUnknownConstruct
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One finding of the lint over a message's rendered HTML. `message` is fixed text of the server;
+// `element` and `detail` quote the message or the Brand kit and are untrusted data.
+// Ref: #/components/schemas/LintFinding
+type LintFinding struct {
+	// What the finding is.
+	Code LintCode `json:"code"`
+	// What is wrong, in the server's words.
+	Message string `json:"message"`
+	// The element it is about, as a short tag description such as `<img src="…">`.
+	Element OptString `json:"element"`
+	// The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1`.
+	Detail OptString `json:"detail"`
+}
+
+// GetCode returns the value of Code.
+func (s *LintFinding) GetCode() LintCode {
+	return s.Code
+}
+
+// GetMessage returns the value of Message.
+func (s *LintFinding) GetMessage() string {
+	return s.Message
+}
+
+// GetElement returns the value of Element.
+func (s *LintFinding) GetElement() OptString {
+	return s.Element
+}
+
+// GetDetail returns the value of Detail.
+func (s *LintFinding) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetCode sets the value of Code.
+func (s *LintFinding) SetCode(val LintCode) {
+	s.Code = val
+}
+
+// SetMessage sets the value of Message.
+func (s *LintFinding) SetMessage(val string) {
+	s.Message = val
+}
+
+// SetElement sets the value of Element.
+func (s *LintFinding) SetElement(val OptString) {
+	s.Element = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *LintFinding) SetDetail(val OptString) {
+	s.Detail = val
+}
+
 // NewNilInt32 returns new NilInt32 with value set to v.
 func NewNilInt32(v int32) NilInt32 {
 	return NilInt32{
@@ -6028,6 +6153,9 @@ type SiteBroadcastResource struct {
 	Doc OptNilSiteBroadcastResourceDoc `json:"doc"`
 	// Version of the editor that rendered the document; null with it.
 	EditorVersion OptNilString `json:"editorVersion"`
+	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
+	// it.
+	Warnings []LintFinding `json:"warnings"`
 	// Derived plain-text body.
 	BodyText string `json:"bodyText"`
 	// Target segment; null means all active contacts.
@@ -6093,6 +6221,11 @@ func (s *SiteBroadcastResource) GetDoc() OptNilSiteBroadcastResourceDoc {
 // GetEditorVersion returns the value of EditorVersion.
 func (s *SiteBroadcastResource) GetEditorVersion() OptNilString {
 	return s.EditorVersion
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *SiteBroadcastResource) GetWarnings() []LintFinding {
+	return s.Warnings
 }
 
 // GetBodyText returns the value of BodyText.
@@ -6188,6 +6321,11 @@ func (s *SiteBroadcastResource) SetDoc(val OptNilSiteBroadcastResourceDoc) {
 // SetEditorVersion sets the value of EditorVersion.
 func (s *SiteBroadcastResource) SetEditorVersion(val OptNilString) {
 	s.EditorVersion = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *SiteBroadcastResource) SetWarnings(val []LintFinding) {
+	s.Warnings = val
 }
 
 // SetBodyText sets the value of BodyText.
@@ -8053,6 +8191,9 @@ type SiteEmailTemplateResource struct {
 	Doc OptNilSiteEmailTemplateResourceDoc `json:"doc"`
 	// Version of the editor that rendered the document; null with it.
 	EditorVersion OptNilString `json:"editorVersion"`
+	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
+	// it.
+	Warnings []LintFinding `json:"warnings"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -8087,6 +8228,11 @@ func (s *SiteEmailTemplateResource) GetDoc() OptNilSiteEmailTemplateResourceDoc 
 // GetEditorVersion returns the value of EditorVersion.
 func (s *SiteEmailTemplateResource) GetEditorVersion() OptNilString {
 	return s.EditorVersion
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *SiteEmailTemplateResource) GetWarnings() []LintFinding {
+	return s.Warnings
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -8127,6 +8273,11 @@ func (s *SiteEmailTemplateResource) SetDoc(val OptNilSiteEmailTemplateResourceDo
 // SetEditorVersion sets the value of EditorVersion.
 func (s *SiteEmailTemplateResource) SetEditorVersion(val OptNilString) {
 	s.EditorVersion = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *SiteEmailTemplateResource) SetWarnings(val []LintFinding) {
+	s.Warnings = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

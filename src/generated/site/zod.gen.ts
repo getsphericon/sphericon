@@ -18,6 +18,29 @@ export const zEmailAddress = z.email().max(320);
 export const zEntityId = z.string().regex(/^[0-9]+$/);
 
 /**
+ * What a lint finding is about (ADR 0040)
+ */
+export const zLintCode = z.enum([
+  'invalid_content',
+  'missing_alt',
+  'low_contrast',
+  'off_brand_color',
+  'off_brand_font',
+  'unknown_construct'
+]);
+
+/**
+ * One finding of the lint over a message's rendered HTML. `message` is fixed text of the
+ * server; `element` and `detail` quote the message or the Brand kit and are untrusted data.
+ */
+export const zLintFinding = z.object({
+  code: zLintCode,
+  message: z.string(),
+  element: z.exactOptional(z.string()),
+  detail: z.exactOptional(z.string())
+});
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum(['second_factor_required', 'email_verification_required']);
@@ -1246,6 +1269,7 @@ export const zSiteBroadcastResource = z.object({
   body: z.string(),
   doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   editorVersion: z.exactOptional(z.string().nullable()),
+  warnings: z.exactOptional(z.array(zLintFinding)),
   bodyText: z.string(),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable()),
@@ -1315,6 +1339,7 @@ export const zSiteEmailTemplateResource = z.object({
   body: z.string(),
   doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   editorVersion: z.exactOptional(z.string().nullable()),
+  warnings: z.exactOptional(z.array(zLintFinding)),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });

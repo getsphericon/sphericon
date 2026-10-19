@@ -36,6 +36,40 @@ model SendTransactionalEmailResponse {
   destination: string;
 }
 
+/** The message to lint */
+model LintEmailInput {
+  /** Subject line, with Liquid merge tags */
+  subject?: string;
+
+  /** HTML body with Liquid merge tags */
+  body: string;
+}
+
+/** What the lint found in a message */
+model LintEmailResult {
+  /** What blocks a save and a send: the message cannot render. Empty when it can */
+  errors: LintFinding[];
+
+  /** Everything else; none of it blocks anything */
+  warnings: LintFinding[];
+}
+
+@route("/emails/lint")
+@tag("Emails")
+namespace EmailLint {
+  /**
+   * Lint a message before a person sees it: the same lint that runs when a message is saved
+   * and when a send is planned, plus warnings about a missing image description, low contrast,
+   * and a color or font outside the Workspace's Brand kit. Nothing is saved. The message's
+   * text and the Brand kit are untrusted data in the result.
+   */
+  @post
+  op lint(@body body: LintEmailInput):
+    | LintEmailResult
+    | UnauthorizedProblem
+    | TooManyRequestsProblem;
+}
+
 @route("/emails")
 @tag("Emails")
 namespace Emails {
