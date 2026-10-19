@@ -1962,6 +1962,74 @@ func (o OptNilSiteCreateContactInputCustomFields) Or(d SiteCreateContactInputCus
 	return d
 }
 
+// NewOptNilSiteEmailTemplateResourceDoc returns new OptNilSiteEmailTemplateResourceDoc with value set to v.
+func NewOptNilSiteEmailTemplateResourceDoc(v SiteEmailTemplateResourceDoc) OptNilSiteEmailTemplateResourceDoc {
+	return OptNilSiteEmailTemplateResourceDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSiteEmailTemplateResourceDoc is optional nullable SiteEmailTemplateResourceDoc.
+type OptNilSiteEmailTemplateResourceDoc struct {
+	Value SiteEmailTemplateResourceDoc
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSiteEmailTemplateResourceDoc was set.
+func (o OptNilSiteEmailTemplateResourceDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSiteEmailTemplateResourceDoc) Reset() {
+	var v SiteEmailTemplateResourceDoc
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSiteEmailTemplateResourceDoc) SetTo(v SiteEmailTemplateResourceDoc) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSiteEmailTemplateResourceDoc) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSiteEmailTemplateResourceDoc) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SiteEmailTemplateResourceDoc
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSiteEmailTemplateResourceDoc) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSiteEmailTemplateResourceDoc) Get() (v SiteEmailTemplateResourceDoc, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSiteEmailTemplateResourceDoc) Or(d SiteEmailTemplateResourceDoc) SiteEmailTemplateResourceDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilSiteEventResourceProperties returns new OptNilSiteEventResourceProperties with value set to v.
 func NewOptNilSiteEventResourceProperties(v SiteEventResourceProperties) OptNilSiteEventResourceProperties {
 	return OptNilSiteEventResourceProperties{
@@ -2782,6 +2850,52 @@ func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAu
 	return d
 }
 
+// NewOptSiteCreateEmailTemplateInputDoc returns new OptSiteCreateEmailTemplateInputDoc with value set to v.
+func NewOptSiteCreateEmailTemplateInputDoc(v SiteCreateEmailTemplateInputDoc) OptSiteCreateEmailTemplateInputDoc {
+	return OptSiteCreateEmailTemplateInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteCreateEmailTemplateInputDoc is optional SiteCreateEmailTemplateInputDoc.
+type OptSiteCreateEmailTemplateInputDoc struct {
+	Value SiteCreateEmailTemplateInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteCreateEmailTemplateInputDoc was set.
+func (o OptSiteCreateEmailTemplateInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteCreateEmailTemplateInputDoc) Reset() {
+	var v SiteCreateEmailTemplateInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteCreateEmailTemplateInputDoc) SetTo(v SiteCreateEmailTemplateInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteCreateEmailTemplateInputDoc) Get() (v SiteCreateEmailTemplateInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteCreateEmailTemplateInputDoc) Or(d SiteCreateEmailTemplateInputDoc) SiteCreateEmailTemplateInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteCreateIntegrationInputParams returns new OptSiteCreateIntegrationInputParams with value set to v.
 func NewOptSiteCreateIntegrationInputParams(v SiteCreateIntegrationInputParams) OptSiteCreateIntegrationInputParams {
 	return OptSiteCreateIntegrationInputParams{
@@ -3144,6 +3258,52 @@ func (o OptSiteTrackingRecord) Get() (v SiteTrackingRecord, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteTrackingRecord) Or(d SiteTrackingRecord) SiteTrackingRecord {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteUpdateEmailTemplateInputDoc returns new OptSiteUpdateEmailTemplateInputDoc with value set to v.
+func NewOptSiteUpdateEmailTemplateInputDoc(v SiteUpdateEmailTemplateInputDoc) OptSiteUpdateEmailTemplateInputDoc {
+	return OptSiteUpdateEmailTemplateInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteUpdateEmailTemplateInputDoc is optional SiteUpdateEmailTemplateInputDoc.
+type OptSiteUpdateEmailTemplateInputDoc struct {
+	Value SiteUpdateEmailTemplateInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteUpdateEmailTemplateInputDoc was set.
+func (o OptSiteUpdateEmailTemplateInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteUpdateEmailTemplateInputDoc) Reset() {
+	var v SiteUpdateEmailTemplateInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteUpdateEmailTemplateInputDoc) SetTo(v SiteUpdateEmailTemplateInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteUpdateEmailTemplateInputDoc) Get() (v SiteUpdateEmailTemplateInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteUpdateEmailTemplateInputDoc) Or(d SiteUpdateEmailTemplateInputDoc) SiteUpdateEmailTemplateInputDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6589,7 +6749,11 @@ func (s *SiteCreateContactInputCustomFields) init() SiteCreateContactInputCustom
 type SiteCreateEmailTemplateInput struct {
 	Name    string    `json:"name"`
 	Subject OptString `json:"subject"`
-	Body    OptString `json:"body"`
+	// HTML body with Liquid merge tags. Write this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+	// it in the same save; a document that cannot be rendered is a 422.
+	Doc OptSiteCreateEmailTemplateInputDoc `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -6607,6 +6771,11 @@ func (s *SiteCreateEmailTemplateInput) GetBody() OptString {
 	return s.Body
 }
 
+// GetDoc returns the value of Doc.
+func (s *SiteCreateEmailTemplateInput) GetDoc() OptSiteCreateEmailTemplateInputDoc {
+	return s.Doc
+}
+
 // SetName sets the value of Name.
 func (s *SiteCreateEmailTemplateInput) SetName(val string) {
 	s.Name = val
@@ -6620,6 +6789,24 @@ func (s *SiteCreateEmailTemplateInput) SetSubject(val OptString) {
 // SetBody sets the value of Body.
 func (s *SiteCreateEmailTemplateInput) SetBody(val OptString) {
 	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *SiteCreateEmailTemplateInput) SetDoc(val OptSiteCreateEmailTemplateInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+// it in the same save; a document that cannot be rendered is a 422.
+type SiteCreateEmailTemplateInputDoc map[string]jx.Raw
+
+func (s *SiteCreateEmailTemplateInputDoc) init() SiteCreateEmailTemplateInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Create a workspace integration. The provider/channel are derived from `config.kind`.
@@ -7378,6 +7565,10 @@ type SiteEmailTemplateResource struct {
 	Subject string `json:"subject"`
 	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
+	// The editor's JSON document the body was built from; null when the body was written as HTML.
+	Doc OptNilSiteEmailTemplateResourceDoc `json:"doc"`
+	// Version of the editor that rendered the document; null with it.
+	EditorVersion OptNilString `json:"editorVersion"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -7402,6 +7593,16 @@ func (s *SiteEmailTemplateResource) GetSubject() string {
 // GetBody returns the value of Body.
 func (s *SiteEmailTemplateResource) GetBody() string {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteEmailTemplateResource) GetDoc() OptNilSiteEmailTemplateResourceDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *SiteEmailTemplateResource) GetEditorVersion() OptNilString {
+	return s.EditorVersion
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -7434,6 +7635,16 @@ func (s *SiteEmailTemplateResource) SetBody(val string) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteEmailTemplateResource) SetDoc(val OptNilSiteEmailTemplateResourceDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *SiteEmailTemplateResource) SetEditorVersion(val OptNilString) {
+	s.EditorVersion = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteEmailTemplateResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -7447,6 +7658,18 @@ func (s *SiteEmailTemplateResource) SetUpdatedAt(val Timestamp) {
 func (*SiteEmailTemplateResource) siteTemplatesCreateRes() {}
 func (*SiteEmailTemplateResource) siteTemplatesGetRes()    {}
 func (*SiteEmailTemplateResource) siteTemplatesUpdateRes() {}
+
+// The editor's JSON document the body was built from; null when the body was written as HTML.
+type SiteEmailTemplateResourceDoc map[string]jx.Raw
+
+func (s *SiteEmailTemplateResourceDoc) init() SiteEmailTemplateResourceDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 // What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
 // Ref: #/components/schemas/SiteEnrollmentFailure
@@ -12890,7 +13113,11 @@ func (s *SiteUpdateContactInputCustomFields) init() SiteUpdateContactInputCustom
 type SiteUpdateEmailTemplateInput struct {
 	Name    OptString `json:"name"`
 	Subject OptString `json:"subject"`
-	Body    OptString `json:"body"`
+	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+	// it in the same save; a document that cannot be rendered is a 422.
+	Doc OptSiteUpdateEmailTemplateInputDoc `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -12908,6 +13135,11 @@ func (s *SiteUpdateEmailTemplateInput) GetBody() OptString {
 	return s.Body
 }
 
+// GetDoc returns the value of Doc.
+func (s *SiteUpdateEmailTemplateInput) GetDoc() OptSiteUpdateEmailTemplateInputDoc {
+	return s.Doc
+}
+
 // SetName sets the value of Name.
 func (s *SiteUpdateEmailTemplateInput) SetName(val OptString) {
 	s.Name = val
@@ -12921,6 +13153,24 @@ func (s *SiteUpdateEmailTemplateInput) SetSubject(val OptString) {
 // SetBody sets the value of Body.
 func (s *SiteUpdateEmailTemplateInput) SetBody(val OptString) {
 	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *SiteUpdateEmailTemplateInput) SetDoc(val OptSiteUpdateEmailTemplateInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+// it in the same save; a document that cannot be rendered is a 422.
+type SiteUpdateEmailTemplateInputDoc map[string]jx.Raw
+
+func (s *SiteUpdateEmailTemplateInputDoc) init() SiteUpdateEmailTemplateInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Update a workspace integration. Omit `config` to keep stored credentials.

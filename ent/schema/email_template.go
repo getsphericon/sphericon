@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"encoding/json"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
@@ -38,6 +40,14 @@ func (EmailTemplate) Fields() []ent.Field {
 		// Email-ready HTML with Liquid merge tags (ADR 0040).
 		field.String("body").
 			Default(""),
+		// The editor's JSON document (ADR 0040), set only when the Template was written as a
+		// document; the server rendered body from it in the same save. A body-only write clears it.
+		field.JSON("doc", json.RawMessage{}).
+			Optional(),
+		// The editor version that rendered doc; set and cleared with it.
+		field.String("editor_version").
+			Optional().
+			Nillable(),
 	}
 }
 

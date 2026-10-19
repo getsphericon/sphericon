@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"encoding/json"
+	"encoding/json/jsontext"
 	"fmt"
 	"strings"
 	"time"
@@ -30,6 +32,10 @@ type EmailTemplate struct {
 	Subject string `json:"subject,omitempty"`
 	// Body holds the value of the "body" field.
 	Body string `json:"body,omitempty"`
+	// Doc holds the value of the "doc" field.
+	Doc jsontext.Value `json:"doc,omitempty"`
+	// EditorVersion holds the value of the "editor_version" field.
+	EditorVersion *string `json:"editor_version,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EmailTemplateQuery when eager-loading is set.
 	Edges        EmailTemplateEdges `json:"edges"`
@@ -61,9 +67,11 @@ func (*EmailTemplate) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case emailtemplate.FieldDoc:
+			values[i] = new([]byte)
 		case emailtemplate.FieldID, emailtemplate.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case emailtemplate.FieldName, emailtemplate.FieldSubject, emailtemplate.FieldBody:
+		case emailtemplate.FieldName, emailtemplate.FieldSubject, emailtemplate.FieldBody, emailtemplate.FieldEditorVersion:
 			values[i] = new(sql.NullString)
 		case emailtemplate.FieldCreatedAt, emailtemplate.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -124,6 +132,21 @@ func (_m *EmailTemplate) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Body = value.String
 			}
+		case emailtemplate.FieldDoc:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field doc", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Doc); err != nil {
+					return fmt.Errorf("unmarshal field doc: %w", err)
+				}
+			}
+		case emailtemplate.FieldEditorVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field editor_version", values[i])
+			} else if value.Valid {
+				_m.EditorVersion = new(string)
+				*_m.EditorVersion = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -182,6 +205,14 @@ func (_m *EmailTemplate) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("body=")
 	builder.WriteString(_m.Body)
+	builder.WriteString(", ")
+	builder.WriteString("doc=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Doc))
+	builder.WriteString(", ")
+	if v := _m.EditorVersion; v != nil {
+		builder.WriteString("editor_version=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

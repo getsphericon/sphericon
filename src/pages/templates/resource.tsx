@@ -11,7 +11,9 @@ import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as templatesEditRoute } from '../../routes/workspaces/$slug/templates/$templateId/edit.tsx'
 import { TemplateForm } from './TemplateForm.tsx'
 
-const templateSchema = resourceFormSchema(zSiteCreateEmailTemplateInput)
+const templateSchema = resourceFormSchema(
+  zSiteCreateEmailTemplateInput.pick({ name: true, subject: true, body: true }),
+)
 
 const templateResource = defineResource({
   schema: templateSchema,

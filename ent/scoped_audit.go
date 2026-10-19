@@ -420,9 +420,11 @@ var EmailTemplateAuditSensitive = map[string]bool{}
 // auditFields maps every audited field of the EmailTemplate to its value.
 func (e *EmailTemplate) auditFields() map[string]any {
 	return map[string]any{
-		"name":    e.Name,
-		"subject": e.Subject,
-		"body":    e.Body,
+		"name":           e.Name,
+		"subject":        e.Subject,
+		"body":           e.Body,
+		"doc":            e.Doc,
+		"editor_version": derefAudit(e.EditorVersion),
 	}
 }
 

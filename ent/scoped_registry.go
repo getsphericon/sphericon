@@ -667,6 +667,12 @@ func ScopedEntities() []ScopedEntity {
 				b.SetName(src.Name)
 				b.SetSubject(src.Subject)
 				b.SetBody(src.Body)
+				if !reflect.ValueOf(src.Doc).IsZero() {
+					b.SetDoc(src.Doc)
+				}
+				if src.EditorVersion != nil {
+					b.SetEditorVersion(*src.EditorVersion)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

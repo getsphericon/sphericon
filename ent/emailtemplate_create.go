@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"time"
@@ -87,6 +88,26 @@ func (_c *EmailTemplateCreate) SetBody(v string) *EmailTemplateCreate {
 func (_c *EmailTemplateCreate) SetNillableBody(v *string) *EmailTemplateCreate {
 	if v != nil {
 		_c.SetBody(*v)
+	}
+	return _c
+}
+
+// SetDoc sets the "doc" field.
+func (_c *EmailTemplateCreate) SetDoc(v jsontext.Value) *EmailTemplateCreate {
+	_c.mutation.SetDoc(v)
+	return _c
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (_c *EmailTemplateCreate) SetEditorVersion(v string) *EmailTemplateCreate {
+	_c.mutation.SetEditorVersion(v)
+	return _c
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (_c *EmailTemplateCreate) SetNillableEditorVersion(v *string) *EmailTemplateCreate {
+	if v != nil {
+		_c.SetEditorVersion(*v)
 	}
 	return _c
 }
@@ -236,6 +257,14 @@ func (_c *EmailTemplateCreate) createSpec() (*EmailTemplate, *sqlgraph.CreateSpe
 		_spec.SetField(emailtemplate.FieldBody, field.TypeString, value)
 		_node.Body = value
 	}
+	if value, ok := _c.mutation.Doc(); ok {
+		_spec.SetField(emailtemplate.FieldDoc, field.TypeJSON, value)
+		_node.Doc = value
+	}
+	if value, ok := _c.mutation.EditorVersion(); ok {
+		_spec.SetField(emailtemplate.FieldEditorVersion, field.TypeString, value)
+		_node.EditorVersion = &value
+	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -365,6 +394,42 @@ func (u *EmailTemplateUpsert) UpdateBody() *EmailTemplateUpsert {
 	return u
 }
 
+// SetDoc sets the "doc" field.
+func (u *EmailTemplateUpsert) SetDoc(v jsontext.Value) *EmailTemplateUpsert {
+	u.Set(emailtemplate.FieldDoc, v)
+	return u
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *EmailTemplateUpsert) UpdateDoc() *EmailTemplateUpsert {
+	u.SetExcluded(emailtemplate.FieldDoc)
+	return u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *EmailTemplateUpsert) ClearDoc() *EmailTemplateUpsert {
+	u.SetNull(emailtemplate.FieldDoc)
+	return u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *EmailTemplateUpsert) SetEditorVersion(v string) *EmailTemplateUpsert {
+	u.Set(emailtemplate.FieldEditorVersion, v)
+	return u
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *EmailTemplateUpsert) UpdateEditorVersion() *EmailTemplateUpsert {
+	u.SetExcluded(emailtemplate.FieldEditorVersion)
+	return u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *EmailTemplateUpsert) ClearEditorVersion() *EmailTemplateUpsert {
+	u.SetNull(emailtemplate.FieldEditorVersion)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -483,6 +548,48 @@ func (u *EmailTemplateUpsertOne) SetBody(v string) *EmailTemplateUpsertOne {
 func (u *EmailTemplateUpsertOne) UpdateBody() *EmailTemplateUpsertOne {
 	return u.Update(func(s *EmailTemplateUpsert) {
 		s.UpdateBody()
+	})
+}
+
+// SetDoc sets the "doc" field.
+func (u *EmailTemplateUpsertOne) SetDoc(v jsontext.Value) *EmailTemplateUpsertOne {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.SetDoc(v)
+	})
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *EmailTemplateUpsertOne) UpdateDoc() *EmailTemplateUpsertOne {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.UpdateDoc()
+	})
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *EmailTemplateUpsertOne) ClearDoc() *EmailTemplateUpsertOne {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.ClearDoc()
+	})
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *EmailTemplateUpsertOne) SetEditorVersion(v string) *EmailTemplateUpsertOne {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.SetEditorVersion(v)
+	})
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *EmailTemplateUpsertOne) UpdateEditorVersion() *EmailTemplateUpsertOne {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.UpdateEditorVersion()
+	})
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *EmailTemplateUpsertOne) ClearEditorVersion() *EmailTemplateUpsertOne {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.ClearEditorVersion()
 	})
 }
 
@@ -770,6 +877,48 @@ func (u *EmailTemplateUpsertBulk) SetBody(v string) *EmailTemplateUpsertBulk {
 func (u *EmailTemplateUpsertBulk) UpdateBody() *EmailTemplateUpsertBulk {
 	return u.Update(func(s *EmailTemplateUpsert) {
 		s.UpdateBody()
+	})
+}
+
+// SetDoc sets the "doc" field.
+func (u *EmailTemplateUpsertBulk) SetDoc(v jsontext.Value) *EmailTemplateUpsertBulk {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.SetDoc(v)
+	})
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *EmailTemplateUpsertBulk) UpdateDoc() *EmailTemplateUpsertBulk {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.UpdateDoc()
+	})
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *EmailTemplateUpsertBulk) ClearDoc() *EmailTemplateUpsertBulk {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.ClearDoc()
+	})
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *EmailTemplateUpsertBulk) SetEditorVersion(v string) *EmailTemplateUpsertBulk {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.SetEditorVersion(v)
+	})
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *EmailTemplateUpsertBulk) UpdateEditorVersion() *EmailTemplateUpsertBulk {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.UpdateEditorVersion()
+	})
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *EmailTemplateUpsertBulk) ClearEditorVersion() *EmailTemplateUpsertBulk {
+	return u.Update(func(s *EmailTemplateUpsert) {
+		s.ClearEditorVersion()
 	})
 }
 

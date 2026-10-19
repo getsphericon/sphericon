@@ -282,7 +282,8 @@ export const zSiteCreateBroadcastInput = z.object({
 export const zSiteCreateEmailTemplateInput = z.object({
   name: z.string(),
   subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string())
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()))
 });
 
 /**
@@ -864,7 +865,8 @@ export const zSiteUpdateBroadcastInput = z.object({
 export const zSiteUpdateEmailTemplateInput = z.object({
   name: z.exactOptional(z.string()),
   subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string())
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()))
 });
 
 /**
@@ -1269,6 +1271,8 @@ export const zSiteEmailTemplateResource = z.object({
   name: z.string(),
   subject: z.string(),
   body: z.string(),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  editorVersion: z.exactOptional(z.string().nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });

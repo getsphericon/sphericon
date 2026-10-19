@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"sync"
@@ -11046,6 +11047,9 @@ type EmailTemplateMutation struct {
 	name             *string
 	subject          *string
 	body             *string
+	doc              *jsontext.Value
+	appenddoc        jsontext.Value
+	editor_version   *string
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -11374,6 +11378,120 @@ func (m *EmailTemplateMutation) ResetBody() {
 	m.body = nil
 }
 
+// SetDoc sets the "doc" field.
+func (m *EmailTemplateMutation) SetDoc(j jsontext.Value) {
+	m.doc = &j
+	m.appenddoc = nil
+}
+
+// Doc returns the value of the "doc" field in the mutation.
+func (m *EmailTemplateMutation) Doc() (r jsontext.Value, exists bool) {
+	v := m.doc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDoc returns the old "doc" field's value of the EmailTemplate entity.
+// If the EmailTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EmailTemplateMutation) OldDoc(ctx context.Context) (v jsontext.Value, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDoc is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDoc requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDoc: %w", err)
+	}
+	return oldValue.Doc, nil
+}
+
+// AppendDoc adds j to the "doc" field.
+func (m *EmailTemplateMutation) AppendDoc(j jsontext.Value) {
+	m.appenddoc = append(m.appenddoc, j...)
+}
+
+// AppendedDoc returns the list of values that were appended to the "doc" field in this mutation.
+func (m *EmailTemplateMutation) AppendedDoc() (jsontext.Value, bool) {
+	if len(m.appenddoc) == 0 {
+		return nil, false
+	}
+	return m.appenddoc, true
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (m *EmailTemplateMutation) ClearDoc() {
+	m.doc = nil
+	m.appenddoc = nil
+	m.clearedFields[emailtemplate.FieldDoc] = struct{}{}
+}
+
+// DocCleared returns if the "doc" field was cleared in this mutation.
+func (m *EmailTemplateMutation) DocCleared() bool {
+	_, ok := m.clearedFields[emailtemplate.FieldDoc]
+	return ok
+}
+
+// ResetDoc resets all changes to the "doc" field.
+func (m *EmailTemplateMutation) ResetDoc() {
+	m.doc = nil
+	m.appenddoc = nil
+	delete(m.clearedFields, emailtemplate.FieldDoc)
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (m *EmailTemplateMutation) SetEditorVersion(s string) {
+	m.editor_version = &s
+}
+
+// EditorVersion returns the value of the "editor_version" field in the mutation.
+func (m *EmailTemplateMutation) EditorVersion() (r string, exists bool) {
+	v := m.editor_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEditorVersion returns the old "editor_version" field's value of the EmailTemplate entity.
+// If the EmailTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EmailTemplateMutation) OldEditorVersion(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEditorVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEditorVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEditorVersion: %w", err)
+	}
+	return oldValue.EditorVersion, nil
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (m *EmailTemplateMutation) ClearEditorVersion() {
+	m.editor_version = nil
+	m.clearedFields[emailtemplate.FieldEditorVersion] = struct{}{}
+}
+
+// EditorVersionCleared returns if the "editor_version" field was cleared in this mutation.
+func (m *EmailTemplateMutation) EditorVersionCleared() bool {
+	_, ok := m.clearedFields[emailtemplate.FieldEditorVersion]
+	return ok
+}
+
+// ResetEditorVersion resets all changes to the "editor_version" field.
+func (m *EmailTemplateMutation) ResetEditorVersion() {
+	m.editor_version = nil
+	delete(m.clearedFields, emailtemplate.FieldEditorVersion)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *EmailTemplateMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -11435,7 +11553,7 @@ func (m *EmailTemplateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EmailTemplateMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, emailtemplate.FieldCreatedAt)
 	}
@@ -11453,6 +11571,12 @@ func (m *EmailTemplateMutation) Fields() []string {
 	}
 	if m.body != nil {
 		fields = append(fields, emailtemplate.FieldBody)
+	}
+	if m.doc != nil {
+		fields = append(fields, emailtemplate.FieldDoc)
+	}
+	if m.editor_version != nil {
+		fields = append(fields, emailtemplate.FieldEditorVersion)
 	}
 	return fields
 }
@@ -11474,6 +11598,10 @@ func (m *EmailTemplateMutation) Field(name string) (ent.Value, bool) {
 		return m.Subject()
 	case emailtemplate.FieldBody:
 		return m.Body()
+	case emailtemplate.FieldDoc:
+		return m.Doc()
+	case emailtemplate.FieldEditorVersion:
+		return m.EditorVersion()
 	}
 	return nil, false
 }
@@ -11495,6 +11623,10 @@ func (m *EmailTemplateMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldSubject(ctx)
 	case emailtemplate.FieldBody:
 		return m.OldBody(ctx)
+	case emailtemplate.FieldDoc:
+		return m.OldDoc(ctx)
+	case emailtemplate.FieldEditorVersion:
+		return m.OldEditorVersion(ctx)
 	}
 	return nil, fmt.Errorf("unknown EmailTemplate field %s", name)
 }
@@ -11546,6 +11678,20 @@ func (m *EmailTemplateMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetBody(v)
 		return nil
+	case emailtemplate.FieldDoc:
+		v, ok := value.(jsontext.Value)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDoc(v)
+		return nil
+	case emailtemplate.FieldEditorVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEditorVersion(v)
+		return nil
 	}
 	return fmt.Errorf("unknown EmailTemplate field %s", name)
 }
@@ -11578,7 +11724,14 @@ func (m *EmailTemplateMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EmailTemplateMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(emailtemplate.FieldDoc) {
+		fields = append(fields, emailtemplate.FieldDoc)
+	}
+	if m.FieldCleared(emailtemplate.FieldEditorVersion) {
+		fields = append(fields, emailtemplate.FieldEditorVersion)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -11591,6 +11744,14 @@ func (m *EmailTemplateMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EmailTemplateMutation) ClearField(name string) error {
+	switch name {
+	case emailtemplate.FieldDoc:
+		m.ClearDoc()
+		return nil
+	case emailtemplate.FieldEditorVersion:
+		m.ClearEditorVersion()
+		return nil
+	}
 	return fmt.Errorf("unknown EmailTemplate nullable field %s", name)
 }
 
@@ -11615,6 +11776,12 @@ func (m *EmailTemplateMutation) ResetField(name string) error {
 		return nil
 	case emailtemplate.FieldBody:
 		m.ResetBody()
+		return nil
+	case emailtemplate.FieldDoc:
+		m.ResetDoc()
+		return nil
+	case emailtemplate.FieldEditorVersion:
+		m.ResetEditorVersion()
 		return nil
 	}
 	return fmt.Errorf("unknown EmailTemplate field %s", name)

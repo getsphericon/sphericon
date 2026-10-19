@@ -415,6 +415,8 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "subject", Type: field.TypeString, Default: ""},
 		{Name: "body", Type: field.TypeString, Default: ""},
+		{Name: "doc", Type: field.TypeJSON, Nullable: true},
+		{Name: "editor_version", Type: field.TypeString, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// EmailTemplatesTable holds the schema information for the "email_templates" table.
@@ -425,7 +427,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "email_templates_workspaces_email_templates",
-				Columns:    []*schema.Column{EmailTemplatesColumns[6]},
+				Columns:    []*schema.Column{EmailTemplatesColumns[8]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -434,7 +436,7 @@ var (
 			{
 				Name:    "emailtemplate_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{EmailTemplatesColumns[6]},
+				Columns: []*schema.Column{EmailTemplatesColumns[8]},
 			},
 		},
 	}

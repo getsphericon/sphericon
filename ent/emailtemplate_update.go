@@ -4,12 +4,14 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -89,6 +91,44 @@ func (_u *EmailTemplateUpdate) SetNillableBody(v *string) *EmailTemplateUpdate {
 	if v != nil {
 		_u.SetBody(*v)
 	}
+	return _u
+}
+
+// SetDoc sets the "doc" field.
+func (_u *EmailTemplateUpdate) SetDoc(v jsontext.Value) *EmailTemplateUpdate {
+	_u.mutation.SetDoc(v)
+	return _u
+}
+
+// AppendDoc appends value to the "doc" field.
+func (_u *EmailTemplateUpdate) AppendDoc(v jsontext.Value) *EmailTemplateUpdate {
+	_u.mutation.AppendDoc(v)
+	return _u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (_u *EmailTemplateUpdate) ClearDoc() *EmailTemplateUpdate {
+	_u.mutation.ClearDoc()
+	return _u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (_u *EmailTemplateUpdate) SetEditorVersion(v string) *EmailTemplateUpdate {
+	_u.mutation.SetEditorVersion(v)
+	return _u
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (_u *EmailTemplateUpdate) SetNillableEditorVersion(v *string) *EmailTemplateUpdate {
+	if v != nil {
+		_u.SetEditorVersion(*v)
+	}
+	return _u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (_u *EmailTemplateUpdate) ClearEditorVersion() *EmailTemplateUpdate {
+	_u.mutation.ClearEditorVersion()
 	return _u
 }
 
@@ -186,6 +226,23 @@ func (_u *EmailTemplateUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(emailtemplate.FieldBody, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Doc(); ok {
+		_spec.SetField(emailtemplate.FieldDoc, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedDoc(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, emailtemplate.FieldDoc, value)
+		})
+	}
+	if _u.mutation.DocCleared() {
+		_spec.ClearField(emailtemplate.FieldDoc, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.EditorVersion(); ok {
+		_spec.SetField(emailtemplate.FieldEditorVersion, field.TypeString, value)
+	}
+	if _u.mutation.EditorVersionCleared() {
+		_spec.ClearField(emailtemplate.FieldEditorVersion, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -297,6 +354,44 @@ func (_u *EmailTemplateUpdateOne) SetNillableBody(v *string) *EmailTemplateUpdat
 	if v != nil {
 		_u.SetBody(*v)
 	}
+	return _u
+}
+
+// SetDoc sets the "doc" field.
+func (_u *EmailTemplateUpdateOne) SetDoc(v jsontext.Value) *EmailTemplateUpdateOne {
+	_u.mutation.SetDoc(v)
+	return _u
+}
+
+// AppendDoc appends value to the "doc" field.
+func (_u *EmailTemplateUpdateOne) AppendDoc(v jsontext.Value) *EmailTemplateUpdateOne {
+	_u.mutation.AppendDoc(v)
+	return _u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (_u *EmailTemplateUpdateOne) ClearDoc() *EmailTemplateUpdateOne {
+	_u.mutation.ClearDoc()
+	return _u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (_u *EmailTemplateUpdateOne) SetEditorVersion(v string) *EmailTemplateUpdateOne {
+	_u.mutation.SetEditorVersion(v)
+	return _u
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (_u *EmailTemplateUpdateOne) SetNillableEditorVersion(v *string) *EmailTemplateUpdateOne {
+	if v != nil {
+		_u.SetEditorVersion(*v)
+	}
+	return _u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (_u *EmailTemplateUpdateOne) ClearEditorVersion() *EmailTemplateUpdateOne {
+	_u.mutation.ClearEditorVersion()
 	return _u
 }
 
@@ -424,6 +519,23 @@ func (_u *EmailTemplateUpdateOne) sqlSave(ctx context.Context) (_node *EmailTemp
 	}
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(emailtemplate.FieldBody, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Doc(); ok {
+		_spec.SetField(emailtemplate.FieldDoc, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedDoc(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, emailtemplate.FieldDoc, value)
+		})
+	}
+	if _u.mutation.DocCleared() {
+		_spec.ClearField(emailtemplate.FieldDoc, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.EditorVersion(); ok {
+		_spec.SetField(emailtemplate.FieldEditorVersion, field.TypeString, value)
+	}
+	if _u.mutation.EditorVersionCleared() {
+		_spec.ClearField(emailtemplate.FieldEditorVersion, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

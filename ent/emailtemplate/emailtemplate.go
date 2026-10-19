@@ -26,6 +26,10 @@ const (
 	FieldSubject = "subject"
 	// FieldBody holds the string denoting the body field in the database.
 	FieldBody = "body"
+	// FieldDoc holds the string denoting the doc field in the database.
+	FieldDoc = "doc"
+	// FieldEditorVersion holds the string denoting the editor_version field in the database.
+	FieldEditorVersion = "editor_version"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// Table holds the table name of the emailtemplate in the database.
@@ -48,6 +52,8 @@ var Columns = []string{
 	FieldName,
 	FieldSubject,
 	FieldBody,
+	FieldDoc,
+	FieldEditorVersion,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -111,6 +117,11 @@ func BySubject(opts ...sql.OrderTermOption) OrderOption {
 // ByBody orders the results by the body field.
 func ByBody(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBody, opts...).ToFunc()
+}
+
+// ByEditorVersion orders the results by the editor_version field.
+func ByEditorVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEditorVersion, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

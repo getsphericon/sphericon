@@ -15,6 +15,16 @@ import (
 //go:embed assets/schema.json
 var schemaJSON []byte
 
+// editorVersionText is the version of @react-email/editor the bundle was built from, written by the
+// bundle build from the installed package (the lockfile's pin). It is generated: never edit.
+//
+//go:embed assets/editor-version.txt
+var editorVersionText string
+
+// EditorVersion is the version of the editor whose export code the renderer runs. A stored document
+// records it, so a later dependency update can tell which documents it has to re-render.
+func EditorVersion() string { return strings.TrimSpace(editorVersionText) }
+
 // Schema is what the editor's extensions define: every node and mark with its content expression
 // and the attributes it accepts, with their defaults. ProseMirror keeps no attribute types or
 // allowed values, so those live in this package's rules and in what an agent is told by hand.

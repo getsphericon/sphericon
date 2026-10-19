@@ -85,6 +85,11 @@ func Body(v string) predicate.EmailTemplate {
 	return predicate.EmailTemplate(sql.FieldEQ(FieldBody, v))
 }
 
+// EditorVersion applies equality check predicate on the "editor_version" field. It's identical to EditorVersionEQ.
+func EditorVersion(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldEQ(FieldEditorVersion, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.EmailTemplate {
 	return predicate.EmailTemplate(sql.FieldEQ(FieldCreatedAt, v))
@@ -378,6 +383,91 @@ func BodyEqualFold(v string) predicate.EmailTemplate {
 // BodyContainsFold applies the ContainsFold predicate on the "body" field.
 func BodyContainsFold(v string) predicate.EmailTemplate {
 	return predicate.EmailTemplate(sql.FieldContainsFold(FieldBody, v))
+}
+
+// DocIsNil applies the IsNil predicate on the "doc" field.
+func DocIsNil() predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldIsNull(FieldDoc))
+}
+
+// DocNotNil applies the NotNil predicate on the "doc" field.
+func DocNotNil() predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldNotNull(FieldDoc))
+}
+
+// EditorVersionEQ applies the EQ predicate on the "editor_version" field.
+func EditorVersionEQ(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldEQ(FieldEditorVersion, v))
+}
+
+// EditorVersionNEQ applies the NEQ predicate on the "editor_version" field.
+func EditorVersionNEQ(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldNEQ(FieldEditorVersion, v))
+}
+
+// EditorVersionIn applies the In predicate on the "editor_version" field.
+func EditorVersionIn(vs ...string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldIn(FieldEditorVersion, vs...))
+}
+
+// EditorVersionNotIn applies the NotIn predicate on the "editor_version" field.
+func EditorVersionNotIn(vs ...string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldNotIn(FieldEditorVersion, vs...))
+}
+
+// EditorVersionGT applies the GT predicate on the "editor_version" field.
+func EditorVersionGT(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldGT(FieldEditorVersion, v))
+}
+
+// EditorVersionGTE applies the GTE predicate on the "editor_version" field.
+func EditorVersionGTE(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldGTE(FieldEditorVersion, v))
+}
+
+// EditorVersionLT applies the LT predicate on the "editor_version" field.
+func EditorVersionLT(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldLT(FieldEditorVersion, v))
+}
+
+// EditorVersionLTE applies the LTE predicate on the "editor_version" field.
+func EditorVersionLTE(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldLTE(FieldEditorVersion, v))
+}
+
+// EditorVersionContains applies the Contains predicate on the "editor_version" field.
+func EditorVersionContains(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldContains(FieldEditorVersion, v))
+}
+
+// EditorVersionHasPrefix applies the HasPrefix predicate on the "editor_version" field.
+func EditorVersionHasPrefix(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldHasPrefix(FieldEditorVersion, v))
+}
+
+// EditorVersionHasSuffix applies the HasSuffix predicate on the "editor_version" field.
+func EditorVersionHasSuffix(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldHasSuffix(FieldEditorVersion, v))
+}
+
+// EditorVersionIsNil applies the IsNil predicate on the "editor_version" field.
+func EditorVersionIsNil() predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldIsNull(FieldEditorVersion))
+}
+
+// EditorVersionNotNil applies the NotNil predicate on the "editor_version" field.
+func EditorVersionNotNil() predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldNotNull(FieldEditorVersion))
+}
+
+// EditorVersionEqualFold applies the EqualFold predicate on the "editor_version" field.
+func EditorVersionEqualFold(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldEqualFold(FieldEditorVersion, v))
+}
+
+// EditorVersionContainsFold applies the ContainsFold predicate on the "editor_version" field.
+func EditorVersionContainsFold(v string) predicate.EmailTemplate {
+	return predicate.EmailTemplate(sql.FieldContainsFold(FieldEditorVersion, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

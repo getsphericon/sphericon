@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"slices"
@@ -9275,6 +9276,24 @@ func (x *EmailTemplateScopedCreate) SetNillableBody(v *string) *EmailTemplateSco
 	return x
 }
 
+// SetDoc sets the "doc" field.
+func (x *EmailTemplateScopedCreate) SetDoc(v jsontext.Value) *EmailTemplateScopedCreate {
+	x.b.SetDoc(v)
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *EmailTemplateScopedCreate) SetEditorVersion(v string) *EmailTemplateScopedCreate {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *EmailTemplateScopedCreate) SetNillableEditorVersion(v *string) *EmailTemplateScopedCreate {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
 func (x *EmailTemplateScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -9417,6 +9436,42 @@ func (u *EmailTemplateScopedUpsert) SetBody(v string) *EmailTemplateScopedUpsert
 // UpdateBody sets the "body" field to the value that was provided on create.
 func (u *EmailTemplateScopedUpsert) UpdateBody() *EmailTemplateScopedUpsert {
 	u.u.SetExcluded(emailtemplate.FieldBody)
+	return u
+}
+
+// SetDoc sets the "doc" field.
+func (u *EmailTemplateScopedUpsert) SetDoc(v jsontext.Value) *EmailTemplateScopedUpsert {
+	u.u.Set(emailtemplate.FieldDoc, v)
+	return u
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *EmailTemplateScopedUpsert) UpdateDoc() *EmailTemplateScopedUpsert {
+	u.u.SetExcluded(emailtemplate.FieldDoc)
+	return u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *EmailTemplateScopedUpsert) ClearDoc() *EmailTemplateScopedUpsert {
+	u.u.SetNull(emailtemplate.FieldDoc)
+	return u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *EmailTemplateScopedUpsert) SetEditorVersion(v string) *EmailTemplateScopedUpsert {
+	u.u.Set(emailtemplate.FieldEditorVersion, v)
+	return u
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *EmailTemplateScopedUpsert) UpdateEditorVersion() *EmailTemplateScopedUpsert {
+	u.u.SetExcluded(emailtemplate.FieldEditorVersion)
+	return u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *EmailTemplateScopedUpsert) ClearEditorVersion() *EmailTemplateScopedUpsert {
+	u.u.SetNull(emailtemplate.FieldEditorVersion)
 	return u
 }
 
@@ -9629,6 +9684,42 @@ func (x *EmailTemplateScopedUpdateOne) SetNillableBody(v *string) *EmailTemplate
 	return x
 }
 
+// SetDoc sets the "doc" field.
+func (x *EmailTemplateScopedUpdateOne) SetDoc(v jsontext.Value) *EmailTemplateScopedUpdateOne {
+	x.b.SetDoc(v)
+	return x
+}
+
+// AppendDoc appends value to the "doc" field.
+func (x *EmailTemplateScopedUpdateOne) AppendDoc(v jsontext.Value) *EmailTemplateScopedUpdateOne {
+	x.b.AppendDoc(v)
+	return x
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (x *EmailTemplateScopedUpdateOne) ClearDoc() *EmailTemplateScopedUpdateOne {
+	x.b.ClearDoc()
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *EmailTemplateScopedUpdateOne) SetEditorVersion(v string) *EmailTemplateScopedUpdateOne {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *EmailTemplateScopedUpdateOne) SetNillableEditorVersion(v *string) *EmailTemplateScopedUpdateOne {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (x *EmailTemplateScopedUpdateOne) ClearEditorVersion() *EmailTemplateScopedUpdateOne {
+	x.b.ClearEditorVersion()
+	return x
+}
+
 func (x *EmailTemplateScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -9740,6 +9831,42 @@ func (x *EmailTemplateScopedUpdate) SetBody(v string) *EmailTemplateScopedUpdate
 // SetNillableBody sets the "body" field if the given value is not nil.
 func (x *EmailTemplateScopedUpdate) SetNillableBody(v *string) *EmailTemplateScopedUpdate {
 	x.b.SetNillableBody(v)
+	return x
+}
+
+// SetDoc sets the "doc" field.
+func (x *EmailTemplateScopedUpdate) SetDoc(v jsontext.Value) *EmailTemplateScopedUpdate {
+	x.b.SetDoc(v)
+	return x
+}
+
+// AppendDoc appends value to the "doc" field.
+func (x *EmailTemplateScopedUpdate) AppendDoc(v jsontext.Value) *EmailTemplateScopedUpdate {
+	x.b.AppendDoc(v)
+	return x
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (x *EmailTemplateScopedUpdate) ClearDoc() *EmailTemplateScopedUpdate {
+	x.b.ClearDoc()
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *EmailTemplateScopedUpdate) SetEditorVersion(v string) *EmailTemplateScopedUpdate {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *EmailTemplateScopedUpdate) SetNillableEditorVersion(v *string) *EmailTemplateScopedUpdate {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (x *EmailTemplateScopedUpdate) ClearEditorVersion() *EmailTemplateScopedUpdate {
+	x.b.ClearEditorVersion()
 	return x
 }
 

@@ -6,6 +6,7 @@ package templates
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -20,6 +21,9 @@ var (
 	ErrNotFound = errors.New("templates: template not found")
 	// ErrBlankName: the Template name is blank.
 	ErrBlankName = errors.New("templates: name must not be empty")
+	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
+	// document (the server builds the body from it) or the body (which clears the document).
+	ErrBodyAndDoc = errors.New("templates: write a body or a doc, not both")
 )
 
 // Module holds no state: every call receives the Workspace-scoped client (ADR 0017).
@@ -33,13 +37,19 @@ type CreateInput struct {
 	Name    string
 	Subject *string
 	Body    *string
+	// Doc is the editor's JSON document, empty when the Template is written as HTML. The body is
+	// built from it in the same save (ADR 0040).
+	Doc json.RawMessage
 }
 
-// UpdateInput changes a Template; nil fields are left as they are.
+// UpdateInput changes a Template; nil fields are left as they are. A Doc is rendered to the
+// body in the same save and stored with it; a Body alone clears the stored document, so the two
+// never disagree.
 type UpdateInput struct {
 	Name    *string
 	Subject *string
 	Body    *string
+	Doc     json.RawMessage
 }
 
 // List returns a page of the Workspace's Templates, ascending by id (a catalogue).
@@ -60,32 +70,41 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.EmailTe
 	return tpl, err
 }
 
-// Create stores a Template. A blank name is ErrBlankName; a subject or body that cannot
-// render is emailrender.ErrInvalidContent; the body is stored sanitized.
+// Create stores a Template. A blank name is ErrBlankName; a subject, body or document that
+// cannot render is emailrender.ErrInvalidContent; the body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.EmailTemplate, error) {
-	body, err := emailrender.PrepareFields(in.Subject, in.Body)
+	c, err := content(ctx, in.Subject, in.Body, in.Doc)
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := s.EmailTemplate().Create().
+	create := s.EmailTemplate().Create().
 		SetName(in.Name).
 		SetNillableSubject(in.Subject).
-		SetNillableBody(body).
-		Save(ctx)
+		SetNillableBody(c.body)
+	if c.authored != nil {
+		create.SetDoc(in.Doc).SetEditorVersion(c.authored.EditorVersion)
+	}
+	tpl, err := create.Save(ctx)
 	return tpl, mapWriteError(err)
 }
 
 // Update applies the given fields. A blank name is ErrBlankName.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.EmailTemplate, error) {
-	body, err := emailrender.PrepareFields(in.Subject, in.Body)
+	c, err := content(ctx, in.Subject, in.Body, in.Doc)
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := s.EmailTemplate().UpdateOneID(id).
+	update := s.EmailTemplate().UpdateOneID(id).
 		SetNillableName(in.Name).
 		SetNillableSubject(in.Subject).
-		SetNillableBody(body).
-		Save(ctx)
+		SetNillableBody(c.body)
+	switch {
+	case c.authored != nil:
+		update.SetDoc(in.Doc).SetEditorVersion(c.authored.EditorVersion)
+	case c.body != nil:
+		update.ClearDoc().ClearEditorVersion()
+	}
+	tpl, err := update.Save(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}
@@ -99,6 +118,31 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		return ErrNotFound
 	}
 	return err
+}
+
+// written is what a save stores of the message content.
+type written struct {
+	// body is the body to store; nil when the write names none.
+	body *string
+	// authored is set when the content is a document: its body is body.
+	authored *emailrender.Authored
+}
+
+// content resolves the body of a write. A document is rendered to it (the one render of the
+// save, never on the send path); a body is validated and sanitized; neither leaves it alone.
+func content(ctx context.Context, subject, body *string, doc json.RawMessage) (written, error) {
+	if len(doc) == 0 {
+		b, err := emailrender.PrepareFields(subject, body)
+		return written{body: b}, err
+	}
+	if body != nil {
+		return written{}, ErrBodyAndDoc
+	}
+	authored, err := emailrender.FromDocument(ctx, subject, doc)
+	if err != nil {
+		return written{}, err
+	}
+	return written{body: &authored.Body, authored: &authored}, nil
 }
 
 // mapWriteError relabels only a validation failure of the name field; any other

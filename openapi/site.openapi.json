@@ -9131,7 +9131,13 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
           }
         },
         "description": "Site request body for creating a template"
@@ -9476,6 +9482,17 @@
           "body": {
             "type": "string",
             "description": "HTML body with Liquid merge tags"
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
+          },
+          "editorVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Version of the editor that rendered the document; null with it"
           },
           "createdAt": {
             "allOf": [
@@ -11246,7 +11263,13 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
           }
         },
         "description": "Site request body for updating a template"

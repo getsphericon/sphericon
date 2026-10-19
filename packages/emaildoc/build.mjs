@@ -103,3 +103,8 @@ writeFileSync(
   join(outdir, 'schema.json'),
   `${JSON.stringify(globalThis.emaildoc.schema(), null, 2)}\n`,
 )
+
+// The editor version the bundle was built from: it is the lockfile's pin (the build reads the
+// installed package), stored beside every document the server renders.
+const editorPackage = JSON.parse(readFileSync(join(editorDist, '..', 'package.json'), 'utf8'))
+writeFileSync(join(outdir, 'editor-version.txt'), `${editorPackage.version}\n`)

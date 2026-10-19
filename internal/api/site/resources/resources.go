@@ -35,6 +35,7 @@ import (
 // goverter:extend optNilInt32
 // goverter:extend exportJSON
 // goverter:extend eventProperties
+// goverter:extend templateDoc
 // goverter:extend broadcastStats
 // goverter:extend automationSteps
 // goverter:extend segmentDefinition
@@ -269,6 +270,23 @@ func contactCustomFields(m map[string]any) siteapi.OptNilSiteContactResourceCust
 		fields[k] = jx.Raw(b)
 	}
 	return siteapi.NewOptNilSiteContactResourceCustomFields(fields)
+}
+
+// templateDoc is a Template's stored editor document as the opaque object of the contract; a
+// Template written as HTML has none.
+func templateDoc(doc json.RawMessage) siteapi.OptNilSiteEmailTemplateResourceDoc {
+	if len(doc) == 0 {
+		return siteapi.OptNilSiteEmailTemplateResourceDoc{}
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(doc, &fields); err != nil {
+		return siteapi.OptNilSiteEmailTemplateResourceDoc{}
+	}
+	out := make(siteapi.SiteEmailTemplateResourceDoc, len(fields))
+	for k, v := range fields {
+		out[k] = jx.Raw(v)
+	}
+	return siteapi.NewOptNilSiteEmailTemplateResourceDoc(out)
 }
 
 func eventProperties(m map[string]any) siteapi.OptNilSiteEventResourceProperties {
