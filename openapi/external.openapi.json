@@ -8954,7 +8954,7 @@
           },
           "body": {
             "type": "string",
-            "description": "Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)"
+            "description": "Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)"
           },
           "seconds": {
             "type": "integer",
@@ -9113,7 +9113,7 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body"
+            "description": "HTML body with Liquid merge tags"
           },
           "segmentId": {
             "type": "string",
@@ -9953,7 +9953,7 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body"
+            "description": "HTML body with Liquid merge tags"
           }
         },
         "description": "Request body for creating a broadcast (always created as a draft)"
@@ -10122,7 +10122,7 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body"
+            "description": "HTML body with Liquid merge tags"
           }
         },
         "description": "Request body for creating a template"
@@ -11531,7 +11531,7 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body"
+            "description": "HTML body with Liquid merge tags"
           },
           "createdAt": {
             "allOf": [
@@ -11730,7 +11730,7 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body"
+            "description": "HTML body with Liquid merge tags"
           }
         },
         "description": "Request body for updating a draft broadcast"
@@ -11885,7 +11885,7 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body"
+            "description": "HTML body with Liquid merge tags"
           }
         },
         "description": "Request body for updating a template"

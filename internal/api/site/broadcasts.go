@@ -10,6 +10,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/samber/lo"
@@ -82,6 +83,10 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 	})
+	if errors.Is(err, emailrender.ErrInvalidContent) {
+		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &v, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +156,9 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 		return &v, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
 		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only draft broadcasts can be edited"))
+		return &v, nil
+	case errors.Is(err, emailrender.ErrInvalidContent):
+		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	case err != nil:
 		return nil, err

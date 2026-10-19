@@ -13,7 +13,7 @@ type Automation struct {
 	Name         string
 	TriggerEvent string
 	Subject      string
-	// Body is MJML.
+	// Body is HTML.
 	Body string
 }
 

@@ -9,9 +9,9 @@ import (
 )
 
 func TestRenderEmailNamesTheFailingPart(t *testing.T) {
-	_, err := emailrender.RenderEmail("{% if %}broken", sampleMJML, nil)
+	_, err := emailrender.RenderEmail("{% if %}broken", sampleHTML, nil)
 	assert.ErrorContains(t, err, "render subject")
 
-	_, err = emailrender.RenderEmail("fine", "<mjml><mj-body>{% if %}broken</mj-body></mjml>", nil)
+	_, err = emailrender.RenderEmail("fine", "<p>{% if %}broken</p>", nil)
 	assert.ErrorContains(t, err, "render body")
 }

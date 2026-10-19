@@ -8,10 +8,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
@@ -26,7 +28,7 @@ const (
 )
 
 // Step is one node of an Automation's linear sequence, in the executor's on-disk
-// JSON form. Email steps carry Subject and Body (MJML), wait steps Seconds, tag
+// JSON form. Email steps carry Subject and Body (HTML), wait steps Seconds, tag
 // steps Tag (the Tag name).
 type Step struct {
 	Type    string `json:"type"`
@@ -51,7 +53,7 @@ var (
 	// ErrNotFound: no such Automation in this Workspace.
 	ErrNotFound = errors.New("automations: automation not found")
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
-	// without a tag name.
+	// without a tag name, or an email step whose content cannot render.
 	ErrInvalidStep = errors.New("automations: invalid step")
 )
 
@@ -90,7 +92,11 @@ func Encode(steps []Step) (string, error) {
 func validate(steps []Step) error {
 	for _, s := range steps {
 		switch s.Type {
-		case StepEmail, StepHTTP:
+		case StepEmail:
+			if err := emailrender.Validate(s.Subject, s.Body); err != nil {
+				return fmt.Errorf("%w: %w", ErrInvalidStep, err)
+			}
+		case StepHTTP:
 		case StepWait:
 			if s.Seconds < 0 {
 				return ErrInvalidStep

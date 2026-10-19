@@ -44,7 +44,7 @@ function broadcast(status: string) {
     subject: 'Hello',
     fromName: 'Ada',
     fromEmail: 'ada@example.com',
-    body: '<mjml></mjml>',
+    body: '<p></p>',
     status,
   }
 }
@@ -134,7 +134,7 @@ test('editing a draft; a cleared sender name is sent as null and the audience is
         fromName: null,
         fromEmail: 'ada@example.com',
         segmentId: null,
-        body: '<mjml></mjml>',
+        body: '<p></p>',
       },
     ])
   await expect.element(screen.getByText('Broadcast updated')).toBeInTheDocument()

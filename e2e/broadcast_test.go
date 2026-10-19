@@ -17,7 +17,7 @@ func TestBroadcastToImportedContactsIsDelivered(t *testing.T) {
 	w.ImportContacts(to)
 	w.SendBroadcast(Broadcast{
 		Subject: "Hello from e2e",
-		Body:    MJML("Welcome aboard, friend"),
+		Body:    HTML(`Welcome aboard, friend <a href="https://example.com/start">Get started</a>`),
 	})
 	msg := w.Inbox.Wait(Match{To: to})
 
@@ -26,6 +26,11 @@ func TestBroadcastToImportedContactsIsDelivered(t *testing.T) {
 	assert.Equal(t, "Hello from e2e", msg.Subject)
 	assert.Contains(t, msg.HTML, "Welcome aboard, friend")
 	assert.Contains(t, msg.Text, "Welcome aboard, friend")
+
+	assert.Contains(t, msg.HTML, env.BaseURL+"/e/c/", "links go through the click tracker")
+	assert.NotContains(t, msg.HTML, `href="https://example.com/start"`, "the destination is not linked directly")
+	assert.Contains(t, msg.HTML, env.BaseURL+"/e/o/", "the open pixel is added")
+	assert.Contains(t, msg.HTML, "unsubscribe</a>", "the unsubscribe footer is added")
 
 	unsub := msg.Header("List-Unsubscribe")
 	require.NotEmpty(t, unsub, "a Broadcast carries List-Unsubscribe")

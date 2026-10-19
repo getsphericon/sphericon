@@ -1,23 +1,23 @@
-# Workspace acme (id 1). Reusable MJML bodies. transactional_emails reference these
+# Workspace acme (id 1). Reusable HTML bodies. transactional_emails reference these
 # by id snapshot (not FK).
 - id: 1 # fixture: TemplateWelcome
   name: Welcome
   subject: "Welcome to CodeBasics \U0001F44B"
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text font-size="20px" font-weight="bold">Welcome!</mj-text><mj-text>Start your first course today.</mj-text><mj-button href="https://codebasics.dev">Open CodeBasics</mj-button></mj-column></mj-section></mj-body></mjml>'
+  body: '<h1>Welcome!</h1><p>Start your first course today.</p><p><a href="https://codebasics.dev">Open CodeBasics</a></p>'
   workspace_id: 1
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 30}}'
 - id: 2
   name: Weekly digest
   subject: Your weekly learning digest
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text font-size="20px" font-weight="bold">This week at CodeBasics</mj-text><mj-text>New lessons are waiting for you.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<h1>This week at CodeBasics</h1><p>New lessons are waiting for you.</p>'
   workspace_id: 1
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 20}}'
 - id: 3
   name: Receipt
   subject: Your CodeBasics receipt
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text font-size="20px" font-weight="bold">Thanks for your purchase</mj-text><mj-text>Your access is now active.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<h1>Thanks for your purchase</h1><p>Your access is now active.</p>'
   workspace_id: 1
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 60}}'
@@ -26,7 +26,7 @@
 - id: 900 # fixture: TemplateGlobex
   name: Globex template
   subject: Globex
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Globex.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Globex.</p>'
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

@@ -42,7 +42,6 @@ require (
 	github.com/osteele/liquid v1.9.2
 	github.com/peterldowns/pgtestdb v0.1.1
 	github.com/pquerna/otp v1.5.0
-	github.com/preslavrachev/gomjml v0.13.0
 	github.com/pressly/goose/v3 v3.29.0
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/common v0.72.1
@@ -82,7 +81,6 @@ require (
 
 require (
 	github.com/DATA-DOG/go-txdb v0.2.1 // indirect
-	github.com/PuerkitoBio/goquery v1.12.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/alexflint/go-arg v1.6.0 // indirect
 	github.com/alexflint/go-scalar v1.2.0 // indirect

@@ -19,7 +19,7 @@ const template = (id: string, subject: string) => ({
   id,
   name: `Template ${id}`,
   subject,
-  body: `<mjml>${id}</mjml>`,
+  body: `<p>${id}</p>`,
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 })
@@ -47,7 +47,7 @@ test('picking a template copies its subject and body into the form', async () =>
   await screen.getByRole('option', { name: 'Template 1' }).click()
 
   await expect.element(screen.getByLabelText(/^Subject/)).toHaveValue('Welcome aboard')
-  await expect.element(screen.getByLabelText(/^Email body/)).toHaveValue('<mjml>1</mjml>')
+  await expect.element(screen.getByLabelText(/^Email body/)).toHaveValue('<p>1</p>')
 })
 
 test('a template without a subject keeps the subject already typed', async () => {
@@ -58,7 +58,7 @@ test('a template without a subject keeps the subject already typed', async () =>
   await screen.getByRole('combobox', { name: 'Start from template' }).click()
   await screen.getByRole('option', { name: 'Template 2' }).click()
 
-  await expect.element(screen.getByLabelText(/^Email body/)).toHaveValue('<mjml>2</mjml>')
+  await expect.element(screen.getByLabelText(/^Email body/)).toHaveValue('<p>2</p>')
   await expect.element(screen.getByLabelText(/^Subject/)).toHaveValue('My subject')
 })
 

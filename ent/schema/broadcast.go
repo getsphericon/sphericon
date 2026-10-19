@@ -45,7 +45,7 @@ func (Broadcast) Fields() []ent.Field {
 		field.String("from_email").
 			Optional().
 			Nillable(),
-		// Email body authored as MJML; compiled to email-safe HTML on send.
+		// Email-ready HTML with Liquid merge tags (ADR 0040).
 		field.String("body").
 			Default(""),
 		field.String("body_text").

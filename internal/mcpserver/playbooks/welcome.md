@@ -18,7 +18,7 @@ reviews and activates it. Never start sending yourself.
 1. Call `whoami()` to confirm which workspace you act on, then `automations_list()` to see whether a welcome Automation already exists. If one does, stop and ask the human whether to extend it.
 2. Call `events_actions_list()` to see which Event actions exist. The Trigger is normally `contact.created`; use another action only if the human asked for it.
 3. Call `templates_list()` for existing content worth copying. A step takes its own copy of the content, so later edits to a Template never change it.
-4. Draft three to four steps with `automations_create()`: an email step (a short thanks and one clear next action), a wait step (two days is a sensible default), a second email step (one useful thing, no hard sell), and optionally an apply tag step that marks the Contact as welcomed. Email bodies are MJML.
+4. Draft three to four steps with `automations_create()`: an email step (a short thanks and one clear next action), a wait step (two days is a sensible default), a second email step (one useful thing, no hard sell), and optionally an apply tag step that marks the Contact as welcomed. Email bodies are HTML with merge tags.
 5. Read the Automation back with `automations_get()` and check that the status is `draft`, the Trigger is right and the step order makes sense.
 
 ## Hand-off

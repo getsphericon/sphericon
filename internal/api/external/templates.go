@@ -9,6 +9,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/samber/lo"
@@ -49,6 +50,10 @@ func (h *Handlers) TemplatesCreate(ctx context.Context, req *externalapi.CreateT
 	})
 	if errors.Is(err, templates.ErrBlankName) {
 		res := externalapi.TemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		return &res, nil
+	}
+	if errors.Is(err, emailrender.ErrInvalidContent) {
+		res := externalapi.TemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
 	}
 	if err != nil {
@@ -99,6 +104,10 @@ func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateT
 	}
 	if errors.Is(err, templates.ErrBlankName) {
 		res := externalapi.TemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		return &res, nil
+	}
+	if errors.Is(err, emailrender.ErrInvalidContent) {
+		res := externalapi.TemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
 	}
 	if err != nil {

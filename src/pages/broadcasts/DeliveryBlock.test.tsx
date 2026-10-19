@@ -21,7 +21,7 @@ const draft: SiteBroadcastResource = {
   id: '7',
   name: 'Launch',
   subject: 'Hello',
-  body: '<mjml></mjml>',
+  body: '<p></p>',
   bodyText: 'Hello',
   status: 'draft',
   stats: {

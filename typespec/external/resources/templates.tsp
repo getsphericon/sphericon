@@ -17,7 +17,7 @@ model TemplateResource {
   /** Default subject line */
   subject: string;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags */
   body: string;
 
   /** Creation timestamp */
@@ -35,7 +35,7 @@ model CreateTemplateInput {
   /** Default subject line */
   subject?: string;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags */
   body?: string;
 }
 
@@ -47,7 +47,7 @@ model UpdateTemplateInput {
   /** Default subject line */
   subject?: string;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags */
   body?: string;
 }
 

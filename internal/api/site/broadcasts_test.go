@@ -23,7 +23,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
 		Name:    "Spring sale",
 		Subject: siteapi.NewOptString("Big news"),
-		Body:    siteapi.NewOptString("<mjml><mj-body><mj-section><mj-column><mj-text>Hi {{ first_name }}</mj-text></mj-column></mj-section></mj-body></mjml>"),
+		Body:    siteapi.NewOptString("<p>Hi {{ first_name }}</p>"),
 	}, siteapi.SiteBroadcastsCreateParams{Slug: slug})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteBroadcastResource)

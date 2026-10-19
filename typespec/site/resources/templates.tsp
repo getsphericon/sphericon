@@ -18,7 +18,7 @@ model SiteEmailTemplateResource {
   /** Default subject line */
   subject: string;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags */
   body: string;
 
   /** Creation timestamp */

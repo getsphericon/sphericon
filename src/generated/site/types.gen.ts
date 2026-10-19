@@ -881,7 +881,7 @@ export type SiteAutomationStep = {
    */
   subject?: string;
   /**
-   * Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)
+   * Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)
    */
   body?: string;
   /**
@@ -980,7 +980,7 @@ export type SiteBroadcastResource = {
    */
   fromEmail?: EmailAddress | null;
   /**
-   * MJML body authored in the composer
+   * HTML body with Liquid merge tags
    */
   body: string;
   /**
@@ -1186,7 +1186,7 @@ export type SiteCreateBroadcastInput = {
    */
   fromEmail?: EmailAddress | null;
   /**
-   * MJML body
+   * HTML body with Liquid merge tags
    */
   body?: string;
   /**
@@ -1485,7 +1485,7 @@ export type SiteEmailTemplateResource = {
    */
   subject: string;
   /**
-   * MJML body
+   * HTML body with Liquid merge tags
    */
   body: string;
   /**
@@ -2746,7 +2746,7 @@ export type SiteUpdateBroadcastInput = {
    */
   fromEmail?: EmailAddress | null;
   /**
-   * MJML body
+   * HTML body with Liquid merge tags
    */
   body?: string;
   /**

@@ -1,8 +1,8 @@
 // Package emailrender renders broadcast/template email content. Bodies are
-// authored as MJML; the pipeline is: Liquid merge tags → MJML compile (which
-// emits email-safe, inlined HTML) → derived plain-text part. Each step is a
-// maintained library (osteele/liquid, preslavrachev/gomjml, k3a/html2text) — we
-// don't hand-roll templating, MJML, or HTML stripping.
+// email-ready HTML with Liquid merge tags (ADR 0040); the pipeline is: Liquid
+// merge tags → derived plain-text part. Each step is a maintained library
+// (osteele/liquid, k3a/html2text, x/net/html) — we don't hand-roll templating or
+// HTML stripping.
 //
 // Tracking (open pixel, click rewriting, unsubscribe footer) is deliberately NOT
 // done here: the caller layers it on AFTER this pipeline so re-parsing can never
@@ -15,8 +15,12 @@ import (
 
 	"github.com/k3a/html2text"
 	"github.com/osteele/liquid"
-	"github.com/preslavrachev/gomjml/mjml"
 )
+
+// ErrInvalidContent is what Validate fails with: the subject or body cannot render, so
+// it is refused where it is saved and where a send is planned. The wrapped text is the
+// reason shown to the author.
+var ErrInvalidContent = errors.New("message content cannot be rendered")
 
 // engine is safe for concurrent ParseAndRender calls.
 var engine = newEngine()
@@ -45,37 +49,38 @@ type Email struct {
 	Text    string
 }
 
-// RenderEmail renders subject + MJML body for one recipient: Liquid merge tags
-// first (so a {% if %} can change MJML structure per recipient), then MJML
-// compiles to email HTML, then the text part is derived from that HTML (before
-// any tracking is layered on). A non-nil error means the Liquid merge tags or the
-// MJML failed to render — the caller must not send that message (sending the raw
-// template to a recipient is worse than not sending).
+// RenderEmail renders subject + HTML body for one recipient: Liquid merge tags
+// first (so a {% if %} can change the markup per recipient), then the text part is
+// derived from that HTML (before any tracking is layered on). A non-nil error means
+// the Liquid merge tags failed to render — the caller must not send that message
+// (sending the raw template to a recipient is worse than not sending).
 func RenderEmail(subject, body string, bindings map[string]any) (Email, error) {
 	renderedSubject, err := Render(subject, bindings)
 	if err != nil {
 		return Email{}, fmt.Errorf("render subject: %w", err)
 	}
-	renderedBody, err := Render(body, bindings)
+	html, err := Render(body, bindings)
 	if err != nil {
 		return Email{}, fmt.Errorf("render body: %w", err)
-	}
-
-	html, err := mjml.Render(renderedBody)
-	if err != nil {
-		return Email{}, fmt.Errorf("compile mjml: %w", err)
 	}
 
 	return Email{Subject: renderedSubject, HTML: html, Text: HTMLToText(html)}, nil
 }
 
 // Validate reports whether subject and body can render at all, without any recipient
-// data: Liquid syntax and MJML compilation errors surface; unbound merge tags simply
-// render empty. Planning code calls it so a template that would fail every recipient
-// fails the whole send once, up front (ADR 0015).
+// data: a Liquid syntax error or HTML that does not parse is refused with the reason
+// (ErrInvalidContent); unbound merge tags simply render empty. Save paths and send
+// planning call it so a message that would fail every recipient fails once, up front
+// (ADR 0015, ADR 0040). Nothing else blocks.
 func Validate(subject, body string) error {
-	_, err := RenderEmail(subject, body, map[string]any{})
-	return err
+	email, err := RenderEmail(subject, body, map[string]any{})
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidContent, err)
+	}
+	if err := checkHTML(email.HTML); err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidContent, err)
+	}
+	return nil
 }
 
 // Render renders a Liquid template with the given bindings. On a template error
@@ -93,4 +98,17 @@ func Render(tmpl string, bindings map[string]any) (string, error) {
 // text/plain MIME part.
 func HTMLToText(html string) string {
 	return html2text.HTML2Text(html)
+}
+
+// ValidateFields is Validate for a write that may carry only some of the content: a
+// nil field is not provided, so it is not checked.
+func ValidateFields(subject, body *string) error {
+	var s, b string
+	if subject != nil {
+		s = *subject
+	}
+	if body != nil {
+		b = *body
+	}
+	return Validate(s, b)
 }
