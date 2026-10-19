@@ -39,7 +39,9 @@ func TestWorkspaceSuspendJoinsTheReasonWords(t *testing.T) {
 	env := testhelper.Setup(t)
 	var out bytes.Buffer
 
-	require.NoError(t, execute(workspaceCLI{env}, &out, "workspace", "suspend", "acme", "complaint", "rate", "too", "high"))
+	err := execute(workspaceCLI{env}, &out, "workspace", "suspend", "acme", "complaint", "rate", "too", "high")
+
+	require.NoError(t, err)
 
 	acme := env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID)
 	require.NotNil(t, acme.SuspendedAt)
@@ -55,29 +57,38 @@ func TestWorkspaceSuspendNeedsASlugAndAReason(t *testing.T) {
 		err := execute(workspaceCLI{env}, &bytes.Buffer{}, append([]string{"workspace"}, args...)...)
 		require.Error(t, err, "args %v", args)
 	}
-	assert.Nil(t, env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID).SuspendedAt)
+	acme := env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID)
+	assert.Nil(t, acme.SuspendedAt)
 }
 
 func TestWorkspaceUnsuspendLiftsTheSuspension(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "suspend", "acme", "abuse"))
+	err := execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "suspend", "acme", "abuse")
+	require.NoError(t, err)
 
-	require.NoError(t, execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "unsuspend", "acme"))
+	err = execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "unsuspend", "acme")
 
-	assert.Nil(t, env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID).SuspendedAt)
+	require.NoError(t, err)
+
+	acme := env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID)
+	assert.Nil(t, acme.SuspendedAt)
 }
 
 func TestWorkspaceUnsuspendReportsNoChange(t *testing.T) {
 	env := testhelper.Setup(t)
 	var out bytes.Buffer
 
-	require.NoError(t, execute(workspaceCLI{env}, &out, "workspace", "unsuspend", "acme"))
+	err := execute(workspaceCLI{env}, &out, "workspace", "unsuspend", "acme")
+
+	require.NoError(t, err)
 
 	assert.Contains(t, out.String(), "not suspended")
 }
 
 func TestWorkspaceUnknownSubcommand(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.Error(t, execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "delete", "acme"))
-	require.Error(t, execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace"))
+	err := execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace", "delete", "acme")
+	require.Error(t, err)
+	err = execute(workspaceCLI{env}, &bytes.Buffer{}, "workspace")
+	require.Error(t, err)
 }

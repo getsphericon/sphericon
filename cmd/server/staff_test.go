@@ -18,7 +18,9 @@ func TestStaffCreateMakesTheStaffMemberAndShowsTheOneTimePasswordOnce(t *testing
 	env := testhelper.Setup(t)
 	var out bytes.Buffer
 
-	require.NoError(t, execute(staffCLI{env.StaffMembers}, &out, "staff", "create", staffEmail))
+	err := execute(staffCLI{env.StaffMembers}, &out, "staff", "create", staffEmail)
+
+	require.NoError(t, err)
 
 	member := env.DB.StaffMember.Query().Where(staffmember.Email(staffEmail)).OnlyX(context.Background())
 	assert.NotEmpty(t, member.PasswordHash, "the Staff member can sign in")
@@ -28,9 +30,10 @@ func TestStaffCreateMakesTheStaffMemberAndShowsTheOneTimePasswordOnce(t *testing
 
 func TestStaffCreateRefusesADuplicateEmail(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, execute(staffCLI{env.StaffMembers}, &bytes.Buffer{}, "staff", "create", staffEmail))
-
 	err := execute(staffCLI{env.StaffMembers}, &bytes.Buffer{}, "staff", "create", staffEmail)
+	require.NoError(t, err)
+
+	err = execute(staffCLI{env.StaffMembers}, &bytes.Buffer{}, "staff", "create", staffEmail)
 
 	require.ErrorContains(t, err, "already exists")
 }
@@ -41,15 +44,18 @@ func TestStaffCreateNeedsTheLicense(t *testing.T) {
 	err := execute(staffCLI{env.StaffMembers}, &bytes.Buffer{}, "staff", "create", staffEmail)
 
 	require.ErrorContains(t, err, "license")
-	assert.False(t, env.DB.StaffMember.Query().Where(staffmember.Email(staffEmail)).ExistX(context.Background()))
+	created := env.DB.StaffMember.Query().Where(staffmember.Email(staffEmail)).ExistX(context.Background())
+	assert.False(t, created)
 }
 
 func TestStaffNeedsACommandAndAnEmail(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, args := range [][]string{nil, {"create"}, {"delete", staffEmail}} {
-		require.Error(t, execute(staffCLI{env.StaffMembers}, &bytes.Buffer{}, append([]string{"staff"}, args...)...), "args %v", args)
+		err := execute(staffCLI{env.StaffMembers}, &bytes.Buffer{}, append([]string{"staff"}, args...)...)
+		require.Error(t, err, "args %v", args)
 	}
-	assert.False(t, env.DB.StaffMember.Query().Where(staffmember.Email(staffEmail)).ExistX(context.Background()))
+	created := env.DB.StaffMember.Query().Where(staffmember.Email(staffEmail)).ExistX(context.Background())
+	assert.False(t, created)
 }
 
 func TestStaffResetTOTPClearsTheFactorAndSaysTheStaffReenrols(t *testing.T) {
@@ -61,7 +67,9 @@ func TestStaffResetTOTPClearsTheFactorAndSaysTheStaffReenrols(t *testing.T) {
 	env.DB.StaffMember.UpdateOneID(enrolled.ID).SetTotpSecretEncrypted("enrolled").ExecX(ctx)
 	var out bytes.Buffer
 
-	require.NoError(t, execute(staffCLI{env.StaffMembers}, &out, "staff", "reset-totp", staffEmail))
+	err = execute(staffCLI{env.StaffMembers}, &out, "staff", "reset-totp", staffEmail)
+
+	require.NoError(t, err)
 
 	after := env.DB.StaffMember.GetX(ctx, enrolled.ID)
 	assert.Empty(t, after.TotpSecretEncrypted, "the factor is cleared")

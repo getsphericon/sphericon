@@ -7,6 +7,7 @@ import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '../i18n.ts'
 import { QueryClient } from '@tanstack/react-query'
+import { http, HttpResponse } from 'msw'
 import { afterEach, beforeAll, beforeEach } from 'vitest'
 
 import { client } from '../generated/site/client.gen.ts'
@@ -27,6 +28,11 @@ createAppRouter(new QueryClient())
 // MSW answers a request without a handler with a 500 and only logs it, which the app may
 // swallow. Record each one and fail the test that made it; handlers are dropped after every test.
 const unhandled: string[] = []
+const recording: Promise<void>[] = []
+
+async function recordUnhandled(frame: { getUnhandledMessage: () => Promise<string> }) {
+  unhandled.push(await frame.getUnhandledMessage())
+}
 
 function isApiFrame({ data }: { data: unknown }) {
   if (typeof data !== 'object' || data === null || !('request' in data)) {
@@ -43,13 +49,13 @@ function isApiFrame({ data }: { data: unknown }) {
 beforeAll(() =>
   worker.start({
     quiet: true,
-    onUnhandledFrame: async ({ frame, defaults }) => {
+    onUnhandledFrame: ({ frame, defaults }) => {
       // Page assets and the analytics package's own traffic are not the app's API.
       if (!isApiFrame(frame)) {
         frame.passthrough()
         return
       }
-      unhandled.push(await frame.getUnhandledMessage())
+      recording.push(recordUnhandled(frame))
       defaults.error()
     },
   }),
@@ -59,13 +65,15 @@ beforeAll(() =>
 beforeEach(() => {
   worker.use(handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }))
 })
-// A test may end before its own requests have reached the worker (the round-trip takes a beat).
-// Give them that beat while the test's handlers are still installed, or they would be answered
-// by the next test's handlers and reported as unmocked there.
+// A test may end before its own requests have reached the worker. The worker takes requests in
+// the order the page made them, so a request answered by a handler of its own has passed every
+// earlier one: wait for that, then for the unmocked ones to be recorded, while the test's handlers
+// are still installed (or they would be answered by the next test's handlers and reported there).
+const FLUSH_PATH = '/__flush'
 afterEach(async () => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 20)
-  })
+  worker.use(http.get(FLUSH_PATH, () => new HttpResponse(null)))
+  await fetch(FLUSH_PATH)
+  await Promise.all(recording.splice(0))
   worker.resetHandlers()
   const messages = unhandled.splice(0)
   if (messages.length > 0) {

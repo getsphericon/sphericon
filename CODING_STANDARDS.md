@@ -3,6 +3,14 @@
 The rules a change is reviewed against. How the repo is built, run and generated is in
 `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
 
+## Code shape
+
+- **Getting data is separate from using it.** A value is read into a named variable on its own
+  line, then used: `after := q.Count(ctx)` then `assert.Equal(t, before, after)`, never an
+  assertion, argument or condition that holds a query, a call chain or a computation inside it.
+  The same goes for production code: `rows, err := ...` first, then the `if` or the `return` that
+  uses them. A test that fails then shows which step produced the wrong value.
+
 ## Database
 
 - **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is

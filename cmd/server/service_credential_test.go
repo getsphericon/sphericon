@@ -88,7 +88,8 @@ func TestServiceCredentialCreateExplainsARefusal(t *testing.T) {
 		_, err := run(t, tc.env, tc.args...)
 		require.ErrorContains(t, err, tc.want)
 	}
-	assert.Equal(t, before, licensed.DB.ServiceCredential.Query().CountX(context.Background()), "a refusal creates nothing")
+	after := licensed.DB.ServiceCredential.Query().CountX(context.Background())
+	assert.Equal(t, before, after, "a refusal creates nothing")
 }
 
 func TestServiceCredentialRotateShowsTheNewValueAndSaysTheOldOneStaysActive(t *testing.T) {
@@ -102,7 +103,8 @@ func TestServiceCredentialRotateShowsTheNewValueAndSaysTheOldOneStaysActive(t *t
 
 	require.NoError(t, err)
 	assert.Len(t, credentials(t, env, "svc-new"), 2, "a second credential with the same name")
-	assert.Equal(t, revokedBefore, env.DB.ServiceCredential.Query().Where(servicecredential.RevokedAtNotNil()).CountX(context.Background()), "the old one stays active")
+	revokedAfter := env.DB.ServiceCredential.Query().Where(servicecredential.RevokedAtNotNil()).CountX(context.Background())
+	assert.Equal(t, revokedBefore, revokedAfter, "the old one stays active")
 	assert.Contains(t, out, "smsc_")
 	assert.Contains(t, out, "revoke")
 }
@@ -116,7 +118,8 @@ func TestServiceCredentialRevokeEndsTheCredential(t *testing.T) {
 	out, err := run(t, env, "revoke", itoa(id))
 
 	require.NoError(t, err)
-	assert.NotNil(t, env.DB.ServiceCredential.GetX(context.Background(), id).RevokedAt)
+	revoked := env.DB.ServiceCredential.GetX(context.Background(), id)
+	assert.NotNil(t, revoked.RevokedAt)
 	assert.Contains(t, out, "revoked")
 }
 
@@ -155,7 +158,8 @@ func TestServiceCredentialRefusesExtraArgumentsAndANegativeExpiry(t *testing.T) 
 	require.Error(t, err)
 	_, err = run(t, env, "create", "--expires-in=-1h", "svc-new", "usage:read")
 	require.Error(t, err)
-	assert.Equal(t, before, env.DB.ServiceCredential.Query().CountX(context.Background()))
+	after := env.DB.ServiceCredential.Query().CountX(context.Background())
+	assert.Equal(t, before, after)
 }
 
 func TestServiceCredentialNeedsAKnownCommandAndItsArguments(t *testing.T) {
@@ -165,7 +169,8 @@ func TestServiceCredentialNeedsAKnownCommandAndItsArguments(t *testing.T) {
 		_, err := run(t, env, args...)
 		require.Error(t, err, "args %v", args)
 	}
-	assert.Equal(t, before, env.DB.ServiceCredential.Query().CountX(context.Background()))
+	after := env.DB.ServiceCredential.Query().CountX(context.Background())
+	assert.Equal(t, before, after)
 }
 
 func itoa(id int64) string { return strconv.FormatInt(id, 10) }
