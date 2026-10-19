@@ -76,19 +76,17 @@ test('invites a member and reveals the invite link', async () => {
   )
   const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
 
-  await screen.getByRole('tab', { name: /Pending invitations/ }).click()
-  await screen
-    .getByLabelText(/^Email/)
-    .last()
-    .fill(' new@example.com ')
   await screen.getByRole('button', { name: 'Invite' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Email/).fill(' new@example.com ')
+  await dialog.getByRole('button', { name: 'Invite' }).click()
 
   await expect.element(screen.getByText('https://app.test/invite/abc')).toBeInTheDocument()
   expect(bodies).toEqual([{ email: 'new@example.com', role: 'member' }])
 
-  // The notice can be dismissed.
+  // Closing the modal drops the link.
   await screen.getByRole('button', { name: 'Copy' }).click()
-  await screen.getByRole('alert').getByRole('button').last().click()
+  await dialog.getByRole('button').first().click()
   await expect.element(screen.getByText('https://app.test/invite/abc')).not.toBeInTheDocument()
 })
 
@@ -105,7 +103,8 @@ test('revokes an invitation after confirmation', async () => {
   const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
 
   await screen.getByRole('tab', { name: /Pending invitations/ }).click()
-  await screen.getByRole('button', { name: 'Revoke' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Revoke' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => revoked).toBe(true)
@@ -123,7 +122,8 @@ test('removes a member after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Remove' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Remove' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => removed).toBe(true)
@@ -181,7 +181,8 @@ test('an owner resets a member Second factor after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Reset 2FA' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).last().click()
+  await screen.getByRole('menuitem', { name: 'Reset 2FA' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Reset' }).click()
 
   await expect.poll(() => reset).toBe(true)
@@ -192,5 +193,7 @@ test('a member is not offered a Second factor reset', async () => {
   const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
 
   await expect.element(screen.getByText('sam@example.com')).toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Reset 2FA' })).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'More actions' }).last().click()
+  await expect.element(screen.getByRole('menuitem', { name: 'Remove' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('menuitem', { name: 'Reset 2FA' })).not.toBeInTheDocument()
 })

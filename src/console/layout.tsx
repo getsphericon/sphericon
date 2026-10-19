@@ -2,7 +2,7 @@ import { Avatar, Group, Menu, Stack, Text, UnstyledButton } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconChevronDown, IconHome, IconLogout } from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useMatchRoute, useNavigate, useRouteContext } from '@tanstack/react-router'
+import { useNavigate, useRouteContext } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { NavLinkLink } from '../components/RouterLink.tsx'
@@ -14,7 +14,6 @@ import { Route as consoleLoginRoute } from '../routes/console/login.tsx'
 
 function ConsoleNavbar() {
   const { t } = useTranslation()
-  const matchRoute = useMatchRoute()
 
   return (
     <Stack gap="xs">
@@ -22,7 +21,7 @@ function ConsoleNavbar() {
         to={consoleHomeRoute.to}
         label={t(($) => $.console.nav.workspaces)}
         leftSection={<IconHome size={18} />}
-        active={Boolean(matchRoute({ to: consoleHomeRoute.to }))}
+        activeOptions={{ exact: true }}
       />
     </Stack>
   )

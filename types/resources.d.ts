@@ -30,6 +30,7 @@ export default interface Resources {
       "continue": "Continue",
       "delete": "Delete",
       "edit": "Edit",
+      "more": "More actions",
       "save": "Save",
       "view": "View"
     },
