@@ -15,7 +15,7 @@ constrain agents is in `docs/research/ai-email-design-landscape.md` and is not r
 
 - Only **two** open-source candidates speak MJML on both sides: **GrapesJS + `grapesjs-mjml`**
   (imports an `<mjml>` string, exports MJML) and **Easy Email** (`MjmlToJson` / `JsonToMjml`).
-  Everything else (React Email editor, Mainly, Unlayer, Beefree) stores its own JSON or emits
+  Everything else (React Email editor, Maily, Unlayer, Beefree) stores its own JSON or emits
   HTML, which breaks the "Message content = subject + MJML" model of ADR 0003 and
   `internal/emailrender`.
 - **Easy Email** is MIT and MJML-shaped but its open-source build is **React 18 only** (its own
@@ -49,7 +49,7 @@ constrain agents is in `docs/research/ai-email-design-landscape.md` and is not r
 
 "MJML in/out" = reads and writes an MJML string for the same document. Dates are 2026.
 
-|                                           | GrapesJS + grapesjs-mjml                             | Easy Email (OSS)                                                                                 | `@react-email/editor`                            | Mainly (`@maily-to/core`)                       | Unlayer `react-email-editor`                                      | Beefree SDK                                                    |
+|                                           | GrapesJS + grapesjs-mjml                             | Easy Email (OSS)                                                                                 | `@react-email/editor`                            | Maily (`@maily-to/core`)                        | Unlayer `react-email-editor`                                      | Beefree SDK                                                    |
 | ----------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------ | ----------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------- |
 | License                                   | BSD-3-Clause (core and plugin)                       | MIT                                                                                              | MIT                                              | MIT (repo `license` file; no npm license field) | wrapper MIT, editor proprietary                                   | npm wrapper Apache-2.0, service proprietary                    |
 | AGPL + closed ee/ + self-host OK          | yes (permissive, self-contained)                     | yes (permissive)                                                                                 | yes (permissive)                                 | yes (permissive)                                | **no**: editor loaded from Unlayer CDN, project ID for production | **no**: client id/secret, vendor auth endpoint, per-user plans |
@@ -192,7 +192,7 @@ constrain agents is in `docs/research/ai-email-design-landscape.md` and is not r
   upload plugin in `@react-email/editor/plugins`; hook names not given. Preview and dark-mode
   preview: not covered.
 
-### Mainly (`mainly.to`, `@maily-to/core`)
+### Maily (`maily.to`, `@maily-to/core`)
 
 - Not on the original list; found as the editor Novu documents. MIT (repo `license` file; npm
   `license` field empty). `@maily-to/core` 0.3.7 (2026-10-14), `@maily-to/render` 0.2.3,
@@ -268,7 +268,7 @@ Message content as subject + MJML body; the broadcast form is a Mantine `Textare
 | GrapesJS + grapesjs-mjml | MJML stays the stored format; the editor is a view. No ADR change if "editor loses unsupported MJML on save" is acceptable. A new ADR is advisable on round-trip policy and Liquid placement.                                             | One editor component, one library stylesheet in `src/main.tsx`; theme variables must come from Mantine or it is custom CSS (a grill question); wrapper peer mismatch; large bundle; own toolbars unrelated to Mantine. | None for the pipeline. Agent text keeps working; an agent edit and a human edit write the same string. Components outside the plugin's list (accordion, carousel, table, `mj-class`) are not editable and may be dropped on save. |
 | Easy Email (OSS)         | Same as above (MJML in/out), but state is its own block tree; MJML is regenerated, not preserved.                                                                                                                                         | React 18 only against our React 19 (`^19.3.1`); Arco CSS x3 plus Mantine; Chrome-only; peers `mjml-browser` 4. Likely blocked until the OSS build supports React 19 or the project takes the Pro licence.              | Liquid control-flow generation is built in; MJML 4 compiler in the browser vs `gomjml` on the server.                                                                                                                             |
 | `@react-email/editor`    | **Supersedes ADR 0003's format**: stored content becomes TipTap JSON or HTML, `emailrender` stops compiling MJML (or an MJML serializer is written as custom `EmailNode`s). The `Validate` and merge-tag-before-compile pipeline changes. | Best React 19/TS fit; theme is JS objects; one `default.css` import; TipTap packages and `react-email` come along.                                                                                                     | MCP tools must expose TipTap JSON plus a schema (the Resend pattern) or keep accepting MJML and lose round-trip.                                                                                                                  |
-| Mainly                   | Same as React Email editor: HTML/JSON, not MJML.                                                                                                                                                                                          | Tailwind v4 in the dependency tree; `style.css` import.                                                                                                                                                                | Built-in variables, repeat and show-if blocks vs Liquid in `emailrender`.                                                                                                                                                         |
+| Maily                    | Same as React Email editor: HTML/JSON, not MJML.                                                                                                                                                                                          | Tailwind v4 in the dependency tree; `style.css` import.                                                                                                                                                                | Built-in variables, repeat and show-if blocks vs Liquid in `emailrender`.                                                                                                                                                         |
 | Unlayer / Beefree        | Own JSON plus HTML; breaks MJML-only and the AGPL self-host promise.                                                                                                                                                                      | iframe/remote script; paid white-labeling (Unlayer) or per-user plans (Beefree).                                                                                                                                       | Vendor MCPs exist, hosted outside the product; operator and customer data leave the instance.                                                                                                                                     |
 
 Common to all: a template or broadcast that already holds hand-written or agent-written MJML
@@ -281,11 +281,11 @@ Liquid control flow may sit relative to MJML elements.
 1. Is **losing unsupported MJML on the first human save** acceptable, or must the editor refuse
    to load MJML it cannot represent and fall back to a raw MJML view?
 2. Do we want a **block editor that rewrites MJML** (Easy Email, GrapesJS) or **one that owns the
-   format and emits HTML** (React Email editor, Mainly)? The second contradicts ADR 0003 and the
+   format and emits HTML** (React Email editor, Maily)? The second contradicts ADR 0003 and the
    "MJML-only" principle; is that supersession on the table?
 3. Where may Liquid appear: only inside text and attribute values, or also as `{% if %}` /
    `{% for %}` around `mj-section`s? The editor choice follows the answer (only Easy Email and
-   Mainly generate control flow; none was tested against `osteele/liquid`).
+   Maily generate control flow; none was tested against `osteele/liquid`).
 4. Does "no custom CSS" allow a library's own editor stylesheet imported in `src/main.tsx`
    (AGENTS.md: "The only CSS imports are the library stylesheets in `src/main.tsx`")? And is
    emitting a vendor's CSS variables through Mantine's `cssVariablesResolver` acceptable?
@@ -315,7 +315,7 @@ Liquid control flow may sit relative to MJML elements.
   in source; absence of a grep hit is not proof.
 - **React Email editor** JSON export/import API, `Mention` as merge-tag mechanism, image upload
   hook names, and whether `composeReactEmail` runs in the browser: the fetched pages did not say.
-- **Mainly** agent surface and exact feature set beyond the README list; licence is from the
+- **Maily** agent surface and exact feature set beyond the README list; licence is from the
   repo `license` file, npm lists none.
 - **Beefree**: per-user overage ($5.00 Free, $3.50 Essentials, $1.25 Core, none on Superpowers),
   "$2 per template import" and the Content Services API quotas came from a search-result summary
@@ -346,7 +346,7 @@ Liquid control flow may sit relative to MJML elements.
   <https://react.email/docs/editor/getting-started>,
   <https://react.email/docs/editor/features/email-export>,
   <https://react.email/docs/editor/features/theming>
-- Mainly: <https://github.com/arikchakma/maily.to>
+- Maily: <https://github.com/arikchakma/maily.to>
 - Unlayer: <https://github.com/unlayer/react-email-editor>,
   <https://docs.unlayer.com/builder/installation>, <https://unlayer.com/pricing>
 - Beefree: <https://docs.beefree.io/beefree-sdk/getting-started/installation>,

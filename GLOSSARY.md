@@ -311,12 +311,20 @@ content is immutable history), transactional references (the template is live).
 _Avoid_: Layout, theme, master, partial
 
 **Message content** (a value, not an entity):
-The reusable shape every email carries — a subject plus an MJML body (compiled to email-safe
-HTML on send). A Template is the saved, named instance of it; a Broadcast and each email
-Automation send step each hold their own copy; a Transactional send renders a _referenced_
-Template's content with per-call variables. The same value across surfaces — copied for
-marketing, referenced for transactional.
+The reusable shape every email carries — a subject plus a body of email-ready HTML with merge
+tags. A body written in the editor also keeps the editor's document it was built from; a body
+that arrived as HTML (from the API) has none and opens as source. A Template is the saved,
+named instance of it; a Broadcast and each email Automation send step each hold their own
+copy; a Transactional send renders a _referenced_ Template's content with per-call variables.
+The same value across surfaces — copied for marketing, referenced for transactional.
 _Avoid_: Email body, content block
+
+**Brand kit**:
+A Workspace's visual identity as data — colors, fonts, logo, button style and footer. It sets
+the palette the editor offers and what an agent is told to use. Its values are written into a
+message when the message is authored, so changing the Brand kit never changes a message that is
+already written.
+_Avoid_: Theme, style guide
 
 ### Operational
 
