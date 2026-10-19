@@ -47,11 +47,17 @@ var pixelGIF, _ = base64.StdEncoding.DecodeString(
 //
 // The token is a signed per-recipient JWT. Opens always return the pixel (even
 // on a bad token) so we never leak token validity through the image.
-func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, limiter *ratelimit.Limiter) http.Handler {
+func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Tracker, limiter *ratelimit.Limiter, appURL string) http.Handler {
 	mux := http.NewServeMux()
+	appURL = strings.TrimRight(appURL, "/")
 
 	mux.HandleFunc("GET /e/o/{token}", func(w http.ResponseWriter, r *http.Request) {
-		if rid, err := tracker.Decode(r.PathValue("token")); err == nil && limiter.RecordsTracking(r) {
+		rid, err := tracker.Decode(r.PathValue("token"))
+		if err == nil && !recipientOnHost(r, client, rid) {
+			http.NotFound(w, r)
+			return
+		}
+		if err == nil && limiter.RecordsTracking(r) {
 			recordOpen(r.Context(), client, bus, rid)
 		}
 		w.Header().Set("Content-Type", "image/gif")
@@ -70,6 +76,10 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Trac
 			http.Error(w, "invalid token", http.StatusBadRequest)
 			return
 		}
+		if !recipientOnHost(r, client, rid) {
+			http.NotFound(w, r)
+			return
+		}
 		if limiter.RecordsTracking(r) {
 			recordClick(r.Context(), client, bus, rid, dest)
 		}
@@ -83,17 +93,25 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Trac
 			http.Error(w, "invalid token", http.StatusBadRequest)
 			return
 		}
+		if !workspaceOnHost(r, target.WorkspaceID) {
+			http.NotFound(w, r)
+			return
+		}
 		// Safe method: record nothing, render the SPA confirmation page. The page's
 		// button POSTs back to this same URL to perform the opt-out. For a per-source
 		// opt-out we pass the deliberate "unsubscribe from everything" escalation link
 		// so the page can offer it (a click, never an auto-fired request).
-		http.Redirect(w, r, confirmRedirect(tracker, tokenStr, target), http.StatusSeeOther)
+		http.Redirect(w, r, confirmRedirect(tracker, appURL, tokenStr, target), http.StatusSeeOther)
 	})
 
 	mux.HandleFunc("POST /e/u/{token}", func(w http.ResponseWriter, r *http.Request) {
 		target, err := tracker.DecodeUnsub(r.PathValue("token"))
 		if err != nil {
 			http.Error(w, "invalid token", http.StatusBadRequest)
+			return
+		}
+		if !workspaceOnHost(r, target.WorkspaceID) {
+			http.NotFound(w, r)
 			return
 		}
 		// Performs the opt-out — the target of the mailbox provider's one-click POST
@@ -111,26 +129,50 @@ func trackingHandler(client *ent.Client, bus *events.Bus, tracker *tracking.Trac
 
 	mux.HandleFunc("GET /e/confirm/{token}", func(w http.ResponseWriter, r *http.Request) {
 		tokenStr := r.PathValue("token")
-		if _, err := tracker.DecodeConfirm(tokenStr); err != nil {
+		target, err := tracker.DecodeConfirm(tokenStr)
+		if err == nil && !workspaceOnHost(r, target.WorkspaceID) {
+			http.NotFound(w, r)
+			return
+		}
+		if err != nil {
 			// Invalid or expired: send to the page with no token so it offers the
 			// "request a new confirmation" path rather than a dead Confirm button.
-			http.Redirect(w, r, "/confirm?expired=1", http.StatusSeeOther)
+			http.Redirect(w, r, appURL+"/confirm?expired=1", http.StatusSeeOther)
 			return
 		}
 		// Safe method: record nothing, render the SPA confirmation page. The page's
 		// button performs the confirmation through the site API.
-		http.Redirect(w, r, "/confirm?token="+url.QueryEscape(tokenStr), http.StatusSeeOther)
+		http.Redirect(w, r, appURL+"/confirm?token="+url.QueryEscape(tokenStr), http.StatusSeeOther)
 	})
 
 	return mux
 }
 
-// confirmRedirect is the SPA confirmation route the GET handler redirects to. It
+// workspaceOnHost reports whether a request may act on workspaceID: always on the
+// Instance's own host, and on a Tracking host only for that host's Workspace (ADR 0038).
+func workspaceOnHost(r *http.Request, workspaceID int64) bool {
+	h, ok := trackingHostFrom(r.Context())
+	return !ok || h.workspaceID == workspaceID
+}
+
+// recipientOnHost is workspaceOnHost for a recipient token, which carries no Workspace:
+// it is read off the recipient row, and only when the request came in on a Tracking host.
+func recipientOnHost(r *http.Request, client *ent.Client, recipientID int64) bool {
+	h, ok := trackingHostFrom(r.Context())
+	if !ok {
+		return true
+	}
+	rec, err := client.BroadcastRecipient.Get(r.Context(), recipientID)
+	return err == nil && rec.WorkspaceID == h.workspaceID
+}
+
+// confirmRedirect is the absolute SPA confirmation URL (on the Instance's own host, so
+// a Tracking host's visitor lands where the SPA is) the GET handler redirects to. It
 // carries the token so the page's button can POST it back, and for a per-source
 // opt-out the everything-scoped escalation URL (built from the same destination)
 // so the page can offer it after confirming.
-func confirmRedirect(tracker *tracking.Tracker, tokenStr string, target tracking.UnsubTarget) string {
-	base := "/unsubscribe?token=" + url.QueryEscape(tokenStr)
+func confirmRedirect(tracker *tracking.Tracker, appURL, tokenStr string, target tracking.UnsubTarget) string {
+	base := appURL + "/unsubscribe?token=" + url.QueryEscape(tokenStr)
 	if target.Source == eligibility.SourceEverything {
 		return base
 	}

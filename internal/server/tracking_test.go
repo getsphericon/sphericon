@@ -86,7 +86,7 @@ func TestConfirmEndpoint(t *testing.T) {
 	// GET is safe: 303 to the SPA confirm page, records nothing.
 	resp := get(cPath)
 	assert.Equal(t, http.StatusSeeOther, resp.Code)
-	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), "/confirm?token="))
+	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), cfg.AppURL+"/confirm?token="))
 	assert.False(t, confirmed(), "GET records nothing")
 
 	// The state change is not reachable through /e/confirm any more: POST there is
@@ -238,7 +238,7 @@ func TestTrackingEndpoints(t *testing.T) {
 
 	resp = get(uPath)
 	assert.Equal(t, http.StatusSeeOther, resp.Code)
-	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), "/unsubscribe?"))
+	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), cfg.AppURL+"/unsubscribe?"))
 	assert.False(t, optedOut(), "GET records nothing")
 	assert.Equal(t, 0, env.DB.Broadcast.GetX(ctx, b.ID).UnsubscribedCount)
 
