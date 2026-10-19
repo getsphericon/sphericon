@@ -18,10 +18,11 @@ type userOps interface {
 	CreateOwner(ctx context.Context, name, email string) (password string, err error)
 }
 
-// userCommand is `sphericon user create-owner <email> <name...>` (ADR 0042): the explicit
-// step that makes the first Owner of an Instance that closed sign-up. It is also
-// `sphericon user reset-second-factor <email>` (ADR 0020): the way back in for a User locked out of their Second factor with nobody to reset it in
-// the product (the sole Owner of a self-hosted instance).
+// userCommand is the `user` group. `create-owner <email> <name...>` (ADR 0042) is the
+// explicit step that makes the first Owner of an Instance that closed sign-up.
+// `reset-second-factor <email>` (ADR 0020) is the way back in for a User locked out of
+// their Second factor with nobody to reset it in the product (the sole Owner of a
+// self-hosted instance).
 func userCommand(d deps) *cli.Command {
 	return group("user", "create a first Owner or recover a User's access",
 		&cli.Command{
