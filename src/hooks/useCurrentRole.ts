@@ -21,3 +21,8 @@ export function useCurrentRole(slug: string): SiteMembershipRole | undefined {
 export function canManage(role: SiteMembershipRole | undefined) {
   return role === 'owner' || role === 'admin'
 }
+
+// Only an Owner changes the Workspace's Brand kit (ADR 0040); every member reads it.
+export function canManageBrandKit(role: SiteMembershipRole | undefined) {
+  return role === 'owner'
+}

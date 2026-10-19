@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -42,6 +43,10 @@ func automationSteps(def string) []externalapi.AutomationStep {
 		default:
 			step.Subject = externalapi.NewOptString(s.Subject)
 			step.Body = externalapi.NewOptString(s.Body)
+			if doc := convert.DocObject[externalapi.AutomationStepDoc](s.Doc); doc != nil {
+				step.Doc = externalapi.NewOptAutomationStepDoc(doc)
+				step.EditorVersion = externalapi.NewOptString(s.EditorVersion)
+			}
 		}
 		steps = append(steps, step)
 	}
@@ -56,6 +61,7 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 			Type:    string(s.Type),
 			Subject: s.Subject.Or(""),
 			Body:    s.Body.Or(""),
+			Doc:     convert.DocJSON(s.Doc.Value, s.Doc.Set),
 			Seconds: int(s.Seconds.Or(0)),
 			Tag:     s.Tag.Or(""),
 
@@ -88,6 +94,8 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend optNilInt32
 // goverter:extend exportJSON
 // goverter:extend segmentDefinition
+// goverter:extend templateDoc
+// goverter:extend broadcastDoc
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
@@ -226,4 +234,22 @@ func segmentDefinition(def *string) externalapi.OptSegmentRuleGroup {
 		return externalapi.OptSegmentRuleGroup{}
 	}
 	return externalapi.NewOptSegmentRuleGroup(group)
+}
+
+// templateDoc is a Template's stored editor document as the opaque object of the contract; a
+// Template written as HTML has none.
+func templateDoc(doc json.RawMessage) externalapi.OptNilTemplateResourceDoc {
+	if fields := convert.DocObject[externalapi.TemplateResourceDoc](doc); fields != nil {
+		return externalapi.NewOptNilTemplateResourceDoc(fields)
+	}
+	return externalapi.OptNilTemplateResourceDoc{}
+}
+
+// broadcastDoc is a Broadcast's stored editor document as the opaque object of the contract; a
+// Broadcast written as HTML has none.
+func broadcastDoc(doc json.RawMessage) externalapi.OptNilBroadcastResourceDoc {
+	if fields := convert.DocObject[externalapi.BroadcastResourceDoc](doc); fields != nil {
+		return externalapi.NewOptNilBroadcastResourceDoc(fields)
+	}
+	return externalapi.OptNilBroadcastResourceDoc{}
 }

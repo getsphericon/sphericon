@@ -19,7 +19,7 @@ every caller (regenerate afterwards), rather than layering the new design over t
 API contracts are **one-directional**: TypeSpec → OpenAPI → generated Go + TS. Never
 hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `src/generated/` / `packages/analytics/src/generated/`, `src/routeTree.gen.ts`, or the `*_gen.go` files in the
-`internal/api/{site,external}/resources` packages and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock — regenerate instead.
+`internal/api/{site,external}/resources` packages and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
 
 ```
 typespec/{site,external,collect,staff,service,telemetry}   ──tsp compile──▶  openapi/*.openapi.json
@@ -33,6 +33,7 @@ src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go
+packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
@@ -52,7 +53,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 Generated files carry a header (`Code generated … DO NOT EDIT`, or `// @ts-nocheck` on the
 frontend) and are flagged `linguist-generated` in `.gitattributes` (GitHub collapses them in
 diffs). Generated code lives in dedicated dirs — `internal/` is otherwise hand-written, its
-only generated files being the two `converter_gen.go`, `internal/fixtures/catalog_gen.go` and the moq `*_gen_test.go` mocks.
+only generated files being the two `converter_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
 
 ## Common commands
 
@@ -155,7 +156,7 @@ app in-process. `HOLD=true mise run test:e2e` keeps the app and Mailpit up after
 printed) until Ctrl-C, to inspect a failed scenario in the Mailpit UI. Scenarios are domain steps on
 `e2e.Workspace` (`env.NewWorkspace(t).Ready()`, `ImportContacts`, `SendBroadcast`), one flat struct whose steps live in non-test files by concept
 (`workspace.go`, `integration.go`, `contacts.go`, `broadcast.go`, `automation.go`, `consent.go`); `_test.go`
-files hold only scenarios, and bodies are authored with `e2e.MJML(text)`. Mail is observed only through
+files hold only scenarios, and bodies are authored with `e2e.HTML(text)`. Mail is observed only through
 the Workspace's `Inbox`: one wait (`w.Inbox.Wait(e2e.Match{To, Subject})`) and one absence check
 (`w.Inbox.RequireNone`); it deletes every message it saw on cleanup.
 
@@ -344,6 +345,11 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   (per-workspace providers: smtp/ses). Both providers share `messaging.BuildMIME`
   (wneessen/go-mail) — smtp sends the `*mail.Msg` directly, ses serializes it to raw
   bytes for SES v2 `SendEmail` (raw content).
+- `internal/emaildoc` (ADR 0040) turns an editor document into email HTML inside the binary: the editor's own
+  export code, bundled by `packages/emaildoc` (`mise run build:emaildoc`; rerun it after any change to the pinned
+  `@react-email/editor`, then `go test ./internal/emaildoc -update` to accept the new golden HTML) and run in goja,
+  no cgo. The runtime starts on the first call, limits are enforced before and during a render. Editor and
+  bundle dependencies in `packages/emaildoc/package.json` are pinned exactly.
 - The tracker snippet (`/t.js`) is the `@sphericon/analytics` IIFE bundle, built and embedded:
   `mise run build:tracker` copies `packages/analytics/dist/t.js` into `internal/server/assets/`.
 

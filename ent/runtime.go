@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -182,6 +183,29 @@ func init() {
 	automationrun.DefaultCurrentStep = automationrunDescCurrentStep.Default.(int)
 	// automationrun.CurrentStepValidator is a validator for the "current_step" field. It is called by the builders before save.
 	automationrun.CurrentStepValidator = automationrunDescCurrentStep.Validators[0].(func(int) error)
+	brandkitMixin := schema.BrandKit{}.Mixin()
+	brandkitMixinFields0 := brandkitMixin[0].Fields()
+	_ = brandkitMixinFields0
+	brandkitFields := schema.BrandKit{}.Fields()
+	_ = brandkitFields
+	// brandkitDescCreatedAt is the schema descriptor for created_at field.
+	brandkitDescCreatedAt := brandkitMixinFields0[0].Descriptor()
+	// brandkit.DefaultCreatedAt holds the default value on creation for the created_at field.
+	brandkit.DefaultCreatedAt = brandkitDescCreatedAt.Default.(func() time.Time)
+	// brandkitDescUpdatedAt is the schema descriptor for updated_at field.
+	brandkitDescUpdatedAt := brandkitMixinFields0[1].Descriptor()
+	// brandkit.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	brandkit.DefaultUpdatedAt = brandkitDescUpdatedAt.Default.(func() time.Time)
+	// brandkit.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	brandkit.UpdateDefaultUpdatedAt = brandkitDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// brandkitDescLogoURL is the schema descriptor for logo_url field.
+	brandkitDescLogoURL := brandkitFields[6].Descriptor()
+	// brandkit.DefaultLogoURL holds the default value on creation for the logo_url field.
+	brandkit.DefaultLogoURL = brandkitDescLogoURL.Default.(string)
+	// brandkitDescFooterText is the schema descriptor for footer_text field.
+	brandkitDescFooterText := brandkitFields[9].Descriptor()
+	// brandkit.DefaultFooterText holds the default value on creation for the footer_text field.
+	brandkit.DefaultFooterText = brandkitDescFooterText.Default.(string)
 	broadcastMixin := schema.Broadcast{}.Mixin()
 	broadcastMixinFields0 := broadcastMixin[0].Fields()
 	_ = broadcastMixinFields0
@@ -210,47 +234,47 @@ func init() {
 	// broadcast.DefaultBody holds the default value on creation for the body field.
 	broadcast.DefaultBody = broadcastDescBody.Default.(string)
 	// broadcastDescBodyText is the schema descriptor for body_text field.
-	broadcastDescBodyText := broadcastFields[6].Descriptor()
+	broadcastDescBodyText := broadcastFields[8].Descriptor()
 	// broadcast.DefaultBodyText holds the default value on creation for the body_text field.
 	broadcast.DefaultBodyText = broadcastDescBodyText.Default.(string)
 	// broadcastDescRecipientsTotal is the schema descriptor for recipients_total field.
-	broadcastDescRecipientsTotal := broadcastFields[12].Descriptor()
+	broadcastDescRecipientsTotal := broadcastFields[14].Descriptor()
 	// broadcast.DefaultRecipientsTotal holds the default value on creation for the recipients_total field.
 	broadcast.DefaultRecipientsTotal = broadcastDescRecipientsTotal.Default.(int)
 	// broadcast.RecipientsTotalValidator is a validator for the "recipients_total" field. It is called by the builders before save.
 	broadcast.RecipientsTotalValidator = broadcastDescRecipientsTotal.Validators[0].(func(int) error)
 	// broadcastDescSentCount is the schema descriptor for sent_count field.
-	broadcastDescSentCount := broadcastFields[13].Descriptor()
+	broadcastDescSentCount := broadcastFields[15].Descriptor()
 	// broadcast.DefaultSentCount holds the default value on creation for the sent_count field.
 	broadcast.DefaultSentCount = broadcastDescSentCount.Default.(int)
 	// broadcast.SentCountValidator is a validator for the "sent_count" field. It is called by the builders before save.
 	broadcast.SentCountValidator = broadcastDescSentCount.Validators[0].(func(int) error)
 	// broadcastDescOpenedCount is the schema descriptor for opened_count field.
-	broadcastDescOpenedCount := broadcastFields[14].Descriptor()
+	broadcastDescOpenedCount := broadcastFields[16].Descriptor()
 	// broadcast.DefaultOpenedCount holds the default value on creation for the opened_count field.
 	broadcast.DefaultOpenedCount = broadcastDescOpenedCount.Default.(int)
 	// broadcast.OpenedCountValidator is a validator for the "opened_count" field. It is called by the builders before save.
 	broadcast.OpenedCountValidator = broadcastDescOpenedCount.Validators[0].(func(int) error)
 	// broadcastDescClickedCount is the schema descriptor for clicked_count field.
-	broadcastDescClickedCount := broadcastFields[15].Descriptor()
+	broadcastDescClickedCount := broadcastFields[17].Descriptor()
 	// broadcast.DefaultClickedCount holds the default value on creation for the clicked_count field.
 	broadcast.DefaultClickedCount = broadcastDescClickedCount.Default.(int)
 	// broadcast.ClickedCountValidator is a validator for the "clicked_count" field. It is called by the builders before save.
 	broadcast.ClickedCountValidator = broadcastDescClickedCount.Validators[0].(func(int) error)
 	// broadcastDescUnsubscribedCount is the schema descriptor for unsubscribed_count field.
-	broadcastDescUnsubscribedCount := broadcastFields[16].Descriptor()
+	broadcastDescUnsubscribedCount := broadcastFields[18].Descriptor()
 	// broadcast.DefaultUnsubscribedCount holds the default value on creation for the unsubscribed_count field.
 	broadcast.DefaultUnsubscribedCount = broadcastDescUnsubscribedCount.Default.(int)
 	// broadcast.UnsubscribedCountValidator is a validator for the "unsubscribed_count" field. It is called by the builders before save.
 	broadcast.UnsubscribedCountValidator = broadcastDescUnsubscribedCount.Validators[0].(func(int) error)
 	// broadcastDescFailedCount is the schema descriptor for failed_count field.
-	broadcastDescFailedCount := broadcastFields[17].Descriptor()
+	broadcastDescFailedCount := broadcastFields[19].Descriptor()
 	// broadcast.DefaultFailedCount holds the default value on creation for the failed_count field.
 	broadcast.DefaultFailedCount = broadcastDescFailedCount.Default.(int)
 	// broadcast.FailedCountValidator is a validator for the "failed_count" field. It is called by the builders before save.
 	broadcast.FailedCountValidator = broadcastDescFailedCount.Validators[0].(func(int) error)
 	// broadcastDescSkippedCount is the schema descriptor for skipped_count field.
-	broadcastDescSkippedCount := broadcastFields[18].Descriptor()
+	broadcastDescSkippedCount := broadcastFields[20].Descriptor()
 	// broadcast.DefaultSkippedCount holds the default value on creation for the skipped_count field.
 	broadcast.DefaultSkippedCount = broadcastDescSkippedCount.Default.(int)
 	// broadcast.SkippedCountValidator is a validator for the "skipped_count" field. It is called by the builders before save.

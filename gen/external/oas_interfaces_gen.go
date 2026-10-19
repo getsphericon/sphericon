@@ -57,6 +57,10 @@ type AutomationsUpdateRes interface {
 	automationsUpdateRes()
 }
 
+type BrandKitGetRes interface {
+	brandKitGetRes()
+}
+
 type BroadcastsCreateRes interface {
 	broadcastsCreateRes()
 }
@@ -131,6 +135,14 @@ type ContactsUpdateRes interface {
 
 type CustomFieldsListRes interface {
 	customFieldsListRes()
+}
+
+type EmailLintLintRes interface {
+	emailLintLintRes()
+}
+
+type EmailSchemaGetRes interface {
+	emailSchemaGetRes()
 }
 
 type EmailsSendRes interface {

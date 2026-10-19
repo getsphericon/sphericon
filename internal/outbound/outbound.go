@@ -271,7 +271,7 @@ type Request struct {
 	Source string
 
 	Subject string
-	Body    string // MJML
+	Body    string // HTML
 	// Variables are extra merge tags; they win over Contact fields.
 	Variables map[string]any
 
@@ -692,7 +692,7 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 type TestRequest struct {
 	To        string
 	Subject   string
-	Body      string // MJML
+	Body      string // HTML
 	Variables map[string]any
 	FromEmail string
 	FromName  string

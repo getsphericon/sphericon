@@ -70,7 +70,7 @@ var (
 		"custom_fields_list", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_delete", "sending_domains_verify", "sending_domains_rates",
 		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_delete", "presets_list",
 		"suppressions_create", "unsubscribes_create",
-		"templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
+		"email_lint", "email_schema", "brand_get", "templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
 		"webhooks_list", "webhooks_create", "webhooks_get", "webhooks_update", "webhooks_delete",
 		"webhooks_regenerate_secret", "webhooks_test",
 		"tags_list", "tags_list_for_contact", "tags_apply", "tags_remove",
@@ -232,6 +232,21 @@ func TestMCPToolCallReturnsTheAPIResult(t *testing.T) {
 	require.False(t, res.IsError, text(t, res))
 	res = call(t, s, "contacts_delete", map[string]any{"id": created["id"]})
 	require.False(t, res.IsError, text(t, res))
+}
+
+// A body an agent saves over MCP is sanitized like one saved through the API (ADR 0040).
+func TestMCPSanitizesBodiesOnSave(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, "templates:write"))
+
+	res := call(t, s, "templates_create", map[string]any{
+		"name": "Hostile",
+		"body": `<p onclick="steal()">Hi {{ first_name }}</p><script>alert(1)</script>`,
+	})
+	require.False(t, res.IsError, text(t, res))
+	var created map[string]any
+	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &created))
+	assert.Equal(t, `<p>Hi {{ first_name }}</p>`, created["body"])
 }
 
 // An agent reads the Send rate limit and 24-hour usage of the Integrations over MCP,

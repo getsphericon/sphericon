@@ -42,7 +42,8 @@ test('renames the workspace', async () => {
   const nameInput = screen.getByLabelText(/^Workspace name/)
   await expect.element(nameInput).toHaveValue('Acme')
   await nameInput.fill('Acme Inc')
-  await screen.getByRole('button', { name: 'Save' }).click()
+  // The General section's Save comes first; the Brand kit has its own.
+  await screen.getByRole('button', { name: 'Save' }).first().click()
 
   await expect.poll(() => puts.length).toBeGreaterThan(0)
   expect(puts[0]).toContain('"name":"Acme Inc"')

@@ -1,11 +1,15 @@
-import { Button, Group, Stack, Textarea, TextInput } from '@mantine/core'
+import { Button, Group, Stack, TextInput } from '@mantine/core'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
+import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteCreateEmailTemplateInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$slug/route.tsx'
 import { Route as templatesRoute } from '../../routes/workspaces/$slug/templates/index.tsx'
+import { docCodec } from '../../utils/messageDoc.ts'
 
 export function TemplateForm({
   form,
@@ -14,9 +18,21 @@ export function TemplateForm({
 }: ResourceFormProps<SiteCreateEmailTemplateInput>) {
   const { t } = useTranslation()
   const { slug } = workspaceRoute.useParams()
+  // The form holds the document as JSON text; a blank or unreadable text is no document.
+  const docText = form.values.doc
+  const doc = useMemo(() => {
+    const parsed = docCodec.safeParse(docText)
+    return parsed.success ? parsed.data : null
+  }, [docText])
+  // A message written in the editor is its document and the server builds the body; sending
+  // both is a 422.
+  const submit = (payload: SiteCreateEmailTemplateInput) => {
+    const { doc: written, name, subject } = payload
+    onSubmit(written ? { name, ...(subject !== undefined && { subject }), doc: written } : payload)
+  }
 
   return (
-    <form onSubmit={form.onSubmit(onSubmit)}>
+    <form onSubmit={form.onSubmit(submit)}>
       <Stack>
         <TextInput
           label={t(($) => $.templates.nameLabel)}
@@ -24,12 +40,17 @@ export function TemplateForm({
           {...form.getInputProps('name')}
         />
         <TextInput label={t(($) => $.templates.subjectLabel)} {...form.getInputProps('subject')} />
-        <Textarea
-          label={t(($) => $.templates.bodyLabel)}
-          description={t(($) => $.templates.bodyHint)}
-          autosize
-          minRows={12}
-          {...form.getInputProps('body')}
+        <MessageEditor
+          doc={doc}
+          body={form.values.body ?? ''}
+          onChange={(edit) => {
+            if ('doc' in edit) {
+              form.setFieldValue('doc', z.encode(docCodec, edit.doc))
+            } else {
+              form.setFieldValue('doc', '')
+              form.setFieldValue('body', edit.body)
+            }
+          }}
         />
 
         <Group justify="flex-end">

@@ -44,7 +44,7 @@ function broadcast(status: string) {
     subject: 'Hello',
     fromName: 'Ada',
     fromEmail: 'ada@example.com',
-    body: '<mjml></mjml>',
+    body: '<p></p>',
     status,
   }
 }
@@ -134,7 +134,7 @@ test('editing a draft; a cleared sender name is sent as null and the audience is
         fromName: null,
         fromEmail: 'ada@example.com',
         segmentId: null,
-        body: '<mjml></mjml>',
+        body: '<p></p>',
       },
     ])
   await expect.element(screen.getByText('Broadcast updated')).toBeInTheDocument()
@@ -189,4 +189,63 @@ test('editing shows an error alert when the broadcast cannot be loaded', async (
 
   await expect.element(screen.getByText('Failed to load broadcasts')).toBeVisible()
   await expect.element(screen.getByText('broadcast not found')).toBeVisible()
+})
+
+const DOC = {
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello there' }] }],
+}
+
+test('saving a broadcast written in the editor sends its document and no body', async () => {
+  const { bodies } = serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({ ...broadcast('draft'), body: '<p>Hello there</p>', doc: DOC }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'Launch',
+        subject: 'Hello',
+        fromName: 'Ada',
+        fromEmail: 'ada@example.com',
+        segmentId: null,
+        doc: DOC,
+      },
+    ])
+})
+
+test('a broadcast with no document opens as editable source', async () => {
+  serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({ ...broadcast('draft'), body: '<table><tr><td>Hi</td></tr></table>' }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await expect
+    .element(screen.getByLabelText('Body'))
+    .toHaveValue('<table><tr><td>Hi</td></tr></table>')
+})
+
+test('a refused save shows the reason the server gave', async () => {
+  serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() => HttpResponse.json({ ...broadcast('draft'), doc: DOC })),
+    handleSiteBroadcastsUpdate(() => problem(422, { detail: 'heading level 9 is not allowed' })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('heading level 9 is not allowed')).toBeInTheDocument()
 })

@@ -42,6 +42,9 @@
       "name": "Site Integrations"
     },
     {
+      "name": "Site Brand Kit"
+    },
+    {
       "name": "Site Automations"
     },
     {
@@ -3012,6 +3015,174 @@
           }
         },
         "tags": ["Site Automations"]
+      }
+    },
+    "/workspaces/{slug}/brand-kit": {
+      "get": {
+        "operationId": "SiteBrandKit_get",
+        "description": "Read the Brand kit. Every member may read it.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteBrandKitResource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Brand Kit"]
+      },
+      "put": {
+        "operationId": "SiteBrandKit_save",
+        "description": "Save the Brand kit (owner only). The first save also creates the starter\nTemplates (a welcome, a receipt, a digest and a one-button message) in its brand; a later\nsave creates none and changes no message already written. A change is recorded as an Audit\nentry.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteBrandKitResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Brand Kit"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSaveBrandKitInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{slug}/brand-kit/starter-templates": {
+      "post": {
+        "operationId": "SiteBrandKit_recreateStarterTemplates",
+        "description": "Create the starter Templates again from the saved Brand kit (owner only). It adds\nnew Templates and never touches one that exists or a message already written. Answers 422\nuntil the Brand kit has been saved.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteEmailTemplateResource"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Brand Kit"]
       }
     },
     "/workspaces/{slug}/broadcasts": {
@@ -8102,6 +8273,47 @@
         "format": "int64",
         "description": "A primary key, written as a decimal string so JavaScript never rounds it. The format\nmakes the Go servers parse it into an int64: a malformed id is refused as a 400 before\na handler runs."
       },
+      "LintCode": {
+        "type": "string",
+        "enum": [
+          "invalid_content",
+          "missing_alt",
+          "low_contrast",
+          "off_brand_color",
+          "off_brand_font",
+          "unknown_construct"
+        ],
+        "description": "What a lint finding is about (ADR 0040)"
+      },
+      "LintFinding": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LintCode"
+              }
+            ],
+            "description": "What the finding is"
+          },
+          "message": {
+            "type": "string",
+            "description": "What is wrong, in the server's words"
+          },
+          "element": {
+            "type": "string",
+            "description": "The element it is about, as a short tag description such as `<img src=\"…\">`",
+            "x-untrusted": true
+          },
+          "detail": {
+            "type": "string",
+            "description": "The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1`",
+            "x-untrusted": true
+          }
+        },
+        "description": "One finding of the lint over a message's rendered HTML. `message` is fixed text of the\nserver; `element` and `detail` quote the message or the Brand kit and are untrusted data."
+      },
       "ProblemCode": {
         "type": "string",
         "enum": ["second_factor_required", "email_verification_required", "signup_closed"],
@@ -8720,7 +8932,16 @@
           },
           "body": {
             "type": "string",
-            "description": "Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)"
+            "description": "Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)"
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document an email step's body was built from, an opaque object checked by the\nserver. Write it instead of `body` (both is a 422): the server renders the body from it in the\nsame save, and a document that cannot be rendered refuses the whole save, naming the step.\nWriting only a body clears the step's document."
+          },
+          "editorVersion": {
+            "type": "string",
+            "description": "Version of the editor that rendered the document (email steps, read only)"
           },
           "seconds": {
             "type": "integer",
@@ -8765,6 +8986,79 @@
         "type": "string",
         "enum": ["email", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
+      },
+      "SiteBrandKitResource": {
+        "type": "object",
+        "required": [
+          "saved",
+          "accentColor",
+          "textColor",
+          "backgroundColor",
+          "headingFont",
+          "bodyFont",
+          "logoUrl",
+          "buttonTextColor",
+          "buttonRadius",
+          "footerText"
+        ],
+        "properties": {
+          "saved": {
+            "type": "boolean",
+            "description": "False until the Brand kit is first saved; the values are then the defaults"
+          },
+          "accentColor": {
+            "type": "string",
+            "description": "Brand color of buttons and links, `#rrggbb`"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "Color of text, `#rrggbb`"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "description": "Color of the message background, `#rrggbb`"
+          },
+          "headingFont": {
+            "type": "string",
+            "description": "Font of headings: a CSS font-family list of web-safe families",
+            "x-untrusted": true
+          },
+          "bodyFont": {
+            "type": "string",
+            "description": "Font of body text: a CSS font-family list of web-safe families",
+            "x-untrusted": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "description": "Address (http or https) of the logo image; empty for none",
+            "x-untrusted": true
+          },
+          "buttonTextColor": {
+            "type": "string",
+            "description": "Color of the text on a button, `#rrggbb`"
+          },
+          "buttonRadius": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Corner radius of a button in pixels, 0 to 32"
+          },
+          "footerText": {
+            "type": "string",
+            "description": "Plain text printed under the starter messages, at most 500 characters; empty for none",
+            "x-untrusted": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Brand kit was last saved; absent while it is not saved"
+          }
+        },
+        "description": "The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets\nthe palette the editor offers and what an agent is told to use. Its values are written into a\nmessage when the message is authored, so saving it never changes a message already written. A\nWorkspace that has not saved one has the defaults and `saved` false."
       },
       "SiteBroadcastProgress": {
         "type": "object",
@@ -8840,7 +9134,25 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body authored in the composer"
+            "description": "HTML body with Liquid merge tags"
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
+          },
+          "editorVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Version of the editor that rendered the document; null with it"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LintFinding"
+            },
+            "description": "Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it"
           },
           "bodyText": {
             "type": "string",
@@ -9156,7 +9468,12 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body"
+            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
           },
           "segmentId": {
             "type": "string",
@@ -9244,7 +9561,13 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
           }
         },
         "description": "Site request body for creating a template"
@@ -9588,7 +9911,25 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body"
+            "description": "HTML body with Liquid merge tags"
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
+          },
+          "editorVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Version of the editor that rendered the document; null with it"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LintFinding"
+            },
+            "description": "Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it"
           },
           "createdAt": {
             "allOf": [
@@ -10434,6 +10775,60 @@
           }
         },
         "description": "Set a new password using a reset token"
+      },
+      "SiteSaveBrandKitInput": {
+        "type": "object",
+        "required": [
+          "accentColor",
+          "textColor",
+          "backgroundColor",
+          "headingFont",
+          "bodyFont",
+          "logoUrl",
+          "buttonTextColor",
+          "buttonRadius",
+          "footerText"
+        ],
+        "properties": {
+          "accentColor": {
+            "type": "string",
+            "description": "Brand color of buttons and links, `#rrggbb`"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "Color of text, `#rrggbb`"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "description": "Color of the message background, `#rrggbb`"
+          },
+          "headingFont": {
+            "type": "string",
+            "description": "Font of headings: letters, digits, spaces, commas and hyphens only"
+          },
+          "bodyFont": {
+            "type": "string",
+            "description": "Font of body text: letters, digits, spaces, commas and hyphens only"
+          },
+          "logoUrl": {
+            "type": "string",
+            "description": "Address (http or https) of the logo image; empty for none"
+          },
+          "buttonTextColor": {
+            "type": "string",
+            "description": "Color of the text on a button, `#rrggbb`"
+          },
+          "buttonRadius": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Corner radius of a button in pixels, 0 to 32"
+          },
+          "footerText": {
+            "type": "string",
+            "description": "Plain text printed under the starter messages, at most 500 characters; empty for none"
+          }
+        },
+        "description": "Save the Brand kit: the first save creates it and the starter Templates, a later one replaces\nits values."
       },
       "SiteScheduleBroadcastInput": {
         "type": "object",
@@ -11353,7 +11748,12 @@
           },
           "body": {
             "type": "string",
-            "description": "MJML body"
+            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
           },
           "segmentId": {
             "type": "string",
@@ -11440,7 +11840,13 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
           }
         },
         "description": "Site request body for updating a template"

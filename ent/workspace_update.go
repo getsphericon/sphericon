@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -568,6 +569,21 @@ func (_u *WorkspaceUpdate) AddEmailTemplates(v ...*EmailTemplate) *WorkspaceUpda
 	return _u.AddEmailTemplateIDs(ids...)
 }
 
+// AddBrandKitIDs adds the "brand_kits" edge to the BrandKit entity by IDs.
+func (_u *WorkspaceUpdate) AddBrandKitIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddBrandKitIDs(ids...)
+	return _u
+}
+
+// AddBrandKits adds the "brand_kits" edges to the BrandKit entity.
+func (_u *WorkspaceUpdate) AddBrandKits(v ...*BrandKit) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBrandKitIDs(ids...)
+}
+
 // AddAutomationIDs adds the "automations" edge to the Automation entity by IDs.
 func (_u *WorkspaceUpdate) AddAutomationIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddAutomationIDs(ids...)
@@ -1030,6 +1046,27 @@ func (_u *WorkspaceUpdate) RemoveEmailTemplates(v ...*EmailTemplate) *WorkspaceU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEmailTemplateIDs(ids...)
+}
+
+// ClearBrandKits clears all "brand_kits" edges to the BrandKit entity.
+func (_u *WorkspaceUpdate) ClearBrandKits() *WorkspaceUpdate {
+	_u.mutation.ClearBrandKits()
+	return _u
+}
+
+// RemoveBrandKitIDs removes the "brand_kits" edge to BrandKit entities by IDs.
+func (_u *WorkspaceUpdate) RemoveBrandKitIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveBrandKitIDs(ids...)
+	return _u
+}
+
+// RemoveBrandKits removes "brand_kits" edges to BrandKit entities.
+func (_u *WorkspaceUpdate) RemoveBrandKits(v ...*BrandKit) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBrandKitIDs(ids...)
 }
 
 // ClearAutomations clears all "automations" edges to the Automation entity.
@@ -2057,6 +2094,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(emailtemplate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BrandKitsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BrandKitsTable,
+			Columns: []string{workspace.BrandKitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(brandkit.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBrandKitsIDs(); len(nodes) > 0 && !_u.mutation.BrandKitsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BrandKitsTable,
+			Columns: []string{workspace.BrandKitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(brandkit.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BrandKitsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BrandKitsTable,
+			Columns: []string{workspace.BrandKitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(brandkit.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -3095,6 +3177,21 @@ func (_u *WorkspaceUpdateOne) AddEmailTemplates(v ...*EmailTemplate) *WorkspaceU
 	return _u.AddEmailTemplateIDs(ids...)
 }
 
+// AddBrandKitIDs adds the "brand_kits" edge to the BrandKit entity by IDs.
+func (_u *WorkspaceUpdateOne) AddBrandKitIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddBrandKitIDs(ids...)
+	return _u
+}
+
+// AddBrandKits adds the "brand_kits" edges to the BrandKit entity.
+func (_u *WorkspaceUpdateOne) AddBrandKits(v ...*BrandKit) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBrandKitIDs(ids...)
+}
+
 // AddAutomationIDs adds the "automations" edge to the Automation entity by IDs.
 func (_u *WorkspaceUpdateOne) AddAutomationIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddAutomationIDs(ids...)
@@ -3557,6 +3654,27 @@ func (_u *WorkspaceUpdateOne) RemoveEmailTemplates(v ...*EmailTemplate) *Workspa
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEmailTemplateIDs(ids...)
+}
+
+// ClearBrandKits clears all "brand_kits" edges to the BrandKit entity.
+func (_u *WorkspaceUpdateOne) ClearBrandKits() *WorkspaceUpdateOne {
+	_u.mutation.ClearBrandKits()
+	return _u
+}
+
+// RemoveBrandKitIDs removes the "brand_kits" edge to BrandKit entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveBrandKitIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveBrandKitIDs(ids...)
+	return _u
+}
+
+// RemoveBrandKits removes "brand_kits" edges to BrandKit entities.
+func (_u *WorkspaceUpdateOne) RemoveBrandKits(v ...*BrandKit) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBrandKitIDs(ids...)
 }
 
 // ClearAutomations clears all "automations" edges to the Automation entity.
@@ -4614,6 +4732,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(emailtemplate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BrandKitsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BrandKitsTable,
+			Columns: []string{workspace.BrandKitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(brandkit.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBrandKitsIDs(); len(nodes) > 0 && !_u.mutation.BrandKitsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BrandKitsTable,
+			Columns: []string{workspace.BrandKitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(brandkit.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BrandKitsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BrandKitsTable,
+			Columns: []string{workspace.BrandKitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(brandkit.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

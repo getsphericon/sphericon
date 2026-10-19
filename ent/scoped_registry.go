@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -305,6 +306,52 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Name:    "BrandKit",
+			Audited: true,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.BrandKit.Query().Where(brandkit.WorkspaceID(ws)).Order(Asc(brandkit.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.BrandKit().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.BrandKit().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.BrandKit().Update().Where(brandkit.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.BrandKit().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.BrandKit().Delete().Where(brandkit.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.BrandKit.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.BrandKit().Create()
+				b.SetAccentColor(src.AccentColor)
+				b.SetTextColor(src.TextColor)
+				b.SetBackgroundColor(src.BackgroundColor)
+				b.SetHeadingFont(src.HeadingFont)
+				b.SetBodyFont(src.BodyFont)
+				b.SetLogoURL(src.LogoURL)
+				b.SetButtonTextColor(src.ButtonTextColor)
+				b.SetButtonRadius(src.ButtonRadius)
+				b.SetFooterText(src.FooterText)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
 			Name:    "Broadcast",
 			Audited: true,
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
@@ -342,6 +389,12 @@ func ScopedEntities() []ScopedEntity {
 					b.SetFromEmail(*src.FromEmail)
 				}
 				b.SetBody(src.Body)
+				if !reflect.ValueOf(src.Doc).IsZero() {
+					b.SetDoc(src.Doc)
+				}
+				if src.EditorVersion != nil {
+					b.SetEditorVersion(*src.EditorVersion)
+				}
 				b.SetBodyText(src.BodyText)
 				if src.SegmentID != nil {
 					b.SetSegmentID(remap("Segment", *src.SegmentID))
@@ -667,6 +720,12 @@ func ScopedEntities() []ScopedEntity {
 				b.SetName(src.Name)
 				b.SetSubject(src.Subject)
 				b.SetBody(src.Body)
+				if !reflect.ValueOf(src.Doc).IsZero() {
+					b.SetDoc(src.Doc)
+				}
+				if src.EditorVersion != nil {
+					b.SetEditorVersion(*src.EditorVersion)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

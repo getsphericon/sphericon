@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"slices"
@@ -14,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -163,6 +165,22 @@ func (s *Scoped) verifyAutomationRun(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("AutomationRun: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyBrandKit fails with ErrNotInWorkspace unless every id is a BrandKit of the Workspace.
+func (s *Scoped) verifyBrandKit(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.BrandKit.Query().Where(brandkit.IDIn(ids...), brandkit.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("BrandKit: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -3652,6 +3670,962 @@ func (x *AutomationRunScopedUpdate) Exec(ctx context.Context) error {
 	return err
 }
 
+// BrandKitScoped reaches BrandKit entities of one Workspace.
+type BrandKitScoped struct{ s *Scoped }
+
+// BrandKit returns the BrandKit entities of the Workspace.
+func (s *Scoped) BrandKit() *BrandKitScoped { return &BrandKitScoped{s: s} }
+
+// Query returns a BrandKit query already confined to the Workspace.
+func (t *BrandKitScoped) Query() *BrandKitQuery {
+	return t.s.c.BrandKit.Query().Where(brandkit.WorkspaceID(t.s.ws))
+}
+
+// Get returns the BrandKit with the id; a row of another Workspace is not found.
+func (t *BrandKitScoped) Get(ctx context.Context, id int64) (*BrandKit, error) {
+	return t.Query().Where(brandkit.ID(id)).Only(ctx)
+}
+
+// BrandKitScopedDeleteOne wraps BrandKitDeleteOne.
+type BrandKitScopedDeleteOne struct {
+	s *Scoped
+	b *BrandKitDeleteOne
+}
+
+// DeleteOneID deletes the BrandKit with the id; a row of another Workspace is not found.
+func (t *BrandKitScoped) DeleteOneID(id int64) *BrandKitScopedDeleteOne {
+	return &BrandKitScopedDeleteOne{s: t.s, b: t.s.c.BrandKit.DeleteOneID(id).Where(brandkit.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *BrandKitScopedDeleteOne) Where(ps ...predicate.BrandKit) *BrandKitScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *BrandKitScopedDeleteOne) Exec(ctx context.Context) error {
+	if x.s.auditing() {
+		return x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.BrandKit.Query().Where(x.b._d.mutation.predicates...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b._d.auditRebind(ts.c)
+			if err := x.b.Exec(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeBrandKit("delete", before, nil))
+		})
+	}
+	return x.b.Exec(ctx)
+}
+
+// BrandKitScopedDelete wraps BrandKitDelete.
+type BrandKitScopedDelete struct {
+	s *Scoped
+	b *BrandKitDelete
+}
+
+// Delete deletes the BrandKit entities of the Workspace that match the predicates.
+func (t *BrandKitScoped) Delete() *BrandKitScopedDelete {
+	return &BrandKitScopedDelete{s: t.s, b: t.s.c.BrandKit.Delete().Where(brandkit.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *BrandKitScopedDelete) Where(ps ...predicate.BrandKit) *BrandKitScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *BrandKitScopedDelete) Exec(ctx context.Context) (int, error) {
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			rows, err := ts.c.BrandKit.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Exec(ctx); err != nil {
+				return err
+			}
+			for _, row := range rows {
+				if err := ts.record(ctx, auditChangeBrandKit("delete", row, nil)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// BrandKitScopedCreate wraps BrandKitCreate. It has no way to name a Workspace.
+type BrandKitScopedCreate struct {
+	s *Scoped
+	b *BrandKitCreate
+}
+
+// Create starts a BrandKit in the Workspace.
+func (t *BrandKitScoped) Create() *BrandKitScopedCreate {
+	return &BrandKitScopedCreate{s: t.s, b: t.s.c.BrandKit.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *BrandKitScopedCreate) SetCreatedAt(v time.Time) *BrandKitScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *BrandKitScopedCreate) SetNillableCreatedAt(v *time.Time) *BrandKitScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *BrandKitScopedCreate) SetUpdatedAt(v time.Time) *BrandKitScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *BrandKitScopedCreate) SetNillableUpdatedAt(v *time.Time) *BrandKitScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetAccentColor sets the "accent_color" field.
+func (x *BrandKitScopedCreate) SetAccentColor(v string) *BrandKitScopedCreate {
+	x.b.SetAccentColor(v)
+	return x
+}
+
+// SetTextColor sets the "text_color" field.
+func (x *BrandKitScopedCreate) SetTextColor(v string) *BrandKitScopedCreate {
+	x.b.SetTextColor(v)
+	return x
+}
+
+// SetBackgroundColor sets the "background_color" field.
+func (x *BrandKitScopedCreate) SetBackgroundColor(v string) *BrandKitScopedCreate {
+	x.b.SetBackgroundColor(v)
+	return x
+}
+
+// SetHeadingFont sets the "heading_font" field.
+func (x *BrandKitScopedCreate) SetHeadingFont(v string) *BrandKitScopedCreate {
+	x.b.SetHeadingFont(v)
+	return x
+}
+
+// SetBodyFont sets the "body_font" field.
+func (x *BrandKitScopedCreate) SetBodyFont(v string) *BrandKitScopedCreate {
+	x.b.SetBodyFont(v)
+	return x
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (x *BrandKitScopedCreate) SetLogoURL(v string) *BrandKitScopedCreate {
+	x.b.SetLogoURL(v)
+	return x
+}
+
+// SetNillableLogoURL sets the "logo_url" field if the given value is not nil.
+func (x *BrandKitScopedCreate) SetNillableLogoURL(v *string) *BrandKitScopedCreate {
+	x.b.SetNillableLogoURL(v)
+	return x
+}
+
+// SetButtonTextColor sets the "button_text_color" field.
+func (x *BrandKitScopedCreate) SetButtonTextColor(v string) *BrandKitScopedCreate {
+	x.b.SetButtonTextColor(v)
+	return x
+}
+
+// SetButtonRadius sets the "button_radius" field.
+func (x *BrandKitScopedCreate) SetButtonRadius(v int) *BrandKitScopedCreate {
+	x.b.SetButtonRadius(v)
+	return x
+}
+
+// SetFooterText sets the "footer_text" field.
+func (x *BrandKitScopedCreate) SetFooterText(v string) *BrandKitScopedCreate {
+	x.b.SetFooterText(v)
+	return x
+}
+
+// SetNillableFooterText sets the "footer_text" field if the given value is not nil.
+func (x *BrandKitScopedCreate) SetNillableFooterText(v *string) *BrandKitScopedCreate {
+	x.b.SetNillableFooterText(v)
+	return x
+}
+
+func (x *BrandKitScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the BrandKit.
+func (x *BrandKitScopedCreate) Save(ctx context.Context) (*BrandKit, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var created *BrandKit
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			x.b.auditRebind(ts.c)
+			var err error
+			if created, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeBrandKit("create", nil, created))
+		})
+		return created, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *BrandKitScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// BrandKitScopedCreateBulk creates several BrandKit entities of one Workspace at once.
+type BrandKitScopedCreateBulk struct {
+	s  *Scoped
+	xs []*BrandKitScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *BrandKitScoped) CreateBulk(xs ...*BrandKitScopedCreate) *BrandKitScopedCreateBulk {
+	return &BrandKitScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *BrandKitScopedCreateBulk) raw(ctx context.Context) (*BrandKitCreateBulk, error) {
+	builders := make([]*BrandKitCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("BrandKit: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.BrandKit.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the BrandKit entities.
+func (b *BrandKitScopedCreateBulk) Save(ctx context.Context) ([]*BrandKit, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if b.s.auditing() {
+		var created []*BrandKit
+		err := b.s.audited(ctx, func(ts *Scoped) error {
+			raw.auditRebind(ts.c)
+			var err error
+			if created, err = raw.Save(ctx); err != nil {
+				return err
+			}
+			for _, row := range created {
+				if err := ts.record(ctx, auditChangeBrandKit("create", nil, row)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return created, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *BrandKitScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// BrandKitScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type BrandKitScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *BrandKitScopedUpsert) SetUpdatedAt(v time.Time) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateUpdatedAt() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldUpdatedAt)
+	return u
+}
+
+// SetAccentColor sets the "accent_color" field.
+func (u *BrandKitScopedUpsert) SetAccentColor(v string) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldAccentColor, v)
+	return u
+}
+
+// UpdateAccentColor sets the "accent_color" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateAccentColor() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldAccentColor)
+	return u
+}
+
+// SetTextColor sets the "text_color" field.
+func (u *BrandKitScopedUpsert) SetTextColor(v string) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldTextColor, v)
+	return u
+}
+
+// UpdateTextColor sets the "text_color" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateTextColor() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldTextColor)
+	return u
+}
+
+// SetBackgroundColor sets the "background_color" field.
+func (u *BrandKitScopedUpsert) SetBackgroundColor(v string) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldBackgroundColor, v)
+	return u
+}
+
+// UpdateBackgroundColor sets the "background_color" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateBackgroundColor() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldBackgroundColor)
+	return u
+}
+
+// SetHeadingFont sets the "heading_font" field.
+func (u *BrandKitScopedUpsert) SetHeadingFont(v string) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldHeadingFont, v)
+	return u
+}
+
+// UpdateHeadingFont sets the "heading_font" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateHeadingFont() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldHeadingFont)
+	return u
+}
+
+// SetBodyFont sets the "body_font" field.
+func (u *BrandKitScopedUpsert) SetBodyFont(v string) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldBodyFont, v)
+	return u
+}
+
+// UpdateBodyFont sets the "body_font" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateBodyFont() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldBodyFont)
+	return u
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (u *BrandKitScopedUpsert) SetLogoURL(v string) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldLogoURL, v)
+	return u
+}
+
+// UpdateLogoURL sets the "logo_url" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateLogoURL() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldLogoURL)
+	return u
+}
+
+// SetButtonTextColor sets the "button_text_color" field.
+func (u *BrandKitScopedUpsert) SetButtonTextColor(v string) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldButtonTextColor, v)
+	return u
+}
+
+// UpdateButtonTextColor sets the "button_text_color" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateButtonTextColor() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldButtonTextColor)
+	return u
+}
+
+// SetButtonRadius sets the "button_radius" field.
+func (u *BrandKitScopedUpsert) SetButtonRadius(v int) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldButtonRadius, v)
+	return u
+}
+
+// AddButtonRadius adds v to the "button_radius" field.
+func (u *BrandKitScopedUpsert) AddButtonRadius(v int) *BrandKitScopedUpsert {
+	u.u.Add(brandkit.FieldButtonRadius, v)
+	return u
+}
+
+// UpdateButtonRadius sets the "button_radius" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateButtonRadius() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldButtonRadius)
+	return u
+}
+
+// SetFooterText sets the "footer_text" field.
+func (u *BrandKitScopedUpsert) SetFooterText(v string) *BrandKitScopedUpsert {
+	u.u.Set(brandkit.FieldFooterText, v)
+	return u
+}
+
+// UpdateFooterText sets the "footer_text" field to the value that was provided on create.
+func (u *BrandKitScopedUpsert) UpdateFooterText() *BrandKitScopedUpsert {
+	u.u.SetExcluded(brandkit.FieldFooterText)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+func (t *BrandKitScoped) conflictOptions(columns []string) []sql.ConflictOption {
+	return []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(brandkit.FieldWorkspaceID, t.s.ws)),
+	}
+}
+
+// BrandKitScopedUpsertOne is the "upsert" of one BrandKit.
+type BrandKitScopedUpsertOne struct {
+	x *BrandKitScopedCreate
+	u *BrandKitUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *BrandKitScopedCreate) OnConflictColumns(columns ...string) *BrandKitScopedUpsertOne {
+	return &BrandKitScopedUpsertOne{x: x, u: x.b.OnConflict((&BrandKitScoped{s: x.s}).conflictOptions(columns)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *BrandKitScopedUpsertOne) UpdateNewValues() *BrandKitScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *BrandKitScopedUpsertOne) Ignore() *BrandKitScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *BrandKitScopedUpsertOne) DoNothing() *BrandKitScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *BrandKitScopedUpsertOne) Update(set func(*BrandKitScopedUpsert)) *BrandKitScopedUpsertOne {
+	u.u.Update(func(s *BrandKitUpsert) { set(&BrandKitScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *BrandKitScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	if u.x.s.auditing() {
+		_, err := u.audited(ctx)
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *BrandKitScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	if u.x.s.auditing() {
+		return u.audited(ctx)
+	}
+	return u.u.ID(ctx)
+}
+
+// audited runs a DO NOTHING upsert with its entry: an insert is a create, a conflict
+// (sql.ErrNoRows) writes nothing and records nothing.
+func (u *BrandKitScopedUpsertOne) audited(ctx context.Context) (int64, error) {
+	if !u.doNothing {
+		return 0, ErrAuditUpsert
+	}
+	var id int64
+	err := u.x.s.audited(ctx, func(ts *Scoped) error {
+		u.x.b.auditRebind(ts.c)
+		var err error
+		if id, err = u.u.ID(ctx); err != nil {
+			return err
+		}
+		row, err := ts.c.BrandKit.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		return ts.record(ctx, auditChangeBrandKit("create", nil, row))
+	})
+	return id, err
+}
+
+// BrandKitScopedUpsertBulk is the "upsert" of several BrandKit entities.
+type BrandKitScopedUpsertBulk struct {
+	b       *BrandKitScopedCreateBulk
+	t       *BrandKitScoped
+	columns []string
+	opts    []func(*BrandKitUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *BrandKitScopedCreateBulk) OnConflictColumns(columns ...string) *BrandKitScopedUpsertBulk {
+	return &BrandKitScopedUpsertBulk{b: b, t: &BrandKitScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *BrandKitScopedUpsertBulk) UpdateNewValues() *BrandKitScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BrandKitUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *BrandKitScopedUpsertBulk) Ignore() *BrandKitScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BrandKitUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *BrandKitScopedUpsertBulk) DoNothing() *BrandKitScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BrandKitUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *BrandKitScopedUpsertBulk) Update(set func(*BrandKitScopedUpsert)) *BrandKitScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *BrandKitUpsertBulk) {
+		r.Update(func(s *BrandKitUpsert) { set(&BrandKitScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *BrandKitScopedUpsertBulk) Exec(ctx context.Context) error {
+	if u.b.s.auditing() {
+		return ErrAuditUpsert
+	}
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// BrandKitScopedUpdateOne wraps BrandKitUpdateOne. It has no way to move the row to another Workspace.
+type BrandKitScopedUpdateOne struct {
+	s *Scoped
+	b *BrandKitUpdateOne
+}
+
+// UpdateOneID updates the BrandKit with the id; a row of another Workspace is not found.
+func (t *BrandKitScoped) UpdateOneID(id int64) *BrandKitScopedUpdateOne {
+	return &BrandKitScopedUpdateOne{s: t.s, b: t.s.c.BrandKit.UpdateOneID(id).Where(brandkit.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *BrandKitScopedUpdateOne) Where(ps ...predicate.BrandKit) *BrandKitScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *BrandKitScopedUpdateOne) SetUpdatedAt(v time.Time) *BrandKitScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetAccentColor sets the "accent_color" field.
+func (x *BrandKitScopedUpdateOne) SetAccentColor(v string) *BrandKitScopedUpdateOne {
+	x.b.SetAccentColor(v)
+	return x
+}
+
+// SetNillableAccentColor sets the "accent_color" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableAccentColor(v *string) *BrandKitScopedUpdateOne {
+	x.b.SetNillableAccentColor(v)
+	return x
+}
+
+// SetTextColor sets the "text_color" field.
+func (x *BrandKitScopedUpdateOne) SetTextColor(v string) *BrandKitScopedUpdateOne {
+	x.b.SetTextColor(v)
+	return x
+}
+
+// SetNillableTextColor sets the "text_color" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableTextColor(v *string) *BrandKitScopedUpdateOne {
+	x.b.SetNillableTextColor(v)
+	return x
+}
+
+// SetBackgroundColor sets the "background_color" field.
+func (x *BrandKitScopedUpdateOne) SetBackgroundColor(v string) *BrandKitScopedUpdateOne {
+	x.b.SetBackgroundColor(v)
+	return x
+}
+
+// SetNillableBackgroundColor sets the "background_color" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableBackgroundColor(v *string) *BrandKitScopedUpdateOne {
+	x.b.SetNillableBackgroundColor(v)
+	return x
+}
+
+// SetHeadingFont sets the "heading_font" field.
+func (x *BrandKitScopedUpdateOne) SetHeadingFont(v string) *BrandKitScopedUpdateOne {
+	x.b.SetHeadingFont(v)
+	return x
+}
+
+// SetNillableHeadingFont sets the "heading_font" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableHeadingFont(v *string) *BrandKitScopedUpdateOne {
+	x.b.SetNillableHeadingFont(v)
+	return x
+}
+
+// SetBodyFont sets the "body_font" field.
+func (x *BrandKitScopedUpdateOne) SetBodyFont(v string) *BrandKitScopedUpdateOne {
+	x.b.SetBodyFont(v)
+	return x
+}
+
+// SetNillableBodyFont sets the "body_font" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableBodyFont(v *string) *BrandKitScopedUpdateOne {
+	x.b.SetNillableBodyFont(v)
+	return x
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (x *BrandKitScopedUpdateOne) SetLogoURL(v string) *BrandKitScopedUpdateOne {
+	x.b.SetLogoURL(v)
+	return x
+}
+
+// SetNillableLogoURL sets the "logo_url" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableLogoURL(v *string) *BrandKitScopedUpdateOne {
+	x.b.SetNillableLogoURL(v)
+	return x
+}
+
+// SetButtonTextColor sets the "button_text_color" field.
+func (x *BrandKitScopedUpdateOne) SetButtonTextColor(v string) *BrandKitScopedUpdateOne {
+	x.b.SetButtonTextColor(v)
+	return x
+}
+
+// SetNillableButtonTextColor sets the "button_text_color" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableButtonTextColor(v *string) *BrandKitScopedUpdateOne {
+	x.b.SetNillableButtonTextColor(v)
+	return x
+}
+
+// SetButtonRadius sets the "button_radius" field.
+func (x *BrandKitScopedUpdateOne) SetButtonRadius(v int) *BrandKitScopedUpdateOne {
+	x.b.SetButtonRadius(v)
+	return x
+}
+
+// SetNillableButtonRadius sets the "button_radius" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableButtonRadius(v *int) *BrandKitScopedUpdateOne {
+	x.b.SetNillableButtonRadius(v)
+	return x
+}
+
+// AddButtonRadius adds value to the "button_radius" field.
+func (x *BrandKitScopedUpdateOne) AddButtonRadius(v int) *BrandKitScopedUpdateOne {
+	x.b.AddButtonRadius(v)
+	return x
+}
+
+// SetFooterText sets the "footer_text" field.
+func (x *BrandKitScopedUpdateOne) SetFooterText(v string) *BrandKitScopedUpdateOne {
+	x.b.SetFooterText(v)
+	return x
+}
+
+// SetNillableFooterText sets the "footer_text" field if the given value is not nil.
+func (x *BrandKitScopedUpdateOne) SetNillableFooterText(v *string) *BrandKitScopedUpdateOne {
+	x.b.SetNillableFooterText(v)
+	return x
+}
+
+func (x *BrandKitScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the BrandKit.
+func (x *BrandKitScopedUpdateOne) Save(ctx context.Context) (*BrandKit, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var updated *BrandKit
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			id, _ := x.b.Mutation().ID()
+			before, err := ts.c.BrandKit.Query().Where(x.b.mutation.predicates...).Where(brandkit.ID(id)).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if updated, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeBrandKit("update", before, updated))
+		})
+		return updated, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *BrandKitScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// BrandKitScopedUpdate wraps BrandKitUpdate: a conditional bulk update of one Workspace.
+type BrandKitScopedUpdate struct {
+	s *Scoped
+	b *BrandKitUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the BrandKit entities of the Workspace that match the predicates.
+func (t *BrandKitScoped) Update() *BrandKitScopedUpdate {
+	return &BrandKitScopedUpdate{s: t.s, b: t.s.c.BrandKit.Update().Where(brandkit.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *BrandKitScopedUpdate) Where(ps ...predicate.BrandKit) *BrandKitScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *BrandKitScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *BrandKitScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(brandkit.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *BrandKitScopedUpdate) SetUpdatedAt(v time.Time) *BrandKitScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetAccentColor sets the "accent_color" field.
+func (x *BrandKitScopedUpdate) SetAccentColor(v string) *BrandKitScopedUpdate {
+	x.b.SetAccentColor(v)
+	return x
+}
+
+// SetNillableAccentColor sets the "accent_color" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableAccentColor(v *string) *BrandKitScopedUpdate {
+	x.b.SetNillableAccentColor(v)
+	return x
+}
+
+// SetTextColor sets the "text_color" field.
+func (x *BrandKitScopedUpdate) SetTextColor(v string) *BrandKitScopedUpdate {
+	x.b.SetTextColor(v)
+	return x
+}
+
+// SetNillableTextColor sets the "text_color" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableTextColor(v *string) *BrandKitScopedUpdate {
+	x.b.SetNillableTextColor(v)
+	return x
+}
+
+// SetBackgroundColor sets the "background_color" field.
+func (x *BrandKitScopedUpdate) SetBackgroundColor(v string) *BrandKitScopedUpdate {
+	x.b.SetBackgroundColor(v)
+	return x
+}
+
+// SetNillableBackgroundColor sets the "background_color" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableBackgroundColor(v *string) *BrandKitScopedUpdate {
+	x.b.SetNillableBackgroundColor(v)
+	return x
+}
+
+// SetHeadingFont sets the "heading_font" field.
+func (x *BrandKitScopedUpdate) SetHeadingFont(v string) *BrandKitScopedUpdate {
+	x.b.SetHeadingFont(v)
+	return x
+}
+
+// SetNillableHeadingFont sets the "heading_font" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableHeadingFont(v *string) *BrandKitScopedUpdate {
+	x.b.SetNillableHeadingFont(v)
+	return x
+}
+
+// SetBodyFont sets the "body_font" field.
+func (x *BrandKitScopedUpdate) SetBodyFont(v string) *BrandKitScopedUpdate {
+	x.b.SetBodyFont(v)
+	return x
+}
+
+// SetNillableBodyFont sets the "body_font" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableBodyFont(v *string) *BrandKitScopedUpdate {
+	x.b.SetNillableBodyFont(v)
+	return x
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (x *BrandKitScopedUpdate) SetLogoURL(v string) *BrandKitScopedUpdate {
+	x.b.SetLogoURL(v)
+	return x
+}
+
+// SetNillableLogoURL sets the "logo_url" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableLogoURL(v *string) *BrandKitScopedUpdate {
+	x.b.SetNillableLogoURL(v)
+	return x
+}
+
+// SetButtonTextColor sets the "button_text_color" field.
+func (x *BrandKitScopedUpdate) SetButtonTextColor(v string) *BrandKitScopedUpdate {
+	x.b.SetButtonTextColor(v)
+	return x
+}
+
+// SetNillableButtonTextColor sets the "button_text_color" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableButtonTextColor(v *string) *BrandKitScopedUpdate {
+	x.b.SetNillableButtonTextColor(v)
+	return x
+}
+
+// SetButtonRadius sets the "button_radius" field.
+func (x *BrandKitScopedUpdate) SetButtonRadius(v int) *BrandKitScopedUpdate {
+	x.b.SetButtonRadius(v)
+	return x
+}
+
+// SetNillableButtonRadius sets the "button_radius" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableButtonRadius(v *int) *BrandKitScopedUpdate {
+	x.b.SetNillableButtonRadius(v)
+	return x
+}
+
+// AddButtonRadius adds value to the "button_radius" field.
+func (x *BrandKitScopedUpdate) AddButtonRadius(v int) *BrandKitScopedUpdate {
+	x.b.AddButtonRadius(v)
+	return x
+}
+
+// SetFooterText sets the "footer_text" field.
+func (x *BrandKitScopedUpdate) SetFooterText(v string) *BrandKitScopedUpdate {
+	x.b.SetFooterText(v)
+	return x
+}
+
+// SetNillableFooterText sets the "footer_text" field if the given value is not nil.
+func (x *BrandKitScopedUpdate) SetNillableFooterText(v *string) *BrandKitScopedUpdate {
+	x.b.SetNillableFooterText(v)
+	return x
+}
+
+func (x *BrandKitScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *BrandKitScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.BrandKit.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			ids := make([]int64, len(before))
+			for i, row := range before {
+				ids[i] = row.ID
+			}
+			after, err := ts.c.BrandKit.Query().Where(brandkit.IDIn(ids...)).All(ctx)
+			if err != nil {
+				return err
+			}
+			byID := make(map[int64]*BrandKit, len(after))
+			for _, row := range after {
+				byID[row.ID] = row
+			}
+			for _, row := range before {
+				if now, ok := byID[row.ID]; ok {
+					if err := ts.record(ctx, auditChangeBrandKit("update", row, now)); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *BrandKitScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
 // BroadcastScoped reaches Broadcast entities of one Workspace.
 type BroadcastScoped struct{ s *Scoped }
 
@@ -3833,6 +4807,24 @@ func (x *BroadcastScopedCreate) SetBody(v string) *BroadcastScopedCreate {
 // SetNillableBody sets the "body" field if the given value is not nil.
 func (x *BroadcastScopedCreate) SetNillableBody(v *string) *BroadcastScopedCreate {
 	x.b.SetNillableBody(v)
+	return x
+}
+
+// SetDoc sets the "doc" field.
+func (x *BroadcastScopedCreate) SetDoc(v jsontext.Value) *BroadcastScopedCreate {
+	x.b.SetDoc(v)
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *BroadcastScopedCreate) SetEditorVersion(v string) *BroadcastScopedCreate {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableEditorVersion(v *string) *BroadcastScopedCreate {
+	x.b.SetNillableEditorVersion(v)
 	return x
 }
 
@@ -4219,6 +5211,42 @@ func (u *BroadcastScopedUpsert) SetBody(v string) *BroadcastScopedUpsert {
 // UpdateBody sets the "body" field to the value that was provided on create.
 func (u *BroadcastScopedUpsert) UpdateBody() *BroadcastScopedUpsert {
 	u.u.SetExcluded(broadcast.FieldBody)
+	return u
+}
+
+// SetDoc sets the "doc" field.
+func (u *BroadcastScopedUpsert) SetDoc(v jsontext.Value) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldDoc, v)
+	return u
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateDoc() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldDoc)
+	return u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *BroadcastScopedUpsert) ClearDoc() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldDoc)
+	return u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *BroadcastScopedUpsert) SetEditorVersion(v string) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldEditorVersion, v)
+	return u
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateEditorVersion() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldEditorVersion)
+	return u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *BroadcastScopedUpsert) ClearEditorVersion() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldEditorVersion)
 	return u
 }
 
@@ -4713,6 +5741,42 @@ func (x *BroadcastScopedUpdateOne) SetNillableBody(v *string) *BroadcastScopedUp
 	return x
 }
 
+// SetDoc sets the "doc" field.
+func (x *BroadcastScopedUpdateOne) SetDoc(v jsontext.Value) *BroadcastScopedUpdateOne {
+	x.b.SetDoc(v)
+	return x
+}
+
+// AppendDoc appends value to the "doc" field.
+func (x *BroadcastScopedUpdateOne) AppendDoc(v jsontext.Value) *BroadcastScopedUpdateOne {
+	x.b.AppendDoc(v)
+	return x
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (x *BroadcastScopedUpdateOne) ClearDoc() *BroadcastScopedUpdateOne {
+	x.b.ClearDoc()
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *BroadcastScopedUpdateOne) SetEditorVersion(v string) *BroadcastScopedUpdateOne {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableEditorVersion(v *string) *BroadcastScopedUpdateOne {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (x *BroadcastScopedUpdateOne) ClearEditorVersion() *BroadcastScopedUpdateOne {
+	x.b.ClearEditorVersion()
+	return x
+}
+
 // SetBodyText sets the "body_text" field.
 func (x *BroadcastScopedUpdateOne) SetBodyText(v string) *BroadcastScopedUpdateOne {
 	x.b.SetBodyText(v)
@@ -5173,6 +6237,42 @@ func (x *BroadcastScopedUpdate) SetBody(v string) *BroadcastScopedUpdate {
 // SetNillableBody sets the "body" field if the given value is not nil.
 func (x *BroadcastScopedUpdate) SetNillableBody(v *string) *BroadcastScopedUpdate {
 	x.b.SetNillableBody(v)
+	return x
+}
+
+// SetDoc sets the "doc" field.
+func (x *BroadcastScopedUpdate) SetDoc(v jsontext.Value) *BroadcastScopedUpdate {
+	x.b.SetDoc(v)
+	return x
+}
+
+// AppendDoc appends value to the "doc" field.
+func (x *BroadcastScopedUpdate) AppendDoc(v jsontext.Value) *BroadcastScopedUpdate {
+	x.b.AppendDoc(v)
+	return x
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (x *BroadcastScopedUpdate) ClearDoc() *BroadcastScopedUpdate {
+	x.b.ClearDoc()
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *BroadcastScopedUpdate) SetEditorVersion(v string) *BroadcastScopedUpdate {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableEditorVersion(v *string) *BroadcastScopedUpdate {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (x *BroadcastScopedUpdate) ClearEditorVersion() *BroadcastScopedUpdate {
+	x.b.ClearEditorVersion()
 	return x
 }
 
@@ -9275,6 +10375,24 @@ func (x *EmailTemplateScopedCreate) SetNillableBody(v *string) *EmailTemplateSco
 	return x
 }
 
+// SetDoc sets the "doc" field.
+func (x *EmailTemplateScopedCreate) SetDoc(v jsontext.Value) *EmailTemplateScopedCreate {
+	x.b.SetDoc(v)
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *EmailTemplateScopedCreate) SetEditorVersion(v string) *EmailTemplateScopedCreate {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *EmailTemplateScopedCreate) SetNillableEditorVersion(v *string) *EmailTemplateScopedCreate {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
 func (x *EmailTemplateScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -9417,6 +10535,42 @@ func (u *EmailTemplateScopedUpsert) SetBody(v string) *EmailTemplateScopedUpsert
 // UpdateBody sets the "body" field to the value that was provided on create.
 func (u *EmailTemplateScopedUpsert) UpdateBody() *EmailTemplateScopedUpsert {
 	u.u.SetExcluded(emailtemplate.FieldBody)
+	return u
+}
+
+// SetDoc sets the "doc" field.
+func (u *EmailTemplateScopedUpsert) SetDoc(v jsontext.Value) *EmailTemplateScopedUpsert {
+	u.u.Set(emailtemplate.FieldDoc, v)
+	return u
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *EmailTemplateScopedUpsert) UpdateDoc() *EmailTemplateScopedUpsert {
+	u.u.SetExcluded(emailtemplate.FieldDoc)
+	return u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *EmailTemplateScopedUpsert) ClearDoc() *EmailTemplateScopedUpsert {
+	u.u.SetNull(emailtemplate.FieldDoc)
+	return u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *EmailTemplateScopedUpsert) SetEditorVersion(v string) *EmailTemplateScopedUpsert {
+	u.u.Set(emailtemplate.FieldEditorVersion, v)
+	return u
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *EmailTemplateScopedUpsert) UpdateEditorVersion() *EmailTemplateScopedUpsert {
+	u.u.SetExcluded(emailtemplate.FieldEditorVersion)
+	return u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *EmailTemplateScopedUpsert) ClearEditorVersion() *EmailTemplateScopedUpsert {
+	u.u.SetNull(emailtemplate.FieldEditorVersion)
 	return u
 }
 
@@ -9629,6 +10783,42 @@ func (x *EmailTemplateScopedUpdateOne) SetNillableBody(v *string) *EmailTemplate
 	return x
 }
 
+// SetDoc sets the "doc" field.
+func (x *EmailTemplateScopedUpdateOne) SetDoc(v jsontext.Value) *EmailTemplateScopedUpdateOne {
+	x.b.SetDoc(v)
+	return x
+}
+
+// AppendDoc appends value to the "doc" field.
+func (x *EmailTemplateScopedUpdateOne) AppendDoc(v jsontext.Value) *EmailTemplateScopedUpdateOne {
+	x.b.AppendDoc(v)
+	return x
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (x *EmailTemplateScopedUpdateOne) ClearDoc() *EmailTemplateScopedUpdateOne {
+	x.b.ClearDoc()
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *EmailTemplateScopedUpdateOne) SetEditorVersion(v string) *EmailTemplateScopedUpdateOne {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *EmailTemplateScopedUpdateOne) SetNillableEditorVersion(v *string) *EmailTemplateScopedUpdateOne {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (x *EmailTemplateScopedUpdateOne) ClearEditorVersion() *EmailTemplateScopedUpdateOne {
+	x.b.ClearEditorVersion()
+	return x
+}
+
 func (x *EmailTemplateScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -9740,6 +10930,42 @@ func (x *EmailTemplateScopedUpdate) SetBody(v string) *EmailTemplateScopedUpdate
 // SetNillableBody sets the "body" field if the given value is not nil.
 func (x *EmailTemplateScopedUpdate) SetNillableBody(v *string) *EmailTemplateScopedUpdate {
 	x.b.SetNillableBody(v)
+	return x
+}
+
+// SetDoc sets the "doc" field.
+func (x *EmailTemplateScopedUpdate) SetDoc(v jsontext.Value) *EmailTemplateScopedUpdate {
+	x.b.SetDoc(v)
+	return x
+}
+
+// AppendDoc appends value to the "doc" field.
+func (x *EmailTemplateScopedUpdate) AppendDoc(v jsontext.Value) *EmailTemplateScopedUpdate {
+	x.b.AppendDoc(v)
+	return x
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (x *EmailTemplateScopedUpdate) ClearDoc() *EmailTemplateScopedUpdate {
+	x.b.ClearDoc()
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *EmailTemplateScopedUpdate) SetEditorVersion(v string) *EmailTemplateScopedUpdate {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *EmailTemplateScopedUpdate) SetNillableEditorVersion(v *string) *EmailTemplateScopedUpdate {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (x *EmailTemplateScopedUpdate) ClearEditorVersion() *EmailTemplateScopedUpdate {
+	x.b.ClearEditorVersion()
 	return x
 }
 

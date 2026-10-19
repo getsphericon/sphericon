@@ -78,3 +78,19 @@ func TestMCPPlaybooksOnlyReferenceAuthoringTools(t *testing.T) {
 		}
 	}
 }
+
+// The playbooks that write mail tell an agent that the editor's document is the format and name
+// where the Brand kit, the schema and the lint are (ADR 0040).
+func TestMCPPlaybooksThatWriteMailNameTheEditorTools(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
+
+	for _, name := range []string{"welcome", "win-back"} {
+		body := promptText(t, s, name)
+		for _, tool := range []string{"brand_get", "email_schema", "email_lint", "templates_get"} {
+			assert.Containsf(t, body, "`"+tool+"()`", "%s names %s", name, tool)
+		}
+		assert.Containsf(t, body, "editor's document", "%s says the document is the format", name)
+		assert.NotContainsf(t, body, "HTML with merge tags", "%s no longer asks for an HTML body", name)
+	}
+}

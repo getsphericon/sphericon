@@ -46,7 +46,7 @@ transactional says "send the _live_ template X with these data".
 ## Consequences
 
 - A new send path renders a referenced Template + variables; it needs a variable/templating
-  layer over the MJML body (e.g. `{{name}}`), an implementation detail not fixed here.
+  layer over the HTML body (e.g. `{{name}}`), an implementation detail not fixed here.
 - Suppression is now checked by three surfaces (Broadcast, Automation, Transactional);
   Unsubscribe by two (the marketing surfaces only).
 - Deliverability facts unify: bounces/complaints from transactional sends feed the same

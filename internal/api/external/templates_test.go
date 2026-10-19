@@ -35,7 +35,7 @@ func TestExternalTemplatesCRUD(t *testing.T) {
 	tpl, ok := got.(*externalapi.TemplateResource)
 	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, "Welcome", tpl.Name)
-	assert.Contains(t, tpl.Body, "<mjml>")
+	assert.Contains(t, tpl.Body, "<p>")
 
 	created, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
 		Name:    "Win-back",

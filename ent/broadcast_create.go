@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"time"
@@ -116,6 +117,26 @@ func (_c *BroadcastCreate) SetBody(v string) *BroadcastCreate {
 func (_c *BroadcastCreate) SetNillableBody(v *string) *BroadcastCreate {
 	if v != nil {
 		_c.SetBody(*v)
+	}
+	return _c
+}
+
+// SetDoc sets the "doc" field.
+func (_c *BroadcastCreate) SetDoc(v jsontext.Value) *BroadcastCreate {
+	_c.mutation.SetDoc(v)
+	return _c
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (_c *BroadcastCreate) SetEditorVersion(v string) *BroadcastCreate {
+	_c.mutation.SetEditorVersion(v)
+	return _c
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableEditorVersion(v *string) *BroadcastCreate {
+	if v != nil {
+		_c.SetEditorVersion(*v)
 	}
 	return _c
 }
@@ -601,6 +622,14 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
 		_node.Body = value
 	}
+	if value, ok := _c.mutation.Doc(); ok {
+		_spec.SetField(broadcast.FieldDoc, field.TypeJSON, value)
+		_node.Doc = value
+	}
+	if value, ok := _c.mutation.EditorVersion(); ok {
+		_spec.SetField(broadcast.FieldEditorVersion, field.TypeString, value)
+		_node.EditorVersion = &value
+	}
 	if value, ok := _c.mutation.BodyText(); ok {
 		_spec.SetField(broadcast.FieldBodyText, field.TypeString, value)
 		_node.BodyText = value
@@ -839,6 +868,42 @@ func (u *BroadcastUpsert) SetBody(v string) *BroadcastUpsert {
 // UpdateBody sets the "body" field to the value that was provided on create.
 func (u *BroadcastUpsert) UpdateBody() *BroadcastUpsert {
 	u.SetExcluded(broadcast.FieldBody)
+	return u
+}
+
+// SetDoc sets the "doc" field.
+func (u *BroadcastUpsert) SetDoc(v jsontext.Value) *BroadcastUpsert {
+	u.Set(broadcast.FieldDoc, v)
+	return u
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateDoc() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldDoc)
+	return u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *BroadcastUpsert) ClearDoc() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldDoc)
+	return u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *BroadcastUpsert) SetEditorVersion(v string) *BroadcastUpsert {
+	u.Set(broadcast.FieldEditorVersion, v)
+	return u
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateEditorVersion() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldEditorVersion)
+	return u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *BroadcastUpsert) ClearEditorVersion() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldEditorVersion)
 	return u
 }
 
@@ -1272,6 +1337,48 @@ func (u *BroadcastUpsertOne) SetBody(v string) *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) UpdateBody() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateBody()
+	})
+}
+
+// SetDoc sets the "doc" field.
+func (u *BroadcastUpsertOne) SetDoc(v jsontext.Value) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetDoc(v)
+	})
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateDoc() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateDoc()
+	})
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *BroadcastUpsertOne) ClearDoc() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearDoc()
+	})
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *BroadcastUpsertOne) SetEditorVersion(v string) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetEditorVersion(v)
+	})
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateEditorVersion() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateEditorVersion()
+	})
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *BroadcastUpsertOne) ClearEditorVersion() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearEditorVersion()
 	})
 }
 
@@ -1916,6 +2023,48 @@ func (u *BroadcastUpsertBulk) SetBody(v string) *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) UpdateBody() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.UpdateBody()
+	})
+}
+
+// SetDoc sets the "doc" field.
+func (u *BroadcastUpsertBulk) SetDoc(v jsontext.Value) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetDoc(v)
+	})
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateDoc() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateDoc()
+	})
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *BroadcastUpsertBulk) ClearDoc() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearDoc()
+	})
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *BroadcastUpsertBulk) SetEditorVersion(v string) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetEditorVersion(v)
+	})
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateEditorVersion() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateEditorVersion()
+	})
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *BroadcastUpsertBulk) ClearEditorVersion() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearEditorVersion()
 	})
 }
 

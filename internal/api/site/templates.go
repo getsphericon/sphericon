@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/samber/lo"
@@ -53,15 +54,23 @@ func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.SiteCre
 		Name:    req.Name,
 		Subject: convert.StringPtr(req.Subject),
 		Body:    convert.StringPtr(req.Body),
+		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
 	if errors.Is(err, templates.ErrBlankName) {
 		v := siteapi.SiteTemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
+		return &v, nil
+	}
+	if errors.Is(err, templates.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
+		v := siteapi.SiteTemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 	res := mapper.EmailTemplateToResource(tpl)
+	if res.Warnings, err = h.lintWarnings(ctx, scoped, tpl.Subject, req.Body, tpl.Body); err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -104,6 +113,7 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.SiteUpd
 		Name:    convert.StringPtr(req.Name),
 		Subject: convert.StringPtr(req.Subject),
 		Body:    convert.StringPtr(req.Body),
+		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
 	if errors.Is(err, templates.ErrNotFound) {
 		v := siteapi.SiteTemplatesUpdateNotFound(problem(http.StatusNotFound, "template not found"))
@@ -113,10 +123,17 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.SiteUpd
 		v := siteapi.SiteTemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
 		return &v, nil
 	}
+	if errors.Is(err, templates.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
+		v := siteapi.SiteTemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &v, nil
+	}
 	if err != nil {
 		return nil, err
 	}
 	res := mapper.EmailTemplateToResource(tpl)
+	if res.Warnings, err = h.lintWarnings(ctx, scoped, tpl.Subject, req.Body, tpl.Body); err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 

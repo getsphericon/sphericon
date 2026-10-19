@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -116,6 +117,7 @@ func checkColumn(t, c string) error {
 			authattempt.Table:        authattempt.ValidColumn,
 			automation.Table:         automation.ValidColumn,
 			automationrun.Table:      automationrun.ValidColumn,
+			brandkit.Table:           brandkit.ValidColumn,
 			broadcast.Table:          broadcast.ValidColumn,
 			broadcastrecipient.Table: broadcastrecipient.ValidColumn,
 			confirmation.Table:       confirmation.ValidColumn,

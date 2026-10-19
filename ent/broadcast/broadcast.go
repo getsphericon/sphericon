@@ -31,6 +31,10 @@ const (
 	FieldFromEmail = "from_email"
 	// FieldBody holds the string denoting the body field in the database.
 	FieldBody = "body"
+	// FieldDoc holds the string denoting the doc field in the database.
+	FieldDoc = "doc"
+	// FieldEditorVersion holds the string denoting the editor_version field in the database.
+	FieldEditorVersion = "editor_version"
 	// FieldBodyText holds the string denoting the body_text field in the database.
 	FieldBodyText = "body_text"
 	// FieldSegmentID holds the string denoting the segment_id field in the database.
@@ -94,6 +98,8 @@ var Columns = []string{
 	FieldFromName,
 	FieldFromEmail,
 	FieldBody,
+	FieldDoc,
+	FieldEditorVersion,
 	FieldBodyText,
 	FieldSegmentID,
 	FieldIntegrationID,
@@ -241,6 +247,11 @@ func ByFromEmail(opts ...sql.OrderTermOption) OrderOption {
 // ByBody orders the results by the body field.
 func ByBody(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBody, opts...).ToFunc()
+}
+
+// ByEditorVersion orders the results by the editor_version field.
+func ByEditorVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEditorVersion, opts...).ToFunc()
 }
 
 // ByBodyText orders the results by the body_text field.

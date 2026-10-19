@@ -7,6 +7,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { I18nextProvider } from 'react-i18next'
 
+import { editorCssVariablesResolver } from './editorCssVariables.ts'
 import { client } from './generated/site/client.gen.ts'
 import { client as staffClient } from './generated/staff/client.gen.ts'
 import { i18n } from './i18n.ts'
@@ -19,6 +20,7 @@ import '@mantine/core/styles.css'
 import '@mantine/charts/styles.css'
 import '@mantine/notifications/styles.css'
 import 'mantine-datatable/styles.css'
+import '@react-email/editor/themes/default.css'
 // Structural layout only; the Mantine compat package handles the visuals.
 import 'react-querybuilder/dist/query-builder-layout.css'
 
@@ -34,7 +36,10 @@ function Root() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nextProvider i18n={i18n}>
-        <MantineProvider defaultColorScheme="auto">
+        <MantineProvider
+          defaultColorScheme="auto"
+          cssVariablesResolver={editorCssVariablesResolver}
+        >
           <ModalsProvider>
             <Notifications position="top-right" layout="stacked" />
             <RouterProvider router={router} />

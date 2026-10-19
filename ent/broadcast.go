@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"encoding/json"
+	"encoding/json/jsontext"
 	"fmt"
 	"strings"
 	"time"
@@ -34,6 +36,10 @@ type Broadcast struct {
 	FromEmail *string `json:"from_email,omitempty"`
 	// Body holds the value of the "body" field.
 	Body string `json:"body,omitempty"`
+	// Doc holds the value of the "doc" field.
+	Doc jsontext.Value `json:"doc,omitempty"`
+	// EditorVersion holds the value of the "editor_version" field.
+	EditorVersion *string `json:"editor_version,omitempty"`
 	// BodyText holds the value of the "body_text" field.
 	BodyText string `json:"body_text,omitempty"`
 	// SegmentID holds the value of the "segment_id" field.
@@ -106,9 +112,11 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case broadcast.FieldDoc:
+			values[i] = new([]byte)
 		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldSegmentID, broadcast.FieldIntegrationID, broadcast.FieldRecipientsTotal, broadcast.FieldSentCount, broadcast.FieldOpenedCount, broadcast.FieldClickedCount, broadcast.FieldUnsubscribedCount, broadcast.FieldFailedCount, broadcast.FieldSkippedCount:
 			values[i] = new(sql.NullInt64)
-		case broadcast.FieldName, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldBody, broadcast.FieldBodyText, broadcast.FieldStatus, broadcast.FieldHoldReason:
+		case broadcast.FieldName, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldBodyText, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
 		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldLastScheduledAt:
 			values[i] = new(sql.NullTime)
@@ -182,6 +190,21 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field body", values[i])
 			} else if value.Valid {
 				_m.Body = value.String
+			}
+		case broadcast.FieldDoc:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field doc", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Doc); err != nil {
+					return fmt.Errorf("unmarshal field doc: %w", err)
+				}
+			}
+		case broadcast.FieldEditorVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field editor_version", values[i])
+			} else if value.Valid {
+				_m.EditorVersion = new(string)
+				*_m.EditorVersion = value.String
 			}
 		case broadcast.FieldBodyText:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -352,6 +375,14 @@ func (_m *Broadcast) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("body=")
 	builder.WriteString(_m.Body)
+	builder.WriteString(", ")
+	builder.WriteString("doc=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Doc))
+	builder.WriteString(", ")
+	if v := _m.EditorVersion; v != nil {
+		builder.WriteString("editor_version=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("body_text=")
 	builder.WriteString(_m.BodyText)

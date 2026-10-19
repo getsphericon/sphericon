@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"sync"
@@ -16,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -67,6 +69,7 @@ const (
 	TypeAuthAttempt        = "AuthAttempt"
 	TypeAutomation         = "Automation"
 	TypeAutomationRun      = "AutomationRun"
+	TypeBrandKit           = "BrandKit"
 	TypeBroadcast          = "Broadcast"
 	TypeBroadcastRecipient = "BroadcastRecipient"
 	TypeConfirmation       = "Confirmation"
@@ -4998,6 +5001,1022 @@ func (m *AutomationRunMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown AutomationRun edge %s", name)
 }
 
+// BrandKitMutation represents an operation that mutates the BrandKit nodes in the graph.
+type BrandKitMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int64
+	created_at        *time.Time
+	updated_at        *time.Time
+	accent_color      *string
+	text_color        *string
+	background_color  *string
+	heading_font      *string
+	body_font         *string
+	logo_url          *string
+	button_text_color *string
+	button_radius     *int
+	addbutton_radius  *int
+	footer_text       *string
+	clearedFields     map[string]struct{}
+	workspace         *int64
+	clearedworkspace  bool
+	done              bool
+	oldValue          func(context.Context) (*BrandKit, error)
+	predicates        []predicate.BrandKit
+}
+
+var _ ent.Mutation = (*BrandKitMutation)(nil)
+
+// brandkitOption allows management of the mutation configuration using functional options.
+type brandkitOption func(*BrandKitMutation)
+
+// newBrandKitMutation creates new mutation for the BrandKit entity.
+func newBrandKitMutation(c config, op Op, opts ...brandkitOption) *BrandKitMutation {
+	m := &BrandKitMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBrandKit,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBrandKitID sets the ID field of the mutation.
+func withBrandKitID(id int64) brandkitOption {
+	return func(m *BrandKitMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BrandKit
+		)
+		m.oldValue = func(ctx context.Context) (*BrandKit, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BrandKit.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBrandKit sets the old BrandKit of the mutation.
+func withBrandKit(node *BrandKit) brandkitOption {
+	return func(m *BrandKitMutation) {
+		m.oldValue = func(context.Context) (*BrandKit, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BrandKitMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BrandKitMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of BrandKit entities.
+func (m *BrandKitMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BrandKitMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BrandKitMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BrandKit.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BrandKitMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BrandKitMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BrandKitMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *BrandKitMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *BrandKitMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *BrandKitMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *BrandKitMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *BrandKitMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *BrandKitMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetAccentColor sets the "accent_color" field.
+func (m *BrandKitMutation) SetAccentColor(s string) {
+	m.accent_color = &s
+}
+
+// AccentColor returns the value of the "accent_color" field in the mutation.
+func (m *BrandKitMutation) AccentColor() (r string, exists bool) {
+	v := m.accent_color
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccentColor returns the old "accent_color" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldAccentColor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccentColor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccentColor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccentColor: %w", err)
+	}
+	return oldValue.AccentColor, nil
+}
+
+// ResetAccentColor resets all changes to the "accent_color" field.
+func (m *BrandKitMutation) ResetAccentColor() {
+	m.accent_color = nil
+}
+
+// SetTextColor sets the "text_color" field.
+func (m *BrandKitMutation) SetTextColor(s string) {
+	m.text_color = &s
+}
+
+// TextColor returns the value of the "text_color" field in the mutation.
+func (m *BrandKitMutation) TextColor() (r string, exists bool) {
+	v := m.text_color
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTextColor returns the old "text_color" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldTextColor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTextColor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTextColor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTextColor: %w", err)
+	}
+	return oldValue.TextColor, nil
+}
+
+// ResetTextColor resets all changes to the "text_color" field.
+func (m *BrandKitMutation) ResetTextColor() {
+	m.text_color = nil
+}
+
+// SetBackgroundColor sets the "background_color" field.
+func (m *BrandKitMutation) SetBackgroundColor(s string) {
+	m.background_color = &s
+}
+
+// BackgroundColor returns the value of the "background_color" field in the mutation.
+func (m *BrandKitMutation) BackgroundColor() (r string, exists bool) {
+	v := m.background_color
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBackgroundColor returns the old "background_color" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldBackgroundColor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBackgroundColor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBackgroundColor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBackgroundColor: %w", err)
+	}
+	return oldValue.BackgroundColor, nil
+}
+
+// ResetBackgroundColor resets all changes to the "background_color" field.
+func (m *BrandKitMutation) ResetBackgroundColor() {
+	m.background_color = nil
+}
+
+// SetHeadingFont sets the "heading_font" field.
+func (m *BrandKitMutation) SetHeadingFont(s string) {
+	m.heading_font = &s
+}
+
+// HeadingFont returns the value of the "heading_font" field in the mutation.
+func (m *BrandKitMutation) HeadingFont() (r string, exists bool) {
+	v := m.heading_font
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHeadingFont returns the old "heading_font" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldHeadingFont(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHeadingFont is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHeadingFont requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHeadingFont: %w", err)
+	}
+	return oldValue.HeadingFont, nil
+}
+
+// ResetHeadingFont resets all changes to the "heading_font" field.
+func (m *BrandKitMutation) ResetHeadingFont() {
+	m.heading_font = nil
+}
+
+// SetBodyFont sets the "body_font" field.
+func (m *BrandKitMutation) SetBodyFont(s string) {
+	m.body_font = &s
+}
+
+// BodyFont returns the value of the "body_font" field in the mutation.
+func (m *BrandKitMutation) BodyFont() (r string, exists bool) {
+	v := m.body_font
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBodyFont returns the old "body_font" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldBodyFont(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBodyFont is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBodyFont requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBodyFont: %w", err)
+	}
+	return oldValue.BodyFont, nil
+}
+
+// ResetBodyFont resets all changes to the "body_font" field.
+func (m *BrandKitMutation) ResetBodyFont() {
+	m.body_font = nil
+}
+
+// SetLogoURL sets the "logo_url" field.
+func (m *BrandKitMutation) SetLogoURL(s string) {
+	m.logo_url = &s
+}
+
+// LogoURL returns the value of the "logo_url" field in the mutation.
+func (m *BrandKitMutation) LogoURL() (r string, exists bool) {
+	v := m.logo_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLogoURL returns the old "logo_url" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldLogoURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLogoURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLogoURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLogoURL: %w", err)
+	}
+	return oldValue.LogoURL, nil
+}
+
+// ResetLogoURL resets all changes to the "logo_url" field.
+func (m *BrandKitMutation) ResetLogoURL() {
+	m.logo_url = nil
+}
+
+// SetButtonTextColor sets the "button_text_color" field.
+func (m *BrandKitMutation) SetButtonTextColor(s string) {
+	m.button_text_color = &s
+}
+
+// ButtonTextColor returns the value of the "button_text_color" field in the mutation.
+func (m *BrandKitMutation) ButtonTextColor() (r string, exists bool) {
+	v := m.button_text_color
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldButtonTextColor returns the old "button_text_color" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldButtonTextColor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldButtonTextColor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldButtonTextColor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldButtonTextColor: %w", err)
+	}
+	return oldValue.ButtonTextColor, nil
+}
+
+// ResetButtonTextColor resets all changes to the "button_text_color" field.
+func (m *BrandKitMutation) ResetButtonTextColor() {
+	m.button_text_color = nil
+}
+
+// SetButtonRadius sets the "button_radius" field.
+func (m *BrandKitMutation) SetButtonRadius(i int) {
+	m.button_radius = &i
+	m.addbutton_radius = nil
+}
+
+// ButtonRadius returns the value of the "button_radius" field in the mutation.
+func (m *BrandKitMutation) ButtonRadius() (r int, exists bool) {
+	v := m.button_radius
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldButtonRadius returns the old "button_radius" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldButtonRadius(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldButtonRadius is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldButtonRadius requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldButtonRadius: %w", err)
+	}
+	return oldValue.ButtonRadius, nil
+}
+
+// AddButtonRadius adds i to the "button_radius" field.
+func (m *BrandKitMutation) AddButtonRadius(i int) {
+	if m.addbutton_radius != nil {
+		*m.addbutton_radius += i
+	} else {
+		m.addbutton_radius = &i
+	}
+}
+
+// AddedButtonRadius returns the value that was added to the "button_radius" field in this mutation.
+func (m *BrandKitMutation) AddedButtonRadius() (r int, exists bool) {
+	v := m.addbutton_radius
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetButtonRadius resets all changes to the "button_radius" field.
+func (m *BrandKitMutation) ResetButtonRadius() {
+	m.button_radius = nil
+	m.addbutton_radius = nil
+}
+
+// SetFooterText sets the "footer_text" field.
+func (m *BrandKitMutation) SetFooterText(s string) {
+	m.footer_text = &s
+}
+
+// FooterText returns the value of the "footer_text" field in the mutation.
+func (m *BrandKitMutation) FooterText() (r string, exists bool) {
+	v := m.footer_text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFooterText returns the old "footer_text" field's value of the BrandKit entity.
+// If the BrandKit object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BrandKitMutation) OldFooterText(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFooterText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFooterText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFooterText: %w", err)
+	}
+	return oldValue.FooterText, nil
+}
+
+// ResetFooterText resets all changes to the "footer_text" field.
+func (m *BrandKitMutation) ResetFooterText() {
+	m.footer_text = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *BrandKitMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[brandkit.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *BrandKitMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *BrandKitMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *BrandKitMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the BrandKitMutation builder.
+func (m *BrandKitMutation) Where(ps ...predicate.BrandKit) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BrandKitMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BrandKitMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BrandKit, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BrandKitMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BrandKitMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BrandKit).
+func (m *BrandKitMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BrandKitMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.created_at != nil {
+		fields = append(fields, brandkit.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, brandkit.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, brandkit.FieldWorkspaceID)
+	}
+	if m.accent_color != nil {
+		fields = append(fields, brandkit.FieldAccentColor)
+	}
+	if m.text_color != nil {
+		fields = append(fields, brandkit.FieldTextColor)
+	}
+	if m.background_color != nil {
+		fields = append(fields, brandkit.FieldBackgroundColor)
+	}
+	if m.heading_font != nil {
+		fields = append(fields, brandkit.FieldHeadingFont)
+	}
+	if m.body_font != nil {
+		fields = append(fields, brandkit.FieldBodyFont)
+	}
+	if m.logo_url != nil {
+		fields = append(fields, brandkit.FieldLogoURL)
+	}
+	if m.button_text_color != nil {
+		fields = append(fields, brandkit.FieldButtonTextColor)
+	}
+	if m.button_radius != nil {
+		fields = append(fields, brandkit.FieldButtonRadius)
+	}
+	if m.footer_text != nil {
+		fields = append(fields, brandkit.FieldFooterText)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BrandKitMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case brandkit.FieldCreatedAt:
+		return m.CreatedAt()
+	case brandkit.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case brandkit.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case brandkit.FieldAccentColor:
+		return m.AccentColor()
+	case brandkit.FieldTextColor:
+		return m.TextColor()
+	case brandkit.FieldBackgroundColor:
+		return m.BackgroundColor()
+	case brandkit.FieldHeadingFont:
+		return m.HeadingFont()
+	case brandkit.FieldBodyFont:
+		return m.BodyFont()
+	case brandkit.FieldLogoURL:
+		return m.LogoURL()
+	case brandkit.FieldButtonTextColor:
+		return m.ButtonTextColor()
+	case brandkit.FieldButtonRadius:
+		return m.ButtonRadius()
+	case brandkit.FieldFooterText:
+		return m.FooterText()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BrandKitMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case brandkit.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case brandkit.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case brandkit.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case brandkit.FieldAccentColor:
+		return m.OldAccentColor(ctx)
+	case brandkit.FieldTextColor:
+		return m.OldTextColor(ctx)
+	case brandkit.FieldBackgroundColor:
+		return m.OldBackgroundColor(ctx)
+	case brandkit.FieldHeadingFont:
+		return m.OldHeadingFont(ctx)
+	case brandkit.FieldBodyFont:
+		return m.OldBodyFont(ctx)
+	case brandkit.FieldLogoURL:
+		return m.OldLogoURL(ctx)
+	case brandkit.FieldButtonTextColor:
+		return m.OldButtonTextColor(ctx)
+	case brandkit.FieldButtonRadius:
+		return m.OldButtonRadius(ctx)
+	case brandkit.FieldFooterText:
+		return m.OldFooterText(ctx)
+	}
+	return nil, fmt.Errorf("unknown BrandKit field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BrandKitMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case brandkit.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case brandkit.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case brandkit.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case brandkit.FieldAccentColor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccentColor(v)
+		return nil
+	case brandkit.FieldTextColor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTextColor(v)
+		return nil
+	case brandkit.FieldBackgroundColor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBackgroundColor(v)
+		return nil
+	case brandkit.FieldHeadingFont:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHeadingFont(v)
+		return nil
+	case brandkit.FieldBodyFont:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBodyFont(v)
+		return nil
+	case brandkit.FieldLogoURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLogoURL(v)
+		return nil
+	case brandkit.FieldButtonTextColor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetButtonTextColor(v)
+		return nil
+	case brandkit.FieldButtonRadius:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetButtonRadius(v)
+		return nil
+	case brandkit.FieldFooterText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFooterText(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BrandKit field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BrandKitMutation) AddedFields() []string {
+	var fields []string
+	if m.addbutton_radius != nil {
+		fields = append(fields, brandkit.FieldButtonRadius)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BrandKitMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case brandkit.FieldButtonRadius:
+		return m.AddedButtonRadius()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BrandKitMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case brandkit.FieldButtonRadius:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddButtonRadius(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BrandKit numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BrandKitMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BrandKitMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BrandKitMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown BrandKit nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BrandKitMutation) ResetField(name string) error {
+	switch name {
+	case brandkit.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case brandkit.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case brandkit.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case brandkit.FieldAccentColor:
+		m.ResetAccentColor()
+		return nil
+	case brandkit.FieldTextColor:
+		m.ResetTextColor()
+		return nil
+	case brandkit.FieldBackgroundColor:
+		m.ResetBackgroundColor()
+		return nil
+	case brandkit.FieldHeadingFont:
+		m.ResetHeadingFont()
+		return nil
+	case brandkit.FieldBodyFont:
+		m.ResetBodyFont()
+		return nil
+	case brandkit.FieldLogoURL:
+		m.ResetLogoURL()
+		return nil
+	case brandkit.FieldButtonTextColor:
+		m.ResetButtonTextColor()
+		return nil
+	case brandkit.FieldButtonRadius:
+		m.ResetButtonRadius()
+		return nil
+	case brandkit.FieldFooterText:
+		m.ResetFooterText()
+		return nil
+	}
+	return fmt.Errorf("unknown BrandKit field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BrandKitMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, brandkit.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BrandKitMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case brandkit.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BrandKitMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BrandKitMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BrandKitMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, brandkit.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BrandKitMutation) EdgeCleared(name string) bool {
+	switch name {
+	case brandkit.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BrandKitMutation) ClearEdge(name string) error {
+	switch name {
+	case brandkit.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown BrandKit unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BrandKitMutation) ResetEdge(name string) error {
+	switch name {
+	case brandkit.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown BrandKit edge %s", name)
+}
+
 // BroadcastMutation represents an operation that mutates the Broadcast nodes in the graph.
 type BroadcastMutation struct {
 	config
@@ -5011,6 +6030,9 @@ type BroadcastMutation struct {
 	from_name             *string
 	from_email            *string
 	body                  *string
+	doc                   *jsontext.Value
+	appenddoc             jsontext.Value
+	editor_version        *string
 	body_text             *string
 	segment_id            *int64
 	addsegment_id         *int64
@@ -5462,6 +6484,120 @@ func (m *BroadcastMutation) OldBody(ctx context.Context) (v string, err error) {
 // ResetBody resets all changes to the "body" field.
 func (m *BroadcastMutation) ResetBody() {
 	m.body = nil
+}
+
+// SetDoc sets the "doc" field.
+func (m *BroadcastMutation) SetDoc(j jsontext.Value) {
+	m.doc = &j
+	m.appenddoc = nil
+}
+
+// Doc returns the value of the "doc" field in the mutation.
+func (m *BroadcastMutation) Doc() (r jsontext.Value, exists bool) {
+	v := m.doc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDoc returns the old "doc" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldDoc(ctx context.Context) (v jsontext.Value, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDoc is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDoc requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDoc: %w", err)
+	}
+	return oldValue.Doc, nil
+}
+
+// AppendDoc adds j to the "doc" field.
+func (m *BroadcastMutation) AppendDoc(j jsontext.Value) {
+	m.appenddoc = append(m.appenddoc, j...)
+}
+
+// AppendedDoc returns the list of values that were appended to the "doc" field in this mutation.
+func (m *BroadcastMutation) AppendedDoc() (jsontext.Value, bool) {
+	if len(m.appenddoc) == 0 {
+		return nil, false
+	}
+	return m.appenddoc, true
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (m *BroadcastMutation) ClearDoc() {
+	m.doc = nil
+	m.appenddoc = nil
+	m.clearedFields[broadcast.FieldDoc] = struct{}{}
+}
+
+// DocCleared returns if the "doc" field was cleared in this mutation.
+func (m *BroadcastMutation) DocCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldDoc]
+	return ok
+}
+
+// ResetDoc resets all changes to the "doc" field.
+func (m *BroadcastMutation) ResetDoc() {
+	m.doc = nil
+	m.appenddoc = nil
+	delete(m.clearedFields, broadcast.FieldDoc)
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (m *BroadcastMutation) SetEditorVersion(s string) {
+	m.editor_version = &s
+}
+
+// EditorVersion returns the value of the "editor_version" field in the mutation.
+func (m *BroadcastMutation) EditorVersion() (r string, exists bool) {
+	v := m.editor_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEditorVersion returns the old "editor_version" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldEditorVersion(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEditorVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEditorVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEditorVersion: %w", err)
+	}
+	return oldValue.EditorVersion, nil
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (m *BroadcastMutation) ClearEditorVersion() {
+	m.editor_version = nil
+	m.clearedFields[broadcast.FieldEditorVersion] = struct{}{}
+}
+
+// EditorVersionCleared returns if the "editor_version" field was cleared in this mutation.
+func (m *BroadcastMutation) EditorVersionCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldEditorVersion]
+	return ok
+}
+
+// ResetEditorVersion resets all changes to the "editor_version" field.
+func (m *BroadcastMutation) ResetEditorVersion() {
+	m.editor_version = nil
+	delete(m.clearedFields, broadcast.FieldEditorVersion)
 }
 
 // SetBodyText sets the "body_text" field.
@@ -6379,7 +7515,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 23)
+	fields := make([]string, 0, 25)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -6403,6 +7539,12 @@ func (m *BroadcastMutation) Fields() []string {
 	}
 	if m.body != nil {
 		fields = append(fields, broadcast.FieldBody)
+	}
+	if m.doc != nil {
+		fields = append(fields, broadcast.FieldDoc)
+	}
+	if m.editor_version != nil {
+		fields = append(fields, broadcast.FieldEditorVersion)
 	}
 	if m.body_text != nil {
 		fields = append(fields, broadcast.FieldBodyText)
@@ -6473,6 +7615,10 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.FromEmail()
 	case broadcast.FieldBody:
 		return m.Body()
+	case broadcast.FieldDoc:
+		return m.Doc()
+	case broadcast.FieldEditorVersion:
+		return m.EditorVersion()
 	case broadcast.FieldBodyText:
 		return m.BodyText()
 	case broadcast.FieldSegmentID:
@@ -6528,6 +7674,10 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldFromEmail(ctx)
 	case broadcast.FieldBody:
 		return m.OldBody(ctx)
+	case broadcast.FieldDoc:
+		return m.OldDoc(ctx)
+	case broadcast.FieldEditorVersion:
+		return m.OldEditorVersion(ctx)
 	case broadcast.FieldBodyText:
 		return m.OldBodyText(ctx)
 	case broadcast.FieldSegmentID:
@@ -6622,6 +7772,20 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBody(v)
+		return nil
+	case broadcast.FieldDoc:
+		v, ok := value.(jsontext.Value)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDoc(v)
+		return nil
+	case broadcast.FieldEditorVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEditorVersion(v)
 		return nil
 	case broadcast.FieldBodyText:
 		v, ok := value.(string)
@@ -6875,6 +8039,12 @@ func (m *BroadcastMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcast.FieldFromEmail) {
 		fields = append(fields, broadcast.FieldFromEmail)
 	}
+	if m.FieldCleared(broadcast.FieldDoc) {
+		fields = append(fields, broadcast.FieldDoc)
+	}
+	if m.FieldCleared(broadcast.FieldEditorVersion) {
+		fields = append(fields, broadcast.FieldEditorVersion)
+	}
 	if m.FieldCleared(broadcast.FieldSegmentID) {
 		fields = append(fields, broadcast.FieldSegmentID)
 	}
@@ -6912,6 +8082,12 @@ func (m *BroadcastMutation) ClearField(name string) error {
 		return nil
 	case broadcast.FieldFromEmail:
 		m.ClearFromEmail()
+		return nil
+	case broadcast.FieldDoc:
+		m.ClearDoc()
+		return nil
+	case broadcast.FieldEditorVersion:
+		m.ClearEditorVersion()
 		return nil
 	case broadcast.FieldSegmentID:
 		m.ClearSegmentID()
@@ -6962,6 +8138,12 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldBody:
 		m.ResetBody()
+		return nil
+	case broadcast.FieldDoc:
+		m.ResetDoc()
+		return nil
+	case broadcast.FieldEditorVersion:
+		m.ResetEditorVersion()
 		return nil
 	case broadcast.FieldBodyText:
 		m.ResetBodyText()
@@ -11048,6 +12230,9 @@ type EmailTemplateMutation struct {
 	name             *string
 	subject          *string
 	body             *string
+	doc              *jsontext.Value
+	appenddoc        jsontext.Value
+	editor_version   *string
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -11376,6 +12561,120 @@ func (m *EmailTemplateMutation) ResetBody() {
 	m.body = nil
 }
 
+// SetDoc sets the "doc" field.
+func (m *EmailTemplateMutation) SetDoc(j jsontext.Value) {
+	m.doc = &j
+	m.appenddoc = nil
+}
+
+// Doc returns the value of the "doc" field in the mutation.
+func (m *EmailTemplateMutation) Doc() (r jsontext.Value, exists bool) {
+	v := m.doc
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDoc returns the old "doc" field's value of the EmailTemplate entity.
+// If the EmailTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EmailTemplateMutation) OldDoc(ctx context.Context) (v jsontext.Value, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDoc is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDoc requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDoc: %w", err)
+	}
+	return oldValue.Doc, nil
+}
+
+// AppendDoc adds j to the "doc" field.
+func (m *EmailTemplateMutation) AppendDoc(j jsontext.Value) {
+	m.appenddoc = append(m.appenddoc, j...)
+}
+
+// AppendedDoc returns the list of values that were appended to the "doc" field in this mutation.
+func (m *EmailTemplateMutation) AppendedDoc() (jsontext.Value, bool) {
+	if len(m.appenddoc) == 0 {
+		return nil, false
+	}
+	return m.appenddoc, true
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (m *EmailTemplateMutation) ClearDoc() {
+	m.doc = nil
+	m.appenddoc = nil
+	m.clearedFields[emailtemplate.FieldDoc] = struct{}{}
+}
+
+// DocCleared returns if the "doc" field was cleared in this mutation.
+func (m *EmailTemplateMutation) DocCleared() bool {
+	_, ok := m.clearedFields[emailtemplate.FieldDoc]
+	return ok
+}
+
+// ResetDoc resets all changes to the "doc" field.
+func (m *EmailTemplateMutation) ResetDoc() {
+	m.doc = nil
+	m.appenddoc = nil
+	delete(m.clearedFields, emailtemplate.FieldDoc)
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (m *EmailTemplateMutation) SetEditorVersion(s string) {
+	m.editor_version = &s
+}
+
+// EditorVersion returns the value of the "editor_version" field in the mutation.
+func (m *EmailTemplateMutation) EditorVersion() (r string, exists bool) {
+	v := m.editor_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEditorVersion returns the old "editor_version" field's value of the EmailTemplate entity.
+// If the EmailTemplate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EmailTemplateMutation) OldEditorVersion(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEditorVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEditorVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEditorVersion: %w", err)
+	}
+	return oldValue.EditorVersion, nil
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (m *EmailTemplateMutation) ClearEditorVersion() {
+	m.editor_version = nil
+	m.clearedFields[emailtemplate.FieldEditorVersion] = struct{}{}
+}
+
+// EditorVersionCleared returns if the "editor_version" field was cleared in this mutation.
+func (m *EmailTemplateMutation) EditorVersionCleared() bool {
+	_, ok := m.clearedFields[emailtemplate.FieldEditorVersion]
+	return ok
+}
+
+// ResetEditorVersion resets all changes to the "editor_version" field.
+func (m *EmailTemplateMutation) ResetEditorVersion() {
+	m.editor_version = nil
+	delete(m.clearedFields, emailtemplate.FieldEditorVersion)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *EmailTemplateMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -11437,7 +12736,7 @@ func (m *EmailTemplateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EmailTemplateMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, emailtemplate.FieldCreatedAt)
 	}
@@ -11455,6 +12754,12 @@ func (m *EmailTemplateMutation) Fields() []string {
 	}
 	if m.body != nil {
 		fields = append(fields, emailtemplate.FieldBody)
+	}
+	if m.doc != nil {
+		fields = append(fields, emailtemplate.FieldDoc)
+	}
+	if m.editor_version != nil {
+		fields = append(fields, emailtemplate.FieldEditorVersion)
 	}
 	return fields
 }
@@ -11476,6 +12781,10 @@ func (m *EmailTemplateMutation) Field(name string) (ent.Value, bool) {
 		return m.Subject()
 	case emailtemplate.FieldBody:
 		return m.Body()
+	case emailtemplate.FieldDoc:
+		return m.Doc()
+	case emailtemplate.FieldEditorVersion:
+		return m.EditorVersion()
 	}
 	return nil, false
 }
@@ -11497,6 +12806,10 @@ func (m *EmailTemplateMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldSubject(ctx)
 	case emailtemplate.FieldBody:
 		return m.OldBody(ctx)
+	case emailtemplate.FieldDoc:
+		return m.OldDoc(ctx)
+	case emailtemplate.FieldEditorVersion:
+		return m.OldEditorVersion(ctx)
 	}
 	return nil, fmt.Errorf("unknown EmailTemplate field %s", name)
 }
@@ -11548,6 +12861,20 @@ func (m *EmailTemplateMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetBody(v)
 		return nil
+	case emailtemplate.FieldDoc:
+		v, ok := value.(jsontext.Value)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDoc(v)
+		return nil
+	case emailtemplate.FieldEditorVersion:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEditorVersion(v)
+		return nil
 	}
 	return fmt.Errorf("unknown EmailTemplate field %s", name)
 }
@@ -11580,7 +12907,14 @@ func (m *EmailTemplateMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EmailTemplateMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(emailtemplate.FieldDoc) {
+		fields = append(fields, emailtemplate.FieldDoc)
+	}
+	if m.FieldCleared(emailtemplate.FieldEditorVersion) {
+		fields = append(fields, emailtemplate.FieldEditorVersion)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -11593,6 +12927,14 @@ func (m *EmailTemplateMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EmailTemplateMutation) ClearField(name string) error {
+	switch name {
+	case emailtemplate.FieldDoc:
+		m.ClearDoc()
+		return nil
+	case emailtemplate.FieldEditorVersion:
+		m.ClearEditorVersion()
+		return nil
+	}
 	return fmt.Errorf("unknown EmailTemplate nullable field %s", name)
 }
 
@@ -11617,6 +12959,12 @@ func (m *EmailTemplateMutation) ResetField(name string) error {
 		return nil
 	case emailtemplate.FieldBody:
 		m.ResetBody()
+		return nil
+	case emailtemplate.FieldDoc:
+		m.ResetDoc()
+		return nil
+	case emailtemplate.FieldEditorVersion:
+		m.ResetEditorVersion()
 		return nil
 	}
 	return fmt.Errorf("unknown EmailTemplate field %s", name)
@@ -35750,6 +37098,9 @@ type WorkspaceMutation struct {
 	email_templates             map[int64]struct{}
 	removedemail_templates      map[int64]struct{}
 	clearedemail_templates      bool
+	brand_kits                  map[int64]struct{}
+	removedbrand_kits           map[int64]struct{}
+	clearedbrand_kits           bool
 	automations                 map[int64]struct{}
 	removedautomations          map[int64]struct{}
 	clearedautomations          bool
@@ -37467,6 +38818,60 @@ func (m *WorkspaceMutation) ResetEmailTemplates() {
 	m.removedemail_templates = nil
 }
 
+// AddBrandKitIDs adds the "brand_kits" edge to the BrandKit entity by ids.
+func (m *WorkspaceMutation) AddBrandKitIDs(ids ...int64) {
+	if m.brand_kits == nil {
+		m.brand_kits = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.brand_kits[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBrandKits clears the "brand_kits" edge to the BrandKit entity.
+func (m *WorkspaceMutation) ClearBrandKits() {
+	m.clearedbrand_kits = true
+}
+
+// BrandKitsCleared reports if the "brand_kits" edge to the BrandKit entity was cleared.
+func (m *WorkspaceMutation) BrandKitsCleared() bool {
+	return m.clearedbrand_kits
+}
+
+// RemoveBrandKitIDs removes the "brand_kits" edge to the BrandKit entity by IDs.
+func (m *WorkspaceMutation) RemoveBrandKitIDs(ids ...int64) {
+	if m.removedbrand_kits == nil {
+		m.removedbrand_kits = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.brand_kits, ids[i])
+		m.removedbrand_kits[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBrandKits returns the removed IDs of the "brand_kits" edge to the BrandKit entity.
+func (m *WorkspaceMutation) RemovedBrandKitsIDs() (ids []int64) {
+	for id := range m.removedbrand_kits {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BrandKitsIDs returns the "brand_kits" edge IDs in the mutation.
+func (m *WorkspaceMutation) BrandKitsIDs() (ids []int64) {
+	for id := range m.brand_kits {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBrandKits resets all changes to the "brand_kits" edge.
+func (m *WorkspaceMutation) ResetBrandKits() {
+	m.brand_kits = nil
+	m.clearedbrand_kits = false
+	m.removedbrand_kits = nil
+}
+
 // AddAutomationIDs adds the "automations" edge to the Automation entity by ids.
 func (m *WorkspaceMutation) AddAutomationIDs(ids ...int64) {
 	if m.automations == nil {
@@ -38573,7 +39978,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 25)
+	edges := make([]string, 0, 26)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -38615,6 +40020,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.email_templates != nil {
 		edges = append(edges, workspace.EdgeEmailTemplates)
+	}
+	if m.brand_kits != nil {
+		edges = append(edges, workspace.EdgeBrandKits)
 	}
 	if m.automations != nil {
 		edges = append(edges, workspace.EdgeAutomations)
@@ -38740,6 +40148,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeBrandKits:
+		ids := make([]ent.Value, 0, len(m.brand_kits))
+		for id := range m.brand_kits {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeAutomations:
 		ids := make([]ent.Value, 0, len(m.automations))
 		for id := range m.automations {
@@ -38812,7 +40226,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 25)
+	edges := make([]string, 0, 26)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -38854,6 +40268,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedemail_templates != nil {
 		edges = append(edges, workspace.EdgeEmailTemplates)
+	}
+	if m.removedbrand_kits != nil {
+		edges = append(edges, workspace.EdgeBrandKits)
 	}
 	if m.removedautomations != nil {
 		edges = append(edges, workspace.EdgeAutomations)
@@ -38979,6 +40396,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeBrandKits:
+		ids := make([]ent.Value, 0, len(m.removedbrand_kits))
+		for id := range m.removedbrand_kits {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeAutomations:
 		ids := make([]ent.Value, 0, len(m.removedautomations))
 		for id := range m.removedautomations {
@@ -39051,7 +40474,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 25)
+	edges := make([]string, 0, 26)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -39093,6 +40516,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedemail_templates {
 		edges = append(edges, workspace.EdgeEmailTemplates)
+	}
+	if m.clearedbrand_kits {
+		edges = append(edges, workspace.EdgeBrandKits)
 	}
 	if m.clearedautomations {
 		edges = append(edges, workspace.EdgeAutomations)
@@ -39162,6 +40588,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedbroadcast_recipients
 	case workspace.EdgeEmailTemplates:
 		return m.clearedemail_templates
+	case workspace.EdgeBrandKits:
+		return m.clearedbrand_kits
 	case workspace.EdgeAutomations:
 		return m.clearedautomations
 	case workspace.EdgeAutomationRuns:
@@ -39241,6 +40669,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeEmailTemplates:
 		m.ResetEmailTemplates()
+		return nil
+	case workspace.EdgeBrandKits:
+		m.ResetBrandKits()
 		return nil
 	case workspace.EdgeAutomations:
 		m.ResetAutomations()

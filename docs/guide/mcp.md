@@ -63,6 +63,7 @@ registration and PKCE (S256 only).
 | Events              | `events_record`, `events_record_batch`, `events_actions_list`                          |
 | Segments            | `segments_*`, `segments_preview`                                                       |
 | Templates           | `templates_*`                                                                          |
+| Writing mail        | `brand_get`, `email_schema`, `email_lint`                                              |
 | Broadcasts          | `broadcasts_*`, `broadcasts_set_audience`, `broadcasts_test_send`, `broadcasts_report` |
 | Automations         | `automations_*`, `automations_deactivate`, `automations_dry_run_http_step`             |
 | Enrollments         | `enrollments_list`, `enrollments_get`                                                  |
@@ -82,10 +83,23 @@ returns; it depends on the token's scopes.
   they are not even listed.
 - **Consent only narrows.** An agent can suppress an address or record an unsubscribe. Resubscribing
   and lifting a suppression are not available over `/api` or MCP at all.
-- **Contact text is data.** Contact names, custom field keys and values, event properties and tag
-  names come from outside the workspace. In tool results they are wrapped as
+- **Contact text is data.** Contact names, custom field keys and values, event properties, tag
+  names and the Brand kit's fonts, logo address and footer text come from outside the agent's
+  instructions. In tool results they are wrapped as
   `{"untrusted_data": …}`, and the server instructions tell the model to treat them as data and
   never as instructions.
+
+## Writing mail
+
+An agent writes mail in the editor's format, the same document the editor in the app saves.
+`brand_get` returns the Workspace's Brand kit (colors, fonts, button style), `email_schema` the
+node and mark types of the document with the attributes and values allowed, and `email_lint`
+checks a message (a `body` or a `doc`) and returns errors and warnings without saving anything.
+An agent copies a starter Template (`templates_get` returns its `doc`), edits the document and
+writes it as `doc` to `templates_create`, `broadcasts_create` or an email step of
+`automations_create`. The server renders the body from the document in the same save and refuses
+an invalid one with the reason (`422`); nothing is repaired or stored. A message sent only as a
+`body` is stored as HTML with no document. Writing a `body` and a `doc` together is a `422`.
 
 ## Playbooks
 

@@ -1,8 +1,8 @@
 // Package emailrender renders broadcast/template email content. Bodies are
-// authored as MJML; the pipeline is: Liquid merge tags → MJML compile (which
-// emits email-safe, inlined HTML) → derived plain-text part. Each step is a
-// maintained library (osteele/liquid, preslavrachev/gomjml, k3a/html2text) — we
-// don't hand-roll templating, MJML, or HTML stripping.
+// email-ready HTML with Liquid merge tags (ADR 0040); the pipeline is: Liquid
+// merge tags → derived plain-text part. Each step is a maintained library
+// (osteele/liquid, k3a/html2text, x/net/html) — we don't hand-roll templating or
+// HTML stripping.
 //
 // Tracking (open pixel, click rewriting, unsubscribe footer) is deliberately NOT
 // done here: the caller layers it on AFTER this pipeline so re-parsing can never
@@ -15,11 +15,22 @@ import (
 
 	"github.com/k3a/html2text"
 	"github.com/osteele/liquid"
-	"github.com/preslavrachev/gomjml/mjml"
+	"github.com/osteele/liquid/render"
 )
 
-// engine is safe for concurrent ParseAndRender calls.
-var engine = newEngine()
+// ErrInvalidContent is what Lint fails with: the subject or body cannot render, so
+// it is refused where it is saved and where a send is planned. The wrapped text is the
+// reason shown to the author.
+var ErrInvalidContent = errors.New("message content cannot be rendered")
+
+// engine renders the subject and any other plain-text template: no escaping. bodyEngine
+// renders the HTML body: the value of every {{ }} is HTML-escaped as it is written, and
+// {{ value | safe }} is the explicit raw output (for a Transactional variable that carries
+// HTML on purpose). Both are safe for concurrent ParseAndRender calls.
+var (
+	engine     = newEngine(false)
+	bodyEngine = newEngine(true)
+)
 
 // errFileTags is what {% include %} and {% render %} fail with: template authors
 // are workspace members and API clients, never trusted with the server's files.
@@ -32,9 +43,12 @@ type noFiles struct{}
 
 func (noFiles) ReadTemplate(string) ([]byte, error) { return nil, errFileTags }
 
-func newEngine() *liquid.Engine {
+func newEngine(escapeHTML bool) *liquid.Engine {
 	e := liquid.NewEngine()
 	e.RegisterTemplateStore(noFiles{})
+	if escapeHTML {
+		e.SetAutoEscapeReplacer(render.HtmlEscaper)
+	}
 	return e
 }
 
@@ -45,37 +59,34 @@ type Email struct {
 	Text    string
 }
 
-// RenderEmail renders subject + MJML body for one recipient: Liquid merge tags
-// first (so a {% if %} can change MJML structure per recipient), then MJML
-// compiles to email HTML, then the text part is derived from that HTML (before
-// any tracking is layered on). A non-nil error means the Liquid merge tags or the
-// MJML failed to render — the caller must not send that message (sending the raw
-// template to a recipient is worse than not sending).
+// RenderEmail renders subject + HTML body for one recipient: Liquid merge tags
+// first (so a {% if %} can change the markup per recipient; the subject is plain text
+// and unescaped, body values are HTML-escaped), then the whole rendered body is
+// sanitized again (a variable can carry markup or a URL the save-time pass never saw),
+// then the text part is derived from that HTML (before any tracking is layered on). A non-nil error means
+// the Liquid merge tags failed to render — the caller must not send that message
+// (sending the raw template to a recipient is worse than not sending).
 func RenderEmail(subject, body string, bindings map[string]any) (Email, error) {
-	renderedSubject, err := Render(subject, bindings)
+	renderedSubject, rendered, err := renderBoth(subject, body, bindings)
 	if err != nil {
-		return Email{}, fmt.Errorf("render subject: %w", err)
+		return Email{}, err
 	}
-	renderedBody, err := Render(body, bindings)
-	if err != nil {
-		return Email{}, fmt.Errorf("render body: %w", err)
-	}
-
-	html, err := mjml.Render(renderedBody)
-	if err != nil {
-		return Email{}, fmt.Errorf("compile mjml: %w", err)
-	}
-
+	html := sanitizeRendered(rendered)
 	return Email{Subject: renderedSubject, HTML: html, Text: HTMLToText(html)}, nil
 }
 
-// Validate reports whether subject and body can render at all, without any recipient
-// data: Liquid syntax and MJML compilation errors surface; unbound merge tags simply
-// render empty. Planning code calls it so a template that would fail every recipient
-// fails the whole send once, up front (ADR 0015).
-func Validate(subject, body string) error {
-	_, err := RenderEmail(subject, body, map[string]any{})
-	return err
+// renderBoth runs Liquid over the subject (plain text) and the body (HTML-escaped values),
+// before any sanitizing.
+func renderBoth(subject, body string, bindings map[string]any) (string, string, error) {
+	renderedSubject, err := Render(subject, bindings)
+	if err != nil {
+		return "", "", fmt.Errorf("render subject: %w", err)
+	}
+	rendered, err := bodyEngine.ParseAndRenderString(body, bindings)
+	if err != nil {
+		return "", "", fmt.Errorf("render body: %w", err)
+	}
+	return renderedSubject, rendered, nil
 }
 
 // Render renders a Liquid template with the given bindings. On a template error
@@ -93,4 +104,26 @@ func Render(tmpl string, bindings map[string]any) (string, error) {
 // text/plain MIME part.
 func HTMLToText(html string) string {
 	return html2text.HTML2Text(html)
+}
+
+// PrepareFields is what every save path calls (site API, external API and MCP all reach
+// it through the broadcasts and templates modules): it refuses content that cannot render
+// (Lint) and returns the body to store, sanitized (SanitizeHTML). A nil field is not
+// provided, so it is not checked; a nil body is returned as nil.
+func PrepareFields(subject, body *string) (*string, error) {
+	var s, b string
+	if subject != nil {
+		s = *subject
+	}
+	if body != nil {
+		b = *body
+	}
+	if err := Lint(s, b, nil).Error; err != nil {
+		return nil, err
+	}
+	if body == nil {
+		return nil, nil
+	}
+	clean := SanitizeHTML(b)
+	return &clean, nil
 }

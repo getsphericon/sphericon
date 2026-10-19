@@ -20,8 +20,8 @@ ECRM that drip is — e-commerce is designed-for architecturally and built later
   unsubscribe links + an "unsubscribe from everything" path.
 - **Sending — all three surfaces:** Broadcasts (river engine, open/click/unsub tracking, per-broadcast
   report), Automations (linear send/wait, enroll-once, event-bus triggers, visual xyflow builder),
-  Transactional (`/api` send, references a Template, respects Suppression). Templates are MJML
-  (compiled on send), copied-at-author-time for marketing [ADR 0003].
+  Transactional (`/api` send, references a Template, respects Suppression). Templates are HTML
+  (Liquid merge tags over email-ready HTML), copied-at-author-time for marketing [ADR 0003].
 - **Deliverability so far:** bounce/complaint ingestion (SES-over-SNS hook → Suppression),
   workspace analytics dashboard.
 - Infra: watermill domain-event bus (transactional outbox), river jobs — both with real handlers.
@@ -31,7 +31,7 @@ ECRM that drip is — e-commerce is designed-for architecturally and built later
   scoped from the caller's Membership.
 
 **Gaps to reach parity (the big rocks left):** automation branching / goals / per-step conditions,
-onsite forms/popups, a visual MJML editor, A/B testing, an outbound
+onsite forms/popups, a visual email editor (ADR 0040), A/B testing, an outbound
 SES-compatible send API, more provider adapters (Yandex/SendGrid/…), SMS channel, e-commerce.
 
 For a detailed competitive feature breakdown of drip.com, see
@@ -53,7 +53,6 @@ library's maintenance status at `go get` / `pnpm add` time and pick the living v
 | Signing tracking tokens          | **JWT** (already a dep via go-pkgz/auth) / `golang-jwt`, not hand-rolled HMAC |
 | Send queue / retries             | **river** (already in the repo) — don't write an engine                       |
 | Email HTML editor                | **`@mantine/tiptap`** (official Mantine package)                              |
-| Responsive email (later)         | **`github.com/Boostport/mjml-go`** (MJML)                                     |
 | Passkeys / WebAuthn              | **`github.com/go-webauthn/webauthn`** (go-pkgz/auth does not do WebAuthn)     |
 | TOTP two-factor                  | **`github.com/pquerna/otp`** (TOTP + QR provisioning URIs)                    |
 
@@ -67,7 +66,7 @@ tracking.
 | --------- | ------------------------------------ | ---------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **1**     | **Broadcasts MVP**                   | ✅ Done          | —          | One-off email campaigns end-to-end + delivery tracking (opens/clicks/unsub) + per-campaign report. Audience = all active contacts (+ rule segment).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **2**     | **Segment engine**                   | ✅ Done          | 1          | react-querybuilder rule definition compiled to an ent predicate (attributes + custom fields **+ event-based conditions** — "performed event X in last N days" via a correlated EXISTS), preview count, usable as broadcast audience.                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **3**     | **Email templates + MJML**           | ✅ Done          | 1          | Reusable templates; single body format — **MJML** everywhere (liquid → MJML compile → text), test sends. A proper visual MJML editor is still to come (body is an MJML textarea for now).                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **3**     | **Email templates + HTML**           | ✅ Done          | 1          | Reusable templates; single body format — **HTML** everywhere (liquid → text), test sends. A visual editor is still to come (ADR 0040; body is an HTML textarea for now).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **4**     | **Automations / Workflows**          | ✅ Done (linear) | 1, 2, 3    | Automation + AutomationRun schema, river-backed engine (trigger → email/wait steps, enroll-once), site CRUD API + UI (list, step editor, activate/deactivate). Triggers fire off the **domain-event bus** (`internal/events`). A visual branch/goal builder (@workflowbuilder/sdk, xyflow) is still to come — steps are a linear list for now.                                                                                                                                                                                                                                                                                                                    |
 | **ADR**   | **Identity + eligibility refactors** | ✅ Done          | —          | ADR 0002 (unified Contact identity — multi-key, email optional, events by resolved id, anonymous-event stitching, `prospect` dropped) and ADR 0001 (send-eligibility — no `contact.status`; (channel, destination)-keyed Suppression + per-source Unsubscribe; derived eligibility) are built, wired into every send path, and tested.                                                                                                                                                                                                                                                                                                                            |
 | 5         | Forms & onsite                       | ⬜               | 1, 2       | Signup forms/popups, embed, feeding into contacts/events (on top of Collect API + tracker).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -78,8 +77,8 @@ tracking.
 > 0002 unified identity) are implemented, tested, and on `main`. Phase 2 added a
 > standalone, domain-agnostic rule engine (`internal/segments`) compiling the
 > react-querybuilder format to SQL; segment targeting + a deliverable-count preview
-> are wired into broadcasts. Phase 3 made email bodies **MJML-only** (compiled via
-> gomjml on send) with reusable templates and test-sends — one format, no dual editor.
+> are wired into broadcasts. Phase 3 made email bodies **HTML-only** (Liquid merge
+> tags over email-ready HTML) with reusable templates and test-sends — one format, no dual editor.
 > Phase 4 shipped linear automations (trigger → email/wait steps) end-to-end, with
 > enrollment driven by an internal **domain-event bus** (`internal/events`, transactional
 > outbox over watermill-sql; see docs/design/domain-events.md) and a **visual xyflow
@@ -128,7 +127,7 @@ The core model is in place; the open work is feature breadth on top of it:
 - **Phase 6 remainder** — outbound SES-compatible send endpoint,
   A/B testing, more provider adapters (Yandex/SendGrid/…). See also **send-rate control &
   IP warmup** below — a deliverability prerequisite that pairs with the (built) sending domains.
-- **Phase 3 — visual MJML editor** — the body is still an MJML textarea.
+- **Phase 3 — visual email editor** (ADR 0040) — the body is still an HTML textarea.
 - **SMS channel** — reserved on Integration/Suppression/Unsubscribe; no implementation.
 - **Phase 7 — e-commerce** — far future.
 
@@ -236,7 +235,7 @@ security release.
 > description of the code. Where it disagrees with `GLOSSARY.md`, the ADRs or the code, those
 > win. Known drift: there is no `Contact.status` (opt-out is an `Unsubscribe` row, ADR 0001);
 > `GET /e/u/{token}` renders the confirm page and only `POST` opts out (ADR 0012); bodies are
-> MJML in a textarea, not `@mantine/tiptap`; river is started by `App.RunJobs`; the goverter
+> HTML in a textarea, not `@mantine/tiptap`; river is started by `App.RunJobs`; the goverter
 > converters live in `internal/api/site/resources`; Campaigns is a real navbar section.
 
 Goal of the MVP: a user can **create a broadcast, pick an audience, write an email, send (or schedule) it,

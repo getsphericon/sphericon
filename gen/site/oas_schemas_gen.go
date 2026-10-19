@@ -1031,6 +1031,131 @@ type EmailAddress string
 
 type EntityId int64
 
+// What a lint finding is about (ADR 0040).
+// Ref: #/components/schemas/LintCode
+type LintCode string
+
+const (
+	LintCodeInvalidContent   LintCode = "invalid_content"
+	LintCodeMissingAlt       LintCode = "missing_alt"
+	LintCodeLowContrast      LintCode = "low_contrast"
+	LintCodeOffBrandColor    LintCode = "off_brand_color"
+	LintCodeOffBrandFont     LintCode = "off_brand_font"
+	LintCodeUnknownConstruct LintCode = "unknown_construct"
+)
+
+// AllValues returns all LintCode values.
+func (LintCode) AllValues() []LintCode {
+	return []LintCode{
+		LintCodeInvalidContent,
+		LintCodeMissingAlt,
+		LintCodeLowContrast,
+		LintCodeOffBrandColor,
+		LintCodeOffBrandFont,
+		LintCodeUnknownConstruct,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LintCode) MarshalText() ([]byte, error) {
+	switch s {
+	case LintCodeInvalidContent:
+		return []byte(s), nil
+	case LintCodeMissingAlt:
+		return []byte(s), nil
+	case LintCodeLowContrast:
+		return []byte(s), nil
+	case LintCodeOffBrandColor:
+		return []byte(s), nil
+	case LintCodeOffBrandFont:
+		return []byte(s), nil
+	case LintCodeUnknownConstruct:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LintCode) UnmarshalText(data []byte) error {
+	switch LintCode(data) {
+	case LintCodeInvalidContent:
+		*s = LintCodeInvalidContent
+		return nil
+	case LintCodeMissingAlt:
+		*s = LintCodeMissingAlt
+		return nil
+	case LintCodeLowContrast:
+		*s = LintCodeLowContrast
+		return nil
+	case LintCodeOffBrandColor:
+		*s = LintCodeOffBrandColor
+		return nil
+	case LintCodeOffBrandFont:
+		*s = LintCodeOffBrandFont
+		return nil
+	case LintCodeUnknownConstruct:
+		*s = LintCodeUnknownConstruct
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One finding of the lint over a message's rendered HTML. `message` is fixed text of the server;
+// `element` and `detail` quote the message or the Brand kit and are untrusted data.
+// Ref: #/components/schemas/LintFinding
+type LintFinding struct {
+	// What the finding is.
+	Code LintCode `json:"code"`
+	// What is wrong, in the server's words.
+	Message string `json:"message"`
+	// The element it is about, as a short tag description such as `<img src="…">`.
+	Element OptString `json:"element"`
+	// The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1`.
+	Detail OptString `json:"detail"`
+}
+
+// GetCode returns the value of Code.
+func (s *LintFinding) GetCode() LintCode {
+	return s.Code
+}
+
+// GetMessage returns the value of Message.
+func (s *LintFinding) GetMessage() string {
+	return s.Message
+}
+
+// GetElement returns the value of Element.
+func (s *LintFinding) GetElement() OptString {
+	return s.Element
+}
+
+// GetDetail returns the value of Detail.
+func (s *LintFinding) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetCode sets the value of Code.
+func (s *LintFinding) SetCode(val LintCode) {
+	s.Code = val
+}
+
+// SetMessage sets the value of Message.
+func (s *LintFinding) SetMessage(val string) {
+	s.Message = val
+}
+
+// SetElement sets the value of Element.
+func (s *LintFinding) SetElement(val OptString) {
+	s.Element = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *LintFinding) SetDetail(val OptString) {
+	s.Detail = val
+}
+
 // NewNilInt32 returns new NilInt32 with value set to v.
 func NewNilInt32(v int32) NilInt32 {
 	return NilInt32{
@@ -1826,6 +1951,74 @@ func (o OptNilSiteBroadcastProgress) Or(d SiteBroadcastProgress) SiteBroadcastPr
 	return d
 }
 
+// NewOptNilSiteBroadcastResourceDoc returns new OptNilSiteBroadcastResourceDoc with value set to v.
+func NewOptNilSiteBroadcastResourceDoc(v SiteBroadcastResourceDoc) OptNilSiteBroadcastResourceDoc {
+	return OptNilSiteBroadcastResourceDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSiteBroadcastResourceDoc is optional nullable SiteBroadcastResourceDoc.
+type OptNilSiteBroadcastResourceDoc struct {
+	Value SiteBroadcastResourceDoc
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSiteBroadcastResourceDoc was set.
+func (o OptNilSiteBroadcastResourceDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSiteBroadcastResourceDoc) Reset() {
+	var v SiteBroadcastResourceDoc
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSiteBroadcastResourceDoc) SetTo(v SiteBroadcastResourceDoc) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSiteBroadcastResourceDoc) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSiteBroadcastResourceDoc) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SiteBroadcastResourceDoc
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSiteBroadcastResourceDoc) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSiteBroadcastResourceDoc) Get() (v SiteBroadcastResourceDoc, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSiteBroadcastResourceDoc) Or(d SiteBroadcastResourceDoc) SiteBroadcastResourceDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilSiteContactResourceCustomFields returns new OptNilSiteContactResourceCustomFields with value set to v.
 func NewOptNilSiteContactResourceCustomFields(v SiteContactResourceCustomFields) OptNilSiteContactResourceCustomFields {
 	return OptNilSiteContactResourceCustomFields{
@@ -1956,6 +2149,74 @@ func (o OptNilSiteCreateContactInputCustomFields) Get() (v SiteCreateContactInpu
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilSiteCreateContactInputCustomFields) Or(d SiteCreateContactInputCustomFields) SiteCreateContactInputCustomFields {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilSiteEmailTemplateResourceDoc returns new OptNilSiteEmailTemplateResourceDoc with value set to v.
+func NewOptNilSiteEmailTemplateResourceDoc(v SiteEmailTemplateResourceDoc) OptNilSiteEmailTemplateResourceDoc {
+	return OptNilSiteEmailTemplateResourceDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSiteEmailTemplateResourceDoc is optional nullable SiteEmailTemplateResourceDoc.
+type OptNilSiteEmailTemplateResourceDoc struct {
+	Value SiteEmailTemplateResourceDoc
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSiteEmailTemplateResourceDoc was set.
+func (o OptNilSiteEmailTemplateResourceDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSiteEmailTemplateResourceDoc) Reset() {
+	var v SiteEmailTemplateResourceDoc
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSiteEmailTemplateResourceDoc) SetTo(v SiteEmailTemplateResourceDoc) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSiteEmailTemplateResourceDoc) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSiteEmailTemplateResourceDoc) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SiteEmailTemplateResourceDoc
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSiteEmailTemplateResourceDoc) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSiteEmailTemplateResourceDoc) Get() (v SiteEmailTemplateResourceDoc, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSiteEmailTemplateResourceDoc) Or(d SiteEmailTemplateResourceDoc) SiteEmailTemplateResourceDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -2782,6 +3043,144 @@ func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAu
 	return d
 }
 
+// NewOptSiteAutomationStepDoc returns new OptSiteAutomationStepDoc with value set to v.
+func NewOptSiteAutomationStepDoc(v SiteAutomationStepDoc) OptSiteAutomationStepDoc {
+	return OptSiteAutomationStepDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteAutomationStepDoc is optional SiteAutomationStepDoc.
+type OptSiteAutomationStepDoc struct {
+	Value SiteAutomationStepDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteAutomationStepDoc was set.
+func (o OptSiteAutomationStepDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteAutomationStepDoc) Reset() {
+	var v SiteAutomationStepDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteAutomationStepDoc) SetTo(v SiteAutomationStepDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteAutomationStepDoc) Get() (v SiteAutomationStepDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteAutomationStepDoc) Or(d SiteAutomationStepDoc) SiteAutomationStepDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteCreateBroadcastInputDoc returns new OptSiteCreateBroadcastInputDoc with value set to v.
+func NewOptSiteCreateBroadcastInputDoc(v SiteCreateBroadcastInputDoc) OptSiteCreateBroadcastInputDoc {
+	return OptSiteCreateBroadcastInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteCreateBroadcastInputDoc is optional SiteCreateBroadcastInputDoc.
+type OptSiteCreateBroadcastInputDoc struct {
+	Value SiteCreateBroadcastInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteCreateBroadcastInputDoc was set.
+func (o OptSiteCreateBroadcastInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteCreateBroadcastInputDoc) Reset() {
+	var v SiteCreateBroadcastInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteCreateBroadcastInputDoc) SetTo(v SiteCreateBroadcastInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteCreateBroadcastInputDoc) Get() (v SiteCreateBroadcastInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteCreateBroadcastInputDoc) Or(d SiteCreateBroadcastInputDoc) SiteCreateBroadcastInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteCreateEmailTemplateInputDoc returns new OptSiteCreateEmailTemplateInputDoc with value set to v.
+func NewOptSiteCreateEmailTemplateInputDoc(v SiteCreateEmailTemplateInputDoc) OptSiteCreateEmailTemplateInputDoc {
+	return OptSiteCreateEmailTemplateInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteCreateEmailTemplateInputDoc is optional SiteCreateEmailTemplateInputDoc.
+type OptSiteCreateEmailTemplateInputDoc struct {
+	Value SiteCreateEmailTemplateInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteCreateEmailTemplateInputDoc was set.
+func (o OptSiteCreateEmailTemplateInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteCreateEmailTemplateInputDoc) Reset() {
+	var v SiteCreateEmailTemplateInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteCreateEmailTemplateInputDoc) SetTo(v SiteCreateEmailTemplateInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteCreateEmailTemplateInputDoc) Get() (v SiteCreateEmailTemplateInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteCreateEmailTemplateInputDoc) Or(d SiteCreateEmailTemplateInputDoc) SiteCreateEmailTemplateInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteCreateIntegrationInputParams returns new OptSiteCreateIntegrationInputParams with value set to v.
 func NewOptSiteCreateIntegrationInputParams(v SiteCreateIntegrationInputParams) OptSiteCreateIntegrationInputParams {
 	return OptSiteCreateIntegrationInputParams{
@@ -3144,6 +3543,98 @@ func (o OptSiteTrackingRecord) Get() (v SiteTrackingRecord, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteTrackingRecord) Or(d SiteTrackingRecord) SiteTrackingRecord {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteUpdateBroadcastInputDoc returns new OptSiteUpdateBroadcastInputDoc with value set to v.
+func NewOptSiteUpdateBroadcastInputDoc(v SiteUpdateBroadcastInputDoc) OptSiteUpdateBroadcastInputDoc {
+	return OptSiteUpdateBroadcastInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteUpdateBroadcastInputDoc is optional SiteUpdateBroadcastInputDoc.
+type OptSiteUpdateBroadcastInputDoc struct {
+	Value SiteUpdateBroadcastInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteUpdateBroadcastInputDoc was set.
+func (o OptSiteUpdateBroadcastInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteUpdateBroadcastInputDoc) Reset() {
+	var v SiteUpdateBroadcastInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteUpdateBroadcastInputDoc) SetTo(v SiteUpdateBroadcastInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteUpdateBroadcastInputDoc) Get() (v SiteUpdateBroadcastInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteUpdateBroadcastInputDoc) Or(d SiteUpdateBroadcastInputDoc) SiteUpdateBroadcastInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteUpdateEmailTemplateInputDoc returns new OptSiteUpdateEmailTemplateInputDoc with value set to v.
+func NewOptSiteUpdateEmailTemplateInputDoc(v SiteUpdateEmailTemplateInputDoc) OptSiteUpdateEmailTemplateInputDoc {
+	return OptSiteUpdateEmailTemplateInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteUpdateEmailTemplateInputDoc is optional SiteUpdateEmailTemplateInputDoc.
+type OptSiteUpdateEmailTemplateInputDoc struct {
+	Value SiteUpdateEmailTemplateInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteUpdateEmailTemplateInputDoc was set.
+func (o OptSiteUpdateEmailTemplateInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteUpdateEmailTemplateInputDoc) Reset() {
+	var v SiteUpdateEmailTemplateInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteUpdateEmailTemplateInputDoc) SetTo(v SiteUpdateEmailTemplateInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteUpdateEmailTemplateInputDoc) Get() (v SiteUpdateEmailTemplateInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteUpdateEmailTemplateInputDoc) Or(d SiteUpdateEmailTemplateInputDoc) SiteUpdateEmailTemplateInputDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3606,6 +4097,7 @@ func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
 func (*ProblemDetails) siteAuthResetPasswordRes()              {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
 func (*ProblemDetails) siteAuthVerifyEmailRes()                {}
+func (*ProblemDetails) siteBrandKitGetRes()                    {}
 func (*ProblemDetails) siteEventsActionsRes()                  {}
 func (*ProblemDetails) siteEventsListRes()                     {}
 func (*ProblemDetails) siteInstanceAcknowledgeNoticeRes()      {}
@@ -5060,9 +5552,16 @@ type SiteAutomationStep struct {
 	Type SiteAutomationStepType `json:"type"`
 	// Email subject (email steps).
 	Subject OptString `json:"subject"`
-	// Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
+	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
 	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
 	Body OptString `json:"body"`
+	// The editor's JSON document an email step's body was built from, an opaque object checked by the
+	// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
+	// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
+	// body clears the step's document.
+	Doc OptSiteAutomationStepDoc `json:"doc"`
+	// Version of the editor that rendered the document (email steps, read only).
+	EditorVersion OptString `json:"editorVersion"`
 	// Delay before the next step, in seconds (wait steps).
 	Seconds OptInt32 `json:"seconds"`
 	// Tag name to apply or remove (apply_tag and remove_tag steps).
@@ -5096,6 +5595,16 @@ func (s *SiteAutomationStep) GetSubject() OptString {
 // GetBody returns the value of Body.
 func (s *SiteAutomationStep) GetBody() OptString {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteAutomationStep) GetDoc() OptSiteAutomationStepDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *SiteAutomationStep) GetEditorVersion() OptString {
+	return s.EditorVersion
 }
 
 // GetSeconds returns the value of Seconds.
@@ -5153,6 +5662,16 @@ func (s *SiteAutomationStep) SetBody(val OptString) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteAutomationStep) SetDoc(val OptSiteAutomationStepDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *SiteAutomationStep) SetEditorVersion(val OptString) {
+	s.EditorVersion = val
+}
+
 // SetSeconds sets the value of Seconds.
 func (s *SiteAutomationStep) SetSeconds(val OptInt32) {
 	s.Seconds = val
@@ -5191,6 +5710,21 @@ func (s *SiteAutomationStep) SetClearSecret(val OptBool) {
 // SetHasSecret sets the value of HasSecret.
 func (s *SiteAutomationStep) SetHasSecret(val OptBool) {
 	s.HasSecret = val
+}
+
+// The editor's JSON document an email step's body was built from, an opaque object checked by the
+// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
+// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
+// body clears the step's document.
+type SiteAutomationStepDoc map[string]jx.Raw
+
+func (s *SiteAutomationStepDoc) init() SiteAutomationStepDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Kind of automation step.
@@ -5408,6 +5942,179 @@ type SiteAutomationsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteAutomationsUpdateUnprocessableEntity) siteAutomationsUpdateRes() {}
 
+type SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON []SiteEmailTemplateResource
+
+func (*SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON) siteBrandKitRecreateStarterTemplatesRes() {
+}
+
+type SiteBrandKitRecreateStarterTemplatesForbidden ProblemDetails
+
+func (*SiteBrandKitRecreateStarterTemplatesForbidden) siteBrandKitRecreateStarterTemplatesRes() {}
+
+type SiteBrandKitRecreateStarterTemplatesNotFound ProblemDetails
+
+func (*SiteBrandKitRecreateStarterTemplatesNotFound) siteBrandKitRecreateStarterTemplatesRes() {}
+
+type SiteBrandKitRecreateStarterTemplatesUnprocessableEntity ProblemDetails
+
+func (*SiteBrandKitRecreateStarterTemplatesUnprocessableEntity) siteBrandKitRecreateStarterTemplatesRes() {
+}
+
+// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
+// palette the editor offers and what an agent is told to use. Its values are written into a message
+// when the message is authored, so saving it never changes a message already written. A Workspace that
+// has not saved one has the defaults and `saved` false.
+// Ref: #/components/schemas/SiteBrandKitResource
+type SiteBrandKitResource struct {
+	// False until the Brand kit is first saved; the values are then the defaults.
+	Saved bool `json:"saved"`
+	// Brand color of buttons and links, `#rrggbb`.
+	AccentColor string `json:"accentColor"`
+	// Color of text, `#rrggbb`.
+	TextColor string `json:"textColor"`
+	// Color of the message background, `#rrggbb`.
+	BackgroundColor string `json:"backgroundColor"`
+	// Font of headings: a CSS font-family list of web-safe families.
+	HeadingFont string `json:"headingFont"`
+	// Font of body text: a CSS font-family list of web-safe families.
+	BodyFont string `json:"bodyFont"`
+	// Address (http or https) of the logo image; empty for none.
+	LogoUrl string `json:"logoUrl"`
+	// Color of the text on a button, `#rrggbb`.
+	ButtonTextColor string `json:"buttonTextColor"`
+	// Corner radius of a button in pixels, 0 to 32.
+	ButtonRadius int32 `json:"buttonRadius"`
+	// Plain text printed under the starter messages, at most 500 characters; empty for none.
+	FooterText string `json:"footerText"`
+	// When the Brand kit was last saved; absent while it is not saved.
+	UpdatedAt OptNilTimestamp `json:"updatedAt"`
+}
+
+// GetSaved returns the value of Saved.
+func (s *SiteBrandKitResource) GetSaved() bool {
+	return s.Saved
+}
+
+// GetAccentColor returns the value of AccentColor.
+func (s *SiteBrandKitResource) GetAccentColor() string {
+	return s.AccentColor
+}
+
+// GetTextColor returns the value of TextColor.
+func (s *SiteBrandKitResource) GetTextColor() string {
+	return s.TextColor
+}
+
+// GetBackgroundColor returns the value of BackgroundColor.
+func (s *SiteBrandKitResource) GetBackgroundColor() string {
+	return s.BackgroundColor
+}
+
+// GetHeadingFont returns the value of HeadingFont.
+func (s *SiteBrandKitResource) GetHeadingFont() string {
+	return s.HeadingFont
+}
+
+// GetBodyFont returns the value of BodyFont.
+func (s *SiteBrandKitResource) GetBodyFont() string {
+	return s.BodyFont
+}
+
+// GetLogoUrl returns the value of LogoUrl.
+func (s *SiteBrandKitResource) GetLogoUrl() string {
+	return s.LogoUrl
+}
+
+// GetButtonTextColor returns the value of ButtonTextColor.
+func (s *SiteBrandKitResource) GetButtonTextColor() string {
+	return s.ButtonTextColor
+}
+
+// GetButtonRadius returns the value of ButtonRadius.
+func (s *SiteBrandKitResource) GetButtonRadius() int32 {
+	return s.ButtonRadius
+}
+
+// GetFooterText returns the value of FooterText.
+func (s *SiteBrandKitResource) GetFooterText() string {
+	return s.FooterText
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SiteBrandKitResource) GetUpdatedAt() OptNilTimestamp {
+	return s.UpdatedAt
+}
+
+// SetSaved sets the value of Saved.
+func (s *SiteBrandKitResource) SetSaved(val bool) {
+	s.Saved = val
+}
+
+// SetAccentColor sets the value of AccentColor.
+func (s *SiteBrandKitResource) SetAccentColor(val string) {
+	s.AccentColor = val
+}
+
+// SetTextColor sets the value of TextColor.
+func (s *SiteBrandKitResource) SetTextColor(val string) {
+	s.TextColor = val
+}
+
+// SetBackgroundColor sets the value of BackgroundColor.
+func (s *SiteBrandKitResource) SetBackgroundColor(val string) {
+	s.BackgroundColor = val
+}
+
+// SetHeadingFont sets the value of HeadingFont.
+func (s *SiteBrandKitResource) SetHeadingFont(val string) {
+	s.HeadingFont = val
+}
+
+// SetBodyFont sets the value of BodyFont.
+func (s *SiteBrandKitResource) SetBodyFont(val string) {
+	s.BodyFont = val
+}
+
+// SetLogoUrl sets the value of LogoUrl.
+func (s *SiteBrandKitResource) SetLogoUrl(val string) {
+	s.LogoUrl = val
+}
+
+// SetButtonTextColor sets the value of ButtonTextColor.
+func (s *SiteBrandKitResource) SetButtonTextColor(val string) {
+	s.ButtonTextColor = val
+}
+
+// SetButtonRadius sets the value of ButtonRadius.
+func (s *SiteBrandKitResource) SetButtonRadius(val int32) {
+	s.ButtonRadius = val
+}
+
+// SetFooterText sets the value of FooterText.
+func (s *SiteBrandKitResource) SetFooterText(val string) {
+	s.FooterText = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SiteBrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
+	s.UpdatedAt = val
+}
+
+func (*SiteBrandKitResource) siteBrandKitGetRes()  {}
+func (*SiteBrandKitResource) siteBrandKitSaveRes() {}
+
+type SiteBrandKitSaveForbidden ProblemDetails
+
+func (*SiteBrandKitSaveForbidden) siteBrandKitSaveRes() {}
+
+type SiteBrandKitSaveNotFound ProblemDetails
+
+func (*SiteBrandKitSaveNotFound) siteBrandKitSaveRes() {}
+
+type SiteBrandKitSaveUnprocessableEntity ProblemDetails
+
+func (*SiteBrandKitSaveUnprocessableEntity) siteBrandKitSaveRes() {}
+
 // How far a sending broadcast has got. A broadcast limited by its Integration's Send rate limit is
 // paced: recipients go out at an even interval, so the estimate is derived on the server from the last
 // scheduled time and the recipients remaining.
@@ -5465,8 +6172,15 @@ type SiteBroadcastResource struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address (defaults to the integration's).
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// MJML body authored in the composer.
+	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
+	// The editor's JSON document the body was built from; null when the body was written as HTML.
+	Doc OptNilSiteBroadcastResourceDoc `json:"doc"`
+	// Version of the editor that rendered the document; null with it.
+	EditorVersion OptNilString `json:"editorVersion"`
+	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
+	// it.
+	Warnings []LintFinding `json:"warnings"`
 	// Derived plain-text body.
 	BodyText string `json:"bodyText"`
 	// Target segment; null means all active contacts.
@@ -5522,6 +6236,21 @@ func (s *SiteBroadcastResource) GetFromEmail() OptNilEmailAddress {
 // GetBody returns the value of Body.
 func (s *SiteBroadcastResource) GetBody() string {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteBroadcastResource) GetDoc() OptNilSiteBroadcastResourceDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *SiteBroadcastResource) GetEditorVersion() OptNilString {
+	return s.EditorVersion
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *SiteBroadcastResource) GetWarnings() []LintFinding {
+	return s.Warnings
 }
 
 // GetBodyText returns the value of BodyText.
@@ -5609,6 +6338,21 @@ func (s *SiteBroadcastResource) SetBody(val string) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteBroadcastResource) SetDoc(val OptNilSiteBroadcastResourceDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *SiteBroadcastResource) SetEditorVersion(val OptNilString) {
+	s.EditorVersion = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *SiteBroadcastResource) SetWarnings(val []LintFinding) {
+	s.Warnings = val
+}
+
 // SetBodyText sets the value of BodyText.
 func (s *SiteBroadcastResource) SetBodyText(val string) {
 	s.BodyText = val
@@ -5669,6 +6413,18 @@ func (*SiteBroadcastResource) siteBroadcastsGetRes()      {}
 func (*SiteBroadcastResource) siteBroadcastsScheduleRes() {}
 func (*SiteBroadcastResource) siteBroadcastsSendRes()     {}
 func (*SiteBroadcastResource) siteBroadcastsUpdateRes()   {}
+
+// The editor's JSON document the body was built from; null when the body was written as HTML.
+type SiteBroadcastResourceDoc map[string]jx.Raw
+
+func (s *SiteBroadcastResourceDoc) init() SiteBroadcastResourceDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 // Denormalized delivery counters for a broadcast.
 // Ref: #/components/schemas/SiteBroadcastStats
@@ -6425,8 +7181,11 @@ type SiteCreateBroadcastInput struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body with Liquid merge tags. Write this or `doc`, not both.
 	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+	// it in the same save; a document that cannot be rendered is a 422.
+	Doc OptSiteCreateBroadcastInputDoc `json:"doc"`
 	// Target segment; null/omitted means all active contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null/omitted means the workspace default.
@@ -6456,6 +7215,11 @@ func (s *SiteCreateBroadcastInput) GetFromEmail() OptNilEmailAddress {
 // GetBody returns the value of Body.
 func (s *SiteCreateBroadcastInput) GetBody() OptString {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteCreateBroadcastInput) GetDoc() OptSiteCreateBroadcastInputDoc {
+	return s.Doc
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -6493,6 +7257,11 @@ func (s *SiteCreateBroadcastInput) SetBody(val OptString) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteCreateBroadcastInput) SetDoc(val OptSiteCreateBroadcastInputDoc) {
+	s.Doc = val
+}
+
 // SetSegmentId sets the value of SegmentId.
 func (s *SiteCreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 	s.SegmentId = val
@@ -6501,6 +7270,19 @@ func (s *SiteCreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 // SetIntegrationId sets the value of IntegrationId.
 func (s *SiteCreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
+}
+
+// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+// it in the same save; a document that cannot be rendered is a 422.
+type SiteCreateBroadcastInputDoc map[string]jx.Raw
+
+func (s *SiteCreateBroadcastInputDoc) init() SiteCreateBroadcastInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Site request body for creating a contact.
@@ -6609,7 +7391,11 @@ func (s *SiteCreateContactInputCustomFields) init() SiteCreateContactInputCustom
 type SiteCreateEmailTemplateInput struct {
 	Name    string    `json:"name"`
 	Subject OptString `json:"subject"`
-	Body    OptString `json:"body"`
+	// HTML body with Liquid merge tags. Write this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+	// it in the same save; a document that cannot be rendered is a 422.
+	Doc OptSiteCreateEmailTemplateInputDoc `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -6627,6 +7413,11 @@ func (s *SiteCreateEmailTemplateInput) GetBody() OptString {
 	return s.Body
 }
 
+// GetDoc returns the value of Doc.
+func (s *SiteCreateEmailTemplateInput) GetDoc() OptSiteCreateEmailTemplateInputDoc {
+	return s.Doc
+}
+
 // SetName sets the value of Name.
 func (s *SiteCreateEmailTemplateInput) SetName(val string) {
 	s.Name = val
@@ -6640,6 +7431,24 @@ func (s *SiteCreateEmailTemplateInput) SetSubject(val OptString) {
 // SetBody sets the value of Body.
 func (s *SiteCreateEmailTemplateInput) SetBody(val OptString) {
 	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *SiteCreateEmailTemplateInput) SetDoc(val OptSiteCreateEmailTemplateInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+// it in the same save; a document that cannot be rendered is a 422.
+type SiteCreateEmailTemplateInputDoc map[string]jx.Raw
+
+func (s *SiteCreateEmailTemplateInputDoc) init() SiteCreateEmailTemplateInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Create a workspace integration. The provider/channel are derived from `config.kind`.
@@ -7396,8 +8205,15 @@ type SiteEmailTemplateResource struct {
 	Name string `json:"name"`
 	// Default subject line.
 	Subject string `json:"subject"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
+	// The editor's JSON document the body was built from; null when the body was written as HTML.
+	Doc OptNilSiteEmailTemplateResourceDoc `json:"doc"`
+	// Version of the editor that rendered the document; null with it.
+	EditorVersion OptNilString `json:"editorVersion"`
+	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
+	// it.
+	Warnings []LintFinding `json:"warnings"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -7422,6 +8238,21 @@ func (s *SiteEmailTemplateResource) GetSubject() string {
 // GetBody returns the value of Body.
 func (s *SiteEmailTemplateResource) GetBody() string {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteEmailTemplateResource) GetDoc() OptNilSiteEmailTemplateResourceDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *SiteEmailTemplateResource) GetEditorVersion() OptNilString {
+	return s.EditorVersion
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *SiteEmailTemplateResource) GetWarnings() []LintFinding {
+	return s.Warnings
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -7454,6 +8285,21 @@ func (s *SiteEmailTemplateResource) SetBody(val string) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteEmailTemplateResource) SetDoc(val OptNilSiteEmailTemplateResourceDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *SiteEmailTemplateResource) SetEditorVersion(val OptNilString) {
+	s.EditorVersion = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *SiteEmailTemplateResource) SetWarnings(val []LintFinding) {
+	s.Warnings = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteEmailTemplateResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -7467,6 +8313,18 @@ func (s *SiteEmailTemplateResource) SetUpdatedAt(val Timestamp) {
 func (*SiteEmailTemplateResource) siteTemplatesCreateRes() {}
 func (*SiteEmailTemplateResource) siteTemplatesGetRes()    {}
 func (*SiteEmailTemplateResource) siteTemplatesUpdateRes() {}
+
+// The editor's JSON document the body was built from; null when the body was written as HTML.
+type SiteEmailTemplateResourceDoc map[string]jx.Raw
+
+func (s *SiteEmailTemplateResourceDoc) init() SiteEmailTemplateResourceDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 // What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
 // Ref: #/components/schemas/SiteEnrollmentFailure
@@ -9790,6 +10648,120 @@ func (s *SiteResetPasswordInput) SetToken(val string) {
 // SetPassword sets the value of Password.
 func (s *SiteResetPasswordInput) SetPassword(val string) {
 	s.Password = val
+}
+
+// Save the Brand kit: the first save creates it and the starter Templates, a later one replaces its
+// values.
+// Ref: #/components/schemas/SiteSaveBrandKitInput
+type SiteSaveBrandKitInput struct {
+	// Brand color of buttons and links, `#rrggbb`.
+	AccentColor string `json:"accentColor"`
+	// Color of text, `#rrggbb`.
+	TextColor string `json:"textColor"`
+	// Color of the message background, `#rrggbb`.
+	BackgroundColor string `json:"backgroundColor"`
+	// Font of headings: letters, digits, spaces, commas and hyphens only.
+	HeadingFont string `json:"headingFont"`
+	// Font of body text: letters, digits, spaces, commas and hyphens only.
+	BodyFont string `json:"bodyFont"`
+	// Address (http or https) of the logo image; empty for none.
+	LogoUrl string `json:"logoUrl"`
+	// Color of the text on a button, `#rrggbb`.
+	ButtonTextColor string `json:"buttonTextColor"`
+	// Corner radius of a button in pixels, 0 to 32.
+	ButtonRadius int32 `json:"buttonRadius"`
+	// Plain text printed under the starter messages, at most 500 characters; empty for none.
+	FooterText string `json:"footerText"`
+}
+
+// GetAccentColor returns the value of AccentColor.
+func (s *SiteSaveBrandKitInput) GetAccentColor() string {
+	return s.AccentColor
+}
+
+// GetTextColor returns the value of TextColor.
+func (s *SiteSaveBrandKitInput) GetTextColor() string {
+	return s.TextColor
+}
+
+// GetBackgroundColor returns the value of BackgroundColor.
+func (s *SiteSaveBrandKitInput) GetBackgroundColor() string {
+	return s.BackgroundColor
+}
+
+// GetHeadingFont returns the value of HeadingFont.
+func (s *SiteSaveBrandKitInput) GetHeadingFont() string {
+	return s.HeadingFont
+}
+
+// GetBodyFont returns the value of BodyFont.
+func (s *SiteSaveBrandKitInput) GetBodyFont() string {
+	return s.BodyFont
+}
+
+// GetLogoUrl returns the value of LogoUrl.
+func (s *SiteSaveBrandKitInput) GetLogoUrl() string {
+	return s.LogoUrl
+}
+
+// GetButtonTextColor returns the value of ButtonTextColor.
+func (s *SiteSaveBrandKitInput) GetButtonTextColor() string {
+	return s.ButtonTextColor
+}
+
+// GetButtonRadius returns the value of ButtonRadius.
+func (s *SiteSaveBrandKitInput) GetButtonRadius() int32 {
+	return s.ButtonRadius
+}
+
+// GetFooterText returns the value of FooterText.
+func (s *SiteSaveBrandKitInput) GetFooterText() string {
+	return s.FooterText
+}
+
+// SetAccentColor sets the value of AccentColor.
+func (s *SiteSaveBrandKitInput) SetAccentColor(val string) {
+	s.AccentColor = val
+}
+
+// SetTextColor sets the value of TextColor.
+func (s *SiteSaveBrandKitInput) SetTextColor(val string) {
+	s.TextColor = val
+}
+
+// SetBackgroundColor sets the value of BackgroundColor.
+func (s *SiteSaveBrandKitInput) SetBackgroundColor(val string) {
+	s.BackgroundColor = val
+}
+
+// SetHeadingFont sets the value of HeadingFont.
+func (s *SiteSaveBrandKitInput) SetHeadingFont(val string) {
+	s.HeadingFont = val
+}
+
+// SetBodyFont sets the value of BodyFont.
+func (s *SiteSaveBrandKitInput) SetBodyFont(val string) {
+	s.BodyFont = val
+}
+
+// SetLogoUrl sets the value of LogoUrl.
+func (s *SiteSaveBrandKitInput) SetLogoUrl(val string) {
+	s.LogoUrl = val
+}
+
+// SetButtonTextColor sets the value of ButtonTextColor.
+func (s *SiteSaveBrandKitInput) SetButtonTextColor(val string) {
+	s.ButtonTextColor = val
+}
+
+// SetButtonRadius sets the value of ButtonRadius.
+func (s *SiteSaveBrandKitInput) SetButtonRadius(val int32) {
+	s.ButtonRadius = val
+}
+
+// SetFooterText sets the value of FooterText.
+func (s *SiteSaveBrandKitInput) SetFooterText(val string) {
+	s.FooterText = val
 }
 
 // Site request body for scheduling a broadcast.
@@ -12903,8 +13875,11 @@ type SiteUpdateBroadcastInput struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
 	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+	// it in the same save; a document that cannot be rendered is a 422.
+	Doc OptSiteUpdateBroadcastInputDoc `json:"doc"`
 	// Target segment; null means all active contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null means the workspace default.
@@ -12934,6 +13909,11 @@ func (s *SiteUpdateBroadcastInput) GetFromEmail() OptNilEmailAddress {
 // GetBody returns the value of Body.
 func (s *SiteUpdateBroadcastInput) GetBody() OptString {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteUpdateBroadcastInput) GetDoc() OptSiteUpdateBroadcastInputDoc {
+	return s.Doc
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -12971,6 +13951,11 @@ func (s *SiteUpdateBroadcastInput) SetBody(val OptString) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteUpdateBroadcastInput) SetDoc(val OptSiteUpdateBroadcastInputDoc) {
+	s.Doc = val
+}
+
 // SetSegmentId sets the value of SegmentId.
 func (s *SiteUpdateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 	s.SegmentId = val
@@ -12979,6 +13964,19 @@ func (s *SiteUpdateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 // SetIntegrationId sets the value of IntegrationId.
 func (s *SiteUpdateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
+}
+
+// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+// it in the same save; a document that cannot be rendered is a 422.
+type SiteUpdateBroadcastInputDoc map[string]jx.Raw
+
+func (s *SiteUpdateBroadcastInputDoc) init() SiteUpdateBroadcastInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Site request body for updating a contact.
@@ -13087,7 +14085,11 @@ func (s *SiteUpdateContactInputCustomFields) init() SiteUpdateContactInputCustom
 type SiteUpdateEmailTemplateInput struct {
 	Name    OptString `json:"name"`
 	Subject OptString `json:"subject"`
-	Body    OptString `json:"body"`
+	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+	// it in the same save; a document that cannot be rendered is a 422.
+	Doc OptSiteUpdateEmailTemplateInputDoc `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -13105,6 +14107,11 @@ func (s *SiteUpdateEmailTemplateInput) GetBody() OptString {
 	return s.Body
 }
 
+// GetDoc returns the value of Doc.
+func (s *SiteUpdateEmailTemplateInput) GetDoc() OptSiteUpdateEmailTemplateInputDoc {
+	return s.Doc
+}
+
 // SetName sets the value of Name.
 func (s *SiteUpdateEmailTemplateInput) SetName(val OptString) {
 	s.Name = val
@@ -13118,6 +14125,24 @@ func (s *SiteUpdateEmailTemplateInput) SetSubject(val OptString) {
 // SetBody sets the value of Body.
 func (s *SiteUpdateEmailTemplateInput) SetBody(val OptString) {
 	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *SiteUpdateEmailTemplateInput) SetDoc(val OptSiteUpdateEmailTemplateInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+// it in the same save; a document that cannot be rendered is a 422.
+type SiteUpdateEmailTemplateInputDoc map[string]jx.Raw
+
+func (s *SiteUpdateEmailTemplateInputDoc) init() SiteUpdateEmailTemplateInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Update a workspace integration. Omit `config` to keep stored credentials.

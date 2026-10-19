@@ -16,7 +16,7 @@ func TestRecordedEventTriggersAutomationEmail(t *testing.T) {
 	w.ActivateAutomation(Automation{
 		TriggerEvent: "e2e.signed_up",
 		Subject:      "Welcome from the automation",
-		Body:         MJML("Glad you signed up"),
+		Body:         HTML("Glad you signed up"),
 	})
 
 	// A non-matching event first, for a Contact the matching event never touches.
@@ -33,6 +33,24 @@ func TestRecordedEventTriggersAutomationEmail(t *testing.T) {
 	w.Inbox.RequireNone(Match{To: other})
 }
 
+func TestAutomationStepWrittenInTheEditorSendsItsBuiltBody(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	to := w.NewRecipient()
+	w.ImportContacts(to)
+	w.ActivateAuthoredAutomation(AuthoredAutomation{
+		TriggerEvent: "e2e.authored",
+		Subject:      "Written in the editor",
+		Text:         "Built from a document for {{ email }}",
+	})
+
+	w.RecordEvent(to, "e2e.authored")
+
+	msg := w.Inbox.Wait(Match{To: to})
+	assert.Equal(t, "Written in the editor", msg.Subject)
+	assert.Contains(t, msg.HTML, "Built from a document for "+to)
+}
+
 func TestAutomationHTTPStepCallsTheHookThenContinues(t *testing.T) {
 	t.Parallel()
 	w := env.NewWorkspace(t).Ready()
@@ -44,7 +62,7 @@ func TestAutomationHTTPStepCallsTheHookThenContinues(t *testing.T) {
 		Hook:         hook,
 		Body:         `{"email": "{{ email }}"}`,
 		Subject:      "After the hook",
-		EmailBody:    MJML("The hook was called"),
+		EmailBody:    HTML("The hook was called"),
 	})
 
 	w.RecordEvent(to, "e2e.hooked")

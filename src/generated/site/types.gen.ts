@@ -384,6 +384,46 @@ export type EmailAddress = string;
 export type EntityId = string;
 
 /**
+ * What a lint finding is about (ADR 0040)
+ */
+export const LintCode = {
+  INVALID_CONTENT: 'invalid_content',
+  MISSING_ALT: 'missing_alt',
+  LOW_CONTRAST: 'low_contrast',
+  OFF_BRAND_COLOR: 'off_brand_color',
+  OFF_BRAND_FONT: 'off_brand_font',
+  UNKNOWN_CONSTRUCT: 'unknown_construct'
+} as const;
+
+/**
+ * What a lint finding is about (ADR 0040)
+ */
+export type LintCode = typeof LintCode[keyof typeof LintCode];
+
+/**
+ * One finding of the lint over a message's rendered HTML. `message` is fixed text of the
+ * server; `element` and `detail` quote the message or the Brand kit and are untrusted data.
+ */
+export type LintFinding = {
+  /**
+   * What the finding is
+   */
+  code: LintCode;
+  /**
+   * What is wrong, in the server's words
+   */
+  message: string;
+  /**
+   * The element it is about, as a short tag description such as `<img src="…">`
+   */
+  element?: string;
+  /**
+   * The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1`
+   */
+  detail?: string;
+};
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const ProblemCode = {
@@ -889,9 +929,22 @@ export type SiteAutomationStep = {
    */
   subject?: string;
   /**
-   * Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)
+   * Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)
    */
   body?: string;
+  /**
+   * The editor's JSON document an email step's body was built from, an opaque object checked by the
+   * server. Write it instead of `body` (both is a 422): the server renders the body from it in the
+   * same save, and a document that cannot be rendered refuses the whole save, naming the step.
+   * Writing only a body clears the step's document.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Version of the editor that rendered the document (email steps, read only)
+   */
+  editorVersion?: string;
   /**
    * Delay before the next step, in seconds (wait steps)
    */
@@ -943,6 +996,59 @@ export const SiteAutomationStepType = {
 export type SiteAutomationStepType = typeof SiteAutomationStepType[keyof typeof SiteAutomationStepType];
 
 /**
+ * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
+ * the palette the editor offers and what an agent is told to use. Its values are written into a
+ * message when the message is authored, so saving it never changes a message already written. A
+ * Workspace that has not saved one has the defaults and `saved` false.
+ */
+export type SiteBrandKitResource = {
+  /**
+   * False until the Brand kit is first saved; the values are then the defaults
+   */
+  saved: boolean;
+  /**
+   * Brand color of buttons and links, `#rrggbb`
+   */
+  accentColor: string;
+  /**
+   * Color of text, `#rrggbb`
+   */
+  textColor: string;
+  /**
+   * Color of the message background, `#rrggbb`
+   */
+  backgroundColor: string;
+  /**
+   * Font of headings: a CSS font-family list of web-safe families
+   */
+  headingFont: string;
+  /**
+   * Font of body text: a CSS font-family list of web-safe families
+   */
+  bodyFont: string;
+  /**
+   * Address (http or https) of the logo image; empty for none
+   */
+  logoUrl: string;
+  /**
+   * Color of the text on a button, `#rrggbb`
+   */
+  buttonTextColor: string;
+  /**
+   * Corner radius of a button in pixels, 0 to 32
+   */
+  buttonRadius: number;
+  /**
+   * Plain text printed under the starter messages, at most 500 characters; empty for none
+   */
+  footerText: string;
+  /**
+   * When the Brand kit was last saved; absent while it is not saved
+   */
+  updatedAt?: Timestamp | null;
+};
+
+/**
  * How far a sending broadcast has got. A broadcast limited by its Integration's Send
  * rate limit is paced: recipients go out at an even interval, so the estimate is
  * derived on the server from the last scheduled time and the recipients remaining.
@@ -988,9 +1094,23 @@ export type SiteBroadcastResource = {
    */
   fromEmail?: EmailAddress | null;
   /**
-   * MJML body authored in the composer
+   * HTML body with Liquid merge tags
    */
   body: string;
+  /**
+   * The editor's JSON document the body was built from; null when the body was written as HTML
+   */
+  doc?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Version of the editor that rendered the document; null with it
+   */
+  editorVersion?: string | null;
+  /**
+   * Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it
+   */
+  warnings?: Array<LintFinding>;
   /**
    * Derived plain-text body
    */
@@ -1194,9 +1314,16 @@ export type SiteCreateBroadcastInput = {
    */
   fromEmail?: EmailAddress | null;
   /**
-   * MJML body
+   * HTML body with Liquid merge tags. Write this or `doc`, not both.
    */
   body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
   /**
    * Target segment; null/omitted means all active contacts
    */
@@ -1249,7 +1376,17 @@ export type SiteCreateContactInput = {
 export type SiteCreateEmailTemplateInput = {
   name: string;
   subject?: string;
+  /**
+   * HTML body with Liquid merge tags. Write this or `doc`, not both.
+   */
   body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -1493,9 +1630,23 @@ export type SiteEmailTemplateResource = {
    */
   subject: string;
   /**
-   * MJML body
+   * HTML body with Liquid merge tags
    */
   body: string;
+  /**
+   * The editor's JSON document the body was built from; null when the body was written as HTML
+   */
+  doc?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Version of the editor that rendered the document; null with it
+   */
+  editorVersion?: string | null;
+  /**
+   * Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it
+   */
+  warnings?: Array<LintFinding>;
   /**
    * Creation timestamp
    */
@@ -2137,6 +2288,49 @@ export type SiteResendVerificationInput = {
 export type SiteResetPasswordInput = {
   token: string;
   password: string;
+};
+
+/**
+ * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
+ * its values.
+ */
+export type SiteSaveBrandKitInput = {
+  /**
+   * Brand color of buttons and links, `#rrggbb`
+   */
+  accentColor: string;
+  /**
+   * Color of text, `#rrggbb`
+   */
+  textColor: string;
+  /**
+   * Color of the message background, `#rrggbb`
+   */
+  backgroundColor: string;
+  /**
+   * Font of headings: letters, digits, spaces, commas and hyphens only
+   */
+  headingFont: string;
+  /**
+   * Font of body text: letters, digits, spaces, commas and hyphens only
+   */
+  bodyFont: string;
+  /**
+   * Address (http or https) of the logo image; empty for none
+   */
+  logoUrl: string;
+  /**
+   * Color of the text on a button, `#rrggbb`
+   */
+  buttonTextColor: string;
+  /**
+   * Corner radius of a button in pixels, 0 to 32
+   */
+  buttonRadius: number;
+  /**
+   * Plain text printed under the starter messages, at most 500 characters; empty for none
+   */
+  footerText: string;
 };
 
 /**
@@ -2820,9 +3014,16 @@ export type SiteUpdateBroadcastInput = {
    */
   fromEmail?: EmailAddress | null;
   /**
-   * MJML body
+   * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
    */
   body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
   /**
    * Target segment; null means all active contacts
    */
@@ -2875,7 +3076,17 @@ export type SiteUpdateContactInput = {
 export type SiteUpdateEmailTemplateInput = {
   name?: string;
   subject?: string;
+  /**
+   * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
+   */
   body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -5067,6 +5278,103 @@ export type SiteAutomationsDeactivateResponses = {
 };
 
 export type SiteAutomationsDeactivateResponse = SiteAutomationsDeactivateResponses[keyof SiteAutomationsDeactivateResponses];
+
+export type SiteBrandKitGetData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/brand-kit';
+};
+
+export type SiteBrandKitGetErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteBrandKitGetError = SiteBrandKitGetErrors[keyof SiteBrandKitGetErrors];
+
+export type SiteBrandKitGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteBrandKitResource;
+};
+
+export type SiteBrandKitGetResponse = SiteBrandKitGetResponses[keyof SiteBrandKitGetResponses];
+
+export type SiteBrandKitSaveData = {
+  body: SiteSaveBrandKitInput;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/brand-kit';
+};
+
+export type SiteBrandKitSaveErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteBrandKitSaveError = SiteBrandKitSaveErrors[keyof SiteBrandKitSaveErrors];
+
+export type SiteBrandKitSaveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteBrandKitResource;
+};
+
+export type SiteBrandKitSaveResponse = SiteBrandKitSaveResponses[keyof SiteBrandKitSaveResponses];
+
+export type SiteBrandKitRecreateStarterTemplatesData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/brand-kit/starter-templates';
+};
+
+export type SiteBrandKitRecreateStarterTemplatesErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteBrandKitRecreateStarterTemplatesError = SiteBrandKitRecreateStarterTemplatesErrors[keyof SiteBrandKitRecreateStarterTemplatesErrors];
+
+export type SiteBrandKitRecreateStarterTemplatesResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: Array<SiteEmailTemplateResource>;
+};
+
+export type SiteBrandKitRecreateStarterTemplatesResponse = SiteBrandKitRecreateStarterTemplatesResponses[keyof SiteBrandKitRecreateStarterTemplatesResponses];
 
 export type SiteBroadcastsListData = {
   body?: never;

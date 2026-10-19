@@ -22,7 +22,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/templates"
 )
 
 // Env is the running application under test plus its Mailpit. One Env serves every
@@ -35,6 +37,9 @@ type Env struct {
 
 	accounts *accounts.Accounts
 	bus      *events.Bus
+	// brandKit is the product's own module, for the arrange step the public API leaves to a
+	// person: saving the Brand kit, which makes the starter Templates.
+	brandKit *brandkit.Module
 	// sessions issues the cookie a signed-in User of the SPA carries.
 	sessions *apiauth.Sessions
 }
@@ -122,6 +127,8 @@ func Boot() (*Env, func(), error) {
 		hooks:    hooks,
 		accounts: acc,
 		bus:      bus,
+
+		brandKit: brandkit.New(bus, templates.New()),
 		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), nil, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }

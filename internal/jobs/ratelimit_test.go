@@ -100,7 +100,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
 			res, err := mod.Send(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.Request{
 				Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
-				Subject: "Receipt", Body: "<mjml><mj-body><mj-section><mj-column><mj-text>Hi</mj-text></mj-column></mj-section></mj-body></mjml>",
+				Subject: "Receipt", Body: "<p>Hi</p>",
 			})
 			require.NoError(t, err)
 			require.Equal(t, outbound.Sent, res.Outcome, "Transactional is never delayed")

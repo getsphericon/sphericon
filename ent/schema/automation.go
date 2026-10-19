@@ -42,7 +42,7 @@ func (Automation) Fields() []ent.Field {
 		// "email.opened", a custom collect event).
 		field.String("trigger_event").
 			NotEmpty(),
-		// JSON array of steps: [{"type":"email","subject":..,"body":<mjml>},
+		// JSON array of steps: [{"type":"email","subject":..,"body":<html>},
 		// {"type":"wait","seconds":N}].
 		// Sensitive: HTTP steps carry sealed URL, header values and secret (ADR 0039),
 		// so the Audit entry only says the definition changed.

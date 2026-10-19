@@ -25,11 +25,10 @@ library-grade and extractable).
 
 ## Phase 3 — email templates
 
-| Need                              | Pick                               | Status                              | Note                                                                                                 |
-| --------------------------------- | ---------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| MJML → email HTML                 | **preslavrachev/gomjml** (primary) | ✅ 2026-04, v0.12.0 (pre-1.0), 117★ | pure Go, fast, no wasm; pin & test templates                                                         |
-| MJML fidelity fallback            | **Boostport/mjml-go**              | 🟡 2025-08, v0.16.0, 121★           | wraps the reference MJML compiler via wasm (spec-accurate but heavier); use if gomjml hits spec gaps |
-| CSS inlining (required for email) | **vanng822/go-premailer**          | ✅ 2026-06, v1.34.0, 202★           | de-facto Go CSS inliner                                                                              |
+| Need                              | Pick                      | Status                    | Note                                                                         |
+| --------------------------------- | ------------------------- | ------------------------- | ---------------------------------------------------------------------------- |
+| Email body                        | **HTML** (ADR 0040)       | accepted                  | Liquid merge tags over email-ready HTML; parsed with `golang.org/x/net/html` |
+| CSS inlining (required for email) | **vanng822/go-premailer** | ✅ 2026-06, v1.34.0, 202★ | de-facto Go CSS inliner                                                      |
 
 ## Phase 4 — automations / workflows
 

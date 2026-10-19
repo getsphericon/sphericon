@@ -92,8 +92,17 @@ model SiteBroadcastResource {
   /** Sender email address (defaults to the integration's) */
   fromEmail?: EmailAddress | null;
 
-  /** MJML body authored in the composer */
+  /** HTML body with Liquid merge tags */
   body: string;
+
+  /** The editor's JSON document the body was built from; null when the body was written as HTML */
+  doc?: Record<unknown> | null;
+
+  /** Version of the editor that rendered the document; null with it */
+  editorVersion?: string | null;
+
+  /** Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it */
+  warnings?: LintFinding[];
 
   /** Derived plain-text body */
   bodyText: string;
@@ -147,8 +156,12 @@ model SiteCreateBroadcastInput {
   /** Sender email address */
   fromEmail?: EmailAddress | null;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags. Write this or `doc`, not both. */
   body?: string;
+
+  /** The editor's JSON document, an opaque object checked by the server. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422. */
+  doc?: Record<unknown>;
 
   /** Target segment; null/omitted means all active contacts */
   segmentId?: EntityId | null;
@@ -171,8 +184,12 @@ model SiteUpdateBroadcastInput {
   /** Sender email address */
   fromEmail?: EmailAddress | null;
 
-  /** MJML body */
+  /** HTML body. Writing only a body clears the stored document. Write this or `doc`, not both. */
   body?: string;
+
+  /** The editor's JSON document, an opaque object checked by the server. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422. */
+  doc?: Record<unknown>;
 
   /** Target segment; null means all active contacts */
   segmentId?: EntityId | null;

@@ -28,7 +28,7 @@ const (
 	suppressd = "ethan.data@codebasics.dev"
 )
 
-const mjml = `<mjml><mj-body><mj-section><mj-column><mj-text>Hi {{ first_name }}</mj-text></mj-column></mj-section></mj-body></mjml>`
+const htmlBody = `<p>Hi {{ first_name }}</p>`
 
 type senders struct {
 	sender messaging.EmailSender
@@ -50,7 +50,7 @@ func transactional(key, to string) outbound.Request {
 		Key:         key,
 		Destination: to,
 		Subject:     "Receipt {{ order }}",
-		Body:        mjml,
+		Body:        htmlBody,
 		Variables:   map[string]any{"order": "42"},
 	}
 }
@@ -65,7 +65,7 @@ func marketing(t *testing.T, env *testhelper.TestEnv, key string, contactID int6
 		Contact:     c,
 		Source:      eligibility.SourceBroadcasts,
 		Subject:     "News",
-		Body:        mjml,
+		Body:        htmlBody,
 	}
 }
 
@@ -350,7 +350,7 @@ func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.
 	before := env.DB.OutboundMessage.Query().CountX(ctx)
 
 	// Even a suppressed address can be the target of an explicit author preview.
-	res, err := m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: suppressd, Subject: "[Test] Hi", Body: mjml,
+	res, err := m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: suppressd, Subject: "[Test] Hi", Body: htmlBody,
 		Variables: map[string]any{"first_name": "Alex"}})
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Sent, res.Outcome)
@@ -362,7 +362,7 @@ func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.
 
 	// But a suspended Workspace sends nothing, test or not.
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
-	res, err = m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: "a@example.com", Subject: "s", Body: mjml})
+	res, err = m.SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.TestRequest{To: "a@example.com", Subject: "s", Body: htmlBody})
 	require.NoError(t, err)
 	assert.Equal(t, outbound.Held, res.Outcome)
 	assert.Equal(t, outbound.HoldSuspended, res.Reason)

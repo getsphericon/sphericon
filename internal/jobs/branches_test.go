@@ -95,7 +95,7 @@ func TestRunStepOutcomes(t *testing.T) {
 
 	t.Run("a template that cannot render fails the run", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		broken := `{"type":"email","subject":"{% if %}broken","body":"<mjml><mj-body></mj-body></mjml>"}`
+		broken := `{"type":"email","subject":"{% if %}broken","body":"<p></p>"}`
 		id := enroll(ctx, t, env, "["+broken+"]", true)
 		_, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), id)
 		require.Error(t, err)

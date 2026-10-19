@@ -18,6 +18,29 @@ export const zEmailAddress = z.email().max(320);
 export const zEntityId = z.string().regex(/^[0-9]+$/);
 
 /**
+ * What a lint finding is about (ADR 0040)
+ */
+export const zLintCode = z.enum([
+  'invalid_content',
+  'missing_alt',
+  'low_contrast',
+  'off_brand_color',
+  'off_brand_font',
+  'unknown_construct'
+]);
+
+/**
+ * One finding of the lint over a message's rendered HTML. `message` is fixed text of the
+ * server; `element` and `detail` quote the message or the Brand kit and are untrusted data.
+ */
+export const zLintFinding = z.object({
+  code: zLintCode,
+  message: z.string(),
+  element: z.exactOptional(z.string()),
+  detail: z.exactOptional(z.string())
+});
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum([
@@ -212,6 +235,8 @@ export const zSiteAutomationStep = z.object({
   type: zSiteAutomationStepType,
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
+  editorVersion: z.exactOptional(z.string()),
   seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   tag: z.exactOptional(z.string()),
   id: z.exactOptional(z.string()),
@@ -276,6 +301,7 @@ export const zSiteCreateBroadcastInput = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -286,7 +312,8 @@ export const zSiteCreateBroadcastInput = z.object({
 export const zSiteCreateEmailTemplateInput = z.object({
   name: z.string(),
   subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string())
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()))
 });
 
 /**
@@ -584,6 +611,22 @@ export const zSiteResendVerificationInput = z.object({
 export const zSiteResetPasswordInput = z.object({
   token: z.string(),
   password: z.string()
+});
+
+/**
+ * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
+ * its values.
+ */
+export const zSiteSaveBrandKitInput = z.object({
+  accentColor: z.string(),
+  textColor: z.string(),
+  backgroundColor: z.string(),
+  headingFont: z.string(),
+  bodyFont: z.string(),
+  logoUrl: z.string(),
+  buttonTextColor: z.string(),
+  buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  footerText: z.string()
 });
 
 /**
@@ -894,6 +937,7 @@ export const zSiteUpdateBroadcastInput = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -904,7 +948,8 @@ export const zSiteUpdateBroadcastInput = z.object({
 export const zSiteUpdateEmailTemplateInput = z.object({
   name: z.exactOptional(z.string()),
   subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string())
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()))
 });
 
 /**
@@ -1223,6 +1268,26 @@ export const zSiteAutomationResource = z.object({
 });
 
 /**
+ * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
+ * the palette the editor offers and what an agent is told to use. Its values are written into a
+ * message when the message is authored, so saving it never changes a message already written. A
+ * Workspace that has not saved one has the defaults and `saved` false.
+ */
+export const zSiteBrandKitResource = z.object({
+  saved: z.boolean(),
+  accentColor: z.string(),
+  textColor: z.string(),
+  backgroundColor: z.string(),
+  headingFont: z.string(),
+  bodyFont: z.string(),
+  logoUrl: z.string(),
+  buttonTextColor: z.string(),
+  buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  footerText: z.string(),
+  updatedAt: z.exactOptional(zTimestamp.nullable())
+});
+
+/**
  * How far a sending broadcast has got. A broadcast limited by its Integration's Send
  * rate limit is paced: recipients go out at an even interval, so the estimate is
  * derived on the server from the last scheduled time and the recipients remaining.
@@ -1243,6 +1308,9 @@ export const zSiteBroadcastResource = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.string(),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  editorVersion: z.exactOptional(z.string().nullable()),
+  warnings: z.exactOptional(z.array(zLintFinding)),
   bodyText: z.string(),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable()),
@@ -1310,6 +1378,9 @@ export const zSiteEmailTemplateResource = z.object({
   name: z.string(),
   subject: z.string(),
   body: z.string(),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  editorVersion: z.exactOptional(z.string().nullable()),
+  warnings: z.exactOptional(z.array(zLintFinding)),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -2249,6 +2320,35 @@ export const zSiteAutomationsDeactivatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationsDeactivateResponse = zSiteAutomationResource;
+
+export const zSiteBrandKitGetPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteBrandKitGetResponse = zSiteBrandKitResource;
+
+export const zSiteBrandKitSaveBody = zSiteSaveBrandKitInput;
+
+export const zSiteBrandKitSavePath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteBrandKitSaveResponse = zSiteBrandKitResource;
+
+export const zSiteBrandKitRecreateStarterTemplatesPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteBrandKitRecreateStarterTemplatesResponse = z.array(zSiteEmailTemplateResource);
 
 export const zSiteBroadcastsListPath = z.object({
   slug: z.string()

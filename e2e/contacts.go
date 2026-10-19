@@ -21,3 +21,15 @@ func (w *Workspace) ImportContacts(emails ...string) {
 		require.NotEqual(w.t, externalapi.ContactBatchStatusFailed, r.Status, "import contact #%d: %s", r.Index, r.Error.Value)
 	}
 }
+
+// ImportContactNamed upserts one Contact with a first name, which a message can merge in.
+func (w *Workspace) ImportContactNamed(email, firstName string) {
+	w.t.Helper()
+	res, err := w.api.ContactsBatchUpsert(w.t.Context(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
+		Email:     externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(email)),
+		FirstName: externalapi.NewOptNilString(firstName),
+	}}})
+	out := ok[externalapi.UpsertContactsResult](w.t, "import contact", res, err)
+	require.Len(w.t, out.Results, 1)
+	require.NotEqual(w.t, externalapi.ContactBatchStatusFailed, out.Results[0].Status, "import contact: %s", out.Results[0].Error.Value)
+}

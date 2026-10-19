@@ -545,6 +545,13 @@ run = "go fmt ./..."
 description = "Build the standalone tracker (IIFE) and copy it into the Go embed tree"
 run = ["pnpm build:tracker", "cp packages/analytics/dist/t.js internal/server/assets/t.js"]
 
+["build:emaildoc"]
+description = "Build the email document renderer bundle (the editor's export code for goja) its schema listing and the editor version into internal/emaildoc/assets"
+run = [
+  "pnpm build:emaildoc",
+  "cp packages/emaildoc/dist/emaildoc.js packages/emaildoc/dist/schema.json packages/emaildoc/dist/editor-version.txt internal/emaildoc/assets/",
+]
+
 ["build:spa"]
 description = "Build the SPA (Vite) into the Go embed tree (gitignored; release builds only)"
 run = [

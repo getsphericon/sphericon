@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const mjmlWithText = `<mjml><mj-body><mj-section><mj-column><mj-text>%s</mj-text></mj-column></mj-section></mj-body></mjml>`
+const htmlWithText = `<table><tbody><tr><td>%s</td></tr></tbody></table>`
 
 // A template author must never reach the server's files: {% include %} and
 // {% render %} fail the render, in the subject and in the body alike, instead
@@ -23,22 +23,22 @@ func TestRenderRejectsFileTags(t *testing.T) {
 
 	for _, tag := range []string{`{% include "secret.txt" %}`, `{% render "secret.txt" %}`} {
 		t.Run(tag, func(t *testing.T) {
-			_, err := emailrender.RenderEmail(tag, sampleMJML, nil)
+			_, err := emailrender.RenderEmail(tag, sampleHTML, nil)
 			require.ErrorContains(t, err, "render subject")
 			assert.ErrorContains(t, err, "include and render tags are not supported")
 
-			out, err := emailrender.RenderEmail("Hi", mjmlWithBody(tag), nil)
+			out, err := emailrender.RenderEmail("Hi", htmlWithBody(tag), nil)
 			require.ErrorContains(t, err, "render body")
 			assert.ErrorContains(t, err, "include and render tags are not supported")
 			assert.NotContains(t, out.HTML, "TOP-SECRET")
 
-			require.ErrorContains(t, emailrender.Validate("Hi", mjmlWithBody(tag)), "include and render tags are not supported")
+			require.ErrorContains(t, emailrender.Lint("Hi", htmlWithBody(tag), nil).Error, "include and render tags are not supported")
 		})
 	}
 
-	require.NoError(t, emailrender.Validate("Hi", mjmlWithBody("plain text")))
+	require.NoError(t, emailrender.Lint("Hi", htmlWithBody("plain text"), nil).Error)
 }
 
-func mjmlWithBody(text string) string {
-	return fmt.Sprintf(mjmlWithText, text)
+func htmlWithBody(text string) string {
+	return fmt.Sprintf(htmlWithText, text)
 }

@@ -168,6 +168,28 @@ type Handler interface {
 	//
 	// PUT /workspaces/{slug}/automations/{id}
 	SiteAutomationsUpdate(ctx context.Context, req *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error)
+	// SiteBrandKitGet implements SiteBrandKit_get operation.
+	//
+	// Read the Brand kit. Every member may read it.
+	//
+	// GET /workspaces/{slug}/brand-kit
+	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (SiteBrandKitGetRes, error)
+	// SiteBrandKitRecreateStarterTemplates implements SiteBrandKit_recreateStarterTemplates operation.
+	//
+	// Create the starter Templates again from the saved Brand kit (owner only). It adds new Templates and
+	// never touches one that exists or a message already written. Answers 422 until the Brand kit has been
+	// saved.
+	//
+	// POST /workspaces/{slug}/brand-kit/starter-templates
+	SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (SiteBrandKitRecreateStarterTemplatesRes, error)
+	// SiteBrandKitSave implements SiteBrandKit_save operation.
+	//
+	// Save the Brand kit (owner only). The first save also creates the starter Templates (a welcome, a
+	// receipt, a digest and a one-button message) in its brand; a later save creates none and changes no
+	// message already written. A change is recorded as an Audit entry.
+	//
+	// PUT /workspaces/{slug}/brand-kit
+	SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error)
 	// SiteBroadcastsCreate implements SiteBroadcasts_create operation.
 	//
 	// Create a resource from the site UI.

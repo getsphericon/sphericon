@@ -23,7 +23,7 @@ func (w *Workspace) RequestTestSend(b Broadcast) string {
 	created := w.createBroadcast(b)
 	res, err := w.site.SiteBroadcastsTestSend(w.t.Context(),
 		&siteapi.SiteTestSendBroadcastInput{Email: siteapi.EmailAddress(w.OwnerEmail)},
-		siteapi.SiteBroadcastsTestSendParams{Slug: w.slug, ID: siteapi.EntityId(created.ID)})
+		siteapi.SiteBroadcastsTestSendParams{Slug: w.slug, ID: siteapi.EntityId(created)})
 	sent := ok[siteapi.SiteTestSendBroadcastResult](w.t, "test send", res, err)
 	return string(sent.From)
 }

@@ -955,9 +955,16 @@ type AutomationStep struct {
 	Type AutomationStepType `json:"type"`
 	// Email subject (email steps).
 	Subject OptString `json:"subject"`
-	// Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
+	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
 	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
 	Body OptString `json:"body"`
+	// The editor's JSON document an email step's body was built from, an opaque object checked by the
+	// server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
+	// server renders the body from it in the same save, and a document that cannot be rendered refuses the
+	// whole save, naming the step. Writing only a body clears the step's document.
+	Doc OptAutomationStepDoc `json:"doc"`
+	// Version of the editor that rendered the document (email steps, read only).
+	EditorVersion OptString `json:"editorVersion"`
 	// Delay before the next step, in seconds (wait steps).
 	Seconds OptInt32 `json:"seconds"`
 	// Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps).
@@ -991,6 +998,16 @@ func (s *AutomationStep) GetSubject() OptString {
 // GetBody returns the value of Body.
 func (s *AutomationStep) GetBody() OptString {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *AutomationStep) GetDoc() OptAutomationStepDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *AutomationStep) GetEditorVersion() OptString {
+	return s.EditorVersion
 }
 
 // GetSeconds returns the value of Seconds.
@@ -1048,6 +1065,16 @@ func (s *AutomationStep) SetBody(val OptString) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *AutomationStep) SetDoc(val OptAutomationStepDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *AutomationStep) SetEditorVersion(val OptString) {
+	s.EditorVersion = val
+}
+
 // SetSeconds sets the value of Seconds.
 func (s *AutomationStep) SetSeconds(val OptInt32) {
 	s.Seconds = val
@@ -1086,6 +1113,21 @@ func (s *AutomationStep) SetClearSecret(val OptBool) {
 // SetHasSecret sets the value of HasSecret.
 func (s *AutomationStep) SetHasSecret(val OptBool) {
 	s.HasSecret = val
+}
+
+// The editor's JSON document an email step's body was built from, an opaque object checked by the
+// server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
+// server renders the body from it in the same save, and a document that cannot be rendered refuses the
+// whole save, naming the step. Writing only a body clears the step's document.
+type AutomationStepDoc map[string]jx.Raw
+
+func (s *AutomationStepDoc) init() AutomationStepDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Kind of automation step.
@@ -1356,6 +1398,146 @@ func (s *BearerAuth) SetRoles(val []string) {
 	s.Roles = val
 }
 
+// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a
+// message in these values. A Workspace that has not saved one has the defaults and `saved` false.
+// Ref: #/components/schemas/BrandKitResource
+type BrandKitResource struct {
+	// False until the Brand kit is first saved; the values are then the defaults.
+	Saved bool `json:"saved"`
+	// Brand color of buttons and links, `#rrggbb`.
+	AccentColor string `json:"accentColor"`
+	// Color of text, `#rrggbb`.
+	TextColor string `json:"textColor"`
+	// Color of the message background, `#rrggbb`.
+	BackgroundColor string `json:"backgroundColor"`
+	// Font of headings: a CSS font-family list of web-safe families.
+	HeadingFont string `json:"headingFont"`
+	// Font of body text: a CSS font-family list of web-safe families.
+	BodyFont string `json:"bodyFont"`
+	// Address (http or https) of the logo image; empty for none.
+	LogoUrl string `json:"logoUrl"`
+	// Color of the text on a button, `#rrggbb`.
+	ButtonTextColor string `json:"buttonTextColor"`
+	// Corner radius of a button in pixels, 0 to 32.
+	ButtonRadius int32 `json:"buttonRadius"`
+	// Plain text printed under the starter messages, at most 500 characters; empty for none.
+	FooterText string `json:"footerText"`
+	// When the Brand kit was last saved; absent while it is not saved.
+	UpdatedAt OptNilTimestamp `json:"updatedAt"`
+}
+
+// GetSaved returns the value of Saved.
+func (s *BrandKitResource) GetSaved() bool {
+	return s.Saved
+}
+
+// GetAccentColor returns the value of AccentColor.
+func (s *BrandKitResource) GetAccentColor() string {
+	return s.AccentColor
+}
+
+// GetTextColor returns the value of TextColor.
+func (s *BrandKitResource) GetTextColor() string {
+	return s.TextColor
+}
+
+// GetBackgroundColor returns the value of BackgroundColor.
+func (s *BrandKitResource) GetBackgroundColor() string {
+	return s.BackgroundColor
+}
+
+// GetHeadingFont returns the value of HeadingFont.
+func (s *BrandKitResource) GetHeadingFont() string {
+	return s.HeadingFont
+}
+
+// GetBodyFont returns the value of BodyFont.
+func (s *BrandKitResource) GetBodyFont() string {
+	return s.BodyFont
+}
+
+// GetLogoUrl returns the value of LogoUrl.
+func (s *BrandKitResource) GetLogoUrl() string {
+	return s.LogoUrl
+}
+
+// GetButtonTextColor returns the value of ButtonTextColor.
+func (s *BrandKitResource) GetButtonTextColor() string {
+	return s.ButtonTextColor
+}
+
+// GetButtonRadius returns the value of ButtonRadius.
+func (s *BrandKitResource) GetButtonRadius() int32 {
+	return s.ButtonRadius
+}
+
+// GetFooterText returns the value of FooterText.
+func (s *BrandKitResource) GetFooterText() string {
+	return s.FooterText
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *BrandKitResource) GetUpdatedAt() OptNilTimestamp {
+	return s.UpdatedAt
+}
+
+// SetSaved sets the value of Saved.
+func (s *BrandKitResource) SetSaved(val bool) {
+	s.Saved = val
+}
+
+// SetAccentColor sets the value of AccentColor.
+func (s *BrandKitResource) SetAccentColor(val string) {
+	s.AccentColor = val
+}
+
+// SetTextColor sets the value of TextColor.
+func (s *BrandKitResource) SetTextColor(val string) {
+	s.TextColor = val
+}
+
+// SetBackgroundColor sets the value of BackgroundColor.
+func (s *BrandKitResource) SetBackgroundColor(val string) {
+	s.BackgroundColor = val
+}
+
+// SetHeadingFont sets the value of HeadingFont.
+func (s *BrandKitResource) SetHeadingFont(val string) {
+	s.HeadingFont = val
+}
+
+// SetBodyFont sets the value of BodyFont.
+func (s *BrandKitResource) SetBodyFont(val string) {
+	s.BodyFont = val
+}
+
+// SetLogoUrl sets the value of LogoUrl.
+func (s *BrandKitResource) SetLogoUrl(val string) {
+	s.LogoUrl = val
+}
+
+// SetButtonTextColor sets the value of ButtonTextColor.
+func (s *BrandKitResource) SetButtonTextColor(val string) {
+	s.ButtonTextColor = val
+}
+
+// SetButtonRadius sets the value of ButtonRadius.
+func (s *BrandKitResource) SetButtonRadius(val int32) {
+	s.ButtonRadius = val
+}
+
+// SetFooterText sets the value of FooterText.
+func (s *BrandKitResource) SetFooterText(val string) {
+	s.FooterText = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *BrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
+	s.UpdatedAt = val
+}
+
+func (*BrandKitResource) brandKitGetRes() {}
+
 // Delivery report of a broadcast.
 // Ref: #/components/schemas/BroadcastReport
 type BroadcastReport struct {
@@ -1509,8 +1691,12 @@ type BroadcastResource struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address (defaults to the integration's).
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
+	// The editor's JSON document the body was built from; null when the body was written as HTML.
+	Doc OptNilBroadcastResourceDoc `json:"doc"`
+	// Version of the editor that rendered the document; null with it.
+	EditorVersion OptNilString `json:"editorVersion"`
 	// Audience: the Segment this broadcast goes to; null means all active contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Lifecycle status. Broadcasts created here are always drafts.
@@ -1553,6 +1739,16 @@ func (s *BroadcastResource) GetFromEmail() OptNilEmailAddress {
 // GetBody returns the value of Body.
 func (s *BroadcastResource) GetBody() string {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *BroadcastResource) GetDoc() OptNilBroadcastResourceDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *BroadcastResource) GetEditorVersion() OptNilString {
+	return s.EditorVersion
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -1615,6 +1811,16 @@ func (s *BroadcastResource) SetBody(val string) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *BroadcastResource) SetDoc(val OptNilBroadcastResourceDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *BroadcastResource) SetEditorVersion(val OptNilString) {
+	s.EditorVersion = val
+}
+
 // SetSegmentId sets the value of SegmentId.
 func (s *BroadcastResource) SetSegmentId(val OptNilEntityId) {
 	s.SegmentId = val
@@ -1651,6 +1857,18 @@ func (*BroadcastResource) broadcastsScheduleRes()    {}
 func (*BroadcastResource) broadcastsSetAudienceRes() {}
 func (*BroadcastResource) broadcastsUnscheduleRes()  {}
 func (*BroadcastResource) broadcastsUpdateRes()      {}
+
+// The editor's JSON document the body was built from; null when the body was written as HTML.
+type BroadcastResourceDoc map[string]jx.Raw
+
+func (s *BroadcastResourceDoc) init() BroadcastResourceDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 // Broadcast lifecycle status.
 // Ref: #/components/schemas/BroadcastStatus
@@ -3505,8 +3723,12 @@ type CreateBroadcastInput struct {
 	FromName OptString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body with Liquid merge tags. Write this or `doc`, not both.
 	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptCreateBroadcastInputDoc `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -3534,6 +3756,11 @@ func (s *CreateBroadcastInput) GetBody() OptString {
 	return s.Body
 }
 
+// GetDoc returns the value of Doc.
+func (s *CreateBroadcastInput) GetDoc() OptCreateBroadcastInputDoc {
+	return s.Doc
+}
+
 // SetName sets the value of Name.
 func (s *CreateBroadcastInput) SetName(val string) {
 	s.Name = val
@@ -3557,6 +3784,25 @@ func (s *CreateBroadcastInput) SetFromEmail(val OptEmailAddress) {
 // SetBody sets the value of Body.
 func (s *CreateBroadcastInput) SetBody(val OptString) {
 	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *CreateBroadcastInput) SetDoc(val OptCreateBroadcastInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+// a 422 with the reason and nothing is stored.
+type CreateBroadcastInputDoc map[string]jx.Raw
+
+func (s *CreateBroadcastInputDoc) init() CreateBroadcastInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Request body for creating a contact.
@@ -3851,8 +4097,12 @@ type CreateTemplateInput struct {
 	Name string `json:"name"`
 	// Default subject line.
 	Subject OptString `json:"subject"`
-	// MJML body.
+	// HTML body with Liquid merge tags. Write this or `doc`, not both.
 	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptCreateTemplateInputDoc `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -3870,6 +4120,11 @@ func (s *CreateTemplateInput) GetBody() OptString {
 	return s.Body
 }
 
+// GetDoc returns the value of Doc.
+func (s *CreateTemplateInput) GetDoc() OptCreateTemplateInputDoc {
+	return s.Doc
+}
+
 // SetName sets the value of Name.
 func (s *CreateTemplateInput) SetName(val string) {
 	s.Name = val
@@ -3883,6 +4138,25 @@ func (s *CreateTemplateInput) SetSubject(val OptString) {
 // SetBody sets the value of Body.
 func (s *CreateTemplateInput) SetBody(val OptString) {
 	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *CreateTemplateInput) SetDoc(val OptCreateTemplateInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+// a 422 with the reason and nothing is stored.
+type CreateTemplateInputDoc map[string]jx.Raw
+
+func (s *CreateTemplateInputDoc) init() CreateTemplateInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Request body for recording an unsubscribe.
@@ -4305,6 +4579,223 @@ func (s *DryRunHttpStepResult) SetDetail(val OptString) {
 func (*DryRunHttpStepResult) automationsDryRunHttpStepRes() {}
 
 type EmailAddress string
+
+type EmailLintLintUnauthorized ProblemDetails
+
+func (*EmailLintLintUnauthorized) emailLintLintRes() {}
+
+type EmailLintLintUnprocessableEntity ProblemDetails
+
+func (*EmailLintLintUnprocessableEntity) emailLintLintRes() {}
+
+// One attribute of a node or mark in the editor's document.
+// Ref: #/components/schemas/EmailSchemaAttribute
+type EmailSchemaAttribute struct {
+	// The value the editor gives the attribute when the document omits it.
+	Default jx.Raw `json:"default"`
+	// The kind of value: `string`, `integer`, `url`, `css`, `alignment` ...
+	Type string `json:"type"`
+	// The only values accepted, when the attribute is a closed set.
+	Allowed []string `json:"allowed"`
+	// The rule the server checks, in words: required or optional, range, form of the value.
+	Rule string `json:"rule"`
+}
+
+// GetDefault returns the value of Default.
+func (s *EmailSchemaAttribute) GetDefault() jx.Raw {
+	return s.Default
+}
+
+// GetType returns the value of Type.
+func (s *EmailSchemaAttribute) GetType() string {
+	return s.Type
+}
+
+// GetAllowed returns the value of Allowed.
+func (s *EmailSchemaAttribute) GetAllowed() []string {
+	return s.Allowed
+}
+
+// GetRule returns the value of Rule.
+func (s *EmailSchemaAttribute) GetRule() string {
+	return s.Rule
+}
+
+// SetDefault sets the value of Default.
+func (s *EmailSchemaAttribute) SetDefault(val jx.Raw) {
+	s.Default = val
+}
+
+// SetType sets the value of Type.
+func (s *EmailSchemaAttribute) SetType(val string) {
+	s.Type = val
+}
+
+// SetAllowed sets the value of Allowed.
+func (s *EmailSchemaAttribute) SetAllowed(val []string) {
+	s.Allowed = val
+}
+
+// SetRule sets the value of Rule.
+func (s *EmailSchemaAttribute) SetRule(val string) {
+	s.Rule = val
+}
+
+// The editor's document format: what an agent writes as `doc`.
+// Ref: #/components/schemas/EmailSchemaResult
+type EmailSchemaResult struct {
+	// Version of the editor whose export code renders a document.
+	EditorVersion string `json:"editorVersion"`
+	// Node types by name. A document is `{"type":"doc","content":[...nodes]}`.
+	Nodes EmailSchemaResultNodes `json:"nodes"`
+	// Mark types by name (bold, link ...), put in a text node's `marks`.
+	Marks EmailSchemaResultMarks `json:"marks"`
+	// Rules that hold across the document, in words.
+	Rules []string `json:"rules"`
+	// A valid document to start from.
+	Example EmailSchemaResultExample `json:"example"`
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *EmailSchemaResult) GetEditorVersion() string {
+	return s.EditorVersion
+}
+
+// GetNodes returns the value of Nodes.
+func (s *EmailSchemaResult) GetNodes() EmailSchemaResultNodes {
+	return s.Nodes
+}
+
+// GetMarks returns the value of Marks.
+func (s *EmailSchemaResult) GetMarks() EmailSchemaResultMarks {
+	return s.Marks
+}
+
+// GetRules returns the value of Rules.
+func (s *EmailSchemaResult) GetRules() []string {
+	return s.Rules
+}
+
+// GetExample returns the value of Example.
+func (s *EmailSchemaResult) GetExample() EmailSchemaResultExample {
+	return s.Example
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *EmailSchemaResult) SetEditorVersion(val string) {
+	s.EditorVersion = val
+}
+
+// SetNodes sets the value of Nodes.
+func (s *EmailSchemaResult) SetNodes(val EmailSchemaResultNodes) {
+	s.Nodes = val
+}
+
+// SetMarks sets the value of Marks.
+func (s *EmailSchemaResult) SetMarks(val EmailSchemaResultMarks) {
+	s.Marks = val
+}
+
+// SetRules sets the value of Rules.
+func (s *EmailSchemaResult) SetRules(val []string) {
+	s.Rules = val
+}
+
+// SetExample sets the value of Example.
+func (s *EmailSchemaResult) SetExample(val EmailSchemaResultExample) {
+	s.Example = val
+}
+
+func (*EmailSchemaResult) emailSchemaGetRes() {}
+
+// A valid document to start from.
+type EmailSchemaResultExample map[string]jx.Raw
+
+func (s *EmailSchemaResultExample) init() EmailSchemaResultExample {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Mark types by name (bold, link ...), put in a text node's `marks`.
+type EmailSchemaResultMarks map[string]EmailSchemaType
+
+func (s *EmailSchemaResultMarks) init() EmailSchemaResultMarks {
+	m := *s
+	if m == nil {
+		m = map[string]EmailSchemaType{}
+		*s = m
+	}
+	return m
+}
+
+// Node types by name. A document is `{"type":"doc","content":[...nodes]}`.
+type EmailSchemaResultNodes map[string]EmailSchemaType
+
+func (s *EmailSchemaResultNodes) init() EmailSchemaResultNodes {
+	m := *s
+	if m == nil {
+		m = map[string]EmailSchemaType{}
+		*s = m
+	}
+	return m
+}
+
+// One node or mark type of the editor's document.
+// Ref: #/components/schemas/EmailSchemaType
+type EmailSchemaType struct {
+	// The content expression: which child nodes the node holds; absent for a leaf and for a mark.
+	Content OptString `json:"content"`
+	// The group a node belongs to (`block`, `inline`); absent for a mark.
+	Group OptString `json:"group"`
+	// The attributes the type accepts, by name. Any other attribute is refused.
+	Attrs EmailSchemaTypeAttrs `json:"attrs"`
+}
+
+// GetContent returns the value of Content.
+func (s *EmailSchemaType) GetContent() OptString {
+	return s.Content
+}
+
+// GetGroup returns the value of Group.
+func (s *EmailSchemaType) GetGroup() OptString {
+	return s.Group
+}
+
+// GetAttrs returns the value of Attrs.
+func (s *EmailSchemaType) GetAttrs() EmailSchemaTypeAttrs {
+	return s.Attrs
+}
+
+// SetContent sets the value of Content.
+func (s *EmailSchemaType) SetContent(val OptString) {
+	s.Content = val
+}
+
+// SetGroup sets the value of Group.
+func (s *EmailSchemaType) SetGroup(val OptString) {
+	s.Group = val
+}
+
+// SetAttrs sets the value of Attrs.
+func (s *EmailSchemaType) SetAttrs(val EmailSchemaTypeAttrs) {
+	s.Attrs = val
+}
+
+// The attributes the type accepts, by name. Any other attribute is refused.
+type EmailSchemaTypeAttrs map[string]EmailSchemaAttribute
+
+func (s *EmailSchemaTypeAttrs) init() EmailSchemaTypeAttrs {
+	m := *s
+	if m == nil {
+		m = map[string]EmailSchemaAttribute{}
+		*s = m
+	}
+	return m
+}
 
 type EmailsSendConflict ProblemDetails
 
@@ -5610,6 +6101,219 @@ type IntegrationsUpdateUnprocessableEntity ProblemDetails
 
 func (*IntegrationsUpdateUnprocessableEntity) integrationsUpdateRes() {}
 
+// What a lint finding is about (ADR 0040).
+// Ref: #/components/schemas/LintCode
+type LintCode string
+
+const (
+	LintCodeInvalidContent   LintCode = "invalid_content"
+	LintCodeMissingAlt       LintCode = "missing_alt"
+	LintCodeLowContrast      LintCode = "low_contrast"
+	LintCodeOffBrandColor    LintCode = "off_brand_color"
+	LintCodeOffBrandFont     LintCode = "off_brand_font"
+	LintCodeUnknownConstruct LintCode = "unknown_construct"
+)
+
+// AllValues returns all LintCode values.
+func (LintCode) AllValues() []LintCode {
+	return []LintCode{
+		LintCodeInvalidContent,
+		LintCodeMissingAlt,
+		LintCodeLowContrast,
+		LintCodeOffBrandColor,
+		LintCodeOffBrandFont,
+		LintCodeUnknownConstruct,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s LintCode) MarshalText() ([]byte, error) {
+	switch s {
+	case LintCodeInvalidContent:
+		return []byte(s), nil
+	case LintCodeMissingAlt:
+		return []byte(s), nil
+	case LintCodeLowContrast:
+		return []byte(s), nil
+	case LintCodeOffBrandColor:
+		return []byte(s), nil
+	case LintCodeOffBrandFont:
+		return []byte(s), nil
+	case LintCodeUnknownConstruct:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *LintCode) UnmarshalText(data []byte) error {
+	switch LintCode(data) {
+	case LintCodeInvalidContent:
+		*s = LintCodeInvalidContent
+		return nil
+	case LintCodeMissingAlt:
+		*s = LintCodeMissingAlt
+		return nil
+	case LintCodeLowContrast:
+		*s = LintCodeLowContrast
+		return nil
+	case LintCodeOffBrandColor:
+		*s = LintCodeOffBrandColor
+		return nil
+	case LintCodeOffBrandFont:
+		*s = LintCodeOffBrandFont
+		return nil
+	case LintCodeUnknownConstruct:
+		*s = LintCodeUnknownConstruct
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The message to lint.
+// Ref: #/components/schemas/LintEmailInput
+type LintEmailInput struct {
+	// Subject line, with Liquid merge tags.
+	Subject OptString `json:"subject"`
+	// HTML body with Liquid merge tags. Send this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked against the schema `email_schema` returns. It
+	// is rendered to HTML as a save would, then linted. A document that cannot be rendered is an error
+	// finding with the reason.
+	Doc OptLintEmailInputDoc `json:"doc"`
+}
+
+// GetSubject returns the value of Subject.
+func (s *LintEmailInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetBody returns the value of Body.
+func (s *LintEmailInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *LintEmailInput) GetDoc() OptLintEmailInputDoc {
+	return s.Doc
+}
+
+// SetSubject sets the value of Subject.
+func (s *LintEmailInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetBody sets the value of Body.
+func (s *LintEmailInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *LintEmailInput) SetDoc(val OptLintEmailInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked against the schema `email_schema` returns. It
+// is rendered to HTML as a save would, then linted. A document that cannot be rendered is an error
+// finding with the reason.
+type LintEmailInputDoc map[string]jx.Raw
+
+func (s *LintEmailInputDoc) init() LintEmailInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// What the lint found in a message.
+// Ref: #/components/schemas/LintEmailResult
+type LintEmailResult struct {
+	// What blocks a save and a send: the message cannot render. Empty when it can.
+	Errors []LintFinding `json:"errors"`
+	// Everything else; none of it blocks anything.
+	Warnings []LintFinding `json:"warnings"`
+}
+
+// GetErrors returns the value of Errors.
+func (s *LintEmailResult) GetErrors() []LintFinding {
+	return s.Errors
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *LintEmailResult) GetWarnings() []LintFinding {
+	return s.Warnings
+}
+
+// SetErrors sets the value of Errors.
+func (s *LintEmailResult) SetErrors(val []LintFinding) {
+	s.Errors = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *LintEmailResult) SetWarnings(val []LintFinding) {
+	s.Warnings = val
+}
+
+func (*LintEmailResult) emailLintLintRes() {}
+
+// One finding of the lint over a message's rendered HTML. `message` is fixed text of the server;
+// `element` and `detail` quote the message or the Brand kit and are untrusted data.
+// Ref: #/components/schemas/LintFinding
+type LintFinding struct {
+	// What the finding is.
+	Code LintCode `json:"code"`
+	// What is wrong, in the server's words.
+	Message string `json:"message"`
+	// The element it is about, as a short tag description such as `<img src="…">`.
+	Element OptString `json:"element"`
+	// The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1`.
+	Detail OptString `json:"detail"`
+}
+
+// GetCode returns the value of Code.
+func (s *LintFinding) GetCode() LintCode {
+	return s.Code
+}
+
+// GetMessage returns the value of Message.
+func (s *LintFinding) GetMessage() string {
+	return s.Message
+}
+
+// GetElement returns the value of Element.
+func (s *LintFinding) GetElement() OptString {
+	return s.Element
+}
+
+// GetDetail returns the value of Detail.
+func (s *LintFinding) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetCode sets the value of Code.
+func (s *LintFinding) SetCode(val LintCode) {
+	s.Code = val
+}
+
+// SetMessage sets the value of Message.
+func (s *LintFinding) SetMessage(val string) {
+	s.Message = val
+}
+
+// SetElement sets the value of Element.
+func (s *LintFinding) SetElement(val OptString) {
+	s.Element = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *LintFinding) SetDetail(val OptString) {
+	s.Detail = val
+}
+
 type MaxPerDay int32
 
 type MaxPerSecond int32
@@ -5931,6 +6635,52 @@ func (o OptAutomationHttpErrorKind) Or(d AutomationHttpErrorKind) AutomationHttp
 	return d
 }
 
+// NewOptAutomationStepDoc returns new OptAutomationStepDoc with value set to v.
+func NewOptAutomationStepDoc(v AutomationStepDoc) OptAutomationStepDoc {
+	return OptAutomationStepDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAutomationStepDoc is optional AutomationStepDoc.
+type OptAutomationStepDoc struct {
+	Value AutomationStepDoc
+	Set   bool
+}
+
+// IsSet returns true if OptAutomationStepDoc was set.
+func (o OptAutomationStepDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAutomationStepDoc) Reset() {
+	var v AutomationStepDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAutomationStepDoc) SetTo(v AutomationStepDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAutomationStepDoc) Get() (v AutomationStepDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAutomationStepDoc) Or(d AutomationStepDoc) AutomationStepDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptBool returns new OptBool with value set to v.
 func NewOptBool(v bool) OptBool {
 	return OptBool{
@@ -5977,6 +6727,52 @@ func (o OptBool) Or(d bool) bool {
 	return d
 }
 
+// NewOptCreateBroadcastInputDoc returns new OptCreateBroadcastInputDoc with value set to v.
+func NewOptCreateBroadcastInputDoc(v CreateBroadcastInputDoc) OptCreateBroadcastInputDoc {
+	return OptCreateBroadcastInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCreateBroadcastInputDoc is optional CreateBroadcastInputDoc.
+type OptCreateBroadcastInputDoc struct {
+	Value CreateBroadcastInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptCreateBroadcastInputDoc was set.
+func (o OptCreateBroadcastInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCreateBroadcastInputDoc) Reset() {
+	var v CreateBroadcastInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCreateBroadcastInputDoc) SetTo(v CreateBroadcastInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCreateBroadcastInputDoc) Get() (v CreateBroadcastInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCreateBroadcastInputDoc) Or(d CreateBroadcastInputDoc) CreateBroadcastInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptCreateIntegrationInputParams returns new OptCreateIntegrationInputParams with value set to v.
 func NewOptCreateIntegrationInputParams(v CreateIntegrationInputParams) OptCreateIntegrationInputParams {
 	return OptCreateIntegrationInputParams{
@@ -6017,6 +6813,52 @@ func (o OptCreateIntegrationInputParams) Get() (v CreateIntegrationInputParams, 
 
 // Or returns value if set, or given parameter if does not.
 func (o OptCreateIntegrationInputParams) Or(d CreateIntegrationInputParams) CreateIntegrationInputParams {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptCreateTemplateInputDoc returns new OptCreateTemplateInputDoc with value set to v.
+func NewOptCreateTemplateInputDoc(v CreateTemplateInputDoc) OptCreateTemplateInputDoc {
+	return OptCreateTemplateInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCreateTemplateInputDoc is optional CreateTemplateInputDoc.
+type OptCreateTemplateInputDoc struct {
+	Value CreateTemplateInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptCreateTemplateInputDoc was set.
+func (o OptCreateTemplateInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCreateTemplateInputDoc) Reset() {
+	var v CreateTemplateInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCreateTemplateInputDoc) SetTo(v CreateTemplateInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCreateTemplateInputDoc) Get() (v CreateTemplateInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCreateTemplateInputDoc) Or(d CreateTemplateInputDoc) CreateTemplateInputDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6253,6 +7095,52 @@ func (o OptInt32) Or(d int32) int32 {
 	return d
 }
 
+// NewOptLintEmailInputDoc returns new OptLintEmailInputDoc with value set to v.
+func NewOptLintEmailInputDoc(v LintEmailInputDoc) OptLintEmailInputDoc {
+	return OptLintEmailInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptLintEmailInputDoc is optional LintEmailInputDoc.
+type OptLintEmailInputDoc struct {
+	Value LintEmailInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptLintEmailInputDoc was set.
+func (o OptLintEmailInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptLintEmailInputDoc) Reset() {
+	var v LintEmailInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptLintEmailInputDoc) SetTo(v LintEmailInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptLintEmailInputDoc) Get() (v LintEmailInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptLintEmailInputDoc) Or(d LintEmailInputDoc) LintEmailInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilAuditEntryResourceDiff returns new OptNilAuditEntryResourceDiff with value set to v.
 func NewOptNilAuditEntryResourceDiff(v AuditEntryResourceDiff) OptNilAuditEntryResourceDiff {
 	return OptNilAuditEntryResourceDiff{
@@ -6315,6 +7203,74 @@ func (o OptNilAuditEntryResourceDiff) Get() (v AuditEntryResourceDiff, ok bool) 
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilAuditEntryResourceDiff) Or(d AuditEntryResourceDiff) AuditEntryResourceDiff {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilBroadcastResourceDoc returns new OptNilBroadcastResourceDoc with value set to v.
+func NewOptNilBroadcastResourceDoc(v BroadcastResourceDoc) OptNilBroadcastResourceDoc {
+	return OptNilBroadcastResourceDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilBroadcastResourceDoc is optional nullable BroadcastResourceDoc.
+type OptNilBroadcastResourceDoc struct {
+	Value BroadcastResourceDoc
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilBroadcastResourceDoc was set.
+func (o OptNilBroadcastResourceDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilBroadcastResourceDoc) Reset() {
+	var v BroadcastResourceDoc
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilBroadcastResourceDoc) SetTo(v BroadcastResourceDoc) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilBroadcastResourceDoc) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilBroadcastResourceDoc) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v BroadcastResourceDoc
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilBroadcastResourceDoc) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilBroadcastResourceDoc) Get() (v BroadcastResourceDoc, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilBroadcastResourceDoc) Or(d BroadcastResourceDoc) BroadcastResourceDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -7069,6 +8025,74 @@ func (o OptNilString) Or(d string) string {
 	return d
 }
 
+// NewOptNilTemplateResourceDoc returns new OptNilTemplateResourceDoc with value set to v.
+func NewOptNilTemplateResourceDoc(v TemplateResourceDoc) OptNilTemplateResourceDoc {
+	return OptNilTemplateResourceDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilTemplateResourceDoc is optional nullable TemplateResourceDoc.
+type OptNilTemplateResourceDoc struct {
+	Value TemplateResourceDoc
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilTemplateResourceDoc was set.
+func (o OptNilTemplateResourceDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilTemplateResourceDoc) Reset() {
+	var v TemplateResourceDoc
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilTemplateResourceDoc) SetTo(v TemplateResourceDoc) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilTemplateResourceDoc) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilTemplateResourceDoc) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v TemplateResourceDoc
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilTemplateResourceDoc) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilTemplateResourceDoc) Get() (v TemplateResourceDoc, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilTemplateResourceDoc) Or(d TemplateResourceDoc) TemplateResourceDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilTimeZoneName returns new OptNilTimeZoneName with value set to v.
 func NewOptNilTimeZoneName(v TimeZoneName) OptNilTimeZoneName {
 	return OptNilTimeZoneName{
@@ -7755,6 +8779,52 @@ func (o OptTrackingRecord) Or(d TrackingRecord) TrackingRecord {
 	return d
 }
 
+// NewOptUpdateBroadcastInputDoc returns new OptUpdateBroadcastInputDoc with value set to v.
+func NewOptUpdateBroadcastInputDoc(v UpdateBroadcastInputDoc) OptUpdateBroadcastInputDoc {
+	return OptUpdateBroadcastInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUpdateBroadcastInputDoc is optional UpdateBroadcastInputDoc.
+type OptUpdateBroadcastInputDoc struct {
+	Value UpdateBroadcastInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptUpdateBroadcastInputDoc was set.
+func (o OptUpdateBroadcastInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUpdateBroadcastInputDoc) Reset() {
+	var v UpdateBroadcastInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUpdateBroadcastInputDoc) SetTo(v UpdateBroadcastInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUpdateBroadcastInputDoc) Get() (v UpdateBroadcastInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUpdateBroadcastInputDoc) Or(d UpdateBroadcastInputDoc) UpdateBroadcastInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptUpdateIntegrationInputParams returns new OptUpdateIntegrationInputParams with value set to v.
 func NewOptUpdateIntegrationInputParams(v UpdateIntegrationInputParams) OptUpdateIntegrationInputParams {
 	return OptUpdateIntegrationInputParams{
@@ -7795,6 +8865,52 @@ func (o OptUpdateIntegrationInputParams) Get() (v UpdateIntegrationInputParams, 
 
 // Or returns value if set, or given parameter if does not.
 func (o OptUpdateIntegrationInputParams) Or(d UpdateIntegrationInputParams) UpdateIntegrationInputParams {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUpdateTemplateInputDoc returns new OptUpdateTemplateInputDoc with value set to v.
+func NewOptUpdateTemplateInputDoc(v UpdateTemplateInputDoc) OptUpdateTemplateInputDoc {
+	return OptUpdateTemplateInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUpdateTemplateInputDoc is optional UpdateTemplateInputDoc.
+type OptUpdateTemplateInputDoc struct {
+	Value UpdateTemplateInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptUpdateTemplateInputDoc was set.
+func (o OptUpdateTemplateInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUpdateTemplateInputDoc) Reset() {
+	var v UpdateTemplateInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUpdateTemplateInputDoc) SetTo(v UpdateTemplateInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUpdateTemplateInputDoc) Get() (v UpdateTemplateInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUpdateTemplateInputDoc) Or(d UpdateTemplateInputDoc) UpdateTemplateInputDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -8271,7 +9387,9 @@ func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 	s.RetryAfter = val
 }
 
+func (*ProblemDetails) brandKitGetRes()      {}
 func (*ProblemDetails) customFieldsListRes() {}
+func (*ProblemDetails) emailSchemaGetRes()   {}
 func (*ProblemDetails) presetsListRes()      {}
 
 // Validation errors grouped by field.
@@ -8370,6 +9488,7 @@ func (*ProblemDetailsHeaders) automationsDryRunHttpStepRes() {}
 func (*ProblemDetailsHeaders) automationsGetRes()            {}
 func (*ProblemDetailsHeaders) automationsListRes()           {}
 func (*ProblemDetailsHeaders) automationsUpdateRes()         {}
+func (*ProblemDetailsHeaders) brandKitGetRes()               {}
 func (*ProblemDetailsHeaders) broadcastsCreateRes()          {}
 func (*ProblemDetailsHeaders) broadcastsDeleteRes()          {}
 func (*ProblemDetailsHeaders) broadcastsGetRes()             {}
@@ -8387,6 +9506,8 @@ func (*ProblemDetailsHeaders) contactsGetRes()               {}
 func (*ProblemDetailsHeaders) contactsListRes()              {}
 func (*ProblemDetailsHeaders) contactsUpdateRes()            {}
 func (*ProblemDetailsHeaders) customFieldsListRes()          {}
+func (*ProblemDetailsHeaders) emailLintLintRes()             {}
+func (*ProblemDetailsHeaders) emailSchemaGetRes()            {}
 func (*ProblemDetailsHeaders) emailsSendRes()                {}
 func (*ProblemDetailsHeaders) enrollmentsGetRes()            {}
 func (*ProblemDetailsHeaders) enrollmentsListRes()           {}
@@ -10698,8 +11819,12 @@ type TemplateResource struct {
 	Name string `json:"name"`
 	// Default subject line.
 	Subject string `json:"subject"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
+	// The editor's JSON document the body was built from; null when the body was written as HTML.
+	Doc OptNilTemplateResourceDoc `json:"doc"`
+	// Version of the editor that rendered the document; null with it.
+	EditorVersion OptNilString `json:"editorVersion"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -10724,6 +11849,16 @@ func (s *TemplateResource) GetSubject() string {
 // GetBody returns the value of Body.
 func (s *TemplateResource) GetBody() string {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *TemplateResource) GetDoc() OptNilTemplateResourceDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *TemplateResource) GetEditorVersion() OptNilString {
+	return s.EditorVersion
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -10756,6 +11891,16 @@ func (s *TemplateResource) SetBody(val string) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *TemplateResource) SetDoc(val OptNilTemplateResourceDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *TemplateResource) SetEditorVersion(val OptNilString) {
+	s.EditorVersion = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *TemplateResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -10769,6 +11914,18 @@ func (s *TemplateResource) SetUpdatedAt(val Timestamp) {
 func (*TemplateResource) templatesCreateRes() {}
 func (*TemplateResource) templatesGetRes()    {}
 func (*TemplateResource) templatesUpdateRes() {}
+
+// The editor's JSON document the body was built from; null when the body was written as HTML.
+type TemplateResourceDoc map[string]jx.Raw
+
+func (s *TemplateResourceDoc) init() TemplateResourceDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 type TemplatesCreateUnauthorized ProblemDetails
 
@@ -11312,8 +12469,12 @@ type UpdateBroadcastInput struct {
 	FromName OptString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
 	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptUpdateBroadcastInputDoc `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -11341,6 +12502,11 @@ func (s *UpdateBroadcastInput) GetBody() OptString {
 	return s.Body
 }
 
+// GetDoc returns the value of Doc.
+func (s *UpdateBroadcastInput) GetDoc() OptUpdateBroadcastInputDoc {
+	return s.Doc
+}
+
 // SetName sets the value of Name.
 func (s *UpdateBroadcastInput) SetName(val OptString) {
 	s.Name = val
@@ -11364,6 +12530,25 @@ func (s *UpdateBroadcastInput) SetFromEmail(val OptEmailAddress) {
 // SetBody sets the value of Body.
 func (s *UpdateBroadcastInput) SetBody(val OptString) {
 	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *UpdateBroadcastInput) SetDoc(val OptUpdateBroadcastInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+// a 422 with the reason and nothing is stored.
+type UpdateBroadcastInputDoc map[string]jx.Raw
+
+func (s *UpdateBroadcastInputDoc) init() UpdateBroadcastInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Request body for updating a contact.
@@ -11646,8 +12831,12 @@ type UpdateTemplateInput struct {
 	Name OptString `json:"name"`
 	// Default subject line.
 	Subject OptString `json:"subject"`
-	// MJML body.
+	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
 	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptUpdateTemplateInputDoc `json:"doc"`
 }
 
 // GetName returns the value of Name.
@@ -11665,6 +12854,11 @@ func (s *UpdateTemplateInput) GetBody() OptString {
 	return s.Body
 }
 
+// GetDoc returns the value of Doc.
+func (s *UpdateTemplateInput) GetDoc() OptUpdateTemplateInputDoc {
+	return s.Doc
+}
+
 // SetName sets the value of Name.
 func (s *UpdateTemplateInput) SetName(val OptString) {
 	s.Name = val
@@ -11678,6 +12872,25 @@ func (s *UpdateTemplateInput) SetSubject(val OptString) {
 // SetBody sets the value of Body.
 func (s *UpdateTemplateInput) SetBody(val OptString) {
 	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *UpdateTemplateInput) SetDoc(val OptUpdateTemplateInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+// a 422 with the reason and nothing is stored.
+type UpdateTemplateInputDoc map[string]jx.Raw
+
+func (s *UpdateTemplateInputDoc) init() UpdateTemplateInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Request body for updating a webhook endpoint.

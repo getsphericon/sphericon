@@ -6,10 +6,12 @@ package templates
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -19,6 +21,9 @@ var (
 	ErrNotFound = errors.New("templates: template not found")
 	// ErrBlankName: the Template name is blank.
 	ErrBlankName = errors.New("templates: name must not be empty")
+	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
+	// document (the server builds the body from it) or the body (which clears the document).
+	ErrBodyAndDoc = errors.New("templates: write a body or a doc, not both")
 )
 
 // Module holds no state: every call receives the Workspace-scoped client (ADR 0017).
@@ -32,13 +37,23 @@ type CreateInput struct {
 	Name    string
 	Subject *string
 	Body    *string
+	// Doc is the editor's JSON document, empty when the Template is written as HTML. The body is
+	// built from it in the same save (ADR 0040).
+	Doc json.RawMessage
+	// Prepared is Doc already rendered by emailrender.FromDocument, for a caller that renders
+	// before it opens a transaction so that no database connection is held through the render.
+	// Nil renders Doc here; a Body is never combined with it.
+	Prepared *emailrender.Authored
 }
 
-// UpdateInput changes a Template; nil fields are left as they are.
+// UpdateInput changes a Template; nil fields are left as they are. A Doc is rendered to the
+// body in the same save and stored with it; a Body alone clears the stored document, so the two
+// never disagree.
 type UpdateInput struct {
 	Name    *string
 	Subject *string
 	Body    *string
+	Doc     json.RawMessage
 }
 
 // List returns a page of the Workspace's Templates, ascending by id (a catalogue).
@@ -59,23 +74,46 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.EmailTe
 	return tpl, err
 }
 
-// Create stores a Template. A blank name is ErrBlankName.
+// Create stores a Template. A blank name is ErrBlankName; a subject, body or document that
+// cannot render is emailrender.ErrInvalidContent; the body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.EmailTemplate, error) {
-	tpl, err := s.EmailTemplate().Create().
+	var c emailrender.Content
+	if in.Prepared != nil && len(in.Doc) > 0 && in.Body == nil {
+		c = emailrender.Content{Body: &in.Prepared.Body, Authored: in.Prepared}
+	} else {
+		var err error
+		if c, err = emailrender.ResolveContent(ctx, in.Subject, in.Body, in.Doc, ErrBodyAndDoc); err != nil {
+			return nil, err
+		}
+	}
+	create := s.EmailTemplate().Create().
 		SetName(in.Name).
 		SetNillableSubject(in.Subject).
-		SetNillableBody(in.Body).
-		Save(ctx)
+		SetNillableBody(c.Body)
+	if c.Authored != nil {
+		create.SetDoc(in.Doc).SetEditorVersion(c.Authored.EditorVersion)
+	}
+	tpl, err := create.Save(ctx)
 	return tpl, mapWriteError(err)
 }
 
 // Update applies the given fields. A blank name is ErrBlankName.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.EmailTemplate, error) {
-	tpl, err := s.EmailTemplate().UpdateOneID(id).
+	c, err := emailrender.ResolveContent(ctx, in.Subject, in.Body, in.Doc, ErrBodyAndDoc)
+	if err != nil {
+		return nil, err
+	}
+	update := s.EmailTemplate().UpdateOneID(id).
 		SetNillableName(in.Name).
 		SetNillableSubject(in.Subject).
-		SetNillableBody(in.Body).
-		Save(ctx)
+		SetNillableBody(c.Body)
+	switch {
+	case c.Authored != nil:
+		update.SetDoc(in.Doc).SetEditorVersion(c.Authored.EditorVersion)
+	case c.Body != nil:
+		update.ClearDoc().ClearEditorVersion()
+	}
+	tpl, err := update.Save(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
 	}

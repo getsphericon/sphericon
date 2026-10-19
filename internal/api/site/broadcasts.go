@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -82,13 +83,21 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		FromName:      convert.StringPtr(req.FromName),
 		FromEmail:     convert.StringPtr(req.FromEmail),
 		Body:          convert.StringPtr(req.Body),
+		Doc:           convert.DocJSON(req.Doc.Value, req.Doc.Set),
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 	})
+	if errors.Is(err, broadcasts.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
+		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &v, nil
+	}
 	if err != nil {
 		return nil, err
 	}
 	res := mapper.BroadcastToResource(b)
+	if res.Warnings, err = h.lintWarnings(ctx, ws, b.Subject, req.Body, b.Body); err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -140,6 +149,7 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 		FromName:      convert.StringPtr(req.FromName),
 		FromEmail:     convert.StringPtr(req.FromEmail),
 		Body:          convert.StringPtr(req.Body),
+		Doc:           convert.DocJSON(req.Doc.Value, req.Doc.Set),
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 
@@ -155,10 +165,16 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 	case errors.Is(err, broadcasts.ErrNotDraft):
 		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only draft broadcasts can be edited"))
 		return &v, nil
+	case errors.Is(err, broadcasts.ErrBodyAndDoc), errors.Is(err, emailrender.ErrInvalidContent):
+		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &v, nil
 	case err != nil:
 		return nil, err
 	}
 	res := mapper.BroadcastToResource(b)
+	if res.Warnings, err = h.lintWarnings(ctx, ws, b.Subject, req.Body, b.Body); err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 

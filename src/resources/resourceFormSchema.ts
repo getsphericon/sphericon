@@ -62,7 +62,11 @@ export function resourceFormSchema<TSchema extends StringFieldsSchema>(
     if (!(shape instanceof z.ZodExactOptional)) {
       return undefined
     }
-    return shape.safeParse(null).success ? null : ''
+    if (shape.safeParse(null).success) {
+      return null
+    }
+    // A field a blank string cannot stand for (a JSON text) is left out instead.
+    return shape.safeParse('').success ? '' : undefined
   }
   const decoder = formCodec(clearedOnUpdate)
   const form = (codec: typeof decoder) => codec.pipe(schema)

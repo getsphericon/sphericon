@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -63,6 +64,7 @@ type WorkspaceQuery struct {
 	withBroadcasts          *BroadcastQuery
 	withBroadcastRecipients *BroadcastRecipientQuery
 	withEmailTemplates      *EmailTemplateQuery
+	withBrandKits           *BrandKitQuery
 	withAutomations         *AutomationQuery
 	withAutomationRuns      *AutomationRunQuery
 	withWebhookEndpoints    *WebhookEndpointQuery
@@ -412,6 +414,28 @@ func (_q *WorkspaceQuery) QueryEmailTemplates() *EmailTemplateQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(emailtemplate.Table, emailtemplate.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.EmailTemplatesTable, workspace.EmailTemplatesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBrandKits chains the current query on the "brand_kits" edge.
+func (_q *WorkspaceQuery) QueryBrandKits() *BrandKitQuery {
+	query := (&BrandKitClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(brandkit.Table, brandkit.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.BrandKitsTable, workspace.BrandKitsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -867,6 +891,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withBroadcasts:          _q.withBroadcasts.Clone(),
 		withBroadcastRecipients: _q.withBroadcastRecipients.Clone(),
 		withEmailTemplates:      _q.withEmailTemplates.Clone(),
+		withBrandKits:           _q.withBrandKits.Clone(),
 		withAutomations:         _q.withAutomations.Clone(),
 		withAutomationRuns:      _q.withAutomationRuns.Clone(),
 		withWebhookEndpoints:    _q.withWebhookEndpoints.Clone(),
@@ -1036,6 +1061,17 @@ func (_q *WorkspaceQuery) WithEmailTemplates(opts ...func(*EmailTemplateQuery)) 
 		opt(query)
 	}
 	_q.withEmailTemplates = query
+	return _q
+}
+
+// WithBrandKits tells the query-builder to eager-load the nodes that are connected to
+// the "brand_kits" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithBrandKits(opts ...func(*BrandKitQuery)) *WorkspaceQuery {
+	query := (&BrandKitClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withBrandKits = query
 	return _q
 }
 
@@ -1238,7 +1274,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [25]bool{
+		loadedTypes = [26]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1253,6 +1289,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withBroadcasts != nil,
 			_q.withBroadcastRecipients != nil,
 			_q.withEmailTemplates != nil,
+			_q.withBrandKits != nil,
 			_q.withAutomations != nil,
 			_q.withAutomationRuns != nil,
 			_q.withWebhookEndpoints != nil,
@@ -1384,6 +1421,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadEmailTemplates(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.EmailTemplates = []*EmailTemplate{} },
 			func(n *Workspace, e *EmailTemplate) { n.Edges.EmailTemplates = append(n.Edges.EmailTemplates, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withBrandKits; query != nil {
+		if err := _q.loadBrandKits(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.BrandKits = []*BrandKit{} },
+			func(n *Workspace, e *BrandKit) { n.Edges.BrandKits = append(n.Edges.BrandKits, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1872,6 +1916,36 @@ func (_q *WorkspaceQuery) loadEmailTemplates(ctx context.Context, query *EmailTe
 	}
 	query.Where(predicate.EmailTemplate(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.EmailTemplatesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadBrandKits(ctx context.Context, query *BrandKitQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *BrandKit)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(brandkit.FieldWorkspaceID)
+	}
+	query.Where(predicate.BrandKit(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.BrandKitsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

@@ -301,7 +301,7 @@ func TestTrackedMarketingSendRewritesLinksAndAddsPixel(t *testing.T) {
 	env := testhelper.Setup(t)
 	req := marketing(t, env, "bc:tracked", fixtures.ContactAliceID)
 	req.TrackID = 4242
-	req.Body = `<mjml><mj-body><mj-section><mj-column><mj-text><a href="https://example.com/x">go</a></mj-text></mj-column></mj-section></mj-body></mjml>`
+	req.Body = `<p><a href="https://example.com/x">go</a></p>`
 
 	res, err := newModule(env).Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), req)
 	require.NoError(t, err)
@@ -551,7 +551,7 @@ func TestPreflightErrors(t *testing.T) {
 
 func TestSendTestOutcomes(t *testing.T) {
 	ctx := context.Background()
-	req := outbound.TestRequest{To: "Preview@Example.com", Subject: "s", Body: mjml}
+	req := outbound.TestRequest{To: "Preview@Example.com", Subject: "s", Body: htmlBody}
 
 	t.Run("unknown workspace", func(t *testing.T) {
 		env := testhelper.Setup(t)
@@ -612,7 +612,7 @@ func TestSendBroadcastTestWordsEveryOutcome(t *testing.T) {
 
 	t.Run("sent", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("Launch {{ first_name }}", mjml), "me@example.com", nil).Detail
+		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("Launch {{ first_name }}", htmlBody), "me@example.com", nil).Detail
 		assert.Empty(t, got)
 
 		msgs := env.CustomerMail.Messages()
@@ -626,21 +626,21 @@ func TestSendBroadcastTestWordsEveryOutcome(t *testing.T) {
 	t.Run("held", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", mjml), "me@example.com", nil).Detail
+		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil).Detail
 		assert.Equal(t, outbound.Detail(outbound.HoldSuspended), got)
 	})
 
 	t.Run("send error", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.CustomerMail.SetErr(errors.New("smtp unavailable"))
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", mjml), "me@example.com", nil).Detail
+		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil).Detail
 		assert.Contains(t, got, "send failed:")
 		assert.Contains(t, got, "smtp unavailable")
 	})
 
 	t.Run("content does not render", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("{% if %}broken", mjml), "me@example.com", nil).Detail
+		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("{% if %}broken", htmlBody), "me@example.com", nil).Detail
 		assert.NotEmpty(t, got)
 		assert.NotContains(t, got, "send failed")
 		assert.Empty(t, env.CustomerMail.Messages())

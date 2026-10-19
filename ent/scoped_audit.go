@@ -243,6 +243,58 @@ func (b *AutomationCreateBulk) auditRebind(c *Client) {
 	}
 }
 
+// BrandKitAuditSensitive lists the BrandKit fields whose values never reach the Audit log.
+var BrandKitAuditSensitive = map[string]bool{}
+
+// auditFields maps every audited field of the BrandKit to its value.
+func (e *BrandKit) auditFields() map[string]any {
+	return map[string]any{
+		"accent_color":      e.AccentColor,
+		"text_color":        e.TextColor,
+		"background_color":  e.BackgroundColor,
+		"heading_font":      e.HeadingFont,
+		"body_font":         e.BodyFont,
+		"logo_url":          e.LogoURL,
+		"button_text_color": e.ButtonTextColor,
+		"button_radius":     e.ButtonRadius,
+		"footer_text":       e.FooterText,
+	}
+}
+
+// auditChangeBrandKit describes a BrandKit create (before is nil), update or delete
+// (after is nil).
+func auditChangeBrandKit(verb string, before, after *BrandKit) AuditChange {
+	var b, a map[string]any
+	target := before
+	if before != nil {
+		b = before.auditFields()
+	}
+	if after != nil {
+		a = after.auditFields()
+		target = after
+	}
+	change := AuditChange{
+		Action:     "brand_kit." + verb,
+		TargetType: "brand_kit",
+		TargetID:   auditID(target.ID),
+		Diff:       AuditDiff(b, a, BrandKitAuditSensitive),
+	}
+	return change
+}
+
+// auditRebind points the builders at the client of the transaction that carries the
+// entry, so the mutation and the entry commit together.
+func (b *BrandKitCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+func (b *BrandKitUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *BrandKitUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+func (b *BrandKitDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+func (b *BrandKitCreateBulk) auditRebind(c *Client) {
+	b.config = c.config
+	for _, x := range b.builders {
+		x.auditRebind(c)
+	}
+}
+
 // BroadcastAuditSensitive lists the Broadcast fields whose values never reach the Audit log.
 var BroadcastAuditSensitive = map[string]bool{}
 
@@ -254,6 +306,8 @@ func (e *Broadcast) auditFields() map[string]any {
 		"from_name":          derefAudit(e.FromName),
 		"from_email":         derefAudit(e.FromEmail),
 		"body":               e.Body,
+		"doc":                e.Doc,
+		"editor_version":     derefAudit(e.EditorVersion),
 		"body_text":          e.BodyText,
 		"segment_id":         derefAudit(e.SegmentID),
 		"integration_id":     derefAudit(e.IntegrationID),
@@ -420,9 +474,11 @@ var EmailTemplateAuditSensitive = map[string]bool{}
 // auditFields maps every audited field of the EmailTemplate to its value.
 func (e *EmailTemplate) auditFields() map[string]any {
 	return map[string]any{
-		"name":    e.Name,
-		"subject": e.Subject,
-		"body":    e.Body,
+		"name":           e.Name,
+		"subject":        e.Subject,
+		"body":           e.Body,
+		"doc":            e.Doc,
+		"editor_version": derefAudit(e.EditorVersion),
 	}
 }
 

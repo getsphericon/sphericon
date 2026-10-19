@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -73,6 +74,8 @@ type Client struct {
 	Automation *AutomationClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
+	// BrandKit is the client for interacting with the BrandKit builders.
+	BrandKit *BrandKitClient
 	// Broadcast is the client for interacting with the Broadcast builders.
 	Broadcast *BroadcastClient
 	// BroadcastRecipient is the client for interacting with the BroadcastRecipient builders.
@@ -157,6 +160,7 @@ func (c *Client) init() {
 	c.AuthAttempt = NewAuthAttemptClient(c.config)
 	c.Automation = NewAutomationClient(c.config)
 	c.AutomationRun = NewAutomationRunClient(c.config)
+	c.BrandKit = NewBrandKitClient(c.config)
 	c.Broadcast = NewBroadcastClient(c.config)
 	c.BroadcastRecipient = NewBroadcastRecipientClient(c.config)
 	c.Confirmation = NewConfirmationClient(c.config)
@@ -288,6 +292,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AuthAttempt:        NewAuthAttemptClient(cfg),
 		Automation:         NewAutomationClient(cfg),
 		AutomationRun:      NewAutomationRunClient(cfg),
+		BrandKit:           NewBrandKitClient(cfg),
 		Broadcast:          NewBroadcastClient(cfg),
 		BroadcastRecipient: NewBroadcastRecipientClient(cfg),
 		Confirmation:       NewConfirmationClient(cfg),
@@ -346,6 +351,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AuthAttempt:        NewAuthAttemptClient(cfg),
 		Automation:         NewAutomationClient(cfg),
 		AutomationRun:      NewAutomationRunClient(cfg),
+		BrandKit:           NewBrandKitClient(cfg),
 		Broadcast:          NewBroadcastClient(cfg),
 		BroadcastRecipient: NewBroadcastRecipientClient(cfg),
 		Confirmation:       NewConfirmationClient(cfg),
@@ -410,13 +416,13 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
-		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
-		c.EmailTemplate, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
-		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
-		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
-		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
-		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
-		c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.BrandKit, c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact,
+		c.CustomField, c.EmailTemplate, c.Event, c.Hold, c.InstanceState,
+		c.Integration, c.Invitation, c.Membership, c.OAuthClient, c.OAuthCode,
+		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
+		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
+		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange,
+		c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -427,13 +433,13 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
-		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
-		c.EmailTemplate, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
-		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
-		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
-		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
-		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
-		c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.BrandKit, c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact,
+		c.CustomField, c.EmailTemplate, c.Event, c.Hold, c.InstanceState,
+		c.Integration, c.Invitation, c.Membership, c.OAuthClient, c.OAuthCode,
+		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
+		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
+		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange,
+		c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -452,6 +458,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Automation.mutate(ctx, m)
 	case *AutomationRunMutation:
 		return c.AutomationRun.mutate(ctx, m)
+	case *BrandKitMutation:
+		return c.BrandKit.mutate(ctx, m)
 	case *BroadcastMutation:
 		return c.Broadcast.mutate(ctx, m)
 	case *BroadcastRecipientMutation:
@@ -1283,6 +1291,155 @@ func (c *AutomationRunClient) mutate(ctx context.Context, m *AutomationRunMutati
 		return (&AutomationRunDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AutomationRun mutation op: %q", m.Op())
+	}
+}
+
+// BrandKitClient is a client for the BrandKit schema.
+type BrandKitClient struct {
+	config
+}
+
+// NewBrandKitClient returns a client for the BrandKit from the given config.
+func NewBrandKitClient(c config) *BrandKitClient {
+	return &BrandKitClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `brandkit.Hooks(f(g(h())))`.
+func (c *BrandKitClient) Use(hooks ...Hook) {
+	c.hooks.BrandKit = append(c.hooks.BrandKit, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `brandkit.Intercept(f(g(h())))`.
+func (c *BrandKitClient) Intercept(interceptors ...Interceptor) {
+	c.inters.BrandKit = append(c.inters.BrandKit, interceptors...)
+}
+
+// Create returns a builder for creating a BrandKit entity.
+func (c *BrandKitClient) Create() *BrandKitCreate {
+	mutation := newBrandKitMutation(c.config, OpCreate)
+	return &BrandKitCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of BrandKit entities.
+func (c *BrandKitClient) CreateBulk(builders ...*BrandKitCreate) *BrandKitCreateBulk {
+	return &BrandKitCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BrandKitClient) MapCreateBulk(slice any, setFunc func(*BrandKitCreate, int)) *BrandKitCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BrandKitCreateBulk{err: fmt.Errorf("calling to BrandKitClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BrandKitCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BrandKitCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BrandKit.
+func (c *BrandKitClient) Update() *BrandKitUpdate {
+	mutation := newBrandKitMutation(c.config, OpUpdate)
+	return &BrandKitUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BrandKitClient) UpdateOne(_m *BrandKit) *BrandKitUpdateOne {
+	mutation := newBrandKitMutation(c.config, OpUpdateOne, withBrandKit(_m))
+	return &BrandKitUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BrandKitClient) UpdateOneID(id int64) *BrandKitUpdateOne {
+	mutation := newBrandKitMutation(c.config, OpUpdateOne, withBrandKitID(id))
+	return &BrandKitUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BrandKit.
+func (c *BrandKitClient) Delete() *BrandKitDelete {
+	mutation := newBrandKitMutation(c.config, OpDelete)
+	return &BrandKitDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BrandKitClient) DeleteOne(_m *BrandKit) *BrandKitDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BrandKitClient) DeleteOneID(id int64) *BrandKitDeleteOne {
+	builder := c.Delete().Where(brandkit.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BrandKitDeleteOne{builder}
+}
+
+// Query returns a query builder for BrandKit.
+func (c *BrandKitClient) Query() *BrandKitQuery {
+	return &BrandKitQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBrandKit},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a BrandKit entity by its id.
+func (c *BrandKitClient) Get(ctx context.Context, id int64) (*BrandKit, error) {
+	return c.Query().Where(brandkit.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BrandKitClient) GetX(ctx context.Context, id int64) *BrandKit {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a BrandKit.
+func (c *BrandKitClient) QueryWorkspace(_m *BrandKit) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(brandkit.Table, brandkit.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, brandkit.WorkspaceTable, brandkit.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BrandKitClient) Hooks() []Hook {
+	return c.hooks.BrandKit
+}
+
+// Interceptors returns the client interceptors.
+func (c *BrandKitClient) Interceptors() []Interceptor {
+	return c.inters.BrandKit
+}
+
+func (c *BrandKitClient) mutate(ctx context.Context, m *BrandKitMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BrandKitCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BrandKitUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BrandKitUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BrandKitDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown BrandKit mutation op: %q", m.Op())
 	}
 }
 
@@ -6679,6 +6836,22 @@ func (c *WorkspaceClient) QueryEmailTemplates(_m *Workspace) *EmailTemplateQuery
 	return query
 }
 
+// QueryBrandKits queries the brand_kits edge of a Workspace.
+func (c *WorkspaceClient) QueryBrandKits(_m *Workspace) *BrandKitQuery {
+	query := (&BrandKitClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(brandkit.Table, brandkit.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.BrandKitsTable, workspace.BrandKitsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryAutomations queries the automations edge of a Workspace.
 func (c *WorkspaceClient) QueryAutomations(_m *Workspace) *AutomationQuery {
 	query := (&AutomationClient{config: c.config}).Query()
@@ -6883,20 +7056,20 @@ func (c *WorkspaceClient) mutate(ctx context.Context, m *WorkspaceMutation) (Val
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
-		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Hold, InstanceState, Integration, Invitation, Membership, OAuthClient,
-		OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage, OutboxOffset,
-		RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
+		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, BrandKit,
+		Broadcast, BroadcastRecipient, Confirmation, Contact, CustomField,
+		EmailTemplate, Event, Hold, InstanceState, Integration, Invitation, Membership,
+		OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage,
+		OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
 		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
 		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
-		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
-		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Hold, InstanceState, Integration, Invitation, Membership, OAuthClient,
-		OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage, OutboxOffset,
-		RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
+		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, BrandKit,
+		Broadcast, BroadcastRecipient, Confirmation, Contact, CustomField,
+		EmailTemplate, Event, Hold, InstanceState, Integration, Invitation, Membership,
+		OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage,
+		OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
 		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
 		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}

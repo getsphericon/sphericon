@@ -1,12 +1,12 @@
 # Workspace acme (id 1). Triggers deliberately avoid "contact.created" (used by the
 # jobs/automation tests' inline automations) so EvaluateTrigger never enrolls a test
 # contact into a fixture automation. definition is the linear JSON step list
-# ({"type":"email"|"wait", ...}); MJML bodies are kept attribute-free for clean JSON.
+# ({"type":"email"|"wait", ...}); HTML bodies are kept attribute-free for clean JSON.
 - id: 100 # fixture: AutomationWelcomeSeries
   name: Welcome series
   status: active
   trigger_event: signup
-  definition: '[{"type":"email","subject":"Welcome to CodeBasics","body":"<mjml><mj-body><mj-section><mj-column><mj-text>Glad you are here.</mj-text></mj-column></mj-section></mj-body></mjml>"},{"type":"wait","seconds":86400},{"type":"email","subject":"Pick your first course","body":"<mjml><mj-body><mj-section><mj-column><mj-text>Here is how to begin.</mj-text></mj-column></mj-section></mj-body></mjml>"}]'
+  definition: '[{"type":"email","subject":"Welcome to CodeBasics","body":"<p>Glad you are here.</p>"},{"type":"wait","seconds":86400},{"type":"email","subject":"Pick your first course","body":"<p>Here is how to begin.</p>"}]'
   workspace_id: 1
   created_at: '{{daysAgo 90}}'
   updated_at: '{{daysAgo 20}}'
@@ -14,7 +14,7 @@
   name: Course completion congrats
   status: active
   trigger_event: course_completed
-  definition: '[{"type":"email","subject":"You finished a course!","body":"<mjml><mj-body><mj-section><mj-column><mj-text>On to the next one.</mj-text></mj-column></mj-section></mj-body></mjml>"}]'
+  definition: '[{"type":"email","subject":"You finished a course!","body":"<p>On to the next one.</p>"}]'
   workspace_id: 1
   created_at: '{{daysAgo 75}}'
   updated_at: '{{daysAgo 15}}'
@@ -22,7 +22,7 @@
   name: Win-back lapsed learners
   status: draft
   trigger_event: subscription_cancelled
-  definition: '[{"type":"wait","seconds":604800},{"type":"email","subject":"We miss you","body":"<mjml><mj-body><mj-section><mj-column><mj-text>Your courses are waiting.</mj-text></mj-column></mj-section></mj-body></mjml>"}]'
+  definition: '[{"type":"wait","seconds":604800},{"type":"email","subject":"We miss you","body":"<p>Your courses are waiting.</p>"}]'
   workspace_id: 1
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
@@ -31,7 +31,7 @@
   name: Hold demo
   status: active
   trigger_event: hold_demo
-  definition: '[{"type":"email","subject":"Hello from the hold demo","body":"<mjml><mj-body><mj-section><mj-column><mj-text>Hello there.</mj-text></mj-column></mj-section></mj-body></mjml>"}]'
+  definition: '[{"type":"email","subject":"Hello from the hold demo","body":"<p>Hello there.</p>"}]'
   workspace_id: 1
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 10}}'

@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"encoding/json"
+
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -13,7 +15,7 @@ type Automation struct {
 	Name         string
 	TriggerEvent string
 	Subject      string
-	// Body is MJML.
+	// Body is HTML.
 	Body string
 }
 
@@ -39,6 +41,44 @@ func (w *Workspace) ActivateAutomation(a Automation) {
 
 	act, err := w.api.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: created.ID})
 	got := ok[externalapi.AutomationResource](w.t, "activate automation", act, err)
+	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
+}
+
+// AuthoredAutomation is what a scenario chooses about an Automation whose one email step is
+// written in the editor: its document is one paragraph of Text, and the server builds the body.
+type AuthoredAutomation struct {
+	TriggerEvent string
+	Subject      string
+	// Text is the paragraph of the step's document; merge tags are allowed.
+	Text string
+}
+
+// ActivateAuthoredAutomation saves an Automation with a single email step that holds an editor
+// document through the external API and activates it.
+func (w *Workspace) ActivateAuthoredAutomation(a AuthoredAutomation) {
+	w.t.Helper()
+	ctx := w.t.Context()
+	doc, err := json.Marshal(map[string]any{
+		"type": "doc",
+		"content": []any{map[string]any{
+			"type":    "paragraph",
+			"content": []any{map[string]any{"type": "text", "text": a.Text}},
+		}},
+	})
+	require.NoError(w.t, err)
+
+	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+		Name:         "e2e authored automation " + uniq(),
+		TriggerEvent: a.TriggerEvent,
+		Steps: []externalapi.AutomationStep{{
+			Type:    externalapi.AutomationStepTypeEmail,
+			Subject: externalapi.NewOptString(a.Subject),
+			Doc:     externalapi.NewOptAutomationStepDoc(docObject[externalapi.AutomationStepDoc](w.t, doc)),
+		}},
+	})
+	created := ok[externalapi.AutomationResource](w.t, "create authored automation", res, err)
+	act, err := w.api.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: created.ID})
+	got := ok[externalapi.AutomationResource](w.t, "activate authored automation", act, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 }
 
