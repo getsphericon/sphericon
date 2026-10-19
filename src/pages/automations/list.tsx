@@ -1,4 +1,4 @@
-import { Badge, Button, Group, Stack } from '@mantine/core'
+import { Badge, Button, Group, Stack, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
@@ -46,7 +46,8 @@ export function AutomationsListPage() {
 
   return (
     <Stack>
-      <Group justify="flex-end">
+      <Group justify="space-between" align="center">
+        <Title order={2}>{t(($) => $.nav.automations)}</Title>
         <ButtonLink to={automationsCreateRoute.to} params={{ slug }}>
           {t(($) => $.automations.addAutomation)}
         </ButtonLink>

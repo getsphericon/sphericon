@@ -32,3 +32,17 @@ test.each(SECTIONS)('%s links to its workspace-scoped route', async (label, targ
     .element(screen.getByRole('link', { name: label, exact: true }))
     .toHaveAttribute('href', routeMount(target, { slug: 'acme' }).initialPath)
 })
+
+test('only the section being viewed is current, the overview not on a page under it', async () => {
+  const { screen } = await renderWithRouter(
+    <AppNavbar slug="acme" />,
+    routeMount(contactsRoute, { slug: 'acme' }),
+  )
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Contacts', exact: true }))
+    .toHaveAttribute('aria-current', 'page')
+  await expect
+    .element(screen.getByRole('link', { name: 'Overview', exact: true }))
+    .not.toHaveAttribute('aria-current')
+})

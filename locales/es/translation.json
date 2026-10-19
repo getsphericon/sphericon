@@ -1083,7 +1083,6 @@
       "suppressed": "Suprimido"
     },
     "statusLabel": "Estado",
-    "subtitle": "Correos de destinatario único enviados a través de la API.",
     "title": "Correos transaccionales"
   },
   "unsubscribe": {
