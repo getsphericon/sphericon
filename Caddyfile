@@ -7,6 +7,13 @@
 	# primary checkout, offset ports in a linked worktree (.mise.toml).
 	admin {$CADDY_ADMIN}
 	http_port {$CADDY_HTTP_PORT}
+
+	# Human-readable dev output: plain console lines instead of JSON, warnings and errors only
+	# (the startup chatter is noise; the backend logs every request itself).
+	log {
+		format console
+		level WARN
+	}
 }
 
 {$APP_HOST}:{$CADDY_PORT} {
