@@ -18,7 +18,8 @@ import (
 // removed (a Broadcast left with nothing pending settles), and the domain-event outbox
 // rows and river job arguments naming the Contact, its runs or its recipients are
 // deleted, as are the queued webhook deliveries whose payload names the Contact or
-// its address. A send a worker already handed to the provider is not recalled; one queued
+// its address, and the queued HTTP-step calls of its runs (a failure's response excerpt
+// sits on the run, which Erasure deletes). A send a worker already handed to the provider is not recalled; one queued
 // but not started finds its row gone and, at the send chokepoint, its Contact gone.
 //
 // It must run before the steps that delete the rows it reads ids from, and before the
@@ -51,6 +52,9 @@ func cancelInFlight(ctx context.Context, s *ent.Scoped, t *Target, purger events
 		return err
 	}
 	if err := purger.PurgeJobs(ctx, jobkind.RunStep, "run_id", runIDs); err != nil {
+		return err
+	}
+	if err := purger.PurgeJobs(ctx, jobkind.HTTPStep, "run_id", runIDs); err != nil {
 		return err
 	}
 	if err := purger.PurgeJobs(ctx, jobkind.SendRecipient, "recipient_id", recipientIDs); err != nil {

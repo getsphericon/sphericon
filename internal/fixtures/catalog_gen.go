@@ -41,6 +41,10 @@ const (
 	AutomationHoldDemoID = 103
 	// AutomationHoldDemoName is from fixtures/automations.
 	AutomationHoldDemoName = "Hold demo"
+	// AutomationInitechHTTPID is from fixtures/automations.
+	AutomationInitechHTTPID = 301
+	// AutomationInitechHTTPName is from fixtures/automations.
+	AutomationInitechHTTPName = "Initech hook"
 	// AutomationInitechID is from fixtures/automations.
 	AutomationInitechID = 300
 	// AutomationInitechName is from fixtures/automations.
@@ -49,6 +53,10 @@ const (
 	AutomationNotifySlackID = 105
 	// AutomationNotifySlackName is from fixtures/automations.
 	AutomationNotifySlackName = "Notify Slack on signup"
+	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
+	AutomationRunBystanderHTTPFailedID = 3002
+	// AutomationRunErasableHTTPFailedID is from fixtures/automation_runs.
+	AutomationRunErasableHTTPFailedID = 3001
 	// AutomationRunErasableID is from fixtures/automation_runs.
 	AutomationRunErasableID = 3000
 	// AutomationRunHTTPFailedID is from fixtures/automation_runs.

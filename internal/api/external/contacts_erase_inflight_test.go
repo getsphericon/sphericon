@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -117,4 +118,35 @@ func TestExternalContactsEraseClearsQueuedWebhookDeliveries(t *testing.T) {
 		left = append(left, fmt.Sprint(args["delivery_id"]))
 	}
 	assert.ElementsMatch(t, []string{"bystander", "nobody", "other-tenant"}, left)
+}
+
+func TestExternalContactsEraseClearsQueuedHTTPStepCallsAndFailureExcerpts(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	// A queued call of the erased Contact's runs (one mid-sequence, one failed), next to the
+	// bystander's and another tenant's.
+	for _, id := range []int64{
+		fixtures.AutomationRunErasableID, fixtures.AutomationRunErasableHTTPFailedID,
+		fixtures.AutomationRunBystanderHTTPFailedID, fixtures.AutomationRunHTTPFailedID,
+	} {
+		env.EnqueueJob(t, jobs.RunHTTPStepArgs{RunID: id})
+	}
+
+	eraseErasable(t, env)
+
+	var left []int64
+	for _, args := range env.JobsOf(t, jobkind.HTTPStep) {
+		left = append(left, int64(args["run_id"].(float64)))
+	}
+	assert.ElementsMatch(t, []int64{fixtures.AutomationRunBystanderHTTPFailedID, fixtures.AutomationRunHTTPFailedID}, left)
+
+	// The failure excerpt lives on the run: it goes with the Enrollment, others keep theirs.
+	gone, err := env.DB.AutomationRun.Query().Where(automationrun.ID(fixtures.AutomationRunErasableHTTPFailedID)).Exist(ctx)
+	require.NoError(t, err)
+	assert.False(t, gone)
+	kept, err := env.DB.AutomationRun.Get(ctx, fixtures.AutomationRunBystanderHTTPFailedID)
+	require.NoError(t, err)
+	require.NotNil(t, kept.FailureExcerpt)
+	assert.Equal(t, "ben@initech.test rejected", *kept.FailureExcerpt)
 }
