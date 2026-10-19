@@ -7,6 +7,7 @@ import type { SiteSetupProgress, SiteSetupStepStatus } from '../../generated/sit
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$slug/broadcasts/new.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
 import { Route as settingsRoute } from '../../routes/workspaces/$slug/settings.tsx'
+import { SetupDomainStep } from './SetupDomainStep.tsx'
 
 type StepKey = keyof SiteSetupProgress['steps']
 
@@ -94,6 +95,9 @@ export function SetupChecklist({
                   <Text size="sm" c="dimmed">
                     {t(($) => $.setupChecklist.steps[step].description)}
                   </Text>
+                  {step === 'sendingDomain' && status === 'pending' && (
+                    <SetupDomainStep slug={slug} />
+                  )}
                 </Stack>
               </Group>
               {status !== 'done' && <StepLink step={step} slug={slug} />}
