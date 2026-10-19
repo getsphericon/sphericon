@@ -10,7 +10,6 @@ import {
   IconUsers,
   IconUsersGroup,
 } from '@tabler/icons-react'
-import { useMatchRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { Route as activityRoute } from '../routes/workspaces/$slug/activity.tsx'
@@ -25,78 +24,78 @@ import { Route as transactionalEmailsRoute } from '../routes/workspaces/$slug/tr
 import { NavLinkLink } from './RouterLink.tsx'
 
 // AppNavbar renders the workspace-scoped sidebar: one link per section, active on the
-// section's route or anything under it (the overview only on itself).
+// section's route or anything under it (the overview only on itself). The router's own active
+// state drives the highlight: Mantine styles `aria-current="page"`, which the router sets.
 export function AppNavbar({ slug }: { slug: string }) {
   const { t } = useTranslation()
-  const matchRoute = useMatchRoute()
 
   const sections = [
     {
       route: overviewRoute,
       label: t(($) => $.nav.overview),
       icon: <IconLayoutDashboard size={18} />,
-      fuzzy: false,
+      exact: true,
     },
     {
       route: contactsRoute,
       label: t(($) => $.nav.contacts),
       icon: <IconUsers size={18} />,
-      fuzzy: true,
+      exact: false,
     },
     {
       route: segmentsRoute,
       label: t(($) => $.nav.segments),
       icon: <IconUsersGroup size={18} />,
-      fuzzy: true,
+      exact: false,
     },
     {
       route: broadcastsRoute,
       label: t(($) => $.nav.broadcasts),
       icon: <IconMailbox size={18} />,
-      fuzzy: true,
+      exact: false,
     },
     {
       route: templatesRoute,
       label: t(($) => $.nav.templates),
       icon: <IconTemplate size={18} />,
-      fuzzy: true,
+      exact: false,
     },
     {
       route: automationsRoute,
       label: t(($) => $.nav.automations),
       icon: <IconRobot size={18} />,
-      fuzzy: true,
+      exact: false,
     },
     {
       route: transactionalEmailsRoute,
       label: t(($) => $.nav.transactionalEmails),
       icon: <IconMailFast size={18} />,
-      fuzzy: true,
+      exact: false,
     },
     {
       route: activityRoute,
       label: t(($) => $.nav.activity),
       icon: <IconActivity size={18} />,
-      fuzzy: true,
+      exact: false,
     },
     {
       route: settingsRoute,
       label: t(($) => $.nav.settings),
       icon: <IconSettings size={18} />,
-      fuzzy: true,
+      exact: false,
     },
   ]
 
   return (
     <Stack gap="xs">
-      {sections.map(({ route, label, icon, fuzzy }) => (
+      {sections.map(({ route, label, icon, exact }) => (
         <NavLinkLink
           key={route.to}
           to={route.to}
           params={{ slug }}
           label={label}
           leftSection={icon}
-          active={Boolean(matchRoute({ to: route.to, params: { slug }, fuzzy }))}
+          activeOptions={{ exact }}
         />
       ))}
     </Stack>
