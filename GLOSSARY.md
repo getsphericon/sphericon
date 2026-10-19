@@ -312,8 +312,8 @@ _Avoid_: Layout, theme, master, partial
 
 **Message content** (a value, not an entity):
 The reusable shape every email carries — a subject plus a body of email-ready HTML with merge
-tags. A body written in the editor also keeps the editor's document it was built from; a body
-that arrived as HTML (from the API) has none and opens as source. A Template is the saved,
+tags. A body written in the editor is built from the editor's document, which is kept with it; a
+body that arrived as HTML (from the API) has no document and opens as source. A Template is the saved,
 named instance of it; a Broadcast and each email Automation send step each hold their own
 copy; a Transactional send renders a _referenced_ Template's content with per-call variables.
 The same value across surfaces — copied for marketing, referenced for transactional.
