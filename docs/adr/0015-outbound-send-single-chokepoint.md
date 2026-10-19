@@ -23,7 +23,8 @@ ways. Workspace suspension (ADR 0007) had no single place to be enforced at all.
 - **In:** Broadcast, Automation step, Transactional. Also the **test send** of a Broadcast: the
   author names the address explicitly, so it skips Send-eligibility and writes no Outbound message
   or `email.sent` Event, but it still passes the freeze check and the Sending-domain gate and is
-  DKIM-signed — a suspended Workspace sends nothing, test or not.
+  DKIM-signed — a suspended Workspace sends nothing, test or not. (Amended by ADR 0041: with no
+  verified Sending domain it goes from the System sender instead, to the asking User only.)
 - **In, when it exists:** the double-opt-in Confirmation mail (ADR 0013). It goes to a Destination
   on the Workspace's behalf, so it needs Suppression, the freeze check, the domain gate and
   signing; it has no Sending source and no unsubscribe, like Transactional. Today the confirmation
