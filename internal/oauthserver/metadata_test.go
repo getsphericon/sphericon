@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
@@ -21,18 +22,16 @@ import (
 const metadataRedirectURI = "https://claude.example/callback"
 
 // metadataServer serves a Client ID Metadata Document over TLS. document receives the
-// client_id URL and returns the body; the server counts the fetches.
+// client_id URL and returns the body.
 type metadataServer struct {
 	*httptest.Server
 	ClientID string
-	fetches  atomic.Int32
 }
 
 func newMetadataServer(t *testing.T, cacheControl string, document func(clientID string) string) *metadataServer {
 	t.Helper()
 	m := &metadataServer{}
 	m.Server = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		m.fetches.Add(1)
 		if cacheControl != "" {
 			w.Header().Set("Cache-Control", cacheControl)
 		}
@@ -159,28 +158,54 @@ func TestMetadataDocumentClientIsRefusedForUnsafeURLs(t *testing.T) {
 			assert.Empty(t, rec.Header().Get("Location"))
 		})
 	}
-	assert.Zero(t, m.fetches.Load(), "the SSRF guard stops the call before it reaches the server")
+
+	n, err := env.DB.OAuthClient.Query().Count(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 1, n, "only the fixture client exists: no refused URL was stored")
+}
+
+func TestConsentScreenRefusesAMetadataClientWithAWrongDocument(t *testing.T) {
+	m := newMetadataServer(t, "", func(string) string { return goodDocument("https://other.example/client.json") })
+	env := setupWithFetcher(t, m)
+	actor := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	described, err := actor.SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{ClientId: m.ClientID, RedirectUri: metadataRedirectURI})
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteOAuthDescribeBadRequest), described)
+
+	decision := approval("contacts:read", false)
+	decision.ClientId, decision.RedirectUri = m.ClientID, metadataRedirectURI
+	decided, err := actor.SiteOAuthDecide(t.Context(), &decision)
+	require.NoError(t, err)
+	assert.IsType(t, new(siteapi.SiteOAuthDecideBadRequest), decided)
+	codes, err := env.DB.OAuthCode.Query().Count(t.Context())
+	require.NoError(t, err)
+	assert.Zero(t, codes, "no authorization code is minted for a refused client")
 }
 
 func TestMetadataDocumentIsCachedByHTTPHeaders(t *testing.T) {
 	for name, tc := range map[string]struct {
 		cacheControl string
-		fetches      int32
+		min, max     time.Duration
 	}{
-		"max-age":  {"max-age=3600", 1},
-		"default":  {"", 1},
-		"no-store": {"no-store", 2},
+		"max-age":  {"max-age=600", 9 * time.Minute, 10 * time.Minute},
+		"default":  {"", 59 * time.Minute, time.Hour},
+		"capped":   {"max-age=864000", 23 * time.Hour, 24 * time.Hour},
+		"no-store": {"no-store", -time.Minute, time.Second},
 	} {
 		t.Run(name, func(t *testing.T) {
 			m := newMetadataServer(t, tc.cacheControl, goodDocument)
 			env := setupWithFetcher(t, m)
 
-			for range 2 {
-				rec := metadataAuthorize(t, env, m.ClientID, metadataRedirectURI)
-				require.Equal(t, http.StatusFound, rec.Code, rec.Body.String())
-			}
+			rec := metadataAuthorize(t, env, m.ClientID, metadataRedirectURI)
+			require.Equal(t, http.StatusFound, rec.Code, rec.Body.String())
 
-			assert.Equal(t, tc.fetches, m.fetches.Load(), "fetches with Cache-Control %q", tc.cacheControl)
+			stored, err := env.DB.OAuthClient.Query().Where(oauthclient.ClientID(m.ClientID)).Only(t.Context())
+			require.NoError(t, err)
+			require.NotNil(t, stored.MetadataExpiresAt)
+			fresh := time.Until(*stored.MetadataExpiresAt)
+			assert.Greater(t, fresh, tc.min, "Cache-Control %q", tc.cacheControl)
+			assert.LessOrEqual(t, fresh, tc.max, "Cache-Control %q", tc.cacheControl)
 		})
 	}
 }
