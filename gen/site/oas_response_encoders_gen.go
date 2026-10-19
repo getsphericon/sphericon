@@ -2636,6 +2636,61 @@ func encodeSiteIntegrationsListResponse(response SiteIntegrationsListRes, w http
 	}
 }
 
+func encodeSiteIntegrationsRegenerateKeyResponse(response SiteIntegrationsRegenerateKeyRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteIntegrationResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteIntegrationsRegenerateKeyBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteIntegrationsRegenerateKeyForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteIntegrationsRegenerateKeyNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteIntegrationsUpdateResponse(response SiteIntegrationsUpdateRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *SiteIntegrationResource:
@@ -3127,6 +3182,23 @@ func encodeSiteOAuthDescribeResponse(response SiteOAuthDescribeRes, w http.Respo
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
+}
+
+func encodeSitePresetsListResponse(response []SitePresetResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	e.ArrStart()
+	for _, elem := range response {
+		elem.Encode(e)
+	}
+	e.ArrEnd()
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
 func encodeSitePublicConfirmationsPerformResponse(response SitePublicConfirmationsPerformRes, w http.ResponseWriter, span trace.Span) error {

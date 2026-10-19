@@ -25,8 +25,6 @@ const (
 	FieldSlug = "slug"
 	// FieldCollectKey holds the string denoting the collect_key field in the database.
 	FieldCollectKey = "collect_key"
-	// FieldIngestKey holds the string denoting the ingest_key field in the database.
-	FieldIngestKey = "ingest_key"
 	// FieldRequireConfirmedOptIn holds the string denoting the require_confirmed_opt_in field in the database.
 	FieldRequireConfirmedOptIn = "require_confirmed_opt_in"
 	// FieldPostalAddress holds the string denoting the postal_address field in the database.
@@ -290,7 +288,6 @@ var Columns = []string{
 	FieldName,
 	FieldSlug,
 	FieldCollectKey,
-	FieldIngestKey,
 	FieldRequireConfirmedOptIn,
 	FieldPostalAddress,
 	FieldRetentionDays,
@@ -329,8 +326,6 @@ var (
 	SlugValidator func(string) error
 	// CollectKeyValidator is a validator for the "collect_key" field. It is called by the builders before save.
 	CollectKeyValidator func(string) error
-	// IngestKeyValidator is a validator for the "ingest_key" field. It is called by the builders before save.
-	IngestKeyValidator func(string) error
 	// DefaultRequireConfirmedOptIn holds the default value on creation for the "require_confirmed_opt_in" field.
 	DefaultRequireConfirmedOptIn bool
 	// DefaultPostalAddress holds the default value on creation for the "postal_address" field.
@@ -398,11 +393,6 @@ func BySlug(opts ...sql.OrderTermOption) OrderOption {
 // ByCollectKey orders the results by the collect_key field.
 func ByCollectKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCollectKey, opts...).ToFunc()
-}
-
-// ByIngestKey orders the results by the ingest_key field.
-func ByIngestKey(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIngestKey, opts...).ToFunc()
 }
 
 // ByRequireConfirmedOptIn orders the results by the require_confirmed_opt_in field.

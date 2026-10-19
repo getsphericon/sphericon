@@ -405,12 +405,31 @@ func (UnimplementedHandler) IntegrationsList(ctx context.Context, params Integra
 	return r, ht.ErrNotImplemented
 }
 
+// IntegrationsRegenerateKey implements Integrations_regenerateKey operation.
+//
+// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
+// pasted into the provider. Needs a person: hidden from MCP.
+//
+// POST /integrations/{id}/regenerate-key
+func (UnimplementedHandler) IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (r IntegrationsRegenerateKeyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // IntegrationsUpdate implements Integrations_update operation.
 //
 // Update a resource.
 //
 // PUT /integrations/{id}
 func (UnimplementedHandler) IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (r IntegrationsUpdateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// PresetsList implements Presets_list operation.
+//
+// List the Presets the Instance offers, with the params schema of each.
+//
+// GET /presets
+func (UnimplementedHandler) PresetsList(ctx context.Context) (r PresetsListRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-faster/jx"
+
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -26,6 +28,12 @@ func smtpInput(host, password string) siteapi.SiteIntegrationConfigInput {
 	}
 }
 
+// sesTopicParams names the SNS topic an SES Integration needs to be saved (the `ses`
+// Preset requires one).
+var sesTopicParams = siteapi.NewOptSiteCreateIntegrationInputParams(siteapi.SiteCreateIntegrationInputParams{
+	"topic_arn": jx.Raw(`"arn:aws:sns:eu-west-1:123456789012:acme-ses-events"`),
+})
+
 func sesInput(region, accessKey, secret string) siteapi.SiteIntegrationConfigInput {
 	return siteapi.SiteIntegrationConfigInput{
 		OneOf: siteapi.NewSiteSesConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSesConfigInput{
@@ -46,7 +54,8 @@ func TestSiteIntegrationsSesEndpointRoundTrips(t *testing.T) {
 
 	// SES integration targeting an SES-compatible endpoint (e.g. Yandex Postbox).
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
-		Name: "Postbox",
+		Params: sesTopicParams,
+		Name:   "Postbox",
 		Config: siteapi.SiteIntegrationConfigInput{
 			OneOf: siteapi.NewSiteSesConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSesConfigInput{
 				Kind:            siteapi.SiteSesConfigInputKindSes,
@@ -68,6 +77,7 @@ func TestSiteIntegrationsSesEndpointRoundTrips(t *testing.T) {
 
 	// An SES integration without an endpoint reads back with the endpoint unset.
 	plain, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+		Params: sesTopicParams,
 		Name:   "AWS",
 		Config: sesInput("eu-west-1", "AKIA5678", "secret"),
 	}, params)
@@ -170,6 +180,7 @@ func TestSiteIntegrationsSingleDefaultPerChannel(t *testing.T) {
 	firstID := first.(*siteapi.SiteIntegrationResource).ID
 
 	second, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+		Params:    sesTopicParams,
 		Name:      "Second",
 		IsDefault: siteapi.NewOptBool(true),
 		Config:    sesInput("eu-west-1", "AKIA1234", "secret"),
@@ -206,6 +217,7 @@ func TestSiteIntegrationsPromoteViaUpdate(t *testing.T) {
 	firstID := first.(*siteapi.SiteIntegrationResource).ID
 
 	second, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+		Params: sesTopicParams,
 		Name:   "Second",
 		Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 	}, params)
@@ -320,7 +332,8 @@ func TestSiteIntegrationsSesBlankSecretFollowsRegionAndKey(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
-		Name: "AWS", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
+		Params: sesTopicParams,
+		Name:   "AWS", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
 	params := siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: created.(*siteapi.SiteIntegrationResource).ID}
@@ -347,7 +360,8 @@ func TestSiteIntegrationsRefuseAnInsecureSesEndpoint(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	res, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.SiteCreateIntegrationInput{
-		Name: "Bad",
+		Params: sesTopicParams,
+		Name:   "Bad",
 		Config: siteapi.SiteIntegrationConfigInput{
 			OneOf: siteapi.NewSiteSesConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSesConfigInput{
 				Kind: siteapi.SiteSesConfigInputKindSes, Region: "r", AccessKeyId: "AKIA1", SecretAccessKey: "s",

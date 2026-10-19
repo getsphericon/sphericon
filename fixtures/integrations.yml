@@ -5,6 +5,7 @@
 # one is disabled. Exactly one is_default per (workspace, channel) — see the partial
 # unique index on integrations.
 - id: 1 # fixture: IntegrationAcmeDefault
+  ingest_key: omik_test_integrationacmedefault
   name: Mailpit (dev SMTP)
   channel: email
   provider: smtp
@@ -15,18 +16,34 @@
   created_at: '{{daysAgo 170}}'
   updated_at: '{{daysAgo 170}}'
 - id: 2 # fixture: IntegrationAcmeSes
+  ingest_key: omik_test_integrationacmeses
   name: Amazon SES (disabled)
   channel: email
   provider: ses
   config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAEXAMPLE\",\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: ses
+  params_encrypted: '{{ encrypt "{\"topic_arn\":\"arn:aws:sns:eu-west-1:123456789012:acme-ses-events\"}" }}'
   enabled: false
   is_default: false
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 40}}'
+- id: 5 # fixture: IntegrationAcmeSesImplied
+  ingest_key: omik_test_integrationacmesesimplied
+  name: Amazon SES (made before Presets, names none)
+  channel: email
+  provider: ses
+  config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAIMPLIED\",\"from\":\"hello@codebasics.dev\"}" }}'
+  params_encrypted: '{{ encrypt "{\"topic_arn\":\"arn:aws:sns:eu-west-1:123456789012:acme-ses-events\"}" }}'
+  enabled: false
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 60}}'
+  updated_at: '{{daysAgo 60}}'
 
 # Globex (workspace 2).
 - id: 900 # fixture: IntegrationGlobex
+  ingest_key: omik_test_integrationglobex
   name: Globex SMTP
   channel: email
   provider: smtp
@@ -36,3 +53,76 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# A row that names no topic cannot be saved any more (the `ses` Preset requires one); it stands
+# for one stored before that, and the hook must still refuse its notifications.
+- id: 901 # fixture: IntegrationGlobexSesNoTopic
+  ingest_key: omik_test_integrationglobexsesnotopic
+  name: Globex SES (stored without an SNS topic)
+  channel: email
+  provider: ses
+  config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAGLOBEX\",\"from\":\"hello@globex.test\"}" }}'
+  preset: ses
+  params_encrypted: '{{ encrypt "{}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Two Integrations of Acme read their callbacks with the generic Preset, each with a secret of its
+# own: a callback signed for one must never be accepted by the other.
+- id: 3 # fixture: IntegrationAcmeGenericA
+  ingest_key: omik_test_integrationacmegenerica
+  name: Relay A (generic Preset)
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"relay-a.example.com\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: generic
+  params_encrypted: '{{ encrypt "{\"secret\":\"whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LUEwMTIzNDU2Nzg5\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 4 # fixture: IntegrationAcmeGenericB
+  ingest_key: omik_test_integrationacmegenericb
+  name: Relay B (generic Preset)
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"relay-b.example.com\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: generic
+  params_encrypted: '{{ encrypt "{\"secret\":\"whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LUIwMTIzNDU2Nzg5\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+
+# An Acme Integration per built-in provider Preset: an SMTP relay whose provider reports
+# bounces and complaints to the Integration's hook.
+- id: 20 # fixture: IntegrationAcmePostmark
+  ingest_key: omik_test_integrationacmepostmark
+  name: Postmark relay
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"smtp.postmarkapp.example\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: postmark
+  params_encrypted: '{{ encrypt "{\"user\":\"postmark-user\",\"secret\":\"postmark-test-token-0123456789\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'
+- id: 21 # fixture: IntegrationAcmeMailgun
+  ingest_key: omik_test_integrationacmemailgun
+  name: Mailgun relay
+  channel: email
+  provider: smtp
+  config_encrypted: '{{ encrypt "{\"host\":\"smtp.mailgun.example\",\"port\":587,\"from\":\"hello@codebasics.dev\"}" }}'
+  preset: mailgun
+  params_encrypted: '{{ encrypt "{\"signing_key\":\"mailgun-test-signing-key-0123456789\"}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'

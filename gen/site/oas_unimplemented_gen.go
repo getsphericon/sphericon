@@ -484,6 +484,15 @@ func (UnimplementedHandler) SiteIntegrationsList(ctx context.Context, params Sit
 	return r, ht.ErrNotImplemented
 }
 
+// SiteIntegrationsRegenerateKey implements SiteIntegrations_regenerateKey operation.
+//
+// Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
+//
+// POST /workspaces/{slug}/integrations/{id}/regenerate-key
+func (UnimplementedHandler) SiteIntegrationsRegenerateKey(ctx context.Context, params SiteIntegrationsRegenerateKeyParams) (r SiteIntegrationsRegenerateKeyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteIntegrationsUpdate implements SiteIntegrations_update operation.
 //
 // Update an integration. Owners and admins only.
@@ -574,6 +583,15 @@ func (UnimplementedHandler) SiteOAuthDecide(ctx context.Context, req *SiteOAuthD
 //
 // GET /oauth/authorization
 func (UnimplementedHandler) SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (r SiteOAuthDescribeRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePresetsList implements SitePresets_list operation.
+//
+// List the Presets the Instance offers, with the params schema of each.
+//
+// GET /presets
+func (UnimplementedHandler) SitePresetsList(ctx context.Context) (r []SitePresetResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

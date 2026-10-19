@@ -193,7 +193,7 @@ func TestResolverErrors(t *testing.T) {
 
 	_, err = env.DB.Integration.Create().
 		SetWorkspaceID(fixtures.GlobexID).SetName("broken").SetProvider("smtp").
-		SetConfigEncrypted("not-a-ciphertext").SetIsDefault(true).
+		SetConfigEncrypted("not-a-ciphertext").SetIngestKey("omik_broken").SetIsDefault(true).
 		Save(ctx)
 	require.NoError(t, err)
 	_, err = resolver.EmailSender(ctx, env.DB.Scoped(fixtures.GlobexID))

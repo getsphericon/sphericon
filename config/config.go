@@ -222,6 +222,12 @@ type Config struct {
 	// `staff` license.
 	InternalAddr string
 
+	// PresetsDir is a directory of the Instance's custom Presets (ADR 0037): every
+	// *.yaml and *.yml file at its root loads beside the built-in ones at start, and a
+	// file that does not load, or reuses a built-in name, stops the start. Empty (the
+	// default) means only the built-in Presets.
+	PresetsDir string
+
 	// System (platform) transactional email — sphericon's OWN sender, distinct from a
 	// customer's per-workspace integration. Dev uses smtp → mailpit (the SMTP_*
 	// values); prod uses ses (the SES_* values). Sent via the same messaging
@@ -314,6 +320,7 @@ type environment struct {
 	OtelServiceName string `env:"OTEL_SERVICE_NAME" envDefault:"sphericon"`
 	MetricsAddr     string `env:"SPHERICON_METRICS_ADDR"`
 	InternalAddr    string `env:"SPHERICON_INTERNAL_ADDR"`
+	PresetsDir      string `env:"SPHERICON_PRESETS_DIR"`
 
 	SystemEmailProvider string `env:"SPHERICON_SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
 	SystemEmailFrom     string `env:"SPHERICON_SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
@@ -435,6 +442,7 @@ func Load(envName string) (*Config, error) {
 		OtelServiceName: e.OtelServiceName,
 		MetricsAddr:     e.MetricsAddr,
 		InternalAddr:    e.InternalAddr,
+		PresetsDir:      e.PresetsDir,
 
 		SystemEmailProvider: e.SystemEmailProvider,
 		SystemEmailFrom:     e.SystemEmailFrom,

@@ -522,6 +522,8 @@ func (b *HoldCreateBulk) auditRebind(c *Client) {
 // IntegrationAuditSensitive lists the Integration fields whose values never reach the Audit log.
 var IntegrationAuditSensitive = map[string]bool{
 	"config_encrypted": true,
+	"params_encrypted": true,
+	"ingest_key":       true,
 }
 
 // auditFields maps every audited field of the Integration to its value.
@@ -531,6 +533,9 @@ func (e *Integration) auditFields() map[string]any {
 		"channel":                    e.Channel,
 		"provider":                   e.Provider,
 		"config_encrypted":           e.ConfigEncrypted,
+		"preset":                     derefAudit(e.Preset),
+		"params_encrypted":           e.ParamsEncrypted,
+		"ingest_key":                 e.IngestKey,
 		"enabled":                    e.Enabled,
 		"is_default":                 e.IsDefault,
 		"max_per_second":             derefAudit(e.MaxPerSecond),

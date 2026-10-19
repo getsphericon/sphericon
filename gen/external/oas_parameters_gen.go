@@ -3445,6 +3445,79 @@ func decodeIntegrationsListParams(args [0]string, argsEscaped bool, r *http.Requ
 	return params, nil
 }
 
+// IntegrationsRegenerateKeyParams is parameters of Integrations_regenerateKey operation.
+type IntegrationsRegenerateKeyParams struct {
+	// Unique identifier.
+	ID EntityId
+}
+
+func unpackIntegrationsRegenerateKeyParams(packed middleware.Parameters) (params IntegrationsRegenerateKeyParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeIntegrationsRegenerateKeyParams(args [1]string, argsEscaped bool, r *http.Request) (params IntegrationsRegenerateKeyParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // IntegrationsUpdateParams is parameters of Integrations_update operation.
 type IntegrationsUpdateParams struct {
 	// Unique identifier.

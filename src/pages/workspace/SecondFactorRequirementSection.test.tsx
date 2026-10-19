@@ -18,7 +18,6 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
   name: 'Acme',
   slug: 'acme',
   collectKey: 'ck',
-  ingestKey: 'ik',
   postalAddress: '',
   accountLinkAvailable: false,
   holds: [],

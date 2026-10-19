@@ -24,14 +24,16 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	}, siteapi.SiteIntegrationsCreateParams{Slug: acme})
 	require.NoError(t, err)
 	row := created.(*siteapi.SiteIntegrationResource)
+	total, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(ctx)
+	require.NoError(t, err)
 
 	t.Run("list is scoped and requires a workspace", func(t *testing.T) {
 		res, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{Slug: acme})
 		require.NoError(t, err)
 		list, ok := res.(*siteapi.SiteIntegrationsListOKApplicationJSON)
 		require.Truef(t, ok, "got %T", res)
-		require.Len(t, *list, 3, "two fixture integrations plus the new one")
-		assert.Equal(t, row.ID, (*list)[2].ID, "ordered by id")
+		require.Len(t, *list, total, "the Workspace's integrations, the new one among them")
+		assert.Equal(t, row.ID, (*list)[total-1].ID, "ordered by id")
 
 		nf, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{Slug: foreign})
 		require.NoError(t, err)
@@ -56,7 +58,7 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		assert.IsType(t, &siteapi.SiteIntegrationsCreateUnprocessableEntity{}, r3, "an SMTP config without a host is rejected")
 		n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(ctx)
 		require.NoError(t, err)
-		assert.Equal(t, 3, n, "rejected creates persisted nothing")
+		assert.Equal(t, total, n, "rejected creates persisted nothing")
 	})
 
 	t.Run("get", func(t *testing.T) {

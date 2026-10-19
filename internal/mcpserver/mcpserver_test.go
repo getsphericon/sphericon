@@ -68,7 +68,7 @@ var (
 		"broadcasts_set_audience", "broadcasts_test_send", "broadcasts_report",
 		"events_record", "events_actions_list", "whoami",
 		"custom_fields_list", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_delete", "sending_domains_verify", "sending_domains_rates",
-		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_delete",
+		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_delete", "presets_list",
 		"suppressions_create", "unsubscribes_create",
 		"templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
 		"webhooks_list", "webhooks_create", "webhooks_get", "webhooks_update", "webhooks_delete",
@@ -143,6 +143,18 @@ func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	b, err = env.DB.Broadcast.Get(context.Background(), fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
+}
+
+// Regenerating an Integration's hook key is hidden from agents: the new URL is a secret an
+// agent should not be handed, and the old one stops working at once. The Presets list is a tool.
+func TestMCPRegenerateKeyIsHiddenAndPresetsListIsATool(t *testing.T) {
+	env := testhelper.Setup(t)
+	got := listedTools(t, env.MCPClient(t, env.ScopedBearer(t, "integrations:read")))
+
+	for _, name := range toolNames(got) {
+		assert.NotContains(t, name, "integrations_regenerate")
+	}
+	assert.Contains(t, toolNames(got), "presets_list")
 }
 
 func TestMCPToolsAreTheContractMinusHiddenOperations(t *testing.T) {

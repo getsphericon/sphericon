@@ -1121,6 +1121,51 @@ func (o NilSiteSendLimitSource) Or(d SiteSendLimitSource) SiteSendLimitSource {
 	return d
 }
 
+// NewNilString returns new NilString with value set to v.
+func NewNilString(v string) NilString {
+	return NilString{
+		Value: v,
+	}
+}
+
+// NilString is nullable string.
+type NilString struct {
+	Value string
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilString) SetTo(v string) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilString) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilString) SetToNull() {
+	o.Null = true
+	var v string
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilString) Get() (v string, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptBool returns new OptBool with value set to v.
 func NewOptBool(v bool) OptBool {
 	return OptBool{
@@ -2737,6 +2782,52 @@ func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAu
 	return d
 }
 
+// NewOptSiteCreateIntegrationInputParams returns new OptSiteCreateIntegrationInputParams with value set to v.
+func NewOptSiteCreateIntegrationInputParams(v SiteCreateIntegrationInputParams) OptSiteCreateIntegrationInputParams {
+	return OptSiteCreateIntegrationInputParams{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteCreateIntegrationInputParams is optional SiteCreateIntegrationInputParams.
+type OptSiteCreateIntegrationInputParams struct {
+	Value SiteCreateIntegrationInputParams
+	Set   bool
+}
+
+// IsSet returns true if OptSiteCreateIntegrationInputParams was set.
+func (o OptSiteCreateIntegrationInputParams) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteCreateIntegrationInputParams) Reset() {
+	var v SiteCreateIntegrationInputParams
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteCreateIntegrationInputParams) SetTo(v SiteCreateIntegrationInputParams) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteCreateIntegrationInputParams) Get() (v SiteCreateIntegrationInputParams, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteCreateIntegrationInputParams) Or(d SiteCreateIntegrationInputParams) SiteCreateIntegrationInputParams {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteEnrollmentFailure returns new OptSiteEnrollmentFailure with value set to v.
 func NewOptSiteEnrollmentFailure(v SiteEnrollmentFailure) OptSiteEnrollmentFailure {
 	return OptSiteEnrollmentFailure{
@@ -2961,6 +3052,52 @@ func (o OptSiteSuppressionChannel) Get() (v SiteSuppressionChannel, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteSuppressionChannel) Or(d SiteSuppressionChannel) SiteSuppressionChannel {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteUpdateIntegrationInputParams returns new OptSiteUpdateIntegrationInputParams with value set to v.
+func NewOptSiteUpdateIntegrationInputParams(v SiteUpdateIntegrationInputParams) OptSiteUpdateIntegrationInputParams {
+	return OptSiteUpdateIntegrationInputParams{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteUpdateIntegrationInputParams is optional SiteUpdateIntegrationInputParams.
+type OptSiteUpdateIntegrationInputParams struct {
+	Value SiteUpdateIntegrationInputParams
+	Set   bool
+}
+
+// IsSet returns true if OptSiteUpdateIntegrationInputParams was set.
+func (o OptSiteUpdateIntegrationInputParams) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteUpdateIntegrationInputParams) Reset() {
+	var v SiteUpdateIntegrationInputParams
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteUpdateIntegrationInputParams) SetTo(v SiteUpdateIntegrationInputParams) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteUpdateIntegrationInputParams) Get() (v SiteUpdateIntegrationInputParams, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteUpdateIntegrationInputParams) Or(d SiteUpdateIntegrationInputParams) SiteUpdateIntegrationInputParams {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6404,6 +6541,10 @@ type SiteCreateIntegrationInput struct {
 	// Most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit.
 	MaxPerDay OptNilSiteMaxPerDay        `json:"maxPerDay"`
 	Config    SiteIntegrationConfigInput `json:"config"`
+	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with.
+	Preset OptNilString `json:"preset"`
+	// The Preset's params, validated against its `paramsSchema`: read the schema first.
+	Params OptSiteCreateIntegrationInputParams `json:"params"`
 }
 
 // GetName returns the value of Name.
@@ -6436,6 +6577,16 @@ func (s *SiteCreateIntegrationInput) GetConfig() SiteIntegrationConfigInput {
 	return s.Config
 }
 
+// GetPreset returns the value of Preset.
+func (s *SiteCreateIntegrationInput) GetPreset() OptNilString {
+	return s.Preset
+}
+
+// GetParams returns the value of Params.
+func (s *SiteCreateIntegrationInput) GetParams() OptSiteCreateIntegrationInputParams {
+	return s.Params
+}
+
 // SetName sets the value of Name.
 func (s *SiteCreateIntegrationInput) SetName(val string) {
 	s.Name = val
@@ -6464,6 +6615,28 @@ func (s *SiteCreateIntegrationInput) SetMaxPerDay(val OptNilSiteMaxPerDay) {
 // SetConfig sets the value of Config.
 func (s *SiteCreateIntegrationInput) SetConfig(val SiteIntegrationConfigInput) {
 	s.Config = val
+}
+
+// SetPreset sets the value of Preset.
+func (s *SiteCreateIntegrationInput) SetPreset(val OptNilString) {
+	s.Preset = val
+}
+
+// SetParams sets the value of Params.
+func (s *SiteCreateIntegrationInput) SetParams(val OptSiteCreateIntegrationInputParams) {
+	s.Params = val
+}
+
+// The Preset's params, validated against its `paramsSchema`: read the schema first.
+type SiteCreateIntegrationInputParams map[string]jx.Raw
+
+func (s *SiteCreateIntegrationInputParams) init() SiteCreateIntegrationInputParams {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Invite an email address to the workspace.
@@ -8205,6 +8378,17 @@ type SiteIntegrationResource struct {
 	SendLimit SiteSendLimitStatus `json:"sendLimit"`
 	// Provider config (secrets redacted).
 	Config SiteIntegrationConfig `json:"config"`
+	// The Preset this Integration's provider callbacks are read with; null when it receives none.
+	Preset NilString `json:"preset"`
+	// The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as
+	// `********`, never its value.
+	Params SiteIntegrationResourceParams `json:"params"`
+	// Names of the secret params that are rotating: a retiring value is still accepted beside the current
+	// one.
+	SecretsRetiring []string `json:"secretsRetiring"`
+	// Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is
+	// an address, not the authentication (the Preset's signature or secret is).
+	HookUrl string `json:"hookUrl"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -8259,6 +8443,26 @@ func (s *SiteIntegrationResource) GetSendLimit() SiteSendLimitStatus {
 // GetConfig returns the value of Config.
 func (s *SiteIntegrationResource) GetConfig() SiteIntegrationConfig {
 	return s.Config
+}
+
+// GetPreset returns the value of Preset.
+func (s *SiteIntegrationResource) GetPreset() NilString {
+	return s.Preset
+}
+
+// GetParams returns the value of Params.
+func (s *SiteIntegrationResource) GetParams() SiteIntegrationResourceParams {
+	return s.Params
+}
+
+// GetSecretsRetiring returns the value of SecretsRetiring.
+func (s *SiteIntegrationResource) GetSecretsRetiring() []string {
+	return s.SecretsRetiring
+}
+
+// GetHookUrl returns the value of HookUrl.
+func (s *SiteIntegrationResource) GetHookUrl() string {
+	return s.HookUrl
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -8321,6 +8525,26 @@ func (s *SiteIntegrationResource) SetConfig(val SiteIntegrationConfig) {
 	s.Config = val
 }
 
+// SetPreset sets the value of Preset.
+func (s *SiteIntegrationResource) SetPreset(val NilString) {
+	s.Preset = val
+}
+
+// SetParams sets the value of Params.
+func (s *SiteIntegrationResource) SetParams(val SiteIntegrationResourceParams) {
+	s.Params = val
+}
+
+// SetSecretsRetiring sets the value of SecretsRetiring.
+func (s *SiteIntegrationResource) SetSecretsRetiring(val []string) {
+	s.SecretsRetiring = val
+}
+
+// SetHookUrl sets the value of HookUrl.
+func (s *SiteIntegrationResource) SetHookUrl(val string) {
+	s.HookUrl = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteIntegrationResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -8331,9 +8555,23 @@ func (s *SiteIntegrationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteIntegrationResource) siteIntegrationsCreateRes() {}
-func (*SiteIntegrationResource) siteIntegrationsGetRes()    {}
-func (*SiteIntegrationResource) siteIntegrationsUpdateRes() {}
+func (*SiteIntegrationResource) siteIntegrationsCreateRes()        {}
+func (*SiteIntegrationResource) siteIntegrationsGetRes()           {}
+func (*SiteIntegrationResource) siteIntegrationsRegenerateKeyRes() {}
+func (*SiteIntegrationResource) siteIntegrationsUpdateRes()        {}
+
+// The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as
+// `********`, never its value.
+type SiteIntegrationResourceParams map[string]jx.Raw
+
+func (s *SiteIntegrationResourceParams) init() SiteIntegrationResourceParams {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 type SiteIntegrationsCreateConflict ProblemDetails
 
@@ -8379,6 +8617,18 @@ func (*SiteIntegrationsGetNotFound) siteIntegrationsGetRes() {}
 type SiteIntegrationsListOKApplicationJSON []SiteIntegrationResource
 
 func (*SiteIntegrationsListOKApplicationJSON) siteIntegrationsListRes() {}
+
+type SiteIntegrationsRegenerateKeyBadRequest ProblemDetails
+
+func (*SiteIntegrationsRegenerateKeyBadRequest) siteIntegrationsRegenerateKeyRes() {}
+
+type SiteIntegrationsRegenerateKeyForbidden ProblemDetails
+
+func (*SiteIntegrationsRegenerateKeyForbidden) siteIntegrationsRegenerateKeyRes() {}
+
+type SiteIntegrationsRegenerateKeyNotFound ProblemDetails
+
+func (*SiteIntegrationsRegenerateKeyNotFound) siteIntegrationsRegenerateKeyRes() {}
 
 type SiteIntegrationsUpdateBadRequest ProblemDetails
 
@@ -9117,6 +9367,59 @@ func (*SiteOAuthDescribeBadRequest) siteOAuthDescribeRes() {}
 type SiteOAuthDescribeNotFound ProblemDetails
 
 func (*SiteOAuthDescribeNotFound) siteOAuthDescribeRes() {}
+
+// A Preset the Instance offers.
+// Ref: #/components/schemas/SitePresetResource
+type SitePresetResource struct {
+	// The name an integration's `preset` refers to.
+	Name string `json:"name"`
+	// What the Preset is for.
+	Description string `json:"description"`
+	// JSON Schema (draft 2020-12) of the params; a string marked `writeOnly` is a secret.
+	ParamsSchema SitePresetResourceParamsSchema `json:"paramsSchema"`
+}
+
+// GetName returns the value of Name.
+func (s *SitePresetResource) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *SitePresetResource) GetDescription() string {
+	return s.Description
+}
+
+// GetParamsSchema returns the value of ParamsSchema.
+func (s *SitePresetResource) GetParamsSchema() SitePresetResourceParamsSchema {
+	return s.ParamsSchema
+}
+
+// SetName sets the value of Name.
+func (s *SitePresetResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *SitePresetResource) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetParamsSchema sets the value of ParamsSchema.
+func (s *SitePresetResource) SetParamsSchema(val SitePresetResourceParamsSchema) {
+	s.ParamsSchema = val
+}
+
+// JSON Schema (draft 2020-12) of the params; a string marked `writeOnly` is a secret.
+type SitePresetResourceParamsSchema map[string]jx.Raw
+
+func (s *SitePresetResourceParamsSchema) init() SitePresetResourceParamsSchema {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 // Request body for previewing a rule definition's audience.
 // Ref: #/components/schemas/SitePreviewSegmentInput
@@ -12300,6 +12603,14 @@ type SiteUpdateIntegrationInput struct {
 	// Most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep.
 	MaxPerDay OptNilSiteMaxPerDay              `json:"maxPerDay"`
 	Config    OptNilSiteIntegrationConfigInput `json:"config"`
+	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no
+	// secret carries over.
+	Preset OptNilString `json:"preset"`
+	// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
+	// rotates it (the old one stays valid until retired).
+	Params OptSiteUpdateIntegrationInputParams `json:"params"`
+	// Stop accepting the retiring value of every rotating secret.
+	RetireSecrets OptBool `json:"retireSecrets"`
 }
 
 // GetName returns the value of Name.
@@ -12332,6 +12643,21 @@ func (s *SiteUpdateIntegrationInput) GetConfig() OptNilSiteIntegrationConfigInpu
 	return s.Config
 }
 
+// GetPreset returns the value of Preset.
+func (s *SiteUpdateIntegrationInput) GetPreset() OptNilString {
+	return s.Preset
+}
+
+// GetParams returns the value of Params.
+func (s *SiteUpdateIntegrationInput) GetParams() OptSiteUpdateIntegrationInputParams {
+	return s.Params
+}
+
+// GetRetireSecrets returns the value of RetireSecrets.
+func (s *SiteUpdateIntegrationInput) GetRetireSecrets() OptBool {
+	return s.RetireSecrets
+}
+
 // SetName sets the value of Name.
 func (s *SiteUpdateIntegrationInput) SetName(val OptString) {
 	s.Name = val
@@ -12360,6 +12686,34 @@ func (s *SiteUpdateIntegrationInput) SetMaxPerDay(val OptNilSiteMaxPerDay) {
 // SetConfig sets the value of Config.
 func (s *SiteUpdateIntegrationInput) SetConfig(val OptNilSiteIntegrationConfigInput) {
 	s.Config = val
+}
+
+// SetPreset sets the value of Preset.
+func (s *SiteUpdateIntegrationInput) SetPreset(val OptNilString) {
+	s.Preset = val
+}
+
+// SetParams sets the value of Params.
+func (s *SiteUpdateIntegrationInput) SetParams(val OptSiteUpdateIntegrationInputParams) {
+	s.Params = val
+}
+
+// SetRetireSecrets sets the value of RetireSecrets.
+func (s *SiteUpdateIntegrationInput) SetRetireSecrets(val OptBool) {
+	s.RetireSecrets = val
+}
+
+// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
+// rotates it (the old one stays valid until retired).
+type SiteUpdateIntegrationInputParams map[string]jx.Raw
+
+func (s *SiteUpdateIntegrationInputParams) init() SiteUpdateIntegrationInputParams {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Update the authenticated user's profile. To change the password, provide both currentPassword and
@@ -13223,8 +13577,6 @@ type SiteWorkspaceResource struct {
 	Slug string `json:"slug"`
 	// Per-workspace collect write-key (x-collect-key) for the tracking snippet.
 	CollectKey string `json:"collectKey"`
-	// Secret key that routes inbound provider webhooks (/hooks/{ingestKey}/...).
-	IngestKey string `json:"ingestKey"`
 	// Physical postal address printed in the marketing email footer (CAN-SPAM 15 U.S.C. §7704(a)(5)).
 	// Empty until the workspace sets one.
 	PostalAddress string `json:"postalAddress"`
@@ -13279,11 +13631,6 @@ func (s *SiteWorkspaceResource) GetSlug() string {
 // GetCollectKey returns the value of CollectKey.
 func (s *SiteWorkspaceResource) GetCollectKey() string {
 	return s.CollectKey
-}
-
-// GetIngestKey returns the value of IngestKey.
-func (s *SiteWorkspaceResource) GetIngestKey() string {
-	return s.IngestKey
 }
 
 // GetPostalAddress returns the value of PostalAddress.
@@ -13359,11 +13706,6 @@ func (s *SiteWorkspaceResource) SetSlug(val string) {
 // SetCollectKey sets the value of CollectKey.
 func (s *SiteWorkspaceResource) SetCollectKey(val string) {
 	s.CollectKey = val
-}
-
-// SetIngestKey sets the value of IngestKey.
-func (s *SiteWorkspaceResource) SetIngestKey(val string) {
-	s.IngestKey = val
 }
 
 // SetPostalAddress sets the value of PostalAddress.

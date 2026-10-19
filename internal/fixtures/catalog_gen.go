@@ -13,8 +13,6 @@ const (
 	AcmeCollectKey = "omck_test_acme_collect_key"
 	// AcmeID is from fixtures/workspaces.
 	AcmeID = 1
-	// AcmeIngestKey is from fixtures/workspaces.
-	AcmeIngestKey = "omik_test_acme_ingest_key"
 	// AcmeMemberMembershipID is from fixtures/memberships.
 	AcmeMemberMembershipID = 3
 	// AcmeName is from fixtures/workspaces.
@@ -375,8 +373,6 @@ const (
 	GlobexCollectKey = "omck_test_globex_collect_key"
 	// GlobexID is from fixtures/workspaces.
 	GlobexID = 2
-	// GlobexIngestKey is from fixtures/workspaces.
-	GlobexIngestKey = "omik_test_globex_ingest_key"
 	// GlobexMaryMembershipID is from fixtures/memberships.
 	GlobexMaryMembershipID = 4
 	// GlobexName is from fixtures/workspaces.
@@ -401,8 +397,6 @@ const (
 	HooliCollectKey = "omck_test_hooli_collect_key"
 	// HooliID is from fixtures/workspaces.
 	HooliID = 5
-	// HooliIngestKey is from fixtures/workspaces.
-	HooliIngestKey = "omik_test_hooli_ingest_key"
 	// HooliName is from fixtures/workspaces.
 	HooliName = "Hooli"
 	// HooliSlug is from fixtures/workspaces.
@@ -439,8 +433,6 @@ const (
 	InitechCollectKey = "omck_test_initech_collect_key"
 	// InitechID is from fixtures/workspaces.
 	InitechID = 3
-	// InitechIngestKey is from fixtures/workspaces.
-	InitechIngestKey = "omik_test_initech_ingest_key"
 	// InitechMemberMaxEmail is from fixtures/users.
 	InitechMemberMaxEmail = "max@initech.test"
 	// InitechMemberMaxID is from fixtures/users.
@@ -469,16 +461,58 @@ const (
 	InitechSlug = "initech"
 	// IntegrationAcmeDefaultID is from fixtures/integrations.
 	IntegrationAcmeDefaultID = 1
+	// IntegrationAcmeDefaultIngestKey is from fixtures/integrations.
+	IntegrationAcmeDefaultIngestKey = "omik_test_integrationacmedefault"
 	// IntegrationAcmeDefaultName is from fixtures/integrations.
 	IntegrationAcmeDefaultName = "Mailpit (dev SMTP)"
+	// IntegrationAcmeGenericAID is from fixtures/integrations.
+	IntegrationAcmeGenericAID = 3
+	// IntegrationAcmeGenericAIngestKey is from fixtures/integrations.
+	IntegrationAcmeGenericAIngestKey = "omik_test_integrationacmegenerica"
+	// IntegrationAcmeGenericAName is from fixtures/integrations.
+	IntegrationAcmeGenericAName = "Relay A (generic Preset)"
+	// IntegrationAcmeGenericBID is from fixtures/integrations.
+	IntegrationAcmeGenericBID = 4
+	// IntegrationAcmeGenericBIngestKey is from fixtures/integrations.
+	IntegrationAcmeGenericBIngestKey = "omik_test_integrationacmegenericb"
+	// IntegrationAcmeGenericBName is from fixtures/integrations.
+	IntegrationAcmeGenericBName = "Relay B (generic Preset)"
+	// IntegrationAcmeMailgunID is from fixtures/integrations.
+	IntegrationAcmeMailgunID = 21
+	// IntegrationAcmeMailgunIngestKey is from fixtures/integrations.
+	IntegrationAcmeMailgunIngestKey = "omik_test_integrationacmemailgun"
+	// IntegrationAcmeMailgunName is from fixtures/integrations.
+	IntegrationAcmeMailgunName = "Mailgun relay"
+	// IntegrationAcmePostmarkID is from fixtures/integrations.
+	IntegrationAcmePostmarkID = 20
+	// IntegrationAcmePostmarkIngestKey is from fixtures/integrations.
+	IntegrationAcmePostmarkIngestKey = "omik_test_integrationacmepostmark"
+	// IntegrationAcmePostmarkName is from fixtures/integrations.
+	IntegrationAcmePostmarkName = "Postmark relay"
 	// IntegrationAcmeSesID is from fixtures/integrations.
 	IntegrationAcmeSesID = 2
+	// IntegrationAcmeSesImpliedID is from fixtures/integrations.
+	IntegrationAcmeSesImpliedID = 5
+	// IntegrationAcmeSesImpliedIngestKey is from fixtures/integrations.
+	IntegrationAcmeSesImpliedIngestKey = "omik_test_integrationacmesesimplied"
+	// IntegrationAcmeSesImpliedName is from fixtures/integrations.
+	IntegrationAcmeSesImpliedName = "Amazon SES (made before Presets, names none)"
+	// IntegrationAcmeSesIngestKey is from fixtures/integrations.
+	IntegrationAcmeSesIngestKey = "omik_test_integrationacmeses"
 	// IntegrationAcmeSesName is from fixtures/integrations.
 	IntegrationAcmeSesName = "Amazon SES (disabled)"
 	// IntegrationGlobexID is from fixtures/integrations.
 	IntegrationGlobexID = 900
+	// IntegrationGlobexIngestKey is from fixtures/integrations.
+	IntegrationGlobexIngestKey = "omik_test_integrationglobex"
 	// IntegrationGlobexName is from fixtures/integrations.
 	IntegrationGlobexName = "Globex SMTP"
+	// IntegrationGlobexSesNoTopicID is from fixtures/integrations.
+	IntegrationGlobexSesNoTopicID = 901
+	// IntegrationGlobexSesNoTopicIngestKey is from fixtures/integrations.
+	IntegrationGlobexSesNoTopicIngestKey = "omik_test_integrationglobexsesnotopic"
+	// IntegrationGlobexSesNoTopicName is from fixtures/integrations.
+	IntegrationGlobexSesNoTopicName = "Globex SES (stored without an SNS topic)"
 	// InvitationGlobexEmail is from fixtures/invitations.
 	InvitationGlobexEmail = "invited@globex.test"
 	// InvitationGlobexID is from fixtures/invitations.
@@ -491,8 +525,6 @@ const (
 	KramericaCollectKey = "omck_test_kramerica_collect_key"
 	// KramericaID is from fixtures/workspaces.
 	KramericaID = 8
-	// KramericaIngestKey is from fixtures/workspaces.
-	KramericaIngestKey = "omik_test_kramerica_ingest_key"
 	// KramericaName is from fixtures/workspaces.
 	KramericaName = "Kramerica"
 	// KramericaNewmanMembershipID is from fixtures/memberships.
@@ -677,8 +709,6 @@ const (
 	SoylentCollectKey = "omck_test_soylent_collect_key"
 	// SoylentID is from fixtures/workspaces.
 	SoylentID = 6
-	// SoylentIngestKey is from fixtures/workspaces.
-	SoylentIngestKey = "omik_test_soylent_ingest_key"
 	// SoylentName is from fixtures/workspaces.
 	SoylentName = "Soylent"
 	// SoylentSlug is from fixtures/workspaces.
@@ -763,8 +793,6 @@ const (
 	UmbrellaCollectKey = "omck_test_umbrella_collect_key"
 	// UmbrellaID is from fixtures/workspaces.
 	UmbrellaID = 4
-	// UmbrellaIngestKey is from fixtures/workspaces.
-	UmbrellaIngestKey = "omik_test_umbrella_ingest_key"
 	// UmbrellaMemberNinaEmail is from fixtures/users.
 	UmbrellaMemberNinaEmail = "nina@umbrella.test"
 	// UmbrellaMemberNinaID is from fixtures/users.
@@ -807,8 +835,6 @@ const (
 	VandelayCosmoMembershipID = 15
 	// VandelayID is from fixtures/workspaces.
 	VandelayID = 7
-	// VandelayIngestKey is from fixtures/workspaces.
-	VandelayIngestKey = "omik_test_vandelay_ingest_key"
 	// VandelayName is from fixtures/workspaces.
 	VandelayName = "Vandelay"
 	// VandelayOwnerArtEmail is from fixtures/users.

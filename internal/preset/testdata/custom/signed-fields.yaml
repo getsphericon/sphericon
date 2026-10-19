@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=../../preset.schema.json
+# The signature kinds that sign over a header and over body fields.
+version: 1
+name: signed-fields
+params:
+  type: object
+  properties:
+    body_secret: { type: string, writeOnly: true }
+    header_secret: { type: string, writeOnly: true }
+verify:
+  kind: hmac_body
+  secret: body_secret
+  signed_fields: [signature.timestamp, signature.token]
+  signature_field: signature.signature
+  algorithm: sha256
+  encoding: hex
+  timestamp_field: signature.timestamp
+  tolerance: 5m
+transform: |
+  [.body.events[] | {id: .id, destination: .to, kind: "complaint"}]
+tests:
+  - name: a body signed over its fields passes
+    now: '2026-01-01T00:00:00Z'
+    params: &params { body_secret: body-secret }
+    request:
+      body: '{"signature":{"timestamp":"1767225600","token":"abc","signature":"e019aa6bcdfe6506e47312f09c4dbce100b185babb354b1e70480fd228788382"},"events":[{"id":"1","to":"A@Example.com"}]}'
+    expect:
+      failures:
+        - { id: '1', destination: a@example.com, kind: complaint }
+  - name: a forged body is parsed, then refused
+    now: '2026-01-01T00:00:00Z'
+    params: *params
+    request:
+      body: '{"signature":{"timestamp":"1767225600","token":"xyz","signature":"e019aa6bcdfe6506e47312f09c4dbce100b185babb354b1e70480fd228788382"},"events":[{"id":"1","to":"a@example.com"}]}'
+    expect: { refused: unauthentic }
+  - name: a body that is not JSON is malformed
+    now: '2026-01-01T00:00:00Z'
+    params: *params
+    request: { body: not json }
+    expect: { refused: malformed }
+  - name: a stale timestamp is refused
+    now: '2026-01-01T00:06:00Z'
+    params: *params
+    request:
+      body: '{"signature":{"timestamp":"1767225600","token":"abc","signature":"e019aa6bcdfe6506e47312f09c4dbce100b185babb354b1e70480fd228788382"},"events":[]}'
+    expect: { refused: unauthentic }
+  - name: a secret that is being rotated out still verifies
+    now: '2026-01-01T00:00:00Z'
+    params: { body_secret: [new-secret, body-secret] }
+    request:
+      body: '{"signature":{"timestamp":"1767225600","token":"abc","signature":"e019aa6bcdfe6506e47312f09c4dbce100b185babb354b1e70480fd228788382"},"events":[]}'
+    expect: { failures: [] }

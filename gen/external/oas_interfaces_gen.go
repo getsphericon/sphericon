@@ -173,8 +173,16 @@ type IntegrationsListRes interface {
 	integrationsListRes()
 }
 
+type IntegrationsRegenerateKeyRes interface {
+	integrationsRegenerateKeyRes()
+}
+
 type IntegrationsUpdateRes interface {
 	integrationsUpdateRes()
+}
+
+type PresetsListRes interface {
+	presetsListRes()
 }
 
 type SegmentsCreateRes interface {

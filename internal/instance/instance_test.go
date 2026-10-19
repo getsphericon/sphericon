@@ -37,7 +37,7 @@ func TestIsOwnerPassesToTheNextOldestWorkspaceWhenTheOldestIsDeleted(t *testing.
 	}{{1, 1}, {2, 2}} {
 		require.NoError(t, client.User.Create().SetID(u.id).SetName("u").SetEmail(fmt.Sprintf("u%d@example.test", u.id)).Exec(ctx))
 		require.NoError(t, client.Workspace.Create().SetID(u.workspace).SetName("w").SetSlug(fmt.Sprintf("w%d", u.workspace)).
-			SetCollectKey(fmt.Sprintf("c%d", u.workspace)).SetIngestKey(fmt.Sprintf("i%d", u.workspace)).Exec(ctx))
+			SetCollectKey(fmt.Sprintf("c%d", u.workspace)).Exec(ctx))
 		require.NoError(t, client.Scoped(u.workspace).Membership().Create().SetUserID(u.id).SetRole(membership.RoleOwner).Exec(ctx))
 	}
 	first, err := mod.IsOwner(ctx, 1)

@@ -119,5 +119,6 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	for _, row := range *list.(*siteapi.SiteIntegrationsListOKApplicationJSON) {
 		usage[row.ID] = row.SendLimit.SentLast24h
 	}
-	assert.Equal(t, map[siteapi.EntityId]int32{1: 2, 2: 1}, usage)
+	assert.Equal(t, int32(2), usage[1])
+	assert.Equal(t, int32(1), usage[2])
 }

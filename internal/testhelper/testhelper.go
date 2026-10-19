@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -140,6 +141,8 @@ type TestEnv struct {
 	Tracker *tracking.Tracker
 	// Cipher is the instance the server seals with, for modules a test builds directly.
 	Cipher *secrets.Cipher
+	// Integrations is the module the server serves Integrations and their hooks with.
+	Integrations *integrations.Module
 
 	edition *ee.Edition // the EE parts, built like the composition root builds them
 
@@ -154,6 +157,9 @@ type TestEnv struct {
 
 	// SES scripts the send quota every "ses" Integration reports.
 	SES *FakeSES
+
+	// Confirmations records the subscription URLs a Preset's confirm action fetched.
+	Confirmations *Confirmations
 
 	// SecondFactor is the module the server verifies Second factors with, on the
 	// env's clock (ADR 0020).
@@ -178,11 +184,17 @@ type setup struct {
 	// version is the running version the Instance module judges releases against; the
 	// test build is "dev", which is no release.
 	version string
+	// certs is where an `sns` Preset gets its signing certificate; nil is the test certificate.
+	certs preset.CertFetcher
 }
 
 // WithRunningVersion sets the version the Instance's Release check compares against, so a
 // test runs as a release build ("0.1.0") instead of the "dev" test build.
 func WithRunningVersion(v string) Option { return func(s *setup) { s.version = v } }
+
+// WithSNSCertificates replaces where an `sns` Preset gets its signing certificate (the
+// test certificate by default), so a test makes the fetch fail.
+func WithSNSCertificates(f preset.CertFetcher) Option { return func(s *setup) { s.certs = f } }
 
 // WithoutLicense builds the instance with no EE license key, like a plain core
 // self-host. Setup's default is an instance licensed for every EE feature.
@@ -300,7 +312,18 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	templatesModule := templates.New()
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow))
-	integrationsModule := integrations.New(bus, cipher, catalog, inline)
+	// An `sns` Preset checks signatures against the test certificate, so a test posts a
+	// notification signed offline; confirmations are recorded, never fetched.
+	certs := st.certs
+	if certs == nil {
+		certs = preset.TestSNSCertificates
+	}
+	presets, err := preset.Load(nil, preset.WithSNSCertificates(certs))
+	if err != nil {
+		t.Fatalf("load presets: %v", err)
+	}
+	confirmations := &Confirmations{}
+	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline)
 	automationsModule := automations.New(cipher)
 	broadcastsModule := broadcasts.New(inline)
@@ -339,8 +362,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{
-		Instance: inst, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
-		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
+		Instance: inst, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
+		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}
 }
 

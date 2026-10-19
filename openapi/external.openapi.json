@@ -27,6 +27,9 @@
       "name": "Sending domains"
     },
     {
+      "name": "Integrations"
+    },
+    {
       "name": "Consent"
     },
     {
@@ -43,9 +46,6 @@
     },
     {
       "name": "Broadcasts"
-    },
-    {
-      "name": "Integrations"
     },
     {
       "name": "Templates"
@@ -5170,6 +5170,215 @@
         "tags": ["Integrations"]
       }
     },
+    "/integrations/{id}/regenerate-key": {
+      "post": {
+        "operationId": "Integrations_regenerateKey",
+        "description": "Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider. Needs a person: hidden from MCP.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IntegrationResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Integrations"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
+    "/presets": {
+      "get": {
+        "operationId": "Presets_list",
+        "description": "List the Presets the Instance offers, with the params schema of each",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PresetResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Integrations"],
+        "x-mcp": {
+          "name": "presets_list"
+        }
+      }
+    },
     "/segments": {
       "get": {
         "operationId": "Segments_list",
@@ -9836,6 +10045,16 @@
           },
           "config": {
             "$ref": "#/components/schemas/IntegrationConfigInput"
+          },
+          "preset": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first"
           }
         },
         "description": "Create an Integration. The provider and channel are derived from `config.kind`."
@@ -10352,6 +10571,10 @@
           "maxPerDay",
           "sendLimit",
           "config",
+          "preset",
+          "params",
+          "secretsRetiring",
+          "hookUrl",
           "createdAt",
           "updatedAt"
         ],
@@ -10421,6 +10644,27 @@
             ],
             "description": "Provider config (secrets redacted)"
           },
+          "preset": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Preset this Integration's provider callbacks are read with; null when it receives none"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as `********`, never its value"
+          },
+          "secretsRetiring": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Names of the secret params that are rotating: a retiring value is still accepted beside the current one"
+          },
+          "hookUrl": {
+            "type": "string",
+            "description": "Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is)"
+          },
           "createdAt": {
             "allOf": [
               {
@@ -10453,6 +10697,26 @@
         "minimum": 1,
         "maximum": 10000,
         "description": "A per-second Send rate limit the caller may set"
+      },
+      "PresetResource": {
+        "type": "object",
+        "required": ["name", "description", "paramsSchema"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name an Integration's `preset` refers to"
+          },
+          "description": {
+            "type": "string",
+            "description": "What the Preset is for"
+          },
+          "paramsSchema": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "JSON Schema (draft 2020-12) of the `params` an Integration of this Preset takes. A string marked `writeOnly` is a secret: it is never returned by a read."
+          }
+        },
+        "description": "A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks"
       },
       "PreviewSegmentInput": {
         "type": "object",
@@ -11488,6 +11752,20 @@
               }
             ],
             "nullable": true
+          },
+          "preset": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)"
+          },
+          "retireSecrets": {
+            "type": "boolean",
+            "description": "Stop accepting the retiring value of every rotating secret"
           }
         },
         "description": "Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret."

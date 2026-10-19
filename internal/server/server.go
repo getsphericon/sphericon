@@ -119,9 +119,9 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// Public email engagement endpoints (open pixel, click redirect, unsubscribe).
 	mux.Handle("/e/", trackingHandler(client, bus, site.Tracker, limiter))
 
-	// Inbound provider webhooks (SES bounce/complaint via SNS), routed by the
-	// workspace's secret ingest key: POST /hooks/{key}/{provider}.
-	mux.Handle("/hooks/", hooksHandler(client, bus))
+	// Inbound provider callbacks (ADR 0037): POST /hooks/{key}, the key of one
+	// Integration, read with that Integration's Preset.
+	mux.Handle("/hooks/", hooksHandler(client, bus, site.Integrations, site.Clock))
 
 	// Catch-all: the embedded SPA (release builds with -tags embed_spa). Most
 	// specific pattern wins, so this never shadows the API prefixes above.
