@@ -345,3 +345,28 @@ func TestTestSendIsAuditedAsAWebhookEndpointTest(t *testing.T) {
 	assert.Equal(t, "John", e.Actor.Name)
 	assert.Equal(t, "email.opened", e.Diff["eventType"])
 }
+
+// Enabling an endpoint that turned itself off starts it fresh: the reason and the failure
+// state are gone. Disabling it by hand drops the reason too, since the owner decided now.
+func TestEnablingClearsTheFailureStateAndTheDisabledReason(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	m := module(env, nil)
+	ctx := context.Background()
+	on := true
+
+	before, err := acme.WebhookEndpoint().Get(ctx, fixtures.WebhookCodebasicsGoneID)
+	require.NoError(t, err)
+	require.NotNil(t, before.DisabledReason)
+	require.NotNil(t, before.ConsecutiveFailures)
+
+	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsGoneID, webhooks.UpdateInput{Enabled: &on})
+	require.NoError(t, err)
+	assert.True(t, got.Enabled)
+	assert.Nil(t, got.DisabledReason)
+	assert.Nil(t, got.ConsecutiveFailures)
+	assert.Nil(t, got.FailingSince)
+	assert.Nil(t, got.LastErrorKind)
+	assert.Nil(t, got.LastErrorStatus)
+	assert.Nil(t, got.LastFailureAt)
+}

@@ -919,7 +919,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL, cfg.OutboundAllow,
+		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL, cfg.OutboundAllow,
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 			edition.Jobs(bus.Bus, sys.EmailSender), inst.Jobs(), reporter.Jobs())
 		if err != nil {

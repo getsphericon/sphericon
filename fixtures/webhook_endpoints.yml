@@ -29,6 +29,20 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{hoursAgo 2}}'
+# An endpoint that turned itself off after its receiver answered 410.
+- id: 103 # fixture: WebhookCodebasicsGone
+  url: https://gone.codebasics.dev/hook
+  secret_encrypted: '{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}'
+  enabled: false
+  consecutive_failures: 1
+  failing_since: '{{hoursAgo 5}}'
+  last_error_kind: http_status
+  last_error_status: 410
+  last_failure_at: '{{hoursAgo 5}}'
+  disabled_reason: gone
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{hoursAgo 5}}'
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: WebhookGlobex

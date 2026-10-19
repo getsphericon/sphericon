@@ -225,6 +225,26 @@ func (_u *WebhookEndpointUpdate) ClearLastFailureAt() *WebhookEndpointUpdate {
 	return _u
 }
 
+// SetDisabledReason sets the "disabled_reason" field.
+func (_u *WebhookEndpointUpdate) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointUpdate {
+	_u.mutation.SetDisabledReason(v)
+	return _u
+}
+
+// SetNillableDisabledReason sets the "disabled_reason" field if the given value is not nil.
+func (_u *WebhookEndpointUpdate) SetNillableDisabledReason(v *webhookendpoint.DisabledReason) *WebhookEndpointUpdate {
+	if v != nil {
+		_u.SetDisabledReason(*v)
+	}
+	return _u
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (_u *WebhookEndpointUpdate) ClearDisabledReason() *WebhookEndpointUpdate {
+	_u.mutation.ClearDisabledReason()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *WebhookEndpointUpdate) SetWorkspace(v *Workspace) *WebhookEndpointUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -287,6 +307,11 @@ func (_u *WebhookEndpointUpdate) check() error {
 	if v, ok := _u.mutation.LastErrorKind(); ok {
 		if err := webhookendpoint.LastErrorKindValidator(v); err != nil {
 			return &ValidationError{Name: "last_error_kind", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.last_error_kind": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.DisabledReason(); ok {
+		if err := webhookendpoint.DisabledReasonValidator(v); err != nil {
+			return &ValidationError{Name: "disabled_reason", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.disabled_reason": %w`, err)}
 		}
 	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
@@ -371,6 +396,12 @@ func (_u *WebhookEndpointUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.LastFailureAtCleared() {
 		_spec.ClearField(webhookendpoint.FieldLastFailureAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DisabledReason(); ok {
+		_spec.SetField(webhookendpoint.FieldDisabledReason, field.TypeEnum, value)
+	}
+	if _u.mutation.DisabledReasonCleared() {
+		_spec.ClearField(webhookendpoint.FieldDisabledReason, field.TypeEnum)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -617,6 +648,26 @@ func (_u *WebhookEndpointUpdateOne) ClearLastFailureAt() *WebhookEndpointUpdateO
 	return _u
 }
 
+// SetDisabledReason sets the "disabled_reason" field.
+func (_u *WebhookEndpointUpdateOne) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointUpdateOne {
+	_u.mutation.SetDisabledReason(v)
+	return _u
+}
+
+// SetNillableDisabledReason sets the "disabled_reason" field if the given value is not nil.
+func (_u *WebhookEndpointUpdateOne) SetNillableDisabledReason(v *webhookendpoint.DisabledReason) *WebhookEndpointUpdateOne {
+	if v != nil {
+		_u.SetDisabledReason(*v)
+	}
+	return _u
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (_u *WebhookEndpointUpdateOne) ClearDisabledReason() *WebhookEndpointUpdateOne {
+	_u.mutation.ClearDisabledReason()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *WebhookEndpointUpdateOne) SetWorkspace(v *Workspace) *WebhookEndpointUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -692,6 +743,11 @@ func (_u *WebhookEndpointUpdateOne) check() error {
 	if v, ok := _u.mutation.LastErrorKind(); ok {
 		if err := webhookendpoint.LastErrorKindValidator(v); err != nil {
 			return &ValidationError{Name: "last_error_kind", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.last_error_kind": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.DisabledReason(); ok {
+		if err := webhookendpoint.DisabledReasonValidator(v); err != nil {
+			return &ValidationError{Name: "disabled_reason", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.disabled_reason": %w`, err)}
 		}
 	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
@@ -793,6 +849,12 @@ func (_u *WebhookEndpointUpdateOne) sqlSave(ctx context.Context) (_node *Webhook
 	}
 	if _u.mutation.LastFailureAtCleared() {
 		_spec.ClearField(webhookendpoint.FieldLastFailureAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DisabledReason(); ok {
+		_spec.SetField(webhookendpoint.FieldDisabledReason, field.TypeEnum, value)
+	}
+	if _u.mutation.DisabledReasonCleared() {
+		_spec.ClearField(webhookendpoint.FieldDisabledReason, field.TypeEnum)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

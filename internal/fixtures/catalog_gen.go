@@ -833,6 +833,10 @@ const (
 	WebhookCodebasicsFailingID = 102
 	// WebhookCodebasicsFailingURL is from fixtures/webhook_endpoints.
 	WebhookCodebasicsFailingURL = "https://failing.codebasics.dev/hook"
+	// WebhookCodebasicsGoneID is from fixtures/webhook_endpoints.
+	WebhookCodebasicsGoneID = 103
+	// WebhookCodebasicsGoneURL is from fixtures/webhook_endpoints.
+	WebhookCodebasicsGoneURL = "https://gone.codebasics.dev/hook"
 	// WebhookCodebasicsID is from fixtures/webhook_endpoints.
 	WebhookCodebasicsID = 100
 	// WebhookCodebasicsURL is from fixtures/webhook_endpoints.

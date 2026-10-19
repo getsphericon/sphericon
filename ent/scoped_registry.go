@@ -1468,6 +1468,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.LastFailureAt != nil {
 					b.SetLastFailureAt(*src.LastFailureAt)
 				}
+				if src.DisabledReason != nil {
+					b.SetDisabledReason(*src.DisabledReason)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

@@ -43,6 +43,8 @@ type WebhookEndpoint struct {
 	LastErrorStatus *int `json:"last_error_status,omitempty"`
 	// LastFailureAt holds the value of the "last_failure_at" field.
 	LastFailureAt *time.Time `json:"last_failure_at,omitempty"`
+	// DisabledReason holds the value of the "disabled_reason" field.
+	DisabledReason *webhookendpoint.DisabledReason `json:"disabled_reason,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the WebhookEndpointQuery when eager-loading is set.
 	Edges        WebhookEndpointEdges `json:"edges"`
@@ -80,7 +82,7 @@ func (*WebhookEndpoint) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case webhookendpoint.FieldID, webhookendpoint.FieldWorkspaceID, webhookendpoint.FieldConsecutiveFailures, webhookendpoint.FieldLastErrorStatus:
 			values[i] = new(sql.NullInt64)
-		case webhookendpoint.FieldURL, webhookendpoint.FieldSecretEncrypted, webhookendpoint.FieldLastErrorKind:
+		case webhookendpoint.FieldURL, webhookendpoint.FieldSecretEncrypted, webhookendpoint.FieldLastErrorKind, webhookendpoint.FieldDisabledReason:
 			values[i] = new(sql.NullString)
 		case webhookendpoint.FieldCreatedAt, webhookendpoint.FieldUpdatedAt, webhookendpoint.FieldFailingSince, webhookendpoint.FieldLastFailureAt:
 			values[i] = new(sql.NullTime)
@@ -184,6 +186,13 @@ func (_m *WebhookEndpoint) assignValues(columns []string, values []any) error {
 				_m.LastFailureAt = new(time.Time)
 				*_m.LastFailureAt = value.Time
 			}
+		case webhookendpoint.FieldDisabledReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field disabled_reason", values[i])
+			} else if value.Valid {
+				_m.DisabledReason = new(webhookendpoint.DisabledReason)
+				*_m.DisabledReason = webhookendpoint.DisabledReason(value.String)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -268,6 +277,11 @@ func (_m *WebhookEndpoint) String() string {
 	if v := _m.LastFailureAt; v != nil {
 		builder.WriteString("last_failure_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.DisabledReason; v != nil {
+		builder.WriteString("disabled_reason=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

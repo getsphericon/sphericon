@@ -66,6 +66,12 @@ func (WebhookEndpoint) Fields() []ent.Field {
 		field.Time("last_failure_at").
 			Optional().
 			Nillable(),
+		// Why the endpoint turned itself off (ADR 0039): the receiver answered 410, or
+		// failed for longer than the window. Nil for an endpoint an owner disabled.
+		field.Enum("disabled_reason").
+			Values("gone", "persistent_failure").
+			Optional().
+			Nillable(),
 	}
 }
 

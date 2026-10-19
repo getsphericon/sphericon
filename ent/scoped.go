@@ -21086,6 +21086,18 @@ func (x *WebhookEndpointScopedCreate) SetNillableLastFailureAt(v *time.Time) *We
 	return x
 }
 
+// SetDisabledReason sets the "disabled_reason" field.
+func (x *WebhookEndpointScopedCreate) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedCreate {
+	x.b.SetDisabledReason(v)
+	return x
+}
+
+// SetNillableDisabledReason sets the "disabled_reason" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableDisabledReason(v *webhookendpoint.DisabledReason) *WebhookEndpointScopedCreate {
+	x.b.SetNillableDisabledReason(v)
+	return x
+}
+
 func (x *WebhookEndpointScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -21348,6 +21360,24 @@ func (u *WebhookEndpointScopedUpsert) UpdateLastFailureAt() *WebhookEndpointScop
 // ClearLastFailureAt clears the value of the "last_failure_at" field.
 func (u *WebhookEndpointScopedUpsert) ClearLastFailureAt() *WebhookEndpointScopedUpsert {
 	u.u.SetNull(webhookendpoint.FieldLastFailureAt)
+	return u
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (u *WebhookEndpointScopedUpsert) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldDisabledReason, v)
+	return u
+}
+
+// UpdateDisabledReason sets the "disabled_reason" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateDisabledReason() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldDisabledReason)
+	return u
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (u *WebhookEndpointScopedUpsert) ClearDisabledReason() *WebhookEndpointScopedUpsert {
+	u.u.SetNull(webhookendpoint.FieldDisabledReason)
 	return u
 }
 
@@ -21680,6 +21710,24 @@ func (x *WebhookEndpointScopedUpdateOne) ClearLastFailureAt() *WebhookEndpointSc
 	return x
 }
 
+// SetDisabledReason sets the "disabled_reason" field.
+func (x *WebhookEndpointScopedUpdateOne) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdateOne {
+	x.b.SetDisabledReason(v)
+	return x
+}
+
+// SetNillableDisabledReason sets the "disabled_reason" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableDisabledReason(v *webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableDisabledReason(v)
+	return x
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (x *WebhookEndpointScopedUpdateOne) ClearDisabledReason() *WebhookEndpointScopedUpdateOne {
+	x.b.ClearDisabledReason()
+	return x
+}
+
 func (x *WebhookEndpointScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -21911,6 +21959,24 @@ func (x *WebhookEndpointScopedUpdate) SetNillableLastFailureAt(v *time.Time) *We
 // ClearLastFailureAt clears the value of the "last_failure_at" field.
 func (x *WebhookEndpointScopedUpdate) ClearLastFailureAt() *WebhookEndpointScopedUpdate {
 	x.b.ClearLastFailureAt()
+	return x
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (x *WebhookEndpointScopedUpdate) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdate {
+	x.b.SetDisabledReason(v)
+	return x
+}
+
+// SetNillableDisabledReason sets the "disabled_reason" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableDisabledReason(v *webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableDisabledReason(v)
+	return x
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (x *WebhookEndpointScopedUpdate) ClearDisabledReason() *WebhookEndpointScopedUpdate {
+	x.b.ClearDisabledReason()
 	return x
 }
 

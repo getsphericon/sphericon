@@ -159,6 +159,20 @@ func (_c *WebhookEndpointCreate) SetNillableLastFailureAt(v *time.Time) *Webhook
 	return _c
 }
 
+// SetDisabledReason sets the "disabled_reason" field.
+func (_c *WebhookEndpointCreate) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointCreate {
+	_c.mutation.SetDisabledReason(v)
+	return _c
+}
+
+// SetNillableDisabledReason sets the "disabled_reason" field if the given value is not nil.
+func (_c *WebhookEndpointCreate) SetNillableDisabledReason(v *webhookendpoint.DisabledReason) *WebhookEndpointCreate {
+	if v != nil {
+		_c.SetDisabledReason(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *WebhookEndpointCreate) SetID(v int64) *WebhookEndpointCreate {
 	_c.mutation.SetID(v)
@@ -249,6 +263,11 @@ func (_c *WebhookEndpointCreate) check() error {
 			return &ValidationError{Name: "last_error_kind", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.last_error_kind": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.DisabledReason(); ok {
+		if err := webhookendpoint.DisabledReasonValidator(v); err != nil {
+			return &ValidationError{Name: "disabled_reason", err: fmt.Errorf(`ent: validator failed for field "WebhookEndpoint.disabled_reason": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "WebhookEndpoint.workspace"`)}
 	}
@@ -328,6 +347,10 @@ func (_c *WebhookEndpointCreate) createSpec() (*WebhookEndpoint, *sqlgraph.Creat
 	if value, ok := _c.mutation.LastFailureAt(); ok {
 		_spec.SetField(webhookendpoint.FieldLastFailureAt, field.TypeTime, value)
 		_node.LastFailureAt = &value
+	}
+	if value, ok := _c.mutation.DisabledReason(); ok {
+		_spec.SetField(webhookendpoint.FieldDisabledReason, field.TypeEnum, value)
+		_node.DisabledReason = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -575,6 +598,24 @@ func (u *WebhookEndpointUpsert) UpdateLastFailureAt() *WebhookEndpointUpsert {
 // ClearLastFailureAt clears the value of the "last_failure_at" field.
 func (u *WebhookEndpointUpsert) ClearLastFailureAt() *WebhookEndpointUpsert {
 	u.SetNull(webhookendpoint.FieldLastFailureAt)
+	return u
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (u *WebhookEndpointUpsert) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointUpsert {
+	u.Set(webhookendpoint.FieldDisabledReason, v)
+	return u
+}
+
+// UpdateDisabledReason sets the "disabled_reason" field to the value that was provided on create.
+func (u *WebhookEndpointUpsert) UpdateDisabledReason() *WebhookEndpointUpsert {
+	u.SetExcluded(webhookendpoint.FieldDisabledReason)
+	return u
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (u *WebhookEndpointUpsert) ClearDisabledReason() *WebhookEndpointUpsert {
+	u.SetNull(webhookendpoint.FieldDisabledReason)
 	return u
 }
 
@@ -836,6 +877,27 @@ func (u *WebhookEndpointUpsertOne) UpdateLastFailureAt() *WebhookEndpointUpsertO
 func (u *WebhookEndpointUpsertOne) ClearLastFailureAt() *WebhookEndpointUpsertOne {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.ClearLastFailureAt()
+	})
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (u *WebhookEndpointUpsertOne) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetDisabledReason(v)
+	})
+}
+
+// UpdateDisabledReason sets the "disabled_reason" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertOne) UpdateDisabledReason() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateDisabledReason()
+	})
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (u *WebhookEndpointUpsertOne) ClearDisabledReason() *WebhookEndpointUpsertOne {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearDisabledReason()
 	})
 }
 
@@ -1263,6 +1325,27 @@ func (u *WebhookEndpointUpsertBulk) UpdateLastFailureAt() *WebhookEndpointUpsert
 func (u *WebhookEndpointUpsertBulk) ClearLastFailureAt() *WebhookEndpointUpsertBulk {
 	return u.Update(func(s *WebhookEndpointUpsert) {
 		s.ClearLastFailureAt()
+	})
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (u *WebhookEndpointUpsertBulk) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.SetDisabledReason(v)
+	})
+}
+
+// UpdateDisabledReason sets the "disabled_reason" field to the value that was provided on create.
+func (u *WebhookEndpointUpsertBulk) UpdateDisabledReason() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.UpdateDisabledReason()
+	})
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (u *WebhookEndpointUpsertBulk) ClearDisabledReason() *WebhookEndpointUpsertBulk {
+	return u.Update(func(s *WebhookEndpointUpsert) {
+		s.ClearDisabledReason()
 	})
 }
 

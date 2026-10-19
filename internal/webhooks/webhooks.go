@@ -258,6 +258,15 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if in.EventTypes != nil {
 		upd = upd.SetEventTypes(in.EventTypes)
 	}
+	if in.Enabled != nil {
+		// Whoever flips the switch decides now: the reason it last turned itself off no
+		// longer applies, and enabling starts the failure run over (ADR 0039).
+		upd = upd.ClearDisabledReason()
+		if *in.Enabled {
+			upd = upd.ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
+				ClearLastErrorStatus().ClearLastFailureAt()
+		}
+	}
 	e, err := upd.Save(ctx)
 	if err != nil {
 		return Endpoint{}, err
