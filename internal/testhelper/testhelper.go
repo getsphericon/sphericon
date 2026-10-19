@@ -334,7 +334,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	case st.noSystemFrom:
 		outboundOpts = append(outboundOpts, outbound.WithSystemSender(struct{ messaging.EmailSender }{systemMail}))
 	default:
-		outboundOpts = append(outboundOpts, outbound.WithSystemSender(systemFrom{systemMail}))
+		outboundOpts = append(outboundOpts, outbound.WithSystemSender(systemMailFrom{systemMail}))
 	}
 	sender := outbound.New(bus, resolver, tracker, outboundOpts...)
 	fakeSES := &FakeSES{}
@@ -450,11 +450,11 @@ func (s *CapturingSender) Messages() []messaging.EmailMessage {
 // SystemFrom is the From address of the test Instance's System sender.
 const SystemFrom = "noreply@sphericon.test"
 
-// systemFrom is the System sender over the capturing system mail: it sends from SystemFrom,
+// systemMailFrom is the System sender over the capturing system mail: it sends from SystemFrom,
 // where the capturing sender itself defaults to a Workspace's verified domain.
-type systemFrom struct{ *CapturingSender }
+type systemMailFrom struct{ *CapturingSender }
 
-func (systemFrom) DefaultFrom() (string, string) { return SystemFrom, "sphericon" }
+func (systemMailFrom) DefaultFrom() (string, string) { return SystemFrom, "sphericon" }
 
 // fixedResolver returns the same capturing sender for any workspace, so inline
 // broadcast sends work without a configured integration.

@@ -40,7 +40,10 @@ export function OverviewPage() {
   const checklistQuery = useQuery(siteSetupChecklistGetOptions({ path: { slug } }))
   const checklist = checklistQuery.data
   const showChecklist = checklist !== undefined && !checklist.dismissed && !checklist.complete
-  const firstEmailSent = checklist?.steps.sentEmail === 'done'
+  // The checklist alone, no analytics, until the first email is sent; a dismissed one gives up
+  // waiting for it.
+  const showAnalytics =
+    checklist !== undefined && (checklist.dismissed || checklist.steps.sentEmail === 'done')
 
   return (
     <Stack>
@@ -60,7 +63,7 @@ export function OverviewPage() {
         <SetupChecklist slug={slug} checklist={checklist} canDismiss={canManage(workspace?.role)} />
       )}
 
-      {checklist && (!showChecklist || firstEmailSent) && <AnalyticsOverview slug={slug} />}
+      {showAnalytics && <AnalyticsOverview slug={slug} />}
     </Stack>
   )
 }

@@ -273,14 +273,10 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Site
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	u, err := h.accounts.User(ctx, a.UserID)
-	if err != nil {
-		return nil, err
-	}
-	report := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email), &outbound.Asker{UserID: u.ID, Email: u.Email})
+	report := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email), &outbound.Asker{UserID: a.UserID, Email: a.Email})
 	switch {
-	case report.RetryAfter > 0:
-		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, report.Limit, report.RetryAfter, h.now())
+	case report.Wait > 0:
+		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, report.Limit, report.Wait, h.now())
 	case report.Detail != "":
 		v := siteapi.SiteBroadcastsTestSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, report.Detail))
 		return &v, nil

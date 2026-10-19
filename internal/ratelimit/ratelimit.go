@@ -282,6 +282,13 @@ func (e *Exchange) AuthFailed(ctx context.Context) error {
 	return e.limiter.failedAuth.Reject(e.w, e.r, ipOf(ctx))
 }
 
+// Refusal is a request a budget turned away: how long until a slot frees and the size of
+// the budget that was spent. The zero Refusal means nothing was refused.
+type Refusal struct {
+	Wait  time.Duration
+	Limit int
+}
+
 // Delay refuses a request that must wait out a delay rather than a window budget
 // (the per-account login delay, ADR 0025): the caller may retry `wait` from now.
 // limit is the budget reported in X-RateLimit-Limit; Remaining is always 0. Like

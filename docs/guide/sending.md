@@ -25,7 +25,7 @@ A broadcast is one email to a segment.
 2. Choose the audience segment.
 3. Send a test. Without a verified sending domain it goes only to your own address, from the
    platform's sender (the editor shows which From it used); with one, to any address you name,
-   through your Integration. See the [Quickstart](/guide/quickstart#_3-see-an-email-before-dns).
+   through your Integration. See the [Quickstart](/guide/quickstart#see-an-email-before-dns).
 4. Send it now, or schedule it. A scheduled broadcast can be unscheduled again.
 
 A broadcast moves through `draft`, `scheduled`, `sending`, `sent` or `failed`. Its report lists

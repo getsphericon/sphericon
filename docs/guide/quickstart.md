@@ -3,10 +3,10 @@
 This walks you from a running instance to your first broadcast. The same four steps appear as the
 **Setup checklist** on the Overview of a new workspace.
 
-## 1. Run sphericon
+## Run sphericon
 
 ::: tip Prefer not to run it?
-[Sphericon Cloud](/guide/cloud) is the hosted edition: skip this step and start at step 2.
+[Sphericon Cloud](/guide/cloud) is the hosted edition: skip this section and start at "Create an account and a workspace".
 :::
 
 The quickest way is the published image. PostgreSQL is the only dependency.
@@ -26,7 +26,7 @@ Every variable, and the alternative of running the single binary, is covered in
 [Self-hosting](/self-hosting). To explore with sample data instead, follow the development
 setup in the [README](https://github.com/getsphericon/sphericon#development).
 
-## 2. Create an account and a workspace
+## Create an account and a workspace
 
 Open the app, register, and create a workspace. A workspace is where everything else lives.
 You can invite teammates later from **Settings**.
@@ -36,9 +36,9 @@ steps below, each with a link to the page where you do it. A step turns done by 
 thing exists, so you can take them in any order, and none waits for another. The checklist goes
 away once every step is done; an owner or admin can also dismiss it.
 
-## 3. See an email before DNS
+## See an email before DNS
 
-You do not have to finish the steps below to see sphericon send. Open a broadcast, write something
+An aside, not one of the four steps: you do not have to finish them to see sphericon send. Open a broadcast, write something
 and press **Send test**. While the workspace has no verified sending domain, the test goes out from
 the Instance's own sender (the one that sends verification and password reset mail) and needs no
 Integration. It has two limits:
@@ -53,14 +53,14 @@ the last checklist step. On an instance with no outbound mail configured there i
 and the test is refused with that reason. Once a sending domain is verified, a test goes through
 your Integration and your domain, to any address you name.
 
-## 4. The four steps
+## The four steps
 
-### Connect an Integration
+### 1. Connect an Integration
 
 In **Settings → Integrations** add an SMTP server or an SES-compatible service. Credentials are stored
 encrypted with your `SPHERICON_ENCRYPTION_KEY`.
 
-### Verify a sending domain
+### 2. Verify a sending domain
 
 In **Settings → Sending domains** add a **sending domain** and publish the DKIM record sphericon
 shows you. Mail to contacts can only be sent from a verified domain; see
@@ -69,12 +69,12 @@ shows you. Mail to contacts can only be sent from a verified domain; see
 DNS can take time, and nothing else waits for it. While the record has not propagated the domain
 shows as waiting for DNS, and you can go on with the next steps and prepare your first broadcast.
 
-### Bring in contacts
+### 3. Bring in contacts
 
 Either [track your site or product](/guide/tracking) so contacts appear as people identify
 themselves, or create and import them through the [API](/guide/api). One contact completes this step.
 
-### Send your first email
+### 4. Send your first email
 
 1. Create a template, or write the body directly in the broadcast.
 2. Create a broadcast, set the sender and subject, and choose an audience. Optionally define a
