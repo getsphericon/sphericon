@@ -21,6 +21,9 @@ type Automation func(*sql.Selector)
 // AutomationRun is the predicate function for automationrun builders.
 type AutomationRun func(*sql.Selector)
 
+// BrandKit is the predicate function for brandkit builders.
+type BrandKit func(*sql.Selector)
+
 // Broadcast is the predicate function for broadcast builders.
 type Broadcast func(*sql.Selector)
 

@@ -238,6 +238,11 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 		foreign, err := e.IDs(ctx, env.DB, globex)
 		require.NoError(t, err)
 		require.NotEmpty(t, foreign, e.Name)
+		// The scope without an actor writes no entry, so a singleton makes room for the planted row
+		// unaudited.
+		if singletonEntities[e.Name] {
+			require.NoError(t, e.Delete(ctx, env.DB.Scoped(acme), ids[0]), e.Name)
+		}
 		before := len(auditEntries(t, env))
 
 		// Create a row by planting a copy of Globex's (no unique clash with Acme's rows),
@@ -254,6 +259,11 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 		}
 		_, err = e.Replant(ctx, s, foreign[0], remap)
 		require.NoError(t, err, e.Name)
+		if singletonEntities[e.Name] {
+			ids, err = e.IDs(ctx, env.DB, acme)
+			require.NoError(t, err)
+			require.NotEmpty(t, ids, e.Name)
+		}
 		require.NoError(t, e.Touch(ctx, s, ids[0]), e.Name)
 		require.NoError(t, e.Delete(ctx, s, ids[0]), e.Name)
 

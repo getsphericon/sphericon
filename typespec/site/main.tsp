@@ -23,6 +23,7 @@ import "./resources/tokens.tsp";
 import "./resources/integrations.tsp";
 import "./resources/broadcasts.tsp";
 import "./resources/templates.tsp";
+import "./resources/brand-kit.tsp";
 import "./resources/automations.tsp";
 import "./resources/enrollments.tsp";
 import "./resources/webhooks.tsp";

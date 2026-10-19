@@ -1,11 +1,16 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleSiteTemplatesGet, handleSiteTemplatesUpdate } from '../../generated/site/msw.gen.ts'
+import {
+  handleSiteBrandKitGet,
+  handleSiteTemplatesCreate,
+  handleSiteTemplatesGet,
+  handleSiteTemplatesUpdate,
+} from '../../generated/site/msw.gen.ts'
 import { Route as templatesEditRoute } from '../../routes/workspaces/$slug/templates/$templateId/edit.tsx'
 import { Route as templatesRoute } from '../../routes/workspaces/$slug/templates/index.tsx'
 import { Route as templatesCreateRoute } from '../../routes/workspaces/$slug/templates/new.tsx'
-import { TIMESTAMPS } from '../../test/payloads.ts'
+import { hex, TIMESTAMPS, UNSAVED_BRAND_KIT } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -51,6 +56,7 @@ function captureUpdates(saved: object) {
 }
 
 test('Cancel links back to the templates list of the current workspace', async () => {
+  worker.use(handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }))
   const { screen } = await renderWithRouter(
     <TemplateCreatePage />,
     routeMount(templatesCreateRoute, { slug: 'test' }),
@@ -110,4 +116,48 @@ test('a refused save shows the reason the server gave', async () => {
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.element(screen.getByText('heading level 9 is not allowed')).toBeInTheDocument()
+})
+
+test('a new message is authored in the Brand kit and its palette is written into the document', async () => {
+  worker.use(
+    handleSiteBrandKitGet({
+      body: {
+        ...UNSAVED_BRAND_KIT,
+        saved: true,
+        accentColor: hex('ff5500'),
+        updatedAt: TIMESTAMPS.updatedAt,
+      },
+    }),
+  )
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteTemplatesCreate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(WITH_DOC, { status: 201 })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(
+    <TemplateCreatePage />,
+    routeMount(templatesCreateRoute, { slug: 'test' }),
+  )
+  await screen.getByLabelText('Name', { exact: false }).fill('Branded')
+  await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
+  await screen.getByRole('button', { name: 'Insert variable' }).click()
+  await screen.getByRole('menuitem', { name: 'first_name' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => JSON.stringify(bodies)).toContain('globalContent')
+  expect(JSON.stringify(bodies)).toContain(hex('ff5500'))
+})
+
+test('a message already written is opened with the look it has, not the Brand kit', async () => {
+  worker.use(handleSiteTemplatesGet({ body: WITH_DOC }))
+  const bodies = captureUpdates(WITH_DOC)
+
+  const { screen } = await renderWithRouter(<TemplateEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ name: 'Welcome', subject: 'Hi', doc: DOC }])
 })

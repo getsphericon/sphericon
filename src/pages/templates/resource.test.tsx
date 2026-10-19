@@ -7,6 +7,7 @@ import {
   siteTemplatesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import {
+  handleSiteBrandKitGet,
   handleSiteTemplatesCreate,
   handleSiteTemplatesGet,
   handleSiteTemplatesList,
@@ -14,6 +15,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import { Route as templatesEditRoute } from '../../routes/workspaces/$slug/templates/$templateId/edit.tsx'
 import { Route as templatesCreateRoute } from '../../routes/workspaces/$slug/templates/new.tsx'
+import { UNSAVED_BRAND_KIT } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -38,6 +40,7 @@ test('creating a template sends the filled keys, refreshes the list and opens th
   const bodies: unknown[] = []
   let listFetches = 0
   worker.use(
+    handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }),
     handleSiteTemplatesCreate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json({ id: '42', name: 'Welcome' }, { status: 201 })
@@ -73,6 +76,7 @@ test('creating a template sends the filled keys, refreshes the list and opens th
 test('a blank required name is rejected with a readable message before anything is sent', async () => {
   const bodies: unknown[] = []
   worker.use(
+    handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }),
     handleSiteTemplatesCreate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json({ id: '1' }, { status: 201 })

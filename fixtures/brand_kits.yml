@@ -1,0 +1,46 @@
+# A Workspace has at most one Brand kit, created by its first save (ADR 0040). Vandelay has none, so
+# its tests start from the first save and its starter Templates; Initech has one saved, with a
+# Broadcast and an Automation written under it, for the tests that edit it and recreate the
+# starters. Acme's row anchors the generic scoped-client suites.
+- id: 1 # fixture: BrandKitAcme
+  accent_color: '#1a73e8'
+  text_color: '#202124'
+  background_color: '#ffffff'
+  heading_font: Arial, sans-serif
+  body_font: Arial, sans-serif
+  logo_url: ''
+  button_text_color: '#ffffff'
+  button_radius: 4
+  footer_text: ''
+  workspace_id: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+- id: 300 # fixture: BrandKitInitech
+  accent_color: '#0a7d5a'
+  text_color: '#1d1d1f'
+  background_color: '#fafafa'
+  heading_font: Georgia, serif
+  body_font: Verdana, sans-serif
+  logo_url: https://cdn.initech.test/logo.png
+  button_text_color: '#ffffff'
+  button_radius: 8
+  footer_text: Initech, 4120 Freidrich Lane
+  workspace_id: 3
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# --- Globex (workspace 2) foreign row — DO NOT change ---
+- id: 900 # fixture: BrandKitGlobex
+  accent_color: '#cc0000'
+  text_color: '#000000'
+  background_color: '#ffffff'
+  heading_font: Arial, sans-serif
+  body_font: Arial, sans-serif
+  logo_url: ''
+  button_text_color: '#ffffff'
+  button_radius: 0
+  footer_text: ''
+  workspace_id: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

@@ -79,6 +79,8 @@ const (
 	EdgeBroadcastRecipients = "broadcast_recipients"
 	// EdgeEmailTemplates holds the string denoting the email_templates edge name in mutations.
 	EdgeEmailTemplates = "email_templates"
+	// EdgeBrandKits holds the string denoting the brand_kits edge name in mutations.
+	EdgeBrandKits = "brand_kits"
 	// EdgeAutomations holds the string denoting the automations edge name in mutations.
 	EdgeAutomations = "automations"
 	// EdgeAutomationRuns holds the string denoting the automation_runs edge name in mutations.
@@ -201,6 +203,13 @@ const (
 	EmailTemplatesInverseTable = "email_templates"
 	// EmailTemplatesColumn is the table column denoting the email_templates relation/edge.
 	EmailTemplatesColumn = "workspace_id"
+	// BrandKitsTable is the table that holds the brand_kits relation/edge.
+	BrandKitsTable = "brand_kits"
+	// BrandKitsInverseTable is the table name for the BrandKit entity.
+	// It exists in this package in order to avoid circular dependency with the "brandkit" package.
+	BrandKitsInverseTable = "brand_kits"
+	// BrandKitsColumn is the table column denoting the brand_kits relation/edge.
+	BrandKitsColumn = "workspace_id"
 	// AutomationsTable is the table that holds the automations relation/edge.
 	AutomationsTable = "automations"
 	// AutomationsInverseTable is the table name for the Automation entity.
@@ -656,6 +665,20 @@ func ByEmailTemplates(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByBrandKitsCount orders the results by brand_kits count.
+func ByBrandKitsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBrandKitsStep(), opts...)
+	}
+}
+
+// ByBrandKits orders the results by brand_kits terms.
+func ByBrandKits(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBrandKitsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByAutomationsCount orders the results by automations count.
 func ByAutomationsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -905,6 +928,13 @@ func newEmailTemplatesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EmailTemplatesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EmailTemplatesTable, EmailTemplatesColumn),
+	)
+}
+func newBrandKitsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BrandKitsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BrandKitsTable, BrandKitsColumn),
 	)
 }
 func newAutomationsStep() *sqlgraph.Step {

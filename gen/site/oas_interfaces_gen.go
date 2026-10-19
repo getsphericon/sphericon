@@ -85,6 +85,18 @@ type SiteAutomationsUpdateRes interface {
 	siteAutomationsUpdateRes()
 }
 
+type SiteBrandKitGetRes interface {
+	siteBrandKitGetRes()
+}
+
+type SiteBrandKitRecreateStarterTemplatesRes interface {
+	siteBrandKitRecreateStarterTemplatesRes()
+}
+
+type SiteBrandKitSaveRes interface {
+	siteBrandKitSaveRes()
+}
+
 type SiteBroadcastsCreateRes interface {
 	siteBroadcastsCreateRes()
 }

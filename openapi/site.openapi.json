@@ -42,6 +42,9 @@
       "name": "Site Integrations"
     },
     {
+      "name": "Site Brand Kit"
+    },
+    {
       "name": "Site Automations"
     },
     {
@@ -2999,6 +3002,174 @@
           }
         },
         "tags": ["Site Automations"]
+      }
+    },
+    "/workspaces/{slug}/brand-kit": {
+      "get": {
+        "operationId": "SiteBrandKit_get",
+        "description": "Read the Brand kit. Every member may read it.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteBrandKitResource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Brand Kit"]
+      },
+      "put": {
+        "operationId": "SiteBrandKit_save",
+        "description": "Save the Brand kit (owner and admin only). The first save also creates the starter\nTemplates (a welcome, a receipt, a digest and a one-button message) in its brand; a later\nsave creates none and changes no message already written. A change is recorded as an Audit\nentry.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteBrandKitResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Brand Kit"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSaveBrandKitInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{slug}/brand-kit/starter-templates": {
+      "post": {
+        "operationId": "SiteBrandKit_recreateStarterTemplates",
+        "description": "Create the starter Templates again from the saved Brand kit (owner and admin only). It adds\nnew Templates and never touches one that exists or a message already written. Answers 422\nuntil the Brand kit has been saved.",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteEmailTemplateResource"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Brand Kit"]
       }
     },
     "/workspaces/{slug}/broadcasts": {
@@ -8653,6 +8824,79 @@
         "enum": ["email", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
       },
+      "SiteBrandKitResource": {
+        "type": "object",
+        "required": [
+          "saved",
+          "accentColor",
+          "textColor",
+          "backgroundColor",
+          "headingFont",
+          "bodyFont",
+          "logoUrl",
+          "buttonTextColor",
+          "buttonRadius",
+          "footerText"
+        ],
+        "properties": {
+          "saved": {
+            "type": "boolean",
+            "description": "False until the Brand kit is first saved; the values are then the defaults"
+          },
+          "accentColor": {
+            "type": "string",
+            "description": "Brand color of buttons and links, `#rrggbb`"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "Color of text, `#rrggbb`"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "description": "Color of the message background, `#rrggbb`"
+          },
+          "headingFont": {
+            "type": "string",
+            "description": "Font of headings: a CSS font-family list of web-safe families",
+            "x-untrusted": true
+          },
+          "bodyFont": {
+            "type": "string",
+            "description": "Font of body text: a CSS font-family list of web-safe families",
+            "x-untrusted": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "description": "Address (http or https) of the logo image; empty for none",
+            "x-untrusted": true
+          },
+          "buttonTextColor": {
+            "type": "string",
+            "description": "Color of the text on a button, `#rrggbb`"
+          },
+          "buttonRadius": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Corner radius of a button in pixels, 0 to 32"
+          },
+          "footerText": {
+            "type": "string",
+            "description": "Plain text printed under the starter messages, at most 500 characters; empty for none",
+            "x-untrusted": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Brand kit was last saved; absent while it is not saved"
+          }
+        },
+        "description": "The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets\nthe palette the editor offers and what an agent is told to use. Its values are written into a\nmessage when the message is authored, so saving it never changes a message already written. A\nWorkspace that has not saved one has the defaults and `saved` false."
+      },
       "SiteBroadcastProgress": {
         "type": "object",
         "required": ["processedCount", "remainingCount"],
@@ -10330,6 +10574,60 @@
           }
         },
         "description": "Set a new password using a reset token"
+      },
+      "SiteSaveBrandKitInput": {
+        "type": "object",
+        "required": [
+          "accentColor",
+          "textColor",
+          "backgroundColor",
+          "headingFont",
+          "bodyFont",
+          "logoUrl",
+          "buttonTextColor",
+          "buttonRadius",
+          "footerText"
+        ],
+        "properties": {
+          "accentColor": {
+            "type": "string",
+            "description": "Brand color of buttons and links, `#rrggbb`"
+          },
+          "textColor": {
+            "type": "string",
+            "description": "Color of text, `#rrggbb`"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "description": "Color of the message background, `#rrggbb`"
+          },
+          "headingFont": {
+            "type": "string",
+            "description": "Font of headings: letters, digits, spaces, commas and hyphens only"
+          },
+          "bodyFont": {
+            "type": "string",
+            "description": "Font of body text: letters, digits, spaces, commas and hyphens only"
+          },
+          "logoUrl": {
+            "type": "string",
+            "description": "Address (http or https) of the logo image; empty for none"
+          },
+          "buttonTextColor": {
+            "type": "string",
+            "description": "Color of the text on a button, `#rrggbb`"
+          },
+          "buttonRadius": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Corner radius of a button in pixels, 0 to 32"
+          },
+          "footerText": {
+            "type": "string",
+            "description": "Plain text printed under the starter messages, at most 500 characters; empty for none"
+          }
+        },
+        "description": "Save the Brand kit: the first save creates it and the starter Templates, a later one replaces\nits values."
       },
       "SiteScheduleBroadcastInput": {
         "type": "object",

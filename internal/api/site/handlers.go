@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/erasure"
@@ -92,6 +93,7 @@ type Handlers struct {
 	erasure        *erasure.Module
 	tags           *tags.Module
 	templates      *templates.Module
+	brandKit       *brandkit.Module
 	automations    *automations.Module
 	oauth          *oauthserver.Service
 	audit          AuditLog
@@ -163,6 +165,7 @@ type Deps struct {
 	Erasure        *erasure.Module
 	Tags           *tags.Module
 	Templates      *templates.Module
+	BrandKit       *brandkit.Module
 	Automations    *automations.Module
 	Broadcasts     *broadcasts.Module
 	Welcome        WelcomeEnqueuer
@@ -207,7 +210,7 @@ func NewHandlers(d Deps) *Handlers {
 	}
 	return &Handlers{
 		accounts: d.Accounts, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
-		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates,
+		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, billingURL: d.BillingURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification,

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -489,6 +490,21 @@ func (_c *WorkspaceCreate) AddEmailTemplates(v ...*EmailTemplate) *WorkspaceCrea
 		ids[i] = v[i].ID
 	}
 	return _c.AddEmailTemplateIDs(ids...)
+}
+
+// AddBrandKitIDs adds the "brand_kits" edge to the BrandKit entity by IDs.
+func (_c *WorkspaceCreate) AddBrandKitIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddBrandKitIDs(ids...)
+	return _c
+}
+
+// AddBrandKits adds the "brand_kits" edges to the BrandKit entity.
+func (_c *WorkspaceCreate) AddBrandKits(v ...*BrandKit) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddBrandKitIDs(ids...)
 }
 
 // AddAutomationIDs adds the "automations" edge to the Automation entity by IDs.
@@ -1090,6 +1106,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(emailtemplate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.BrandKitsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BrandKitsTable,
+			Columns: []string{workspace.BrandKitsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(brandkit.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

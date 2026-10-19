@@ -30,6 +30,7 @@ import (
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/contacts"
@@ -1154,6 +1155,17 @@ func register(injector do.Injector, env string, o options) {
 	do.Provide(injector, func(do.Injector) (*templates.Module, error) {
 		return templates.New(), nil
 	})
+	do.Provide(injector, func(i do.Injector) (*brandkit.Module, error) {
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		tpl, err := do.Invoke[*templates.Module](i)
+		if err != nil {
+			return nil, err
+		}
+		return brandkit.New(bus.Bus, tpl), nil
+	})
 	do.Provide(injector, func(do.Injector) (*tags.Module, error) {
 		return tags.New(), nil
 	})
@@ -1456,6 +1468,10 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	if err != nil {
 		return apisite.Deps{}, err
 	}
+	bk, err := do.Invoke[*brandkit.Module](i)
+	if err != nil {
+		return apisite.Deps{}, err
+	}
 	tg, err := do.Invoke[*tags.Module](i)
 	if err != nil {
 		return apisite.Deps{}, err
@@ -1519,7 +1535,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Instance:    inst,
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
-		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Automations: auto,
+		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, Integrations: integ,
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Analytics: an,
 		RequireEmailVerification: cfg.RequireEmailVerification,

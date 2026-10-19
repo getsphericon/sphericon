@@ -1,7 +1,11 @@
 import { Input, Loader, Textarea } from '@mantine/core'
+import { useQuery } from '@tanstack/react-query'
 import { lazy, Suspense, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { siteBrandKitGetOptions } from '../generated/site/@tanstack/react-query.gen.ts'
+import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
+import { brandTheme } from '../utils/brandTheme.ts'
 import type { MessageDoc } from '../utils/messageDoc.ts'
 
 // The editor's code is its own chunk: it loads when a message is first edited visually.
@@ -37,6 +41,10 @@ export function MessageEditor({
   const { t } = useTranslation()
   const [asSource] = useState(() => doc === null && body !== '')
   const [initial] = useState(doc)
+  const { slug } = workspaceRoute.useParams()
+  // Only a new message is authored in the Brand kit's palette.
+  const isNew = !asSource && initial === null
+  const brandKit = useQuery({ ...siteBrandKitGetOptions({ path: { slug } }), enabled: isNew })
 
   if (asSource) {
     return (
@@ -51,15 +59,25 @@ export function MessageEditor({
     )
   }
 
+  // The Brand kit is written into a message when the message is authored (ADR 0040): a new message
+  // opens with its palette, an existing one keeps the look it was written with. The editor reads
+  // its theme once, on mount, so a new message waits for the kit.
+  const theme = brandTheme(isNew ? brandKit.data : undefined)
+
   return (
     <Input.Wrapper label={t(($) => $.messageEditor.label)}>
-      <Suspense fallback={<Loader size="sm" />}>
-        <VisualEditor
-          initial={initial}
-          variables={variables}
-          onChange={(next) => onChange({ doc: next })}
-        />
-      </Suspense>
+      {brandKit.isLoading ? (
+        <Loader size="sm" />
+      ) : (
+        <Suspense fallback={<Loader size="sm" />}>
+          <VisualEditor
+            initial={initial}
+            variables={variables}
+            theme={theme}
+            onChange={(next) => onChange({ doc: next })}
+          />
+        </Suspense>
+      )}
     </Input.Wrapper>
   )
 }

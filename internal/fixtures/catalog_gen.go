@@ -73,6 +73,12 @@ const (
 	AutomationWinBackID = 102
 	// AutomationWinBackName is from fixtures/automations.
 	AutomationWinBackName = "Win-back lapsed learners"
+	// BrandKitAcmeID is from fixtures/brand_kits.
+	BrandKitAcmeID = 1
+	// BrandKitGlobexID is from fixtures/brand_kits.
+	BrandKitGlobexID = 900
+	// BrandKitInitechID is from fixtures/brand_kits.
+	BrandKitInitechID = 300
 	// BroadcastDraftID is from fixtures/broadcasts.
 	BroadcastDraftID = 100
 	// BroadcastDraftName is from fixtures/broadcasts.
@@ -795,6 +801,10 @@ const (
 	TagVipID = 1
 	// TagVipName is from fixtures/tags.
 	TagVipName = "vip"
+	// TemplateAuthoredID is from fixtures/email_templates.
+	TemplateAuthoredID = 4
+	// TemplateAuthoredName is from fixtures/email_templates.
+	TemplateAuthoredName = "Product update"
 	// TemplateGlobexID is from fixtures/email_templates.
 	TemplateGlobexID = 900
 	// TemplateGlobexName is from fixtures/email_templates.

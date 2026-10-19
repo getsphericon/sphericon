@@ -190,6 +190,43 @@ var (
 			},
 		},
 	}
+	// BrandKitsColumns holds the columns for the "brand_kits" table.
+	BrandKitsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "accent_color", Type: field.TypeString},
+		{Name: "text_color", Type: field.TypeString},
+		{Name: "background_color", Type: field.TypeString},
+		{Name: "heading_font", Type: field.TypeString},
+		{Name: "body_font", Type: field.TypeString},
+		{Name: "logo_url", Type: field.TypeString, Default: ""},
+		{Name: "button_text_color", Type: field.TypeString},
+		{Name: "button_radius", Type: field.TypeInt},
+		{Name: "footer_text", Type: field.TypeString, Default: ""},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// BrandKitsTable holds the schema information for the "brand_kits" table.
+	BrandKitsTable = &schema.Table{
+		Name:       "brand_kits",
+		Columns:    BrandKitsColumns,
+		PrimaryKey: []*schema.Column{BrandKitsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "brand_kits_workspaces_brand_kits",
+				Columns:    []*schema.Column{BrandKitsColumns[12]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "brandkit_workspace_id",
+				Unique:  true,
+				Columns: []*schema.Column{BrandKitsColumns[12]},
+			},
+		},
+	}
 	// BroadcastsColumns holds the columns for the "broadcasts" table.
 	BroadcastsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1288,6 +1325,7 @@ var (
 		AuthAttemptsTable,
 		AutomationsTable,
 		AutomationRunsTable,
+		BrandKitsTable,
 		BroadcastsTable,
 		BroadcastRecipientsTable,
 		ConfirmationsTable,
@@ -1343,6 +1381,10 @@ func init() {
 	AutomationRunsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	AutomationRunsTable.Annotation = &entsql.Annotation{
 		Table: "automation_runs",
+	}
+	BrandKitsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	BrandKitsTable.Annotation = &entsql.Annotation{
+		Table: "brand_kits",
 	}
 	BroadcastsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	BroadcastsTable.Annotation = &entsql.Annotation{

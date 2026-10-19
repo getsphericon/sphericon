@@ -935,6 +935,59 @@ export const SiteAutomationStepType = {
 export type SiteAutomationStepType = typeof SiteAutomationStepType[keyof typeof SiteAutomationStepType];
 
 /**
+ * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
+ * the palette the editor offers and what an agent is told to use. Its values are written into a
+ * message when the message is authored, so saving it never changes a message already written. A
+ * Workspace that has not saved one has the defaults and `saved` false.
+ */
+export type SiteBrandKitResource = {
+  /**
+   * False until the Brand kit is first saved; the values are then the defaults
+   */
+  saved: boolean;
+  /**
+   * Brand color of buttons and links, `#rrggbb`
+   */
+  accentColor: string;
+  /**
+   * Color of text, `#rrggbb`
+   */
+  textColor: string;
+  /**
+   * Color of the message background, `#rrggbb`
+   */
+  backgroundColor: string;
+  /**
+   * Font of headings: a CSS font-family list of web-safe families
+   */
+  headingFont: string;
+  /**
+   * Font of body text: a CSS font-family list of web-safe families
+   */
+  bodyFont: string;
+  /**
+   * Address (http or https) of the logo image; empty for none
+   */
+  logoUrl: string;
+  /**
+   * Color of the text on a button, `#rrggbb`
+   */
+  buttonTextColor: string;
+  /**
+   * Corner radius of a button in pixels, 0 to 32
+   */
+  buttonRadius: number;
+  /**
+   * Plain text printed under the starter messages, at most 500 characters; empty for none
+   */
+  footerText: string;
+  /**
+   * When the Brand kit was last saved; absent while it is not saved
+   */
+  updatedAt?: Timestamp | null;
+};
+
+/**
  * How far a sending broadcast has got. A broadcast limited by its Integration's Send
  * rate limit is paced: recipients go out at an even interval, so the estimate is
  * derived on the server from the last scheduled time and the recipients remaining.
@@ -2141,6 +2194,49 @@ export type SiteResendVerificationInput = {
 export type SiteResetPasswordInput = {
   token: string;
   password: string;
+};
+
+/**
+ * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
+ * its values.
+ */
+export type SiteSaveBrandKitInput = {
+  /**
+   * Brand color of buttons and links, `#rrggbb`
+   */
+  accentColor: string;
+  /**
+   * Color of text, `#rrggbb`
+   */
+  textColor: string;
+  /**
+   * Color of the message background, `#rrggbb`
+   */
+  backgroundColor: string;
+  /**
+   * Font of headings: letters, digits, spaces, commas and hyphens only
+   */
+  headingFont: string;
+  /**
+   * Font of body text: letters, digits, spaces, commas and hyphens only
+   */
+  bodyFont: string;
+  /**
+   * Address (http or https) of the logo image; empty for none
+   */
+  logoUrl: string;
+  /**
+   * Color of the text on a button, `#rrggbb`
+   */
+  buttonTextColor: string;
+  /**
+   * Corner radius of a button in pixels, 0 to 32
+   */
+  buttonRadius: number;
+  /**
+   * Plain text printed under the starter messages, at most 500 characters; empty for none
+   */
+  footerText: string;
 };
 
 /**
@@ -5014,6 +5110,103 @@ export type SiteAutomationsDeactivateResponses = {
 };
 
 export type SiteAutomationsDeactivateResponse = SiteAutomationsDeactivateResponses[keyof SiteAutomationsDeactivateResponses];
+
+export type SiteBrandKitGetData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/brand-kit';
+};
+
+export type SiteBrandKitGetErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteBrandKitGetError = SiteBrandKitGetErrors[keyof SiteBrandKitGetErrors];
+
+export type SiteBrandKitGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteBrandKitResource;
+};
+
+export type SiteBrandKitGetResponse = SiteBrandKitGetResponses[keyof SiteBrandKitGetResponses];
+
+export type SiteBrandKitSaveData = {
+  body: SiteSaveBrandKitInput;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/brand-kit';
+};
+
+export type SiteBrandKitSaveErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteBrandKitSaveError = SiteBrandKitSaveErrors[keyof SiteBrandKitSaveErrors];
+
+export type SiteBrandKitSaveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteBrandKitResource;
+};
+
+export type SiteBrandKitSaveResponse = SiteBrandKitSaveResponses[keyof SiteBrandKitSaveResponses];
+
+export type SiteBrandKitRecreateStarterTemplatesData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/brand-kit/starter-templates';
+};
+
+export type SiteBrandKitRecreateStarterTemplatesErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteBrandKitRecreateStarterTemplatesError = SiteBrandKitRecreateStarterTemplatesErrors[keyof SiteBrandKitRecreateStarterTemplatesErrors];
+
+export type SiteBrandKitRecreateStarterTemplatesResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: Array<SiteEmailTemplateResource>;
+};
+
+export type SiteBrandKitRecreateStarterTemplatesResponse = SiteBrandKitRecreateStarterTemplatesResponses[keyof SiteBrandKitRecreateStarterTemplatesResponses];
 
 export type SiteBroadcastsListData = {
   body?: never;

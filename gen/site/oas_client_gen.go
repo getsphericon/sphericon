@@ -187,6 +187,28 @@ type Invoker interface {
 	//
 	// PUT /workspaces/{slug}/automations/{id}
 	SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (SiteAutomationsUpdateRes, error)
+	// SiteBrandKitGet invokes SiteBrandKit_get operation.
+	//
+	// Read the Brand kit. Every member may read it.
+	//
+	// GET /workspaces/{slug}/brand-kit
+	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (SiteBrandKitGetRes, error)
+	// SiteBrandKitRecreateStarterTemplates invokes SiteBrandKit_recreateStarterTemplates operation.
+	//
+	// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
+	// Templates and never touches one that exists or a message already written. Answers 422 until the
+	// Brand kit has been saved.
+	//
+	// POST /workspaces/{slug}/brand-kit/starter-templates
+	SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (SiteBrandKitRecreateStarterTemplatesRes, error)
+	// SiteBrandKitSave invokes SiteBrandKit_save operation.
+	//
+	// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
+	// welcome, a receipt, a digest and a one-button message) in its brand; a later save creates none and
+	// changes no message already written. A change is recorded as an Audit entry.
+	//
+	// PUT /workspaces/{slug}/brand-kit
+	SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error)
 	// SiteBroadcastsCreate invokes SiteBroadcasts_create operation.
 	//
 	// Create a resource from the site UI.
@@ -3836,6 +3858,409 @@ func (c *Client) sendSiteAutomationsUpdate(ctx context.Context, request *SiteUpd
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteAutomationsUpdateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteBrandKitGet invokes SiteBrandKit_get operation.
+//
+// Read the Brand kit. Every member may read it.
+//
+// GET /workspaces/{slug}/brand-kit
+func (c *Client) SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (SiteBrandKitGetRes, error) {
+	res, err := c.sendSiteBrandKitGet(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (res SiteBrandKitGetRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteBrandKit_get"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{slug}/brand-kit"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteBrandKitGetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "slug" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "slug",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Slug))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/brand-kit"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteBrandKitGetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteBrandKitGetResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteBrandKitRecreateStarterTemplates invokes SiteBrandKit_recreateStarterTemplates operation.
+//
+// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
+// Templates and never touches one that exists or a message already written. Answers 422 until the
+// Brand kit has been saved.
+//
+// POST /workspaces/{slug}/brand-kit/starter-templates
+func (c *Client) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (SiteBrandKitRecreateStarterTemplatesRes, error) {
+	res, err := c.sendSiteBrandKitRecreateStarterTemplates(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (res SiteBrandKitRecreateStarterTemplatesRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteBrandKit_recreateStarterTemplates"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{slug}/brand-kit/starter-templates"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteBrandKitRecreateStarterTemplatesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "slug" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "slug",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Slug))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/brand-kit/starter-templates"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteBrandKitRecreateStarterTemplatesOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteBrandKitRecreateStarterTemplatesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteBrandKitSave invokes SiteBrandKit_save operation.
+//
+// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
+// welcome, a receipt, a digest and a one-button message) in its brand; a later save creates none and
+// changes no message already written. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{slug}/brand-kit
+func (c *Client) SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error) {
+	res, err := c.sendSiteBrandKitSave(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (res SiteBrandKitSaveRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteBrandKit_save"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/workspaces/{slug}/brand-kit"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteBrandKitSaveOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "slug" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "slug",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Slug))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/brand-kit"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteBrandKitSaveRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteBrandKitSaveOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteBrandKitSaveResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

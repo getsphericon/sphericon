@@ -14,6 +14,10 @@ import (
 
 const acme, globex int64 = fixtures.AcmeID, fixtures.GlobexID
 
+// singletonEntities hold at most one row per Workspace (a unique index on workspace_id). A test
+// that plants a second row in Acme first removes Acme's own.
+var singletonEntities = map[string]bool{"BrandKit": true}
+
 // firstID returns the lowest id of the entity's rows in the Workspace, read through
 // the raw client. A missing row means a fixture row is missing for the entity.
 func firstID(ctx context.Context, t *testing.T, c *ent.Client, entities []ent.ScopedEntity, name string, ws int64) int64 {
@@ -119,6 +123,9 @@ func TestScopedClientIsolation(t *testing.T) {
 			t.Run("create sets the workspace and refuses foreign references", func(t *testing.T) {
 				// The foreign fixture row is re-created without its workspace_id:
 				// the new row lands in Acme only because the scoped create set it.
+				if singletonEntities[e.Name] {
+					require.NoError(t, e.Delete(ctx, scoped, own[0]))
+				}
 				ws, err := replantInAcme(ctx, t, env.DB, entities, e, foreign[0])
 				require.NoError(t, err)
 				assert.Equal(t, acme, ws)

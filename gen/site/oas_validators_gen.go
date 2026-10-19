@@ -990,6 +990,62 @@ func (s *SiteAutomationsUpdateUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON) Validate() error {
+	alias := ([]SiteEmailTemplateResource)(s)
+	if alias == nil {
+		return errors.New("nil is invalid value")
+	}
+	return nil
+}
+
+func (s *SiteBrandKitRecreateStarterTemplatesForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBrandKitRecreateStarterTemplatesNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBrandKitRecreateStarterTemplatesUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBrandKitSaveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBrandKitSaveNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteBrandKitSaveUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteBroadcastResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer

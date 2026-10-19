@@ -3759,6 +3759,7 @@ func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
 func (*ProblemDetails) siteAuthResetPasswordRes()              {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
 func (*ProblemDetails) siteAuthVerifyEmailRes()                {}
+func (*ProblemDetails) siteBrandKitGetRes()                    {}
 func (*ProblemDetails) siteEventsActionsRes()                  {}
 func (*ProblemDetails) siteEventsListRes()                     {}
 func (*ProblemDetails) siteInstanceAcknowledgeNoticeRes()      {}
@@ -5542,6 +5543,179 @@ func (*SiteAutomationsUpdateNotFound) siteAutomationsUpdateRes() {}
 type SiteAutomationsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteAutomationsUpdateUnprocessableEntity) siteAutomationsUpdateRes() {}
+
+type SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON []SiteEmailTemplateResource
+
+func (*SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON) siteBrandKitRecreateStarterTemplatesRes() {
+}
+
+type SiteBrandKitRecreateStarterTemplatesForbidden ProblemDetails
+
+func (*SiteBrandKitRecreateStarterTemplatesForbidden) siteBrandKitRecreateStarterTemplatesRes() {}
+
+type SiteBrandKitRecreateStarterTemplatesNotFound ProblemDetails
+
+func (*SiteBrandKitRecreateStarterTemplatesNotFound) siteBrandKitRecreateStarterTemplatesRes() {}
+
+type SiteBrandKitRecreateStarterTemplatesUnprocessableEntity ProblemDetails
+
+func (*SiteBrandKitRecreateStarterTemplatesUnprocessableEntity) siteBrandKitRecreateStarterTemplatesRes() {
+}
+
+// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
+// palette the editor offers and what an agent is told to use. Its values are written into a message
+// when the message is authored, so saving it never changes a message already written. A Workspace that
+// has not saved one has the defaults and `saved` false.
+// Ref: #/components/schemas/SiteBrandKitResource
+type SiteBrandKitResource struct {
+	// False until the Brand kit is first saved; the values are then the defaults.
+	Saved bool `json:"saved"`
+	// Brand color of buttons and links, `#rrggbb`.
+	AccentColor string `json:"accentColor"`
+	// Color of text, `#rrggbb`.
+	TextColor string `json:"textColor"`
+	// Color of the message background, `#rrggbb`.
+	BackgroundColor string `json:"backgroundColor"`
+	// Font of headings: a CSS font-family list of web-safe families.
+	HeadingFont string `json:"headingFont"`
+	// Font of body text: a CSS font-family list of web-safe families.
+	BodyFont string `json:"bodyFont"`
+	// Address (http or https) of the logo image; empty for none.
+	LogoUrl string `json:"logoUrl"`
+	// Color of the text on a button, `#rrggbb`.
+	ButtonTextColor string `json:"buttonTextColor"`
+	// Corner radius of a button in pixels, 0 to 32.
+	ButtonRadius int32 `json:"buttonRadius"`
+	// Plain text printed under the starter messages, at most 500 characters; empty for none.
+	FooterText string `json:"footerText"`
+	// When the Brand kit was last saved; absent while it is not saved.
+	UpdatedAt OptNilTimestamp `json:"updatedAt"`
+}
+
+// GetSaved returns the value of Saved.
+func (s *SiteBrandKitResource) GetSaved() bool {
+	return s.Saved
+}
+
+// GetAccentColor returns the value of AccentColor.
+func (s *SiteBrandKitResource) GetAccentColor() string {
+	return s.AccentColor
+}
+
+// GetTextColor returns the value of TextColor.
+func (s *SiteBrandKitResource) GetTextColor() string {
+	return s.TextColor
+}
+
+// GetBackgroundColor returns the value of BackgroundColor.
+func (s *SiteBrandKitResource) GetBackgroundColor() string {
+	return s.BackgroundColor
+}
+
+// GetHeadingFont returns the value of HeadingFont.
+func (s *SiteBrandKitResource) GetHeadingFont() string {
+	return s.HeadingFont
+}
+
+// GetBodyFont returns the value of BodyFont.
+func (s *SiteBrandKitResource) GetBodyFont() string {
+	return s.BodyFont
+}
+
+// GetLogoUrl returns the value of LogoUrl.
+func (s *SiteBrandKitResource) GetLogoUrl() string {
+	return s.LogoUrl
+}
+
+// GetButtonTextColor returns the value of ButtonTextColor.
+func (s *SiteBrandKitResource) GetButtonTextColor() string {
+	return s.ButtonTextColor
+}
+
+// GetButtonRadius returns the value of ButtonRadius.
+func (s *SiteBrandKitResource) GetButtonRadius() int32 {
+	return s.ButtonRadius
+}
+
+// GetFooterText returns the value of FooterText.
+func (s *SiteBrandKitResource) GetFooterText() string {
+	return s.FooterText
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SiteBrandKitResource) GetUpdatedAt() OptNilTimestamp {
+	return s.UpdatedAt
+}
+
+// SetSaved sets the value of Saved.
+func (s *SiteBrandKitResource) SetSaved(val bool) {
+	s.Saved = val
+}
+
+// SetAccentColor sets the value of AccentColor.
+func (s *SiteBrandKitResource) SetAccentColor(val string) {
+	s.AccentColor = val
+}
+
+// SetTextColor sets the value of TextColor.
+func (s *SiteBrandKitResource) SetTextColor(val string) {
+	s.TextColor = val
+}
+
+// SetBackgroundColor sets the value of BackgroundColor.
+func (s *SiteBrandKitResource) SetBackgroundColor(val string) {
+	s.BackgroundColor = val
+}
+
+// SetHeadingFont sets the value of HeadingFont.
+func (s *SiteBrandKitResource) SetHeadingFont(val string) {
+	s.HeadingFont = val
+}
+
+// SetBodyFont sets the value of BodyFont.
+func (s *SiteBrandKitResource) SetBodyFont(val string) {
+	s.BodyFont = val
+}
+
+// SetLogoUrl sets the value of LogoUrl.
+func (s *SiteBrandKitResource) SetLogoUrl(val string) {
+	s.LogoUrl = val
+}
+
+// SetButtonTextColor sets the value of ButtonTextColor.
+func (s *SiteBrandKitResource) SetButtonTextColor(val string) {
+	s.ButtonTextColor = val
+}
+
+// SetButtonRadius sets the value of ButtonRadius.
+func (s *SiteBrandKitResource) SetButtonRadius(val int32) {
+	s.ButtonRadius = val
+}
+
+// SetFooterText sets the value of FooterText.
+func (s *SiteBrandKitResource) SetFooterText(val string) {
+	s.FooterText = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SiteBrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
+	s.UpdatedAt = val
+}
+
+func (*SiteBrandKitResource) siteBrandKitGetRes()  {}
+func (*SiteBrandKitResource) siteBrandKitSaveRes() {}
+
+type SiteBrandKitSaveForbidden ProblemDetails
+
+func (*SiteBrandKitSaveForbidden) siteBrandKitSaveRes() {}
+
+type SiteBrandKitSaveNotFound ProblemDetails
+
+func (*SiteBrandKitSaveNotFound) siteBrandKitSaveRes() {}
+
+type SiteBrandKitSaveUnprocessableEntity ProblemDetails
+
+func (*SiteBrandKitSaveUnprocessableEntity) siteBrandKitSaveRes() {}
 
 // How far a sending broadcast has got. A broadcast limited by its Integration's Send rate limit is
 // paced: recipients go out at an even interval, so the estimate is derived on the server from the last
@@ -9969,6 +10143,120 @@ func (s *SiteResetPasswordInput) SetToken(val string) {
 // SetPassword sets the value of Password.
 func (s *SiteResetPasswordInput) SetPassword(val string) {
 	s.Password = val
+}
+
+// Save the Brand kit: the first save creates it and the starter Templates, a later one replaces its
+// values.
+// Ref: #/components/schemas/SiteSaveBrandKitInput
+type SiteSaveBrandKitInput struct {
+	// Brand color of buttons and links, `#rrggbb`.
+	AccentColor string `json:"accentColor"`
+	// Color of text, `#rrggbb`.
+	TextColor string `json:"textColor"`
+	// Color of the message background, `#rrggbb`.
+	BackgroundColor string `json:"backgroundColor"`
+	// Font of headings: letters, digits, spaces, commas and hyphens only.
+	HeadingFont string `json:"headingFont"`
+	// Font of body text: letters, digits, spaces, commas and hyphens only.
+	BodyFont string `json:"bodyFont"`
+	// Address (http or https) of the logo image; empty for none.
+	LogoUrl string `json:"logoUrl"`
+	// Color of the text on a button, `#rrggbb`.
+	ButtonTextColor string `json:"buttonTextColor"`
+	// Corner radius of a button in pixels, 0 to 32.
+	ButtonRadius int32 `json:"buttonRadius"`
+	// Plain text printed under the starter messages, at most 500 characters; empty for none.
+	FooterText string `json:"footerText"`
+}
+
+// GetAccentColor returns the value of AccentColor.
+func (s *SiteSaveBrandKitInput) GetAccentColor() string {
+	return s.AccentColor
+}
+
+// GetTextColor returns the value of TextColor.
+func (s *SiteSaveBrandKitInput) GetTextColor() string {
+	return s.TextColor
+}
+
+// GetBackgroundColor returns the value of BackgroundColor.
+func (s *SiteSaveBrandKitInput) GetBackgroundColor() string {
+	return s.BackgroundColor
+}
+
+// GetHeadingFont returns the value of HeadingFont.
+func (s *SiteSaveBrandKitInput) GetHeadingFont() string {
+	return s.HeadingFont
+}
+
+// GetBodyFont returns the value of BodyFont.
+func (s *SiteSaveBrandKitInput) GetBodyFont() string {
+	return s.BodyFont
+}
+
+// GetLogoUrl returns the value of LogoUrl.
+func (s *SiteSaveBrandKitInput) GetLogoUrl() string {
+	return s.LogoUrl
+}
+
+// GetButtonTextColor returns the value of ButtonTextColor.
+func (s *SiteSaveBrandKitInput) GetButtonTextColor() string {
+	return s.ButtonTextColor
+}
+
+// GetButtonRadius returns the value of ButtonRadius.
+func (s *SiteSaveBrandKitInput) GetButtonRadius() int32 {
+	return s.ButtonRadius
+}
+
+// GetFooterText returns the value of FooterText.
+func (s *SiteSaveBrandKitInput) GetFooterText() string {
+	return s.FooterText
+}
+
+// SetAccentColor sets the value of AccentColor.
+func (s *SiteSaveBrandKitInput) SetAccentColor(val string) {
+	s.AccentColor = val
+}
+
+// SetTextColor sets the value of TextColor.
+func (s *SiteSaveBrandKitInput) SetTextColor(val string) {
+	s.TextColor = val
+}
+
+// SetBackgroundColor sets the value of BackgroundColor.
+func (s *SiteSaveBrandKitInput) SetBackgroundColor(val string) {
+	s.BackgroundColor = val
+}
+
+// SetHeadingFont sets the value of HeadingFont.
+func (s *SiteSaveBrandKitInput) SetHeadingFont(val string) {
+	s.HeadingFont = val
+}
+
+// SetBodyFont sets the value of BodyFont.
+func (s *SiteSaveBrandKitInput) SetBodyFont(val string) {
+	s.BodyFont = val
+}
+
+// SetLogoUrl sets the value of LogoUrl.
+func (s *SiteSaveBrandKitInput) SetLogoUrl(val string) {
+	s.LogoUrl = val
+}
+
+// SetButtonTextColor sets the value of ButtonTextColor.
+func (s *SiteSaveBrandKitInput) SetButtonTextColor(val string) {
+	s.ButtonTextColor = val
+}
+
+// SetButtonRadius sets the value of ButtonRadius.
+func (s *SiteSaveBrandKitInput) SetButtonRadius(val int32) {
+	s.ButtonRadius = val
+}
+
+// SetFooterText sets the value of FooterText.
+func (s *SiteSaveBrandKitInput) SetFooterText(val string) {
+	s.FooterText = val
 }
 
 // Site request body for scheduling a broadcast.

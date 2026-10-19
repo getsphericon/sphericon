@@ -32,6 +32,7 @@ import { Route as settingsRoute } from '../../routes/workspaces/$slug/settings.t
 import { ApiKeysSection } from './ApiKeysSection.tsx'
 import type { AuditFilter } from './auditFilter.ts'
 import { AuditLogSection } from './AuditLogSection.tsx'
+import { BrandKitSection } from './BrandKitSection.tsx'
 import { IntegrationsSection } from './IntegrationsSection.tsx'
 import { MembersSection } from './MembersSection.tsx'
 import { SecondFactorRequirementSection } from './SecondFactorRequirementSection.tsx'
@@ -216,6 +217,7 @@ export function SettingsPage() {
           <GeneralSection workspace={workspace} />
           <MembersSection slug={workspace.slug} />
           <SecondFactorRequirementSection workspace={workspace} />
+          <BrandKitSection workspace={workspace} />
           <AuditLogSection
             slug={workspace.slug}
             filter={auditFilter}

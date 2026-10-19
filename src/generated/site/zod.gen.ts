@@ -582,6 +582,22 @@ export const zSiteResetPasswordInput = z.object({
 });
 
 /**
+ * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
+ * its values.
+ */
+export const zSiteSaveBrandKitInput = z.object({
+  accentColor: z.string(),
+  textColor: z.string(),
+  backgroundColor: z.string(),
+  headingFont: z.string(),
+  bodyFont: z.string(),
+  logoUrl: z.string(),
+  buttonTextColor: z.string(),
+  buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  footerText: z.string()
+});
+
+/**
  * Proof of the User's password and a code from the authenticator app
  */
 export const zSiteSecondFactorConfirmInput = z.object({
@@ -1181,6 +1197,26 @@ export const zSiteAutomationResource = z.object({
   steps: z.array(zSiteAutomationStep),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
+ * the palette the editor offers and what an agent is told to use. Its values are written into a
+ * message when the message is authored, so saving it never changes a message already written. A
+ * Workspace that has not saved one has the defaults and `saved` false.
+ */
+export const zSiteBrandKitResource = z.object({
+  saved: z.boolean(),
+  accentColor: z.string(),
+  textColor: z.string(),
+  backgroundColor: z.string(),
+  headingFont: z.string(),
+  bodyFont: z.string(),
+  logoUrl: z.string(),
+  buttonTextColor: z.string(),
+  buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  footerText: z.string(),
+  updatedAt: z.exactOptional(zTimestamp.nullable())
 });
 
 /**
@@ -2211,6 +2247,35 @@ export const zSiteAutomationsDeactivatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationsDeactivateResponse = zSiteAutomationResource;
+
+export const zSiteBrandKitGetPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteBrandKitGetResponse = zSiteBrandKitResource;
+
+export const zSiteBrandKitSaveBody = zSiteSaveBrandKitInput;
+
+export const zSiteBrandKitSavePath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteBrandKitSaveResponse = zSiteBrandKitResource;
+
+export const zSiteBrandKitRecreateStarterTemplatesPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteBrandKitRecreateStarterTemplatesResponse = z.array(zSiteEmailTemplateResource);
 
 export const zSiteBroadcastsListPath = z.object({
   slug: z.string()

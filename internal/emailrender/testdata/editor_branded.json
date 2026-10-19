@@ -1,0 +1,332 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "globalContent",
+      "attrs": {
+        "data": {
+          "styles": [
+            {
+              "id": "body",
+              "title": "Background",
+              "classReference": "body",
+              "inputs": [
+                {
+                  "label": "Background",
+                  "type": "color",
+                  "value": "#f0f4f8",
+                  "prop": "backgroundColor",
+                  "classReference": "body"
+                },
+                {
+                  "label": "Padding Top",
+                  "type": "number",
+                  "unit": "px",
+                  "prop": "paddingTop",
+                  "classReference": "body"
+                },
+                {
+                  "label": "Padding Right",
+                  "type": "number",
+                  "unit": "px",
+                  "prop": "paddingRight",
+                  "classReference": "body"
+                },
+                {
+                  "label": "Padding Bottom",
+                  "type": "number",
+                  "unit": "px",
+                  "prop": "paddingBottom",
+                  "classReference": "body"
+                },
+                {
+                  "label": "Padding Left",
+                  "type": "number",
+                  "unit": "px",
+                  "prop": "paddingLeft",
+                  "classReference": "body"
+                }
+              ]
+            },
+            {
+              "id": "container",
+              "title": "Content",
+              "classReference": "container",
+              "inputs": [
+                {
+                  "label": "Align",
+                  "type": "select",
+                  "value": "center",
+                  "options": { "left": "Left", "center": "Center", "right": "Right" },
+                  "prop": "align",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Width",
+                  "type": "number",
+                  "value": 600,
+                  "unit": "px",
+                  "prop": "width",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Height",
+                  "type": "number",
+                  "unit": "px",
+                  "prop": "height",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Text",
+                  "type": "color",
+                  "value": "#000000",
+                  "prop": "color",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Background",
+                  "type": "color",
+                  "value": "#f0f4f8",
+                  "prop": "backgroundColor",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Padding Top",
+                  "type": "number",
+                  "value": 0,
+                  "unit": "px",
+                  "prop": "paddingTop",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Padding Right",
+                  "type": "number",
+                  "value": 0,
+                  "unit": "px",
+                  "prop": "paddingRight",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Padding Bottom",
+                  "type": "number",
+                  "value": 0,
+                  "unit": "px",
+                  "prop": "paddingBottom",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Padding Left",
+                  "type": "number",
+                  "value": 0,
+                  "unit": "px",
+                  "prop": "paddingLeft",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Corner radius",
+                  "type": "number",
+                  "value": 0,
+                  "unit": "px",
+                  "prop": "borderRadius",
+                  "classReference": "container"
+                },
+                {
+                  "label": "Border color",
+                  "type": "color",
+                  "value": "#000000",
+                  "prop": "borderColor",
+                  "classReference": "container"
+                }
+              ]
+            },
+            {
+              "id": "typography",
+              "title": "Text",
+              "classReference": "body",
+              "inputs": [
+                {
+                  "label": "Font size",
+                  "type": "number",
+                  "value": 14,
+                  "unit": "px",
+                  "prop": "fontSize",
+                  "classReference": "body"
+                },
+                {
+                  "label": "Line Height",
+                  "type": "number",
+                  "value": 155,
+                  "unit": "%",
+                  "prop": "lineHeight",
+                  "classReference": "container"
+                }
+              ]
+            },
+            {
+              "id": "h1",
+              "title": "Title",
+              "category": "Text",
+              "classReference": "h1",
+              "inputs": [
+                {
+                  "label": "Text color",
+                  "type": "color",
+                  "prop": "color",
+                  "classReference": "h1",
+                  "value": "#102030"
+                },
+                {
+                  "label": "fontFamily",
+                  "type": "text",
+                  "prop": "fontFamily",
+                  "classReference": "h1",
+                  "value": "Georgia, serif"
+                }
+              ]
+            },
+            {
+              "id": "paragraph",
+              "title": "Paragraph",
+              "category": "Text",
+              "classReference": "paragraph",
+              "inputs": [
+                {
+                  "label": "Text color",
+                  "type": "color",
+                  "prop": "color",
+                  "classReference": "paragraph",
+                  "value": "#102030"
+                },
+                {
+                  "label": "fontFamily",
+                  "type": "text",
+                  "prop": "fontFamily",
+                  "classReference": "paragraph",
+                  "value": "Verdana, sans-serif"
+                }
+              ]
+            },
+            {
+              "id": "list",
+              "title": "List",
+              "category": "Text",
+              "classReference": "list",
+              "inputs": []
+            },
+            {
+              "id": "link",
+              "title": "Link",
+              "classReference": "link",
+              "inputs": [
+                {
+                  "label": "Color",
+                  "type": "color",
+                  "value": "#ff5500",
+                  "prop": "color",
+                  "classReference": "link"
+                },
+                {
+                  "label": "Decoration",
+                  "type": "select",
+                  "value": "underline",
+                  "prop": "textDecoration",
+                  "options": { "underline": "Underline", "none": "None" },
+                  "classReference": "link"
+                }
+              ]
+            },
+            {
+              "id": "button",
+              "title": "Button",
+              "classReference": "button",
+              "inputs": [
+                {
+                  "label": "Background",
+                  "type": "color",
+                  "value": "#ff5500",
+                  "prop": "backgroundColor",
+                  "classReference": "button"
+                },
+                {
+                  "label": "Text color",
+                  "type": "color",
+                  "value": "#fefefe",
+                  "prop": "color",
+                  "classReference": "button"
+                },
+                {
+                  "label": "Radius",
+                  "type": "number",
+                  "value": 12,
+                  "unit": "px",
+                  "prop": "borderRadius",
+                  "classReference": "button"
+                },
+                {
+                  "label": "Padding Top",
+                  "type": "number",
+                  "value": 7,
+                  "unit": "px",
+                  "prop": "paddingTop",
+                  "classReference": "button"
+                },
+                {
+                  "label": "Padding Right",
+                  "type": "number",
+                  "value": 12,
+                  "unit": "px",
+                  "prop": "paddingRight",
+                  "classReference": "button"
+                },
+                {
+                  "label": "Padding Bottom",
+                  "type": "number",
+                  "value": 7,
+                  "unit": "px",
+                  "prop": "paddingBottom",
+                  "classReference": "button"
+                },
+                {
+                  "label": "Padding Left",
+                  "type": "number",
+                  "value": 12,
+                  "unit": "px",
+                  "prop": "paddingLeft",
+                  "classReference": "button"
+                },
+                {
+                  "label": "fontFamily",
+                  "type": "text",
+                  "prop": "fontFamily",
+                  "classReference": "button",
+                  "value": "Verdana, sans-serif"
+                }
+              ]
+            }
+          ],
+          "theme": "basic"
+        }
+      }
+    },
+    {
+      "type": "container",
+      "content": [
+        {
+          "type": "heading",
+          "attrs": { "level": 1, "style": "", "alignment": null, "class": "" },
+          "content": [{ "type": "text", "text": "Hello {{ first_name }}" }]
+        },
+        {
+          "type": "button",
+          "attrs": {
+            "href": "https://example.com",
+            "alignment": "left",
+            "style": "",
+            "class": "button"
+          },
+          "content": [{ "type": "text", "text": "Open" }]
+        }
+      ]
+    }
+  ]
+}

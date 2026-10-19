@@ -69,6 +69,18 @@ func (f AutomationRunFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationRunMutation", m)
 }
 
+// The BrandKitFunc type is an adapter to allow the use of ordinary
+// function as BrandKit mutator.
+type BrandKitFunc func(context.Context, *ent.BrandKitMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BrandKitFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BrandKitMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BrandKitMutation", m)
+}
+
 // The BroadcastFunc type is an adapter to allow the use of ordinary
 // function as Broadcast mutator.
 type BroadcastFunc func(context.Context, *ent.BroadcastMutation) (ent.Value, error)

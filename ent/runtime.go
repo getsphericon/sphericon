@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -181,6 +182,29 @@ func init() {
 	automationrun.DefaultCurrentStep = automationrunDescCurrentStep.Default.(int)
 	// automationrun.CurrentStepValidator is a validator for the "current_step" field. It is called by the builders before save.
 	automationrun.CurrentStepValidator = automationrunDescCurrentStep.Validators[0].(func(int) error)
+	brandkitMixin := schema.BrandKit{}.Mixin()
+	brandkitMixinFields0 := brandkitMixin[0].Fields()
+	_ = brandkitMixinFields0
+	brandkitFields := schema.BrandKit{}.Fields()
+	_ = brandkitFields
+	// brandkitDescCreatedAt is the schema descriptor for created_at field.
+	brandkitDescCreatedAt := brandkitMixinFields0[0].Descriptor()
+	// brandkit.DefaultCreatedAt holds the default value on creation for the created_at field.
+	brandkit.DefaultCreatedAt = brandkitDescCreatedAt.Default.(func() time.Time)
+	// brandkitDescUpdatedAt is the schema descriptor for updated_at field.
+	brandkitDescUpdatedAt := brandkitMixinFields0[1].Descriptor()
+	// brandkit.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	brandkit.DefaultUpdatedAt = brandkitDescUpdatedAt.Default.(func() time.Time)
+	// brandkit.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	brandkit.UpdateDefaultUpdatedAt = brandkitDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// brandkitDescLogoURL is the schema descriptor for logo_url field.
+	brandkitDescLogoURL := brandkitFields[6].Descriptor()
+	// brandkit.DefaultLogoURL holds the default value on creation for the logo_url field.
+	brandkit.DefaultLogoURL = brandkitDescLogoURL.Default.(string)
+	// brandkitDescFooterText is the schema descriptor for footer_text field.
+	brandkitDescFooterText := brandkitFields[9].Descriptor()
+	// brandkit.DefaultFooterText holds the default value on creation for the footer_text field.
+	brandkit.DefaultFooterText = brandkitDescFooterText.Default.(string)
 	broadcastMixin := schema.Broadcast{}.Mixin()
 	broadcastMixinFields0 := broadcastMixin[0].Fields()
 	_ = broadcastMixinFields0
