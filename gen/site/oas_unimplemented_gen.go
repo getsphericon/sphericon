@@ -792,6 +792,16 @@ func (UnimplementedHandler) SiteSendingDomainsVerify(ctx context.Context, params
 	return r, ht.ErrNotImplemented
 }
 
+// SiteSetupChecklistDismiss implements SiteSetupChecklist_dismiss operation.
+//
+// Dismiss the Setup checklist for the whole Workspace (owner and admin only). Idempotent: dismissing a
+// dismissed checklist changes nothing. Returns the checklist as it now reads.
+//
+// POST /workspaces/{slug}/setup-checklist/dismissal
+func (UnimplementedHandler) SiteSetupChecklistDismiss(ctx context.Context, params SiteSetupChecklistDismissParams) (r SiteSetupChecklistDismissRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSetupChecklistGet implements SiteSetupChecklist_get operation.
 //
 // The Workspace's Setup checklist.

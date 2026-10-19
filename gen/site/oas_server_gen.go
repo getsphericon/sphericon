@@ -544,6 +544,13 @@ type Handler interface {
 	//
 	// POST /workspaces/{slug}/sending-domains/{id}/verify
 	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)
+	// SiteSetupChecklistDismiss implements SiteSetupChecklist_dismiss operation.
+	//
+	// Dismiss the Setup checklist for the whole Workspace (owner and admin only). Idempotent: dismissing a
+	// dismissed checklist changes nothing. Returns the checklist as it now reads.
+	//
+	// POST /workspaces/{slug}/setup-checklist/dismissal
+	SiteSetupChecklistDismiss(ctx context.Context, params SiteSetupChecklistDismissParams) (SiteSetupChecklistDismissRes, error)
 	// SiteSetupChecklistGet implements SiteSetupChecklist_get operation.
 	//
 	// The Workspace's Setup checklist.

@@ -21,6 +21,7 @@ import {
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
+import { canManage } from '../../hooks/useCurrentRole.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$slug/index.tsx'
 import { formatPercent } from '../../utils/percent.ts'
 import { SetupChecklist } from './SetupChecklist.tsx'
@@ -55,7 +56,9 @@ export function OverviewPage() {
         />
       )}
 
-      {showChecklist && <SetupChecklist slug={slug} checklist={checklist} />}
+      {showChecklist && (
+        <SetupChecklist slug={slug} checklist={checklist} canDismiss={canManage(workspace?.role)} />
+      )}
 
       {checklist && (!showChecklist || firstEmailSent) && <AnalyticsOverview slug={slug} />}
     </Stack>

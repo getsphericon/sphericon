@@ -11272,6 +11272,14 @@ func (s *SiteSesConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
+type SiteSetupChecklistDismissForbidden ProblemDetails
+
+func (*SiteSetupChecklistDismissForbidden) siteSetupChecklistDismissRes() {}
+
+type SiteSetupChecklistDismissNotFound ProblemDetails
+
+func (*SiteSetupChecklistDismissNotFound) siteSetupChecklistDismissRes() {}
+
 // The Workspace's Setup checklist: a point-in-time read model, never ticked by hand.
 // Ref: #/components/schemas/SiteSetupProgress
 type SiteSetupProgress struct {
@@ -11312,7 +11320,8 @@ func (s *SiteSetupProgress) SetDismissed(val bool) {
 	s.Dismissed = val
 }
 
-func (*SiteSetupProgress) siteSetupChecklistGetRes() {}
+func (*SiteSetupProgress) siteSetupChecklistDismissRes() {}
+func (*SiteSetupProgress) siteSetupChecklistGetRes()     {}
 
 // Where one Setup checklist step stands, read off the Workspace's own data.
 // Ref: #/components/schemas/SiteSetupStepStatus

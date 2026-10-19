@@ -46,4 +46,13 @@ namespace SiteSetupChecklist {
   /** The Workspace's Setup checklist */
   @get
   op get(@path slug: string): SiteSetupProgress | NotFoundProblem;
+
+  /** Dismiss the Setup checklist for the whole Workspace (owner and admin only). Idempotent:
+   * dismissing a dismissed checklist changes nothing. Returns the checklist as it now reads. */
+  @post
+  @route("/dismissal")
+  op dismiss(@path slug: string):
+    | SiteSetupProgress
+    | ForbiddenProblem
+    | NotFoundProblem;
 }

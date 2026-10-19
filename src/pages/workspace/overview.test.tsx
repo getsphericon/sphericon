@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteAnalyticsOverview,
+  handleSiteSetupChecklistDismiss,
   handleSiteSetupChecklistGet,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
@@ -229,4 +230,57 @@ test('a finished checklist is not shown', async () => {
 
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Set up sphericon')).not.toBeInTheDocument()
+})
+
+const open = {
+  steps: { integration: 'todo', sendingDomain: 'todo', contact: 'todo', sentEmail: 'todo' },
+  complete: false,
+  dismissed: false,
+} as const
+
+const workspaceAs = (role: 'owner' | 'admin' | 'member') => ({
+  id: '1',
+  name: 'Acme',
+  slug: 'test',
+  collectKey: 'k',
+  postalAddress: '',
+  accountLinkAvailable: false,
+  holds: [],
+  role,
+  createdAt: '2026-01-01T00:00:00Z',
+})
+
+test('an owner dismisses the checklist and gets the usual Overview', async () => {
+  let dismissals = 0
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspaceAs('owner')] }),
+    handleSiteSetupChecklistGet(() => HttpResponse.json({ ...open, dismissed: dismissals > 0 })),
+    handleSiteSetupChecklistDismiss(() => {
+      dismissals++
+      return HttpResponse.json({ ...open, dismissed: true })
+    }),
+    handleSiteAnalyticsOverview({
+      body: { ...overview, contacts: { total: 0, active: 0, unsubscribed: 0, newInRange: 0 } },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await screen.getByRole('button', { name: 'Dismiss' }).click()
+
+  await expect.element(screen.getByText('No contacts yet')).toBeInTheDocument()
+  await expect.element(screen.getByText('Set up sphericon')).not.toBeInTheDocument()
+  expect(dismissals).toBe(1)
+})
+
+test('a member sees the checklist but no dismiss action', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspaceAs('member')] }),
+    handleSiteSetupChecklistGet({ body: open }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Set up sphericon')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
 })

@@ -985,6 +985,9 @@ export default interface Resources {
     },
     "setupChecklist": {
       "description": "Four steps to your first email. Each turns done by itself when the thing exists, in any order.",
+      "dismiss": "Dismiss",
+      "dismissError": "Failed to dismiss the setup checklist",
+      "dismissForbidden": "Only owners and admins can dismiss the setup checklist.",
       "done": "Done",
       "loadError": "Failed to load the setup checklist",
       "steps": {

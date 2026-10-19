@@ -8411,6 +8411,71 @@ func decodeSiteSendingDomainsVerifyParams(args [2]string, argsEscaped bool, r *h
 	return params, nil
 }
 
+// SiteSetupChecklistDismissParams is parameters of SiteSetupChecklist_dismiss operation.
+type SiteSetupChecklistDismissParams struct {
+	Slug string
+}
+
+func unpackSiteSetupChecklistDismissParams(packed middleware.Parameters) (params SiteSetupChecklistDismissParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "slug",
+			In:   "path",
+		}
+		params.Slug = packed[key].(string)
+	}
+	return params
+}
+
+func decodeSiteSetupChecklistDismissParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSetupChecklistDismissParams, _ error) {
+	// Decode path: slug.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "slug",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Slug = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "slug",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteSetupChecklistGetParams is parameters of SiteSetupChecklist_get operation.
 type SiteSetupChecklistGetParams struct {
 	Slug string

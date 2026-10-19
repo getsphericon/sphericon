@@ -205,6 +205,34 @@ func (a *Accounts) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped
 	return updated, switchedOn, err
 }
 
+// DismissSetupChecklist dismisses the scoped Workspace's Setup checklist for everyone
+// (ADR 0041), at now. Dismissing a dismissed checklist keeps the original time and records
+// nothing. A change is recorded as a `workspace.update` Audit entry in the same transaction.
+// The caller has checked the role.
+func (a *Accounts) DismissSetupChecklist(ctx context.Context, s *ent.Scoped, actor events.Actor, now time.Time) error {
+	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		if err != nil {
+			return err
+		}
+		if before.SetupChecklistDismissedAt != nil {
+			return nil
+		}
+		if err := tx.Workspace.UpdateOneID(s.WorkspaceID()).SetSetupChecklistDismissedAt(now).Exec(ctx); err != nil {
+			return err
+		}
+		return events.RecordAudit(ctx, pub, &events.AuditEntry{
+			WorkspaceID: s.WorkspaceID(),
+			Actor:       actor,
+			Action:      events.ActionWorkspaceUpdate,
+			TargetType:  workspace.Label,
+			TargetID:    strconv.FormatInt(before.ID, 10),
+			TargetName:  before.Name,
+			Diff:        map[string]any{"setup_checklist_dismissed_at": map[string]any{"from": nil, "to": now}},
+		})
+	})
+}
+
 func ptrEqual(a, b *int) bool {
 	if a == nil || b == nil {
 		return a == b

@@ -1003,6 +1003,9 @@
   },
   "setupChecklist": {
     "description": "Cuatro pasos hasta tu primer correo. Cada uno se marca solo cuando existe lo necesario, en cualquier orden.",
+    "dismiss": "Descartar",
+    "dismissError": "No se pudo descartar la lista de configuración",
+    "dismissForbidden": "Solo los propietarios y administradores pueden descartar la lista de configuración.",
     "done": "Hecho",
     "loadError": "No se pudo cargar la lista de configuración",
     "steps": {

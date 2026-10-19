@@ -2732,6 +2732,15 @@ export const zSiteSetupChecklistGetPath = z.object({
  */
 export const zSiteSetupChecklistGetResponse = zSiteSetupProgress;
 
+export const zSiteSetupChecklistDismissPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSetupChecklistDismissResponse = zSiteSetupProgress;
+
 export const zSiteSuppressionsListPath = z.object({
   slug: z.string()
 });
