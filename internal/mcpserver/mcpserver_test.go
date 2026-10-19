@@ -144,6 +144,18 @@ func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 }
 
+// Regenerating an Integration's hook key is hidden from agents: the new URL is a secret an
+// agent should not be handed, and the old one stops working at once. The Presets list is a tool.
+func TestMCPRegenerateKeyIsHiddenAndPresetsListIsATool(t *testing.T) {
+	env := testhelper.Setup(t)
+	got := listedTools(t, env.MCPClient(t, env.ScopedBearer(t, "integrations:read")))
+
+	for _, name := range toolNames(got) {
+		assert.NotContains(t, name, "regenerate")
+	}
+	assert.Contains(t, toolNames(got), "presets_list")
+}
+
 func TestMCPToolsAreTheContractMinusHiddenOperations(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))

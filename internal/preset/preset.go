@@ -32,8 +32,8 @@ const (
 	TransformTimeout = 100 * time.Millisecond
 )
 
-// The three ways a request is refused. A caller answers 4xx for all of them: the
-// request is the provider's to fix, a retry would not change it.
+// The ways a request is refused. A caller answers 4xx for the first three: the request
+// is the provider's to fix, a retry would not change it. ErrUnavailable is ours: 5xx.
 var (
 	// ErrUnauthentic: the request did not come from the provider for this Integration.
 	ErrUnauthentic = errors.New("preset: request is not authentic")
@@ -42,6 +42,10 @@ var (
 	// ErrTransformFailed: the transform failed, timed out or returned something that is
 	// not a list of valid Delivery failures.
 	ErrTransformFailed = errors.New("preset: transform failed")
+	// ErrUnavailable: the request could not be verified because something on our side
+	// failed (the signing certificate could not be fetched). It says nothing about the
+	// request, so a caller answers 5xx and the provider retries.
+	ErrUnavailable = errors.New("preset: verification is unavailable")
 )
 
 // Kind of a Delivery failure.
@@ -159,11 +163,11 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 			return Result{}, err
 		}
 		if err := p.verifier.verify(ctx, req, body, params, now); err != nil {
-			return Result{}, fmt.Errorf("%w: %w", ErrUnauthentic, err)
+			return Result{}, refusal(err)
 		}
 	} else {
 		if err := p.verifier.verify(ctx, req, nil, params, now); err != nil {
-			return Result{}, fmt.Errorf("%w: %w", ErrUnauthentic, err)
+			return Result{}, refusal(err)
 		}
 		var err error
 		if body, err = parseBody(req.Body); err != nil {
@@ -179,6 +183,15 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 		res.Action = a.action(body)
 	}
 	return res, nil
+}
+
+// refusal is what a failed verification becomes: unauthentic, unless the verifier says
+// the failure was on our side.
+func refusal(err error) error {
+	if errors.Is(err, ErrUnavailable) {
+		return err
+	}
+	return fmt.Errorf("%w: %w", ErrUnauthentic, err)
 }
 
 // forTest is the Preset as its own tests run it: offline, so an `sns` Preset checks

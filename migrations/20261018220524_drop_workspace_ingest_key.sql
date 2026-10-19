@@ -1,12 +1,19 @@
 -- +goose Up
 -- Destructive (ADR 0033, ADR 0037): the Workspace's ingest key goes, every Integration has its own.
--- The guard first checks that the keys it replaces have moved: an Integration with no key of its
--- own means the previous migration did not run, and dropping now would strand its hook.
+-- The guard checks that the previous migration ran, which is what made the replacement keys
+-- exist: integrations.ingest_key is there and NOT NULL (that migration backfills every row,
+-- then sets NOT NULL, so a row with no key of its own cannot exist once it is). Dropping
+-- without it would leave a Workspace with no hook key at all. The Workspace's old URLs stop
+-- working by design: an Integration's hook URL is shown in the app and in the API.
 -- +goose StatementBegin
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM "integrations" WHERE "ingest_key" IS NULL OR "ingest_key" = '') THEN
-    RAISE EXCEPTION 'workspaces.ingest_key cannot be dropped: an Integration has no ingest key of its own; install the last release of Major 1, migrate, then upgrade again';
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = current_schema() AND table_name = 'integrations'
+      AND column_name = 'ingest_key' AND is_nullable = 'NO'
+  ) THEN
+    RAISE EXCEPTION 'workspaces.ingest_key cannot be dropped: integrations.ingest_key is missing or nullable, so the Integrations have no hook keys of their own; install the last release of Major 1, migrate, then upgrade again';
   END IF;
 END
 $$;

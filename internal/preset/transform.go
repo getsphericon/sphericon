@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/mail"
+	"reflect"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -35,11 +36,51 @@ func compileTransform(program string) (*gojq.Code, error) {
 	if err != nil {
 		return nil, fmt.Errorf("transform: %w", err)
 	}
+	if name, found := forbiddenCall(reflect.ValueOf(q)); found {
+		return nil, fmt.Errorf("transform: %s is not available to a transform", name)
+	}
 	code, err := gojq.Compile(q)
 	if err != nil {
 		return nil, fmt.Errorf("transform: %w", err)
 	}
 	return code, nil
+}
+
+// forbiddenFuncs are the builtins a transform may not call: debug and stderr write to the
+// process's stderr and now reads the clock, so a transform would not be a pure function of
+// its input (a Preset's tests could not pin its result). gojq resolves a builtin before any
+// custom function, so a function of the same name cannot override one: the call is
+// refused at load.
+var forbiddenFuncs = map[string]bool{"debug": true, "stderr": true, "now": true, "input_filename": true}
+
+// forbiddenCall walks the parsed program for a call to a forbidden builtin.
+func forbiddenCall(v reflect.Value) (string, bool) {
+	switch v.Kind() {
+	case reflect.Pointer, reflect.Interface:
+		if v.IsNil() {
+			return "", false
+		}
+		if f, ok := v.Interface().(*gojq.Func); ok && forbiddenFuncs[f.Name] {
+			return f.Name, true
+		}
+		return forbiddenCall(v.Elem())
+	case reflect.Struct:
+		for i := range v.NumField() {
+			if !v.Type().Field(i).IsExported() {
+				continue
+			}
+			if name, found := forbiddenCall(v.Field(i)); found {
+				return name, true
+			}
+		}
+	case reflect.Slice:
+		for i := range v.Len() {
+			if name, found := forbiddenCall(v.Index(i)); found {
+				return name, true
+			}
+		}
+	}
+	return "", false
 }
 
 // run evaluates the transform under the timeout and validates what comes out.

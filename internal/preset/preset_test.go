@@ -63,6 +63,18 @@ tests:
 			files: map[string]string{"bad.yaml": strings.Replace(valid, `transform: "[]"`, `transform: "[input]"`, 1)},
 			want:  []string{"bad.yaml:", "input"},
 		},
+		"a program that calls debug": {
+			files: map[string]string{"bad.yaml": strings.Replace(valid, `transform: "[]"`, `transform: "[.body | debug]"`, 1)},
+			want:  []string{"bad.yaml:", "debug"},
+		},
+		"a program that calls stderr": {
+			files: map[string]string{"bad.yaml": strings.Replace(valid, `transform: "[]"`, `transform: "[.body | stderr]"`, 1)},
+			want:  []string{"bad.yaml:", "stderr"},
+		},
+		"a program that reads the clock": {
+			files: map[string]string{"bad.yaml": strings.Replace(valid, `transform: "[]"`, `transform: "[now | floor | {id: tostring}]"`, 1)},
+			want:  []string{"bad.yaml:", "now"},
+		},
 		"params that are not a schema": {
 			files: map[string]string{"bad.yaml": "version: 1\nname: ok\nparams: {type: 7}\nverify: {kind: standard_webhooks, secret: s}\ntransform: '[]'\ntests:\n  - {name: t, request: {body: '{}'}, expect: {refused: unauthentic}}\n"},
 			want:  []string{"bad.yaml:3"},

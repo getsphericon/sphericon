@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sync"
 	"time"
 
 	sns "github.com/robbiet480/go.sns"
@@ -70,7 +71,58 @@ func parseCertificate(data []byte) (*x509.Certificate, error) {
 	return x509.ParseCertificate(block.Bytes)
 }
 
+// certCache keeps the certificates fetched so far, so a flood of notifications costs one
+// fetch per certificate, not one each. It is bounded: the URL is checked against the SNS
+// host pattern, but a caller still picks which of its many hosts to name.
+var certCache = &boundedCerts{max: 16, ttl: 6 * time.Hour, entries: map[string]cachedCert{}}
+
+type cachedCert struct {
+	cert    *x509.Certificate
+	fetched time.Time
+}
+
+type boundedCerts struct {
+	mu      sync.Mutex
+	max     int
+	ttl     time.Duration
+	entries map[string]cachedCert
+}
+
+func (c *boundedCerts) get(url string, now time.Time) (*x509.Certificate, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	e, ok := c.entries[url]
+	if !ok || now.Sub(e.fetched) > c.ttl {
+		return nil, false
+	}
+	return e.cert, true
+}
+
+func (c *boundedCerts) put(url string, cert *x509.Certificate, now time.Time) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if _, ok := c.entries[url]; !ok && len(c.entries) >= c.max {
+		for k := range c.entries { // evict any one: the cache holds a few entries
+			delete(c.entries, k)
+			break
+		}
+	}
+	c.entries[url] = cachedCert{cert: cert, fetched: now}
+}
+
 func fetchSNSCertificate(ctx context.Context, certURL string) (*x509.Certificate, error) {
+	if cert, ok := certCache.get(certURL, time.Now()); ok {
+		return cert, nil
+	}
+	cert, err := downloadSNSCertificate(ctx, certURL)
+	if err != nil {
+		return nil, err
+	}
+	certCache.put(certURL, cert, time.Now())
+	return cert, nil
+}
+
+func downloadSNSCertificate(ctx context.Context, certURL string) (*x509.Certificate, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, certURL, nil)
 	if err != nil {
 		return nil, err
@@ -133,23 +185,25 @@ func (s *snsVerifier) verify(ctx context.Context, _ Request, body any, params Pa
 	if err != nil {
 		return fmt.Errorf("signature is not base64: %w", err)
 	}
-	if _, err := awsURL(p.SigningCertURL); err != nil {
-		return fmt.Errorf("signing certificate: %w", err)
-	}
-	cert, err := s.certs(ctx, p.SigningCertURL)
-	if err != nil {
-		return fmt.Errorf("signing certificate: %w", err)
-	}
-	if err := cert.CheckSignature(p.SignatureAlgorithm(), p.BuildSignature(), signature); err != nil {
-		return fmt.Errorf("signature does not match: %w", err)
-	}
-
+	// The topic first: it costs nothing, and a message for another topic never makes us
+	// fetch a certificate.
 	topic, _ := params[s.c.Topic].(string)
 	if topic == "" {
 		return errors.New("the Integration names no SNS topic")
 	}
 	if p.TopicArn != topic {
 		return errors.New("the message is from another SNS topic")
+	}
+	if _, err := awsURL(p.SigningCertURL); err != nil {
+		return fmt.Errorf("signing certificate: %w", err)
+	}
+	// A certificate we cannot get says nothing about the request: ours to retry.
+	cert, err := s.certs(ctx, p.SigningCertURL)
+	if err != nil {
+		return fmt.Errorf("%w: signing certificate: %w", ErrUnavailable, err)
+	}
+	if err := cert.CheckSignature(p.SignatureAlgorithm(), p.BuildSignature(), signature); err != nil {
+		return fmt.Errorf("signature does not match: %w", err)
 	}
 	if p.Type == "SubscriptionConfirmation" {
 		if _, err := awsURL(p.SubscribeURL); err != nil {

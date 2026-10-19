@@ -63,7 +63,8 @@ func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(r.Body)
+	// Bounded to what the engine parses, so an oversized body is never held in memory.
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, preset.MaxBodyBytes))
 	if err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
@@ -74,20 +75,34 @@ func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if row.Preset == nil {
+	name := presetNameOf(row)
+	if name == "" {
 		// An Integration with no Preset reads no callbacks.
 		http.NotFound(w, r)
 		return
 	}
-	h.servePreset(w, r, row, body)
+	h.servePreset(w, r, row, name, body)
 }
 
-func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Integration, body []byte) {
+// presetNameOf is the Preset an Integration's callbacks are read with: the one it names,
+// and for an SES Integration that names none, `ses` (it is implied, so an Integration made
+// before Presets existed keeps receiving its bounces). "" when it reads none.
+func presetNameOf(row *ent.Integration) string {
+	switch {
+	case row.Preset != nil:
+		return *row.Preset
+	case row.Provider == integration.ProviderSes:
+		return "ses"
+	}
+	return ""
+}
+
+func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Integration, name string, body []byte) {
 	ctx := r.Context()
 	log := logging.FromContext(ctx)
-	p, ok := h.integ.Presets().Get(*row.Preset)
+	p, ok := h.integ.Presets().Get(name)
 	if !ok {
-		log.Error("hooks: the Integration's preset is not loaded", "integration_id", row.ID, "preset", *row.Preset)
+		log.Error("hooks: the Integration's preset is not loaded", "integration_id", row.ID, "preset", name)
 		writeProblem(w, http.StatusInternalServerError, "the preset of this integration is not available")
 		return
 	}
@@ -101,6 +116,11 @@ func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Inte
 	switch {
 	case errors.Is(err, preset.ErrUnauthentic):
 		writeProblem(w, http.StatusForbidden, "the request is not authentic")
+		return
+	case errors.Is(err, preset.ErrUnavailable):
+		// Our side failed (the signing certificate): the provider retries.
+		log.Error("hooks: verification unavailable", "integration_id", row.ID, "preset", p.Name(), "err", err)
+		writeProblem(w, http.StatusBadGateway, "the request could not be verified right now")
 		return
 	case errors.Is(err, preset.ErrMalformed):
 		writeProblem(w, http.StatusBadRequest, "the request is malformed")

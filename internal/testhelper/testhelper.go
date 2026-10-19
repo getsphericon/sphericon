@@ -175,7 +175,13 @@ type setup struct {
 	unlicensed bool
 	// volumeFloor is the Staff console's rate floor; zero is the default.
 	volumeFloor int
+	// certs is where an `sns` Preset gets its signing certificate; nil is the test certificate.
+	certs preset.CertFetcher
 }
+
+// WithSNSCertificates replaces where an `sns` Preset gets its signing certificate (the
+// test certificate by default), so a test makes the fetch fail.
+func WithSNSCertificates(f preset.CertFetcher) Option { return func(s *setup) { s.certs = f } }
 
 // WithoutLicense builds the instance with no EE license key, like a plain core
 // self-host. Setup's default is an instance licensed for every EE feature.
@@ -295,7 +301,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	webhooksModule := webhooks.New(cipher, edition.Audit)
 	// An `sns` Preset checks signatures against the test certificate, so a test posts a
 	// notification signed offline; confirmations are recorded, never fetched.
-	presets, err := preset.Load(nil, preset.WithSNSCertificates(preset.TestSNSCertificates))
+	certs := st.certs
+	if certs == nil {
+		certs = preset.TestSNSCertificates
+	}
+	presets, err := preset.Load(nil, preset.WithSNSCertificates(certs))
 	if err != nil {
 		t.Fatalf("load presets: %v", err)
 	}

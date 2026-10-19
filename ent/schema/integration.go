@@ -48,8 +48,8 @@ func (Integration) Fields() []ent.Field {
 			Sensitive().
 			Annotations(Sensitive{}),
 		// The Preset this Integration's provider callbacks are read with (ADR 0037); nil
-		// when the Integration receives none. An SES Integration with no Preset is read by
-		// the SES adapter until the `ses` Preset replaces it.
+		// when the Integration names none. An SES Integration with no Preset is read with the
+		// `ses` Preset: the hook implies it, and creating one stores it.
 		field.String("preset").
 			Optional().
 			Nillable().
