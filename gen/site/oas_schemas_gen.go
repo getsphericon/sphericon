@@ -14087,6 +14087,9 @@ type SiteWorkspaceResource struct {
 	// The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
 	// instance configured none, and then no billing text is shown.
 	BillingUrl OptNilString `json:"billingUrl"`
+	// The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its own
+	// host, otherwise the app origin.
+	McpUrl string `json:"mcpUrl"`
 	// The Staff holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
@@ -14153,6 +14156,11 @@ func (s *SiteWorkspaceResource) GetSupportEmail() OptNilString {
 // GetBillingUrl returns the value of BillingUrl.
 func (s *SiteWorkspaceResource) GetBillingUrl() OptNilString {
 	return s.BillingUrl
+}
+
+// GetMcpUrl returns the value of McpUrl.
+func (s *SiteWorkspaceResource) GetMcpUrl() string {
+	return s.McpUrl
 }
 
 // GetHolds returns the value of Holds.
@@ -14228,6 +14236,11 @@ func (s *SiteWorkspaceResource) SetSupportEmail(val OptNilString) {
 // SetBillingUrl sets the value of BillingUrl.
 func (s *SiteWorkspaceResource) SetBillingUrl(val OptNilString) {
 	s.BillingUrl = val
+}
+
+// SetMcpUrl sets the value of McpUrl.
+func (s *SiteWorkspaceResource) SetMcpUrl(val string) {
+	s.McpUrl = val
 }
 
 // SetHolds sets the value of Holds.

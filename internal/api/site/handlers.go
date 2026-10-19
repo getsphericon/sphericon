@@ -105,6 +105,7 @@ type Handlers struct {
 	instance       *instance.Module
 	holdsHonoured  func() bool
 	billingURL     string
+	mcpURL         string
 	// requireVerification is the email verification gate (ADR 0030): off only on an
 	// install that set SPHERICON_REQUIRE_EMAIL_VERIFICATION=false.
 	requireVerification bool
@@ -180,7 +181,9 @@ type Deps struct {
 	SupportEmail string
 	// BillingURL is the billing site a member under a hold is pointed to (SPHERICON_BILLING_URL).
 	BillingURL string
-	Analytics  *analytics.Module
+	// MCPURL is the public origin of the MCP endpoint (config.MCPOrigin).
+	MCPURL    string
+	Analytics *analytics.Module
 	// Sessions issues the session cookie on login (ADR 0020). The composition
 	// root (server.New) builds it from the instance secret and SPHERICON_SESSION_TTL.
 	Sessions *auth.Sessions
@@ -214,7 +217,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, billingURL: d.BillingURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, billingURL: d.BillingURL, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }

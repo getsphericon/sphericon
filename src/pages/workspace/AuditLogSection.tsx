@@ -35,7 +35,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { Route as settingsRoute } from '../../routes/workspaces/$slug/settings.tsx'
+import { Route as teamRoute } from '../../routes/workspaces/$slug/settings/team.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 import { formatDateTime } from '../../utils/datetime.ts'
 import { auditQuery } from './auditFilter.ts'
@@ -496,7 +496,7 @@ export function ChangeHistoryLink({
     <ButtonLink
       size="compact-sm"
       variant="subtle"
-      to={settingsRoute.to}
+      to={teamRoute.to}
       params={{ slug }}
       search={{ targetType, targetId }}
     >

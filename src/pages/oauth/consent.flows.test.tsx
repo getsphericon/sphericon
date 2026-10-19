@@ -26,6 +26,7 @@ const workspace = (slug: string, name: string) => ({
   collectKey: 'omck',
   postalAddress: '',
   accountLinkAvailable: false,
+  mcpUrl: 'https://sphericon.test',
   holds: [],
   role: 'owner' as const,
   createdAt: '2026-01-01T00:00:00Z',

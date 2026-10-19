@@ -11796,6 +11796,7 @@
           "collectKey",
           "postalAddress",
           "role",
+          "mcpUrl",
           "holds",
           "accountLinkAvailable",
           "createdAt"
@@ -11857,6 +11858,10 @@
             "type": "string",
             "nullable": true,
             "description": "The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the\ninstance configured none, and then no billing text is shown."
+          },
+          "mcpUrl": {
+            "type": "string",
+            "description": "The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its\nown host, otherwise the app origin."
           },
           "holds": {
             "type": "array",

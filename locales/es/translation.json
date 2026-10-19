@@ -746,6 +746,7 @@
       "title": "Registro de auditoría",
       "to": "Hasta"
     },
+    "backToWorkspace": "Volver al espacio de trabajo",
     "copied": "Copiado",
     "copy": "Copiar",
     "errorTitle": "Error al actualizar el espacio de trabajo",
@@ -836,6 +837,17 @@
       "title": "Proveedores de envío"
     },
     "loadErrorTitle": "Error al cargar el espacio de trabajo",
+    "mcp": {
+      "apiKeysLink": "Claves de API",
+      "approveNote": "Solo un propietario o administrador puede aprobar la conexión.",
+      "description": "Añade esta dirección como conector personalizado en Claude, o en cualquier cliente compatible con MCP, para que un agente trabaje en este espacio de trabajo.",
+      "memberNote": "Eres miembro: pide a un propietario o administrador que conecte el agente.",
+      "stepAdd": "En Claude abre Settings → Connectors → Add custom connector y pega la dirección.",
+      "stepApprove": "Aprueba el acceso en la pantalla de sphericon que se abre.",
+      "stepConnect": "Pulsa Connect.",
+      "title": "Conectar un agente de IA (MCP)",
+      "tokenNote": "Al aprobar se crea un token de API normal llamado «<cliente> (MCP)». Puedes verlo y revocarlo en"
+    },
     "members": {
       "created": "Creado",
       "emailLabel": "Correo",
@@ -867,6 +879,14 @@
       "title": "Miembros del equipo"
     },
     "nameLabel": "Nombre del espacio de trabajo",
+    "nav": {
+      "developers": "Desarrolladores",
+      "general": "General",
+      "mcp": "Agentes de IA (MCP)",
+      "sending": "Envío",
+      "team": "Equipo y seguridad",
+      "tracking": "Seguimiento"
+    },
     "postalAddressDescription": "Se muestra en el pie de cada correo de marketing. La ley de EE. UU. (CAN-SPAM) exige una dirección postal física válida.",
     "postalAddressLabel": "Dirección postal",
     "postalAddressPlaceholder": "Acme Inc, Calle Mayor 123, 28013 Madrid, España",
@@ -934,7 +954,6 @@
     },
     "testEventDescription": "Envía un evento de prueba desde tu terminal y luego observa cómo aparece en el feed de actividad.",
     "testEventTitle": "Enviar un evento de prueba",
-    "title": "Configuración",
     "tokens": {
       "create": "Crear token",
       "created": "Creado",

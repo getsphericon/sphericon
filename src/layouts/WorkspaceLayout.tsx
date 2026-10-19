@@ -1,7 +1,7 @@
 import { Alert, Anchor, Group, Select, Text } from '@mantine/core'
 import { IconCreditCard, IconPlayerPause } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useMatchRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -13,12 +13,14 @@ import {
   SecondFactorGraceBanner,
   secondFactorStanding,
 } from '../components/SecondFactorNotice.tsx'
+import { SettingsNavbar } from '../components/SettingsNavbar.tsx'
 import { UpdateBanner } from '../components/UpdateBanner.tsx'
 import { UserMenu } from '../components/UserMenu.tsx'
 import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceHold, SiteWorkspaceResource } from '../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
 import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$slug/settings/route.tsx'
 import { isSecondFactorRequiredError } from '../utils/apiErrors.ts'
 import { DashboardShell } from './DashboardShell.tsx'
 
@@ -156,11 +158,15 @@ function useSecondFactorRefused(slug: string, listedAt: number) {
 }
 
 // WorkspaceLayout is the shell for workspace-scoped pages (overview, contacts,
-// activity, workspace settings): workspace sidebar + switcher. Under a Two-factor
+// activity; workspace settings under its own sidebar): workspace sidebar + switcher. Under a Two-factor
 // requirement it shows the grace banner, and once the grace is over it replaces
 // the page with the screen that leads to enrollment.
 export function WorkspaceLayout() {
   const { slug } = workspaceRoute.useParams()
+  // The settings area swaps the workspace sidebar for its own.
+  const inSettings = Boolean(
+    useMatchRoute()({ to: settingsRoute.to, params: { slug }, fuzzy: true }),
+  )
   const workspacesQuery = useQuery(siteWorkspacesListOptions())
   const workspaces = workspacesQuery.data ?? []
   const current = workspaces.find((w) => w.slug === slug)
@@ -173,7 +179,7 @@ export function WorkspaceLayout() {
 
   return (
     <DashboardShell
-      sidebar={<AppNavbar slug={slug} />}
+      sidebar={inSettings ? <SettingsNavbar slug={slug} /> : <AppNavbar slug={slug} />}
       banner={
         <>
           <LicenseBanner />

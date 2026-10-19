@@ -6,7 +6,7 @@ import { Route as broadcastsRoute } from '../routes/workspaces/$slug/broadcasts/
 import { Route as contactsRoute } from '../routes/workspaces/$slug/contacts/index.tsx'
 import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
 import { Route as segmentsRoute } from '../routes/workspaces/$slug/segments/index.tsx'
-import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$slug/settings/index.tsx'
 import { Route as templatesRoute } from '../routes/workspaces/$slug/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$slug/transactional-emails/index.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
