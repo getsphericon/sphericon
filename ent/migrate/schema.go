@@ -1014,6 +1014,28 @@ var (
 			},
 		},
 	}
+	// TrackingHostChangesColumns holds the columns for the "tracking_host_changes" table.
+	TrackingHostChangesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "workspace_id", Type: field.TypeInt64},
+		{Name: "domain", Type: field.TypeString},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"dns_verified", "serving", "removed"}},
+	}
+	// TrackingHostChangesTable holds the schema information for the "tracking_host_changes" table.
+	TrackingHostChangesTable = &schema.Table{
+		Name:       "tracking_host_changes",
+		Columns:    TrackingHostChangesColumns,
+		PrimaryKey: []*schema.Column{TrackingHostChangesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "trackinghostchange_domain",
+				Unique:  false,
+				Columns: []*schema.Column{TrackingHostChangesColumns[4]},
+			},
+		},
+	}
 	// UnsubscribesColumns holds the columns for the "unsubscribes" table.
 	UnsubscribesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1275,6 +1297,7 @@ var (
 		StaffMembersTable,
 		SuppressionsTable,
 		TagsTable,
+		TrackingHostChangesTable,
 		UnsubscribesTable,
 		UsagesTable,
 		UsersTable,
@@ -1401,6 +1424,9 @@ func init() {
 	TagsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	TagsTable.Annotation = &entsql.Annotation{
 		Table: "tags",
+	}
+	TrackingHostChangesTable.Annotation = &entsql.Annotation{
+		Table: "tracking_host_changes",
 	}
 	UnsubscribesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UnsubscribesTable.Annotation = &entsql.Annotation{

@@ -8,6 +8,7 @@ import "./resources/identity.tsp";
 import "./resources/holds.tsp";
 import "./resources/usage.tsp";
 import "./resources/workspace-feed.tsp";
+import "./resources/tracking-hosts.tsp";
 
 using TypeSpec.OpenAPI;
 using TypeSpec.Http;

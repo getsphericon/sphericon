@@ -225,7 +225,7 @@ the wall clock; it injects the clock.
     Auth: its own **JWT cookie** (`STAFF_JWT`, `SPHERICON_STAFF_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/staff`.
   - `/service/*` — the service endpoints of the Staff surface, called by a platform service with a
     **Service credential** (ADR 0026): **Bearer** `smsc_…`, limited to scopes (`usage:read`,
-    `workspaces:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
+    `workspaces:read`, `domains:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
     the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style): the public mux answers 404 for it.
     Handlers and security handler in `ee/staff` (`service.go`); every operation names its scopes in
     `ServiceOperationScopes` (no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,

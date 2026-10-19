@@ -99,6 +99,9 @@ type Suppression func(*sql.Selector)
 // Tag is the predicate function for tag builders.
 type Tag func(*sql.Selector)
 
+// TrackingHostChange is the predicate function for trackinghostchange builders.
+type TrackingHostChange func(*sql.Selector)
+
 // Unsubscribe is the predicate function for unsubscribe builders.
 type Unsubscribe func(*sql.Selector)
 
