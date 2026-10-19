@@ -72,11 +72,16 @@ test('a signed-out invitee with an account is sent to sign in and back to the ac
   await expect
     .element(screen.getByRole('button', { name: 'Join workspace' }))
     .not.toBeInTheDocument()
-  await screen.getByRole('button', { name: 'Sign in' }).click()
+  await screen.getByRole('link', { name: 'Sign in' }).click()
 
   await expect
     .poll(() => navigate.mock.calls)
-    .toContainEqual([{ to: loginRoute.to, search: { redirect: expect.stringContaining('inv-1') } }])
+    .toContainEqual([
+      expect.objectContaining({
+        to: loginRoute.to,
+        search: { redirect: expect.stringContaining('inv-1') },
+      }),
+    ])
 })
 
 test('an accept failure shows the API error and stays on the page', async () => {

@@ -15,6 +15,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   sitePublicInvitationsAcceptMutation,
   sitePublicInvitationsLookupOptions,
@@ -139,12 +140,9 @@ export function AcceptInvitationPage() {
           {t(($) => $.acceptInvitation.acceptExistingButton)}
         </Button>
       ) : (
-        <Button
-          variant="default"
-          onClick={() => void navigate({ to: loginRoute.to, search: { redirect: location.href } })}
-        >
+        <ButtonLink variant="default" to={loginRoute.to} search={{ redirect: location.href }}>
           {t(($) => $.acceptInvitation.signInButton)}
-        </Button>
+        </ButtonLink>
       )}
     </Stack>
   )
