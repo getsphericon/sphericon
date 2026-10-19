@@ -26,7 +26,8 @@ extend-ignore-re = ["[A-Za-z0-9+/=_-]{40,}"]
 
 [default.extend-words]
 # Intentional fragments: hyphenated "mis-quoted", a header folded mid-word in a test
-# comment, the CSS "styl" extension regex, OTP plural, and the "optin" brand spelling.
+# comment, the CSS "styl" extension regex, OTP plural, the "optin" brand spelling and the
+# RTO (recovery time objective) of the restore drill.
 mis = "mis"
 Unsubscrib = "Unsubscrib"
 unsubscrib = "unsubscrib"
@@ -36,3 +37,4 @@ optin = "optin"
 Optin = "Optin"
 Maily = "Maily"
 maily = "maily"
+RTO = "RTO"

@@ -3,8 +3,8 @@ locals {
 
   image = "${var.image_repository}:${var.image_tag}"
 
-  # Connection budget. db.t4g.micro (1 GiB) allows LEAST(DBInstanceClassMemory/9531392, 5000)
-  # connections, in practice about 85-110 (RDS reserves 3 for superusers; read the real value with
+  # Connection budget. db.t4g.small (2 GiB) allows LEAST(DBInstanceClassMemory/9531392, 5000)
+  # connections, in practice about 190-225 (RDS reserves 3 for superusers; read the real value with
   # `SHOW max_connections`). Every process opens two pools: database/sql (SPHERICON_DB_MAX_OPEN_CONNS: ent,
   # the event bus and the job workers' own queries) and river's pgx pool (SPHERICON_PGX_MAX_CONNS: fetch,
   # completion, LISTEN and leader election). One process peaks at 10 + 10 = 20.
@@ -16,8 +16,9 @@ locals {
   #   migration (before deploy) old task + migrate task        20 + ~4 (goose: 1-2; river migrator: 1-2)
   #   rolling deploy            old + new task                  20 + 20 = 40
   #
-  # 40 stays under the lowest plausible limit (about 85). A third process, or a second task kept
-  # permanently (3 x 20 = 60), still fits; beyond that lower the pools or move to a larger class.
+  # 40 is about a fifth of the limit (about 190), the margin the db.t4g.micro (about 85) lacked once
+  # a second task is kept for availability. Three processes (60) still fit; beyond that lower the
+  # pools or move to a larger class.
   # No transaction-mode pooler: river relies on LISTEN/NOTIFY.
   plain_env = merge({
     SPHERICON_APP_URL           = "https://${local.app_host}"
@@ -76,6 +77,12 @@ resource "aws_cloudwatch_log_group" "app" {
 
 resource "aws_ecs_cluster" "this" {
   name = var.name
+
+  # Publishes RunningTaskCount, which the no-running-task alarm reads (alarms.tf).
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_ecs_task_definition" "web" {

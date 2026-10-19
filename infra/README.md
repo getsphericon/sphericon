@@ -60,14 +60,15 @@ the script and never printed. Re-running it is safe.
 Create `infra/production.tfvars` (gitignored) with the plain values, at least:
 
 ```hcl
-image_tag = "0.1.0" # the released version
+image_tag   = "0.1.0"            # the released version
+alarm_email = "ops@example.com"  # receives the CloudWatch alarms
 ```
 
 Optional: `image_repository` (default `ghcr.io/getsphericon/sphericon`), `otel_service_name`,
 `domain` (`getsphericon.app`, also the app host), `api_host_label` (`api`),
 `tracker_host_label` (`t`), `mcp_host_label` (`mcp`), `region`, `name`, `task_cpu`, `task_memory`, `db_instance_class`,
 `db_allocated_storage`, `db_max_open_conns`, `pgx_max_conns`, `mail_from_label` (`mail`),
-`system_email_from` (default `noreply@<domain>`), `dmarc_rua`, `internal_listener_source_security_group_id` and
+`system_email_from` (default `noreply@<domain>`), `dmarc_rua`, `db_connections_alarm_threshold`, `internal_listener_source_security_group_id` and
 `internal_port` (see below). There are no secret variables.
 
 The internal listener is off by default. Set `internal_listener_source_security_group_id` to the id
@@ -142,14 +143,29 @@ https://$(mise run infra -- output -raw alb_dns_name)/readyz`.
 - [ ] Database private: it has no public address (`aws rds describe-db-instances` shows
       `PubliclyAccessible: false`) and the plan output showed no secret values.
 
+Before the first apply with the default 14-day backups, the AWS account must be off the free plan:
+the free plan caps retention at 1 day (`FreeTierRestrictionError`), so set
+`-var db_backup_retention_days=1` until it is upgraded. Moving an existing database to Multi-AZ and
+`db.t4g.small` applies immediately (`apply_immediately`): expect a reboot and a few minutes of
+downtime, so apply it in a quiet hour.
+
 ## 7. Destroy and recreate
 
-The environment is a test deployment: no deletion protection, no final snapshot.
+The database is protected (`db_protected`, default true): deletion protection, a final snapshot
+`sphericon-final` and kept automated backups. To destroy a **scratch** environment, turn that off
+first, then destroy:
 
 ```sh
-mise run infra -- destroy
+mise run infra -- apply -var db_protected=false
+mise run infra -- destroy -var db_protected=false
 ```
 
+The automated backups kept by `db_protected` outlive the instance and are billed until their
+retention ends (`aws rds delete-db-instance-automated-backup` removes them). A later plain `apply`
+turns protection back on: pass the variable every time, or set it in a tfvars file.
+
+Never do this to production without a snapshot you have restored (the runbook's restore drill). A
+second destroy with protection on fails on an existing `sphericon-final`: delete that snapshot first.
 Destroy removes the service, the database **and all its data**, the zone, the SES identity, the
 runtime secret and the records. The state bucket and `sphericon/app` stay (never delete them with
 the environment). To recreate, run sections 4 to 6 again, with these effects:
@@ -161,7 +177,7 @@ the environment). To recreate, run sections 4 to 6 again, with these effects:
 - **SES**: the identity is created again with new DKIM tokens, so verification repeats after the
   nameservers propagate. Production access is per account and region and is kept.
 
-**Pending, needs the account owner:** none of this has been applied yet. The smoke test, a destroy and
+**Pending, needs the account owner:** none of this has been applied yet. The smoke test, a destroy (with `db_protected=false`) and
 recreate following only this runbook, the ALB URL rewrite, `max_connections` of the real instance
 and a password-reset email passing DKIM and SPF need the account owner's access to the AWS account and the registrar.
 
@@ -181,7 +197,7 @@ and a password-reset email passing DKIM and SPF need the account owner's access 
   `404` problem+json means the rewrite did not apply (check the rule's transform in the console).
 - **The tracker host serves the SPA.** It must not: only `/t.js` and `/collect` have a rule.
 - **The MCP host serves the SPA.** It must not: only `/mcp` and `/.well-known/*` have a rule.
-- **Connection budget.** `db.t4g.micro` allows about 85-110 connections (read `SHOW
+- **Connection budget.** `db.t4g.small` allows about 190-225 connections (read `SHOW
   max_connections`). Each process opens two pools, 10 + 10; old plus new task during a deploy is 40
   and the migrate task adds about 4 (goose and river's migrator, 1-2 connections each). Before a
   second permanent task or another process, lower both pools or move to a larger class. No
@@ -190,6 +206,10 @@ and a password-reset email passing DKIM and SPF need the account owner's access 
 - **Email not delivered.** The SES sandbox accepts only verified recipients until production access
   is granted; check the identity status first. The app uses the SES API
   (`SPHERICON_SYSTEM_EMAIL_PROVIDER=ses`, see the env table in `docs/self-hosting.md`).
+- **No alarm email.** The subscription stays pending until the recipient clicks the confirmation
+  link AWS sends after the first apply (check spam, or `aws sns list-subscriptions-by-topic`: a
+  pending one shows `PendingConfirmation`). See "Alarms" in the
+  [operations runbook](../docs/operations/runbook.md#hosted-deployment-alarms).
 - **State lock errors.** The lock is a `.tflock` object next to the state in the bucket; run one
   person at a time. After a crashed run, `mise run infra -- force-unlock <id>`.
 - **`no credentials for profile`.** `aws login --profile sphericon` (sessions expire).

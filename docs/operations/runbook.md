@@ -272,3 +272,93 @@ reviews accounts above roughly this rate, and mailbox providers start filtering.
 **Fix.** Stop the offending broadcast now. Complaining addresses are suppressed automatically;
 confirm that the `suppression` consumer is current. Fix the source of the audience or the
 unsubscribe flow before sending again, and respond to the provider if they open a review.
+
+## Hosted deployment alarms
+
+The hosted deployment ([ADR 0028](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0028-saas-hosting-terraform-on-aws-ecs-fargate.md))
+has CloudWatch alarms and EventBridge rules in `infra/alarms.tf`. All of them publish to the SNS topic
+`<name>-alarms` (default `sphericon-alarms`), which emails `alarm_email`; an alarm also sends a
+message when it returns to OK. Slack: create an AWS Chatbot channel configuration in the console and
+subscribe it to the topic (Chatbot is not managed by Terraform).
+
+After the first apply the recipient must click the confirmation link AWS emails; until then nothing
+arrives.
+
+| Alarm                                  | Fires when                                                     | First look                                                                                               |
+| -------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `<name>-alb-5xx-rate`                  | more than 5% of requests are 5xx (min. 20 requests) for 10 min | app logs in `/ecs/<name>`; [SphericonSiteErrorRatioHigh](#sphericonsiteerrorratiohigh)                   |
+| `<name>-alb-no-healthy-targets`        | no healthy target for 3 min                                    | the service is down: [SphericonDown](#sphericondown); `/readyz` pings the database                       |
+| `<name>-alb-unhealthy-targets`         | a target fails `/readyz` for 5 min                             | task logs; database reachability                                                                         |
+| `<name>-ecs-no-running-task`           | the service has no running task for 3 min                      | `aws ecs describe-services` events: image pull, secrets, a crash loop                                    |
+| `<name>-ecs-cpu-high`, `-memory-high`  | above 85% for 15 min                                           | raise `task_cpu` / `task_memory` (memory near 100% means an OOM kill is next)                            |
+| `<name>-ecs-deployment-failed` (event) | the deploy circuit breaker rolled the service back             | the new revision's task logs; the service runs the previous revision                                     |
+| `<name>-ecs-task-crashed` (event)      | a task stopped with a non-zero container exit code             | one message per restart: a crash loop floods the channel; read the stopped task's reason                 |
+| `<name>-rds-cpu-high`                  | database CPU above 80% for 15 min                              | Performance Insights; [SphericonDBPoolSaturated](#sphericondbpoolsaturated)                              |
+| `<name>-rds-free-storage-low`          | less than 20% of the storage is free                           | raise `db_allocated_storage` (the volume does not autoscale)                                             |
+| `<name>-rds-connections-high`          | connections above `db_connections_alarm_threshold` (150)       | the connection budget in `infra/ecs.tf`                                                                  |
+| `<name>-ses-bounce-rate`               | SES account bounce rate at 5%                                  | [SphericonEmailBounceRateHigh](#sphericonemailbounceratehigh); AWS reviews at 5%, pauses at 10%          |
+| `<name>-ses-complaint-rate`            | SES account complaint rate at 0.1%                             | [SphericonEmailComplaintRateHigh](#sphericonemailcomplaintratehigh); AWS reviews at 0.1%, pauses at 0.5% |
+
+**Test that an alarm reaches the channel.** After applying, and after any change to the topic or
+the recipient, publish to the topic and force one alarm, then return it to OK:
+
+```sh
+aws sns publish --topic-arn "$(aws sns list-topics --query "Topics[?ends_with(TopicArn, ':sphericon-alarms')].TopicArn | [0]" --output text)" \
+  --subject "Sphericon alarm test" --message "Test message from the runbook."
+aws cloudwatch set-alarm-state --alarm-name sphericon-alb-5xx-rate --state-value ALARM --state-reason "Runbook test"
+aws cloudwatch set-alarm-state --alarm-name sphericon-alb-5xx-rate --state-value OK --state-reason "Runbook test done"
+```
+
+The email for each arrives within a minute (the state is reset by itself at the next evaluation
+anyway). The commands use the default names (`var.name` = `sphericon`) and `--profile sphericon`, as in the Terraform runbook.
+
+## Database restore drill
+
+The hosted database ([ADR 0028](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0028-saas-hosting-terraform-on-aws-ecs-fargate.md))
+is RDS Multi-AZ with 14 days of automated backups. Rehearse a restore into a scratch instance
+after any change to the backup setup and at least quarterly. It never touches production.
+
+The names below are the defaults (`var.name` = `sphericon`); find the database security group with
+`aws rds describe-db-instances --db-instance-identifier sphericon --query 'DBInstances[0].VpcSecurityGroups[0].VpcSecurityGroupId' --output text`.
+
+1. Pick the point: `aws rds describe-db-instances --db-instance-identifier sphericon --query 'DBInstances[0].LatestRestorableTime'`.
+   Note the time of the "incident" you simulate (for example five minutes earlier).
+2. Restore to a point in time into a new instance (start a stopwatch):
+
+   ```sh
+   aws rds restore-db-instance-to-point-in-time \
+     --source-db-instance-identifier sphericon --target-db-instance-identifier sphericon-drill \
+     --restore-time <UTC timestamp> --db-instance-class db.t4g.small --no-multi-az \
+     --db-subnet-group-name sphericon --vpc-security-group-ids <db security group id> --no-publicly-accessible
+   aws rds wait db-instance-available --db-instance-identifier sphericon-drill
+   ```
+
+   To rehearse the snapshot path instead, replace the restore command with:
+
+   ```sh
+   aws rds restore-db-instance-from-db-snapshot --db-snapshot-identifier <snapshot id> \
+     --db-instance-identifier sphericon-drill --db-instance-class db.t4g.small --no-multi-az \
+     --db-subnet-group-name sphericon --vpc-security-group-ids <db security group id> --no-publicly-accessible
+   ```
+
+   The snapshot is the latest automated one (`aws rds describe-db-snapshots --db-instance-identifier sphericon`)
+   or `sphericon-final` after a destroy.
+
+3. Verify as in [Restore drill](./backup#restore-drill): run the same version of sphericon against the
+   drill instance with a throwaway SMTP sink, `GET /readyz` returns `200`, and counts match
+   production at the restore time. Run `SHOW max_connections` there too.
+4. Stop the stopwatch and record the results below, then delete the instance
+   (`aws rds delete-db-instance --db-instance-identifier sphericon-drill --skip-final-snapshot`).
+
+The figures in this paragraph are AWS's documented behaviour, **not measured here**; the table is
+for the measured values. **RPO** is the gap between the failure and the restored point: RDS archives transaction logs about
+every five minutes, so point-in-time recovery loses up to about five minutes, and a Multi-AZ
+failover loses nothing (synchronous standby). **RTO** is the restore time (step 2 plus 3), plus
+repointing `DATABASE_URL` and redeploying; a Multi-AZ failover alone is 1-2 minutes with no action.
+The restore time grows with the database size.
+
+| Date                                                                    | Source | Size | RTO (restore to `/readyz`) | RPO (restored point vs. target) | Who |
+| ----------------------------------------------------------------------- | ------ | ---- | -------------------------- | ------------------------------- | --- |
+| _not yet measured: needs the account owner's access to the AWS account_ |        |      |                            |                                 |     |
+
+After a restore into production, read [After a restore](./backup#after-a-restore) first.

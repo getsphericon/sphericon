@@ -96,9 +96,32 @@ variable "task_memory" {
 }
 
 variable "db_instance_class" {
-  description = "RDS instance class. The connection budget in ecs.tf assumes the 1 GiB db.t4g.micro."
+  description = "RDS instance class. The connection budget in ecs.tf assumes the 2 GiB db.t4g.small."
   type        = string
-  default     = "db.t4g.micro"
+  default     = "db.t4g.small"
+}
+
+variable "db_multi_az" {
+  description = "Run a synchronous standby in a second availability zone (automatic failover)."
+  type        = bool
+  default     = true
+}
+
+variable "db_protected" {
+  description = "Production safety: deletion protection on, and a final snapshot (<name>-final) and the automated backups kept on destroy. Set false (and apply) before destroying a scratch environment."
+  type        = bool
+  default     = true
+}
+
+variable "db_backup_retention_days" {
+  description = "Days of automated backups, which is also the point-in-time recovery window (the AWS free plan caps it at 1)."
+  type        = number
+  default     = 14
+
+  validation {
+    condition     = var.db_backup_retention_days >= 1 && var.db_backup_retention_days <= 35
+    error_message = "Must be between 1 and 35 days."
+  }
 }
 
 variable "db_allocated_storage" {
@@ -161,4 +184,22 @@ variable "ses_test_recipients" {
   description = "Email addresses SES verifies as recipients while the account is in the SES sandbox (it delivers only to verified addresses). Each gets a verification email with a link to click. Empty once SES production access is granted."
   type        = set(string)
   default     = []
+}
+
+# Alarms (alarms.tf).
+
+variable "alarm_email" {
+  description = "Email address subscribed to the alarm topic. AWS sends it one confirmation link: until it is clicked, no alarm reaches it."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.alarm_email))
+    error_message = "Must be an email address."
+  }
+}
+
+variable "db_connections_alarm_threshold" {
+  description = "DatabaseConnections above which the database alarm fires. The default is about 80% of the 190 connections of the db.t4g.small (see the connection budget in ecs.tf); raise it with the instance class."
+  type        = number
+  default     = 150
 }
