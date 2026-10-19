@@ -233,6 +233,12 @@ variable "waf_common_count_rules" {
   default     = ["SizeRestrictions_BODY", "CrossSiteScripting_BODY"]
 }
 
+variable "waf_log_retention_days" {
+  description = "Retention of the log group that holds the requests the web ACL counted or blocked (waf.tf). Must cover the count-mode review."
+  type        = number
+  default     = 30
+}
+
 variable "waf_rate_limit" {
   description = "Requests per source address over waf_rate_window_seconds before the rate rule for the MCP host and /collect fires. Agent connectors share egress addresses, so keep it well above one client's rate; the per-Workspace limits of ADR 0025 stay the precise ones."
   type        = number

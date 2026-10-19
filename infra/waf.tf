@@ -24,7 +24,7 @@ resource "aws_wafv2_web_acl" "this" {
 
     content {
       name     = "aws-${rule.key}"
-      priority = rule.value + 10
+      priority = rule.value + 10 # after the rate rule (priority 1)
 
       # A managed group keeps its own actions in block mode and counts them otherwise.
       override_action {
@@ -137,6 +137,52 @@ resource "aws_wafv2_web_acl" "this" {
     cloudwatch_metrics_enabled = true
     metric_name                = var.name
     sampled_requests_enabled   = true
+  }
+}
+
+# The console keeps sampled requests for about three hours, too short to review a week of count mode,
+# so every counted or blocked request is logged. Allowed requests are dropped (volume and cost). The
+# name must start with aws-waf-logs-.
+resource "aws_cloudwatch_log_group" "waf" {
+  name              = "aws-waf-logs-${var.name}"
+  retention_in_days = var.waf_log_retention_days
+}
+
+resource "aws_wafv2_web_acl_logging_configuration" "this" {
+  resource_arn            = aws_wafv2_web_acl.this.arn
+  log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
+
+  redacted_fields {
+    single_header {
+      name = "authorization"
+    }
+  }
+
+  redacted_fields {
+    single_header {
+      name = "cookie"
+    }
+  }
+
+  logging_filter {
+    default_behavior = "DROP"
+
+    filter {
+      behavior    = "KEEP"
+      requirement = "MEETS_ANY"
+
+      condition {
+        action_condition {
+          action = "COUNT"
+        }
+      }
+
+      condition {
+        action_condition {
+          action = "BLOCK"
+        }
+      }
+    }
   }
 }
 

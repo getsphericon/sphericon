@@ -317,20 +317,27 @@ anyway). The commands use the default names (`var.name` = `sphericon`) and `--pr
 The hosted ALB has a WAF web ACL (`infra/waf.tf`, [ADR 0028](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0028-saas-hosting-terraform-on-aws-ecs-fargate.md)):
 the AWS managed common, known bad inputs and IP reputation rule groups, and a rate rule per source
 address over `mcp.<domain>` and `/collect` (`waf_rate_limit` per `waf_rate_window_seconds`). It
-costs about $9 a month plus $0.60 per million requests. Its `waf_mode` is `count` (the default) or
+costs about $9 a month plus $0.60 per million requests and the log group (only counted and blocked requests). Its `waf_mode` is `count` (the default) or
 `block`.
 
 To move from count to block:
 
-1. In the WAF console (`us-east-2`, web ACL `<name>`), open the sampled requests of each rule over a
-   week of traffic. Counted requests are the ones block mode would refuse.
-2. Check that no legitimate `/collect`, `/mcp`, OAuth (`/.well-known/*`, the consent pages) or `/site`
-   request is among them. A managed rule that matches real traffic goes into `waf_common_count_rules`
-   (common set only) or out of `waf_managed_rule_groups`; the rate limit is raised with
-   `waf_rate_limit`.
+1. Let count mode run for a week of traffic. Every counted or blocked request is logged to the
+   CloudWatch log group `aws-waf-logs-<name>` (`waf_log_retention_days`, 30 by default; the
+   `authorization` and `cookie` headers are redacted). The console's sampled requests keep only
+   about three hours. In Logs Insights, group by rule:
+   `stats count(*) by terminatingRuleId, httpRequest.host, httpRequest.uri`, and read the
+   `CountedRequests` metric of each rule in CloudWatch.
+2. Check that no legitimate `/collect` or `mcp.<domain>` request (`/mcp`, the OAuth discovery
+   documents), OAuth redirect or `/site` request is among them: query-string and user-agent rules of
+   the common set and the IP reputation list are the likely false positives. A managed rule that
+   matches real traffic goes into `waf_common_count_rules` (common set only; keep that group in
+   `waf_managed_rule_groups`) or out of `waf_managed_rule_groups`; the rate limit is raised with
+   `waf_rate_limit`. The rate rule counts one address across both hosts, and agent connectors share
+   egress addresses.
 3. Set `waf_mode = "block"`, plan and apply.
 
-A legitimate client refused after the switch gets a `403`: find its rule in the sampled requests and
+A legitimate client refused after the switch gets a `403`: find its rule in the log group and
 set `waf_mode = "count"` again while you tune it.
 
 ## Database restore drill
