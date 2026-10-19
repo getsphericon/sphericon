@@ -27,6 +27,13 @@ in plain text in a task definition, a plan or a log. One root module, one enviro
   `https://mcp.getsphericon.app`, while the OAuth issuer and consent UI stay on the apex). The MCP
   surface has its own host so agent connectors get a stable origin that can be rate-limited or put
   behind a WAF on its own. Anything else is a 404. One ACM certificate with the four hosts as names, validated by DNS in Route 53.
+  A **WAF web ACL** (`infra/waf.tf`) is associated with the ALB: the AWS managed common, known bad
+  inputs and IP reputation rule groups, plus a rate-based rule per source address over the MCP host
+  and `/collect` (default 2000 requests per 5 minutes: agent connectors share egress addresses, and
+  the precise limits stay the per-Workspace ones of ADR 0025). Mode, rule groups and the limit are
+  variables; it ships in count mode and is switched to block after the sampled requests were read.
+  The common set's body-size and XSS-body rules stay in count mode even then: they match the email
+  HTML and MJML the app posts.
   Task: 0.5 vCPU / 1 GB, one task, rolling deploy (new task first, circuit breaker with
   rollback), health check `/readyz`.
 - **No NAT gateway** (cost): tasks run in public subnets with public IPs and a security group that
@@ -101,11 +108,12 @@ in plain text in a task definition, a plan or a log. One root module, one enviro
 
 ## Consequences
 
-- **Cost** is about $98-100 a month (list prices in `us-east-2`, estimates to check against the
+- **Cost** is about $107-109 a month (list prices in `us-east-2`, estimates to check against the
   bill): the ALB (about $18), Fargate ARM (about $14), RDS with storage (about $52: `db.t4g.small`
   Multi-AZ about $47, gp3 20 GB twice about $5; the test tier was about $14, so the hardening adds
   about $38 a month; backup storage up to the size of the database is free), public IPv4 addresses for the ALB
-  and the task (about $11), plus Route 53, Secrets Manager and logs (a few dollars). The ALB is
+  and the task (about $11), the WAF (about $9: web ACL $5 and $1 for each of its four rules; the three
+  managed groups have no extra fee, requests are $0.60 per million), plus Route 53, Secrets Manager and logs (a few dollars). The ALB is
   the largest fixed item.
 - **Connections.** `db.t4g.small` allows `LEAST(DBInstanceClassMemory/9531392, 5000)`, about
   190-225 (the micro's 85-110 left a thin margin once a second task is kept; read the real value

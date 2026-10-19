@@ -68,7 +68,7 @@ Optional: `image_repository` (default `ghcr.io/getsphericon/sphericon`), `otel_s
 `domain` (`getsphericon.app`, also the app host), `api_host_label` (`api`),
 `tracker_host_label` (`t`), `mcp_host_label` (`mcp`), `region`, `name`, `task_cpu`, `task_memory`, `db_instance_class`,
 `db_allocated_storage`, `db_max_open_conns`, `pgx_max_conns`, `mail_from_label` (`mail`),
-`system_email_from` (default `noreply@<domain>`), `dmarc_rua`, `db_connections_alarm_threshold`, `internal_listener_source_security_group_id` and
+`system_email_from` (default `noreply@<domain>`), `dmarc_rua`, `db_connections_alarm_threshold`, `waf_mode` (`count`, or `block`; see the runbook), `waf_managed_rule_groups`, `waf_common_count_rules`, `waf_rate_limit`, `waf_rate_window_seconds`, `internal_listener_source_security_group_id` and
 `internal_port` (see below). There are no secret variables.
 
 The internal listener is off by default. Set `internal_listener_source_security_group_id` to the id
@@ -83,7 +83,7 @@ mise run infra -- plan -out=tfplan
 ```
 
 Read it before applying: only expected resources (VPC, subnets, security groups, RDS, ECS, ALB,
-certificate, zone and records, SES identity, IAM roles and one send-only user, two secrets);
+web ACL, certificate, zone and records, SES identity, IAM roles and one send-only user, two secrets);
 secret values show as `(sensitive value)`; nothing is destroyed on a first run.
 
 ## 5. Apply (two steps on a fresh account)

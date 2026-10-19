@@ -312,6 +312,27 @@ aws cloudwatch set-alarm-state --alarm-name sphericon-alb-5xx-rate --state-value
 The email for each arrives within a minute (the state is reset by itself at the next evaluation
 anyway). The commands use the default names (`var.name` = `sphericon`) and `--profile sphericon`, as in the Terraform runbook.
 
+## Web application firewall
+
+The hosted ALB has a WAF web ACL (`infra/waf.tf`, [ADR 0028](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0028-saas-hosting-terraform-on-aws-ecs-fargate.md)):
+the AWS managed common, known bad inputs and IP reputation rule groups, and a rate rule per source
+address over `mcp.<domain>` and `/collect` (`waf_rate_limit` per `waf_rate_window_seconds`). It
+costs about $9 a month plus $0.60 per million requests. Its `waf_mode` is `count` (the default) or
+`block`.
+
+To move from count to block:
+
+1. In the WAF console (`us-east-2`, web ACL `<name>`), open the sampled requests of each rule over a
+   week of traffic. Counted requests are the ones block mode would refuse.
+2. Check that no legitimate `/collect`, `/mcp`, OAuth (`/.well-known/*`, the consent pages) or `/site`
+   request is among them. A managed rule that matches real traffic goes into `waf_common_count_rules`
+   (common set only) or out of `waf_managed_rule_groups`; the rate limit is raised with
+   `waf_rate_limit`.
+3. Set `waf_mode = "block"`, plan and apply.
+
+A legitimate client refused after the switch gets a `403`: find its rule in the sampled requests and
+set `waf_mode = "count"` again while you tune it.
+
 ## Database restore drill
 
 The hosted database ([ADR 0028](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0028-saas-hosting-terraform-on-aws-ecs-fargate.md))
