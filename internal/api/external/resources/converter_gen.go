@@ -65,6 +65,8 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.FromName = optNilString((*source).FromName)
 		externalapiBroadcastResource.FromEmail = optNilEmailAddress((*source).FromEmail)
 		externalapiBroadcastResource.Body = (*source).Body
+		externalapiBroadcastResource.Doc = broadcastDoc((*source).Doc)
+		externalapiBroadcastResource.EditorVersion = optNilString((*source).EditorVersion)
 		externalapiBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
 		externalapiBroadcastResource.Status = external.BroadcastStatus((*source).Status)
 		externalapiBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
@@ -136,6 +138,8 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) exter
 		externalapiTemplateResource.Name = (*source).Name
 		externalapiTemplateResource.Subject = (*source).Subject
 		externalapiTemplateResource.Body = (*source).Body
+		externalapiTemplateResource.Doc = templateDoc((*source).Doc)
+		externalapiTemplateResource.EditorVersion = optNilString((*source).EditorVersion)
 		externalapiTemplateResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiTemplateResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

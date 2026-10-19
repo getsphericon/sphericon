@@ -80,7 +80,7 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		FromName:      convert.StringPtr(req.FromName),
 		FromEmail:     convert.StringPtr(req.FromEmail),
 		Body:          convert.StringPtr(req.Body),
-		Doc:           templateDoc(req.Doc.Value, req.Doc.Set),
+		Doc:           convert.DocJSON(req.Doc.Value, req.Doc.Set),
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 	})
@@ -146,7 +146,7 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 		FromName:      convert.StringPtr(req.FromName),
 		FromEmail:     convert.StringPtr(req.FromEmail),
 		Body:          convert.StringPtr(req.Body),
-		Doc:           templateDoc(req.Doc.Value, req.Doc.Set),
+		Doc:           convert.DocJSON(req.Doc.Value, req.Doc.Set),
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 

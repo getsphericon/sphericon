@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/templates"
-	"github.com/go-faster/jx"
 	"github.com/samber/lo"
 )
 
@@ -56,7 +54,7 @@ func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.SiteCre
 		Name:    req.Name,
 		Subject: convert.StringPtr(req.Subject),
 		Body:    convert.StringPtr(req.Body),
-		Doc:     templateDoc(req.Doc.Value, req.Doc.Set),
+		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
 	if errors.Is(err, templates.ErrBlankName) {
 		v := siteapi.SiteTemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "name must not be empty"))
@@ -115,7 +113,7 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.SiteUpd
 		Name:    convert.StringPtr(req.Name),
 		Subject: convert.StringPtr(req.Subject),
 		Body:    convert.StringPtr(req.Body),
-		Doc:     templateDoc(req.Doc.Value, req.Doc.Set),
+		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
 	if errors.Is(err, templates.ErrNotFound) {
 		v := siteapi.SiteTemplatesUpdateNotFound(problem(http.StatusNotFound, "template not found"))
@@ -159,21 +157,4 @@ func (h *Handlers) SiteTemplatesDelete(ctx context.Context, params siteapi.SiteT
 		return nil, err
 	}
 	return &siteapi.SiteTemplatesDeleteNoContent{}, nil
-}
-
-// templateDoc is the opaque document object of a write as the JSON the module renders; nil when
-// the request names none. An empty object is a document (an invalid one), not an absent one.
-func templateDoc[M ~map[string]jx.Raw](fields M, set bool) json.RawMessage {
-	if !set {
-		return nil
-	}
-	raw := make(map[string]json.RawMessage, len(fields))
-	for k, v := range fields {
-		raw[k] = json.RawMessage(v)
-	}
-	b, err := json.Marshal(raw)
-	if err != nil {
-		return nil
-	}
-	return b
 }

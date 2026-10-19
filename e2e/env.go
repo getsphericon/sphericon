@@ -20,8 +20,9 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/templates"
 )
 
 // Env is the running application under test plus its Mailpit. One Env serves every
@@ -34,10 +35,9 @@ type Env struct {
 
 	accounts *accounts.Accounts
 	bus      *events.Bus
-	// automations is the product's own module, for a step the public API cannot take yet (an
-	// email step written as a document is saved by /site only). It holds no state, and an email
-	// step needs no cipher.
-	automations *automations.Module
+	// brandKit is the product's own module, for the arrange step the public API leaves to a
+	// person: saving the Brand kit, which makes the starter Templates.
+	brandKit *brandkit.Module
 }
 
 // Boot starts Mailpit and the full application (event router, job queue, HTTP server)
@@ -108,7 +108,7 @@ func Boot() (*Env, func(), error) {
 		accounts: acc,
 		bus:      bus,
 
-		automations: automations.New(nil),
+		brandKit: brandkit.New(bus, templates.New()),
 	}, stop, nil
 }
 

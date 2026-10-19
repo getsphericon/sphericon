@@ -60,3 +60,37 @@ func StringPtr[T ~string, O getter[T]](o O) *string {
 	}
 	return nil
 }
+
+// DocJSON is the opaque editor-document object of a write as the JSON the modules render; nil when
+// the request names none. An empty object is a document (an invalid one), not an absent one.
+func DocJSON[M ~map[string]jx.Raw](fields M, set bool) json.RawMessage {
+	if !set {
+		return nil
+	}
+	raw := make(map[string]json.RawMessage, len(fields))
+	for k, v := range fields {
+		raw[k] = json.RawMessage(v)
+	}
+	b, err := json.Marshal(raw)
+	if err != nil {
+		return nil
+	}
+	return b
+}
+
+// DocObject is a stored editor document as the opaque object of a contract; nil for a message
+// written as HTML, which has none.
+func DocObject[M ~map[string]jx.Raw](doc json.RawMessage) M {
+	if len(doc) == 0 {
+		return nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(doc, &fields); err != nil {
+		return nil
+	}
+	out := make(M, len(fields))
+	for k, v := range fields {
+		out[k] = jx.Raw(v)
+	}
+	return out
+}

@@ -7,9 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/automation"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/automations"
 )
 
 // Automation is what a scenario chooses about an Automation: one email step, no waits.
@@ -56,8 +54,7 @@ type AuthoredAutomation struct {
 }
 
 // ActivateAuthoredAutomation saves an Automation with a single email step that holds an editor
-// document and activates it. Only the /site save path takes a document today, so the step goes
-// through the Automations module that path uses, scoped to this Workspace.
+// document through the external API and activates it.
 func (w *Workspace) ActivateAuthoredAutomation(a AuthoredAutomation) {
 	w.t.Helper()
 	ctx := w.t.Context()
@@ -70,15 +67,19 @@ func (w *Workspace) ActivateAuthoredAutomation(a AuthoredAutomation) {
 	})
 	require.NoError(w.t, err)
 
-	created, err := w.env.automations.Create(ctx, w.scoped, automations.CreateInput{
+	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "e2e authored automation " + uniq(),
 		TriggerEvent: a.TriggerEvent,
-		Steps:        []automations.Step{{Type: automations.StepEmail, Subject: a.Subject, Doc: doc}},
+		Steps: []externalapi.AutomationStep{{
+			Type:    externalapi.AutomationStepTypeEmail,
+			Subject: externalapi.NewOptString(a.Subject),
+			Doc:     externalapi.NewOptAutomationStepDoc(docObject[externalapi.AutomationStepDoc](w.t, doc)),
+		}},
 	})
-	require.NoError(w.t, err, "create authored automation")
-	active, err := w.env.automations.Activate(ctx, w.scoped, created.ID)
-	require.NoError(w.t, err, "activate authored automation")
-	require.Equal(w.t, automation.StatusActive, active.Status)
+	created := ok[externalapi.AutomationResource](w.t, "create authored automation", res, err)
+	act, err := w.api.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: created.ID})
+	got := ok[externalapi.AutomationResource](w.t, "activate authored automation", act, err)
+	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 }
 
 // HTTPAutomation is what a scenario chooses about an Automation that calls a Hook and then
