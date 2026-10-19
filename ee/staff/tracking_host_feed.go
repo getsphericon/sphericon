@@ -21,8 +21,8 @@ type TrackingHostChanges struct {
 // TrackingHostFeed is the changes of Tracking domain hosts logged after cursor, in log
 // order, at most limit of them (ADR 0038). An entry says a host became dns_verified or
 // serving, or was removed: left both states, because its record stopped resolving, its
-// Sending domain was deleted or renamed. A database trigger
-// writes the log, so a removal is never silence. An empty cursor starts from the
+// Sending domain was deleted or renamed. An ent hook
+// (internal/trackinghostlog) writes the log, so a removal is never silence. An empty cursor starts from the
 // beginning; the module keeps no position, and delivery is at-least-once like the
 // Workspace feed. It reads the log through the raw client: the entries name a Workspace
 // but carry no Workspace data.

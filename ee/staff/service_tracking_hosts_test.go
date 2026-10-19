@@ -60,7 +60,7 @@ func domainsReader(t *testing.T, h *harness) *serviceapi.Client {
 }
 
 // setTracking moves a fixture Sending domain of Umbrella to state through ent, the way the
-// recheck job does. The fixture rows themselves are loaded without the log's trigger.
+// recheck job does. The fixture rows themselves are loaded without the log's hook.
 func setTracking(t *testing.T, h *harness, id int64, state sendingdomain.TrackingState) {
 	t.Helper()
 	require.NoError(t, h.env.DB.Scoped(fixtures.UmbrellaID).SendingDomain().UpdateOneID(id).

@@ -11,11 +11,11 @@ import (
 // TrackingHostChange is one entry of the change log behind the service read of Tracking
 // domain hosts (ADR 0038): a host entering dns_verified or serving, or leaving them
 // (back to pending, its Sending domain deleted or renamed).
-// The id is the position in the log. A database trigger on sending_domains, created in
-// a migration of its own, writes it in the same statement as the change, so no write
+// The id is the position in the log. An ent hook on SendingDomain
+// (internal/trackinghostlog) writes it in the transaction of the change, so no write
 // path can forget it, and takes an advisory lock held to the end of the transaction so
 // positions commit in the order they are taken: a reader that passed a position cannot
-// miss an entry committed below it. Nothing in Go writes the table; ee/staff reads it.
+// miss an entry committed below it. Only that hook writes the table; ee/staff reads it.
 // It has no Workspace edge: an entry must outlive the Workspace row it reports, because
 // the removal of a host is what a platform service reads it for.
 type TrackingHostChange struct {

@@ -309,7 +309,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   list item 7), `internal/workspacefeed` (the ent hook, installed on every client, that gives
   a Workspace the next feed position when it is created or an owner is added, removed,
   transferred or changes email or verification: it must reach the Workspace a User or
-  Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`) and the composition roots
+  Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`), `internal/trackinghostlog` (the same
+  pair of hooks for the Tracking host change log, ADR 0038: it reads Sending domains of any Workspace
+  to log the hosts a change adds or removes; `ee/staff` serves it in `Module.TrackingHostFeed`) and the composition roots
   (`internal/app`, `internal/db`, `internal/testhelper`). Needing raw access anywhere else
   means a new small package in this list, not a field on `Handlers`.
   `internal/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes

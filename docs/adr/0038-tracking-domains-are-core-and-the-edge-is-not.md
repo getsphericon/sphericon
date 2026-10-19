@@ -39,9 +39,10 @@ as the CNAME, while a CloudFront multi-tenant distribution validates over HTTP a
   host that leaves `dns_verified` and `serving` vanish without a word, and the edge could never tear it
   down. The read pages an append-only log (`GET /service/domains/changes`) whose entries say a host
   became `dns_verified`, became `serving` or was `removed` (its record stopped resolving, its Sending
-  domain was deleted or renamed). A database trigger on the Sending domain
-  table writes the entries, so a write from any path (the recheck job, the console, a delete) is logged,
-  and its advisory lock makes positions commit in the order they were taken. A caller applies entries in
+  domain was deleted or renamed). An ent hook on the Sending domain
+  (`internal/trackinghostlog`, no database trigger: the schema is plain tables) writes the entries in
+  the transaction of the change, so a write from any path (the recheck job, the console, a delete) is
+  logged, and an advisory lock taken in that transaction makes positions commit in the order they were taken. A caller applies entries in
   order and starts from an empty cursor to rebuild the set.
 - **Only link paths move.** The first-party tracker (`/t.js`, `/collect`) is a separate decision.
 - **The edge is outside the core.** On the hosted service a closed service in `getsphericon/platform`
