@@ -109,6 +109,13 @@ func (OutboundMessage) Fields() []ent.Field {
 		// The Template a transactional send referenced (ADR 0005).
 		field.Int64("template_id").Optional().Nillable().
 			Annotations(ScopedRef{Entity: "EmailTemplate"}),
+		// The Instance's origin (SPHERICON_APP_URL) the message's links were built on, so
+		// `sphericon doctor` can warn when the configured origin has since changed (ADR 0036).
+		// Nil when the send carried no links of its own (a Transactional send has no Tracker).
+		field.String("app_origin").
+			Optional().
+			Nillable().
+			Immutable(),
 	}
 }
 

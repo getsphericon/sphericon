@@ -5,7 +5,7 @@ with the React SPA, the tracker snippet (`/t.js`), and the database migrations a
 embedded. The only external dependency at runtime is **PostgreSQL** (the background queue
 and pub/sub both ride on Postgres — no Redis, no object storage, no separate worker).
 
-- **PostgreSQL:** 14+ recommended.
+- **PostgreSQL:** 14 to 18 (the test suite runs on 18). `sphericon doctor` checks it.
 
 > Would rather not run it? [Sphericon Cloud](/guide/cloud) is the hosted edition.
 
@@ -166,6 +166,27 @@ docker run -p 3000:3000 \
 The image declares a `HEALTHCHECK` against `/healthz`, so `docker ps` reports `healthy`
 once the process is serving.
 
+### Docker Compose
+
+`compose.yaml` at the repo root runs Postgres (18, in a named volume), a one-shot `migrate` service
+(`sphericon migrate`, exits 0) and the app, which starts only after Postgres is healthy and `migrate`
+has succeeded. The app keeps the image's `HEALTHCHECK`. Mailpit is not included: configure an SMTP or
+SES provider in the app.
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/getsphericon/sphericon/main/compose.yaml
+curl -fsSL https://raw.githubusercontent.com/getsphericon/sphericon/main/compose.env.example -o .env
+# fill in .env: POSTGRES_PASSWORD and SPHERICON_JWT_SECRET (`openssl rand -hex 32`),
+# SPHERICON_ENCRYPTION_KEY (`docker run --rm ghcr.io/getsphericon/sphericon:latest genkey`)
+docker compose up -d
+```
+
+`.env` lists the required variables only; any other variable from the table above goes into the
+`environment` block of the `x-sphericon` anchor in `compose.yaml`. `SPHERICON_VERSION` in `.env` picks the
+image tag (pin a release). To upgrade, back up, set the new tag, then `docker compose pull` and
+`docker compose up -d`: `up` re-runs `migrate` first, and the app is recreated once it succeeds. See
+[Upgrading](./operations/upgrading#docker) for the Majors and refusals.
+
 ### Binary
 
 ```sh
@@ -229,7 +250,9 @@ for `--check`, `--version`, `--from` (offline) and what to do when a step refuse
 
 sphericon speaks plain HTTP on `PORT`. Put a reverse proxy in front for TLS, and set `SPHERICON_APP_URL` to the
 public `https://` origin: tracking pixels, click links, unsubscribe links and OAuth metadata are
-built from it, so a wrong value breaks mail already sent.
+built from it, so a wrong value breaks mail already sent. `sphericon doctor` checks that it is well formed, https
+and reachable, and warns when it differs from the origin in recently sent mail
+([Diagnosing with doctor](./operations/doctor)).
 
 Caddy gets and renews certificates by itself:
 

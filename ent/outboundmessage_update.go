@@ -636,6 +636,9 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if _u.mutation.TemplateIDCleared() {
 		_spec.ClearField(outboundmessage.FieldTemplateID, field.TypeInt64)
 	}
+	if _u.mutation.AppOriginCleared() {
+		_spec.ClearField(outboundmessage.FieldAppOrigin, field.TypeString)
+	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -1322,6 +1325,9 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.TemplateIDCleared() {
 		_spec.ClearField(outboundmessage.FieldTemplateID, field.TypeInt64)
+	}
+	if _u.mutation.AppOriginCleared() {
+		_spec.ClearField(outboundmessage.FieldAppOrigin, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

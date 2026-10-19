@@ -1,0 +1,50 @@
+# sphericon with its own Postgres: `cp compose.env.example .env`, fill it in, `docker compose up -d`.
+# Upgrade: bump SPHERICON_VERSION in .env, `docker compose pull`, `docker compose up -d`.
+# `migrate` runs on every `up` and exits 0; the app starts only after it succeeded (ADR 0033).
+name: sphericon
+
+x-sphericon: &sphericon
+  image: ghcr.io/getsphericon/sphericon:${SPHERICON_VERSION:-latest}
+  environment:
+    DATABASE_URL: postgres://sphericon:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/sphericon?sslmode=disable
+    SPHERICON_JWT_SECRET: ${SPHERICON_JWT_SECRET:?set SPHERICON_JWT_SECRET in .env}
+    SPHERICON_ENCRYPTION_KEY: ${SPHERICON_ENCRYPTION_KEY:?set SPHERICON_ENCRYPTION_KEY in .env}
+    SPHERICON_APP_URL: ${SPHERICON_APP_URL:?set SPHERICON_APP_URL in .env}
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sphericon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: sphericon
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sphericon -d sphericon']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    <<: *sphericon
+    command: ['migrate']
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  sphericon:
+    <<: *sphericon
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres-data:

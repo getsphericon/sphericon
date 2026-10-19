@@ -181,8 +181,11 @@ docker run --rm \
   -e SPHERICON_JWT_SECRET="$SPHERICON_JWT_SECRET" \
   ghcr.io/getsphericon/sphericon:0.5.0 migrate
 
-# then recreate the container (or `docker compose up -d`) on the new tag
+# then recreate the container
 ```
+
+With the [Compose file](../self-hosting#docker-compose), set the new `SPHERICON_VERSION` in `.env`, then
+`docker compose pull` and `docker compose up -d`: its `migrate` service runs before the app is replaced.
 
 Use an explicit version tag in production, never `latest`, so a restart does not upgrade you by
 accident. With several replicas leave `SPHERICON_DB_AUTO_MIGRATE` off, so a heavy migration never
@@ -190,6 +193,8 @@ runs under an orchestrator's liveness probe, and roll the replicas one at a time
 `GET /readyz` to return `200` on each. Across a Major, migrate and recreate on each release a
 [refusal](#refusals) names, oldest first. Offline, move the image with `docker save` and
 `docker load`.
+
+After an upgrade or a change of configuration, [`sphericon doctor`](./doctor) checks the whole Instance.
 
 To look before you act, `migrate --status` prints the schema's current Major and release, the
 newest the binary knows and the migrations that would run, and changes nothing (`./sphericon

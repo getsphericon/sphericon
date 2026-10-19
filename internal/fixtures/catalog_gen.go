@@ -563,6 +563,10 @@ const (
 	OutboundMessageGlobexDestination = "pat@globex.test"
 	// OutboundMessageGlobexID is from fixtures/outbound_messages.
 	OutboundMessageGlobexID = 900
+	// OutboundMessageMovedOriginDestination is from fixtures/outbound_messages.
+	OutboundMessageMovedOriginDestination = "moved@initech.test"
+	// OutboundMessageMovedOriginID is from fixtures/outbound_messages.
+	OutboundMessageMovedOriginID = 304
 	// OutboundMessageStrangerDestination is from fixtures/outbound_messages.
 	OutboundMessageStrangerDestination = "stranger@initech.test"
 	// OutboundMessageStrangerID is from fixtures/outbound_messages.

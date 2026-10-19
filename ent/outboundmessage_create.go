@@ -307,6 +307,20 @@ func (_c *OutboundMessageCreate) SetNillableTemplateID(v *int64) *OutboundMessag
 	return _c
 }
 
+// SetAppOrigin sets the "app_origin" field.
+func (_c *OutboundMessageCreate) SetAppOrigin(v string) *OutboundMessageCreate {
+	_c.mutation.SetAppOrigin(v)
+	return _c
+}
+
+// SetNillableAppOrigin sets the "app_origin" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableAppOrigin(v *string) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetAppOrigin(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OutboundMessageCreate) SetID(v int64) *OutboundMessageCreate {
 	_c.mutation.SetID(v)
@@ -540,6 +554,10 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.TemplateID(); ok {
 		_spec.SetField(outboundmessage.FieldTemplateID, field.TypeInt64, value)
 		_node.TemplateID = &value
+	}
+	if value, ok := _c.mutation.AppOrigin(); ok {
+		_spec.SetField(outboundmessage.FieldAppOrigin, field.TypeString, value)
+		_node.AppOrigin = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -995,6 +1013,9 @@ func (u *OutboundMessageUpsertOne) UpdateNewValues() *OutboundMessageUpsertOne {
 		}
 		if _, exists := u.create.mutation.IdempotencyKey(); exists {
 			s.SetIgnore(outboundmessage.FieldIdempotencyKey)
+		}
+		if _, exists := u.create.mutation.AppOrigin(); exists {
+			s.SetIgnore(outboundmessage.FieldAppOrigin)
 		}
 	}))
 	return u
@@ -1637,6 +1658,9 @@ func (u *OutboundMessageUpsertBulk) UpdateNewValues() *OutboundMessageUpsertBulk
 			}
 			if _, exists := b.mutation.IdempotencyKey(); exists {
 				s.SetIgnore(outboundmessage.FieldIdempotencyKey)
+			}
+			if _, exists := b.mutation.AppOrigin(); exists {
+				s.SetIgnore(outboundmessage.FieldAppOrigin)
 			}
 		}
 	}))

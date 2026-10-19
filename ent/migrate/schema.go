@@ -735,6 +735,7 @@ var (
 		{Name: "automation_step", Type: field.TypeInt, Nullable: true},
 		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "template_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "app_origin", Type: field.TypeString, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// OutboundMessagesTable holds the schema information for the "outbound_messages" table.
@@ -745,7 +746,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "outbound_messages_workspaces_outbound_messages",
-				Columns:    []*schema.Column{OutboundMessagesColumns[22]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[23]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -754,22 +755,22 @@ var (
 			{
 				Name:    "outbound_messages_workspace_id_idempotency_key",
 				Unique:  true,
-				Columns: []*schema.Column{OutboundMessagesColumns[22], OutboundMessagesColumns[4]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[4]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_kind_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[22], OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_integration_id_sent_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[22], OutboundMessagesColumns[20], OutboundMessagesColumns[14]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[20], OutboundMessagesColumns[14]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_sending_domain_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[22], OutboundMessagesColumns[9], OutboundMessagesColumns[1]},
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[9], OutboundMessagesColumns[1]},
 			},
 		},
 	}

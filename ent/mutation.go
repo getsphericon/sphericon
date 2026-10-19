@@ -19377,6 +19377,7 @@ type OutboundMessageMutation struct {
 	addintegration_id         *int64
 	template_id               *int64
 	addtemplate_id            *int64
+	app_origin                *string
 	clearedFields             map[string]struct{}
 	workspace                 *int64
 	clearedworkspace          bool
@@ -20631,6 +20632,55 @@ func (m *OutboundMessageMutation) ResetTemplateID() {
 	delete(m.clearedFields, outboundmessage.FieldTemplateID)
 }
 
+// SetAppOrigin sets the "app_origin" field.
+func (m *OutboundMessageMutation) SetAppOrigin(s string) {
+	m.app_origin = &s
+}
+
+// AppOrigin returns the value of the "app_origin" field in the mutation.
+func (m *OutboundMessageMutation) AppOrigin() (r string, exists bool) {
+	v := m.app_origin
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAppOrigin returns the old "app_origin" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldAppOrigin(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAppOrigin is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAppOrigin requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAppOrigin: %w", err)
+	}
+	return oldValue.AppOrigin, nil
+}
+
+// ClearAppOrigin clears the value of the "app_origin" field.
+func (m *OutboundMessageMutation) ClearAppOrigin() {
+	m.app_origin = nil
+	m.clearedFields[outboundmessage.FieldAppOrigin] = struct{}{}
+}
+
+// AppOriginCleared returns if the "app_origin" field was cleared in this mutation.
+func (m *OutboundMessageMutation) AppOriginCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldAppOrigin]
+	return ok
+}
+
+// ResetAppOrigin resets all changes to the "app_origin" field.
+func (m *OutboundMessageMutation) ResetAppOrigin() {
+	m.app_origin = nil
+	delete(m.clearedFields, outboundmessage.FieldAppOrigin)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *OutboundMessageMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -20692,7 +20742,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 22)
+	fields := make([]string, 0, 23)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -20759,6 +20809,9 @@ func (m *OutboundMessageMutation) Fields() []string {
 	if m.template_id != nil {
 		fields = append(fields, outboundmessage.FieldTemplateID)
 	}
+	if m.app_origin != nil {
+		fields = append(fields, outboundmessage.FieldAppOrigin)
+	}
 	return fields
 }
 
@@ -20811,6 +20864,8 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.IntegrationID()
 	case outboundmessage.FieldTemplateID:
 		return m.TemplateID()
+	case outboundmessage.FieldAppOrigin:
+		return m.AppOrigin()
 	}
 	return nil, false
 }
@@ -20864,6 +20919,8 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldIntegrationID(ctx)
 	case outboundmessage.FieldTemplateID:
 		return m.OldTemplateID(ctx)
+	case outboundmessage.FieldAppOrigin:
+		return m.OldAppOrigin(ctx)
 	}
 	return nil, fmt.Errorf("unknown OutboundMessage field %s", name)
 }
@@ -21026,6 +21083,13 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTemplateID(v)
+		return nil
+	case outboundmessage.FieldAppOrigin:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAppOrigin(v)
 		return nil
 	}
 	return fmt.Errorf("unknown OutboundMessage field %s", name)
@@ -21198,6 +21262,9 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldTemplateID) {
 		fields = append(fields, outboundmessage.FieldTemplateID)
 	}
+	if m.FieldCleared(outboundmessage.FieldAppOrigin) {
+		fields = append(fields, outboundmessage.FieldAppOrigin)
+	}
 	return fields
 }
 
@@ -21253,6 +21320,9 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 		return nil
 	case outboundmessage.FieldTemplateID:
 		m.ClearTemplateID()
+		return nil
+	case outboundmessage.FieldAppOrigin:
+		m.ClearAppOrigin()
 		return nil
 	}
 	return fmt.Errorf("unknown OutboundMessage nullable field %s", name)
@@ -21327,6 +21397,9 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldTemplateID:
 		m.ResetTemplateID()
+		return nil
+	case outboundmessage.FieldAppOrigin:
+		m.ResetAppOrigin()
 		return nil
 	}
 	return fmt.Errorf("unknown OutboundMessage field %s", name)
