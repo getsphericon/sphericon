@@ -19,13 +19,14 @@ import (
 // must render as an empty list.
 func webhookResource(e webhooks.Endpoint) externalapi.WebhookResource {
 	return externalapi.WebhookResource{
-		ID:         externalapi.EntityId(e.ID),
-		URL:        e.URL,
-		EventTypes: lo.Ternary(e.EventTypes == nil, []string{}, e.EventTypes),
-		Enabled:    e.Enabled,
-		Failure:    webhookFailure(e),
-		CreatedAt:  externalapi.Timestamp(e.CreatedAt),
-		UpdatedAt:  externalapi.Timestamp(e.UpdatedAt),
+		ID:             externalapi.EntityId(e.ID),
+		URL:            e.URL,
+		EventTypes:     lo.Ternary(e.EventTypes == nil, []string{}, e.EventTypes),
+		Enabled:        e.Enabled,
+		Failure:        webhookFailure(e),
+		DisabledReason: webhookDisabledReason(e),
+		CreatedAt:      externalapi.Timestamp(e.CreatedAt),
+		UpdatedAt:      externalapi.Timestamp(e.UpdatedAt),
 	}
 }
 
@@ -171,4 +172,12 @@ func (h *Handlers) WebhooksDelete(ctx context.Context, params externalapi.Webhoo
 		return nil, err
 	}
 	return &externalapi.WebhooksDeleteNoContent{}, nil
+}
+
+// webhookDisabledReason maps why the endpoint turned itself off; absent otherwise.
+func webhookDisabledReason(e webhooks.Endpoint) externalapi.OptWebhookDisabledReason {
+	if e.DisabledReason == nil {
+		return externalapi.OptWebhookDisabledReason{}
+	}
+	return externalapi.NewOptWebhookDisabledReason(externalapi.WebhookDisabledReason(*e.DisabledReason))
 }

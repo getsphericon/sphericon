@@ -2807,6 +2807,20 @@ export type SiteVerifyEmailInput = {
 };
 
 /**
+ * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
+ * Gone) and `persistent_failure` (deliveries failed for longer than the window).
+ * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ */
+export const SiteWebhookDisabledReason = { GONE: 'gone', PERSISTENT_FAILURE: 'persistent_failure' } as const;
+
+/**
+ * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
+ * Gone) and `persistent_failure` (deliveries failed for longer than the window).
+ * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ */
+export type SiteWebhookDisabledReason = typeof SiteWebhookDisabledReason[keyof typeof SiteWebhookDisabledReason];
+
+/**
  * Webhook endpoint resource used by the site UI
  */
 export type SiteWebhookEndpointResource = {
@@ -2830,6 +2844,10 @@ export type SiteWebhookEndpointResource = {
    * Whether the endpoint receives deliveries
    */
   enabled: boolean;
+  /**
+   * Why the endpoint turned itself off; absent when an owner disabled it or it is enabled
+   */
+  disabledReason?: SiteWebhookDisabledReason;
   /**
    * Present while deliveries are failing; cleared by the next 2xx
    */

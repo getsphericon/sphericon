@@ -281,6 +281,16 @@ export function WebhooksSection({ slug }: { slug: string }) {
                     ? t(($) => $.settings.webhooks.enabled)
                     : t(($) => $.settings.webhooks.disabled)}
                 </Badge>
+                {record.disabledReason ? (
+                  <Text size="xs" c="dimmed">
+                    {
+                      {
+                        gone: t(($) => $.settings.webhooks.disabledGone),
+                        persistent_failure: t(($) => $.settings.webhooks.disabledPersistentFailure),
+                      }[record.disabledReason]
+                    }
+                  </Text>
+                ) : null}
                 {record.failure ? (
                   <>
                     <Badge variant="light" color="red">

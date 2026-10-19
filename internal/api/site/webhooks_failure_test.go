@@ -32,3 +32,20 @@ func TestSiteWebhooksShowTheFailureState(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, healthy.(*siteapi.SiteWebhookEndpointResource).Failure.IsSet())
 }
+
+func TestSiteWebhooksShowWhyAnEndpointTurnedItselfOff(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	gone, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{Slug: fixtures.AcmeSlug, ID: siteapi.EntityId(fixtures.WebhookCodebasicsGoneID)})
+	require.NoError(t, err)
+	res, ok := gone.(*siteapi.SiteWebhookEndpointResource)
+	require.Truef(t, ok, "got %T", gone)
+	assert.False(t, res.Enabled)
+	assert.Equal(t, siteapi.SiteWebhookDisabledReasonGone, res.DisabledReason.Value)
+
+	healthy, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{Slug: fixtures.AcmeSlug, ID: siteapi.EntityId(fixtures.WebhookCodebasicsID)})
+	require.NoError(t, err)
+	assert.False(t, healthy.(*siteapi.SiteWebhookEndpointResource).DisabledReason.IsSet())
+}

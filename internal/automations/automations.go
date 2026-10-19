@@ -175,9 +175,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if err := validate(*in.Steps); err != nil {
 			return nil, err
 		}
-		var stored []Step
-		if cur, err := s.Automation().Get(ctx, id); err == nil {
-			stored, _ = Decode(cur.Definition)
+		cur, err := s.Automation().Get(ctx, id)
+		if err != nil {
+			return nil, notFound(err)
+		}
+		stored, err := Decode(cur.Definition)
+		if err != nil {
+			return nil, err
 		}
 		sealed, err := m.sealSteps(*in.Steps, stored)
 		if err != nil {

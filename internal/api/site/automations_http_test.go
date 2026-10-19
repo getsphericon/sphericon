@@ -36,6 +36,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	require.Truef(t, ok, "got %T", created)
 
 	step := res.Steps[0]
+	sealedAtCreate := sealedValues(t, env, int64(res.ID))
 	assert.NotEmpty(t, step.ID.Or(""))
 	assert.True(t, step.HasSecret.Or(false))
 	assert.False(t, step.URL.Set, "the url is never returned")
@@ -68,10 +69,29 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	for _, e := range entries {
 		raw, err := json.Marshal(e)
 		require.NoError(t, err)
-		for _, secret := range []string{"SECRETPATH", "hunter2", "whsec_topsecret"} {
+		secrets := append([]string{"SECRETPATH", "hunter2", "whsec_topsecret"}, sealedAtCreate...)
+		secrets = append(secrets, steps[0].URL, steps[0].Secret, steps[0].Headers[0].Value)
+		for _, secret := range secrets {
 			assert.NotContains(t, string(raw), secret)
 		}
 	}
+}
+
+// sealedValues returns the ciphertext of the first step's URL, secret and header values.
+func sealedValues(t *testing.T, env *testhelper.TestEnv, id int64) []string {
+	t.Helper()
+	stored, err := env.DB.Scoped(fixtures.AcmeID).Automation().Get(context.Background(), id)
+	require.NoError(t, err)
+	steps, err := automations.Decode(stored.Definition)
+	require.NoError(t, err)
+	out := []string{steps[0].URL, steps[0].Secret}
+	for _, h := range steps[0].Headers {
+		out = append(out, h.Value)
+	}
+	for _, v := range out {
+		require.NotEmpty(t, v)
+	}
+	return out
 }
 
 func TestSiteHTTPStepDryRunRendersForAContactWithoutCalling(t *testing.T) {

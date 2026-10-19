@@ -912,6 +912,8 @@ export default interface Resources {
         "deleteError": "Failed to delete webhook",
         "disable": "Disable",
         "disabled": "Disabled",
+        "disabledGone": "Receiver answered 410 Gone",
+        "disabledPersistentFailure": "Turned off after failing for too long",
         "empty": "No webhook endpoints yet",
         "enable": "Enable",
         "enabled": "Enabled",

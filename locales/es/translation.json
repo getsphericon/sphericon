@@ -928,6 +928,8 @@
       "deleteError": "Error al eliminar el webhook",
       "disable": "Deshabilitar",
       "disabled": "Deshabilitado",
+      "disabledGone": "El receptor respondió 410 Gone",
+      "disabledPersistentFailure": "Desactivado tras fallar durante demasiado tiempo",
       "empty": "Aún no hay endpoints de webhook",
       "enable": "Habilitar",
       "enabled": "Habilitado",

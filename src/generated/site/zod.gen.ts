@@ -909,6 +909,13 @@ export const zSiteVerifyEmailInput = z.object({
 });
 
 /**
+ * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
+ * Gone) and `persistent_failure` (deliveries failed for longer than the window).
+ * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ */
+export const zSiteWebhookDisabledReason = z.enum(['gone', 'persistent_failure']);
+
+/**
  * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
  * time), `blocked_address` (the URL names an address this instance does not permit),
  * `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
@@ -1421,6 +1428,7 @@ export const zSiteWebhookEndpointResource = z.object({
   secret: z.string(),
   eventTypes: z.array(z.string()),
   enabled: z.boolean(),
+  disabledReason: z.exactOptional(zSiteWebhookDisabledReason),
   failure: z.exactOptional(zSiteWebhookFailure),
   createdAt: zTimestamp,
   updatedAt: zTimestamp

@@ -11645,6 +11645,11 @@
         "type": "string",
         "enum": ["1.0.0"]
       },
+      "WebhookDisabledReason": {
+        "type": "string",
+        "enum": ["gone", "persistent_failure"],
+        "description": "Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410\nGone) and `persistent_failure` (deliveries failed for longer than the window).\nAbsent for an endpoint an owner disabled, and while the endpoint is enabled."
+      },
       "WebhookErrorKind": {
         "type": "string",
         "enum": ["timeout", "blocked_address", "http_status", "network"],
@@ -11717,6 +11722,14 @@
           "enabled": {
             "type": "boolean",
             "description": "Whether the endpoint receives deliveries"
+          },
+          "disabledReason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WebhookDisabledReason"
+              }
+            ],
+            "description": "Why the endpoint turned itself off; absent when an owner disabled it or it is enabled"
           },
           "failure": {
             "allOf": [

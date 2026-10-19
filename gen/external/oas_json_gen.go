@@ -17234,6 +17234,39 @@ func (s *OptTimestamp) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes WebhookDisabledReason as json.
+func (o OptWebhookDisabledReason) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes WebhookDisabledReason from json.
+func (o *OptWebhookDisabledReason) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptWebhookDisabledReason to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptWebhookDisabledReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptWebhookDisabledReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes WebhookErrorKind as json.
 func (o OptWebhookErrorKind) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -27498,6 +27531,46 @@ func (s *UpsertContactsResult) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes WebhookDisabledReason as json.
+func (s WebhookDisabledReason) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WebhookDisabledReason from json.
+func (s *WebhookDisabledReason) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WebhookDisabledReason to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WebhookDisabledReason(v) {
+	case WebhookDisabledReasonGone:
+		*s = WebhookDisabledReasonGone
+	case WebhookDisabledReasonPersistentFailure:
+		*s = WebhookDisabledReasonPersistentFailure
+	default:
+		*s = WebhookDisabledReason(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WebhookDisabledReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WebhookDisabledReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes WebhookErrorKind as json.
 func (s WebhookErrorKind) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -27730,6 +27803,12 @@ func (s *WebhookResource) encodeFields(e *jx.Encoder) {
 		e.Bool(s.Enabled)
 	}
 	{
+		if s.DisabledReason.Set {
+			e.FieldStart("disabledReason")
+			s.DisabledReason.Encode(e)
+		}
+	}
+	{
 		if s.Failure.Set {
 			e.FieldStart("failure")
 			s.Failure.Encode(e)
@@ -27745,14 +27824,15 @@ func (s *WebhookResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfWebhookResource = [7]string{
+var jsonFieldsNameOfWebhookResource = [8]string{
 	0: "id",
 	1: "url",
 	2: "eventTypes",
 	3: "enabled",
-	4: "failure",
-	5: "createdAt",
-	6: "updatedAt",
+	4: "disabledReason",
+	5: "failure",
+	6: "createdAt",
+	7: "updatedAt",
 }
 
 // Decode decodes WebhookResource from json.
@@ -27818,6 +27898,16 @@ func (s *WebhookResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"enabled\"")
 			}
+		case "disabledReason":
+			if err := func() error {
+				s.DisabledReason.Reset()
+				if err := s.DisabledReason.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"disabledReason\"")
+			}
 		case "failure":
 			if err := func() error {
 				s.Failure.Reset()
@@ -27829,7 +27919,7 @@ func (s *WebhookResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failure\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -27839,7 +27929,7 @@ func (s *WebhookResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -27858,7 +27948,7 @@ func (s *WebhookResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01101111,
+		0b11001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

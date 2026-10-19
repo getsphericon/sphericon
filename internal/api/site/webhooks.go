@@ -18,14 +18,15 @@ import (
 // UI displays for signature verification.
 func webhookResource(e webhooks.Endpoint) siteapi.SiteWebhookEndpointResource {
 	return siteapi.SiteWebhookEndpointResource{
-		ID:         siteapi.EntityId(e.ID),
-		URL:        e.URL,
-		Secret:     e.Secret,
-		EventTypes: lo.Ternary(e.EventTypes == nil, []string{}, e.EventTypes),
-		Enabled:    e.Enabled,
-		Failure:    webhookFailure(e),
-		CreatedAt:  siteapi.Timestamp(e.CreatedAt),
-		UpdatedAt:  siteapi.Timestamp(e.UpdatedAt),
+		ID:             siteapi.EntityId(e.ID),
+		URL:            e.URL,
+		Secret:         e.Secret,
+		EventTypes:     lo.Ternary(e.EventTypes == nil, []string{}, e.EventTypes),
+		Enabled:        e.Enabled,
+		Failure:        webhookFailure(e),
+		DisabledReason: webhookDisabledReason(e),
+		CreatedAt:      siteapi.Timestamp(e.CreatedAt),
+		UpdatedAt:      siteapi.Timestamp(e.UpdatedAt),
 	}
 }
 
@@ -188,4 +189,12 @@ func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWe
 		return nil, err
 	}
 	return &siteapi.SiteWebhooksDeleteNoContent{}, nil
+}
+
+// webhookDisabledReason maps why the endpoint turned itself off; absent otherwise.
+func webhookDisabledReason(e webhooks.Endpoint) siteapi.OptSiteWebhookDisabledReason {
+	if e.DisabledReason == nil {
+		return siteapi.OptSiteWebhookDisabledReason{}
+	}
+	return siteapi.NewOptSiteWebhookDisabledReason(siteapi.SiteWebhookDisabledReason(*e.DisabledReason))
 }

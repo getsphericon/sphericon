@@ -192,7 +192,9 @@ func (b *ApiTokenCreateBulk) auditRebind(c *Client) {
 }
 
 // AutomationAuditSensitive lists the Automation fields whose values never reach the Audit log.
-var AutomationAuditSensitive = map[string]bool{}
+var AutomationAuditSensitive = map[string]bool{
+	"definition": true,
+}
 
 // auditFields maps every audited field of the Automation to its value.
 func (e *Automation) auditFields() map[string]any {

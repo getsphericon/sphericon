@@ -17,6 +17,16 @@ enum WebhookErrorKind {
   network: "network",
 }
 
+/**
+ * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
+ * Gone) and `persistent_failure` (deliveries failed for longer than the window).
+ * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ */
+enum WebhookDisabledReason {
+  gone: "gone",
+  persistent_failure: "persistent_failure",
+}
+
 /** The failure state of an endpoint that is currently failing; absent while it is healthy. */
 model WebhookFailure {
   /** Deliveries that failed in a row */
@@ -54,6 +64,9 @@ model WebhookResource {
 
   /** Whether the endpoint receives deliveries */
   enabled: boolean;
+
+  /** Why the endpoint turned itself off; absent when an owner disabled it or it is enabled */
+  disabledReason?: WebhookDisabledReason;
 
   /** Present while deliveries are failing; cleared by the next 2xx */
   failure?: WebhookFailure;

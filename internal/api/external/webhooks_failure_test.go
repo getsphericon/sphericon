@@ -25,3 +25,15 @@ func TestExternalWebhooksShowTheFailureState(t *testing.T) {
 	assert.Equal(t, int32(503), f.Status.Value)
 	assert.Equal(t, int32(7), f.ConsecutiveFailures)
 }
+
+func TestExternalWebhooksShowWhyAnEndpointTurnedItselfOff(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "webhooks:read")
+
+	got, err := c.WebhooksGet(context.Background(), externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsGoneID)})
+	require.NoError(t, err)
+	hook, ok := got.(*externalapi.WebhookResource)
+	require.Truef(t, ok, "got %T", got)
+	assert.False(t, hook.Enabled)
+	assert.Equal(t, externalapi.WebhookDisabledReasonGone, hook.DisabledReason.Value)
+}

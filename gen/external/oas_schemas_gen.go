@@ -7459,6 +7459,52 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// NewOptWebhookDisabledReason returns new OptWebhookDisabledReason with value set to v.
+func NewOptWebhookDisabledReason(v WebhookDisabledReason) OptWebhookDisabledReason {
+	return OptWebhookDisabledReason{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptWebhookDisabledReason is optional WebhookDisabledReason.
+type OptWebhookDisabledReason struct {
+	Value WebhookDisabledReason
+	Set   bool
+}
+
+// IsSet returns true if OptWebhookDisabledReason was set.
+func (o OptWebhookDisabledReason) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptWebhookDisabledReason) Reset() {
+	var v WebhookDisabledReason
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptWebhookDisabledReason) SetTo(v WebhookDisabledReason) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptWebhookDisabledReason) Get() (v WebhookDisabledReason, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptWebhookDisabledReason) Or(d WebhookDisabledReason) WebhookDisabledReason {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptWebhookErrorKind returns new OptWebhookErrorKind with value set to v.
 func NewOptWebhookErrorKind(v WebhookErrorKind) OptWebhookErrorKind {
 	return OptWebhookErrorKind{
@@ -11062,6 +11108,51 @@ func (s *UpsertContactsResult) SetResults(val []ContactBatchItemResult) {
 
 func (*UpsertContactsResult) contactsBatchUpsertRes() {}
 
+// Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410 Gone) and
+// `persistent_failure` (deliveries failed for longer than the window). Absent for an endpoint an owner
+// disabled, and while the endpoint is enabled.
+// Ref: #/components/schemas/WebhookDisabledReason
+type WebhookDisabledReason string
+
+const (
+	WebhookDisabledReasonGone              WebhookDisabledReason = "gone"
+	WebhookDisabledReasonPersistentFailure WebhookDisabledReason = "persistent_failure"
+)
+
+// AllValues returns all WebhookDisabledReason values.
+func (WebhookDisabledReason) AllValues() []WebhookDisabledReason {
+	return []WebhookDisabledReason{
+		WebhookDisabledReasonGone,
+		WebhookDisabledReasonPersistentFailure,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WebhookDisabledReason) MarshalText() ([]byte, error) {
+	switch s {
+	case WebhookDisabledReasonGone:
+		return []byte(s), nil
+	case WebhookDisabledReasonPersistentFailure:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WebhookDisabledReason) UnmarshalText(data []byte) error {
+	switch WebhookDisabledReason(data) {
+	case WebhookDisabledReasonGone:
+		*s = WebhookDisabledReasonGone
+		return nil
+	case WebhookDisabledReasonPersistentFailure:
+		*s = WebhookDisabledReasonPersistentFailure
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in time),
 // `blocked_address` (the URL names an address this instance does not permit), `http_status` (a non-2xx
 // answer, see `status`) and `network` (any other transport failure).
@@ -11198,6 +11289,8 @@ type WebhookResource struct {
 	EventTypes []string `json:"eventTypes"`
 	// Whether the endpoint receives deliveries.
 	Enabled bool `json:"enabled"`
+	// Why the endpoint turned itself off; absent when an owner disabled it or it is enabled.
+	DisabledReason OptWebhookDisabledReason `json:"disabledReason"`
 	// Present while deliveries are failing; cleared by the next 2xx.
 	Failure OptWebhookFailure `json:"failure"`
 	// Creation timestamp.
@@ -11224,6 +11317,11 @@ func (s *WebhookResource) GetEventTypes() []string {
 // GetEnabled returns the value of Enabled.
 func (s *WebhookResource) GetEnabled() bool {
 	return s.Enabled
+}
+
+// GetDisabledReason returns the value of DisabledReason.
+func (s *WebhookResource) GetDisabledReason() OptWebhookDisabledReason {
+	return s.DisabledReason
 }
 
 // GetFailure returns the value of Failure.
@@ -11259,6 +11357,11 @@ func (s *WebhookResource) SetEventTypes(val []string) {
 // SetEnabled sets the value of Enabled.
 func (s *WebhookResource) SetEnabled(val bool) {
 	s.Enabled = val
+}
+
+// SetDisabledReason sets the value of DisabledReason.
+func (s *WebhookResource) SetDisabledReason(val OptWebhookDisabledReason) {
+	s.DisabledReason = val
 }
 
 // SetFailure sets the value of Failure.

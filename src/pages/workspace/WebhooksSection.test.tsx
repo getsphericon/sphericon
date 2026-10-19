@@ -83,6 +83,13 @@ test('lists a failing endpoint with its last error', async () => {
   await expect.element(screen.getByText(/HTTP 503: 7 deliveries failed/)).toBeInTheDocument()
 })
 
+test('says why an endpoint turned itself off', async () => {
+  worker.use(list([endpoint({ enabled: false, disabledReason: 'gone' })]))
+  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+
+  await expect.element(screen.getByText('Receiver answered 410 Gone')).toBeInTheDocument()
+})
+
 test('creates an endpoint from the form', async () => {
   const bodies: unknown[] = []
   worker.use(
