@@ -81,6 +81,17 @@ the binary). `SPHERICON_ENV` selects the environment (`development` by default; 
 | `SPHERICON_SUPPORT_EMAIL`                                                                                             | no                               | — (none)                                | Support contact shown to a Workspace owner with a suspension (banner and notice email) so they can appeal by email. Empty shows none.                                                                                                                                                                                        |
 | `SPHERICON_BILLING_URL`                                                                                               | no                               | — (none)                                | Billing site a Workspace member is pointed to while sending is on hold: Owners and Admins get a link to it, other members are told to contact one. Empty (the self-host default) shows no link and no billing text.                                                                                                          |
 
+## Bounces, complaints and Suppression
+
+Bounces and complaints are ingested only through an Integration's hook, read by a built-in
+**Preset** (`ses`, `postmark`, `mailgun`, `generic`) or one of your own from `SPHERICON_PRESETS_DIR`
+([ADR 0037](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0037-inbound-provider-callbacks-are-presets-on-an-integration.md)).
+**Plain SMTP with no provider callback gets no Suppression**, so SMTP alone is for tests and small
+volumes. The hook URL must be reachable from the provider, so serve the Instance over public HTTPS
+(see below). Setup steps for each Preset are in
+[Deliverability](/guide/deliverability#bounces-and-complaints); the file format is in
+[Presets](/guide/presets).
+
 ## Generate the keys
 
 Both secrets are random values you create once and keep:

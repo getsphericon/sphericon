@@ -11,7 +11,9 @@ configuration.
 
 ::: warning
 A bare SMTP server feeds nothing to Suppression. Only a provider that posts callbacks (SES, Postmark,
-Mailgun or one you add a Preset for) does.
+Mailgun or one you add a Preset for) does. Setup steps for each built-in Preset are in
+[Deliverability](/guide/deliverability#bounces-and-complaints); the design is
+[ADR 0037](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0037-inbound-provider-callbacks-are-presets-on-an-integration.md).
 :::
 
 ## Add your own Preset
@@ -44,11 +46,15 @@ time) for a signature with a timestamp tolerance.
 ## The file format (version 1)
 
 The format carries a `version` and changes only between Majors, so your files keep working in between.
-Its JSON Schema is published at `https://getsphericon.app/schemas/preset-1.schema.json` and
-`sphericon preset schema` prints it; point your editor at it for validation as you write:
+`sphericon preset schema` prints its JSON Schema (its `$id` is only an identifier, nothing is served
+there). Save it next to your file and point your editor at it for validation as you write:
+
+```sh
+sphericon preset schema > preset-1.schema.json
+```
 
 ```yaml
-# yaml-language-server: $schema=https://getsphericon.app/schemas/preset-1.schema.json
+# yaml-language-server: $schema=./preset-1.schema.json
 version: 1
 name: acme-relay
 params: …

@@ -73,10 +73,11 @@ Add one or more integrations in **Settings → Integrations**:
 - **SMTP**: any server that accepts SMTP.
 - **SES-compatible API**: Amazon SES, or any service that implements the same API, such as Yandex
   Cloud Postbox. Set the integration's **endpoint** to the service's URL; leave it empty for
-  Amazon SES itself. Bounce and complaint notifications delivered over SNS are ingested and turned
-  into suppressions. Set the integration's **SNS topic ARN** to the topic those notifications are
-  published to: a notification from any other topic is refused, and an integration with no topic
-  suppresses nothing.
+  Amazon SES itself.
+
+Bounces and complaints become suppressions only through the integration's hook, set up under
+**Inbound** with a Preset (SES, Postmark, Mailgun or generic). Plain SMTP gets none: see
+[Bounces and complaints](/guide/deliverability#bounces-and-complaints).
 
 Credentials are encrypted at rest. Because DKIM signing happens in sphericon itself, switching
 transport does not mean re-verifying your domain.
