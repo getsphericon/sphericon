@@ -57,7 +57,7 @@ your Integration and your domain, to any address you name.
 
 ### 1. Connect an Integration
 
-In **Settings → Developers** add an SMTP server or an SES-compatible service. Credentials are stored
+In **Settings → Sending** add an SMTP server or an SES-compatible service. Credentials are stored
 encrypted with your `SPHERICON_ENCRYPTION_KEY`.
 
 ### 2. Verify a sending domain
