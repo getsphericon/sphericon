@@ -1181,6 +1181,13 @@ func ScopedEntities() []ScopedEntity {
 				if src.VerifiedAt != nil {
 					b.SetVerifiedAt(*src.VerifiedAt)
 				}
+				b.SetTrackingState(src.TrackingState)
+				if src.TrackingCheckedAt != nil {
+					b.SetTrackingCheckedAt(*src.TrackingCheckedAt)
+				}
+				if src.TrackingStateChangedAt != nil {
+					b.SetTrackingStateChangedAt(*src.TrackingStateChangedAt)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

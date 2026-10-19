@@ -113,3 +113,35 @@ test('expanding a domain row shows its DNS records', async () => {
   await expect.element(screen.getByText('om1._domainkey.mail.acme.com')).toBeInTheDocument()
   await expect.element(screen.getByText('v=DMARC1; p=none')).toBeInTheDocument()
 })
+
+test('lists the tracking CNAME with its state when the instance has a target', async () => {
+  worker.use(
+    list([
+      domain({
+        trackingRecord: {
+          type: 'CNAME',
+          host: 'track.mail.acme.com',
+          target: 'edge.example.com',
+          state: 'dns_verified',
+        },
+      }),
+    ]),
+  )
+  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+
+  await screen.getByText('mail.acme.com').click()
+
+  await expect.element(screen.getByText('track.mail.acme.com')).toBeInTheDocument()
+  await expect.element(screen.getByText('edge.example.com')).toBeInTheDocument()
+  await expect.element(screen.getByText('DNS verified')).toBeInTheDocument()
+})
+
+test('lists no tracking record when the instance has no target', async () => {
+  worker.use(list([domain()]))
+  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+
+  await screen.getByText('mail.acme.com').click()
+
+  await expect.element(screen.getByText('_dmarc.mail.acme.com')).toBeInTheDocument()
+  await expect.element(screen.getByText('Tracking domain (optional)')).not.toBeInTheDocument()
+})

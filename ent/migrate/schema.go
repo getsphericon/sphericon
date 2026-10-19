@@ -877,6 +877,9 @@ var (
 		{Name: "verified", Type: field.TypeBool, Default: false},
 		{Name: "last_checked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "verified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "tracking_state", Type: field.TypeEnum, Enums: []string{"pending", "dns_verified", "serving"}, Default: "pending"},
+		{Name: "tracking_checked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "tracking_state_changed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// SendingDomainsTable holds the schema information for the "sending_domains" table.
@@ -887,7 +890,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sending_domains_workspaces_sending_domains",
-				Columns:    []*schema.Column{SendingDomainsColumns[10]},
+				Columns:    []*schema.Column{SendingDomainsColumns[13]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -896,7 +899,7 @@ var (
 			{
 				Name:    "sendingdomain_workspace_id_domain",
 				Unique:  true,
-				Columns: []*schema.Column{SendingDomainsColumns[10], SendingDomainsColumns[3]},
+				Columns: []*schema.Column{SendingDomainsColumns[13], SendingDomainsColumns[3]},
 			},
 			{
 				Name:    "sendingdomain_last_checked_at",

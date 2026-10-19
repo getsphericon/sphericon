@@ -38,6 +38,12 @@ type SendingDomain struct {
 	LastCheckedAt *time.Time `json:"last_checked_at,omitempty"`
 	// VerifiedAt holds the value of the "verified_at" field.
 	VerifiedAt *time.Time `json:"verified_at,omitempty"`
+	// TrackingState holds the value of the "tracking_state" field.
+	TrackingState sendingdomain.TrackingState `json:"tracking_state,omitempty"`
+	// TrackingCheckedAt holds the value of the "tracking_checked_at" field.
+	TrackingCheckedAt *time.Time `json:"tracking_checked_at,omitempty"`
+	// TrackingStateChangedAt holds the value of the "tracking_state_changed_at" field.
+	TrackingStateChangedAt *time.Time `json:"tracking_state_changed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SendingDomainQuery when eager-loading is set.
 	Edges        SendingDomainEdges `json:"edges"`
@@ -73,9 +79,9 @@ func (*SendingDomain) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case sendingdomain.FieldID, sendingdomain.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case sendingdomain.FieldDomain, sendingdomain.FieldDkimSelector, sendingdomain.FieldDkimPrivateKeyEncrypted, sendingdomain.FieldDkimPublicKey:
+		case sendingdomain.FieldDomain, sendingdomain.FieldDkimSelector, sendingdomain.FieldDkimPrivateKeyEncrypted, sendingdomain.FieldDkimPublicKey, sendingdomain.FieldTrackingState:
 			values[i] = new(sql.NullString)
-		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt:
+		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldTrackingCheckedAt, sendingdomain.FieldTrackingStateChangedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -160,6 +166,26 @@ func (_m *SendingDomain) assignValues(columns []string, values []any) error {
 				_m.VerifiedAt = new(time.Time)
 				*_m.VerifiedAt = value.Time
 			}
+		case sendingdomain.FieldTrackingState:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tracking_state", values[i])
+			} else if value.Valid {
+				_m.TrackingState = sendingdomain.TrackingState(value.String)
+			}
+		case sendingdomain.FieldTrackingCheckedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field tracking_checked_at", values[i])
+			} else if value.Valid {
+				_m.TrackingCheckedAt = new(time.Time)
+				*_m.TrackingCheckedAt = value.Time
+			}
+		case sendingdomain.FieldTrackingStateChangedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field tracking_state_changed_at", values[i])
+			} else if value.Valid {
+				_m.TrackingStateChangedAt = new(time.Time)
+				*_m.TrackingStateChangedAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -231,6 +257,19 @@ func (_m *SendingDomain) String() string {
 	builder.WriteString(", ")
 	if v := _m.VerifiedAt; v != nil {
 		builder.WriteString("verified_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("tracking_state=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TrackingState))
+	builder.WriteString(", ")
+	if v := _m.TrackingCheckedAt; v != nil {
+		builder.WriteString("tracking_checked_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.TrackingStateChangedAt; v != nil {
+		builder.WriteString("tracking_state_changed_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')

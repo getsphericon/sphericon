@@ -217,6 +217,11 @@ type Config struct {
 	// `staff` license.
 	InternalAddr string
 
+	// TrackingCNAMETarget is the edge host a Sending domain's Tracking domain CNAME
+	// (track.<domain>) must point at (SPHERICON_TRACKING_CNAME_TARGET, ADR 0038). Empty (the
+	// default) turns the feature off: no tracking record is shown and none is checked.
+	TrackingCNAMETarget string
+
 	// System (platform) transactional email — sphericon's OWN sender, distinct from a
 	// customer's per-workspace integration. Dev uses smtp → mailpit (the SMTP_*
 	// values); prod uses ses (the SES_* values). Sent via the same messaging
@@ -308,6 +313,8 @@ type environment struct {
 	OtelServiceName string `env:"OTEL_SERVICE_NAME" envDefault:"sphericon"`
 	MetricsAddr     string `env:"SPHERICON_METRICS_ADDR"`
 	InternalAddr    string `env:"SPHERICON_INTERNAL_ADDR"`
+
+	TrackingCNAMETarget string `env:"SPHERICON_TRACKING_CNAME_TARGET"`
 
 	SystemEmailProvider string `env:"SPHERICON_SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
 	SystemEmailFrom     string `env:"SPHERICON_SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
@@ -423,6 +430,8 @@ func Load(envName string) (*Config, error) {
 		OtelServiceName: e.OtelServiceName,
 		MetricsAddr:     e.MetricsAddr,
 		InternalAddr:    e.InternalAddr,
+
+		TrackingCNAMETarget: strings.ToLower(strings.TrimSuffix(strings.TrimSpace(e.TrackingCNAMETarget), ".")),
 
 		SystemEmailProvider: e.SystemEmailProvider,
 		SystemEmailFrom:     e.SystemEmailFrom,

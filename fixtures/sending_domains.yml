@@ -116,3 +116,54 @@
   workspace_id: 8
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# The Tracking domain record in each state (ADR 0038), on Umbrella (workspace 4). The
+# DKIM columns are placeholders: these rows exist for the tracking state, not for signing.
+# serving.umbrella.test is held by Umbrella; Wayne (workspace 9) has a pending claim on
+# the same name, which a verified owner must never be blocked by (and vice versa).
+- id: 500 # fixture: SendingDomainTrackingPending
+  domain: pending.umbrella.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "umbrella-pending-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=umbrellapending'
+  verified: false
+  tracking_state: pending
+  workspace_id: 4
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 501 # fixture: SendingDomainTrackingDNSVerified
+  domain: dns.umbrella.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "umbrella-dns-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=umbrelladns'
+  verified: true
+  verified_at: '2026-01-01 00:00:00'
+  tracking_state: dns_verified
+  tracking_checked_at: '{{daysAgo 1}}'
+  tracking_state_changed_at: '{{daysAgo 2}}'
+  workspace_id: 4
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 502 # fixture: SendingDomainTrackingServing
+  domain: serving.umbrella.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "umbrella-serving-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=umbrellaserving'
+  verified: true
+  verified_at: '2026-01-01 00:00:00'
+  tracking_state: serving
+  tracking_checked_at: '{{daysAgo 1}}'
+  tracking_state_changed_at: '{{daysAgo 3}}'
+  workspace_id: 4
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 510 # fixture: SendingDomainTrackingClaim
+  domain: serving.umbrella.test
+  dkim_selector: 'sphericon'
+  dkim_private_key_encrypted: '{{ encrypt "wayne-claim-dkim-private-key" }}'
+  dkim_public_key: 'v=DKIM1; k=rsa; p=wayneclaim'
+  verified: false
+  tracking_state: pending
+  workspace_id: 9
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

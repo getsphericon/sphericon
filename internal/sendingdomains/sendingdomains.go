@@ -17,6 +17,7 @@ import (
 	"net"
 	"regexp"
 	"strings"
+	"time"
 
 	"golang.org/x/net/idna"
 
@@ -58,11 +59,17 @@ type Module struct {
 	bus    *events.Bus
 	cipher *secrets.Cipher
 	verify VerifyEnqueuer
+	// trackingTarget is the edge host the Tracking domain CNAME points at
+	// (SPHERICON_TRACKING_CNAME_TARGET); empty turns the feature off (ADR 0038).
+	trackingTarget string
 }
 
-func New(bus *events.Bus, cipher *secrets.Cipher, verify VerifyEnqueuer) *Module {
-	return &Module{bus: bus, cipher: cipher, verify: verify}
+func New(bus *events.Bus, cipher *secrets.Cipher, verify VerifyEnqueuer, trackingTarget string) *Module {
+	return &Module{bus: bus, cipher: cipher, verify: verify, trackingTarget: trackingTarget}
 }
+
+// TrackingHost is the Tracking domain of a Sending domain: track.<domain> (ADR 0038).
+func TrackingHost(domain string) string { return "track." + domain }
 
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
 type CreateInput struct {
@@ -177,24 +184,45 @@ type Record struct {
 	Value string
 }
 
+// TrackingRecord is the Tracking domain CNAME to publish: Host points at Target (the
+// Instance's edge host). State and the two times are read-only facts the checks keep.
+type TrackingRecord struct {
+	Host           string
+	Target         string
+	State          sendingdomain.TrackingState
+	CheckedAt      *time.Time
+	StateChangedAt *time.Time
+}
+
 // DNSRecords are the records a Sending domain needs: DKIM gates sending, SPF and DMARC
-// are advisory.
+// are advisory. Tracking is nil while the Tracking domain feature is off.
 type DNSRecords struct {
-	DKIM  Record
-	SPF   Record
-	DMARC Record
+	DKIM     Record
+	SPF      Record
+	DMARC    Record
+	Tracking *TrackingRecord
 }
 
 // Records derives the DNS records for a stored domain. The public key only.
-func Records(d *ent.SendingDomain) DNSRecords {
+func (m *Module) Records(d *ent.SendingDomain) DNSRecords {
 	dkimHost, dkimValue := sending.DKIMRecord(d.DkimSelector, d.Domain, d.DkimPublicKey)
 	spfHost, spfValue := sending.SPFRecord(d.Domain)
 	dmarcHost, dmarcValue := sending.DMARCRecord(d.Domain)
-	return DNSRecords{
+	rec := DNSRecords{
 		DKIM:  Record{Host: dkimHost, Value: dkimValue},
 		SPF:   Record{Host: spfHost, Value: spfValue},
 		DMARC: Record{Host: dmarcHost, Value: dmarcValue},
 	}
+	if m.trackingTarget != "" {
+		rec.Tracking = &TrackingRecord{
+			Host:           TrackingHost(d.Domain),
+			Target:         m.trackingTarget,
+			State:          d.TrackingState,
+			CheckedAt:      d.TrackingCheckedAt,
+			StateChangedAt: d.TrackingStateChangedAt,
+		}
+	}
+	return rec
 }
 
 func validSelector(raw string) (string, error) {

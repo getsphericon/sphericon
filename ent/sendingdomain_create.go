@@ -123,6 +123,48 @@ func (_c *SendingDomainCreate) SetNillableVerifiedAt(v *time.Time) *SendingDomai
 	return _c
 }
 
+// SetTrackingState sets the "tracking_state" field.
+func (_c *SendingDomainCreate) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainCreate {
+	_c.mutation.SetTrackingState(v)
+	return _c
+}
+
+// SetNillableTrackingState sets the "tracking_state" field if the given value is not nil.
+func (_c *SendingDomainCreate) SetNillableTrackingState(v *sendingdomain.TrackingState) *SendingDomainCreate {
+	if v != nil {
+		_c.SetTrackingState(*v)
+	}
+	return _c
+}
+
+// SetTrackingCheckedAt sets the "tracking_checked_at" field.
+func (_c *SendingDomainCreate) SetTrackingCheckedAt(v time.Time) *SendingDomainCreate {
+	_c.mutation.SetTrackingCheckedAt(v)
+	return _c
+}
+
+// SetNillableTrackingCheckedAt sets the "tracking_checked_at" field if the given value is not nil.
+func (_c *SendingDomainCreate) SetNillableTrackingCheckedAt(v *time.Time) *SendingDomainCreate {
+	if v != nil {
+		_c.SetTrackingCheckedAt(*v)
+	}
+	return _c
+}
+
+// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
+func (_c *SendingDomainCreate) SetTrackingStateChangedAt(v time.Time) *SendingDomainCreate {
+	_c.mutation.SetTrackingStateChangedAt(v)
+	return _c
+}
+
+// SetNillableTrackingStateChangedAt sets the "tracking_state_changed_at" field if the given value is not nil.
+func (_c *SendingDomainCreate) SetNillableTrackingStateChangedAt(v *time.Time) *SendingDomainCreate {
+	if v != nil {
+		_c.SetTrackingStateChangedAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SendingDomainCreate) SetID(v int64) *SendingDomainCreate {
 	_c.mutation.SetID(v)
@@ -181,6 +223,10 @@ func (_c *SendingDomainCreate) defaults() {
 		v := sendingdomain.DefaultVerified
 		_c.mutation.SetVerified(v)
 	}
+	if _, ok := _c.mutation.TrackingState(); !ok {
+		v := sendingdomain.DefaultTrackingState
+		_c.mutation.SetTrackingState(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -223,6 +269,14 @@ func (_c *SendingDomainCreate) check() error {
 	}
 	if _, ok := _c.mutation.Verified(); !ok {
 		return &ValidationError{Name: "verified", err: errors.New(`ent: missing required field "SendingDomain.verified"`)}
+	}
+	if _, ok := _c.mutation.TrackingState(); !ok {
+		return &ValidationError{Name: "tracking_state", err: errors.New(`ent: missing required field "SendingDomain.tracking_state"`)}
+	}
+	if v, ok := _c.mutation.TrackingState(); ok {
+		if err := sendingdomain.TrackingStateValidator(v); err != nil {
+			return &ValidationError{Name: "tracking_state", err: fmt.Errorf(`ent: validator failed for field "SendingDomain.tracking_state": %w`, err)}
+		}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "SendingDomain.workspace"`)}
@@ -295,6 +349,18 @@ func (_c *SendingDomainCreate) createSpec() (*SendingDomain, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.VerifiedAt(); ok {
 		_spec.SetField(sendingdomain.FieldVerifiedAt, field.TypeTime, value)
 		_node.VerifiedAt = &value
+	}
+	if value, ok := _c.mutation.TrackingState(); ok {
+		_spec.SetField(sendingdomain.FieldTrackingState, field.TypeEnum, value)
+		_node.TrackingState = value
+	}
+	if value, ok := _c.mutation.TrackingCheckedAt(); ok {
+		_spec.SetField(sendingdomain.FieldTrackingCheckedAt, field.TypeTime, value)
+		_node.TrackingCheckedAt = &value
+	}
+	if value, ok := _c.mutation.TrackingStateChangedAt(); ok {
+		_spec.SetField(sendingdomain.FieldTrackingStateChangedAt, field.TypeTime, value)
+		_node.TrackingStateChangedAt = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -482,6 +548,54 @@ func (u *SendingDomainUpsert) UpdateVerifiedAt() *SendingDomainUpsert {
 // ClearVerifiedAt clears the value of the "verified_at" field.
 func (u *SendingDomainUpsert) ClearVerifiedAt() *SendingDomainUpsert {
 	u.SetNull(sendingdomain.FieldVerifiedAt)
+	return u
+}
+
+// SetTrackingState sets the "tracking_state" field.
+func (u *SendingDomainUpsert) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainUpsert {
+	u.Set(sendingdomain.FieldTrackingState, v)
+	return u
+}
+
+// UpdateTrackingState sets the "tracking_state" field to the value that was provided on create.
+func (u *SendingDomainUpsert) UpdateTrackingState() *SendingDomainUpsert {
+	u.SetExcluded(sendingdomain.FieldTrackingState)
+	return u
+}
+
+// SetTrackingCheckedAt sets the "tracking_checked_at" field.
+func (u *SendingDomainUpsert) SetTrackingCheckedAt(v time.Time) *SendingDomainUpsert {
+	u.Set(sendingdomain.FieldTrackingCheckedAt, v)
+	return u
+}
+
+// UpdateTrackingCheckedAt sets the "tracking_checked_at" field to the value that was provided on create.
+func (u *SendingDomainUpsert) UpdateTrackingCheckedAt() *SendingDomainUpsert {
+	u.SetExcluded(sendingdomain.FieldTrackingCheckedAt)
+	return u
+}
+
+// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
+func (u *SendingDomainUpsert) ClearTrackingCheckedAt() *SendingDomainUpsert {
+	u.SetNull(sendingdomain.FieldTrackingCheckedAt)
+	return u
+}
+
+// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
+func (u *SendingDomainUpsert) SetTrackingStateChangedAt(v time.Time) *SendingDomainUpsert {
+	u.Set(sendingdomain.FieldTrackingStateChangedAt, v)
+	return u
+}
+
+// UpdateTrackingStateChangedAt sets the "tracking_state_changed_at" field to the value that was provided on create.
+func (u *SendingDomainUpsert) UpdateTrackingStateChangedAt() *SendingDomainUpsert {
+	u.SetExcluded(sendingdomain.FieldTrackingStateChangedAt)
+	return u
+}
+
+// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
+func (u *SendingDomainUpsert) ClearTrackingStateChangedAt() *SendingDomainUpsert {
+	u.SetNull(sendingdomain.FieldTrackingStateChangedAt)
 	return u
 }
 
@@ -673,6 +787,62 @@ func (u *SendingDomainUpsertOne) UpdateVerifiedAt() *SendingDomainUpsertOne {
 func (u *SendingDomainUpsertOne) ClearVerifiedAt() *SendingDomainUpsertOne {
 	return u.Update(func(s *SendingDomainUpsert) {
 		s.ClearVerifiedAt()
+	})
+}
+
+// SetTrackingState sets the "tracking_state" field.
+func (u *SendingDomainUpsertOne) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetTrackingState(v)
+	})
+}
+
+// UpdateTrackingState sets the "tracking_state" field to the value that was provided on create.
+func (u *SendingDomainUpsertOne) UpdateTrackingState() *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateTrackingState()
+	})
+}
+
+// SetTrackingCheckedAt sets the "tracking_checked_at" field.
+func (u *SendingDomainUpsertOne) SetTrackingCheckedAt(v time.Time) *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetTrackingCheckedAt(v)
+	})
+}
+
+// UpdateTrackingCheckedAt sets the "tracking_checked_at" field to the value that was provided on create.
+func (u *SendingDomainUpsertOne) UpdateTrackingCheckedAt() *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateTrackingCheckedAt()
+	})
+}
+
+// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
+func (u *SendingDomainUpsertOne) ClearTrackingCheckedAt() *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.ClearTrackingCheckedAt()
+	})
+}
+
+// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
+func (u *SendingDomainUpsertOne) SetTrackingStateChangedAt(v time.Time) *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetTrackingStateChangedAt(v)
+	})
+}
+
+// UpdateTrackingStateChangedAt sets the "tracking_state_changed_at" field to the value that was provided on create.
+func (u *SendingDomainUpsertOne) UpdateTrackingStateChangedAt() *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateTrackingStateChangedAt()
+	})
+}
+
+// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
+func (u *SendingDomainUpsertOne) ClearTrackingStateChangedAt() *SendingDomainUpsertOne {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.ClearTrackingStateChangedAt()
 	})
 }
 
@@ -1030,6 +1200,62 @@ func (u *SendingDomainUpsertBulk) UpdateVerifiedAt() *SendingDomainUpsertBulk {
 func (u *SendingDomainUpsertBulk) ClearVerifiedAt() *SendingDomainUpsertBulk {
 	return u.Update(func(s *SendingDomainUpsert) {
 		s.ClearVerifiedAt()
+	})
+}
+
+// SetTrackingState sets the "tracking_state" field.
+func (u *SendingDomainUpsertBulk) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetTrackingState(v)
+	})
+}
+
+// UpdateTrackingState sets the "tracking_state" field to the value that was provided on create.
+func (u *SendingDomainUpsertBulk) UpdateTrackingState() *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateTrackingState()
+	})
+}
+
+// SetTrackingCheckedAt sets the "tracking_checked_at" field.
+func (u *SendingDomainUpsertBulk) SetTrackingCheckedAt(v time.Time) *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetTrackingCheckedAt(v)
+	})
+}
+
+// UpdateTrackingCheckedAt sets the "tracking_checked_at" field to the value that was provided on create.
+func (u *SendingDomainUpsertBulk) UpdateTrackingCheckedAt() *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateTrackingCheckedAt()
+	})
+}
+
+// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
+func (u *SendingDomainUpsertBulk) ClearTrackingCheckedAt() *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.ClearTrackingCheckedAt()
+	})
+}
+
+// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
+func (u *SendingDomainUpsertBulk) SetTrackingStateChangedAt(v time.Time) *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.SetTrackingStateChangedAt(v)
+	})
+}
+
+// UpdateTrackingStateChangedAt sets the "tracking_state_changed_at" field to the value that was provided on create.
+func (u *SendingDomainUpsertBulk) UpdateTrackingStateChangedAt() *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.UpdateTrackingStateChangedAt()
+	})
+}
+
+// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
+func (u *SendingDomainUpsertBulk) ClearTrackingStateChangedAt() *SendingDomainUpsertBulk {
+	return u.Update(func(s *SendingDomainUpsert) {
+		s.ClearTrackingStateChangedAt()
 	})
 }
 

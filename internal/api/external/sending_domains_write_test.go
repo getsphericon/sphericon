@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/config"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -48,6 +49,29 @@ func TestExternalSendingDomainsWritesNeedTheWriteScope(t *testing.T) {
 	get, err := writer.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.SendingDomainsGetUnauthorized{}, get, "write does not imply read")
+}
+
+func TestExternalSendingDomainShowsTheTrackingRecord(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+
+	created := createDomain(t, c, externalapi.CreateSendingDomainInput{Domain: "marketing.example.com"})
+
+	rec, ok := created.TrackingRecord.Get()
+	require.True(t, ok, "the tracking record is listed")
+	assert.Equal(t, externalapi.TrackingRecordTypeCNAME, rec.Type)
+	assert.Equal(t, "track.marketing.example.com", rec.Host)
+	assert.Equal(t, testhelper.TrackingCNAMETarget, rec.Target)
+	assert.Equal(t, externalapi.TrackingStatePending, rec.State)
+}
+
+func TestExternalSendingDomainHasNoTrackingRecordWithoutATarget(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.TrackingCNAMETarget = "" }))
+	c := env.ExternalScoped(t, "sending_domains:read", "sending_domains:write")
+
+	created := createDomain(t, c, externalapi.CreateSendingDomainInput{Domain: "marketing.example.com"})
+
+	assert.False(t, created.TrackingRecord.IsSet())
 }
 
 func TestExternalSendingDomainsCreateReturnsRecordsNeverTheKey(t *testing.T) {

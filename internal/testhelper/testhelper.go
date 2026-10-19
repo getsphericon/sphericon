@@ -164,6 +164,10 @@ type TestEnv struct {
 }
 
 // Option tunes the server a test builds with Setup.
+// TrackingCNAMETarget is the edge host the test instance names for Tracking domain CNAMEs
+// (SPHERICON_TRACKING_CNAME_TARGET); WithConfig clears it to test the feature off.
+const TrackingCNAMETarget = "edge.sphericon.test"
+
 type Option func(*setup)
 
 // setup is what the options edit: a private copy of the test config, the clock the
@@ -230,6 +234,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	cfg := *baseCfg
 	cfg.RateLimits = config.RateLimits{}
+	cfg.TrackingCNAMETarget = TrackingCNAMETarget
 	st := &setup{cfg: &cfg, now: time.Now, version: buildinfo.Current().Version}
 	for _, opt := range opts {
 		opt(st)
@@ -300,7 +305,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(cipher, edition.Audit)
 	integrationsModule := integrations.New(bus, cipher, catalog, inline)
-	sendingDomainsModule := sendingdomains.New(bus, cipher, inline)
+	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
 	automationsModule := automations.New()
 	broadcastsModule := broadcasts.New(inline)
 	acc := accounts.New(client, bus)

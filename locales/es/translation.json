@@ -846,6 +846,13 @@
       "spfHint": "Informativo — no bloquea el envío.",
       "statusColumn": "Estado",
       "title": "Dominios de envío",
+      "tracking": "Dominio de seguimiento (opcional)",
+      "trackingHint": "Pone los enlaces de tu correo en tu propio dominio cuando el CNAME resuelve y HTTPS responde.",
+      "trackingState": {
+        "dnsVerified": "DNS verificado",
+        "pending": "Pendiente",
+        "serving": "Activo"
+      },
       "verified": "Verificado",
       "verify": "Verificar",
       "verifyError": "No se pudo iniciar la verificación",

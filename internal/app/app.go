@@ -1071,7 +1071,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return sendingdomains.New(bus.Bus, cipher, jc.Client), nil
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		return sendingdomains.New(bus.Bus, cipher, jc.Client, cfg.TrackingCNAMETarget), nil
 	})
 
 	do.Provide(injector, func(do.Injector) (*templates.Module, error) {

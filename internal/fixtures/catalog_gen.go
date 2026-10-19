@@ -603,6 +603,22 @@ const (
 	SendingDomainSoylentIdleDomain = "idle.soylent.test"
 	// SendingDomainSoylentIdleID is from fixtures/sending_domains.
 	SendingDomainSoylentIdleID = 401
+	// SendingDomainTrackingClaimDomain is from fixtures/sending_domains.
+	SendingDomainTrackingClaimDomain = "serving.umbrella.test"
+	// SendingDomainTrackingClaimID is from fixtures/sending_domains.
+	SendingDomainTrackingClaimID = 510
+	// SendingDomainTrackingDNSVerifiedDomain is from fixtures/sending_domains.
+	SendingDomainTrackingDNSVerifiedDomain = "dns.umbrella.test"
+	// SendingDomainTrackingDNSVerifiedID is from fixtures/sending_domains.
+	SendingDomainTrackingDNSVerifiedID = 501
+	// SendingDomainTrackingPendingDomain is from fixtures/sending_domains.
+	SendingDomainTrackingPendingDomain = "pending.umbrella.test"
+	// SendingDomainTrackingPendingID is from fixtures/sending_domains.
+	SendingDomainTrackingPendingID = 500
+	// SendingDomainTrackingServingDomain is from fixtures/sending_domains.
+	SendingDomainTrackingServingDomain = "serving.umbrella.test"
+	// SendingDomainTrackingServingID is from fixtures/sending_domains.
+	SendingDomainTrackingServingID = 502
 	// SendingDomainUnverifiedDomain is from fixtures/sending_domains.
 	SendingDomainUnverifiedDomain = "news.acme.com"
 	// SendingDomainUnverifiedID is from fixtures/sending_domains.
@@ -821,6 +837,16 @@ const (
 	VisitorErasableID = 300
 	// VisitorGlobexID is from fixtures/visitors.
 	VisitorGlobexID = 900
+	// WayneCollectKey is from fixtures/workspaces.
+	WayneCollectKey = "omck_test_wayne_collect_key"
+	// WayneID is from fixtures/workspaces.
+	WayneID = 9
+	// WayneIngestKey is from fixtures/workspaces.
+	WayneIngestKey = "omik_test_wayne_ingest_key"
+	// WayneName is from fixtures/workspaces.
+	WayneName = "Wayne"
+	// WayneSlug is from fixtures/workspaces.
+	WayneSlug = "wayne"
 	// WebhookCodebasicsDisabledID is from fixtures/webhook_endpoints.
 	WebhookCodebasicsDisabledID = 101
 	// WebhookCodebasicsDisabledURL is from fixtures/webhook_endpoints.

@@ -69,8 +69,8 @@ func TestTheWorkspaceListShowsEveryWorkspaceNewestFirst(t *testing.T) {
 
 	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
 
-	assert.Equal(t, []string{"kramerica", "vandelay", "soylent", "hooli", "umbrella", "initech", "globex", "acme"}, slugs(page.Items))
-	assert.EqualValues(t, 8, page.TotalItems)
+	assert.Equal(t, []string{"wayne", "kramerica", "vandelay", "soylent", "hooli", "umbrella", "initech", "globex", "acme"}, slugs(page.Items))
+	assert.EqualValues(t, 9, page.TotalItems)
 	assert.EqualValues(t, 1, page.TotalPages)
 	assert.EqualValues(t, 1, page.Page)
 }
@@ -83,9 +83,9 @@ func TestTheWorkspaceListIsPaginated(t *testing.T) {
 		Page: staffapi.NewOptInt32(2), PageSize: staffapi.NewOptInt32(2),
 	})
 
-	assert.Equal(t, []string{"soylent", "hooli"}, slugs(second.Items))
-	assert.EqualValues(t, 8, second.TotalItems)
-	assert.EqualValues(t, 4, second.TotalPages)
+	assert.Equal(t, []string{"vandelay", "soylent"}, slugs(second.Items))
+	assert.EqualValues(t, 9, second.TotalItems)
+	assert.EqualValues(t, 5, second.TotalPages)
 	assert.EqualValues(t, 2, second.PageSize)
 }
 

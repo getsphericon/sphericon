@@ -24609,6 +24609,9 @@ type SendingDomainMutation struct {
 	verified                   *bool
 	last_checked_at            *time.Time
 	verified_at                *time.Time
+	tracking_state             *sendingdomain.TrackingState
+	tracking_checked_at        *time.Time
+	tracking_state_changed_at  *time.Time
 	clearedFields              map[string]struct{}
 	workspace                  *int64
 	clearedworkspace           bool
@@ -25107,6 +25110,140 @@ func (m *SendingDomainMutation) ResetVerifiedAt() {
 	delete(m.clearedFields, sendingdomain.FieldVerifiedAt)
 }
 
+// SetTrackingState sets the "tracking_state" field.
+func (m *SendingDomainMutation) SetTrackingState(ss sendingdomain.TrackingState) {
+	m.tracking_state = &ss
+}
+
+// TrackingState returns the value of the "tracking_state" field in the mutation.
+func (m *SendingDomainMutation) TrackingState() (r sendingdomain.TrackingState, exists bool) {
+	v := m.tracking_state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackingState returns the old "tracking_state" field's value of the SendingDomain entity.
+// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainMutation) OldTrackingState(ctx context.Context) (v sendingdomain.TrackingState, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackingState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackingState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackingState: %w", err)
+	}
+	return oldValue.TrackingState, nil
+}
+
+// ResetTrackingState resets all changes to the "tracking_state" field.
+func (m *SendingDomainMutation) ResetTrackingState() {
+	m.tracking_state = nil
+}
+
+// SetTrackingCheckedAt sets the "tracking_checked_at" field.
+func (m *SendingDomainMutation) SetTrackingCheckedAt(t time.Time) {
+	m.tracking_checked_at = &t
+}
+
+// TrackingCheckedAt returns the value of the "tracking_checked_at" field in the mutation.
+func (m *SendingDomainMutation) TrackingCheckedAt() (r time.Time, exists bool) {
+	v := m.tracking_checked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackingCheckedAt returns the old "tracking_checked_at" field's value of the SendingDomain entity.
+// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainMutation) OldTrackingCheckedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackingCheckedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackingCheckedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackingCheckedAt: %w", err)
+	}
+	return oldValue.TrackingCheckedAt, nil
+}
+
+// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
+func (m *SendingDomainMutation) ClearTrackingCheckedAt() {
+	m.tracking_checked_at = nil
+	m.clearedFields[sendingdomain.FieldTrackingCheckedAt] = struct{}{}
+}
+
+// TrackingCheckedAtCleared returns if the "tracking_checked_at" field was cleared in this mutation.
+func (m *SendingDomainMutation) TrackingCheckedAtCleared() bool {
+	_, ok := m.clearedFields[sendingdomain.FieldTrackingCheckedAt]
+	return ok
+}
+
+// ResetTrackingCheckedAt resets all changes to the "tracking_checked_at" field.
+func (m *SendingDomainMutation) ResetTrackingCheckedAt() {
+	m.tracking_checked_at = nil
+	delete(m.clearedFields, sendingdomain.FieldTrackingCheckedAt)
+}
+
+// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
+func (m *SendingDomainMutation) SetTrackingStateChangedAt(t time.Time) {
+	m.tracking_state_changed_at = &t
+}
+
+// TrackingStateChangedAt returns the value of the "tracking_state_changed_at" field in the mutation.
+func (m *SendingDomainMutation) TrackingStateChangedAt() (r time.Time, exists bool) {
+	v := m.tracking_state_changed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackingStateChangedAt returns the old "tracking_state_changed_at" field's value of the SendingDomain entity.
+// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainMutation) OldTrackingStateChangedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackingStateChangedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackingStateChangedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackingStateChangedAt: %w", err)
+	}
+	return oldValue.TrackingStateChangedAt, nil
+}
+
+// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
+func (m *SendingDomainMutation) ClearTrackingStateChangedAt() {
+	m.tracking_state_changed_at = nil
+	m.clearedFields[sendingdomain.FieldTrackingStateChangedAt] = struct{}{}
+}
+
+// TrackingStateChangedAtCleared returns if the "tracking_state_changed_at" field was cleared in this mutation.
+func (m *SendingDomainMutation) TrackingStateChangedAtCleared() bool {
+	_, ok := m.clearedFields[sendingdomain.FieldTrackingStateChangedAt]
+	return ok
+}
+
+// ResetTrackingStateChangedAt resets all changes to the "tracking_state_changed_at" field.
+func (m *SendingDomainMutation) ResetTrackingStateChangedAt() {
+	m.tracking_state_changed_at = nil
+	delete(m.clearedFields, sendingdomain.FieldTrackingStateChangedAt)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *SendingDomainMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -25168,7 +25305,7 @@ func (m *SendingDomainMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SendingDomainMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, sendingdomain.FieldCreatedAt)
 	}
@@ -25199,6 +25336,15 @@ func (m *SendingDomainMutation) Fields() []string {
 	if m.verified_at != nil {
 		fields = append(fields, sendingdomain.FieldVerifiedAt)
 	}
+	if m.tracking_state != nil {
+		fields = append(fields, sendingdomain.FieldTrackingState)
+	}
+	if m.tracking_checked_at != nil {
+		fields = append(fields, sendingdomain.FieldTrackingCheckedAt)
+	}
+	if m.tracking_state_changed_at != nil {
+		fields = append(fields, sendingdomain.FieldTrackingStateChangedAt)
+	}
 	return fields
 }
 
@@ -25227,6 +25373,12 @@ func (m *SendingDomainMutation) Field(name string) (ent.Value, bool) {
 		return m.LastCheckedAt()
 	case sendingdomain.FieldVerifiedAt:
 		return m.VerifiedAt()
+	case sendingdomain.FieldTrackingState:
+		return m.TrackingState()
+	case sendingdomain.FieldTrackingCheckedAt:
+		return m.TrackingCheckedAt()
+	case sendingdomain.FieldTrackingStateChangedAt:
+		return m.TrackingStateChangedAt()
 	}
 	return nil, false
 }
@@ -25256,6 +25408,12 @@ func (m *SendingDomainMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldLastCheckedAt(ctx)
 	case sendingdomain.FieldVerifiedAt:
 		return m.OldVerifiedAt(ctx)
+	case sendingdomain.FieldTrackingState:
+		return m.OldTrackingState(ctx)
+	case sendingdomain.FieldTrackingCheckedAt:
+		return m.OldTrackingCheckedAt(ctx)
+	case sendingdomain.FieldTrackingStateChangedAt:
+		return m.OldTrackingStateChangedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown SendingDomain field %s", name)
 }
@@ -25335,6 +25493,27 @@ func (m *SendingDomainMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetVerifiedAt(v)
 		return nil
+	case sendingdomain.FieldTrackingState:
+		v, ok := value.(sendingdomain.TrackingState)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackingState(v)
+		return nil
+	case sendingdomain.FieldTrackingCheckedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackingCheckedAt(v)
+		return nil
+	case sendingdomain.FieldTrackingStateChangedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackingStateChangedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain field %s", name)
 }
@@ -25374,6 +25553,12 @@ func (m *SendingDomainMutation) ClearedFields() []string {
 	if m.FieldCleared(sendingdomain.FieldVerifiedAt) {
 		fields = append(fields, sendingdomain.FieldVerifiedAt)
 	}
+	if m.FieldCleared(sendingdomain.FieldTrackingCheckedAt) {
+		fields = append(fields, sendingdomain.FieldTrackingCheckedAt)
+	}
+	if m.FieldCleared(sendingdomain.FieldTrackingStateChangedAt) {
+		fields = append(fields, sendingdomain.FieldTrackingStateChangedAt)
+	}
 	return fields
 }
 
@@ -25393,6 +25578,12 @@ func (m *SendingDomainMutation) ClearField(name string) error {
 		return nil
 	case sendingdomain.FieldVerifiedAt:
 		m.ClearVerifiedAt()
+		return nil
+	case sendingdomain.FieldTrackingCheckedAt:
+		m.ClearTrackingCheckedAt()
+		return nil
+	case sendingdomain.FieldTrackingStateChangedAt:
+		m.ClearTrackingStateChangedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain nullable field %s", name)
@@ -25431,6 +25622,15 @@ func (m *SendingDomainMutation) ResetField(name string) error {
 		return nil
 	case sendingdomain.FieldVerifiedAt:
 		m.ResetVerifiedAt()
+		return nil
+	case sendingdomain.FieldTrackingState:
+		m.ResetTrackingState()
+		return nil
+	case sendingdomain.FieldTrackingCheckedAt:
+		m.ResetTrackingCheckedAt()
+		return nil
+	case sendingdomain.FieldTrackingStateChangedAt:
+		m.ResetTrackingStateChangedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown SendingDomain field %s", name)
