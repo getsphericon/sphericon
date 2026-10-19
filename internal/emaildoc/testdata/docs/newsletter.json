@@ -1,0 +1,76 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "heading",
+      "attrs": { "level": 1 },
+      "content": [{ "type": "text", "text": "Welcome, {{ first_name }}" }]
+    },
+    {
+      "type": "heading",
+      "attrs": { "level": 2 },
+      "content": [{ "type": "text", "text": "What is new" }]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "text": "Read the " },
+        { "type": "text", "marks": [{ "type": "bold" }], "text": "latest" },
+        { "type": "text", "text": " and " },
+        { "type": "text", "marks": [{ "type": "italic" }], "text": "greatest" },
+        { "type": "text", "text": " on " },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://example.com/u?id={{ contact.id }}&t={{ token | url_encode }}"
+              }
+            }
+          ],
+          "text": "our site"
+        }
+      ]
+    },
+    {
+      "type": "bulletList",
+      "content": [
+        {
+          "type": "listItem",
+          "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "First" }] }]
+        },
+        {
+          "type": "listItem",
+          "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Second" }] }]
+        }
+      ]
+    },
+    {
+      "type": "button",
+      "attrs": { "href": "{{ cta_url }}", "alignment": "center" },
+      "content": [{ "type": "text", "text": "Get started" }]
+    },
+    {
+      "type": "image",
+      "attrs": {
+        "src": "https://example.com/hero.png",
+        "alt": "Hero",
+        "width": 560,
+        "alignment": "center"
+      }
+    },
+    { "type": "horizontalRule" },
+    {
+      "type": "paragraph",
+      "attrs": { "alignment": "center" },
+      "content": [
+        {
+          "type": "text",
+          "marks": [{ "type": "link", "attrs": { "href": "{{ unsubscribe_url }}" } }],
+          "text": "Unsubscribe"
+        }
+      ]
+    }
+  ]
+}

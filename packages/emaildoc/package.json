@@ -1,0 +1,17 @@
+{
+  "name": "@sphericon/emaildoc",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Builds the email document renderer bundle that the Go binary runs in an embedded JavaScript runtime",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@react-email/editor": "1.7.14",
+    "@tiptap/core": "3.32.0",
+    "esbuild": "0.28.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  }
+}

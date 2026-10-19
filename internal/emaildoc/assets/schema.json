@@ -1,0 +1,355 @@
+{
+  "nodes": {
+    "paragraph": {
+      "content": "inline*",
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": ""
+      }
+    },
+    "doc": {
+      "content": "block+",
+      "attrs": {}
+    },
+    "codeBlock": {
+      "content": "text*",
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "language": "javascript",
+        "theme": "default"
+      }
+    },
+    "twoColumns": {
+      "content": "columnsColumn columnsColumn",
+      "group": "block",
+      "attrs": {
+        "align": null,
+        "width": null,
+        "height": null,
+        "id": null,
+        "class": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null,
+        "cellspacing": null
+      }
+    },
+    "threeColumns": {
+      "content": "columnsColumn columnsColumn columnsColumn",
+      "group": "block",
+      "attrs": {
+        "align": null,
+        "width": null,
+        "height": null,
+        "id": null,
+        "class": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null,
+        "cellspacing": null
+      }
+    },
+    "fourColumns": {
+      "content": "columnsColumn{4}",
+      "group": "block",
+      "attrs": {
+        "align": null,
+        "width": null,
+        "height": null,
+        "id": null,
+        "class": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null,
+        "cellspacing": null
+      }
+    },
+    "container": {
+      "content": "block+",
+      "group": "block",
+      "attrs": {}
+    },
+    "columnsColumn": {
+      "content": "block+",
+      "group": "columnsColumn",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": null,
+        "align": null,
+        "width": null,
+        "height": null,
+        "id": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null
+      }
+    },
+    "bulletList": {
+      "content": "listItem+",
+      "group": "block list",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": ""
+      }
+    },
+    "orderedList": {
+      "content": "listItem+",
+      "group": "block list",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": "",
+        "start": 1,
+        "type": null
+      }
+    },
+    "blockquote": {
+      "content": "block+",
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": ""
+      }
+    },
+    "listItem": {
+      "content": "paragraph block*",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": ""
+      }
+    },
+    "hardBreak": {
+      "group": "inline",
+      "attrs": {}
+    },
+    "previewText": {
+      "group": "block",
+      "attrs": {}
+    },
+    "heading": {
+      "content": "inline*",
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": "",
+        "level": 1
+      }
+    },
+    "horizontalRule": {
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "class": "divider"
+      }
+    },
+    "table": {
+      "content": "tableRow+",
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": null,
+        "border": null,
+        "cellpadding": null,
+        "cellspacing": null,
+        "align": null,
+        "width": null,
+        "height": null,
+        "id": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null
+      }
+    },
+    "tableRow": {
+      "content": "(tableCell | tableHeader)+",
+      "group": "tableRow",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": null,
+        "valign": null,
+        "bgcolor": null,
+        "colspan": null,
+        "rowspan": null,
+        "align": null,
+        "width": null,
+        "height": null,
+        "id": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null
+      }
+    },
+    "tableCell": {
+      "content": "block+",
+      "group": "tableCell",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": null,
+        "valign": null,
+        "bgcolor": null,
+        "colspan": null,
+        "rowspan": null,
+        "align": null,
+        "width": null,
+        "height": null,
+        "id": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null
+      }
+    },
+    "tableHeader": {
+      "content": "block+",
+      "group": "tableCell",
+      "attrs": {
+        "style": "",
+        "alignment": null,
+        "class": null,
+        "valign": null,
+        "bgcolor": null,
+        "colspan": null,
+        "rowspan": null,
+        "scope": null,
+        "align": null,
+        "width": null,
+        "height": null,
+        "id": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null
+      }
+    },
+    "body": {
+      "content": "block+",
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "class": null,
+        "id": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null,
+        "align": null,
+        "width": null,
+        "height": null
+      }
+    },
+    "div": {
+      "content": "block+",
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "class": null,
+        "id": null,
+        "title": null,
+        "lang": null,
+        "dir": null,
+        "data-id": null,
+        "align": null,
+        "width": null,
+        "height": null
+      }
+    },
+    "button": {
+      "content": "inline*",
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "alignment": "left",
+        "class": "button",
+        "href": "#"
+      }
+    },
+    "section": {
+      "content": "block+",
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "class": ""
+      }
+    },
+    "globalContent": {
+      "group": "block",
+      "attrs": {
+        "data": {}
+      }
+    },
+    "text": {
+      "group": "inline",
+      "attrs": {}
+    },
+    "image": {
+      "group": "block",
+      "attrs": {
+        "style": "",
+        "alignment": "center",
+        "class": "",
+        "src": "",
+        "alt": "",
+        "width": "auto",
+        "height": "auto",
+        "href": null
+      }
+    }
+  },
+  "marks": {
+    "link": {
+      "attrs": {
+        "style": "",
+        "class": "node-link",
+        "href": null,
+        "target": "_blank",
+        "rel": "noopener noreferrer nofollow",
+        "title": null,
+        "ses:no-track": null
+      }
+    },
+    "code": {
+      "attrs": {}
+    },
+    "italic": {
+      "attrs": {}
+    },
+    "bold": {
+      "attrs": {}
+    },
+    "strike": {
+      "attrs": {}
+    },
+    "sup": {
+      "attrs": {}
+    },
+    "underline": {
+      "attrs": {}
+    },
+    "uppercase": {
+      "attrs": {}
+    },
+    "preservedStyle": {
+      "attrs": {
+        "style": null
+      }
+    }
+  }
+}

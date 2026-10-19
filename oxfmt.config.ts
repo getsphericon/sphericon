@@ -16,6 +16,8 @@ export default defineConfig({
     'packages/*/src/generated',
     'packages/*/dist',
     'internal/server/assets',
+    'internal/emaildoc/assets',
+    'internal/emaildoc/testdata/golden',
     'charts/*/templates',
     'gen',
     'ent',
