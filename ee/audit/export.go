@@ -25,7 +25,7 @@ var exportHeader = []string{
 
 // ExportCSV streams the scoped Workspace's Audit log entries matching the filter, newest first, to w as CSV: a
 // header row, then one row per entry. It pages through Entries, so a long log never
-// sits in memory, and it shows a Staff member as "sphericon staff" like every read surface.
+// sits in memory, and it shows a Staff member as "Sphericon staff" like every read surface.
 // The caller has already checked Licensed and the reader's role.
 func (l *Log) ExportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter, w io.Writer) error {
 	cw := csv.NewWriter(w)

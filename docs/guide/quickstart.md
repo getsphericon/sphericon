@@ -4,7 +4,7 @@ This walks you from a new account to your first broadcast. The same four steps a
 **Setup checklist** on the Overview of a new workspace.
 
 ::: tip Need an instance?
-Use [Sphericon Cloud](/guide/cloud), the hosted edition, or [run sphericon yourself](/self-hosting).
+Use [Sphericon Cloud](/guide/cloud), the hosted edition, or [run Sphericon yourself](/self-hosting).
 :::
 
 ## Create an account and a workspace
@@ -19,7 +19,7 @@ away once every step is done.
 
 ## See an email before DNS
 
-An aside, not one of the four steps: you do not have to finish them to see sphericon send. Open a broadcast, write something
+An aside, not one of the four steps: you do not have to finish them to see Sphericon send. Open a broadcast, write something
 and press **Send test**. While the workspace has no verified sending domain, the test goes out from
 the Instance's own sender (the one that sends verification and password reset mail) and needs no
 Integration. It has two limits:
@@ -43,7 +43,7 @@ encrypted with your `SPHERICON_ENCRYPTION_KEY`.
 
 ### 2. Verify a sending domain
 
-In **Settings → Sending** add a **sending domain** and publish the DKIM record sphericon
+In **Settings → Sending** add a **sending domain** and publish the DKIM record Sphericon
 shows you. Mail to contacts can only be sent from a verified domain; see
 [Deliverability and consent](/guide/deliverability).
 

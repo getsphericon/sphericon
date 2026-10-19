@@ -70,7 +70,7 @@ func TestAStaffMembersEntryShowsAsSphericonStaffWithoutTheStaffId(t *testing.T) 
 	staff := page.Items[1]
 	assert.Equal(t, staffapi.EntityId(int64(fixtures.InitechAuditStaffSuspendID)), staff.ID)
 	assert.Equal(t, staffapi.StaffAuditActorKindStaff, staff.Actor.Kind)
-	assert.Equal(t, "sphericon staff", staff.Actor.Name.Value)
+	assert.Equal(t, "Sphericon staff", staff.Actor.Name.Value)
 	assert.False(t, staff.Actor.ID.IsSet() && !staff.Actor.ID.IsNull(), "no StaffMember id")
 
 	rec := get(t, h.env.Server, "/staff/workspaces/"+strconv.Itoa(fixtures.InitechID)+"/audit-entries", cookie)

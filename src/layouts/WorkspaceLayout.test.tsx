@@ -93,7 +93,7 @@ test('without a support contact the owner is sent to the administrator', async (
   const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
   await expect
-    .element(screen.getByText(/To appeal, contact your sphericon administrator/))
+    .element(screen.getByText(/To appeal, contact your Sphericon administrator/))
     .toBeInTheDocument()
 })
 

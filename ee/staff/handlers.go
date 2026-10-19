@@ -281,7 +281,7 @@ func change(w *ent.Workspace, changed bool) *staffapi.StaffSuspensionChange {
 }
 
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
-// Staff member, whose id the audit trail keeps while customers see "sphericon staff".
+// Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffapi.StaffSuspendInput, params staffapi.StaffWorkspacesSuspendParams) (staffapi.StaffWorkspacesSuspendRes, error) {
 	id := int64(params.WorkspaceId)
 	w, changed, err := h.module.SuspendWorkspace(ctx, h.bus, h.sender, id, Current(ctx), req.Reason)

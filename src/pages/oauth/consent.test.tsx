@@ -64,7 +64,7 @@ test('shows the client and its permissions, with sending off by default', async 
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await expect
-    .element(screen.getByText('Connect Fixture Connector to sphericon'))
+    .element(screen.getByText('Connect Fixture Connector to Sphericon'))
     .toBeInTheDocument()
   await expect.element(screen.getByText('contacts:read', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByLabelText(/Also allow sending/)).not.toBeChecked()
@@ -88,7 +88,7 @@ test('shows no host and no localhost warning for an ordinary registered client',
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await expect
-    .element(screen.getByText('Connect Fixture Connector to sphericon'))
+    .element(screen.getByText('Connect Fixture Connector to Sphericon'))
     .toBeInTheDocument()
   expect(screen.getByText(/Requested by the app at/).elements()).toHaveLength(0)
   expect(screen.getByText('This app connects through localhost').elements()).toHaveLength(0)

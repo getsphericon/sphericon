@@ -7,7 +7,7 @@ export default interface Resources {
       "errorMessage": "We couldn't accept this invitation. The link may have expired.",
       "errorTitle": "Could not accept invitation",
       "haveAccount": "Already have an account?",
-      "intro": "You've been invited to join {{workspace}} on sphericon.",
+      "intro": "You've been invited to join {{workspace}} on Sphericon.",
       "invalid": "This invitation is invalid or has expired.",
       "joinedMessage": "You've joined the workspace.",
       "loading": "Loading invitation…",
@@ -123,7 +123,7 @@ export default interface Resources {
       }
     },
     "app": {
-      "name": "sphericon"
+      "name": "Sphericon"
     },
     "automations": {
       "activate": "Activate",
@@ -203,7 +203,7 @@ export default interface Resources {
         "reasons": {
           "no_integration": "No email provider is configured for this workspace. Add a default integration to resume.",
           "unverified_domain": "The sender domain is not verified. Publish its DKIM record and verify the domain to resume.",
-          "workspace_suspended": "Sending is suspended for this workspace. Contact your sphericon administrator."
+          "workspace_suspended": "Sending is suspended for this workspace. Contact your Sphericon administrator."
         },
         "title": "Sending is on hold"
       },
@@ -398,7 +398,7 @@ export default interface Resources {
         "unsuspend": {
           "button": "Lift suspension",
           "confirm": "Lift suspension",
-          "description": "Held sends resume. Customers will see this recorded as sphericon staff.",
+          "description": "Held sends resume. Customers will see this recorded as Sphericon staff.",
           "done": "Suspension lifted. Held sends resume.",
           "error": "Could not lift the suspension",
           "title": "Lift the suspension?",
@@ -488,7 +488,7 @@ export default interface Resources {
       },
       "title": "Instance",
       "update": {
-        "description": "Version {{version}} of sphericon has been released. Run `sphericon upgrade` to update this instance, or see the upgrade guide for your deployment.",
+        "description": "Version {{version}} of Sphericon has been released. Run `sphericon upgrade` to update this instance, or see the upgrade guide for your deployment.",
         "title": "A new version is available"
       }
     },
@@ -559,7 +559,7 @@ export default interface Resources {
       "errorMessage": "We couldn't complete the authorization. Please try again.",
       "errorTitle": "Authorization failed",
       "forbidden": "Only workspace owners and admins can connect an application. Ask an owner or admin to approve it, or choose another workspace.",
-      "intro": "{{client}} is asking to act on a workspace of yours through the sphericon API. It gets an API token limited to the permissions below, which you can revoke at any time in the workspace API keys.",
+      "intro": "{{client}} is asking to act on a workspace of yours through the Sphericon API. It gets an API token limited to the permissions below, which you can revoke at any time in the workspace API keys.",
       "invalid": "This authorization request is invalid. Return to the app that sent you here and start again.",
       "localhostDescription": "After you allow access, the token is sent to a program listening on this computer (localhost). Continue only if you started this connection yourself.",
       "localhostTitle": "This app connects through localhost",
@@ -567,7 +567,7 @@ export default interface Resources {
       "sendCheckbox": "Also allow sending ({{scopes}})",
       "sendDescription": "This app also asked to send email. That is off unless you allow it here.",
       "sendTitle": "Sending is opt-in",
-      "title": "Connect {{client}} to sphericon",
+      "title": "Connect {{client}} to Sphericon",
       "workspaceLabel": "Workspace"
     },
     "overview": {
@@ -713,7 +713,7 @@ export default interface Resources {
         "from": "From",
         "ip": "IP address",
         "kindApiToken": "API token",
-        "kindStaff": "sphericon staff",
+        "kindStaff": "Sphericon staff",
         "kindStaffMember": "settings.auditLog.kindStaffMember",
         "kindSystem": "System",
         "kindUser": "User",
@@ -884,7 +884,7 @@ export default interface Resources {
         "deleteConfirmDescription": "Mail from this domain will stop being authenticated. This cannot be undone.",
         "deleteConfirmTitle": "Delete this sending domain?",
         "deleteError": "Failed to delete domain",
-        "description": "Authenticate the domains you send from. sphericon signs your mail with DKIM; publish the records below at your DNS provider, then verify.",
+        "description": "Authenticate the domains you send from. Sphericon signs your mail with DKIM; publish the records below at your DNS provider, then verify.",
         "dkim": "DKIM (required)",
         "dkimHint": "Authenticates your mail — required to send once enforced.",
         "dmarc": "DMARC (recommended)",
@@ -1037,7 +1037,7 @@ export default interface Resources {
           "title": "Send your first email"
         }
       },
-      "title": "Set up sphericon",
+      "title": "Set up Sphericon",
       "waitingForDns": "Waiting for DNS"
     },
     "status": {
@@ -1133,7 +1133,7 @@ export default interface Resources {
       "title": "Sending is on hold"
     },
     "workspaceSuspension": {
-      "appealAdmin": "To appeal, contact your sphericon administrator.",
+      "appealAdmin": "To appeal, contact your Sphericon administrator.",
       "appealSupport": "To appeal, email {{email}}.",
       "description": "Outbound email sending is suspended for this workspace. Scheduled broadcasts and automations are paused and resume when the suspension is lifted. You can still sign in and view your data.",
       "reason": "Reason: {{reason}}",

@@ -98,7 +98,7 @@ sphericon upgrade --check
 ```
 
 It makes one request to GitHub and prints `Up to date: <version> is the latest release.` or
-`A newer release is available: <version> (running <current>). Run `sphericon upgrade`.`. The exit
+`A newer release is available: <version> (running <current>). Run `Sphericon upgrade`.`. The exit
 status is `0` when you are current, `10` when a newer stable release exists and `1` on an error,
 so cron or a monitoring check can ask:
 
@@ -294,7 +294,7 @@ migrated schema. Anything else is a restore.
 
 ## Upgrade notes {#upgrade-notes}
 
-sphericon is versioned with release-please from Conventional Commits. The changes of each release
+Sphericon is versioned with release-please from Conventional Commits. The changes of each release
 are on the [GitHub releases page](https://github.com/getsphericon/sphericon/releases). A commit that
 breaks something carries an `Upgrade:` line saying what a Self-hoster must do, and those lines are
 where a new required setting, a removed one or a changed default is recorded; there is no
@@ -313,7 +313,7 @@ It prints nothing when there are none.
 ## PostgreSQL major upgrades {#postgres}
 
 A PostgreSQL major upgrade (for example 16 to 17) is a database administration task,
-independent of sphericon releases. Do not combine it with an application upgrade: change one
+independent of Sphericon releases. Do not combine it with an application upgrade: change one
 thing at a time, so a failure has one suspect.
 
 1. Check that the target major version is supported (see [Self-hosting](../self-hosting) for
@@ -322,7 +322,7 @@ thing at a time, so a failure has one suspect.
 3. Upgrade in place with `pg_upgrade`, or dump from the old server and restore into a new
    server on the new major version (`pg_dump` then `pg_restore`). Managed services offer
    their own major-version upgrade.
-4. Stop sphericon during the switch, repoint `DATABASE_URL` if the server changed, start it, and
+4. Stop Sphericon during the switch, repoint `DATABASE_URL` if the server changed, start it, and
    check `GET /readyz`.
 5. Run `ANALYZE` on the new cluster: planner statistics are not always carried over.
 

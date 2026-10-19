@@ -1,6 +1,6 @@
 # Operations
 
-This section is for the person who keeps a self-hosted sphericon instance running. Start with
+This section is for the person who keeps a self-hosted Sphericon instance running. Start with
 [Self-hosting](../self-hosting) to install and configure it; the pages here cover what comes
 after: sizing, backups, upgrades and monitoring.
 
@@ -22,7 +22,7 @@ Not keen on operating it? [Sphericon Cloud](/guide/cloud) runs, upgrades and bac
 
 ## What you operate
 
-sphericon is one process (the Go binary or Docker image) plus **one PostgreSQL database**. There is
+Sphericon is one process (the Go binary or Docker image) plus **one PostgreSQL database**. There is
 no Redis, no object storage and no separate worker. That shapes everything below:
 
 - **PostgreSQL holds all state.** Contacts, events, Outbound messages, provider credentials

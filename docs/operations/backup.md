@@ -1,6 +1,6 @@
 # Backup and restore
 
-Everything sphericon knows lives in PostgreSQL, so backing up the database backs up the instance.
+Everything Sphericon knows lives in PostgreSQL, so backing up the database backs up the instance.
 Two secrets live **outside** the database and need their own backup. This page covers what to
 back up, how, how to rehearse a restore, and what the instance does once it is restored.
 
@@ -83,7 +83,7 @@ a schedule (for example monthly) and after any change to the backup setup.
      sphericon-20260101T000000Z.dump
    ```
 
-2. Start the **same version** of sphericon that wrote the dump against the scratch database, with
+2. Start the **same version** of Sphericon that wrote the dump against the scratch database, with
    the backed-up `SPHERICON_ENCRYPTION_KEY` and `SPHERICON_JWT_SECRET`. Point it at a throwaway SMTP sink (for
    example Mailpit), not at your real provider, so a drill cannot send real mail. Leave
    `SPHERICON_DB_AUTO_MIGRATE` off.
@@ -120,7 +120,7 @@ three behaviours follow from the architecture:
   Consumers resume from their stored position, so anything published after that position is
   delivered again. An Event is stored once per `source_id`, so redelivery does not duplicate
   it.
-- **Mail sent after the backup point can be sent again.** Each email sphericon sends is recorded
+- **Mail sent after the backup point can be sent again.** Each email Sphericon sends is recorded
   as an Outbound message before the provider is called, and the idempotency key that prevents
   duplicate sends lives in that same database row
   ([ADR 0015](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0015-outbound-send-single-chokepoint.md)). A message sent after the backup

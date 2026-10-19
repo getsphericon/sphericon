@@ -8734,7 +8734,7 @@
                 "$ref": "#/components/schemas/AuditActorKind"
               }
             ],
-            "description": "The kind of actor; a staff member is shown as \"sphericon staff\""
+            "description": "The kind of actor; a staff member is shown as \"Sphericon staff\""
           },
           "id": {
             "type": "string",

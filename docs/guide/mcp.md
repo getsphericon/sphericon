@@ -1,6 +1,6 @@
 # MCP for agents
 
-sphericon serves a [Model Context Protocol](https://modelcontextprotocol.io) endpoint at `/mcp`, so an
+Sphericon serves a [Model Context Protocol](https://modelcontextprotocol.io) endpoint at `/mcp`, so an
 AI agent (Claude, or any MCP client) can operate a workspace: read contacts, draft broadcasts,
 build segments, author automations. It is the same binary and the same data as `/api`.
 
@@ -43,7 +43,7 @@ Any client that takes a JSON configuration:
 
 Clients that cannot hold a static header, such as claude.ai custom connectors, use OAuth 2.1:
 add `https://sphericon.example.com/mcp` as the connector URL and approve the consent screen in the
-sphericon app. sphericon serves the discovery metadata (RFC 9728 and RFC 8414), dynamic client
+Sphericon app. Sphericon serves the discovery metadata (RFC 9728 and RFC 8414), dynamic client
 registration and PKCE (S256 only).
 
 - Only a workspace **owner or admin** can approve, because approval mints a token.

@@ -129,7 +129,7 @@ func (m *Module) TestSend(ctx context.Context, s *ent.Scoped, id int64, eventTyp
 		"type":        eventType,
 		"occurredAt":  time.Now().UTC(),
 		"workspaceId": s.WorkspaceID(),
-		"subject":     "sphericon test event",
+		"subject":     "Sphericon test event",
 		"data":        map[string]any{"test": true},
 	})
 	if err != nil {

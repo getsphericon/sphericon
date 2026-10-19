@@ -56,7 +56,7 @@ func TestTheConsoleAndTheOwnerTellABillingHoldFromAnotherHold(t *testing.T) {
 }
 
 // The Audit log shows a billing hold's set and lift as billing activity: the console names
-// the credential, the customer reads "sphericon staff", never an individual.
+// the credential, the customer reads "Sphericon staff", never an individual.
 func TestABillingHoldInTheAuditLogIsBillingActivityUnderTheCredential(t *testing.T) {
 	h := newHarness(t)
 	h.setHoldFor(t, "billing", "non_payment", time.Hour)

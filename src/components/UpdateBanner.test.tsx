@@ -20,7 +20,7 @@ test('an owner is told which release is newer', async () => {
   const { screen } = await renderWithRouter(<UpdateBanner />)
 
   await expect.element(screen.getByText('A new version is available')).toBeInTheDocument()
-  await expect.element(screen.getByText(/Version 0\.4\.0 of sphericon/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/Version 0\.4\.0 of Sphericon/)).toBeInTheDocument()
 })
 
 test('no banner without a newer release', async () => {

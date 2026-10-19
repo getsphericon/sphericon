@@ -28,7 +28,7 @@ import (
 // apiPrefix is where the external ogen server is mounted.
 const apiPrefix = "/api"
 
-const instructions = "sphericon marketing automation. Tools mirror the sphericon external API and act on " +
+const instructions = "Sphericon marketing automation. Tools mirror the Sphericon external API and act on " +
 	"the workspace of the Bearer API token used to connect; results and errors are the API's." + untrustedInstructions
 
 // Authenticator validates a Bearer API token (the external API's security handler).

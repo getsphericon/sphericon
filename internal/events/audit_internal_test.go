@@ -44,7 +44,7 @@ func TestWebhooksConsumerForwardsAuditEntriesAsAuditEntry(t *testing.T) {
 	assert.JSONEq(t, `{"workspaceId":1,"actor":{"kind":"user"},"action":"membership.update","targetType":"membership"}`, string(payload.Data))
 }
 
-// A forwarded entry shows a Staff member only as "sphericon staff", like every read surface:
+// A forwarded entry shows a Staff member only as "Sphericon staff", like every read surface:
 // the staff id never reaches a customer's SIEM (ADR 0022).
 func TestWebhooksConsumerMasksTheStaffIdentity(t *testing.T) {
 	data, err := json.Marshal(&AuditEntry{

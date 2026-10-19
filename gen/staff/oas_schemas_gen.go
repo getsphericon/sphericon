@@ -1162,7 +1162,7 @@ func (s *StaffAbuseWarning) SetRate(val float64) {
 // The actor of an Audit entry.
 // Ref: #/components/schemas/StaffAuditActor
 type StaffAuditActor struct {
-	// The kind of actor; a staff member carries no id and the name "sphericon staff"; a service is a
+	// The kind of actor; a staff member carries no id and the name "Sphericon staff"; a service is a
 	// Service credential, named as the Staff member who issued it chose.
 	Kind StaffAuditActorKind `json:"kind"`
 	// The actor's id (a User id or an API token id); absent for the system and a staff member.
@@ -1916,7 +1916,7 @@ func (s *StaffRate) SetRate(val NilFloat64) {
 	s.Rate = val
 }
 
-// The authenticated platform Staff member (shown to customers only as "sphericon staff").
+// The authenticated platform Staff member (shown to customers only as "Sphericon staff").
 // Ref: #/components/schemas/StaffResource
 type StaffResource struct {
 	// Unique identifier.

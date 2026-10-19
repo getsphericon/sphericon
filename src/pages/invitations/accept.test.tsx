@@ -32,7 +32,7 @@ test('a signed-out invitee supplies a name and password to accept', async () => 
   const { screen, navigate } = await renderWithRouter(<AcceptInvitationPage />, MOUNT)
 
   await expect
-    .element(screen.getByText("You've been invited to join Acme on sphericon."))
+    .element(screen.getByText("You've been invited to join Acme on Sphericon."))
     .toBeInTheDocument()
   await expect.element(screen.getByText('ada@example.com')).toBeInTheDocument()
   await screen.getByLabelText(/^Your name/).fill('  Ada  ')

@@ -11,7 +11,7 @@ import (
 )
 
 // StaffWorkspaceAuditList is a page of one Workspace's Audit log, newest first. An
-// Staff member's entry shows as "sphericon staff" with no id, as it does to the customer.
+// Staff member's entry shows as "Sphericon staff" with no id, as it does to the customer.
 func (h *Handlers) StaffWorkspaceAuditList(ctx context.Context, params staffapi.StaffWorkspaceAuditListParams) (staffapi.StaffWorkspaceAuditListRes, error) {
 	id := int64(params.WorkspaceId)
 	cursor, limit, err := auditapi.Page(params.Cursor.Or(""), params.Limit.Or(0), params.Limit.IsSet())
@@ -55,7 +55,7 @@ func auditEntryResource(e *ent.AuditEntry) staffapi.StaffAuditEntryResource {
 		UserAgent:  nilableString(v.UserAgent),
 	}
 	// The console is the platform's own view: a Service credential is named here, as a
-	// customer's read of the same entry shows "sphericon staff".
+	// customer's read of the same entry shows "Sphericon staff".
 	if e.ActorKind == events.ActorService {
 		res.Actor = staffapi.StaffAuditActor{Kind: staffapi.StaffAuditActorKindService, ID: nilableString(e.ActorID), Name: nilableString(e.ActorName)}
 	}

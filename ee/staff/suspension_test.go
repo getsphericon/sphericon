@@ -157,6 +157,6 @@ func TestTheAuditEntryShowsSphericonStaffAndNeverTheStaffMember(t *testing.T) {
 		}
 	}
 	require.Len(t, got, 1)
-	assert.Equal(t, "sphericon staff", got[0].Actor.Name.Value)
+	assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)
 	assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "")
 }

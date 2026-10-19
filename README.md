@@ -1,6 +1,6 @@
-# sphericon
+# Sphericon
 
-Open-core marketing automation you can run yourself. sphericon helps a business know its
+Open-core marketing automation you can run yourself. Sphericon helps a business know its
 audience and talk to it at the right moment: it collects who your contacts are and what
 they do on your site or in your product, groups them into segments, and sends them email —
 one-off broadcasts, automated sequences triggered by their behavior, and transactional
@@ -12,7 +12,7 @@ reputation stays intact. Everything lives in your own workspace on your own infr
 so the customer data stays yours. The goal is a self-hostable alternative to tools like
 Drip, without the lock-in.
 
-![The sphericon workspace overview: email engagement, contacts and automations](docs/public/screenshot.png)
+![The Sphericon workspace overview: email engagement, contacts and automations](docs/public/screenshot.png)
 
 **Documentation:** https://docs.getsphericon.app/
 
@@ -191,7 +191,7 @@ and health checks.
 
 ## License
 
-sphericon is **open-core**. The core is licensed under the GNU AGPL-3.0
+Sphericon is **open-core**. The core is licensed under the GNU AGPL-3.0
 ([`LICENSE`](LICENSE)); the Enterprise features under [`ee/`](ee/) are commercial and
 source-available ([`ee/LICENSE`](ee/LICENSE)). See [`LICENSING.md`](LICENSING.md) for the
 boundary. Contributions need a signed [CLA](CLA.md), see [`CONTRIBUTING.md`](CONTRIBUTING.md).
