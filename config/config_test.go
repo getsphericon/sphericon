@@ -513,3 +513,44 @@ func TestConfigLoadSecretFileMustBeReadableAndNotEmpty(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigLoadJWTSecretSecondary(t *testing.T) {
+	other := strings.Repeat("m3", 16)
+	for name, tc := range map[string]struct {
+		env, secondary string
+		wantErr        bool
+	}{
+		"none":                        {env: "production"},
+		"a strong second secret":      {env: "production", secondary: other},
+		"the same secret twice":       {env: "production", secondary: strongSecret, wantErr: true},
+		"a short second secret":       {env: "production", secondary: "short", wantErr: true},
+		"a placeholder second secret": {env: "production", secondary: "change-me-change-me-change-me-change-me", wantErr: true},
+		"development takes any":       {env: "development", secondary: "short"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("SPHERICON_JWT_SECRET", strongSecret)
+			t.Setenv("SPHERICON_JWT_SECRET_SECONDARY", tc.secondary)
+			cfg, err := Load(tc.env)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("want an error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if cfg.JWTSecretSecondary != tc.secondary {
+				t.Fatalf("JWTSecretSecondary = %q, want %q", cfg.JWTSecretSecondary, tc.secondary)
+			}
+			want := 0
+			if tc.secondary != "" {
+				want = 1
+			}
+			if got := cfg.JWTVerifySecrets(); len(got) != want || (want == 1 && got[0] != tc.secondary) {
+				t.Fatalf("JWTVerifySecrets() = %v", got)
+			}
+		})
+	}
+}

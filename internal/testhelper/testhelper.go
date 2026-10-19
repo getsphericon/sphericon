@@ -295,7 +295,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	stubTXT := func(context.Context, string) ([]string, error) {
 		return nil, &net.DNSError{IsNotFound: true}
 	}
-	tracker := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tracker := tracking.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...)
 	// Cipher (over the fixture-sealing key) and provider catalog for the site
 	// handlers and the inline jobs — mirrors the app's DI singletons, except that
 	// SES's quota lookup is answered by a fake instead of the AWS API.
@@ -319,7 +319,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	if st.volumeFloor > 0 {
 		limits.VolumeFloor = st.volumeFloor
 	}
-	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, staff.Config{
+	edition, err := ee.New(client, lic, cipher, cfg.JWTSecrets(), staff.Config{
 		Secret: newStaffSecret(), SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
 		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail,
 	})

@@ -49,7 +49,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// Login and logout are /site operations (ADR 0020), and the login operation is
 	// the one route that mints a session, through this issuer. The library's
 	// /auth/ and /avatar/ routes are gone and must not fall through to the SPA shell.
-	site.Sessions = apiauth.NewSessions(cfg.JWTSecret, cfg.SessionTTL, cfg.SecureCookies(), site.Clock)
+	site.Sessions = apiauth.NewSessions(cfg.JWTSecret, cfg.SessionTTL, cfg.SecureCookies(), site.Clock, cfg.JWTVerifySecrets()...)
 	mux.Handle("/auth/", http.NotFoundHandler())
 	mux.Handle("/avatar/", http.NotFoundHandler())
 	limiter := ratelimit.New(cfg.RateLimits)
@@ -58,7 +58,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// and logout are public per the spec).
 	siteSrv, err := siteapi.NewServer(
 		apisite.NewHandlers(site),
-		apiauth.NewSiteSecurityHandler(cfg.JWTSecret, client, site.Clock),
+		apiauth.NewSiteSecurityHandler(cfg.JWTSecret, client, site.Clock, cfg.JWTVerifySecrets()...),
 		siteapi.WithPathPrefix("/site"),
 		siteapi.WithErrorHandler(problemErrorHandler),
 	)

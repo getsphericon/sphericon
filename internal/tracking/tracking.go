@@ -28,14 +28,21 @@ const confirmTTL = 7 * 24 * time.Hour
 
 // Tracker mints recipient tokens and builds tracking URLs against baseURL.
 type Tracker struct {
-	secret  []byte
-	baseURL string
+	secret []byte
+	// verifyWith are the secondary secrets (a JWT secret rotation in progress): a token that
+	// does not verify under secret is checked against each, so links already mailed keep working.
+	verifyWith [][]byte
+	baseURL    string
 }
 
 // New builds a Tracker. baseURL is the public origin (e.g. https://sphericon.localhost);
 // a trailing slash is trimmed.
-func New(secret, baseURL string) *Tracker {
-	return &Tracker{secret: []byte(secret), baseURL: strings.TrimRight(baseURL, "/")}
+func New(secret, baseURL string, verifyWith ...string) *Tracker {
+	t := &Tracker{secret: []byte(secret), baseURL: strings.TrimRight(baseURL, "/")}
+	for _, v := range verifyWith {
+		t.verifyWith = append(t.verifyWith, []byte(v))
+	}
+	return t
 }
 
 // Origin is the public origin the Tracker builds its links on, without a trailing slash.
@@ -44,7 +51,7 @@ func (t *Tracker) Origin() string { return t.baseURL }
 // OnHost returns a Tracker that signs with the same secret but builds every link on
 // https://<host>, the Tracking domain of one message's Sending domain (ADR 0038).
 func (t *Tracker) OnHost(host string) *Tracker {
-	return &Tracker{secret: t.secret, baseURL: "https://" + host}
+	return &Tracker{secret: t.secret, verifyWith: t.verifyWith, baseURL: "https://" + host}
 }
 
 // UnsubTarget is the self-describing payload an unsubscribe link carries. The
@@ -89,9 +96,13 @@ func (t *Tracker) sign(claims jwt.Claims) (string, error) {
 }
 
 func (t *Tracker) parse(token string, claims jwt.Claims, opts ...jwt.ParserOption) error {
-	_, err := jwt.ParseWithClaims(token, claims, func(*jwt.Token) (any, error) {
-		return t.secret, nil
-	}, append([]jwt.ParserOption{jwt.WithValidMethods([]string{"HS256"})}, opts...)...)
+	opts = append([]jwt.ParserOption{jwt.WithValidMethods([]string{"HS256"})}, opts...)
+	var err error
+	for _, secret := range append([][]byte{t.secret}, t.verifyWith...) {
+		if _, err = jwt.ParseWithClaims(token, claims, func(*jwt.Token) (any, error) { return secret, nil }, opts...); err == nil {
+			return nil
+		}
+	}
 	return err
 }
 

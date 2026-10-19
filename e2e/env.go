@@ -122,7 +122,7 @@ func Boot() (*Env, func(), error) {
 		hooks:    hooks,
 		accounts: acc,
 		bus:      bus,
-		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), nil),
+		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), nil, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }
 

@@ -47,6 +47,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/rekey"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -852,7 +853,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		edition, err := ee.New(client.Client, lic, cipher, cfg.JWTSecret, staff.Config{
+		edition, err := ee.New(client.Client, lic, cipher, cfg.JWTSecrets(), staff.Config{
 			Abuse:        abuse.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
 			SupportEmail: cfg.SupportEmail,
 			Secret:       cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
@@ -996,7 +997,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return tracking.New(cfg.JWTSecret, cfg.AppURL), nil
+		return tracking.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*outboundModule, error) {
@@ -1580,4 +1581,18 @@ func buildSystemSender(cfg *config.Config, catalog *messaging.Catalog) (messagin
 		}
 		return catalog.BuildEmail(messaging.ProviderSMTP, blob, nil)
 	}
+}
+
+// Reencrypt seals every stored secret under the primary key of the encryption keyset
+// (`sphericon encryption-key reencrypt`) and returns what it did per column.
+func (a *App) Reencrypt(ctx context.Context) ([]rekey.Count, error) {
+	client, err := do.Invoke[*entClient](a.injector)
+	if err != nil {
+		return nil, err
+	}
+	cipher, err := do.Invoke[*secrets.Cipher](a.injector)
+	if err != nil {
+		return nil, err
+	}
+	return rekey.New(client.Client, cipher).Run(ctx)
 }
