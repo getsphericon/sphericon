@@ -969,7 +969,15 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return &outboundModule{outbound.New(bus.Bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))}, nil
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		opts := []outbound.Option{outbound.WithFreezers(edition.Freezer())}
+		if cfg.TrackingCNAMETarget != "" {
+			opts = append(opts, outbound.WithTrackingDomains())
+		}
+		return &outboundModule{outbound.New(bus.Bus, resolver, tracker, opts...)}, nil
 	})
 
 	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).

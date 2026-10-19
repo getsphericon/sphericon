@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
@@ -151,11 +152,13 @@ const DefaultLease = 5 * time.Minute
 
 // Module is the Outbound send module.
 type Module struct {
-	bus      *events.Bus
-	senders  Senders
-	tracker  *tracking.Tracker
-	lease    time.Duration
-	freezers []Freezer
+	bus     *events.Bus
+	senders Senders
+	tracker *tracking.Tracker
+	// trackingDomains reports whether the Instance offers Tracking domains at all.
+	trackingDomains bool
+	lease           time.Duration
+	freezers        []Freezer
 }
 
 // Option customizes a Module.
@@ -163,6 +166,11 @@ type Option func(*Module)
 
 // WithLease overrides DefaultLease (tests use a tiny lease to exercise takeover).
 func WithLease(d time.Duration) Option { return func(m *Module) { m.lease = d } }
+
+// WithTrackingDomains turns on Tracking domains (SPHERICON_TRACKING_CNAME_TARGET is set):
+// a message from a Sending domain whose Tracking domain is serving gets its links on
+// track.<domain>. Off, every link uses the Instance's host (ADR 0038).
+func WithTrackingDomains() Option { return func(m *Module) { m.trackingDomains = true } }
 
 // WithFreezers adds extra freeze reasons after the core suspension check.
 func WithFreezers(f ...Freezer) Option {
@@ -301,7 +309,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, dec.Reason)
 	}
 
-	built, err := m.compose(req, dest, ws)
+	built, err := m.compose(ctx, s, g.domain, req, dest, ws)
 	if err != nil {
 		return m.finish(ctx, s, msg, outboundmessage.StatusFailed, Failed, err.Error())
 	}
@@ -478,7 +486,7 @@ type composed struct {
 // compose renders the content for one recipient and, for a marketing send, layers
 // on the unsubscribe footer, the open/click tracking and the one-click header. Any
 // error here is deterministic for this message, so the caller records it as Failed.
-func (m *Module) compose(req Request, dest string, ws *ent.Workspace) (composed, error) {
+func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req Request, dest string, ws *ent.Workspace) (composed, error) {
 	email, err := emailrender.RenderEmail(req.Subject, req.Body, bindings(req.Contact, req.Variables))
 	if err != nil {
 		return composed{}, err
@@ -486,6 +494,18 @@ func (m *Module) compose(req Request, dest string, ws *ent.Workspace) (composed,
 	out := composed{msg: messaging.EmailMessage{Subject: email.Subject, HTML: email.HTML, Text: email.Text}}
 	if req.Source == "" {
 		return out, nil // Transactional: no unsubscribe, no tracking
+	}
+
+	// One choice per message: every link and the List-Unsubscribe URL share one host.
+	tr := m.tracker
+	if m.trackingDomains {
+		host, err := sendingdomains.ServingTrackingHost(ctx, s, domain)
+		if err != nil {
+			return composed{}, fmt.Errorf("tracking host: %w", err)
+		}
+		if host != "" {
+			tr = tr.OnHost(host)
+		}
 	}
 
 	contactID := req.ContactID
@@ -502,13 +522,13 @@ func (m *Module) compose(req Request, dest string, ws *ent.Workspace) (composed,
 	if req.TrackID != 0 {
 		// Click/open tracking is layered on after rendering so re-parsing the HTML
 		// cannot mangle the pixel or links; Rewrite also appends the footer.
-		html, err := m.tracker.Rewrite(email.HTML, req.TrackID, unsub, ws.PostalAddress)
+		html, err := tr.Rewrite(email.HTML, req.TrackID, unsub, ws.PostalAddress)
 		if err != nil {
 			return composed{}, fmt.Errorf("tracking rewrite: %w", err)
 		}
 		out.msg.HTML = html
 	} else {
-		footer, err := m.tracker.UnsubscribeFooter(unsub, ws.PostalAddress)
+		footer, err := tr.UnsubscribeFooter(unsub, ws.PostalAddress)
 		if err != nil {
 			return composed{}, fmt.Errorf("unsubscribe footer: %w", err)
 		}
@@ -516,7 +536,7 @@ func (m *Module) compose(req Request, dest string, ws *ent.Workspace) (composed,
 	}
 	// RFC 8058 one-click header: the same source-scoped token the footer carries
 	// (ADR 0012); the provider adapter covers it with the DKIM signature.
-	url, err := m.tracker.UnsubscribeURL(unsub)
+	url, err := tr.UnsubscribeURL(unsub)
 	if err != nil {
 		return composed{}, fmt.Errorf("unsubscribe url: %w", err)
 	}
@@ -660,7 +680,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 		return Result{Outcome: Held, Reason: g.hold}, nil
 	}
 	to := eligibility.NormalizeDestination(req.To)
-	built, err := m.compose(Request{Subject: req.Subject, Body: req.Body, Variables: req.Variables}, to, ws)
+	built, err := m.compose(ctx, s, g.domain, Request{Subject: req.Subject, Body: req.Body, Variables: req.Variables}, to, ws)
 	if err != nil {
 		return Result{Outcome: Failed, Reason: err.Error()}, nil
 	}

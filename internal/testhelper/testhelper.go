@@ -287,7 +287,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	client.Use(edition.Hooks()...)
 	bus.Use(edition.Hooks()...)
 	// The Staff hold freezer rides the send chokepoint like the app's.
-	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))
+	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()), outbound.WithTrackingDomains())
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
 	inline := jobs.NewInline(client, sender, systemMail, stubTXT, nil, cipher, catalog, cfg.AppURL)
