@@ -32,3 +32,16 @@ func TestBroadcastToImportedContactsIsDelivered(t *testing.T) {
 	assert.Contains(t, unsub, env.BaseURL, "the unsubscribe link points at the server under test")
 	assert.Equal(t, "List-Unsubscribe=One-Click", msg.Header("List-Unsubscribe-Post"))
 }
+
+func TestTestSendBeforeAnyDomainReachesTheOwnerFromTheSystemSender(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t) // no Integration, no Sending domain
+
+	from := w.RequestTestSend(Broadcast{Subject: "Preview me", Body: MJML("Early look at the product")})
+	msg := w.Inbox.Wait(Match{To: w.OwnerEmail})
+
+	assert.Equal(t, SystemSenderFrom, from, "the answer names the From it used")
+	assert.Equal(t, SystemSenderFrom, msg.From.Address)
+	assert.Equal(t, "[Test] Preview me", msg.Subject)
+	assert.Contains(t, msg.HTML, "Early look at the product")
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	stdsql "database/sql"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/authattempt"
+	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
 // Kind is the action an attempt counter belongs to. Each kind has its own counter
@@ -24,6 +26,17 @@ const (
 	KindPasswordReset = authattempt.KindPasswordReset
 	KindRegister      = authattempt.KindRegister
 	KindEmailChange   = authattempt.KindEmailChange
+	// The caps on a Test send from the System sender (ADR 0041), keyed by "user:<id>" and
+	// "workspace:<id>" rather than an address.
+	KindTestSendUser      = authattempt.KindTestSendUser
+	KindTestSendWorkspace = authattempt.KindTestSendWorkspace
+)
+
+// The fixed caps on a Test send from the System sender (ADR 0041): a way to cause mail from
+// the platform's own domain, so no environment variable raises them.
+const (
+	TestSendPerUserHour     = 5
+	TestSendPerWorkspaceDay = 20
 )
 
 // Rule is the throttle of one Kind (ADR 0025): after Threshold failures within
@@ -94,6 +107,9 @@ func NewAttempts(client *ent.Client, opts ...AttemptsOption) *Attempts {
 		KindPasswordReset: ResetRule(0),
 		KindRegister:      ResetRule(0),
 		KindEmailChange:   ResetRule(0),
+		// Not configurable: always on, with their own windows.
+		KindTestSendUser:      {Threshold: TestSendPerUserHour, Window: time.Hour},
+		KindTestSendWorkspace: {Threshold: TestSendPerWorkspaceDay, Window: 24 * time.Hour},
 	}}
 	for _, opt := range opts {
 		opt(a)
@@ -231,6 +247,38 @@ func (a *Attempts) Take(ctx context.Context, kind Kind, email string) (bool, err
 		return false, nil
 	}
 	return err == nil, err
+}
+
+// TakeTestSend grants one Test send from the System sender (ADR 0041): a slot of the
+// User's hourly budget and one of the Workspace's daily budget. It returns the zero Cap when
+// both were granted, else how long until the refused budget frees a slot and its size. A
+// refusal by the Workspace budget has already spent the User's slot, which is the safe side.
+func (a *Attempts) TakeTestSend(ctx context.Context, userID, workspaceID int64) (outbound.Cap, error) {
+	for _, b := range []struct {
+		kind Kind
+		key  string
+	}{
+		{KindTestSendUser, "user:" + strconv.FormatInt(userID, 10)},
+		{KindTestSendWorkspace, "workspace:" + strconv.FormatInt(workspaceID, 10)},
+	} {
+		granted, err := a.Take(ctx, b.kind, b.key)
+		if err != nil {
+			return outbound.Cap{}, err
+		}
+		if granted {
+			continue
+		}
+		rule, _ := a.rule(b.kind)
+		row, err := a.ent.AuthAttempt.Query().
+			Where(authattempt.Email(b.key), authattempt.KindEQ(b.kind)).
+			Only(ctx)
+		if err != nil {
+			return outbound.Cap{}, err
+		}
+		wait := max(row.LastAttemptAt.Add(rule.Window).Sub(a.now()), time.Second)
+		return outbound.Cap{Wait: wait, Limit: rule.Threshold}, nil
+	}
+	return outbound.Cap{}, nil
 }
 
 // Purge deletes the rows whose last failure is past their Kind's window (a delay is

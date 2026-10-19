@@ -250,6 +250,7 @@
     "testSend": "Envío de prueba",
     "testSendButton": "Enviar prueba",
     "testSendEmailLabel": "Enviar una prueba a",
+    "testSendFrom": "Enviado desde {{from}}. Hasta que se verifique un dominio de envío, es la dirección de la propia plataforma, no la que verán tus contactos.",
     "useTemplate": "Empezar desde una plantilla",
     "useTemplateNone": "— ninguna —"
   },

@@ -3700,6 +3700,7 @@ func (*ProblemDetailsHeaders) siteAuthRegisterRes()                        {}
 func (*ProblemDetailsHeaders) siteAuthResendVerificationRes()              {}
 func (*ProblemDetailsHeaders) siteAuthSecondFactorRes()                    {}
 func (*ProblemDetailsHeaders) siteAuthVerifyEmailRes()                     {}
+func (*ProblemDetailsHeaders) siteBroadcastsTestSendRes()                  {}
 func (*ProblemDetailsHeaders) sitePublicConfirmationsPerformRes()          {}
 func (*ProblemDetailsHeaders) sitePublicInvitationsAcceptRes()             {}
 func (*ProblemDetailsHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
@@ -5992,11 +5993,6 @@ func (*SiteBroadcastsSendUnprocessableEntity) siteBroadcastsSendRes() {}
 type SiteBroadcastsTestSendBadRequest ProblemDetails
 
 func (*SiteBroadcastsTestSendBadRequest) siteBroadcastsTestSendRes() {}
-
-// SiteBroadcastsTestSendNoContent is response for SiteBroadcastsTestSend operation.
-type SiteBroadcastsTestSendNoContent struct{}
-
-func (*SiteBroadcastsTestSendNoContent) siteBroadcastsTestSendRes() {}
 
 type SiteBroadcastsTestSendNotFound ProblemDetails
 
@@ -12120,6 +12116,26 @@ func (s *SiteTestSendBroadcastInput) GetEmail() EmailAddress {
 func (s *SiteTestSendBroadcastInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
+
+// What a test send did: the address the preview went out from.
+// Ref: #/components/schemas/SiteTestSendBroadcastResult
+type SiteTestSendBroadcastResult struct {
+	// The From address of the preview. A Workspace with a verified Sending domain gets its own domain; one
+	// without gets the System sender, which is not the address Contacts will see.
+	From EmailAddress `json:"from"`
+}
+
+// GetFrom returns the value of From.
+func (s *SiteTestSendBroadcastResult) GetFrom() EmailAddress {
+	return s.From
+}
+
+// SetFrom sets the value of From.
+func (s *SiteTestSendBroadcastResult) SetFrom(val EmailAddress) {
+	s.From = val
+}
+
+func (*SiteTestSendBroadcastResult) siteBroadcastsTestSendRes() {}
 
 // Request body for sending a sample event to a webhook endpoint.
 // Ref: #/components/schemas/SiteTestWebhookInput

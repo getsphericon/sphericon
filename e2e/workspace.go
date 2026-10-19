@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/events"
 )
@@ -37,6 +38,9 @@ type Workspace struct {
 	t   testing.TB
 	env *Env
 	api *externalapi.Client
+	// site is the SPA's API, signed in as the owner.
+	site *siteapi.Client
+	slug string
 
 	// Domain is this Workspace's unique Sending domain (the dev DKIM lookup resolves
 	// by name alone, so no two tests may share one).
@@ -45,6 +49,9 @@ type Workspace struct {
 	FromEmail string
 	// FromName is the sender display name configured on the Integration.
 	FromName string
+
+	// OwnerEmail is the address of the User who created the Workspace.
+	OwnerEmail string
 
 	// Inbox is the only way a scenario observes mail.
 	Inbox *Inbox
@@ -85,8 +92,13 @@ func (e *Env) NewWorkspace(t testing.TB) *Workspace {
 	api, err := externalapi.NewClient(e.BaseURL+"/api", bearer(minted.Value))
 	require.NoError(t, err)
 
+	cookie, err := e.sessions.Issue(user)
+	require.NoError(t, err)
+	site, err := siteapi.NewClient(e.BaseURL+"/site", cookieSource(cookie.Value))
+	require.NoError(t, err)
+
 	w := &Workspace{
-		t: t, env: e, api: api,
+		t: t, env: e, api: api, site: site, slug: ws.Slug, OwnerEmail: user.Email,
 		Domain:    id + ".e2e.test",
 		FromEmail: "news@" + id + ".e2e.test",
 		FromName:  "E2E News",

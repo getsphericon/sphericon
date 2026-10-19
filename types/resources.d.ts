@@ -246,6 +246,7 @@ export default interface Resources {
       "testSend": "Test send",
       "testSendButton": "Send test",
       "testSendEmailLabel": "Send a test to",
+      "testSendFrom": "Sent from {{from}}. Until a sending domain is verified this is the platform's own address, not the one your contacts will see.",
       "useTemplate": "Start from template",
       "useTemplateNone": "— none —"
     },
