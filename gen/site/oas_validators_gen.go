@@ -4759,6 +4759,15 @@ func (s SiteTokensListOKApplicationJSON) Validate() error {
 	return nil
 }
 
+func (s SiteTrackingReason) Validate() error {
+	switch s {
+	case "host_taken":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SiteTrackingRecord) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4784,6 +4793,24 @@ func (s *SiteTrackingRecord) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "state",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Reason.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "reason",
 			Error: err,
 		})
 	}

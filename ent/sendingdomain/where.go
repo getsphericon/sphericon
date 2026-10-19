@@ -655,6 +655,36 @@ func TrackingCheckedAtNotNil() predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldNotNull(FieldTrackingCheckedAt))
 }
 
+// TrackingReasonEQ applies the EQ predicate on the "tracking_reason" field.
+func TrackingReasonEQ(v TrackingReason) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldTrackingReason, v))
+}
+
+// TrackingReasonNEQ applies the NEQ predicate on the "tracking_reason" field.
+func TrackingReasonNEQ(v TrackingReason) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNEQ(FieldTrackingReason, v))
+}
+
+// TrackingReasonIn applies the In predicate on the "tracking_reason" field.
+func TrackingReasonIn(vs ...TrackingReason) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIn(FieldTrackingReason, vs...))
+}
+
+// TrackingReasonNotIn applies the NotIn predicate on the "tracking_reason" field.
+func TrackingReasonNotIn(vs ...TrackingReason) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotIn(FieldTrackingReason, vs...))
+}
+
+// TrackingReasonIsNil applies the IsNil predicate on the "tracking_reason" field.
+func TrackingReasonIsNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIsNull(FieldTrackingReason))
+}
+
+// TrackingReasonNotNil applies the NotNil predicate on the "tracking_reason" field.
+func TrackingReasonNotNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotNull(FieldTrackingReason))
+}
+
 // TrackingStateChangedAtEQ applies the EQ predicate on the "tracking_state_changed_at" field.
 func TrackingStateChangedAtEQ(v time.Time) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldEQ(FieldTrackingStateChangedAt, v))

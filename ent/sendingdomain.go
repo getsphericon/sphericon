@@ -42,6 +42,8 @@ type SendingDomain struct {
 	TrackingState sendingdomain.TrackingState `json:"tracking_state,omitempty"`
 	// TrackingCheckedAt holds the value of the "tracking_checked_at" field.
 	TrackingCheckedAt *time.Time `json:"tracking_checked_at,omitempty"`
+	// TrackingReason holds the value of the "tracking_reason" field.
+	TrackingReason *sendingdomain.TrackingReason `json:"tracking_reason,omitempty"`
 	// TrackingStateChangedAt holds the value of the "tracking_state_changed_at" field.
 	TrackingStateChangedAt *time.Time `json:"tracking_state_changed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -79,7 +81,7 @@ func (*SendingDomain) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case sendingdomain.FieldID, sendingdomain.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case sendingdomain.FieldDomain, sendingdomain.FieldDkimSelector, sendingdomain.FieldDkimPrivateKeyEncrypted, sendingdomain.FieldDkimPublicKey, sendingdomain.FieldTrackingState:
+		case sendingdomain.FieldDomain, sendingdomain.FieldDkimSelector, sendingdomain.FieldDkimPrivateKeyEncrypted, sendingdomain.FieldDkimPublicKey, sendingdomain.FieldTrackingState, sendingdomain.FieldTrackingReason:
 			values[i] = new(sql.NullString)
 		case sendingdomain.FieldCreatedAt, sendingdomain.FieldUpdatedAt, sendingdomain.FieldLastCheckedAt, sendingdomain.FieldVerifiedAt, sendingdomain.FieldTrackingCheckedAt, sendingdomain.FieldTrackingStateChangedAt:
 			values[i] = new(sql.NullTime)
@@ -179,6 +181,13 @@ func (_m *SendingDomain) assignValues(columns []string, values []any) error {
 				_m.TrackingCheckedAt = new(time.Time)
 				*_m.TrackingCheckedAt = value.Time
 			}
+		case sendingdomain.FieldTrackingReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tracking_reason", values[i])
+			} else if value.Valid {
+				_m.TrackingReason = new(sendingdomain.TrackingReason)
+				*_m.TrackingReason = sendingdomain.TrackingReason(value.String)
+			}
 		case sendingdomain.FieldTrackingStateChangedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field tracking_state_changed_at", values[i])
@@ -266,6 +275,11 @@ func (_m *SendingDomain) String() string {
 	if v := _m.TrackingCheckedAt; v != nil {
 		builder.WriteString("tracking_checked_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.TrackingReason; v != nil {
+		builder.WriteString("tracking_reason=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	if v := _m.TrackingStateChangedAt; v != nil {

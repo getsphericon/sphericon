@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strings"
 	"testing"
 
@@ -120,28 +121,44 @@ func TestTrackingHostServesTheProbeValue(t *testing.T) {
 	assert.NotEqual(t, trackingdomain.ProbeValue(cfg.JWTSecret, pending), resp.Body.String())
 }
 
-// The configured header names the host only for a peer inside the edge ranges.
-func TestTrackingHostHeaderIsTrustedOnlyFromTheEdge(t *testing.T) {
+// viaPeer serves GET /healthz from a peer address, with the host header set when given.
+func viaPeer(env *testhelper.TestEnv, peer, header string) int {
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/healthz", nil)
+	req.RemoteAddr = peer
+	if header != "" {
+		req.Header.Set(edgeHeader, header)
+	}
+	w := httptest.NewRecorder()
+	env.Server.ServeHTTP(w, req)
+	return w.Code
+}
+
+// By default only loopback is the edge: a private-range peer of a shared network is not.
+func TestTrackingHostHeaderIsTrustedOnlyFromLoopbackByDefault(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.TrackingHostHeader = edgeHeader }))
 	host := trackHost(fixtures.SendingDomainTrackingServingDomain)
 
-	via := func(peer, header string) int {
-		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/healthz", nil)
-		req.RemoteAddr = peer
-		if header != "" {
-			req.Header.Set(edgeHeader, header)
-		}
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
-		return w.Code
-	}
-
 	// From the edge the header selects the tracking host: /healthz is not a link path.
-	assert.Equal(t, http.StatusNotFound, via("10.1.2.3:4444", host))
+	assert.Equal(t, http.StatusNotFound, viaPeer(env, "127.0.0.1:4444", host))
+	assert.Equal(t, http.StatusNotFound, viaPeer(env, "[::1]:4444", host))
 	// An unverified host named by the edge is a 404, never the SPA.
-	assert.Equal(t, http.StatusNotFound, via("10.1.2.3:4444", "track.nobody.test"))
-	// From any other peer the header is ignored and the Instance serves as before.
-	assert.Equal(t, http.StatusOK, via("203.0.113.9:4444", host))
+	assert.Equal(t, http.StatusNotFound, viaPeer(env, "127.0.0.1:4444", "track.nobody.test"))
+	// From any other peer, private ranges included, the header is ignored.
+	assert.Equal(t, http.StatusOK, viaPeer(env, "10.1.2.3:4444", host))
+	assert.Equal(t, http.StatusOK, viaPeer(env, "203.0.113.9:4444", host))
 	// No header: the connection's Host rules.
-	assert.Equal(t, http.StatusOK, via("10.1.2.3:4444", ""))
+	assert.Equal(t, http.StatusOK, viaPeer(env, "127.0.0.1:4444", ""))
+}
+
+// An operator lists their proxy's range explicitly, and only that range is trusted.
+func TestTrackingHostHeaderIsTrustedFromTheConfiguredRanges(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) {
+		c.TrackingHostHeader = edgeHeader
+		c.TrackingEdgeCIDRs = []netip.Prefix{netip.MustParsePrefix("10.1.0.0/16")}
+	}))
+	host := trackHost(fixtures.SendingDomainTrackingServingDomain)
+
+	assert.Equal(t, http.StatusNotFound, viaPeer(env, "10.1.2.3:4444", host))
+	assert.Equal(t, http.StatusOK, viaPeer(env, "10.2.2.3:4444", host))
+	assert.Equal(t, http.StatusOK, viaPeer(env, "127.0.0.1:4444", host))
 }

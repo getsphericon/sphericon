@@ -23,6 +23,11 @@ enum SiteTrackingState {
   serving,
 }
 
+/** Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038) */
+enum SiteTrackingReason {
+  host_taken: "host_taken",
+}
+
 /** The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured. */
 model SiteTrackingRecord {
   /** The record type (always CNAME) */
@@ -36,6 +41,9 @@ model SiteTrackingRecord {
 
   /** Where the Tracking domain stands */
   state: SiteTrackingState;
+
+  /** Why the domain is not advancing; absent when nothing holds it back */
+  reason?: SiteTrackingReason;
 
   /** When the Tracking domain was most recently checked (null = never) */
   lastCheckedAt?: Timestamp | null;

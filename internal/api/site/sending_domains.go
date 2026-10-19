@@ -176,6 +176,9 @@ func trackingRecord(t *sendingdomains.TrackingRecord) siteapi.OptSiteTrackingRec
 		Target: t.Target,
 		State:  siteapi.SiteTrackingState(t.State),
 	}
+	if t.Reason != nil {
+		rec.Reason = siteapi.NewOptSiteTrackingReason(siteapi.SiteTrackingReason(*t.Reason))
+	}
 	if t.CheckedAt != nil {
 		rec.LastCheckedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*t.CheckedAt))
 	}

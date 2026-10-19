@@ -3669,6 +3669,39 @@ func (s *OptSiteSuppressionChannel) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteTrackingReason as json.
+func (o OptSiteTrackingReason) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes SiteTrackingReason from json.
+func (o *OptSiteTrackingReason) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSiteTrackingReason to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSiteTrackingReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSiteTrackingReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteTrackingRecord as json.
 func (o OptSiteTrackingRecord) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -29427,6 +29460,44 @@ func (s *SiteTokensListOKApplicationJSON) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteTrackingReason as json.
+func (s SiteTrackingReason) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteTrackingReason from json.
+func (s *SiteTrackingReason) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteTrackingReason to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteTrackingReason(v) {
+	case SiteTrackingReasonHostTaken:
+		*s = SiteTrackingReasonHostTaken
+	default:
+		*s = SiteTrackingReason(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteTrackingReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteTrackingReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *SiteTrackingRecord) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -29453,6 +29524,12 @@ func (s *SiteTrackingRecord) encodeFields(e *jx.Encoder) {
 		s.State.Encode(e)
 	}
 	{
+		if s.Reason.Set {
+			e.FieldStart("reason")
+			s.Reason.Encode(e)
+		}
+	}
+	{
 		if s.LastCheckedAt.Set {
 			e.FieldStart("lastCheckedAt")
 			s.LastCheckedAt.Encode(e)
@@ -29466,13 +29543,14 @@ func (s *SiteTrackingRecord) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteTrackingRecord = [6]string{
+var jsonFieldsNameOfSiteTrackingRecord = [7]string{
 	0: "type",
 	1: "host",
 	2: "target",
 	3: "state",
-	4: "lastCheckedAt",
-	5: "stateChangedAt",
+	4: "reason",
+	5: "lastCheckedAt",
+	6: "stateChangedAt",
 }
 
 // Decode decodes SiteTrackingRecord from json.
@@ -29527,6 +29605,16 @@ func (s *SiteTrackingRecord) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"state\"")
+			}
+		case "reason":
+			if err := func() error {
+				s.Reason.Reset()
+				if err := s.Reason.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"reason\"")
 			}
 		case "lastCheckedAt":
 			if err := func() error {

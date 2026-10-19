@@ -21,6 +21,8 @@
   "email.webhook_disabled.reason_gone": "The receiver answered 410 Gone, which means it no longer wants these requests.",
   "email.webhook_disabled.reason_persistent_failure": "Deliveries kept failing: at least {{.Failures}} in a row over more than {{.Window}}.",
   "email.webhook_disabled.body": "sphericon stopped sending events to the webhook endpoint {{.URL}} in your workspace {{.Workspace}}.\n\n{{.Reason}}\n\nNothing else changed. Fix the receiver, then enable the endpoint again in the workspace settings: its failure history is cleared when you do.\n",
+  "email.sending_domain_unverified.subject": "Action required: sending domain {{.Domain}} is no longer verified",
+  "email.sending_domain_unverified.body": "The sending domain \"{{.Domain}}\" in your workspace is no longer verified: its DKIM DNS record ({{.Record}}) could not be found.\n\nEmail sent from this domain is now blocked until you re-publish the record and re-verify the domain in your sphericon settings.\n",
   "email.tracking_domain_regressed.subject": "Action required: tracking domain {{.Host}} stopped working",
   "email.tracking_domain_regressed.body": "The tracking domain \"{{.Host}}\" of your sending domain \"{{.Domain}}\" is now {{.To}} instead of {{.From}}: its CNAME must point at {{.Target}} and the host must answer over HTTPS.\n\nLinks in your email fall back to the app address until it works again.\n",
   "email.abuse_warning.subject": "Warning: email deliverability problem in {{.Workspace}}",

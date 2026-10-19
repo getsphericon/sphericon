@@ -28,6 +28,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteSendingDomainResource,
+  SiteTrackingReason,
   SiteTrackingState,
 } from '../../generated/site/types.gen.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
@@ -91,18 +92,35 @@ const trackingStateColor: Record<SiteTrackingState, string> = {
   serving: 'teal',
 }
 
-// TrackingStateBadge shows where the Tracking domain stands (ADR 0038).
-function TrackingStateBadge({ state }: { state: SiteTrackingState }) {
+// TrackingStatus shows where the Tracking domain stands and, when something holds it
+// back, why (ADR 0038).
+function TrackingStatus({
+  state,
+  reason,
+}: {
+  state: SiteTrackingState
+  reason?: SiteTrackingReason | undefined
+}) {
   const { t } = useTranslation()
   const labels: Record<SiteTrackingState, string> = {
     pending: t(($) => $.settings.sendingDomains.trackingState.pending),
     dns_verified: t(($) => $.settings.sendingDomains.trackingState.dnsVerified),
     serving: t(($) => $.settings.sendingDomains.trackingState.serving),
   }
+  const reasons: Record<SiteTrackingReason, string> = {
+    host_taken: t(($) => $.settings.sendingDomains.trackingReason.hostTaken),
+  }
   return (
-    <Badge mt={4} color={trackingStateColor[state]} variant="light">
-      {labels[state]}
-    </Badge>
+    <>
+      <Badge mt={4} color={trackingStateColor[state]} variant="light">
+        {labels[state]}
+      </Badge>
+      {reason ? (
+        <Text c="red" size="xs" mt={4}>
+          {reasons[reason]}
+        </Text>
+      ) : null}
+    </>
   )
 }
 
@@ -152,7 +170,12 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
                   host: record.trackingRecord.host,
                   value: record.trackingRecord.target,
                 }}
-                status={<TrackingStateBadge state={record.trackingRecord.state} />}
+                status={
+                  <TrackingStatus
+                    state={record.trackingRecord.state}
+                    reason={record.trackingRecord.reason}
+                  />
+                }
               />
             ) : null}
           </Table.Tbody>

@@ -235,6 +235,8 @@ type Config struct {
 
 	// TrackingEdgeCIDRs are the peer address ranges the edge connects from
 	// (SPHERICON_TRACKING_EDGE_CIDRS): the only peers whose TrackingHostHeader is believed.
+	// The default is loopback only; a proxy on another address must be listed, because a
+	// private range as a default would let any peer of a shared network forge the host.
 	TrackingEdgeCIDRs []netip.Prefix
 
 	// PresetsDir is a directory of the Instance's custom Presets (ADR 0037): every
@@ -339,7 +341,7 @@ type environment struct {
 
 	TrackingCNAMETarget string `env:"SPHERICON_TRACKING_CNAME_TARGET"`
 	TrackingHostHeader  string `env:"SPHERICON_TRACKING_HOST_HEADER"`
-	TrackingEdgeCIDRs   string `env:"SPHERICON_TRACKING_EDGE_CIDRS" envDefault:"127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"`
+	TrackingEdgeCIDRs   string `env:"SPHERICON_TRACKING_EDGE_CIDRS" envDefault:"127.0.0.0/8,::1/128"`
 
 	SystemEmailProvider string `env:"SPHERICON_SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
 	SystemEmailFrom     string `env:"SPHERICON_SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`

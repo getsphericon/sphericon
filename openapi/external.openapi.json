@@ -11585,6 +11585,11 @@
         "type": "string",
         "format": "date-time"
       },
+      "TrackingReason": {
+        "type": "string",
+        "enum": ["host_taken"],
+        "description": "Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)"
+      },
       "TrackingRecord": {
         "type": "object",
         "required": ["type", "host", "target", "state"],
@@ -11609,6 +11614,14 @@
               }
             ],
             "description": "Where the Tracking domain stands"
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackingReason"
+              }
+            ],
+            "description": "Why the domain is not advancing; absent when nothing holds it back"
           },
           "lastCheckedAt": {
             "type": "string",

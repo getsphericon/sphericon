@@ -2591,6 +2591,16 @@ export type SiteTestWebhookInput = {
 };
 
 /**
+ * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
+ */
+export const SiteTrackingReason = { HOST_TAKEN: 'host_taken' } as const;
+
+/**
+ * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
+ */
+export type SiteTrackingReason = typeof SiteTrackingReason[keyof typeof SiteTrackingReason];
+
+/**
  * The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured.
  */
 export type SiteTrackingRecord = {
@@ -2610,6 +2620,10 @@ export type SiteTrackingRecord = {
    * Where the Tracking domain stands
    */
   state: SiteTrackingState;
+  /**
+   * Why the domain is not advancing; absent when nothing holds it back
+   */
+  reason?: SiteTrackingReason;
   /**
    * When the Tracking domain was most recently checked (null = never)
    */

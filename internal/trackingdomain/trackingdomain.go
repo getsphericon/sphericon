@@ -59,7 +59,9 @@ type Verifier struct {
 // DNS gone sends the state back to pending; a CNAME at Target with a failing probe is
 // dns_verified (a serving host falls back to it); a passing probe is serving. A resolver
 // failure other than not-found returns its error and changes nothing. It returns the
-// resulting state, with ErrHostTaken when the host is held elsewhere.
+// resulting state, with ErrHostTaken when the host is held elsewhere; the row then carries
+// the reason host_taken until a later check stores its outcome without losing the claim
+// (the reason is cleared on every stored outcome, including an absent CNAME).
 func (v *Verifier) Check(ctx context.Context, s *ent.Scoped, id int64) (sendingdomain.TrackingState, error) {
 	row, err := s.SendingDomain().Get(ctx, id)
 	if err != nil {
@@ -88,8 +90,10 @@ func (v *Verifier) Check(ctx context.Context, s *ent.Scoped, id int64) (sendingd
 
 	err = v.store(ctx, s, row, next, now)
 	if db.IsUniqueViolation(err) {
-		// Another Workspace verified the host first. Record the check, keep the state.
-		if cerr := s.SendingDomain().UpdateOneID(id).SetTrackingCheckedAt(now).Exec(ctx); cerr != nil {
+		// Another Workspace verified the host first. Record the check and why, keep the state.
+		cerr := s.SendingDomain().UpdateOneID(id).
+			SetTrackingCheckedAt(now).SetTrackingReason(sendingdomain.TrackingReasonHostTaken).Exec(ctx)
+		if cerr != nil {
 			return "", cerr
 		}
 		return row.TrackingState, ErrHostTaken
@@ -102,11 +106,11 @@ func (v *Verifier) Check(ctx context.Context, s *ent.Scoped, id int64) (sendingd
 
 func (v *Verifier) store(ctx context.Context, s *ent.Scoped, row *ent.SendingDomain, next sendingdomain.TrackingState, now time.Time) error {
 	if next == row.TrackingState {
-		return s.SendingDomain().UpdateOneID(row.ID).SetTrackingCheckedAt(now).Exec(ctx)
+		return s.SendingDomain().UpdateOneID(row.ID).SetTrackingCheckedAt(now).ClearTrackingReason().Exec(ctx)
 	}
 	return v.Events.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		err := ts.SendingDomain().UpdateOneID(row.ID).
-			SetTrackingCheckedAt(now).SetTrackingState(next).SetTrackingStateChangedAt(now).Exec(ctx)
+			SetTrackingCheckedAt(now).ClearTrackingReason().SetTrackingState(next).SetTrackingStateChangedAt(now).Exec(ctx)
 		if err != nil {
 			return err
 		}

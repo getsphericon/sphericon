@@ -3,7 +3,6 @@ package jobs
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net"
 	"strings"
@@ -237,14 +236,9 @@ func NotifySendingDomainUnverified(ctx context.Context, client *ent.Client, send
 	if err != nil {
 		return err
 	}
-	subject := fmt.Sprintf("Action required: sending domain %s is no longer verified", dom.Domain)
-	body := fmt.Sprintf(
-		"The sending domain %q in your workspace is no longer verified: its DKIM DNS "+
-			"record (%s._domainkey.%s) could not be found.\n\nEmail sent from this domain "+
-			"is now blocked until you re-publish the record and re-verify the domain in "+
-			"your sphericon settings.\n",
-		dom.Domain, dom.DkimSelector, dom.Domain,
-	)
+	data := map[string]any{"Domain": dom.Domain, "Record": dom.DkimSelector + "._domainkey." + dom.Domain}
+	subject := i18n.T("email.sending_domain_unverified.subject", data)
+	body := i18n.T("email.sending_domain_unverified.body", data)
 	var errs []error
 	for _, m := range owners {
 		u := m.Edges.User

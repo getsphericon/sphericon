@@ -1201,6 +1201,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.TrackingCheckedAt != nil {
 					b.SetTrackingCheckedAt(*src.TrackingCheckedAt)
 				}
+				if src.TrackingReason != nil {
+					b.SetTrackingReason(*src.TrackingReason)
+				}
 				if src.TrackingStateChangedAt != nil {
 					b.SetTrackingStateChangedAt(*src.TrackingStateChangedAt)
 				}

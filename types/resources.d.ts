@@ -878,6 +878,9 @@ export default interface Resources {
         "title": "Sending domains",
         "tracking": "Tracking domain (optional)",
         "trackingHint": "Puts the links in your mail on your own domain once the CNAME resolves and HTTPS answers.",
+        "trackingReason": {
+          "hostTaken": "Another workspace has already verified this host, so it stays pending here. Use a sending domain of your own, or ask the other workspace to release it."
+        },
         "trackingState": {
           "dnsVerified": "DNS verified",
           "pending": "Pending",

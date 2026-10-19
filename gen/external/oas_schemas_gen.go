@@ -7663,6 +7663,52 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// NewOptTrackingReason returns new OptTrackingReason with value set to v.
+func NewOptTrackingReason(v TrackingReason) OptTrackingReason {
+	return OptTrackingReason{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTrackingReason is optional TrackingReason.
+type OptTrackingReason struct {
+	Value TrackingReason
+	Set   bool
+}
+
+// IsSet returns true if OptTrackingReason was set.
+func (o OptTrackingReason) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTrackingReason) Reset() {
+	var v TrackingReason
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTrackingReason) SetTo(v TrackingReason) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTrackingReason) Get() (v TrackingReason, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTrackingReason) Or(d TrackingReason) TrackingReason {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptTrackingRecord returns new OptTrackingRecord with value set to v.
 func NewOptTrackingRecord(v TrackingRecord) OptTrackingRecord {
 	return OptTrackingRecord{
@@ -10890,6 +10936,43 @@ type TimeZoneName string
 
 type Timestamp time.Time
 
+// Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another
+// Workspace already has this host verified (ADR 0038).
+// Ref: #/components/schemas/TrackingReason
+type TrackingReason string
+
+const (
+	TrackingReasonHostTaken TrackingReason = "host_taken"
+)
+
+// AllValues returns all TrackingReason values.
+func (TrackingReason) AllValues() []TrackingReason {
+	return []TrackingReason{
+		TrackingReasonHostTaken,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TrackingReason) MarshalText() ([]byte, error) {
+	switch s {
+	case TrackingReasonHostTaken:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TrackingReason) UnmarshalText(data []byte) error {
+	switch TrackingReason(data) {
+	case TrackingReasonHostTaken:
+		*s = TrackingReasonHostTaken
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only;
 // absent when the instance has no tracking target configured.
 // Ref: #/components/schemas/TrackingRecord
@@ -10902,6 +10985,8 @@ type TrackingRecord struct {
 	Target string `json:"target"`
 	// Where the Tracking domain stands.
 	State TrackingState `json:"state"`
+	// Why the domain is not advancing; absent when nothing holds it back.
+	Reason OptTrackingReason `json:"reason"`
 	// When the Tracking domain was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the state most recently changed (null = never).
@@ -10926,6 +11011,11 @@ func (s *TrackingRecord) GetTarget() string {
 // GetState returns the value of State.
 func (s *TrackingRecord) GetState() TrackingState {
 	return s.State
+}
+
+// GetReason returns the value of Reason.
+func (s *TrackingRecord) GetReason() OptTrackingReason {
+	return s.Reason
 }
 
 // GetLastCheckedAt returns the value of LastCheckedAt.
@@ -10956,6 +11046,11 @@ func (s *TrackingRecord) SetTarget(val string) {
 // SetState sets the value of State.
 func (s *TrackingRecord) SetState(val TrackingState) {
 	s.State = val
+}
+
+// SetReason sets the value of Reason.
+func (s *TrackingRecord) SetReason(val OptTrackingReason) {
+	s.Reason = val
 }
 
 // SetLastCheckedAt sets the value of LastCheckedAt.

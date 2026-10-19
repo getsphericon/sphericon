@@ -17489,6 +17489,18 @@ func (x *SendingDomainScopedCreate) SetNillableTrackingCheckedAt(v *time.Time) *
 	return x
 }
 
+// SetTrackingReason sets the "tracking_reason" field.
+func (x *SendingDomainScopedCreate) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainScopedCreate {
+	x.b.SetTrackingReason(v)
+	return x
+}
+
+// SetNillableTrackingReason sets the "tracking_reason" field if the given value is not nil.
+func (x *SendingDomainScopedCreate) SetNillableTrackingReason(v *sendingdomain.TrackingReason) *SendingDomainScopedCreate {
+	x.b.SetNillableTrackingReason(v)
+	return x
+}
+
 // SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
 func (x *SendingDomainScopedCreate) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedCreate {
 	x.b.SetTrackingStateChangedAt(v)
@@ -17733,6 +17745,24 @@ func (u *SendingDomainScopedUpsert) UpdateTrackingCheckedAt() *SendingDomainScop
 // ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
 func (u *SendingDomainScopedUpsert) ClearTrackingCheckedAt() *SendingDomainScopedUpsert {
 	u.u.SetNull(sendingdomain.FieldTrackingCheckedAt)
+	return u
+}
+
+// SetTrackingReason sets the "tracking_reason" field.
+func (u *SendingDomainScopedUpsert) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainScopedUpsert {
+	u.u.Set(sendingdomain.FieldTrackingReason, v)
+	return u
+}
+
+// UpdateTrackingReason sets the "tracking_reason" field to the value that was provided on create.
+func (u *SendingDomainScopedUpsert) UpdateTrackingReason() *SendingDomainScopedUpsert {
+	u.u.SetExcluded(sendingdomain.FieldTrackingReason)
+	return u
+}
+
+// ClearTrackingReason clears the value of the "tracking_reason" field.
+func (u *SendingDomainScopedUpsert) ClearTrackingReason() *SendingDomainScopedUpsert {
+	u.u.SetNull(sendingdomain.FieldTrackingReason)
 	return u
 }
 
@@ -18053,6 +18083,24 @@ func (x *SendingDomainScopedUpdateOne) ClearTrackingCheckedAt() *SendingDomainSc
 	return x
 }
 
+// SetTrackingReason sets the "tracking_reason" field.
+func (x *SendingDomainScopedUpdateOne) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainScopedUpdateOne {
+	x.b.SetTrackingReason(v)
+	return x
+}
+
+// SetNillableTrackingReason sets the "tracking_reason" field if the given value is not nil.
+func (x *SendingDomainScopedUpdateOne) SetNillableTrackingReason(v *sendingdomain.TrackingReason) *SendingDomainScopedUpdateOne {
+	x.b.SetNillableTrackingReason(v)
+	return x
+}
+
+// ClearTrackingReason clears the value of the "tracking_reason" field.
+func (x *SendingDomainScopedUpdateOne) ClearTrackingReason() *SendingDomainScopedUpdateOne {
+	x.b.ClearTrackingReason()
+	return x
+}
+
 // SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
 func (x *SendingDomainScopedUpdateOne) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedUpdateOne {
 	x.b.SetTrackingStateChangedAt(v)
@@ -18272,6 +18320,24 @@ func (x *SendingDomainScopedUpdate) SetNillableTrackingCheckedAt(v *time.Time) *
 // ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
 func (x *SendingDomainScopedUpdate) ClearTrackingCheckedAt() *SendingDomainScopedUpdate {
 	x.b.ClearTrackingCheckedAt()
+	return x
+}
+
+// SetTrackingReason sets the "tracking_reason" field.
+func (x *SendingDomainScopedUpdate) SetTrackingReason(v sendingdomain.TrackingReason) *SendingDomainScopedUpdate {
+	x.b.SetTrackingReason(v)
+	return x
+}
+
+// SetNillableTrackingReason sets the "tracking_reason" field if the given value is not nil.
+func (x *SendingDomainScopedUpdate) SetNillableTrackingReason(v *sendingdomain.TrackingReason) *SendingDomainScopedUpdate {
+	x.b.SetNillableTrackingReason(v)
+	return x
+}
+
+// ClearTrackingReason clears the value of the "tracking_reason" field.
+func (x *SendingDomainScopedUpdate) ClearTrackingReason() *SendingDomainScopedUpdate {
+	x.b.ClearTrackingReason()
 	return x
 }
 

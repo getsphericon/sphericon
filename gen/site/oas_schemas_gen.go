@@ -3058,6 +3058,52 @@ func (o OptSiteSuppressionChannel) Or(d SiteSuppressionChannel) SiteSuppressionC
 	return d
 }
 
+// NewOptSiteTrackingReason returns new OptSiteTrackingReason with value set to v.
+func NewOptSiteTrackingReason(v SiteTrackingReason) OptSiteTrackingReason {
+	return OptSiteTrackingReason{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteTrackingReason is optional SiteTrackingReason.
+type OptSiteTrackingReason struct {
+	Value SiteTrackingReason
+	Set   bool
+}
+
+// IsSet returns true if OptSiteTrackingReason was set.
+func (o OptSiteTrackingReason) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteTrackingReason) Reset() {
+	var v SiteTrackingReason
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteTrackingReason) SetTo(v SiteTrackingReason) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteTrackingReason) Get() (v SiteTrackingReason, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteTrackingReason) Or(d SiteTrackingReason) SiteTrackingReason {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteTrackingRecord returns new OptSiteTrackingRecord with value set to v.
 func NewOptSiteTrackingRecord(v SiteTrackingRecord) OptSiteTrackingRecord {
 	return OptSiteTrackingRecord{
@@ -12112,6 +12158,43 @@ type SiteTokensListOKApplicationJSON []SiteApiTokenResource
 
 func (*SiteTokensListOKApplicationJSON) siteTokensListRes() {}
 
+// Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another
+// Workspace already has this host verified (ADR 0038).
+// Ref: #/components/schemas/SiteTrackingReason
+type SiteTrackingReason string
+
+const (
+	SiteTrackingReasonHostTaken SiteTrackingReason = "host_taken"
+)
+
+// AllValues returns all SiteTrackingReason values.
+func (SiteTrackingReason) AllValues() []SiteTrackingReason {
+	return []SiteTrackingReason{
+		SiteTrackingReasonHostTaken,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteTrackingReason) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteTrackingReasonHostTaken:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteTrackingReason) UnmarshalText(data []byte) error {
+	switch SiteTrackingReason(data) {
+	case SiteTrackingReasonHostTaken:
+		*s = SiteTrackingReasonHostTaken
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only;
 // absent when the instance has no tracking target configured.
 // Ref: #/components/schemas/SiteTrackingRecord
@@ -12124,6 +12207,8 @@ type SiteTrackingRecord struct {
 	Target string `json:"target"`
 	// Where the Tracking domain stands.
 	State SiteTrackingState `json:"state"`
+	// Why the domain is not advancing; absent when nothing holds it back.
+	Reason OptSiteTrackingReason `json:"reason"`
 	// When the Tracking domain was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the state most recently changed (null = never).
@@ -12148,6 +12233,11 @@ func (s *SiteTrackingRecord) GetTarget() string {
 // GetState returns the value of State.
 func (s *SiteTrackingRecord) GetState() SiteTrackingState {
 	return s.State
+}
+
+// GetReason returns the value of Reason.
+func (s *SiteTrackingRecord) GetReason() OptSiteTrackingReason {
+	return s.Reason
 }
 
 // GetLastCheckedAt returns the value of LastCheckedAt.
@@ -12178,6 +12268,11 @@ func (s *SiteTrackingRecord) SetTarget(val string) {
 // SetState sets the value of State.
 func (s *SiteTrackingRecord) SetState(val SiteTrackingState) {
 	s.State = val
+}
+
+// SetReason sets the value of Reason.
+func (s *SiteTrackingRecord) SetReason(val OptSiteTrackingReason) {
+	s.Reason = val
 }
 
 // SetLastCheckedAt sets the value of LastCheckedAt.

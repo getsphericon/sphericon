@@ -17654,6 +17654,39 @@ func (s *OptTimestamp) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes TrackingReason as json.
+func (o OptTrackingReason) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes TrackingReason from json.
+func (o *OptTrackingReason) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptTrackingReason to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptTrackingReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptTrackingReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes TrackingRecord as json.
 func (o OptTrackingRecord) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -26741,6 +26774,44 @@ func (s *Timestamp) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes TrackingReason as json.
+func (s TrackingReason) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes TrackingReason from json.
+func (s *TrackingReason) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TrackingReason to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch TrackingReason(v) {
+	case TrackingReasonHostTaken:
+		*s = TrackingReasonHostTaken
+	default:
+		*s = TrackingReason(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s TrackingReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TrackingReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *TrackingRecord) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -26767,6 +26838,12 @@ func (s *TrackingRecord) encodeFields(e *jx.Encoder) {
 		s.State.Encode(e)
 	}
 	{
+		if s.Reason.Set {
+			e.FieldStart("reason")
+			s.Reason.Encode(e)
+		}
+	}
+	{
 		if s.LastCheckedAt.Set {
 			e.FieldStart("lastCheckedAt")
 			s.LastCheckedAt.Encode(e)
@@ -26780,13 +26857,14 @@ func (s *TrackingRecord) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfTrackingRecord = [6]string{
+var jsonFieldsNameOfTrackingRecord = [7]string{
 	0: "type",
 	1: "host",
 	2: "target",
 	3: "state",
-	4: "lastCheckedAt",
-	5: "stateChangedAt",
+	4: "reason",
+	5: "lastCheckedAt",
+	6: "stateChangedAt",
 }
 
 // Decode decodes TrackingRecord from json.
@@ -26841,6 +26919,16 @@ func (s *TrackingRecord) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"state\"")
+			}
+		case "reason":
+			if err := func() error {
+				s.Reason.Reset()
+				if err := s.Reason.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"reason\"")
 			}
 		case "lastCheckedAt":
 			if err := func() error {

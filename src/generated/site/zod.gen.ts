@@ -819,6 +819,11 @@ export const zSiteTestWebhookInput = z.object({
 });
 
 /**
+ * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
+ */
+export const zSiteTrackingReason = z.enum(['host_taken']);
+
+/**
  * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`
  */
 export const zSiteTrackingState = z.enum([
@@ -1398,6 +1403,7 @@ export const zSiteTrackingRecord = z.object({
   host: z.string(),
   target: z.string(),
   state: zSiteTrackingState,
+  reason: z.exactOptional(zSiteTrackingReason),
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   stateChangedAt: z.exactOptional(zTimestamp.nullable())
 });

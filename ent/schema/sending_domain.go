@@ -74,6 +74,13 @@ func (SendingDomain) Fields() []ent.Field {
 		field.Time("tracking_checked_at").
 			Optional().
 			Nillable(),
+		// Why the Tracking domain is not advancing although its CNAME is right: host_taken
+		// means another Workspace holds the host (ADR 0038). Set by the verifier when the
+		// claim loses, cleared by the next check that does not lose.
+		field.Enum("tracking_reason").
+			Values("host_taken").
+			Optional().
+			Nillable(),
 		// When tracking_state most recently changed (nil = never changed).
 		field.Time("tracking_state_changed_at").
 			Optional().

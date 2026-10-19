@@ -159,6 +159,32 @@ func TestCheck_secondWorkspaceCannotVerifyHeldHost(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, sendingdomain.TrackingStatePending, row.TrackingState)
 	assert.True(t, clock.Equal(*row.TrackingCheckedAt))
+	require.NotNil(t, row.TrackingReason, "the owner of the claim is told why it stays pending")
+	assert.Equal(t, sendingdomain.TrackingReasonHostTaken, *row.TrackingReason)
+
+	// The holder itself is never held back by anyone.
+	held, err := env.DB.Scoped(fixtures.UmbrellaID).SendingDomain().Get(ctx, fixtures.SendingDomainTrackingServingID)
+	require.NoError(t, err)
+	assert.Nil(t, held.TrackingReason)
+}
+
+// The reason goes away with the next check that does not lose the host: here the CNAME
+// is gone, so the claim is plain pending again.
+func TestCheck_hostTakenReasonIsClearedWhenTheCnameIsAbsent(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.WayneID)
+
+	_, err := verifier(env, t, pointingAtEdge("track.serving.umbrella.test")).Check(ctx, s, fixtures.SendingDomainTrackingClaimID)
+	require.ErrorIs(t, err, trackingdomain.ErrHostTaken)
+
+	state, err := verifier(env, t, nil).Check(ctx, s, fixtures.SendingDomainTrackingClaimID)
+	require.NoError(t, err)
+	assert.Equal(t, sendingdomain.TrackingStatePending, state)
+
+	row, err := s.SendingDomain().Get(ctx, fixtures.SendingDomainTrackingClaimID)
+	require.NoError(t, err)
+	assert.Nil(t, row.TrackingReason)
 }
 
 // An unverified claim never blocks the real owner: the pending claim sits on the host

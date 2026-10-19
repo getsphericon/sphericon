@@ -62,6 +62,32 @@ func TestSiteSendingDomainShowsTheTrackingState(t *testing.T) {
 	assert.True(t, changed.Equal(time.Time(rec.StateChangedAt.Value)))
 }
 
+// A claim that lost its host to another Workspace says so; a record nothing holds back
+// carries no reason.
+func TestSiteSendingDomainShowsWhyTheTrackingHostIsHeldBack(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	params := siteapi.SiteSendingDomainsGetParams{Slug: fixtures.AcmeSlug, ID: fixtures.SendingDomainVerifiedID}
+	reason := func() siteapi.OptSiteTrackingReason {
+		res, err := c.SiteSendingDomainsGet(ctx, params)
+		require.NoError(t, err)
+		got, ok := res.(*siteapi.SiteSendingDomainResource)
+		require.Truef(t, ok, "got %T", res)
+		rec, ok := got.TrackingRecord.Get()
+		require.True(t, ok)
+		return rec.Reason
+	}
+
+	assert.False(t, reason().IsSet())
+
+	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).SendingDomain().UpdateOneID(fixtures.SendingDomainVerifiedID).
+		SetTrackingReason(sendingdomain.TrackingReasonHostTaken).Exec(ctx))
+	got, ok := reason().Get()
+	require.True(t, ok)
+	assert.Equal(t, siteapi.SiteTrackingReasonHostTaken, got)
+}
+
 // With SPHERICON_TRACKING_CNAME_TARGET unset the feature is off: no tracking record.
 func TestSiteSendingDomainHasNoTrackingRecordWithoutATarget(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.TrackingCNAMETarget = "" }))

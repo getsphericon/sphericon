@@ -197,6 +197,9 @@ func trackingRecord(t *sendingdomains.TrackingRecord) externalapi.OptTrackingRec
 		Target: t.Target,
 		State:  externalapi.TrackingState(t.State),
 	}
+	if t.Reason != nil {
+		rec.Reason = externalapi.NewOptTrackingReason(externalapi.TrackingReason(*t.Reason))
+	}
 	if t.CheckedAt != nil {
 		rec.LastCheckedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*t.CheckedAt))
 	}

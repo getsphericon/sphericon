@@ -25066,6 +25066,7 @@ type SendingDomainMutation struct {
 	verified_at                *time.Time
 	tracking_state             *sendingdomain.TrackingState
 	tracking_checked_at        *time.Time
+	tracking_reason            *sendingdomain.TrackingReason
 	tracking_state_changed_at  *time.Time
 	clearedFields              map[string]struct{}
 	workspace                  *int64
@@ -25650,6 +25651,55 @@ func (m *SendingDomainMutation) ResetTrackingCheckedAt() {
 	delete(m.clearedFields, sendingdomain.FieldTrackingCheckedAt)
 }
 
+// SetTrackingReason sets the "tracking_reason" field.
+func (m *SendingDomainMutation) SetTrackingReason(sr sendingdomain.TrackingReason) {
+	m.tracking_reason = &sr
+}
+
+// TrackingReason returns the value of the "tracking_reason" field in the mutation.
+func (m *SendingDomainMutation) TrackingReason() (r sendingdomain.TrackingReason, exists bool) {
+	v := m.tracking_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackingReason returns the old "tracking_reason" field's value of the SendingDomain entity.
+// If the SendingDomain object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SendingDomainMutation) OldTrackingReason(ctx context.Context) (v *sendingdomain.TrackingReason, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackingReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackingReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackingReason: %w", err)
+	}
+	return oldValue.TrackingReason, nil
+}
+
+// ClearTrackingReason clears the value of the "tracking_reason" field.
+func (m *SendingDomainMutation) ClearTrackingReason() {
+	m.tracking_reason = nil
+	m.clearedFields[sendingdomain.FieldTrackingReason] = struct{}{}
+}
+
+// TrackingReasonCleared returns if the "tracking_reason" field was cleared in this mutation.
+func (m *SendingDomainMutation) TrackingReasonCleared() bool {
+	_, ok := m.clearedFields[sendingdomain.FieldTrackingReason]
+	return ok
+}
+
+// ResetTrackingReason resets all changes to the "tracking_reason" field.
+func (m *SendingDomainMutation) ResetTrackingReason() {
+	m.tracking_reason = nil
+	delete(m.clearedFields, sendingdomain.FieldTrackingReason)
+}
+
 // SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
 func (m *SendingDomainMutation) SetTrackingStateChangedAt(t time.Time) {
 	m.tracking_state_changed_at = &t
@@ -25760,7 +25810,7 @@ func (m *SendingDomainMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SendingDomainMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, sendingdomain.FieldCreatedAt)
 	}
@@ -25797,6 +25847,9 @@ func (m *SendingDomainMutation) Fields() []string {
 	if m.tracking_checked_at != nil {
 		fields = append(fields, sendingdomain.FieldTrackingCheckedAt)
 	}
+	if m.tracking_reason != nil {
+		fields = append(fields, sendingdomain.FieldTrackingReason)
+	}
 	if m.tracking_state_changed_at != nil {
 		fields = append(fields, sendingdomain.FieldTrackingStateChangedAt)
 	}
@@ -25832,6 +25885,8 @@ func (m *SendingDomainMutation) Field(name string) (ent.Value, bool) {
 		return m.TrackingState()
 	case sendingdomain.FieldTrackingCheckedAt:
 		return m.TrackingCheckedAt()
+	case sendingdomain.FieldTrackingReason:
+		return m.TrackingReason()
 	case sendingdomain.FieldTrackingStateChangedAt:
 		return m.TrackingStateChangedAt()
 	}
@@ -25867,6 +25922,8 @@ func (m *SendingDomainMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldTrackingState(ctx)
 	case sendingdomain.FieldTrackingCheckedAt:
 		return m.OldTrackingCheckedAt(ctx)
+	case sendingdomain.FieldTrackingReason:
+		return m.OldTrackingReason(ctx)
 	case sendingdomain.FieldTrackingStateChangedAt:
 		return m.OldTrackingStateChangedAt(ctx)
 	}
@@ -25962,6 +26019,13 @@ func (m *SendingDomainMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTrackingCheckedAt(v)
 		return nil
+	case sendingdomain.FieldTrackingReason:
+		v, ok := value.(sendingdomain.TrackingReason)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackingReason(v)
+		return nil
 	case sendingdomain.FieldTrackingStateChangedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -26011,6 +26075,9 @@ func (m *SendingDomainMutation) ClearedFields() []string {
 	if m.FieldCleared(sendingdomain.FieldTrackingCheckedAt) {
 		fields = append(fields, sendingdomain.FieldTrackingCheckedAt)
 	}
+	if m.FieldCleared(sendingdomain.FieldTrackingReason) {
+		fields = append(fields, sendingdomain.FieldTrackingReason)
+	}
 	if m.FieldCleared(sendingdomain.FieldTrackingStateChangedAt) {
 		fields = append(fields, sendingdomain.FieldTrackingStateChangedAt)
 	}
@@ -26036,6 +26103,9 @@ func (m *SendingDomainMutation) ClearField(name string) error {
 		return nil
 	case sendingdomain.FieldTrackingCheckedAt:
 		m.ClearTrackingCheckedAt()
+		return nil
+	case sendingdomain.FieldTrackingReason:
+		m.ClearTrackingReason()
 		return nil
 	case sendingdomain.FieldTrackingStateChangedAt:
 		m.ClearTrackingStateChangedAt()
@@ -26083,6 +26153,9 @@ func (m *SendingDomainMutation) ResetField(name string) error {
 		return nil
 	case sendingdomain.FieldTrackingCheckedAt:
 		m.ResetTrackingCheckedAt()
+		return nil
+	case sendingdomain.FieldTrackingReason:
+		m.ResetTrackingReason()
 		return nil
 	case sendingdomain.FieldTrackingStateChangedAt:
 		m.ResetTrackingStateChangedAt()

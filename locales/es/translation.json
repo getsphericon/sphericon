@@ -894,6 +894,9 @@
       "title": "Dominios de envío",
       "tracking": "Dominio de seguimiento (opcional)",
       "trackingHint": "Pone los enlaces de tu correo en tu propio dominio cuando el CNAME resuelve y HTTPS responde.",
+      "trackingReason": {
+        "hostTaken": "Otro espacio de trabajo ya verificó este host, por lo que aquí sigue pendiente. Use un dominio de envío propio o pida al otro espacio de trabajo que lo libere."
+      },
       "trackingState": {
         "dnsVerified": "DNS verificado",
         "pending": "Pendiente",

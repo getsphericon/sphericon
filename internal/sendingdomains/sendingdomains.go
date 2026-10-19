@@ -216,6 +216,7 @@ type TrackingRecord struct {
 	Host           string
 	Target         string
 	State          sendingdomain.TrackingState
+	Reason         *sendingdomain.TrackingReason
 	CheckedAt      *time.Time
 	StateChangedAt *time.Time
 }
@@ -244,6 +245,7 @@ func (m *Module) Records(d *ent.SendingDomain) DNSRecords {
 			Host:           TrackingHost(d.Domain),
 			Target:         m.trackingTarget,
 			State:          d.TrackingState,
+			Reason:         d.TrackingReason,
 			CheckedAt:      d.TrackingCheckedAt,
 			StateChangedAt: d.TrackingStateChangedAt,
 		}

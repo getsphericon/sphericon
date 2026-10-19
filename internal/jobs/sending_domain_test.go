@@ -63,7 +63,9 @@ func TestNotifySendingDomainUnverified_emailsOwner(t *testing.T) {
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1)
 	assert.Equal(t, fixtures.OwnerJohnEmail, msgs[0].To)
-	assert.Contains(t, msgs[0].Subject, "mail.acme.com")
+	assert.Equal(t, "Action required: sending domain mail.acme.com is no longer verified", msgs[0].Subject)
+	assert.Contains(t, msgs[0].Text, "sphericon._domainkey.mail.acme.com")
+	assert.Contains(t, msgs[0].Text, "is now blocked")
 }
 
 func TestNotifySendingDomainUnverified_nilSenderIsNoop(t *testing.T) {

@@ -32,6 +32,13 @@ your instance has an edge set up for it (`SPHERICON_TRACKING_CNAME_TARGET`, see
      the expected answer, so HTTPS works. New mail from this sending domain now builds its links on
      the tracking domain, so the link host matches your From domain.
 
+If the row stays **Pending** with a red note that another workspace has already verified the host,
+the same `track.<domain>` is held by a different workspace on this instance (a host belongs to one
+workspace). Your CNAME may be perfectly right, but the host cannot be yours until that workspace
+releases it, so use a sending domain of your own. The note is cleared by the next check that no longer
+loses the host, or finds the CNAME gone. The same fact is the `reason` (`host_taken`) of the
+`trackingRecord` in the API.
+
 A certificate takes time to issue, so a domain stays in **DNS verified** until HTTPS answers. Until the
 domain is **Serving**, no message carries a link that could fail TLS. If a later check finds the CNAME
 gone or HTTPS broken, the domain drops back and new mail goes out on the instance's host again; the

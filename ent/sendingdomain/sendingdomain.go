@@ -39,6 +39,8 @@ const (
 	FieldTrackingState = "tracking_state"
 	// FieldTrackingCheckedAt holds the string denoting the tracking_checked_at field in the database.
 	FieldTrackingCheckedAt = "tracking_checked_at"
+	// FieldTrackingReason holds the string denoting the tracking_reason field in the database.
+	FieldTrackingReason = "tracking_reason"
 	// FieldTrackingStateChangedAt holds the string denoting the tracking_state_changed_at field in the database.
 	FieldTrackingStateChangedAt = "tracking_state_changed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -69,6 +71,7 @@ var Columns = []string{
 	FieldVerifiedAt,
 	FieldTrackingState,
 	FieldTrackingCheckedAt,
+	FieldTrackingReason,
 	FieldTrackingStateChangedAt,
 }
 
@@ -123,6 +126,28 @@ func TrackingStateValidator(ts TrackingState) error {
 		return nil
 	default:
 		return fmt.Errorf("sendingdomain: invalid enum value for tracking_state field: %q", ts)
+	}
+}
+
+// TrackingReason defines the type for the "tracking_reason" enum field.
+type TrackingReason string
+
+// TrackingReason values.
+const (
+	TrackingReasonHostTaken TrackingReason = "host_taken"
+)
+
+func (tr TrackingReason) String() string {
+	return string(tr)
+}
+
+// TrackingReasonValidator is a validator for the "tracking_reason" field enum values. It is called by the builders before save.
+func TrackingReasonValidator(tr TrackingReason) error {
+	switch tr {
+	case TrackingReasonHostTaken:
+		return nil
+	default:
+		return fmt.Errorf("sendingdomain: invalid enum value for tracking_reason field: %q", tr)
 	}
 }
 
@@ -192,6 +217,11 @@ func ByTrackingState(opts ...sql.OrderTermOption) OrderOption {
 // ByTrackingCheckedAt orders the results by the tracking_checked_at field.
 func ByTrackingCheckedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTrackingCheckedAt, opts...).ToFunc()
+}
+
+// ByTrackingReason orders the results by the tracking_reason field.
+func ByTrackingReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrackingReason, opts...).ToFunc()
 }
 
 // ByTrackingStateChangedAt orders the results by the tracking_state_changed_at field.
