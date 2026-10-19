@@ -11,7 +11,7 @@ Sending domains**; sphericon generates a DKIM keypair, you publish one TXT recor
 signed by sphericon itself, whichever transport carries it. Sending from an unverified domain is
 rejected on all three surfaces: broadcasts, automations and transactional mail. The one exception is
 a broadcast's test send to your own address, which falls back to the platform's sender until a
-domain is verified ([Quickstart](/guide/quickstart#_3-see-an-email-before-dns)). DNS can take time
+domain is verified ([Quickstart](/guide/quickstart#see-an-email-before-dns)). DNS can take time
 and nothing else in setup waits for it.
 
 ### Tracking domain

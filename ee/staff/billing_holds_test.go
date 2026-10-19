@@ -26,7 +26,7 @@ func TestLiftingABillingHoldLeavesTheSuspensionInForce(t *testing.T) {
 
 	held, ok := h.sendOnAPI(t, "still-held@example.com").(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok, "the suspension still refuses sends")
-	assert.Equal(t, outbound.HoldDetail(outbound.HoldSuspended), held.Detail.Value)
+	assert.Equal(t, outbound.Detail(outbound.HoldSuspended), held.Detail.Value)
 	assert.NotNil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)
 }
 

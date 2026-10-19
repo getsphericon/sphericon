@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -106,9 +107,9 @@ const (
 	RefuseNoSystemSender = "no_system_sender"
 )
 
-// HoldDetail words a Hold reason for a human (an API problem detail). The single
-// place the wording lives, so every surface that reports a Held outcome agrees.
-func HoldDetail(reason string) string {
+// Detail words a Hold or Refuse reason for a human (an API problem detail). The single
+// place the wording lives, so every surface that reports a Held or Refused outcome agrees.
+func Detail(reason string) string {
 	switch reason {
 	case HoldSuspended:
 		return "sending is suspended for this workspace"
@@ -118,6 +119,10 @@ func HoldDetail(reason string) string {
 		return "no default email provider configured"
 	case HoldUnverifiedDomain:
 		return "sender domain is not a verified sending domain"
+	case RefuseOtherRecipient:
+		return "until a sending domain is verified, a test send can only go to your own address"
+	case RefuseNoSystemSender:
+		return "outbound mail is not configured on this instance, so a test send needs a verified sending domain"
 	default:
 		return "sending is currently on hold for this workspace: " + reason
 	}
@@ -140,14 +145,13 @@ type Result struct {
 	Reason string
 	// MessageID is the Outbound message row; zero when Held (nothing was recorded).
 	MessageID int64
-	// Wait is, for a Deferral, how long until the Send rate limit has capacity again.
-	Wait time.Duration
 	// Replayed is true when the Outcome was read back from an earlier attempt.
 	Replayed bool
 	// From is, for a Test send that was Sent, the From address it went out from.
 	From string
-	// Limit is, for a Test send Deferred by the System sender's caps, the cap that was hit.
-	Limit int
+	// Refusal is, for a Deferral, how long until capacity returns (Wait) and, for a Test
+	// send Deferred by the System sender's caps, the cap that was hit (Limit).
+	ratelimit.Refusal
 }
 
 // Senders resolves a Workspace's email provider adapter (its default Integration).
@@ -173,16 +177,11 @@ type Asker struct {
 }
 
 // TestSendBudget meters Test sends from the System sender, per User and per Workspace
-// (ADR 0041, ADR 0025). TakeTestSend reserves one slot of each and returns the zero Cap when it
-// was granted; otherwise the Cap says how long until a slot frees and which cap was hit.
+// (ADR 0041, ADR 0025). TakeTestSend reserves one slot of each and returns the zero Refusal
+// when it was granted; otherwise the Refusal says how long until a slot frees and which cap
+// was hit.
 type TestSendBudget interface {
-	TakeTestSend(ctx context.Context, userID, workspaceID int64) (Cap, error)
-}
-
-// Cap is a refused TestSendBudget request.
-type Cap struct {
-	Wait  time.Duration
-	Limit int
+	TakeTestSend(ctx context.Context, userID, workspaceID int64) (ratelimit.Refusal, error)
 }
 
 // DefaultLease is how long a pending claim blocks other attempts before a retry may
@@ -375,7 +374,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		// Busy, not blocked: drop the claim so the retry starts clean and no attempt
 		// is consumed.
 		_, _ = s.OutboundMessage().Delete().Where(holds(msg)...).Exec(ctx)
-		return Result{Outcome: Deferral, Wait: wait}, nil
+		return Result{Outcome: Deferral, Refusal: ratelimit.Refusal{Wait: wait}}, nil
 	}
 
 	receipt, err := g.sender.Send(ctx, built.msg)
@@ -393,7 +392,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 			// Transactional mail never defers (ADR 0023): it falls through to the
 			// retryable error below, which releases the claim for the caller's retry.
 			_, _ = s.OutboundMessage().Delete().Where(holds(msg)...).Exec(ctx)
-			return Result{Outcome: Deferral, Wait: wait}, nil
+			return Result{Outcome: Deferral, Refusal: ratelimit.Refusal{Wait: wait}}, nil
 		}
 		m.release(ctx, s, msg)
 		return Result{}, fmt.Errorf("outbound: send to %s: %w", dest, err)
@@ -505,11 +504,7 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, fro
 	// The effective From is the Request's, else the Integration's configured one —
 	// the address that will really go on the wire, so the domain gate and the
 	// Sending-domain stamp agree with the DKIM signer.
-	from, name := fromEmail, fromName
-	if d, ok := sender.(messaging.DefaultFromer); ok {
-		df, dn := d.DefaultFrom()
-		from, name = messaging.FirstNonEmpty(from, df), messaging.FirstNonEmpty(name, dn)
-	}
+	from, name := effectiveFrom(sender, fromEmail, fromName)
 	verified, err := messaging.HasVerifiedSendingDomain(ctx, s, from)
 	if err != nil {
 		return gateResult{}, fmt.Errorf("outbound: check sending domain: %w", err)
@@ -522,6 +517,16 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, fro
 		return gateResult{}, fmt.Errorf("outbound: load integration: %w", err)
 	}
 	return gateResult{sender: sender, integration: integ, from: from, fromName: name, domain: messaging.DomainOf(from)}, nil
+}
+
+// effectiveFrom is the From the message goes out with: the given one, else the sender's
+// configured default.
+func effectiveFrom(sender messaging.EmailSender, from, name string) (string, string) {
+	if d, ok := sender.(messaging.DefaultFromer); ok {
+		df, dn := d.DefaultFrom()
+		return messaging.FirstNonEmpty(from, df), messaging.FirstNonEmpty(name, dn)
+	}
+	return from, name
 }
 
 func replayResult(msg *ent.OutboundMessage) Result {
@@ -700,15 +705,11 @@ type TestRequest struct {
 // TestSubjectPrefix marks a preview send so it is never mistaken for the real mailing.
 const TestSubjectPrefix = "[Test] "
 
-// TestReport is what a Broadcast's Test send did, worded for a human.
+// TestReport is what a Broadcast's Test send did, worded for a human: the Result, plus
+// Detail, "" when the message was sent and otherwise why it was not.
 type TestReport struct {
-	// Detail is "" when the message was sent, otherwise why it was not.
+	Result
 	Detail string
-	// From is the address a sent message went out from.
-	From string
-	// RetryAfter and Limit are set when the System sender's caps refused it.
-	RetryAfter time.Duration
-	Limit      int
 }
 
 // SendBroadcastTest sends the Broadcast to one address with sample merge data for
@@ -725,34 +726,18 @@ func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Br
 		FromName:  lo.FromPtr(b.FromName),
 		Asker:     asker,
 	})
+	report := TestReport{Result: res}
 	switch {
 	case err != nil:
-		return TestReport{Detail: "send failed: " + err.Error()}
-	case res.Outcome == Sent:
-		return TestReport{From: res.From}
-	case res.Outcome == Held:
-		return TestReport{Detail: HoldDetail(res.Reason)}
-	case res.Outcome == Refused:
-		return TestReport{Detail: refusalDetail(res.Reason)}
+		report.Detail = "send failed: " + err.Error()
+	case res.Outcome == Held, res.Outcome == Refused:
+		report.Detail = Detail(res.Reason)
 	case res.Outcome == Deferral:
-		return TestReport{
-			Detail:     "too many test sends from the system sender, try again later",
-			RetryAfter: res.Wait, Limit: res.Limit,
-		}
-	default: // Failed: the content did not render
-		return TestReport{Detail: res.Reason}
+		report.Detail = "too many test sends from the system sender, try again later"
+	case res.Outcome == Failed: // the content did not render
+		report.Detail = res.Reason
 	}
-}
-
-func refusalDetail(reason string) string {
-	switch reason {
-	case RefuseOtherRecipient:
-		return "until a sending domain is verified, a test send can only go to your own address"
-	case RefuseNoSystemSender:
-		return "outbound mail is not configured on this instance, so a test send needs a verified sending domain"
-	default:
-		return "test send refused: " + reason
-	}
+	return report
 }
 
 // SendTest sends one message for an author to preview. The author names the
@@ -788,18 +773,30 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 		return Result{Outcome: Held, Reason: g.hold}, nil
 	}
 	to := eligibility.NormalizeDestination(req.To)
-	built, err := m.compose(ctx, s, g.domain, Request{Subject: req.Subject, Body: req.Body, Variables: req.Variables}, to, ws)
+	msg, err := m.composeTest(ctx, s, ws, g.domain, req, to)
 	if err != nil {
 		return Result{Outcome: Failed, Reason: err.Error()}, nil
 	}
-	built.msg.From, built.msg.FromName, built.msg.To = g.from, g.fromName, to
-	if _, err := g.sender.Send(ctx, built.msg); err != nil {
+	return sendTestMessage(ctx, g.sender, msg, g.from, g.fromName, to)
+}
+
+// composeTest renders a Test send's content for to: no unsubscribe, no tracking.
+func (m *Module) composeTest(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, domain string, req TestRequest, to string) (messaging.EmailMessage, error) {
+	built, err := m.compose(ctx, s, domain, Request{Subject: req.Subject, Body: req.Body, Variables: req.Variables}, to, ws)
+	return built.msg, err
+}
+
+// sendTestMessage sends a rendered Test message from from and reports it Sent. No Outbound
+// message is recorded.
+func sendTestMessage(ctx context.Context, sender messaging.EmailSender, msg messaging.EmailMessage, from, name, to string) (Result, error) {
+	msg.From, msg.FromName, msg.To = from, name, to
+	if _, err := sender.Send(ctx, msg); err != nil {
 		if errors.Is(err, messaging.ErrUnverifiedSendingDomain) {
 			return Result{Outcome: Held, Reason: HoldUnverifiedDomain}, nil
 		}
 		return Result{}, fmt.Errorf("outbound: test send to %s: %w", to, err)
 	}
-	return Result{Outcome: Sent, From: g.from}, nil
+	return Result{Outcome: Sent, From: from}, nil
 }
 
 // sendTestFromSystem is the Test send of a Workspace with no verified Sending domain.
@@ -819,30 +816,23 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 		return Result{Outcome: Refused, Reason: RefuseNoSystemSender}, nil
 	}
 	// Render before taking a slot: content that cannot render never costs the budget.
-	built, err := m.compose(ctx, s, "", Request{Subject: req.Subject, Body: req.Body, Variables: req.Variables}, to, ws)
+	msg, err := m.composeTest(ctx, s, ws, "", req, to)
 	if err != nil {
 		return Result{Outcome: Failed, Reason: err.Error()}, nil
 	}
 	// A System sender that names no From cannot send: refuse before a slot is taken.
-	from, name := "", ""
-	if d, ok := m.system.(messaging.DefaultFromer); ok {
-		from, name = d.DefaultFrom()
-	}
+	from, name := effectiveFrom(m.system, "", "")
 	if from == "" {
 		return Result{Outcome: Refused, Reason: RefuseNoSystemSender}, nil
 	}
 	if m.testBudget != nil {
-		c, err := m.testBudget.TakeTestSend(ctx, req.Asker.UserID, s.WorkspaceID())
+		refusal, err := m.testBudget.TakeTestSend(ctx, req.Asker.UserID, s.WorkspaceID())
 		if err != nil {
 			return Result{}, fmt.Errorf("outbound: test send budget: %w", err)
 		}
-		if c.Wait > 0 {
-			return Result{Outcome: Deferral, Wait: c.Wait, Limit: c.Limit}, nil
+		if refusal.Wait > 0 {
+			return Result{Outcome: Deferral, Refusal: refusal}, nil
 		}
 	}
-	built.msg.From, built.msg.FromName, built.msg.To = from, name, to
-	if _, err := m.system.Send(ctx, built.msg); err != nil {
-		return Result{}, fmt.Errorf("outbound: system test send to %s: %w", to, err)
-	}
-	return Result{Outcome: Sent, From: from}, nil
+	return sendTestMessage(ctx, m.system, msg, from, name, to)
 }

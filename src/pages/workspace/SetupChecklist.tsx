@@ -12,42 +12,41 @@ import { SetupDomainStep } from './SetupDomainStep.tsx'
 
 type StepKey = keyof SiteSetupProgress['steps']
 
-const STEP_ORDER: StepKey[] = ['integration', 'sendingDomain', 'contact', 'sentEmail']
+// The steps in the order the checklist shows them, each with the existing page where it is done.
+const STEPS = [
+  { key: 'integration', to: settingsRoute.to },
+  { key: 'sendingDomain', to: settingsRoute.to },
+  { key: 'contact', to: contactsRoute.to },
+  { key: 'sentEmail', to: broadcastsCreateRoute.to },
+] as const satisfies readonly { key: StepKey; to: string }[]
+
+const STATUS_ICON = {
+  done: { color: 'teal', variant: 'filled', Icon: IconCheck },
+  pending: { color: 'yellow', variant: 'filled', Icon: IconClock },
+  todo: { color: 'gray', variant: 'light', Icon: IconCircle },
+} as const satisfies Record<SiteSetupStepStatus, unknown>
 
 function StatusIcon({ status }: { status: SiteSetupStepStatus }) {
-  if (status === 'done') {
-    return (
-      <ThemeIcon color="teal" radius="xl" size="md">
-        <IconCheck size={14} />
-      </ThemeIcon>
-    )
-  }
-  if (status === 'pending') {
-    return (
-      <ThemeIcon color="yellow" radius="xl" size="md">
-        <IconClock size={14} />
-      </ThemeIcon>
-    )
-  }
+  const { color, variant, Icon } = STATUS_ICON[status]
   return (
-    <ThemeIcon color="gray" variant="light" radius="xl" size="md">
-      <IconCircle size={14} />
+    <ThemeIcon color={color} variant={variant} radius="xl" size="md">
+      <Icon size={14} />
     </ThemeIcon>
   )
 }
 
-// Each step links to the existing page where it is done.
-const STEP_TARGET = {
-  integration: settingsRoute.to,
-  sendingDomain: settingsRoute.to,
-  contact: contactsRoute.to,
-  sentEmail: broadcastsCreateRoute.to,
-} as const
-
-function StepLink({ step, slug }: { step: StepKey; slug: string }) {
+function StepLink({
+  step,
+  to,
+  slug,
+}: {
+  step: StepKey
+  to: (typeof STEPS)[number]['to']
+  slug: string
+}) {
   const { t } = useTranslation()
   return (
-    <ButtonLink to={STEP_TARGET[step]} params={{ slug }} variant="default" size="xs">
+    <ButtonLink to={to} params={{ slug }} variant="default" size="xs">
       {t(($) => $.setupChecklist.steps[step].action)}
     </ButtonLink>
   )
@@ -89,7 +88,7 @@ export function SetupChecklist({
             </Button>
           )}
         </Group>
-        {STEP_ORDER.map((step) => {
+        {STEPS.map(({ key: step, to }) => {
           const status = checklist.steps[step]
           return (
             <Group key={step} justify="space-between" align="center" wrap="wrap" gap="sm">
@@ -117,7 +116,7 @@ export function SetupChecklist({
                   )}
                 </Stack>
               </Group>
-              {status !== 'done' && <StepLink step={step} slug={slug} />}
+              {status !== 'done' && <StepLink step={step} to={to} slug={slug} />}
             </Group>
           )
         })}
