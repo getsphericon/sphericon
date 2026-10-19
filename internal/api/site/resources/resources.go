@@ -36,6 +36,7 @@ import (
 // goverter:extend exportJSON
 // goverter:extend eventProperties
 // goverter:extend templateDoc
+// goverter:extend broadcastDoc
 // goverter:extend broadcastStats
 // goverter:extend automationSteps
 // goverter:extend segmentDefinition
@@ -287,6 +288,23 @@ func templateDoc(doc json.RawMessage) siteapi.OptNilSiteEmailTemplateResourceDoc
 		out[k] = jx.Raw(v)
 	}
 	return siteapi.NewOptNilSiteEmailTemplateResourceDoc(out)
+}
+
+// broadcastDoc is a Broadcast's stored editor document as the opaque object of the contract; a
+// Broadcast written as HTML has none.
+func broadcastDoc(doc json.RawMessage) siteapi.OptNilSiteBroadcastResourceDoc {
+	if len(doc) == 0 {
+		return siteapi.OptNilSiteBroadcastResourceDoc{}
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(doc, &fields); err != nil {
+		return siteapi.OptNilSiteBroadcastResourceDoc{}
+	}
+	out := make(siteapi.SiteBroadcastResourceDoc, len(fields))
+	for k, v := range fields {
+		out[k] = jx.Raw(v)
+	}
+	return siteapi.NewOptNilSiteBroadcastResourceDoc(out)
 }
 
 func eventProperties(m map[string]any) siteapi.OptNilSiteEventResourceProperties {

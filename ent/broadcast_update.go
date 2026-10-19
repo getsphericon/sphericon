@@ -4,12 +4,14 @@ package ent
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -130,6 +132,44 @@ func (_u *BroadcastUpdate) SetNillableBody(v *string) *BroadcastUpdate {
 	if v != nil {
 		_u.SetBody(*v)
 	}
+	return _u
+}
+
+// SetDoc sets the "doc" field.
+func (_u *BroadcastUpdate) SetDoc(v jsontext.Value) *BroadcastUpdate {
+	_u.mutation.SetDoc(v)
+	return _u
+}
+
+// AppendDoc appends value to the "doc" field.
+func (_u *BroadcastUpdate) AppendDoc(v jsontext.Value) *BroadcastUpdate {
+	_u.mutation.AppendDoc(v)
+	return _u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (_u *BroadcastUpdate) ClearDoc() *BroadcastUpdate {
+	_u.mutation.ClearDoc()
+	return _u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (_u *BroadcastUpdate) SetEditorVersion(v string) *BroadcastUpdate {
+	_u.mutation.SetEditorVersion(v)
+	return _u
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableEditorVersion(v *string) *BroadcastUpdate {
+	if v != nil {
+		_u.SetEditorVersion(*v)
+	}
+	return _u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (_u *BroadcastUpdate) ClearEditorVersion() *BroadcastUpdate {
+	_u.mutation.ClearEditorVersion()
 	return _u
 }
 
@@ -625,6 +665,23 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Doc(); ok {
+		_spec.SetField(broadcast.FieldDoc, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedDoc(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, broadcast.FieldDoc, value)
+		})
+	}
+	if _u.mutation.DocCleared() {
+		_spec.ClearField(broadcast.FieldDoc, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.EditorVersion(); ok {
+		_spec.SetField(broadcast.FieldEditorVersion, field.TypeString, value)
+	}
+	if _u.mutation.EditorVersionCleared() {
+		_spec.ClearField(broadcast.FieldEditorVersion, field.TypeString)
+	}
 	if value, ok := _u.mutation.BodyText(); ok {
 		_spec.SetField(broadcast.FieldBodyText, field.TypeString, value)
 	}
@@ -910,6 +967,44 @@ func (_u *BroadcastUpdateOne) SetNillableBody(v *string) *BroadcastUpdateOne {
 	if v != nil {
 		_u.SetBody(*v)
 	}
+	return _u
+}
+
+// SetDoc sets the "doc" field.
+func (_u *BroadcastUpdateOne) SetDoc(v jsontext.Value) *BroadcastUpdateOne {
+	_u.mutation.SetDoc(v)
+	return _u
+}
+
+// AppendDoc appends value to the "doc" field.
+func (_u *BroadcastUpdateOne) AppendDoc(v jsontext.Value) *BroadcastUpdateOne {
+	_u.mutation.AppendDoc(v)
+	return _u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (_u *BroadcastUpdateOne) ClearDoc() *BroadcastUpdateOne {
+	_u.mutation.ClearDoc()
+	return _u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (_u *BroadcastUpdateOne) SetEditorVersion(v string) *BroadcastUpdateOne {
+	_u.mutation.SetEditorVersion(v)
+	return _u
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableEditorVersion(v *string) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetEditorVersion(*v)
+	}
+	return _u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (_u *BroadcastUpdateOne) ClearEditorVersion() *BroadcastUpdateOne {
+	_u.mutation.ClearEditorVersion()
 	return _u
 }
 
@@ -1434,6 +1529,23 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	}
 	if value, ok := _u.mutation.Body(); ok {
 		_spec.SetField(broadcast.FieldBody, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Doc(); ok {
+		_spec.SetField(broadcast.FieldDoc, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedDoc(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, broadcast.FieldDoc, value)
+		})
+	}
+	if _u.mutation.DocCleared() {
+		_spec.ClearField(broadcast.FieldDoc, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.EditorVersion(); ok {
+		_spec.SetField(broadcast.FieldEditorVersion, field.TypeString, value)
+	}
+	if _u.mutation.EditorVersionCleared() {
+		_spec.ClearField(broadcast.FieldEditorVersion, field.TypeString)
 	}
 	if value, ok := _u.mutation.BodyText(); ok {
 		_spec.SetField(broadcast.FieldBodyText, field.TypeString, value)

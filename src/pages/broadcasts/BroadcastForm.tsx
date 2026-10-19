@@ -1,7 +1,10 @@
-import { Alert, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Select, Stack, TextInput } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
+import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteSegmentsListOptions,
@@ -11,6 +14,7 @@ import type { SiteCreateBroadcastInput } from '../../generated/site/types.gen.ts
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$slug/broadcasts/index.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$slug/route.tsx'
+import { docCodec } from '../../utils/messageDoc.ts'
 
 export function BroadcastForm({
   form,
@@ -33,6 +37,17 @@ export function BroadcastForm({
   )
   const templates = templatesQuery.data?.items ?? []
 
+  // The form holds the document as JSON text; a blank or unreadable text is no document.
+  const docText = form.values.doc
+  const doc = useMemo(() => {
+    const parsed = docCodec.safeParse(docText)
+    return parsed.success ? parsed.data : null
+  }, [docText])
+  // The editor reads its content once when it mounts, so a copied Template remounts it.
+  const [editorKey, setEditorKey] = useState(0)
+
+  // A copy, never a reference (ADR 0003): the Template's subject, document and body are written
+  // into the form, and editing the Template afterwards changes nothing here.
   const applyTemplate = (id: string | null) => {
     const tpl = templates.find((x) => x.id === id)
     if (!tpl) {
@@ -42,10 +57,30 @@ export function BroadcastForm({
       form.setFieldValue('subject', tpl.subject)
     }
     form.setFieldValue('body', tpl.body)
+    form.setFieldValue('doc', tpl.doc ? z.encode(docCodec, tpl.doc) : '')
+    setEditorKey((key) => key + 1)
+  }
+
+  // A message written in the editor is its document and the server builds the body; sending
+  // both is a 422.
+  const submit = (payload: SiteCreateBroadcastInput) => {
+    const { doc: written, name, subject, fromName, fromEmail, segmentId } = payload
+    onSubmit(
+      written
+        ? {
+            name,
+            doc: written,
+            ...(subject !== undefined && { subject }),
+            ...(fromName !== undefined && { fromName }),
+            ...(fromEmail !== undefined && { fromEmail }),
+            ...(segmentId !== undefined && { segmentId }),
+          }
+        : payload,
+    )
   }
 
   return (
-    <form onSubmit={form.onSubmit(onSubmit)}>
+    <form onSubmit={form.onSubmit(submit)}>
       <Stack>
         <TextInput
           label={t(($) => $.broadcasts.nameLabel)}
@@ -85,12 +120,18 @@ export function BroadcastForm({
           />
         ) : null}
 
-        <Textarea
-          label={t(($) => $.broadcasts.bodyLabel)}
-          description={t(($) => $.broadcasts.bodyHint)}
-          autosize
-          minRows={12}
-          {...form.getInputProps('body')}
+        <MessageEditor
+          key={editorKey}
+          doc={doc}
+          body={form.values.body ?? ''}
+          onChange={(edit) => {
+            if ('doc' in edit) {
+              form.setFieldValue('doc', z.encode(docCodec, edit.doc))
+            } else {
+              form.setFieldValue('doc', '')
+              form.setFieldValue('body', edit.body)
+            }
+          }}
         />
 
         <Group justify="flex-end">

@@ -274,6 +274,7 @@ export const zSiteCreateBroadcastInput = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -857,6 +858,7 @@ export const zSiteUpdateBroadcastInput = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -1206,6 +1208,8 @@ export const zSiteBroadcastResource = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.string(),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  editorVersion: z.exactOptional(z.string().nullable()),
   bodyText: z.string(),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable()),

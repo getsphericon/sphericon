@@ -2873,6 +2873,56 @@ func (s *OptNilSiteBroadcastProgress) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteBroadcastResourceDoc as json.
+func (o OptNilSiteBroadcastResourceDoc) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SiteBroadcastResourceDoc from json.
+func (o *OptNilSiteBroadcastResourceDoc) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilSiteBroadcastResourceDoc to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v SiteBroadcastResourceDoc
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	o.Value = make(SiteBroadcastResourceDoc)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilSiteBroadcastResourceDoc) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilSiteBroadcastResourceDoc) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteContactResourceCustomFields as json.
 func (o OptNilSiteContactResourceCustomFields) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -3587,6 +3637,40 @@ func (s *OptSiteAutomationStepDoc) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteCreateBroadcastInputDoc as json.
+func (o OptSiteCreateBroadcastInputDoc) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SiteCreateBroadcastInputDoc from json.
+func (o *OptSiteCreateBroadcastInputDoc) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSiteCreateBroadcastInputDoc to nil")
+	}
+	o.Set = true
+	o.Value = make(SiteCreateBroadcastInputDoc)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSiteCreateBroadcastInputDoc) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSiteCreateBroadcastInputDoc) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteCreateEmailTemplateInputDoc as json.
 func (o OptSiteCreateEmailTemplateInputDoc) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -3849,6 +3933,40 @@ func (s OptSiteTrackingRecord) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptSiteTrackingRecord) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteUpdateBroadcastInputDoc as json.
+func (o OptSiteUpdateBroadcastInputDoc) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SiteUpdateBroadcastInputDoc from json.
+func (o *OptSiteUpdateBroadcastInputDoc) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSiteUpdateBroadcastInputDoc to nil")
+	}
+	o.Set = true
+	o.Value = make(SiteUpdateBroadcastInputDoc)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSiteUpdateBroadcastInputDoc) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSiteUpdateBroadcastInputDoc) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -9346,6 +9464,18 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.Body)
 	}
 	{
+		if s.Doc.Set {
+			e.FieldStart("doc")
+			s.Doc.Encode(e)
+		}
+	}
+	{
+		if s.EditorVersion.Set {
+			e.FieldStart("editorVersion")
+			s.EditorVersion.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("bodyText")
 		e.Str(s.BodyText)
 	}
@@ -9403,24 +9533,26 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteBroadcastResource = [17]string{
+var jsonFieldsNameOfSiteBroadcastResource = [19]string{
 	0:  "id",
 	1:  "name",
 	2:  "subject",
 	3:  "fromName",
 	4:  "fromEmail",
 	5:  "body",
-	6:  "bodyText",
-	7:  "segmentId",
-	8:  "integrationId",
-	9:  "status",
-	10: "holdReason",
-	11: "scheduledAt",
-	12: "sentAt",
-	13: "stats",
-	14: "progress",
-	15: "createdAt",
-	16: "updatedAt",
+	6:  "doc",
+	7:  "editorVersion",
+	8:  "bodyText",
+	9:  "segmentId",
+	10: "integrationId",
+	11: "status",
+	12: "holdReason",
+	13: "scheduledAt",
+	14: "sentAt",
+	15: "stats",
+	16: "progress",
+	17: "createdAt",
+	18: "updatedAt",
 }
 
 // Decode decodes SiteBroadcastResource from json.
@@ -9498,8 +9630,28 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"body\"")
 			}
+		case "doc":
+			if err := func() error {
+				s.Doc.Reset()
+				if err := s.Doc.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		case "editorVersion":
+			if err := func() error {
+				s.EditorVersion.Reset()
+				if err := s.EditorVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"editorVersion\"")
+			}
 		case "bodyText":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				v, err := d.Str()
 				s.BodyText = string(v)
@@ -9531,7 +9683,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		case "status":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				if err := s.Status.Decode(d); err != nil {
 					return err
@@ -9571,7 +9723,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sentAt\"")
 			}
 		case "stats":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.Stats.Decode(d); err != nil {
 					return err
@@ -9591,7 +9743,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"progress\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -9601,7 +9753,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[2] |= 1 << 0
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -9620,9 +9772,9 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
-		0b01100111,
-		0b10100010,
-		0b00000001,
+		0b00100111,
+		0b10001001,
+		0b00000110,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -9664,6 +9816,64 @@ func (s *SiteBroadcastResource) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteBroadcastResource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s SiteBroadcastResourceDoc) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s SiteBroadcastResourceDoc) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes SiteBroadcastResourceDoc from json.
+func (s *SiteBroadcastResourceDoc) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteBroadcastResourceDoc to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteBroadcastResourceDoc")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteBroadcastResourceDoc) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteBroadcastResourceDoc) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -12367,6 +12577,12 @@ func (s *SiteCreateBroadcastInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Doc.Set {
+			e.FieldStart("doc")
+			s.Doc.Encode(e)
+		}
+	}
+	{
 		if s.SegmentId.Set {
 			e.FieldStart("segmentId")
 			s.SegmentId.Encode(e)
@@ -12380,14 +12596,15 @@ func (s *SiteCreateBroadcastInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteCreateBroadcastInput = [7]string{
+var jsonFieldsNameOfSiteCreateBroadcastInput = [8]string{
 	0: "name",
 	1: "subject",
 	2: "fromName",
 	3: "fromEmail",
 	4: "body",
-	5: "segmentId",
-	6: "integrationId",
+	5: "doc",
+	6: "segmentId",
+	7: "integrationId",
 }
 
 // Decode decodes SiteCreateBroadcastInput from json.
@@ -12450,6 +12667,16 @@ func (s *SiteCreateBroadcastInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "doc":
+			if err := func() error {
+				s.Doc.Reset()
+				if err := s.Doc.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"doc\"")
 			}
 		case "segmentId":
 			if err := func() error {
@@ -12523,6 +12750,64 @@ func (s *SiteCreateBroadcastInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteCreateBroadcastInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s SiteCreateBroadcastInputDoc) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s SiteCreateBroadcastInputDoc) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes SiteCreateBroadcastInputDoc from json.
+func (s *SiteCreateBroadcastInputDoc) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteCreateBroadcastInputDoc to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteCreateBroadcastInputDoc")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteCreateBroadcastInputDoc) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteCreateBroadcastInputDoc) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -30923,6 +31208,12 @@ func (s *SiteUpdateBroadcastInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Doc.Set {
+			e.FieldStart("doc")
+			s.Doc.Encode(e)
+		}
+	}
+	{
 		if s.SegmentId.Set {
 			e.FieldStart("segmentId")
 			s.SegmentId.Encode(e)
@@ -30936,14 +31227,15 @@ func (s *SiteUpdateBroadcastInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateBroadcastInput = [7]string{
+var jsonFieldsNameOfSiteUpdateBroadcastInput = [8]string{
 	0: "name",
 	1: "subject",
 	2: "fromName",
 	3: "fromEmail",
 	4: "body",
-	5: "segmentId",
-	6: "integrationId",
+	5: "doc",
+	6: "segmentId",
+	7: "integrationId",
 }
 
 // Decode decodes SiteUpdateBroadcastInput from json.
@@ -31004,6 +31296,16 @@ func (s *SiteUpdateBroadcastInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"body\"")
 			}
+		case "doc":
+			if err := func() error {
+				s.Doc.Reset()
+				if err := s.Doc.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"doc\"")
+			}
 		case "segmentId":
 			if err := func() error {
 				s.SegmentId.Reset()
@@ -31044,6 +31346,64 @@ func (s *SiteUpdateBroadcastInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteUpdateBroadcastInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s SiteUpdateBroadcastInputDoc) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s SiteUpdateBroadcastInputDoc) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes SiteUpdateBroadcastInputDoc from json.
+func (s *SiteUpdateBroadcastInputDoc) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteUpdateBroadcastInputDoc to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteUpdateBroadcastInputDoc")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteUpdateBroadcastInputDoc) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteUpdateBroadcastInputDoc) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
