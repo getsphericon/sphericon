@@ -158,6 +158,8 @@ func (s ProblemCode) Validate() error {
 		return nil
 	case "email_verification_required":
 		return nil
+	case "signup_closed":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -664,6 +666,14 @@ func (s *SiteAuthLoginUnauthorized) Validate() error {
 }
 
 func (s *SiteAuthRegisterConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAuthRegisterForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

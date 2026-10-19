@@ -619,6 +619,16 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 	return err == nil, err
 }
 
+// CreateOwner makes a Verified User with its first Workspace and a one-time password
+// (ADR 0042): the way the first Owner of an Instance that closed sign-up comes to exist.
+func (a *App) CreateOwner(ctx context.Context, email, name string) (string, error) {
+	acc, err := do.Invoke[*accounts.Accounts](a.injector)
+	if err != nil {
+		return "", err
+	}
+	return acc.CreateOwner(ctx, email, name)
+}
+
 // CreateStaffMember makes a platform Staff member (ADR 0026) and returns its one-time password:
 // the only way a Staff member comes to exist (there is no signup). It refuses a duplicate
 // email and an instance without the `staff` license.
@@ -1533,7 +1543,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Automations: auto,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, Integrations: integ,
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Analytics: an,
-		RequireEmailVerification: cfg.RequireEmailVerification,
+		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
 	}, nil
 }
 

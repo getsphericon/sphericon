@@ -337,11 +337,21 @@
     "/auth/register": {
       "post": {
         "operationId": "SiteAuth_register",
-        "description": "Create an Unverified User (ADR 0030): no password, no session, no Workspace.\nA verification email with the link to the set-password screen is on its way\n(202), and 202 is the answer for every address, taken or not (ADR 0031): the\nowner of a taken address gets a notice by mail instead. With\n`SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the\nrequest must carry a password (422 otherwise), creates a Verified User with its\nfirst Workspace at once (202, no session: the User signs in next), and a taken\naddress answers 409.",
+        "description": "Create an Unverified User (ADR 0030): no password, no session, no Workspace.\nA verification email with the link to the set-password screen is on its way\n(202), and 202 is the answer for every address, taken or not (ADR 0031): the\nowner of a taken address gets a notice by mail instead. With\n`SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the\nrequest must carry a password (422 otherwise), creates a Verified User with its\nfirst Workspace at once (202, no session: the User signs in next), and a taken\naddress answers 409. An Instance that closed sign-up\n(`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed`\nbefore anything is read or created; accepting an Invitation still works.",
         "parameters": [],
         "responses": {
           "202": {
             "description": "The request has been accepted for processing, but processing has not yet completed."
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "409": {
             "description": "RFC 7807 conflict response",
@@ -8143,7 +8153,7 @@
       },
       "ProblemCode": {
         "type": "string",
-        "enum": ["second_factor_required", "email_verification_required"],
+        "enum": ["second_factor_required", "email_verification_required", "signup_closed"],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
       "ProblemDetails": {

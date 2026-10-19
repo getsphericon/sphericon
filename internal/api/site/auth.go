@@ -19,6 +19,15 @@ import (
 // where the address is proven and the password is set; the Workspace and the welcome
 // email follow that proof (SiteAuthVerifyEmail).
 func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegisterInput) (siteapi.SiteAuthRegisterRes, error) {
+	if !h.signupOpen {
+		v := siteapi.SiteAuthRegisterForbidden(siteapi.ProblemDetails{
+			Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeSignupClosed),
+			Status: siteapi.NewOptInt32(http.StatusForbidden),
+			Title:  siteapi.NewOptString(http.StatusText(http.StatusForbidden)),
+			Detail: siteapi.NewOptString(i18n.T("errors.signup_closed", nil)),
+		})
+		return &v, nil
+	}
 	name := strings.TrimSpace(req.Name)
 	email := strings.TrimSpace(string(req.Email))
 

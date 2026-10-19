@@ -38,6 +38,7 @@
   "errors.password_required": "password is required",
   "errors.register_required": "name and email are required",
   "errors.email_verification_required": "verify your email first: follow the link we sent to your address",
+  "errors.signup_closed": "sign-up is closed on this instance: ask an owner for an invitation",
   "errors.email_exists": "email already exists",
   "errors.invalid_credentials": "invalid email or password",
   "errors.login_challenge_invalid": "the sign-in step expired, sign in again",
