@@ -77,7 +77,34 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	if err := w.recordOutcome(ctx, e, sendErr); err != nil {
 		return err
 	}
+	if limited := rateLimit(sendErr); limited != nil {
+		now := w.now()
+		if now.Sub(job.CreatedAt) >= HookRetryHorizon {
+			return river.JobCancel(sendErr) // a receiver that never lets up ends the delivery too
+		}
+		return river.JobSnooze(HookSnooze(limited.RetryAfter, now))
+	}
 	return sendErr
+}
+
+// NextRetry is the delivery's retry policy (HookNextRetry), so a failed delivery is retried
+// for days rather than river's default hours; Dispatch inserts with the matching MaxAttempts.
+func (w *DeliverWebhookWorker) NextRetry(job *river.Job[DeliverWebhookArgs]) time.Time {
+	if job.AttemptedAt == nil {
+		return time.Time{} // river falls back to its default
+	}
+	return HookNextRetry(*job.AttemptedAt, job.Attempt)
+}
+
+// rateLimit returns the receiver's 429 answer, or nil for any other outcome. A 429 is
+// neither a success nor a failure: the receiver is alive and asking us to slow down.
+func rateLimit(sendErr error) *webhook.DeliveryError {
+	var deliveryErr *webhook.DeliveryError
+	if errors.As(sendErr, &deliveryErr) && deliveryErr.Kind == webhook.KindHTTPStatus &&
+		deliveryErr.Status == http.StatusTooManyRequests {
+		return deliveryErr
+	}
+	return nil
 }
 
 // recordOutcome keeps the endpoint's failure state (ADR 0039): a failed delivery extends
@@ -96,6 +123,9 @@ func (w *DeliverWebhookWorker) recordOutcome(ctx context.Context, e *ent.Webhook
 	}
 	if !errors.As(sendErr, &deliveryErr) {
 		return nil // not a delivery outcome (an unusable secret): nothing to remember
+	}
+	if rateLimit(sendErr) != nil {
+		return nil // a 429 leaves the counters as they are
 	}
 	now := w.now()
 	// The count is incremented in SQL, so workers failing at once do not lose one.
@@ -203,7 +233,7 @@ func (c *Client) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliver
 			EventName:  eventName,
 			DeliveryID: deliveryID,
 			Body:       body,
-		}, &river.InsertOpts{Queue: QueueWebhooks, MaxAttempts: 10}); err != nil {
+		}, &river.InsertOpts{Queue: QueueWebhooks, MaxAttempts: HookMaxAttempts()}); err != nil {
 			return err
 		}
 	}

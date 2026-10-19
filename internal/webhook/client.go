@@ -79,7 +79,7 @@ func Send(ctx context.Context, client Doer, url, secret, eventName, deliveryID s
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBytes))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return statusError(resp.StatusCode)
+		return statusError(resp.StatusCode, resp.Header.Get("Retry-After"))
 	}
 	return nil
 }

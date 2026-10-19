@@ -4,6 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/doyensec/safeurl"
 )
@@ -25,11 +29,13 @@ const (
 )
 
 // DeliveryError is a failed delivery with its closed kind. Status is set only for
-// KindHTTPStatus.
+// KindHTTPStatus. RetryAfter is the receiver's Retry-After header, verbatim, when it sent one
+// (ParseRetryAfter reads it).
 type DeliveryError struct {
-	Kind   ErrorKind
-	Status int
-	cause  error
+	Kind       ErrorKind
+	Status     int
+	RetryAfter string
+	cause      error
 }
 
 func (e *DeliveryError) Error() string {
@@ -41,8 +47,25 @@ func (e *DeliveryError) Error() string {
 
 func (e *DeliveryError) Unwrap() error { return e.cause }
 
-func statusError(status int) *DeliveryError {
-	return &DeliveryError{Kind: KindHTTPStatus, Status: status}
+func statusError(status int, retryAfter string) *DeliveryError {
+	return &DeliveryError{Kind: KindHTTPStatus, Status: status, RetryAfter: retryAfter}
+}
+
+// ParseRetryAfter reads a Retry-After value (RFC 9110: delta-seconds or an HTTP-date) as the
+// wait from now. ok is false for an absent or unreadable value; a date already past is a
+// zero wait.
+func ParseRetryAfter(value string, now time.Time) (wait time.Duration, ok bool) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0, false
+	}
+	if secs, err := strconv.ParseUint(value, 10, 31); err == nil {
+		return time.Duration(secs) * time.Second, true
+	}
+	if at, err := http.ParseTime(value); err == nil {
+		return max(at.Sub(now), 0), true
+	}
+	return 0, false
 }
 
 // transportError classifies an error from the client's Do.
