@@ -273,6 +273,45 @@ reviews accounts above roughly this rate, and mailbox providers start filtering.
 confirm that the `suppression` consumer is current. Fix the source of the audience or the
 unsubscribe flow before sending again, and respond to the provider if they open a review.
 
+## Hosted deployment alarms
+
+The hosted deployment ([ADR 0028](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0028-saas-hosting-terraform-on-aws-ecs-fargate.md))
+has CloudWatch alarms and EventBridge rules in `infra/alarms.tf`. All of them publish to the SNS topic
+`<name>-alarms` (default `sphericon-alarms`), which emails `alarm_email`; an alarm also sends a
+message when it returns to OK. Slack: create an AWS Chatbot channel configuration in the console and
+subscribe it to the topic (Chatbot is not managed by Terraform).
+
+After the first apply the recipient must click the confirmation link AWS emails; until then nothing
+arrives.
+
+| Alarm                                  | Fires when                                                     | First look                                                                                               |
+| -------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `<name>-alb-5xx-rate`                  | more than 5% of requests are 5xx (min. 20 requests) for 10 min | app logs in `/ecs/<name>`; [SphericonSiteErrorRatioHigh](#sphericonsiteerrorratiohigh)                   |
+| `<name>-alb-no-healthy-targets`        | no healthy target for 3 min                                    | the service is down: [SphericonDown](#sphericondown); `/readyz` pings the database                       |
+| `<name>-alb-unhealthy-targets`         | a target fails `/readyz` for 5 min                             | task logs; database reachability                                                                         |
+| `<name>-ecs-no-running-task`           | the service has no running task for 3 min                      | `aws ecs describe-services` events: image pull, secrets, a crash loop                                    |
+| `<name>-ecs-cpu-high`, `-memory-high`  | above 85% for 15 min                                           | raise `task_cpu` / `task_memory` (memory near 100% means an OOM kill is next)                            |
+| `<name>-ecs-deployment-failed` (event) | the deploy circuit breaker rolled the service back             | the new revision's task logs; the service runs the previous revision                                     |
+| `<name>-ecs-task-crashed` (event)      | a task stopped with a non-zero container exit code             | one message per restart: a crash loop floods the channel; read the stopped task's reason                 |
+| `<name>-rds-cpu-high`                  | database CPU above 80% for 15 min                              | Performance Insights; [SphericonDBPoolSaturated](#sphericondbpoolsaturated)                              |
+| `<name>-rds-free-storage-low`          | less than 20% of the storage is free                           | raise `db_allocated_storage` (the volume does not autoscale)                                             |
+| `<name>-rds-connections-high`          | connections above `db_connections_alarm_threshold` (150)       | the connection budget in `infra/ecs.tf`                                                                  |
+| `<name>-ses-bounce-rate`               | SES account bounce rate at 5%                                  | [SphericonEmailBounceRateHigh](#sphericonemailbounceratehigh); AWS reviews at 5%, pauses at 10%          |
+| `<name>-ses-complaint-rate`            | SES account complaint rate at 0.1%                             | [SphericonEmailComplaintRateHigh](#sphericonemailcomplaintratehigh); AWS reviews at 0.1%, pauses at 0.5% |
+
+**Test that an alarm reaches the channel.** After applying, and after any change to the topic or
+the recipient, publish to the topic and force one alarm, then return it to OK:
+
+```sh
+aws sns publish --topic-arn "$(aws sns list-topics --query "Topics[?ends_with(TopicArn, ':sphericon-alarms')].TopicArn | [0]" --output text)" \
+  --subject "Sphericon alarm test" --message "Test message from the runbook."
+aws cloudwatch set-alarm-state --alarm-name sphericon-alb-5xx-rate --state-value ALARM --state-reason "Runbook test"
+aws cloudwatch set-alarm-state --alarm-name sphericon-alb-5xx-rate --state-value OK --state-reason "Runbook test done"
+```
+
+The email for each arrives within a minute (the state is reset by itself at the next evaluation
+anyway). Use `--profile sphericon` with the commands, as in the Terraform runbook.
+
 ## Database restore drill
 
 The hosted database ([ADR 0028](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0028-saas-hosting-terraform-on-aws-ecs-fargate.md))

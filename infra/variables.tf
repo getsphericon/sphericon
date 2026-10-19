@@ -185,3 +185,21 @@ variable "ses_test_recipients" {
   type        = set(string)
   default     = []
 }
+
+# Alarms (alarms.tf).
+
+variable "alarm_email" {
+  description = "Email address subscribed to the alarm topic. AWS sends it one confirmation link: until it is clicked, no alarm reaches it."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.alarm_email))
+    error_message = "Must be an email address."
+  }
+}
+
+variable "db_connections_alarm_threshold" {
+  description = "DatabaseConnections above which the database alarm fires. The default is about 80% of the 190 connections of the db.t4g.small (see the connection budget in ecs.tf); raise it with the instance class."
+  type        = number
+  default     = 150
+}

@@ -60,7 +60,8 @@ the script and never printed. Re-running it is safe.
 Create `infra/production.tfvars` (gitignored) with the plain values, at least:
 
 ```hcl
-image_tag = "0.1.0" # the released version
+image_tag   = "0.1.0"            # the released version
+alarm_email = "ops@example.com"  # receives the CloudWatch alarms (see "Alarms" below)
 ```
 
 Optional: `image_repository` (default `ghcr.io/getsphericon/sphericon`), `otel_service_name`,
@@ -205,6 +206,10 @@ and a password-reset email passing DKIM and SPF need the account owner's access 
 - **Email not delivered.** The SES sandbox accepts only verified recipients until production access
   is granted; check the identity status first. The app uses the SES API
   (`SPHERICON_SYSTEM_EMAIL_PROVIDER=ses`, see the env table in `docs/self-hosting.md`).
+- **No alarm email.** The subscription stays pending until the recipient clicks the confirmation
+  link AWS sends after the first apply (check spam, or `aws sns list-subscriptions-by-topic`: a
+  pending one shows `PendingConfirmation`). See "Alarms" in the
+  [operations runbook](../docs/operations/runbook.md#hosted-deployment-alarms).
 - **State lock errors.** The lock is a `.tflock` object next to the state in the bucket; run one
   person at a time. After a crashed run, `mise run infra -- force-unlock <id>`.
 - **`no credentials for profile`.** `aws login --profile sphericon` (sessions expire).

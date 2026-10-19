@@ -77,6 +77,12 @@ resource "aws_cloudwatch_log_group" "app" {
 
 resource "aws_ecs_cluster" "this" {
   name = var.name
+
+  # Publishes RunningTaskCount, which the no-running-task alarm reads (alarms.tf).
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_ecs_task_definition" "web" {
