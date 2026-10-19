@@ -739,7 +739,6 @@ export default interface Resources {
       "copied": "Copied",
       "copy": "Copy",
       "errorTitle": "Failed to update workspace",
-      "generalTitle": "General",
       "installStatusReceived": "Events are arriving",
       "installStatusTitle": "Installation status",
       "installStatusWaiting": "Waiting for the first event…",
@@ -823,7 +822,7 @@ export default interface Resources {
         "providerLabel": "Provider",
         "saved": "Provider saved",
         "secretKept": "Leave blank to keep the stored secret",
-        "title": "Sending providers"
+        "title": "Providers"
       },
       "loadErrorTitle": "Failed to load workspace",
       "mcp": {
@@ -863,7 +862,7 @@ export default interface Resources {
         "revokeError": "Failed to revoke invitation",
         "roleLabel": "Role",
         "roleUpdateError": "Failed to update role",
-        "title": "Team members"
+        "title": "Members"
       },
       "nameLabel": "Workspace name",
       "nav": {
@@ -903,7 +902,7 @@ export default interface Resources {
         "spf": "SPF (recommended)",
         "spfHint": "Advisory — does not gate sending.",
         "statusColumn": "Status",
-        "title": "Sending domains",
+        "title": "Domains",
         "tracking": "Tracking domain (optional)",
         "trackingHint": "Puts the links in your mail on your own domain once the CNAME resolves and HTTPS answers.",
         "trackingReason": {
@@ -959,7 +958,7 @@ export default interface Resources {
         "secretNotice": "Copy this token now — it won't be shown again."
       },
       "trackingDescription": "Paste this snippet into the <head> of your site to start collecting events.",
-      "trackingTitle": "Tracking snippet",
+      "trackingTitle": "Embed snippet",
       "viewActivity": "Open activity feed",
       "webhooks": {
         "allEvents": "All events",

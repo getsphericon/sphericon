@@ -1,4 +1,4 @@
-import { Box, Button, Group, Stack, Textarea, TextInput, Title } from '@mantine/core'
+import { Box, Button, Group, Stack, Textarea, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useTranslation } from 'react-i18next'
 
@@ -28,9 +28,6 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 
   return (
     <Box>
-      <Title order={4} mb="sm">
-        {t(($) => $.settings.generalTitle)}
-      </Title>
       <form
         onSubmit={form.onSubmit((values) =>
           updateMutation.mutate({
