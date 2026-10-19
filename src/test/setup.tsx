@@ -7,11 +7,13 @@ import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '../i18n.ts'
 import { QueryClient } from '@tanstack/react-query'
-import { afterEach, beforeAll } from 'vitest'
+import { afterEach, beforeAll, beforeEach } from 'vitest'
 
 import { client } from '../generated/site/client.gen.ts'
+import { handleSiteBrandKitGet } from '../generated/site/msw.gen.ts'
 import { client as staffClient } from '../generated/staff/client.gen.ts'
 import { createAppRouter } from '../router.ts'
+import { UNSAVED_BRAND_KIT } from './payloads.ts'
 import { worker } from './worker.ts'
 
 // The app pins the generated client's base URL in src/main.tsx; mirror it here.
@@ -52,6 +54,11 @@ beforeAll(() =>
     },
   }),
 )
+// Every page with a message editor reads the Workspace's Brand kit; a test that is about the kit
+// installs its own handler over this one.
+beforeEach(() => {
+  worker.use(handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }))
+})
 // A test may end before its own requests have reached the worker (the round-trip takes a beat).
 // Give them that beat while the test's handlers are still installed, or they would be answered
 // by the next test's handlers and reported as unmocked there.

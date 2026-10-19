@@ -56,7 +56,6 @@ function captureUpdates(saved: object) {
 }
 
 test('Cancel links back to the templates list of the current workspace', async () => {
-  worker.use(handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }))
   const { screen } = await renderWithRouter(
     <TemplateCreatePage />,
     routeMount(templatesCreateRoute, { slug: 'test' }),

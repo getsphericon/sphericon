@@ -3,7 +3,6 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteAuditGetRetention,
-  handleSiteBrandKitGet,
   handleSiteAuditList,
   handleSiteEventsList,
   handleSiteIntegrationsList,
@@ -19,7 +18,6 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import { Route as activityRoute } from '../../routes/workspaces/$slug/activity.tsx'
 import { Route as settingsRoute } from '../../routes/workspaces/$slug/settings.tsx'
-import { UNSAVED_BRAND_KIT } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -46,7 +44,6 @@ const emptyPage = { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages:
 // embeds the other workspace sections, all empty here.
 function serveWorkspace(totalItems = 0) {
   worker.use(
-    handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }),
     handleSiteMembershipsList({ body: [] }),
     handleSiteUserGetMe({
       body: {
