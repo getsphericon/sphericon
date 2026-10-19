@@ -339,7 +339,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		RequireEmailVerification: cfg.RequireEmailVerification,
 	}, external, mcpHandler, staffHandler)
 	require.NoError(t, err, "build server")
-	internalHandler, err := server.NewInternal(&cfg, edition.Service(bus))
+	internalHandler, err := server.NewInternal(&cfg, client, edition.Service(bus))
 	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{

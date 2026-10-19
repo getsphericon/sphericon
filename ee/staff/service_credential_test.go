@@ -379,7 +379,7 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 func TestWithoutALicenseNothingIsServedAndTheModuleRefuses(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 
-	assert.Nil(t, env.Internal, "no handler for a listener to serve")
+	assert.Equal(t, http.StatusNotFound, getIdentity(t, env.Internal, primary).Code, "the service endpoints are not routed without the license")
 	_, err := env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{Name: "s", Scopes: []staff.Scope{staff.ScopeUsageRead}})
 	require.ErrorIs(t, err, staff.ErrNotLicensed)
 	_, err = env.StaffMembers.RotateServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID, nil)

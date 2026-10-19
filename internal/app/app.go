@@ -286,8 +286,9 @@ func New(env string, opts ...Option) (*App, error) {
 		metrics = telemetry.NewMetricsServer(cfg.MetricsAddr)
 	}
 
-	// The internal listener exists only when an address is configured and the
-	// `staff` license gives it something to serve (ADR 0026).
+	// The internal listener exists only when an address is configured: it always
+	// serves the edge's TLS ask (ADR 0038), the service endpoints only with the
+	// `staff` license (ADR 0026).
 	var internal *sidelistener.Server
 	if cfg.InternalAddr != "" {
 		ih, err := do.Invoke[*internalHandler](injector)
@@ -1198,7 +1199,7 @@ func register(injector do.Injector, env string, o options) {
 	})
 
 	// The handler of the internal listener (ADR 0026): the service endpoints of the
-	// Staff surface. Nil without the `staff` license.
+	// Staff surface (with the `staff` license) and the edge's TLS ask (always).
 	do.Provide(injector, func(i do.Injector) (*internalHandler, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -1212,7 +1213,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		h, err := server.NewInternal(cfg, edition.Service(bus.Bus))
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		h, err := server.NewInternal(cfg, client.Client, edition.Service(bus.Bus))
 		if err != nil {
 			return nil, err
 		}
