@@ -810,6 +810,13 @@ func ScopedEntities() []ScopedEntity {
 				b.SetChannel(src.Channel)
 				b.SetProvider(src.Provider)
 				b.SetConfigEncrypted(src.ConfigEncrypted)
+				if src.Preset != nil {
+					b.SetPreset(*src.Preset)
+				}
+				if !reflect.ValueOf(src.ParamsEncrypted).IsZero() {
+					b.SetParamsEncrypted(src.ParamsEncrypted)
+				}
+				b.SetIngestKey(src.IngestKey + "-replanted")
 				b.SetEnabled(src.Enabled)
 				b.SetIsDefault(src.IsDefault)
 				if src.MaxPerSecond != nil {

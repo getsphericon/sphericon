@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -45,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -253,6 +255,12 @@ func New(env string, opts ...Option) (*App, error) {
 
 	handler, err := do.Invoke[http.Handler](injector)
 	if err != nil {
+		_ = injector.Shutdown()
+		return nil, err
+	}
+
+	// The Presets load at start: a broken custom file stops it here, not on a callback.
+	if _, err := do.Invoke[*preset.Registry](injector); err != nil {
 		_ = injector.Shutdown()
 		return nil, err
 	}
@@ -701,6 +709,21 @@ func register(injector do.Injector, env string, o options) {
 		return cfg, nil
 	})
 
+	// The Presets of the Instance: the built-in ones and the Self-hoster's directory.
+	do.Provide(injector, func(i do.Injector) (*preset.Registry, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		if cfg.PresetsDir == "" {
+			return preset.Load(nil)
+		}
+		if _, err := os.Stat(cfg.PresetsDir); err != nil {
+			return nil, fmt.Errorf("SPHERICON_PRESETS_DIR: %w", err)
+		}
+		return preset.Load(os.DirFS(cfg.PresetsDir))
+	})
+
 	do.Provide(injector, func(i do.Injector) (*sqlDB, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -1069,6 +1092,14 @@ func register(injector do.Injector, env string, o options) {
 	})
 
 	do.Provide(injector, func(i do.Injector) (*integrations.Module, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		presets, err := do.Invoke[*preset.Registry](i)
+		if err != nil {
+			return nil, err
+		}
 		bus, err := do.Invoke[*eventsBus](i)
 		if err != nil {
 			return nil, err
@@ -1085,7 +1116,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return integrations.New(bus.Bus, cipher, catalog, jc.Client), nil
+		return integrations.New(bus.Bus, cipher, catalog, jc.Client, presets, cfg.AppURL), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*sendingdomains.Module, error) {

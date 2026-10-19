@@ -37,13 +37,6 @@ func (Workspace) Fields() []ent.Field {
 			NotEmpty().
 			Unique().
 			Sensitive(),
-		// Secret per-workspace key that routes inbound provider webhooks
-		// (/hooks/{ingest_key}/{provider}, e.g. SES bounce/complaint via SNS).
-		// Distinct from the browser-exposed collect_key.
-		field.String("ingest_key").
-			NotEmpty().
-			Unique().
-			Sensitive(),
 		// Confirmed opt-in policy (ADR 0013). When true, marketing sends require a
 		// Confirmation for the destination (double opt-in); when false (the default),
 		// the subtractive single-opt-in model applies unchanged. Forward-looking:

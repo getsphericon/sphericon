@@ -1,0 +1,138 @@
+# yaml-language-server: $schema=../preset.schema.json
+version: 1
+name: postmark
+description: Postmark bounce and spam complaint webhooks, authenticated with HTTP basic auth.
+params:
+  type: object
+  required: [user, secret]
+  additionalProperties: false
+  properties:
+    user:
+      type: string
+      title: Basic auth user name
+      description: The user name set in the webhook URL, https://user:password@host/hooks/key.
+    secret:
+      type: string
+      title: Basic auth password
+      description: The password set in the webhook URL.
+      writeOnly: true
+# Postmark does not sign webhooks; its documented protection is HTTP basic auth in the URL
+# (and an IP allowlist, which is the network's to do).
+verify:
+  kind: token
+  secret: secret
+  basic: true
+  user: user
+# One webhook per Postmark message stream; a Bounce webhook carries RecordType Bounce and a
+# Spam complaint webhook RecordType SpamComplaint. Types are the names of Postmark's Bounce
+# API table.
+#
+# Mapping, a decision of ours (Postmark documents only HardBounce as hard and SoftBounce and
+# Transient as soft):
+#   permanent bounce  HardBounce, BadEmailAddress (the address is not an address).
+#   transient bounce  Transient, SoftBounce, DnsError (temporary by Postmark's own words),
+#                     Blocked and DMARCPolicy (the sender is refused, not the address) and
+#                     Unknown (cannot be classified, so it never suppresses an address).
+#   ignored           everything else: not a delivery failure of the address (Unsubscribe,
+#                     Subscribe, AutoResponder, AddressChange, SpamNotification,
+#                     OpenRelayTest, VirusNotification, ChallengeVerification) or not a
+#                     provider outcome (ManuallyDeactivated, Unconfirmed, SMTPApiError,
+#                     InboundError, TemplateRenderingFailed).
+# A spam complaint is RecordType SpamComplaint. From is the original sender; its domain is
+# the Sending domain. ID is a number, so it is spelled out as a string.
+transform: |
+  .body as $b
+  | ($b.Type // "") as $type
+  | ([$b.From // "" | ascii_downcase | capture("@(?<d>[a-z0-9.-]+)>?\\s*$").d] | first) as $domain
+  | def failure($kind; $permanent):
+      [{id: ($b.ID | tostring), destination: $b.Email, kind: $kind, permanent: $permanent, sending_domain: $domain}];
+  if $b.RecordType == "SpamComplaint" then failure("complaint"; false)
+  elif $b.RecordType == "Bounce" then
+    if $type | IN("HardBounce", "BadEmailAddress") then failure("bounce"; true)
+    elif $type | IN("Transient", "SoftBounce", "DnsError", "Blocked", "DMARCPolicy", "Unknown") then failure("bounce"; false)
+    else [] end
+  else [] end
+tests:
+  - name: a hard bounce is a permanent bounce
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      headers:
+        Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
+      body: '{"RecordType":"Bounce","MessageStream":"outbound","ID":4323372036854775807,"Type":"HardBounce","TypeCode":1,"Name":"Hard bounce","Email":"Alice@Example.com","From":"News <Hello@News.Example.com>","BouncedAt":"2026-01-01T00:00:00Z"}'
+    expect:
+      failures:
+        - id: '4323372036854775807'
+          destination: alice@example.com
+          kind: bounce
+          permanent: true
+          sending_domain: news.example.com
+  - name: a soft bounce is a transient bounce
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      headers:
+        Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
+      body: '{"RecordType":"Bounce","ID":2,"Type":"SoftBounce","TypeCode":4096,"Email":"bob@example.com","From":"hello@news.example.com","BouncedAt":"2026-01-01T00:00:00Z"}'
+    expect:
+      failures:
+        - id: '2'
+          destination: bob@example.com
+          kind: bounce
+          permanent: false
+          sending_domain: news.example.com
+  - name: a spam complaint is a complaint
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      headers:
+        Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
+      body: '{"RecordType":"SpamComplaint","ID":692560174,"Type":"SpamComplaint","TypeCode":100001,"Email":"margareth@nasa.com","From":"alanturing@computers.com","BouncedAt":"2026-01-01T00:00:00Z"}'
+    expect:
+      failures:
+        - id: '692560174'
+          destination: margareth@nasa.com
+          kind: complaint
+          permanent: false
+          sending_domain: computers.com
+  - name: an unsubscribe request is no failure
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      headers:
+        Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
+      body: '{"RecordType":"Bounce","ID":3,"Type":"Unsubscribe","TypeCode":16,"Email":"carol@example.com","From":"hello@news.example.com"}'
+    expect:
+      failures: []
+  - name: a delivery event is no failure
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      headers:
+        Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay10ZXN0LXRva2VuLTAxMjM0NTY3ODk=
+      body: '{"RecordType":"Delivery","MessageID":"x","Recipient":"carol@example.com"}'
+    expect:
+      failures: []
+  - name: a request with no credentials is refused
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      body: '{"RecordType":"Bounce","ID":1,"Type":"HardBounce","Email":"victim@example.com"}'
+    expect:
+      refused: unauthentic
+  - name: another Integration's token is refused
+    params:
+      user: postmark-user
+      secret: postmark-test-token-0123456789
+    request:
+      headers:
+        Authorization: Basic cG9zdG1hcmstdXNlcjpwb3N0bWFyay1vdGhlci10b2tlbi05ODc2NTQzMjEw
+      body: '{"RecordType":"Bounce","ID":1,"Type":"HardBounce","Email":"victim@example.com"}'
+    expect:
+      refused: unauthentic

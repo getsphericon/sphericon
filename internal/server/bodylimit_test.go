@@ -67,7 +67,7 @@ func jsonRPCPingOfSize(t *testing.T, n int) string {
 // problem and is refused while the body is read, before any signature check.
 func TestSESHookOversizedBodyIsRejected(t *testing.T) {
 	env := testhelper.Setup(t, withSmallBodyCap())
-	rec := servePost(t, env, "/hooks/"+fixtures.AcmeIngestKey+"/ses", `{"Message":"`+strings.Repeat("a", bodyCap)+`"}`, nil)
+	rec := servePost(t, env, "/hooks/"+fixtures.IntegrationAcmeSesIngestKey, `{"Message":"`+strings.Repeat("a", bodyCap)+`"}`, nil)
 	assert.Equal(t, http.StatusRequestEntityTooLarge, rec.Code)
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 }

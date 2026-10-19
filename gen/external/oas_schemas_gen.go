@@ -3487,6 +3487,10 @@ type CreateIntegrationInput struct {
 	// Most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit.
 	MaxPerDay OptNilMaxPerDay        `json:"maxPerDay"`
 	Config    IntegrationConfigInput `json:"config"`
+	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with.
+	Preset OptNilString `json:"preset"`
+	// The Preset's params, validated against its `paramsSchema`: read the schema first.
+	Params OptCreateIntegrationInputParams `json:"params"`
 }
 
 // GetName returns the value of Name.
@@ -3519,6 +3523,16 @@ func (s *CreateIntegrationInput) GetConfig() IntegrationConfigInput {
 	return s.Config
 }
 
+// GetPreset returns the value of Preset.
+func (s *CreateIntegrationInput) GetPreset() OptNilString {
+	return s.Preset
+}
+
+// GetParams returns the value of Params.
+func (s *CreateIntegrationInput) GetParams() OptCreateIntegrationInputParams {
+	return s.Params
+}
+
 // SetName sets the value of Name.
 func (s *CreateIntegrationInput) SetName(val string) {
 	s.Name = val
@@ -3547,6 +3561,28 @@ func (s *CreateIntegrationInput) SetMaxPerDay(val OptNilMaxPerDay) {
 // SetConfig sets the value of Config.
 func (s *CreateIntegrationInput) SetConfig(val IntegrationConfigInput) {
 	s.Config = val
+}
+
+// SetPreset sets the value of Preset.
+func (s *CreateIntegrationInput) SetPreset(val OptNilString) {
+	s.Preset = val
+}
+
+// SetParams sets the value of Params.
+func (s *CreateIntegrationInput) SetParams(val OptCreateIntegrationInputParams) {
+	s.Params = val
+}
+
+// The Preset's params, validated against its `paramsSchema`: read the schema first.
+type CreateIntegrationInputParams map[string]jx.Raw
+
+func (s *CreateIntegrationInputParams) init() CreateIntegrationInputParams {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Request body for creating a segment.
@@ -4597,6 +4633,17 @@ type IntegrationResource struct {
 	SendLimit SendLimitStatus `json:"sendLimit"`
 	// Provider config (secrets redacted).
 	Config IntegrationConfig `json:"config"`
+	// The Preset this Integration's provider callbacks are read with; null when it receives none.
+	Preset NilString `json:"preset"`
+	// The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as
+	// `********`, never its value.
+	Params IntegrationResourceParams `json:"params"`
+	// Names of the secret params that are rotating: a retiring value is still accepted beside the current
+	// one.
+	SecretsRetiring []string `json:"secretsRetiring"`
+	// Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is
+	// an address, not the authentication (the Preset's signature or secret is).
+	HookUrl string `json:"hookUrl"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -4651,6 +4698,26 @@ func (s *IntegrationResource) GetSendLimit() SendLimitStatus {
 // GetConfig returns the value of Config.
 func (s *IntegrationResource) GetConfig() IntegrationConfig {
 	return s.Config
+}
+
+// GetPreset returns the value of Preset.
+func (s *IntegrationResource) GetPreset() NilString {
+	return s.Preset
+}
+
+// GetParams returns the value of Params.
+func (s *IntegrationResource) GetParams() IntegrationResourceParams {
+	return s.Params
+}
+
+// GetSecretsRetiring returns the value of SecretsRetiring.
+func (s *IntegrationResource) GetSecretsRetiring() []string {
+	return s.SecretsRetiring
+}
+
+// GetHookUrl returns the value of HookUrl.
+func (s *IntegrationResource) GetHookUrl() string {
+	return s.HookUrl
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -4713,6 +4780,26 @@ func (s *IntegrationResource) SetConfig(val IntegrationConfig) {
 	s.Config = val
 }
 
+// SetPreset sets the value of Preset.
+func (s *IntegrationResource) SetPreset(val NilString) {
+	s.Preset = val
+}
+
+// SetParams sets the value of Params.
+func (s *IntegrationResource) SetParams(val IntegrationResourceParams) {
+	s.Params = val
+}
+
+// SetSecretsRetiring sets the value of SecretsRetiring.
+func (s *IntegrationResource) SetSecretsRetiring(val []string) {
+	s.SecretsRetiring = val
+}
+
+// SetHookUrl sets the value of HookUrl.
+func (s *IntegrationResource) SetHookUrl(val string) {
+	s.HookUrl = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *IntegrationResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
@@ -4723,9 +4810,23 @@ func (s *IntegrationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*IntegrationResource) integrationsCreateRes() {}
-func (*IntegrationResource) integrationsGetRes()    {}
-func (*IntegrationResource) integrationsUpdateRes() {}
+func (*IntegrationResource) integrationsCreateRes()        {}
+func (*IntegrationResource) integrationsGetRes()           {}
+func (*IntegrationResource) integrationsRegenerateKeyRes() {}
+func (*IntegrationResource) integrationsUpdateRes()        {}
+
+// The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as
+// `********`, never its value.
+type IntegrationResourceParams map[string]jx.Raw
+
+func (s *IntegrationResourceParams) init() IntegrationResourceParams {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 type IntegrationsCreateConflict ProblemDetails
 
@@ -4849,6 +4950,18 @@ func (*IntegrationsListUnauthorized) integrationsListRes() {}
 type IntegrationsListUnprocessableEntity ProblemDetails
 
 func (*IntegrationsListUnprocessableEntity) integrationsListRes() {}
+
+type IntegrationsRegenerateKeyBadRequest ProblemDetails
+
+func (*IntegrationsRegenerateKeyBadRequest) integrationsRegenerateKeyRes() {}
+
+type IntegrationsRegenerateKeyNotFound ProblemDetails
+
+func (*IntegrationsRegenerateKeyNotFound) integrationsRegenerateKeyRes() {}
+
+type IntegrationsRegenerateKeyUnauthorized ProblemDetails
+
+func (*IntegrationsRegenerateKeyUnauthorized) integrationsRegenerateKeyRes() {}
 
 type IntegrationsUpdateBadRequest ProblemDetails
 
@@ -5054,6 +5167,51 @@ func (o NilSendLimitSource) Or(d SendLimitSource) SendLimitSource {
 	return d
 }
 
+// NewNilString returns new NilString with value set to v.
+func NewNilString(v string) NilString {
+	return NilString{
+		Value: v,
+	}
+}
+
+// NilString is nullable string.
+type NilString struct {
+	Value string
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilString) SetTo(v string) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilString) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilString) SetToNull() {
+	o.Null = true
+	var v string
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilString) Get() (v string, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptAuditActorKind returns new OptAuditActorKind with value set to v.
 func NewOptAuditActorKind(v AuditActorKind) OptAuditActorKind {
 	return OptAuditActorKind{
@@ -5140,6 +5298,52 @@ func (o OptBool) Get() (v bool, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptBool) Or(d bool) bool {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptCreateIntegrationInputParams returns new OptCreateIntegrationInputParams with value set to v.
+func NewOptCreateIntegrationInputParams(v CreateIntegrationInputParams) OptCreateIntegrationInputParams {
+	return OptCreateIntegrationInputParams{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCreateIntegrationInputParams is optional CreateIntegrationInputParams.
+type OptCreateIntegrationInputParams struct {
+	Value CreateIntegrationInputParams
+	Set   bool
+}
+
+// IsSet returns true if OptCreateIntegrationInputParams was set.
+func (o OptCreateIntegrationInputParams) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCreateIntegrationInputParams) Reset() {
+	var v CreateIntegrationInputParams
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCreateIntegrationInputParams) SetTo(v CreateIntegrationInputParams) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCreateIntegrationInputParams) Get() (v CreateIntegrationInputParams, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCreateIntegrationInputParams) Or(d CreateIntegrationInputParams) CreateIntegrationInputParams {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6740,6 +6944,173 @@ func (o OptTrackingRecord) Or(d TrackingRecord) TrackingRecord {
 	return d
 }
 
+// NewOptUpdateIntegrationInputParams returns new OptUpdateIntegrationInputParams with value set to v.
+func NewOptUpdateIntegrationInputParams(v UpdateIntegrationInputParams) OptUpdateIntegrationInputParams {
+	return OptUpdateIntegrationInputParams{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUpdateIntegrationInputParams is optional UpdateIntegrationInputParams.
+type OptUpdateIntegrationInputParams struct {
+	Value UpdateIntegrationInputParams
+	Set   bool
+}
+
+// IsSet returns true if OptUpdateIntegrationInputParams was set.
+func (o OptUpdateIntegrationInputParams) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUpdateIntegrationInputParams) Reset() {
+	var v UpdateIntegrationInputParams
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUpdateIntegrationInputParams) SetTo(v UpdateIntegrationInputParams) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUpdateIntegrationInputParams) Get() (v UpdateIntegrationInputParams, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUpdateIntegrationInputParams) Or(d UpdateIntegrationInputParams) UpdateIntegrationInputParams {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks.
+// Ref: #/components/schemas/PresetResource
+type PresetResource struct {
+	// The name an Integration's `preset` refers to.
+	Name string `json:"name"`
+	// What the Preset is for.
+	Description string `json:"description"`
+	// JSON Schema (draft 2020-12) of the `params` an Integration of this Preset takes. A string marked
+	// `writeOnly` is a secret: it is never returned by a read.
+	ParamsSchema PresetResourceParamsSchema `json:"paramsSchema"`
+}
+
+// GetName returns the value of Name.
+func (s *PresetResource) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *PresetResource) GetDescription() string {
+	return s.Description
+}
+
+// GetParamsSchema returns the value of ParamsSchema.
+func (s *PresetResource) GetParamsSchema() PresetResourceParamsSchema {
+	return s.ParamsSchema
+}
+
+// SetName sets the value of Name.
+func (s *PresetResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *PresetResource) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetParamsSchema sets the value of ParamsSchema.
+func (s *PresetResource) SetParamsSchema(val PresetResourceParamsSchema) {
+	s.ParamsSchema = val
+}
+
+// JSON Schema (draft 2020-12) of the `params` an Integration of this Preset takes. A string marked
+// `writeOnly` is a secret: it is never returned by a read.
+type PresetResourceParamsSchema map[string]jx.Raw
+
+func (s *PresetResourceParamsSchema) init() PresetResourceParamsSchema {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Paginated response.
+type PresetsListOK struct {
+	// List of items.
+	Items []PresetResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *PresetsListOK) GetItems() []PresetResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *PresetsListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *PresetsListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *PresetsListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *PresetsListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *PresetsListOK) SetItems(val []PresetResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *PresetsListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *PresetsListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *PresetsListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *PresetsListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+func (*PresetsListOK) presetsListRes() {}
+
 // Request body for previewing a rule definition's audience.
 // Ref: #/components/schemas/PreviewSegmentInput
 type PreviewSegmentInput struct {
@@ -6945,6 +7316,7 @@ func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 }
 
 func (*ProblemDetails) customFieldsListRes() {}
+func (*ProblemDetails) presetsListRes()      {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -7029,73 +7401,75 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
-func (*ProblemDetailsHeaders) authMeGetRes()              {}
-func (*ProblemDetailsHeaders) authTokensBootstrapRes()    {}
-func (*ProblemDetailsHeaders) authTokensCreateRes()       {}
-func (*ProblemDetailsHeaders) authTokensDeleteRes()       {}
-func (*ProblemDetailsHeaders) authTokensListRes()         {}
-func (*ProblemDetailsHeaders) automationsActivateRes()    {}
-func (*ProblemDetailsHeaders) automationsCreateRes()      {}
-func (*ProblemDetailsHeaders) automationsDeactivateRes()  {}
-func (*ProblemDetailsHeaders) automationsDeleteRes()      {}
-func (*ProblemDetailsHeaders) automationsGetRes()         {}
-func (*ProblemDetailsHeaders) automationsListRes()        {}
-func (*ProblemDetailsHeaders) automationsUpdateRes()      {}
-func (*ProblemDetailsHeaders) broadcastsCreateRes()       {}
-func (*ProblemDetailsHeaders) broadcastsDeleteRes()       {}
-func (*ProblemDetailsHeaders) broadcastsGetRes()          {}
-func (*ProblemDetailsHeaders) broadcastsListRes()         {}
-func (*ProblemDetailsHeaders) broadcastsReportRes()       {}
-func (*ProblemDetailsHeaders) broadcastsScheduleRes()     {}
-func (*ProblemDetailsHeaders) broadcastsSetAudienceRes()  {}
-func (*ProblemDetailsHeaders) broadcastsTestSendRes()     {}
-func (*ProblemDetailsHeaders) broadcastsUnscheduleRes()   {}
-func (*ProblemDetailsHeaders) broadcastsUpdateRes()       {}
-func (*ProblemDetailsHeaders) contactsBatchUpsertRes()    {}
-func (*ProblemDetailsHeaders) contactsCreateRes()         {}
-func (*ProblemDetailsHeaders) contactsDeleteRes()         {}
-func (*ProblemDetailsHeaders) contactsGetRes()            {}
-func (*ProblemDetailsHeaders) contactsListRes()           {}
-func (*ProblemDetailsHeaders) contactsUpdateRes()         {}
-func (*ProblemDetailsHeaders) customFieldsListRes()       {}
-func (*ProblemDetailsHeaders) emailsSendRes()             {}
-func (*ProblemDetailsHeaders) eventActionsListRes()       {}
-func (*ProblemDetailsHeaders) eventsBatchSubmitRes()      {}
-func (*ProblemDetailsHeaders) eventsCreateRes()           {}
-func (*ProblemDetailsHeaders) integrationsCreateRes()     {}
-func (*ProblemDetailsHeaders) integrationsDeleteRes()     {}
-func (*ProblemDetailsHeaders) integrationsGetRes()        {}
-func (*ProblemDetailsHeaders) integrationsListRes()       {}
-func (*ProblemDetailsHeaders) integrationsUpdateRes()     {}
-func (*ProblemDetailsHeaders) segmentsCreateRes()         {}
-func (*ProblemDetailsHeaders) segmentsDeleteRes()         {}
-func (*ProblemDetailsHeaders) segmentsGetRes()            {}
-func (*ProblemDetailsHeaders) segmentsListRes()           {}
-func (*ProblemDetailsHeaders) segmentsPreviewRes()        {}
-func (*ProblemDetailsHeaders) segmentsUpdateRes()         {}
-func (*ProblemDetailsHeaders) sendingDomainRatesListRes() {}
-func (*ProblemDetailsHeaders) sendingDomainsCreateRes()   {}
-func (*ProblemDetailsHeaders) sendingDomainsDeleteRes()   {}
-func (*ProblemDetailsHeaders) sendingDomainsGetRes()      {}
-func (*ProblemDetailsHeaders) sendingDomainsListRes()     {}
-func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()   {}
-func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()   {}
-func (*ProblemDetailsHeaders) suppressionsCreateRes()     {}
-func (*ProblemDetailsHeaders) tagsApplyRes()              {}
-func (*ProblemDetailsHeaders) tagsListForContactRes()     {}
-func (*ProblemDetailsHeaders) tagsListRes()               {}
-func (*ProblemDetailsHeaders) tagsRemoveRes()             {}
-func (*ProblemDetailsHeaders) templatesCreateRes()        {}
-func (*ProblemDetailsHeaders) templatesDeleteRes()        {}
-func (*ProblemDetailsHeaders) templatesGetRes()           {}
-func (*ProblemDetailsHeaders) templatesListRes()          {}
-func (*ProblemDetailsHeaders) templatesUpdateRes()        {}
-func (*ProblemDetailsHeaders) unsubscribesCreateRes()     {}
-func (*ProblemDetailsHeaders) webhooksCreateRes()         {}
-func (*ProblemDetailsHeaders) webhooksDeleteRes()         {}
-func (*ProblemDetailsHeaders) webhooksGetRes()            {}
-func (*ProblemDetailsHeaders) webhooksListRes()           {}
-func (*ProblemDetailsHeaders) webhooksUpdateRes()         {}
+func (*ProblemDetailsHeaders) authMeGetRes()                 {}
+func (*ProblemDetailsHeaders) authTokensBootstrapRes()       {}
+func (*ProblemDetailsHeaders) authTokensCreateRes()          {}
+func (*ProblemDetailsHeaders) authTokensDeleteRes()          {}
+func (*ProblemDetailsHeaders) authTokensListRes()            {}
+func (*ProblemDetailsHeaders) automationsActivateRes()       {}
+func (*ProblemDetailsHeaders) automationsCreateRes()         {}
+func (*ProblemDetailsHeaders) automationsDeactivateRes()     {}
+func (*ProblemDetailsHeaders) automationsDeleteRes()         {}
+func (*ProblemDetailsHeaders) automationsGetRes()            {}
+func (*ProblemDetailsHeaders) automationsListRes()           {}
+func (*ProblemDetailsHeaders) automationsUpdateRes()         {}
+func (*ProblemDetailsHeaders) broadcastsCreateRes()          {}
+func (*ProblemDetailsHeaders) broadcastsDeleteRes()          {}
+func (*ProblemDetailsHeaders) broadcastsGetRes()             {}
+func (*ProblemDetailsHeaders) broadcastsListRes()            {}
+func (*ProblemDetailsHeaders) broadcastsReportRes()          {}
+func (*ProblemDetailsHeaders) broadcastsScheduleRes()        {}
+func (*ProblemDetailsHeaders) broadcastsSetAudienceRes()     {}
+func (*ProblemDetailsHeaders) broadcastsTestSendRes()        {}
+func (*ProblemDetailsHeaders) broadcastsUnscheduleRes()      {}
+func (*ProblemDetailsHeaders) broadcastsUpdateRes()          {}
+func (*ProblemDetailsHeaders) contactsBatchUpsertRes()       {}
+func (*ProblemDetailsHeaders) contactsCreateRes()            {}
+func (*ProblemDetailsHeaders) contactsDeleteRes()            {}
+func (*ProblemDetailsHeaders) contactsGetRes()               {}
+func (*ProblemDetailsHeaders) contactsListRes()              {}
+func (*ProblemDetailsHeaders) contactsUpdateRes()            {}
+func (*ProblemDetailsHeaders) customFieldsListRes()          {}
+func (*ProblemDetailsHeaders) emailsSendRes()                {}
+func (*ProblemDetailsHeaders) eventActionsListRes()          {}
+func (*ProblemDetailsHeaders) eventsBatchSubmitRes()         {}
+func (*ProblemDetailsHeaders) eventsCreateRes()              {}
+func (*ProblemDetailsHeaders) integrationsCreateRes()        {}
+func (*ProblemDetailsHeaders) integrationsDeleteRes()        {}
+func (*ProblemDetailsHeaders) integrationsGetRes()           {}
+func (*ProblemDetailsHeaders) integrationsListRes()          {}
+func (*ProblemDetailsHeaders) integrationsRegenerateKeyRes() {}
+func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
+func (*ProblemDetailsHeaders) presetsListRes()               {}
+func (*ProblemDetailsHeaders) segmentsCreateRes()            {}
+func (*ProblemDetailsHeaders) segmentsDeleteRes()            {}
+func (*ProblemDetailsHeaders) segmentsGetRes()               {}
+func (*ProblemDetailsHeaders) segmentsListRes()              {}
+func (*ProblemDetailsHeaders) segmentsPreviewRes()           {}
+func (*ProblemDetailsHeaders) segmentsUpdateRes()            {}
+func (*ProblemDetailsHeaders) sendingDomainRatesListRes()    {}
+func (*ProblemDetailsHeaders) sendingDomainsCreateRes()      {}
+func (*ProblemDetailsHeaders) sendingDomainsDeleteRes()      {}
+func (*ProblemDetailsHeaders) sendingDomainsGetRes()         {}
+func (*ProblemDetailsHeaders) sendingDomainsListRes()        {}
+func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()      {}
+func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()      {}
+func (*ProblemDetailsHeaders) suppressionsCreateRes()        {}
+func (*ProblemDetailsHeaders) tagsApplyRes()                 {}
+func (*ProblemDetailsHeaders) tagsListForContactRes()        {}
+func (*ProblemDetailsHeaders) tagsListRes()                  {}
+func (*ProblemDetailsHeaders) tagsRemoveRes()                {}
+func (*ProblemDetailsHeaders) templatesCreateRes()           {}
+func (*ProblemDetailsHeaders) templatesDeleteRes()           {}
+func (*ProblemDetailsHeaders) templatesGetRes()              {}
+func (*ProblemDetailsHeaders) templatesListRes()             {}
+func (*ProblemDetailsHeaders) templatesUpdateRes()           {}
+func (*ProblemDetailsHeaders) unsubscribesCreateRes()        {}
+func (*ProblemDetailsHeaders) webhooksCreateRes()            {}
+func (*ProblemDetailsHeaders) webhooksDeleteRes()            {}
+func (*ProblemDetailsHeaders) webhooksGetRes()               {}
+func (*ProblemDetailsHeaders) webhooksListRes()              {}
+func (*ProblemDetailsHeaders) webhooksUpdateRes()            {}
 
 // A rate as the (numerator, denominator, rate) triple (ADR 0011). The rate is null when the
 // denominator is zero: an undefined rate is never reported as 0.
@@ -10078,6 +10452,14 @@ type UpdateIntegrationInput struct {
 	// Most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep.
 	MaxPerDay OptNilMaxPerDay              `json:"maxPerDay"`
 	Config    OptNilIntegrationConfigInput `json:"config"`
+	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no
+	// secret carries over.
+	Preset OptNilString `json:"preset"`
+	// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
+	// rotates it (the old one stays valid until retired).
+	Params OptUpdateIntegrationInputParams `json:"params"`
+	// Stop accepting the retiring value of every rotating secret.
+	RetireSecrets OptBool `json:"retireSecrets"`
 }
 
 // GetName returns the value of Name.
@@ -10110,6 +10492,21 @@ func (s *UpdateIntegrationInput) GetConfig() OptNilIntegrationConfigInput {
 	return s.Config
 }
 
+// GetPreset returns the value of Preset.
+func (s *UpdateIntegrationInput) GetPreset() OptNilString {
+	return s.Preset
+}
+
+// GetParams returns the value of Params.
+func (s *UpdateIntegrationInput) GetParams() OptUpdateIntegrationInputParams {
+	return s.Params
+}
+
+// GetRetireSecrets returns the value of RetireSecrets.
+func (s *UpdateIntegrationInput) GetRetireSecrets() OptBool {
+	return s.RetireSecrets
+}
+
 // SetName sets the value of Name.
 func (s *UpdateIntegrationInput) SetName(val OptString) {
 	s.Name = val
@@ -10138,6 +10535,34 @@ func (s *UpdateIntegrationInput) SetMaxPerDay(val OptNilMaxPerDay) {
 // SetConfig sets the value of Config.
 func (s *UpdateIntegrationInput) SetConfig(val OptNilIntegrationConfigInput) {
 	s.Config = val
+}
+
+// SetPreset sets the value of Preset.
+func (s *UpdateIntegrationInput) SetPreset(val OptNilString) {
+	s.Preset = val
+}
+
+// SetParams sets the value of Params.
+func (s *UpdateIntegrationInput) SetParams(val OptUpdateIntegrationInputParams) {
+	s.Params = val
+}
+
+// SetRetireSecrets sets the value of RetireSecrets.
+func (s *UpdateIntegrationInput) SetRetireSecrets(val OptBool) {
+	s.RetireSecrets = val
+}
+
+// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
+// rotates it (the old one stays valid until retired).
+type UpdateIntegrationInputParams map[string]jx.Raw
+
+func (s *UpdateIntegrationInputParams) init() UpdateIntegrationInputParams {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Request body for updating a segment.

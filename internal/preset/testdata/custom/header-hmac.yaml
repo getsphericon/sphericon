@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=../../preset.schema.json
+version: 1
+name: header-hmac
+params:
+  type: object
+  required: [secret]
+  properties:
+    secret: { type: string, writeOnly: true }
+verify:
+  kind: hmac_header
+  secret: secret
+  header: X-Signature
+  prefix: 'sha256='
+  signed: '{header.X-Timestamp}.{body}'
+  algorithm: sha256
+  encoding: hex
+  timestamp_header: X-Timestamp
+  tolerance: 5m
+transform: |
+  []
+tests:
+  - name: a signed request passes
+    now: '2026-01-01T00:00:00Z'
+    params: &params { secret: header-secret }
+    request:
+      headers:
+        X-Timestamp: '1767225600'
+        X-Signature: sha256=d2f238fdfc91fc3849bd4e0a7c202f1a023d7685b34061fd654fc88f7512256f
+      body: '{"events":[]}'
+    expect: { failures: [] }
+  - name: a signature over another body is refused
+    now: '2026-01-01T00:00:00Z'
+    params: *params
+    request:
+      headers:
+        X-Timestamp: '1767225600'
+        X-Signature: sha256=d2f238fdfc91fc3849bd4e0a7c202f1a023d7685b34061fd654fc88f7512256f
+      body: '{"events":[{}]}'
+    expect: { refused: unauthentic }
+  - name: a header scheme refuses before parsing the body
+    now: '2026-01-01T00:00:00Z'
+    params: *params
+    request:
+      headers:
+        X-Timestamp: '1767225600'
+        X-Signature: sha256=00
+      body: not json
+    expect: { refused: unauthentic }
+  - name: a timestamp from the future is refused
+    now: '2025-12-31T23:50:00Z'
+    params: *params
+    request:
+      headers:
+        X-Timestamp: '1767225600'
+        X-Signature: sha256=d2f238fdfc91fc3849bd4e0a7c202f1a023d7685b34061fd654fc88f7512256f
+      body: '{"events":[]}'
+    expect: { refused: unauthentic }

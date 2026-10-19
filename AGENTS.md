@@ -263,8 +263,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      bus subscriber is the raw-client entry, an envelope carries only a Workspace id);
   5. transactions: `events.Bus.WithinScopedTx`, and `tx.Scoped(...)` inside
      `accounts.AcceptInvitation`, re-scope a transaction's client to the same Workspace;
-  6. the Workspace comes from a secret rather than a login: the SES hook ingest key
-     (`internal/server/hooks_ses.go`), signed unsubscribe/confirm tokens
+  6. the Workspace comes from a secret rather than a login: the ingest hook
+     `POST /hooks/{key}` (`internal/server/hooks.go`, ADR 0037), where the key belongs to one
+     Integration, so the hook resolves the Integration by key with the raw client and then
+     scopes to its Workspace (`row.WorkspaceID`); signed unsubscribe/confirm tokens
      (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token);
   7. the platform Staff member (ADR 0026): `ee/staff` scopes over the one Workspace the console
      is looking at, in two reads, each after the Workspace row is loaded and each through

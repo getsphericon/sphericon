@@ -107,6 +107,60 @@ func (_u *IntegrationUpdate) SetNillableConfigEncrypted(v *string) *IntegrationU
 	return _u
 }
 
+// SetPreset sets the "preset" field.
+func (_u *IntegrationUpdate) SetPreset(v string) *IntegrationUpdate {
+	_u.mutation.SetPreset(v)
+	return _u
+}
+
+// SetNillablePreset sets the "preset" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillablePreset(v *string) *IntegrationUpdate {
+	if v != nil {
+		_u.SetPreset(*v)
+	}
+	return _u
+}
+
+// ClearPreset clears the value of the "preset" field.
+func (_u *IntegrationUpdate) ClearPreset() *IntegrationUpdate {
+	_u.mutation.ClearPreset()
+	return _u
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (_u *IntegrationUpdate) SetParamsEncrypted(v string) *IntegrationUpdate {
+	_u.mutation.SetParamsEncrypted(v)
+	return _u
+}
+
+// SetNillableParamsEncrypted sets the "params_encrypted" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableParamsEncrypted(v *string) *IntegrationUpdate {
+	if v != nil {
+		_u.SetParamsEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearParamsEncrypted clears the value of the "params_encrypted" field.
+func (_u *IntegrationUpdate) ClearParamsEncrypted() *IntegrationUpdate {
+	_u.mutation.ClearParamsEncrypted()
+	return _u
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (_u *IntegrationUpdate) SetIngestKey(v string) *IntegrationUpdate {
+	_u.mutation.SetIngestKey(v)
+	return _u
+}
+
+// SetNillableIngestKey sets the "ingest_key" field if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableIngestKey(v *string) *IntegrationUpdate {
+	if v != nil {
+		_u.SetIngestKey(*v)
+	}
+	return _u
+}
+
 // SetEnabled sets the "enabled" field.
 func (_u *IntegrationUpdate) SetEnabled(v bool) *IntegrationUpdate {
 	_u.mutation.SetEnabled(v)
@@ -371,6 +425,16 @@ func (_u *IntegrationUpdate) check() error {
 			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "Integration.provider": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Preset(); ok {
+		if err := integration.PresetValidator(v); err != nil {
+			return &ValidationError{Name: "preset", err: fmt.Errorf(`ent: validator failed for field "Integration.preset": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.IngestKey(); ok {
+		if err := integration.IngestKeyValidator(v); err != nil {
+			return &ValidationError{Name: "ingest_key", err: fmt.Errorf(`ent: validator failed for field "Integration.ingest_key": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.MaxPerSecond(); ok {
 		if err := integration.MaxPerSecondValidator(v); err != nil {
 			return &ValidationError{Name: "max_per_second", err: fmt.Errorf(`ent: validator failed for field "Integration.max_per_second": %w`, err)}
@@ -419,6 +483,21 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.ConfigEncrypted(); ok {
 		_spec.SetField(integration.FieldConfigEncrypted, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Preset(); ok {
+		_spec.SetField(integration.FieldPreset, field.TypeString, value)
+	}
+	if _u.mutation.PresetCleared() {
+		_spec.ClearField(integration.FieldPreset, field.TypeString)
+	}
+	if value, ok := _u.mutation.ParamsEncrypted(); ok {
+		_spec.SetField(integration.FieldParamsEncrypted, field.TypeString, value)
+	}
+	if _u.mutation.ParamsEncryptedCleared() {
+		_spec.ClearField(integration.FieldParamsEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.IngestKey(); ok {
+		_spec.SetField(integration.FieldIngestKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(integration.FieldEnabled, field.TypeBool, value)
@@ -623,6 +702,60 @@ func (_u *IntegrationUpdateOne) SetConfigEncrypted(v string) *IntegrationUpdateO
 func (_u *IntegrationUpdateOne) SetNillableConfigEncrypted(v *string) *IntegrationUpdateOne {
 	if v != nil {
 		_u.SetConfigEncrypted(*v)
+	}
+	return _u
+}
+
+// SetPreset sets the "preset" field.
+func (_u *IntegrationUpdateOne) SetPreset(v string) *IntegrationUpdateOne {
+	_u.mutation.SetPreset(v)
+	return _u
+}
+
+// SetNillablePreset sets the "preset" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillablePreset(v *string) *IntegrationUpdateOne {
+	if v != nil {
+		_u.SetPreset(*v)
+	}
+	return _u
+}
+
+// ClearPreset clears the value of the "preset" field.
+func (_u *IntegrationUpdateOne) ClearPreset() *IntegrationUpdateOne {
+	_u.mutation.ClearPreset()
+	return _u
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (_u *IntegrationUpdateOne) SetParamsEncrypted(v string) *IntegrationUpdateOne {
+	_u.mutation.SetParamsEncrypted(v)
+	return _u
+}
+
+// SetNillableParamsEncrypted sets the "params_encrypted" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableParamsEncrypted(v *string) *IntegrationUpdateOne {
+	if v != nil {
+		_u.SetParamsEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearParamsEncrypted clears the value of the "params_encrypted" field.
+func (_u *IntegrationUpdateOne) ClearParamsEncrypted() *IntegrationUpdateOne {
+	_u.mutation.ClearParamsEncrypted()
+	return _u
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (_u *IntegrationUpdateOne) SetIngestKey(v string) *IntegrationUpdateOne {
+	_u.mutation.SetIngestKey(v)
+	return _u
+}
+
+// SetNillableIngestKey sets the "ingest_key" field if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableIngestKey(v *string) *IntegrationUpdateOne {
+	if v != nil {
+		_u.SetIngestKey(*v)
 	}
 	return _u
 }
@@ -904,6 +1037,16 @@ func (_u *IntegrationUpdateOne) check() error {
 			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "Integration.provider": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Preset(); ok {
+		if err := integration.PresetValidator(v); err != nil {
+			return &ValidationError{Name: "preset", err: fmt.Errorf(`ent: validator failed for field "Integration.preset": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.IngestKey(); ok {
+		if err := integration.IngestKeyValidator(v); err != nil {
+			return &ValidationError{Name: "ingest_key", err: fmt.Errorf(`ent: validator failed for field "Integration.ingest_key": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.MaxPerSecond(); ok {
 		if err := integration.MaxPerSecondValidator(v); err != nil {
 			return &ValidationError{Name: "max_per_second", err: fmt.Errorf(`ent: validator failed for field "Integration.max_per_second": %w`, err)}
@@ -969,6 +1112,21 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 	}
 	if value, ok := _u.mutation.ConfigEncrypted(); ok {
 		_spec.SetField(integration.FieldConfigEncrypted, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Preset(); ok {
+		_spec.SetField(integration.FieldPreset, field.TypeString, value)
+	}
+	if _u.mutation.PresetCleared() {
+		_spec.ClearField(integration.FieldPreset, field.TypeString)
+	}
+	if value, ok := _u.mutation.ParamsEncrypted(); ok {
+		_spec.SetField(integration.FieldParamsEncrypted, field.TypeString, value)
+	}
+	if _u.mutation.ParamsEncryptedCleared() {
+		_spec.ClearField(integration.FieldParamsEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.IngestKey(); ok {
+		_spec.SetField(integration.FieldIngestKey, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(integration.FieldEnabled, field.TypeBool, value)

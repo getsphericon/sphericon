@@ -20,6 +20,8 @@ paths = [
   '''^\.env\.test$''',
   '''^\.mise\.toml$''',
   '''^\.env\.docker\.sample$''',
+  # The built-in Presets' own tests carry throwaway secrets and their signatures.
+  '''^internal/preset/builtin/(generic|postmark|mailgun)\.yaml$''',
 ]
 
 [[allowlists]]

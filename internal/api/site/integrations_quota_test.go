@@ -37,7 +37,8 @@ func TestSiteIntegrationsSaveDiscoversTheSESQuota(t *testing.T) {
 	env.SES.SetQuota(messaging.Quota{PerSecond: lo.ToPtr(14), PerDay: lo.ToPtr(50000)})
 
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
-		Name: "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
+		Params: sesTopicParams,
+		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 		MaxPerDay: siteapi.NewOptNilSiteMaxPerDay(1000),
 	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
@@ -60,7 +61,8 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	env.SES.SetQuotaErr(errors.New("AccessDenied: ses:GetSendQuota"))
 
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
-		Name: "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
+		Params: sesTopicParams,
+		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteIntegrationResource)

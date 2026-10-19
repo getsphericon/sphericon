@@ -160,33 +160,6 @@ function TestEvent({ collectKey }: { collectKey: string }) {
   )
 }
 
-// SesWebhookSection shows the per-workspace inbound webhook URL to register as an
-// SES bounce/complaint SNS subscription. The ingest key in the path routes
-// notifications to this workspace; SNS signature verification is the auth.
-function SesWebhookSection({ ingestKey }: { ingestKey: string }) {
-  const { t } = useTranslation()
-  const url = `${window.location.origin}/hooks/${ingestKey}/ses`
-
-  return (
-    <Card withBorder>
-      <Title order={4} mb="xs">
-        {t(($) => $.settings.sesWebhook.title)}
-      </Title>
-      <Text c="dimmed" size="sm" mb="sm">
-        {t(($) => $.settings.sesWebhook.description)}
-      </Text>
-      <Code block>{url}</Code>
-      <CopyButton value={url}>
-        {({ copied, copy }) => (
-          <Button mt="sm" variant="light" onClick={copy}>
-            {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-          </Button>
-        )}
-      </CopyButton>
-    </Card>
-  )
-}
-
 // TrackingSection shows the embed snippet customers paste into their site. The
 // host is derived from the current origin; the collect key identifies the workspace.
 function TrackingSection({ collectKey, slug }: { collectKey: string; slug: string }) {
@@ -254,7 +227,6 @@ export function SettingsPage() {
           <SendingDomainsSection slug={workspace.slug} />
           <ApiKeysSection slug={workspace.slug} />
           <WebhooksSection slug={workspace.slug} />
-          <SesWebhookSection ingestKey={workspace.ingestKey} />
           <SuppressionsSection slug={workspace.slug} />
         </>
       ) : null}

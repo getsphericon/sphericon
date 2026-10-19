@@ -1,0 +1,6 @@
+# Throwaway whsec_ test secrets in the first version of the hook tests (22f0761f); the
+# tests now build theirs by concatenation. History cannot be rewritten after the merge.
+22f0761f1950d5f1d9480dd1dfa67cb6c01616a4:internal/api/external/integrations_preset_test.go:generic-api-key:19
+22f0761f1950d5f1d9480dd1dfa67cb6c01616a4:internal/api/external/integrations_preset_test.go:generic-api-key:20
+22f0761f1950d5f1d9480dd1dfa67cb6c01616a4:internal/server/hooks_test.go:generic-api-key:29
+22f0761f1950d5f1d9480dd1dfa67cb6c01616a4:internal/server/hooks_test.go:generic-api-key:30

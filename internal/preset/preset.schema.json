@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://getsphericon.app/schemas/preset-1.schema.json",
+  "title": "Sphericon Preset",
+  "description": "A Preset describes one provider's inbound callbacks: how a request is verified and how its payload becomes Delivery failures. Format version 1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "name", "params", "verify", "transform", "tests"],
+  "properties": {
+    "version": {
+      "description": "The Preset format version. It changes only between Majors.",
+      "const": 1
+    },
+    "name": {
+      "description": "The Preset's name, unique across the Instance. A custom Preset cannot reuse a built-in name.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,62}$"
+    },
+    "description": { "type": "string", "maxLength": 500 },
+    "params": {
+      "description": "A JSON Schema (draft 2020-12) of what the Owner enters on the Integration. A secret is a string marked writeOnly.",
+      "type": "object"
+    },
+    "verify": { "$ref": "#/$defs/verify" },
+    "transform": {
+      "description": "A gojq program. Input {body, headers}; output an array of Delivery failures {id, destination, kind, permanent, sending_domain}.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16384
+    },
+    "tests": {
+      "description": "Cases the Preset carries as its proof, run by `sphericon preset test`.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "paramName": {
+      "description": "The name of a top-level property of params.",
+      "type": "string",
+      "minLength": 1
+    },
+    "headerName": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" },
+    "algorithm": { "enum": ["sha1", "sha256", "sha512"] },
+    "encoding": { "enum": ["hex", "base64"] },
+    "tolerance": {
+      "description": "How far a signed timestamp may be from now, a Go duration such as 5m.",
+      "type": "string",
+      "pattern": "^[0-9]+(s|m|h)$"
+    },
+    "fieldPath": {
+      "description": "A dotted path into the JSON body, such as signature.timestamp.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$"
+    },
+    "verify": {
+      "oneOf": [
+        {
+          "title": "hmac_header",
+          "description": "HMAC over a signed-content template, compared with a signature header, on the raw bytes.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "secret", "header", "signed", "algorithm", "encoding"],
+          "dependentRequired": { "tolerance": ["timestamp_header"] },
+          "properties": {
+            "kind": { "const": "hmac_header" },
+            "secret": { "$ref": "#/$defs/paramName" },
+            "header": { "$ref": "#/$defs/headerName" },
+            "prefix": {
+              "description": "Stripped from the header value, such as sha256=.",
+              "type": "string"
+            },
+            "signed": {
+              "description": "The signed content; {body} is the raw body and {header.Name} a request header.",
+              "type": "string",
+              "minLength": 1
+            },
+            "algorithm": { "$ref": "#/$defs/algorithm" },
+            "encoding": { "$ref": "#/$defs/encoding" },
+            "timestamp_header": { "$ref": "#/$defs/headerName" },
+            "tolerance": { "$ref": "#/$defs/tolerance" }
+          }
+        },
+        {
+          "title": "standard_webhooks",
+          "description": "The three Standard Webhooks headers, base64 HMAC-SHA256, five-minute tolerance.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "secret"],
+          "properties": {
+            "kind": { "const": "standard_webhooks" },
+            "secret": { "$ref": "#/$defs/paramName" }
+          }
+        },
+        {
+          "title": "token",
+          "description": "A shared token in a named header, or basic auth.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "secret"],
+          "oneOf": [{ "required": ["header"] }, { "required": ["basic"] }],
+          "properties": {
+            "kind": { "const": "token" },
+            "secret": { "$ref": "#/$defs/paramName" },
+            "header": { "$ref": "#/$defs/headerName" },
+            "prefix": {
+              "description": "Stripped from the header value, such as Bearer .",
+              "type": "string"
+            },
+            "basic": { "description": "The token is the basic-auth password.", "const": true },
+            "user": {
+              "description": "The param holding the basic-auth user name; omitted, any user name is accepted.",
+              "$ref": "#/$defs/paramName"
+            }
+          }
+        },
+        {
+          "title": "sns",
+          "description": "An Amazon SNS message: its signature (both versions), the signing certificate host, and the one topic the Integration names. A subscription confirmation is returned as an action for the caller to perform.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "topic"],
+          "properties": {
+            "kind": { "const": "sns" },
+            "topic": {
+              "description": "The param holding the SNS topic ARN the Integration accepts.",
+              "$ref": "#/$defs/paramName"
+            }
+          }
+        },
+        {
+          "title": "hmac_body",
+          "description": "HMAC over named fields of the JSON body; the signature is a field of the body too.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "secret",
+            "signed_fields",
+            "signature_field",
+            "algorithm",
+            "encoding"
+          ],
+          "dependentRequired": { "tolerance": ["timestamp_field"] },
+          "properties": {
+            "kind": { "const": "hmac_body" },
+            "secret": { "$ref": "#/$defs/paramName" },
+            "signed_fields": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/fieldPath" }
+            },
+            "signature_field": { "$ref": "#/$defs/fieldPath" },
+            "algorithm": { "$ref": "#/$defs/algorithm" },
+            "encoding": { "$ref": "#/$defs/encoding" },
+            "timestamp_field": { "$ref": "#/$defs/fieldPath" },
+            "tolerance": { "$ref": "#/$defs/tolerance" }
+          }
+        }
+      ]
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "destination", "kind"],
+      "properties": {
+        "id": { "type": "string" },
+        "destination": { "type": "string" },
+        "kind": { "enum": ["bounce", "complaint"] },
+        "permanent": { "type": "boolean" },
+        "sending_domain": { "type": "string" }
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "request", "expect"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "now": {
+          "description": "The clock for this case, an RFC 3339 time.",
+          "type": "string",
+          "format": "date-time"
+        },
+        "params": {
+          "description": "The Integration's params, secrets included.",
+          "type": "object"
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["body"],
+          "properties": {
+            "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+            "body": { "description": "The raw request body.", "type": "string" }
+          }
+        },
+        "expect": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["failures"],
+              "properties": {
+                "failures": { "type": "array", "items": { "$ref": "#/$defs/failure" } },
+                "action": {
+                  "description": "What the caller is asked to do, such as confirm a subscription.",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "url"],
+                  "properties": {
+                    "kind": { "const": "confirm" },
+                    "url": { "type": "string" }
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["refused"],
+              "properties": {
+                "refused": { "enum": ["unauthentic", "malformed", "transform_failed"] }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

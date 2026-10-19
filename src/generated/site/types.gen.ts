@@ -1211,6 +1211,16 @@ export type SiteCreateIntegrationInput = {
    */
   maxPerDay?: SiteMaxPerDay | null;
   config: SiteIntegrationConfigInput;
+  /**
+   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with
+   */
+  preset?: string | null;
+  /**
+   * The Preset's params, validated against its `paramsSchema`: read the schema first
+   */
+  params?: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -1603,6 +1613,24 @@ export type SiteIntegrationResource = {
    */
   config: SiteIntegrationConfig;
   /**
+   * The Preset this Integration's provider callbacks are read with; null when it receives none
+   */
+  preset: string | null;
+  /**
+   * The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as `********`, never its value
+   */
+  params: {
+    [key: string]: unknown;
+  };
+  /**
+   * Names of the secret params that are rotating: a retiring value is still accepted beside the current one
+   */
+  secretsRetiring: Array<string>;
+  /**
+   * Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is)
+   */
+  hookUrl: string;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;
@@ -1823,6 +1851,26 @@ export type SiteOAuthDecisionInput = {
  */
 export type SiteOAuthDecisionResult = {
   redirectUrl: string;
+};
+
+/**
+ * A Preset the Instance offers
+ */
+export type SitePresetResource = {
+  /**
+   * The name an integration's `preset` refers to
+   */
+  name: string;
+  /**
+   * What the Preset is for
+   */
+  description: string;
+  /**
+   * JSON Schema (draft 2020-12) of the params; a string marked `writeOnly` is a secret
+   */
+  paramsSchema: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -2569,6 +2617,20 @@ export type SiteUpdateIntegrationInput = {
    */
   maxPerDay?: SiteMaxPerDay | null;
   config?: SiteIntegrationConfigInput | null;
+  /**
+   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over
+   */
+  preset?: string | null;
+  /**
+   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)
+   */
+  params?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Stop accepting the retiring value of every rotating secret
+   */
+  retireSecrets?: boolean;
 };
 
 /**
@@ -2752,10 +2814,6 @@ export type SiteWorkspaceResource = {
    * Per-workspace collect write-key (x-collect-key) for the tracking snippet
    */
   collectKey: string;
-  /**
-   * Secret key that routes inbound provider webhooks (/hooks/{ingestKey}/...)
-   */
-  ingestKey: string;
   /**
    * Physical postal address printed in the marketing email footer (CAN-SPAM
    * 15 U.S.C. §7704(a)(5)). Empty until the workspace sets one.
@@ -3816,6 +3874,22 @@ export type SiteOAuthDecideResponses = {
 };
 
 export type SiteOAuthDecideResponse = SiteOAuthDecideResponses[keyof SiteOAuthDecideResponses];
+
+export type SitePresetsListData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/presets';
+};
+
+export type SitePresetsListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<SitePresetResource>;
+};
+
+export type SitePresetsListResponse = SitePresetsListResponses[keyof SitePresetsListResponses];
 
 export type SitePublicUnsubscribesPerformData = {
   body?: never;
@@ -5598,6 +5672,48 @@ export type SiteIntegrationsUpdateResponses = {
 };
 
 export type SiteIntegrationsUpdateResponse = SiteIntegrationsUpdateResponses[keyof SiteIntegrationsUpdateResponses];
+
+export type SiteIntegrationsRegenerateKeyData = {
+  body?: never;
+  path: {
+    /**
+     * URL-safe unique slug; the route key for nested workspace resources
+     */
+    slug: string;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/integrations/{id}/regenerate-key';
+};
+
+export type SiteIntegrationsRegenerateKeyErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteIntegrationsRegenerateKeyError = SiteIntegrationsRegenerateKeyErrors[keyof SiteIntegrationsRegenerateKeyErrors];
+
+export type SiteIntegrationsRegenerateKeyResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteIntegrationResource;
+};
+
+export type SiteIntegrationsRegenerateKeyResponse = SiteIntegrationsRegenerateKeyResponses[keyof SiteIntegrationsRegenerateKeyResponses];
 
 export type SiteInvitationsListData = {
   body?: never;
