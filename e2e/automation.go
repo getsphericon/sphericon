@@ -3,9 +3,13 @@
 package e2e
 
 import (
+	"encoding/json"
+
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/automation"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/automations"
 )
 
 // Automation is what a scenario chooses about an Automation: one email step, no waits.
@@ -40,6 +44,41 @@ func (w *Workspace) ActivateAutomation(a Automation) {
 	act, err := w.api.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: created.ID})
 	got := ok[externalapi.AutomationResource](w.t, "activate automation", act, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
+}
+
+// AuthoredAutomation is what a scenario chooses about an Automation whose one email step is
+// written in the editor: its document is one paragraph of Text, and the server builds the body.
+type AuthoredAutomation struct {
+	TriggerEvent string
+	Subject      string
+	// Text is the paragraph of the step's document; merge tags are allowed.
+	Text string
+}
+
+// ActivateAuthoredAutomation saves an Automation with a single email step that holds an editor
+// document and activates it. Only the /site save path takes a document today, so the step goes
+// through the Automations module that path uses, scoped to this Workspace.
+func (w *Workspace) ActivateAuthoredAutomation(a AuthoredAutomation) {
+	w.t.Helper()
+	ctx := w.t.Context()
+	doc, err := json.Marshal(map[string]any{
+		"type": "doc",
+		"content": []any{map[string]any{
+			"type":    "paragraph",
+			"content": []any{map[string]any{"type": "text", "text": a.Text}},
+		}},
+	})
+	require.NoError(w.t, err)
+
+	created, err := w.env.automations.Create(ctx, w.scoped, automations.CreateInput{
+		Name:         "e2e authored automation " + uniq(),
+		TriggerEvent: a.TriggerEvent,
+		Steps:        []automations.Step{{Type: automations.StepEmail, Subject: a.Subject, Doc: doc}},
+	})
+	require.NoError(w.t, err, "create authored automation")
+	active, err := w.env.automations.Activate(ctx, w.scoped, created.ID)
+	require.NoError(w.t, err, "activate authored automation")
+	require.Equal(w.t, automation.StatusActive, active.Status)
 }
 
 // HTTPAutomation is what a scenario chooses about an Automation that calls a Hook and then

@@ -237,6 +237,8 @@ var (
 		{Name: "from_name", Type: field.TypeString, Nullable: true},
 		{Name: "from_email", Type: field.TypeString, Nullable: true},
 		{Name: "body", Type: field.TypeString, Default: ""},
+		{Name: "doc", Type: field.TypeJSON, Nullable: true},
+		{Name: "editor_version", Type: field.TypeString, Nullable: true},
 		{Name: "body_text", Type: field.TypeString, Default: ""},
 		{Name: "segment_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
@@ -262,7 +264,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[23]},
+				Columns:    []*schema.Column{BroadcastsColumns[25]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -271,7 +273,7 @@ var (
 			{
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[23]},
+				Columns: []*schema.Column{BroadcastsColumns[25]},
 			},
 		},
 	}

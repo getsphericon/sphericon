@@ -208,6 +208,8 @@ export const zSiteAutomationStep = z.object({
   type: zSiteAutomationStepType,
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
+  editorVersion: z.exactOptional(z.string()),
   seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   tag: z.exactOptional(z.string()),
   id: z.exactOptional(z.string()),
@@ -272,6 +274,7 @@ export const zSiteCreateBroadcastInput = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -871,6 +874,7 @@ export const zSiteUpdateBroadcastInput = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -1240,6 +1244,8 @@ export const zSiteBroadcastResource = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   fromEmail: z.exactOptional(zEmailAddress.nullable()),
   body: z.string(),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  editorVersion: z.exactOptional(z.string().nullable()),
   bodyText: z.string(),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable()),

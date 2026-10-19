@@ -4810,6 +4810,24 @@ func (x *BroadcastScopedCreate) SetNillableBody(v *string) *BroadcastScopedCreat
 	return x
 }
 
+// SetDoc sets the "doc" field.
+func (x *BroadcastScopedCreate) SetDoc(v jsontext.Value) *BroadcastScopedCreate {
+	x.b.SetDoc(v)
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *BroadcastScopedCreate) SetEditorVersion(v string) *BroadcastScopedCreate {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableEditorVersion(v *string) *BroadcastScopedCreate {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
 // SetBodyText sets the "body_text" field.
 func (x *BroadcastScopedCreate) SetBodyText(v string) *BroadcastScopedCreate {
 	x.b.SetBodyText(v)
@@ -5193,6 +5211,42 @@ func (u *BroadcastScopedUpsert) SetBody(v string) *BroadcastScopedUpsert {
 // UpdateBody sets the "body" field to the value that was provided on create.
 func (u *BroadcastScopedUpsert) UpdateBody() *BroadcastScopedUpsert {
 	u.u.SetExcluded(broadcast.FieldBody)
+	return u
+}
+
+// SetDoc sets the "doc" field.
+func (u *BroadcastScopedUpsert) SetDoc(v jsontext.Value) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldDoc, v)
+	return u
+}
+
+// UpdateDoc sets the "doc" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateDoc() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldDoc)
+	return u
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (u *BroadcastScopedUpsert) ClearDoc() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldDoc)
+	return u
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (u *BroadcastScopedUpsert) SetEditorVersion(v string) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldEditorVersion, v)
+	return u
+}
+
+// UpdateEditorVersion sets the "editor_version" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateEditorVersion() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldEditorVersion)
+	return u
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (u *BroadcastScopedUpsert) ClearEditorVersion() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldEditorVersion)
 	return u
 }
 
@@ -5687,6 +5741,42 @@ func (x *BroadcastScopedUpdateOne) SetNillableBody(v *string) *BroadcastScopedUp
 	return x
 }
 
+// SetDoc sets the "doc" field.
+func (x *BroadcastScopedUpdateOne) SetDoc(v jsontext.Value) *BroadcastScopedUpdateOne {
+	x.b.SetDoc(v)
+	return x
+}
+
+// AppendDoc appends value to the "doc" field.
+func (x *BroadcastScopedUpdateOne) AppendDoc(v jsontext.Value) *BroadcastScopedUpdateOne {
+	x.b.AppendDoc(v)
+	return x
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (x *BroadcastScopedUpdateOne) ClearDoc() *BroadcastScopedUpdateOne {
+	x.b.ClearDoc()
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *BroadcastScopedUpdateOne) SetEditorVersion(v string) *BroadcastScopedUpdateOne {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableEditorVersion(v *string) *BroadcastScopedUpdateOne {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (x *BroadcastScopedUpdateOne) ClearEditorVersion() *BroadcastScopedUpdateOne {
+	x.b.ClearEditorVersion()
+	return x
+}
+
 // SetBodyText sets the "body_text" field.
 func (x *BroadcastScopedUpdateOne) SetBodyText(v string) *BroadcastScopedUpdateOne {
 	x.b.SetBodyText(v)
@@ -6147,6 +6237,42 @@ func (x *BroadcastScopedUpdate) SetBody(v string) *BroadcastScopedUpdate {
 // SetNillableBody sets the "body" field if the given value is not nil.
 func (x *BroadcastScopedUpdate) SetNillableBody(v *string) *BroadcastScopedUpdate {
 	x.b.SetNillableBody(v)
+	return x
+}
+
+// SetDoc sets the "doc" field.
+func (x *BroadcastScopedUpdate) SetDoc(v jsontext.Value) *BroadcastScopedUpdate {
+	x.b.SetDoc(v)
+	return x
+}
+
+// AppendDoc appends value to the "doc" field.
+func (x *BroadcastScopedUpdate) AppendDoc(v jsontext.Value) *BroadcastScopedUpdate {
+	x.b.AppendDoc(v)
+	return x
+}
+
+// ClearDoc clears the value of the "doc" field.
+func (x *BroadcastScopedUpdate) ClearDoc() *BroadcastScopedUpdate {
+	x.b.ClearDoc()
+	return x
+}
+
+// SetEditorVersion sets the "editor_version" field.
+func (x *BroadcastScopedUpdate) SetEditorVersion(v string) *BroadcastScopedUpdate {
+	x.b.SetEditorVersion(v)
+	return x
+}
+
+// SetNillableEditorVersion sets the "editor_version" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableEditorVersion(v *string) *BroadcastScopedUpdate {
+	x.b.SetNillableEditorVersion(v)
+	return x
+}
+
+// ClearEditorVersion clears the value of the "editor_version" field.
+func (x *BroadcastScopedUpdate) ClearEditorVersion() *BroadcastScopedUpdate {
+	x.b.ClearEditorVersion()
 	return x
 }
 

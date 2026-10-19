@@ -8780,6 +8780,15 @@
             "type": "string",
             "description": "Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)"
           },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document an email step's body was built from, an opaque object checked by the\nserver. Write it instead of `body` (both is a 422): the server renders the body from it in the\nsame save, and a document that cannot be rendered refuses the whole save, naming the step.\nWriting only a body clears the step's document."
+          },
+          "editorVersion": {
+            "type": "string",
+            "description": "Version of the editor that rendered the document (email steps, read only)"
+          },
           "seconds": {
             "type": "integer",
             "format": "int32",
@@ -8972,6 +8981,17 @@
           "body": {
             "type": "string",
             "description": "HTML body with Liquid merge tags"
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
+          },
+          "editorVersion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Version of the editor that rendered the document; null with it"
           },
           "bodyText": {
             "type": "string",
@@ -9287,7 +9307,12 @@
           },
           "body": {
             "type": "string",
-            "description": "HTML body with Liquid merge tags"
+            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
           },
           "segmentId": {
             "type": "string",
@@ -11474,7 +11499,12 @@
           },
           "body": {
             "type": "string",
-            "description": "HTML body with Liquid merge tags"
+            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
           },
           "segmentId": {
             "type": "string",

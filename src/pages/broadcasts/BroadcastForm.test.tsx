@@ -15,11 +15,18 @@ import { BroadcastCreatePage } from './resource.tsx'
 
 const mount = routeMount(broadcastsCreateRoute, { slug: 'test' })
 
-const template = (id: string, subject: string) => ({
+const DOC = {
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello there' }] }],
+}
+
+const template = (id: string, subject: string, doc: object | null = null) => ({
   id,
   name: `Template ${id}`,
   subject,
   body: `<p>${id}</p>`,
+  doc,
+  editorVersion: doc ? '1.7.14' : null,
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 })
@@ -39,26 +46,44 @@ function serve(templates: ReturnType<typeof template>[], bodies: unknown[] = [])
   )
 }
 
-test('picking a template copies its subject and body into the form', async () => {
-  serve([template('1', 'Welcome aboard')])
+test('picking a template copies its subject and document, and saves the document only', async () => {
+  const bodies: unknown[] = []
+  serve([template('1', 'Welcome aboard', DOC)], bodies)
   const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
 
+  await screen.getByLabelText(/^Name/).fill('Launch')
   await screen.getByRole('combobox', { name: 'Start from template' }).click()
   await screen.getByRole('option', { name: 'Template 1' }).click()
-
   await expect.element(screen.getByLabelText(/^Subject/)).toHaveValue('Welcome aboard')
-  await expect.element(screen.getByLabelText(/^Email body/)).toHaveValue('<p>1</p>')
+  await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ name: 'Launch', subject: 'Welcome aboard', doc: DOC }])
+})
+
+test('a template written as HTML is copied as source and saves its body only', async () => {
+  const bodies: unknown[] = []
+  serve([template('2', 'Plain')], bodies)
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
+
+  await screen.getByLabelText(/^Name/).fill('Launch')
+  await screen.getByRole('combobox', { name: 'Start from template' }).click()
+  await screen.getByRole('option', { name: 'Template 2' }).click()
+  await expect.element(screen.getByLabelText('Body')).toHaveValue('<p>2</p>')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ name: 'Launch', subject: 'Plain', body: '<p>2</p>' }])
 })
 
 test('a template without a subject keeps the subject already typed', async () => {
-  serve([template('2', '')])
+  serve([template('3', '')])
   const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
 
   await screen.getByLabelText(/^Subject/).fill('My subject')
   await screen.getByRole('combobox', { name: 'Start from template' }).click()
-  await screen.getByRole('option', { name: 'Template 2' }).click()
+  await screen.getByRole('option', { name: 'Template 3' }).click()
 
-  await expect.element(screen.getByLabelText(/^Email body/)).toHaveValue('<p>2</p>')
+  await expect.element(screen.getByLabelText('Body')).toHaveValue('<p>3</p>')
   await expect.element(screen.getByLabelText(/^Subject/)).toHaveValue('My subject')
 })
 

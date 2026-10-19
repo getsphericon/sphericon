@@ -3,6 +3,8 @@ import type { PaletteItem, UISchema, WBIcon } from '@workflowbuilder/sdk'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { MESSAGE_FORMAT } from './MessageControl.tsx'
+
 // The palette `type` of each node, stored on `node.data.type` and used by the
 // graph ↔ definition converters to tell email steps from wait steps.
 export const EMAIL_NODE_TYPE = 'email'
@@ -30,26 +32,28 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         icon: EMAIL_NODE_ICON,
         label: t(($) => $.automations.stepEmail),
         description: t(($) => $.automations.emailNodeDescription),
-        defaultPropertiesData: { subject: '', body: '' },
+        // `doc` is the editor's document as JSON text ('' for a step written as HTML); the
+        // message control edits it and the body together.
+        defaultPropertiesData: { subject: '', body: '', doc: '' },
         schema: {
           type: 'object',
-          required: ['subject', 'body'],
+          required: ['subject'],
           properties: {
             ...sharedProperties,
             subject: { type: 'string', label: t(($) => $.automations.emailSubjectLabel) },
-            body: { type: 'string', label: t(($) => $.automations.emailBodyLabel) },
+            body: {
+              type: 'string',
+              format: MESSAGE_FORMAT,
+              label: t(($) => $.automations.emailBodyLabel),
+            },
+            doc: { type: 'string' },
           },
         },
         uischema: {
           type: 'VerticalLayout',
           elements: [
             { type: 'Text', scope: '#/properties/subject', placeholder: '' },
-            {
-              type: 'TextArea',
-              scope: '#/properties/body',
-              minRows: 8,
-              placeholder: t(($) => $.automations.emailBodyHint),
-            },
+            { type: 'Text', scope: '#/properties/body', placeholder: '' },
           ],
         } satisfies UISchema,
       },

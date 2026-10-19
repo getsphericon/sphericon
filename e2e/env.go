@@ -20,6 +20,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
@@ -33,6 +34,10 @@ type Env struct {
 
 	accounts *accounts.Accounts
 	bus      *events.Bus
+	// automations is the product's own module, for a step the public API cannot take yet (an
+	// email step written as a document is saved by /site only). It holds no state, and an email
+	// step needs no cipher.
+	automations *automations.Module
 }
 
 // Boot starts Mailpit and the full application (event router, job queue, HTTP server)
@@ -102,6 +107,8 @@ func Boot() (*Env, func(), error) {
 		hooks:    hooks,
 		accounts: acc,
 		bus:      bus,
+
+		automations: automations.New(nil),
 	}, stop, nil
 }
 

@@ -18,6 +18,7 @@ import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 import { AutomationDetailsFields } from './AutomationDetailsFields.tsx'
 import type { AutomationDetailsValues } from './AutomationDetailsFields.tsx'
 import { graphToSteps, stepsToGraph } from './definition.ts'
+import { messageRenderer } from './MessageControl.tsx'
 import { useAutomationNodeTypes } from './nodes.tsx'
 
 // Imported as a raw string (not auto-injected): the SDK sheet carries unlayered
@@ -25,6 +26,9 @@ import { useAutomationNodeTypes } from './nodes.tsx'
 // only while the builder is on screen and remove it on unmount, so it never
 // touches the rest of the app (e.g. the dashboard's body scroll).
 import builderStyles from '@workflowbuilder/sdk/style.css?inline'
+
+// The email step's message is edited by the editor, not a text field. A stable reference.
+const jsonForm = { renderers: [messageRenderer] }
 
 interface AutomationBuilderProps {
   slug: string
@@ -149,6 +153,7 @@ export function AutomationBuilder({ slug, automation }: AutomationBuilderProps) 
             initialNodes={initialGraph.nodes}
             initialEdges={initialGraph.edges}
             integration={integration}
+            jsonForm={jsonForm}
           >
             <ThemeSync />
             <WorkflowBuilder.DefaultLayout />

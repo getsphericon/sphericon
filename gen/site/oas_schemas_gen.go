@@ -1826,6 +1826,74 @@ func (o OptNilSiteBroadcastProgress) Or(d SiteBroadcastProgress) SiteBroadcastPr
 	return d
 }
 
+// NewOptNilSiteBroadcastResourceDoc returns new OptNilSiteBroadcastResourceDoc with value set to v.
+func NewOptNilSiteBroadcastResourceDoc(v SiteBroadcastResourceDoc) OptNilSiteBroadcastResourceDoc {
+	return OptNilSiteBroadcastResourceDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSiteBroadcastResourceDoc is optional nullable SiteBroadcastResourceDoc.
+type OptNilSiteBroadcastResourceDoc struct {
+	Value SiteBroadcastResourceDoc
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSiteBroadcastResourceDoc was set.
+func (o OptNilSiteBroadcastResourceDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSiteBroadcastResourceDoc) Reset() {
+	var v SiteBroadcastResourceDoc
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSiteBroadcastResourceDoc) SetTo(v SiteBroadcastResourceDoc) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSiteBroadcastResourceDoc) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSiteBroadcastResourceDoc) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SiteBroadcastResourceDoc
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSiteBroadcastResourceDoc) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSiteBroadcastResourceDoc) Get() (v SiteBroadcastResourceDoc, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSiteBroadcastResourceDoc) Or(d SiteBroadcastResourceDoc) SiteBroadcastResourceDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilSiteContactResourceCustomFields returns new OptNilSiteContactResourceCustomFields with value set to v.
 func NewOptNilSiteContactResourceCustomFields(v SiteContactResourceCustomFields) OptNilSiteContactResourceCustomFields {
 	return OptNilSiteContactResourceCustomFields{
@@ -2850,6 +2918,98 @@ func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAu
 	return d
 }
 
+// NewOptSiteAutomationStepDoc returns new OptSiteAutomationStepDoc with value set to v.
+func NewOptSiteAutomationStepDoc(v SiteAutomationStepDoc) OptSiteAutomationStepDoc {
+	return OptSiteAutomationStepDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteAutomationStepDoc is optional SiteAutomationStepDoc.
+type OptSiteAutomationStepDoc struct {
+	Value SiteAutomationStepDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteAutomationStepDoc was set.
+func (o OptSiteAutomationStepDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteAutomationStepDoc) Reset() {
+	var v SiteAutomationStepDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteAutomationStepDoc) SetTo(v SiteAutomationStepDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteAutomationStepDoc) Get() (v SiteAutomationStepDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteAutomationStepDoc) Or(d SiteAutomationStepDoc) SiteAutomationStepDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteCreateBroadcastInputDoc returns new OptSiteCreateBroadcastInputDoc with value set to v.
+func NewOptSiteCreateBroadcastInputDoc(v SiteCreateBroadcastInputDoc) OptSiteCreateBroadcastInputDoc {
+	return OptSiteCreateBroadcastInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteCreateBroadcastInputDoc is optional SiteCreateBroadcastInputDoc.
+type OptSiteCreateBroadcastInputDoc struct {
+	Value SiteCreateBroadcastInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteCreateBroadcastInputDoc was set.
+func (o OptSiteCreateBroadcastInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteCreateBroadcastInputDoc) Reset() {
+	var v SiteCreateBroadcastInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteCreateBroadcastInputDoc) SetTo(v SiteCreateBroadcastInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteCreateBroadcastInputDoc) Get() (v SiteCreateBroadcastInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteCreateBroadcastInputDoc) Or(d SiteCreateBroadcastInputDoc) SiteCreateBroadcastInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteCreateEmailTemplateInputDoc returns new OptSiteCreateEmailTemplateInputDoc with value set to v.
 func NewOptSiteCreateEmailTemplateInputDoc(v SiteCreateEmailTemplateInputDoc) OptSiteCreateEmailTemplateInputDoc {
 	return OptSiteCreateEmailTemplateInputDoc{
@@ -3258,6 +3418,52 @@ func (o OptSiteTrackingRecord) Get() (v SiteTrackingRecord, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteTrackingRecord) Or(d SiteTrackingRecord) SiteTrackingRecord {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteUpdateBroadcastInputDoc returns new OptSiteUpdateBroadcastInputDoc with value set to v.
+func NewOptSiteUpdateBroadcastInputDoc(v SiteUpdateBroadcastInputDoc) OptSiteUpdateBroadcastInputDoc {
+	return OptSiteUpdateBroadcastInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteUpdateBroadcastInputDoc is optional SiteUpdateBroadcastInputDoc.
+type OptSiteUpdateBroadcastInputDoc struct {
+	Value SiteUpdateBroadcastInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteUpdateBroadcastInputDoc was set.
+func (o OptSiteUpdateBroadcastInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteUpdateBroadcastInputDoc) Reset() {
+	var v SiteUpdateBroadcastInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteUpdateBroadcastInputDoc) SetTo(v SiteUpdateBroadcastInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteUpdateBroadcastInputDoc) Get() (v SiteUpdateBroadcastInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteUpdateBroadcastInputDoc) Or(d SiteUpdateBroadcastInputDoc) SiteUpdateBroadcastInputDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -5199,6 +5405,13 @@ type SiteAutomationStep struct {
 	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
 	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
 	Body OptString `json:"body"`
+	// The editor's JSON document an email step's body was built from, an opaque object checked by the
+	// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
+	// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
+	// body clears the step's document.
+	Doc OptSiteAutomationStepDoc `json:"doc"`
+	// Version of the editor that rendered the document (email steps, read only).
+	EditorVersion OptString `json:"editorVersion"`
 	// Delay before the next step, in seconds (wait steps).
 	Seconds OptInt32 `json:"seconds"`
 	// Tag name to apply or remove (apply_tag and remove_tag steps).
@@ -5232,6 +5445,16 @@ func (s *SiteAutomationStep) GetSubject() OptString {
 // GetBody returns the value of Body.
 func (s *SiteAutomationStep) GetBody() OptString {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteAutomationStep) GetDoc() OptSiteAutomationStepDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *SiteAutomationStep) GetEditorVersion() OptString {
+	return s.EditorVersion
 }
 
 // GetSeconds returns the value of Seconds.
@@ -5289,6 +5512,16 @@ func (s *SiteAutomationStep) SetBody(val OptString) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteAutomationStep) SetDoc(val OptSiteAutomationStepDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *SiteAutomationStep) SetEditorVersion(val OptString) {
+	s.EditorVersion = val
+}
+
 // SetSeconds sets the value of Seconds.
 func (s *SiteAutomationStep) SetSeconds(val OptInt32) {
 	s.Seconds = val
@@ -5327,6 +5560,21 @@ func (s *SiteAutomationStep) SetClearSecret(val OptBool) {
 // SetHasSecret sets the value of HasSecret.
 func (s *SiteAutomationStep) SetHasSecret(val OptBool) {
 	s.HasSecret = val
+}
+
+// The editor's JSON document an email step's body was built from, an opaque object checked by the
+// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
+// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
+// body clears the step's document.
+type SiteAutomationStepDoc map[string]jx.Raw
+
+func (s *SiteAutomationStepDoc) init() SiteAutomationStepDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Kind of automation step.
@@ -5776,6 +6024,10 @@ type SiteBroadcastResource struct {
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
 	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
+	// The editor's JSON document the body was built from; null when the body was written as HTML.
+	Doc OptNilSiteBroadcastResourceDoc `json:"doc"`
+	// Version of the editor that rendered the document; null with it.
+	EditorVersion OptNilString `json:"editorVersion"`
 	// Derived plain-text body.
 	BodyText string `json:"bodyText"`
 	// Target segment; null means all active contacts.
@@ -5831,6 +6083,16 @@ func (s *SiteBroadcastResource) GetFromEmail() OptNilEmailAddress {
 // GetBody returns the value of Body.
 func (s *SiteBroadcastResource) GetBody() string {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteBroadcastResource) GetDoc() OptNilSiteBroadcastResourceDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *SiteBroadcastResource) GetEditorVersion() OptNilString {
+	return s.EditorVersion
 }
 
 // GetBodyText returns the value of BodyText.
@@ -5918,6 +6180,16 @@ func (s *SiteBroadcastResource) SetBody(val string) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteBroadcastResource) SetDoc(val OptNilSiteBroadcastResourceDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *SiteBroadcastResource) SetEditorVersion(val OptNilString) {
+	s.EditorVersion = val
+}
+
 // SetBodyText sets the value of BodyText.
 func (s *SiteBroadcastResource) SetBodyText(val string) {
 	s.BodyText = val
@@ -5978,6 +6250,18 @@ func (*SiteBroadcastResource) siteBroadcastsGetRes()      {}
 func (*SiteBroadcastResource) siteBroadcastsScheduleRes() {}
 func (*SiteBroadcastResource) siteBroadcastsSendRes()     {}
 func (*SiteBroadcastResource) siteBroadcastsUpdateRes()   {}
+
+// The editor's JSON document the body was built from; null when the body was written as HTML.
+type SiteBroadcastResourceDoc map[string]jx.Raw
+
+func (s *SiteBroadcastResourceDoc) init() SiteBroadcastResourceDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 // Denormalized delivery counters for a broadcast.
 // Ref: #/components/schemas/SiteBroadcastStats
@@ -6739,8 +7023,11 @@ type SiteCreateBroadcastInput struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body with Liquid merge tags.
+	// HTML body with Liquid merge tags. Write this or `doc`, not both.
 	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+	// it in the same save; a document that cannot be rendered is a 422.
+	Doc OptSiteCreateBroadcastInputDoc `json:"doc"`
 	// Target segment; null/omitted means all active contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null/omitted means the workspace default.
@@ -6770,6 +7057,11 @@ func (s *SiteCreateBroadcastInput) GetFromEmail() OptNilEmailAddress {
 // GetBody returns the value of Body.
 func (s *SiteCreateBroadcastInput) GetBody() OptString {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteCreateBroadcastInput) GetDoc() OptSiteCreateBroadcastInputDoc {
+	return s.Doc
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -6807,6 +7099,11 @@ func (s *SiteCreateBroadcastInput) SetBody(val OptString) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteCreateBroadcastInput) SetDoc(val OptSiteCreateBroadcastInputDoc) {
+	s.Doc = val
+}
+
 // SetSegmentId sets the value of SegmentId.
 func (s *SiteCreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 	s.SegmentId = val
@@ -6815,6 +7112,19 @@ func (s *SiteCreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 // SetIntegrationId sets the value of IntegrationId.
 func (s *SiteCreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
+}
+
+// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+// it in the same save; a document that cannot be rendered is a 422.
+type SiteCreateBroadcastInputDoc map[string]jx.Raw
+
+func (s *SiteCreateBroadcastInputDoc) init() SiteCreateBroadcastInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Site request body for creating a contact.
@@ -13217,8 +13527,11 @@ type SiteUpdateBroadcastInput struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body with Liquid merge tags.
+	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
 	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+	// it in the same save; a document that cannot be rendered is a 422.
+	Doc OptSiteUpdateBroadcastInputDoc `json:"doc"`
 	// Target segment; null means all active contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null means the workspace default.
@@ -13248,6 +13561,11 @@ func (s *SiteUpdateBroadcastInput) GetFromEmail() OptNilEmailAddress {
 // GetBody returns the value of Body.
 func (s *SiteUpdateBroadcastInput) GetBody() OptString {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteUpdateBroadcastInput) GetDoc() OptSiteUpdateBroadcastInputDoc {
+	return s.Doc
 }
 
 // GetSegmentId returns the value of SegmentId.
@@ -13285,6 +13603,11 @@ func (s *SiteUpdateBroadcastInput) SetBody(val OptString) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteUpdateBroadcastInput) SetDoc(val OptSiteUpdateBroadcastInputDoc) {
+	s.Doc = val
+}
+
 // SetSegmentId sets the value of SegmentId.
 func (s *SiteUpdateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 	s.SegmentId = val
@@ -13293,6 +13616,19 @@ func (s *SiteUpdateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 // SetIntegrationId sets the value of IntegrationId.
 func (s *SiteUpdateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
+}
+
+// The editor's JSON document, an opaque object checked by the server. The server renders the body from
+// it in the same save; a document that cannot be rendered is a 422.
+type SiteUpdateBroadcastInputDoc map[string]jx.Raw
+
+func (s *SiteUpdateBroadcastInputDoc) init() SiteUpdateBroadcastInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Site request body for updating a contact.

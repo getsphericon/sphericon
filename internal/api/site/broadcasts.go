@@ -80,10 +80,11 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		FromName:      convert.StringPtr(req.FromName),
 		FromEmail:     convert.StringPtr(req.FromEmail),
 		Body:          convert.StringPtr(req.Body),
+		Doc:           templateDoc(req.Doc.Value, req.Doc.Set),
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 	})
-	if errors.Is(err, emailrender.ErrInvalidContent) {
+	if errors.Is(err, broadcasts.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
 		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	}
@@ -142,6 +143,7 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 		FromName:      convert.StringPtr(req.FromName),
 		FromEmail:     convert.StringPtr(req.FromEmail),
 		Body:          convert.StringPtr(req.Body),
+		Doc:           templateDoc(req.Doc.Value, req.Doc.Set),
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 
@@ -157,7 +159,7 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 	case errors.Is(err, broadcasts.ErrNotDraft):
 		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "only draft broadcasts can be edited"))
 		return &v, nil
-	case errors.Is(err, emailrender.ErrInvalidContent):
+	case errors.Is(err, broadcasts.ErrBodyAndDoc), errors.Is(err, emailrender.ErrInvalidContent):
 		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	case err != nil:

@@ -30,7 +30,7 @@ test('stepsToGraph builds a top-to-bottom chain linked by edges', () => {
   expect(nodes.map((n) => n.id)).toEqual(['step-0', 'step-1', 'step-2', 'step-3'])
   expect(nodes.map((n) => n.position.y)).toEqual([0, 160, 320, 480])
   expect(nodes.map((n) => n.data.properties)).toEqual([
-    { subject: 'Hello', body: '<p></p>' },
+    { subject: 'Hello', body: '<p></p>', doc: '' },
     { seconds: 3600 },
     { tag: 'vip' },
     { tag: 'lead' },
@@ -46,7 +46,7 @@ test('stepsToGraph defaults missing step fields', () => {
   const { nodes } = stepsToGraph([{ type: 'email' }, { type: 'wait' }, { type: 'apply_tag' }])
 
   expect(nodes.map((n) => n.data.properties)).toEqual([
-    { subject: '', body: '' },
+    { subject: '', body: '', doc: '' },
     { seconds: 0 },
     { tag: '' },
   ])
@@ -58,6 +58,39 @@ test('stepsToGraph of nothing is an empty graph', () => {
 
 test('graphToSteps round-trips a stored chain', () => {
   expect(graphToSteps(stepsToGraph(STEPS))).toEqual({ steps: STEPS, dropped: 0 })
+})
+
+test('an email step written in the editor is saved as its document alone', () => {
+  const doc = { type: 'doc', content: [{ type: 'paragraph' }] }
+  const stored: AutomationStep = {
+    type: 'email',
+    subject: 'Hi',
+    body: '<p>built by the server</p>',
+    doc,
+    editorVersion: '1.7.14',
+  }
+
+  // The canvas holds the document as text beside the body the server built...
+  expect(stepsToGraph([stored]).nodes[0]?.data.properties).toEqual({
+    subject: 'Hi',
+    body: '<p>built by the server</p>',
+    doc: JSON.stringify(doc),
+  })
+  // ...and resaving sends the document only: a body beside it is a 422.
+  expect(graphToSteps(stepsToGraph([stored])).steps).toEqual([
+    { type: 'email', subject: 'Hi', doc },
+  ])
+})
+
+test('an email step whose document was cleared is saved as its body alone', () => {
+  const graph = {
+    nodes: [node('a', 'email', { subject: 'Hi', body: '<p>source</p>', doc: '' })],
+    edges: [],
+  }
+
+  expect(graphToSteps(graph).steps).toEqual([
+    { type: 'email', subject: 'Hi', body: '<p>source</p>' },
+  ])
 })
 
 test('graphToSteps of an empty graph has no steps', () => {

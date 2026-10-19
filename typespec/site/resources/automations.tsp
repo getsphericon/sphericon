@@ -66,6 +66,15 @@ model SiteAutomationStep {
   /** Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON) */
   body?: string;
 
+  /** The editor's JSON document an email step's body was built from, an opaque object checked by the
+   * server. Write it instead of `body` (both is a 422): the server renders the body from it in the
+   * same save, and a document that cannot be rendered refuses the whole save, naming the step.
+   * Writing only a body clears the step's document. */
+  doc?: Record<unknown>;
+
+  /** Version of the editor that rendered the document (email steps, read only) */
+  editorVersion?: string;
+
   /** Delay before the next step, in seconds (wait steps) */
   seconds?: int32;
 

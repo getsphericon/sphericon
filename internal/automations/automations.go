@@ -34,8 +34,13 @@ type Step struct {
 	Type    string `json:"type"`
 	Subject string `json:"subject,omitempty"`
 	Body    string `json:"body,omitempty"`
-	Seconds int    `json:"seconds,omitempty"`
-	Tag     string `json:"tag,omitempty"`
+	// Doc is the editor's JSON document an email step's Body was built from, and EditorVersion
+	// the editor that rendered it (ADR 0040). A step written as HTML has neither. A step being
+	// saved carries a Doc or a Body, not both: the save renders the Doc to the Body.
+	Doc           json.RawMessage `json:"doc,omitempty"`
+	EditorVersion string          `json:"editorVersion,omitempty"`
+	Seconds       int             `json:"seconds,omitempty"`
+	Tag           string          `json:"tag,omitempty"`
 
 	// HTTP steps (ADR 0039) hold ID, URL, Headers, Body (a Liquid JSON template) and
 	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;
@@ -56,6 +61,32 @@ var (
 	// without a tag name, or an email step whose content cannot render.
 	ErrInvalidStep = errors.New("automations: invalid step")
 )
+
+// build renders every email step that holds a document to its body, in the same save (ADR 0040,
+// the Template rules): a step with a document and a body is refused, and a document that cannot
+// be rendered refuses the whole save, naming the step (1-based). A step with no document is
+// left as it is, so a body-only write stores no document.
+func build(ctx context.Context, steps []Step) ([]Step, error) {
+	out := make([]Step, len(steps))
+	copy(out, steps)
+	for i, s := range out {
+		if s.Type != StepEmail || len(s.Doc) == 0 {
+			continue
+		}
+		if s.Body != "" {
+			return nil, fmt.Errorf("%w: step %d: write a body or a doc, not both", ErrInvalidStep, i+1)
+		}
+		authored, err := emailrender.FromDocument(ctx, &s.Subject, s.Doc)
+		if errors.Is(err, emailrender.ErrInvalidContent) {
+			return nil, fmt.Errorf("%w: step %d: %w", ErrInvalidStep, i+1, err)
+		}
+		if err != nil {
+			return nil, err
+		}
+		out[i].Body, out[i].EditorVersion = authored.Body, authored.EditorVersion
+	}
+	return out, nil
+}
 
 // Decode parses a stored definition. An empty definition has no steps.
 func Decode(definition string) ([]Step, error) {
@@ -82,7 +113,11 @@ func Encode(steps []Step) (string, error) {
 		case StepHTTP:
 			stored = append(stored, Step{Type: StepHTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
 		default:
-			stored = append(stored, Step{Type: StepEmail, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)})
+			email := Step{Type: StepEmail, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)}
+			if len(s.Doc) > 0 {
+				email.Doc, email.EditorVersion = s.Doc, s.EditorVersion
+			}
+			stored = append(stored, email)
 		}
 	}
 	b, err := json.Marshal(stored)
@@ -151,6 +186,11 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automat
 
 // Create stores a new draft Automation.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.Automation, error) {
+	built, err := build(ctx, in.Steps)
+	if err != nil {
+		return nil, err
+	}
+	in.Steps = built
 	if err := validate(in.Steps); err != nil {
 		return nil, err
 	}
@@ -178,6 +218,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		SetNillableName(in.Name).
 		SetNillableTriggerEvent(in.TriggerEvent)
 	if in.Steps != nil {
+		built, err := build(ctx, *in.Steps)
+		if err != nil {
+			return nil, err
+		}
+		in.Steps = &built
 		if err := validate(*in.Steps); err != nil {
 			return nil, err
 		}
