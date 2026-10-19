@@ -313,6 +313,10 @@ type SiteSendingDomainsVerifyRes interface {
 	siteSendingDomainsVerifyRes()
 }
 
+type SiteSetupChecklistGetRes interface {
+	siteSetupChecklistGetRes()
+}
+
 type SiteSuppressionsCreateRes interface {
 	siteSuppressionsCreateRes()
 }

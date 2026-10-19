@@ -2477,6 +2477,57 @@ export type SiteSesConfigInput = {
 };
 
 /**
+ * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
+ */
+export type SiteSetupProgress = {
+  steps: SiteSetupSteps;
+  /**
+   * Every step is done
+   */
+  complete: boolean;
+  /**
+   * An owner or admin dismissed the checklist for the whole Workspace
+   */
+  dismissed: boolean;
+};
+
+/**
+ * Where one Setup checklist step stands, read off the Workspace's own data
+ */
+export const SiteSetupStepStatus = {
+  TODO: 'todo',
+  PENDING: 'pending',
+  DONE: 'done'
+} as const;
+
+/**
+ * Where one Setup checklist step stands, read off the Workspace's own data
+ */
+export type SiteSetupStepStatus = typeof SiteSetupStepStatus[keyof typeof SiteSetupStepStatus];
+
+/**
+ * The four Setup checklist steps, in the order the checklist shows them; none blocks another
+ */
+export type SiteSetupSteps = {
+  /**
+   * At least one Integration exists
+   */
+  integration: SiteSetupStepStatus;
+  /**
+   * At least one Sending domain is verified; pending while one exists unverified
+   */
+  sendingDomain: SiteSetupStepStatus;
+  /**
+   * At least one Contact exists, from any source
+   */
+  contact: SiteSetupStepStatus;
+  /**
+   * At least one Outbound message was sent, from any surface (a Test send is not one)
+   */
+  sentEmail: SiteSetupStepStatus;
+};
+
+/**
  * SMTP config without the password
  */
 export type SiteSmtpConfig = {
@@ -6916,6 +6967,33 @@ export type SiteSendingDomainsVerifyResponses = {
 };
 
 export type SiteSendingDomainsVerifyResponse = SiteSendingDomainsVerifyResponses[keyof SiteSendingDomainsVerifyResponses];
+
+export type SiteSetupChecklistGetData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/setup-checklist';
+};
+
+export type SiteSetupChecklistGetErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteSetupChecklistGetError = SiteSetupChecklistGetErrors[keyof SiteSetupChecklistGetErrors];
+
+export type SiteSetupChecklistGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSetupProgress;
+};
+
+export type SiteSetupChecklistGetResponse = SiteSetupChecklistGetResponses[keyof SiteSetupChecklistGetResponses];
 
 export type SiteSuppressionsListData = {
   body?: never;

@@ -716,6 +716,34 @@ export const zSiteSesConfigInput = z.object({
 });
 
 /**
+ * Where one Setup checklist step stands, read off the Workspace's own data
+ */
+export const zSiteSetupStepStatus = z.enum([
+  'todo',
+  'pending',
+  'done'
+]);
+
+/**
+ * The four Setup checklist steps, in the order the checklist shows them; none blocks another
+ */
+export const zSiteSetupSteps = z.object({
+  integration: zSiteSetupStepStatus,
+  sendingDomain: zSiteSetupStepStatus,
+  contact: zSiteSetupStepStatus,
+  sentEmail: zSiteSetupStepStatus
+});
+
+/**
+ * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
+ */
+export const zSiteSetupProgress = z.object({
+  steps: zSiteSetupSteps,
+  complete: z.boolean(),
+  dismissed: z.boolean()
+});
+
+/**
  * SMTP config without the password
  */
 export const zSiteSmtpConfig = z.object({
@@ -2687,6 +2715,15 @@ export const zSiteSendingDomainsVerifyPath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteSendingDomainsVerifyResponse = z.void();
+
+export const zSiteSetupChecklistGetPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSetupChecklistGetResponse = zSiteSetupProgress;
 
 export const zSiteSuppressionsListPath = z.object({
   slug: z.string()

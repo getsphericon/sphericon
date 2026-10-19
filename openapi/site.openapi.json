@@ -48,6 +48,9 @@
       "name": "Site Analytics"
     },
     {
+      "name": "Site Setup Checklist"
+    },
+    {
       "name": "Site Suppressions"
     },
     {
@@ -5717,6 +5720,45 @@
         "tags": ["Site Sending Domains"]
       }
     },
+    "/workspaces/{slug}/setup-checklist": {
+      "get": {
+        "operationId": "SiteSetupChecklist_get",
+        "description": "The Workspace's Setup checklist",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSetupProgress"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Setup Checklist"]
+      }
+    },
     "/workspaces/{slug}/suppressions": {
       "post": {
         "operationId": "SiteSuppressions_create",
@@ -10794,6 +10836,68 @@
           }
         },
         "description": "SES credentials"
+      },
+      "SiteSetupProgress": {
+        "type": "object",
+        "required": ["steps", "complete", "dismissed"],
+        "properties": {
+          "steps": {
+            "$ref": "#/components/schemas/SiteSetupSteps"
+          },
+          "complete": {
+            "type": "boolean",
+            "description": "Every step is done"
+          },
+          "dismissed": {
+            "type": "boolean",
+            "description": "An owner or admin dismissed the checklist for the whole Workspace"
+          }
+        },
+        "description": "The Workspace's Setup checklist: a point-in-time read model, never ticked by hand"
+      },
+      "SiteSetupStepStatus": {
+        "type": "string",
+        "enum": ["todo", "pending", "done"],
+        "description": "Where one Setup checklist step stands, read off the Workspace's own data"
+      },
+      "SiteSetupSteps": {
+        "type": "object",
+        "required": ["integration", "sendingDomain", "contact", "sentEmail"],
+        "properties": {
+          "integration": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSetupStepStatus"
+              }
+            ],
+            "description": "At least one Integration exists"
+          },
+          "sendingDomain": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSetupStepStatus"
+              }
+            ],
+            "description": "At least one Sending domain is verified; pending while one exists unverified"
+          },
+          "contact": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSetupStepStatus"
+              }
+            ],
+            "description": "At least one Contact exists, from any source"
+          },
+          "sentEmail": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSetupStepStatus"
+              }
+            ],
+            "description": "At least one Outbound message was sent, from any surface (a Test send is not one)"
+          }
+        },
+        "description": "The four Setup checklist steps, in the order the checklist shows them; none blocks another"
       },
       "SiteSmtpConfig": {
         "type": "object",

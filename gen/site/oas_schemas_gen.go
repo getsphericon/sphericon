@@ -3609,6 +3609,7 @@ func (*ProblemDetails) siteInvitationsListRes()                {}
 func (*ProblemDetails) siteMembershipsListRes()                {}
 func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
 func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
+func (*ProblemDetails) siteSetupChecklistGetRes()              {}
 func (*ProblemDetails) siteTokensListRes()                     {}
 
 // Validation errors grouped by field.
@@ -11273,6 +11274,151 @@ func (s *SiteSesConfigKind) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// The Workspace's Setup checklist: a point-in-time read model, never ticked by hand.
+// Ref: #/components/schemas/SiteSetupProgress
+type SiteSetupProgress struct {
+	Steps SiteSetupSteps `json:"steps"`
+	// Every step is done.
+	Complete bool `json:"complete"`
+	// An owner or admin dismissed the checklist for the whole Workspace.
+	Dismissed bool `json:"dismissed"`
+}
+
+// GetSteps returns the value of Steps.
+func (s *SiteSetupProgress) GetSteps() SiteSetupSteps {
+	return s.Steps
+}
+
+// GetComplete returns the value of Complete.
+func (s *SiteSetupProgress) GetComplete() bool {
+	return s.Complete
+}
+
+// GetDismissed returns the value of Dismissed.
+func (s *SiteSetupProgress) GetDismissed() bool {
+	return s.Dismissed
+}
+
+// SetSteps sets the value of Steps.
+func (s *SiteSetupProgress) SetSteps(val SiteSetupSteps) {
+	s.Steps = val
+}
+
+// SetComplete sets the value of Complete.
+func (s *SiteSetupProgress) SetComplete(val bool) {
+	s.Complete = val
+}
+
+// SetDismissed sets the value of Dismissed.
+func (s *SiteSetupProgress) SetDismissed(val bool) {
+	s.Dismissed = val
+}
+
+func (*SiteSetupProgress) siteSetupChecklistGetRes() {}
+
+// Where one Setup checklist step stands, read off the Workspace's own data.
+// Ref: #/components/schemas/SiteSetupStepStatus
+type SiteSetupStepStatus string
+
+const (
+	SiteSetupStepStatusTodo    SiteSetupStepStatus = "todo"
+	SiteSetupStepStatusPending SiteSetupStepStatus = "pending"
+	SiteSetupStepStatusDone    SiteSetupStepStatus = "done"
+)
+
+// AllValues returns all SiteSetupStepStatus values.
+func (SiteSetupStepStatus) AllValues() []SiteSetupStepStatus {
+	return []SiteSetupStepStatus{
+		SiteSetupStepStatusTodo,
+		SiteSetupStepStatusPending,
+		SiteSetupStepStatusDone,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSetupStepStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSetupStepStatusTodo:
+		return []byte(s), nil
+	case SiteSetupStepStatusPending:
+		return []byte(s), nil
+	case SiteSetupStepStatusDone:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSetupStepStatus) UnmarshalText(data []byte) error {
+	switch SiteSetupStepStatus(data) {
+	case SiteSetupStepStatusTodo:
+		*s = SiteSetupStepStatusTodo
+		return nil
+	case SiteSetupStepStatusPending:
+		*s = SiteSetupStepStatusPending
+		return nil
+	case SiteSetupStepStatusDone:
+		*s = SiteSetupStepStatusDone
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The four Setup checklist steps, in the order the checklist shows them; none blocks another.
+// Ref: #/components/schemas/SiteSetupSteps
+type SiteSetupSteps struct {
+	// At least one Integration exists.
+	Integration SiteSetupStepStatus `json:"integration"`
+	// At least one Sending domain is verified; pending while one exists unverified.
+	SendingDomain SiteSetupStepStatus `json:"sendingDomain"`
+	// At least one Contact exists, from any source.
+	Contact SiteSetupStepStatus `json:"contact"`
+	// At least one Outbound message was sent, from any surface (a Test send is not one).
+	SentEmail SiteSetupStepStatus `json:"sentEmail"`
+}
+
+// GetIntegration returns the value of Integration.
+func (s *SiteSetupSteps) GetIntegration() SiteSetupStepStatus {
+	return s.Integration
+}
+
+// GetSendingDomain returns the value of SendingDomain.
+func (s *SiteSetupSteps) GetSendingDomain() SiteSetupStepStatus {
+	return s.SendingDomain
+}
+
+// GetContact returns the value of Contact.
+func (s *SiteSetupSteps) GetContact() SiteSetupStepStatus {
+	return s.Contact
+}
+
+// GetSentEmail returns the value of SentEmail.
+func (s *SiteSetupSteps) GetSentEmail() SiteSetupStepStatus {
+	return s.SentEmail
+}
+
+// SetIntegration sets the value of Integration.
+func (s *SiteSetupSteps) SetIntegration(val SiteSetupStepStatus) {
+	s.Integration = val
+}
+
+// SetSendingDomain sets the value of SendingDomain.
+func (s *SiteSetupSteps) SetSendingDomain(val SiteSetupStepStatus) {
+	s.SendingDomain = val
+}
+
+// SetContact sets the value of Contact.
+func (s *SiteSetupSteps) SetContact(val SiteSetupStepStatus) {
+	s.Contact = val
+}
+
+// SetSentEmail sets the value of SentEmail.
+func (s *SiteSetupSteps) SetSentEmail(val SiteSetupStepStatus) {
+	s.SentEmail = val
 }
 
 // SMTP config without the password.

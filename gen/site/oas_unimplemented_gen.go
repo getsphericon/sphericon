@@ -790,6 +790,15 @@ func (UnimplementedHandler) SiteSendingDomainsVerify(ctx context.Context, params
 	return r, ht.ErrNotImplemented
 }
 
+// SiteSetupChecklistGet implements SiteSetupChecklist_get operation.
+//
+// The Workspace's Setup checklist.
+//
+// GET /workspaces/{slug}/setup-checklist
+func (UnimplementedHandler) SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (r SiteSetupChecklistGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSuppressionsCreate implements SiteSuppressions_create operation.
 //
 // Manually suppress an address (reason = manual; idempotent per address).

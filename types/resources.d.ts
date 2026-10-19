@@ -982,6 +982,35 @@ export default interface Resources {
       },
       "webhooksTitle": "Webhooks"
     },
+    "setupChecklist": {
+      "description": "Four steps to your first email. Each turns done by itself when the thing exists, in any order.",
+      "done": "Done",
+      "loadError": "Failed to load the setup checklist",
+      "steps": {
+        "contact": {
+          "action": "Open Contacts",
+          "description": "Import, the API or the tracker: any one Contact completes this step.",
+          "title": "Add a Contact"
+        },
+        "integration": {
+          "action": "Add an Integration",
+          "description": "SMTP or an SES-compatible service that sends your email.",
+          "title": "Connect an Integration"
+        },
+        "sendingDomain": {
+          "action": "Open Sending domains",
+          "description": "Publish the DKIM record at your DNS provider; verification can take a while and blocks nothing else.",
+          "title": "Verify a Sending domain"
+        },
+        "sentEmail": {
+          "action": "Create a Broadcast",
+          "description": "Create a Broadcast. A test send does not count.",
+          "title": "Send your first email"
+        }
+      },
+      "title": "Set up sphericon",
+      "waitingForDns": "Waiting for DNS"
+    },
     "status": {
       "active": "Active",
       "all": "All",

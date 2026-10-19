@@ -542,6 +542,12 @@ type Handler interface {
 	//
 	// POST /workspaces/{slug}/sending-domains/{id}/verify
 	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)
+	// SiteSetupChecklistGet implements SiteSetupChecklist_get operation.
+	//
+	// The Workspace's Setup checklist.
+	//
+	// GET /workspaces/{slug}/setup-checklist
+	SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (SiteSetupChecklistGetRes, error)
 	// SiteSuppressionsCreate implements SiteSuppressions_create operation.
 	//
 	// Manually suppress an address (reason = manual; idempotent per address).

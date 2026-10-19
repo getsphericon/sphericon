@@ -1000,6 +1000,35 @@
     },
     "webhooksTitle": "Webhooks"
   },
+  "setupChecklist": {
+    "description": "Cuatro pasos hasta tu primer correo. Cada uno se marca solo cuando existe lo necesario, en cualquier orden.",
+    "done": "Hecho",
+    "loadError": "No se pudo cargar la lista de configuración",
+    "steps": {
+      "contact": {
+        "action": "Abrir contactos",
+        "description": "Importación, API o tracker: basta con un contacto.",
+        "title": "Añade un contacto"
+      },
+      "integration": {
+        "action": "Añadir una integración",
+        "description": "SMTP o un servicio compatible con SES que envíe tus correos.",
+        "title": "Conecta una integración"
+      },
+      "sendingDomain": {
+        "action": "Abrir dominios de envío",
+        "description": "Publica el registro DKIM en tu proveedor de DNS; la verificación puede tardar y no bloquea nada más.",
+        "title": "Verifica un dominio de envío"
+      },
+      "sentEmail": {
+        "action": "Crear una difusión",
+        "description": "Crea una difusión. Un envío de prueba no cuenta.",
+        "title": "Envía tu primer correo"
+      }
+    },
+    "title": "Configura sphericon",
+    "waitingForDns": "Esperando al DNS"
+  },
   "status": {
     "active": "Activo",
     "all": "Todos",
