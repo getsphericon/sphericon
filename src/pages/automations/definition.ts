@@ -1,9 +1,11 @@
 import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
+import * as z from 'zod'
 
 import type {
   SiteAutomationHttpHeader,
   SiteAutomationStep,
 } from '../../generated/site/types.gen.ts'
+import { docCodec } from '../../utils/messageDoc.ts'
 import {
   APPLY_TAG_NODE_TYPE,
   EMAIL_NODE_ICON,
@@ -64,7 +66,11 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
   if (step.type === 'apply_tag' || step.type === 'remove_tag') {
     return { tag: step.tag ?? '' }
   }
-  return { subject: step.subject ?? '', body: step.body ?? '' }
+  return {
+    subject: step.subject ?? '',
+    body: step.body ?? '',
+    doc: step.doc ? z.encode(docCodec, step.doc) : '',
+  }
 }
 
 // stepsToGraph builds a linear top-to-bottom chain of nodes for the canvas from
@@ -141,11 +147,13 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
     }
   }
   if (node.data.type === EMAIL_NODE_TYPE) {
-    return {
-      type: 'email',
-      subject: asText(props.subject),
-      body: asText(props.body),
-    }
+    // A message written in the editor is saved as its document alone (the server builds the
+    // body; sending both is a 422), and one written as HTML as its body alone.
+    const subject = asText(props.subject)
+    const doc = docCodec.safeParse(asText(props.doc))
+    return doc.success
+      ? { type: 'email', subject, doc: doc.data }
+      : { type: 'email', subject, body: asText(props.body) }
   }
   return null
 }

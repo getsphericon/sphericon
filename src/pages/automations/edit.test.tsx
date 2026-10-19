@@ -1,5 +1,7 @@
+import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
+import { page } from 'vitest/browser'
 
 import {
   handleSiteAutomationsGet,
@@ -100,6 +102,47 @@ test('saving from the builder sends the edited name, trigger and the canvas step
   await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
 })
 
+const AUTHORED_DOC = {
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }],
+}
+
+test('saving an email step written in the editor sends its document and no body', async () => {
+  const bodies: unknown[] = []
+  const authored: SiteAutomationResource = {
+    ...STORED,
+    steps: [
+      {
+        type: 'email',
+        subject: 'Hi',
+        body: '<p>Hello</p>',
+        doc: AUTHORED_DOC,
+        editorVersion: '1.7.14',
+      },
+    ],
+  }
+  worker.use(
+    handleSiteAutomationsGet({ body: authored }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(authored)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        name: 'Welcome flow',
+        triggerEvent: 'email.clicked',
+        steps: [{ type: 'email', subject: 'Hi', doc: AUTHORED_DOC }],
+      },
+    ])
+})
+
 test('a failed save from the builder shows an error toast', async () => {
   worker.use(
     handleSiteAutomationsGet({ body: STORED }),
@@ -184,4 +227,53 @@ test('lists the enrollments an HTTP step failed, with the reason and the respons
   await expect.element(screen.getByText('Failed enrollments')).toBeInTheDocument()
   await expect.element(screen.getByText('The receiver answered 503')).toBeInTheDocument()
   await expect.element(screen.getByText('upstream unavailable')).toBeInTheDocument()
+})
+
+// The canvas node of the only step; it throws until the canvas has drawn it, which poll retries.
+function flowNode() {
+  const node = document.querySelector('.react-flow__node')
+  if (!node) {
+    throw new Error('the canvas has not drawn the step yet')
+  }
+  return node
+}
+
+test('an email step opens its document in the editor from the properties panel', async () => {
+  notifications.clean()
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        ...STORED,
+        steps: [{ type: 'email', subject: 'Hi', body: '<p>Hello</p>', doc: AUTHORED_DOC }],
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(flowNode).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode()).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('button', { name: 'Edit message' }).click()
+
+  await expect.element(screen.getByText('Hello')).toBeInTheDocument()
+})
+
+test('a refused document shows the server reason naming the step', async () => {
+  // The toasts of the tests before are still on screen and cover the Save button.
+  notifications.clean()
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsUpdate(() =>
+      problem(422, {
+        title: 'Unprocessable Entity',
+        detail: 'automations: invalid step: step 2: heading level 9 is not allowed',
+      }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('Failed to save automation')).toBeInTheDocument()
+  await expect.element(screen.getByText(/step 2: heading level 9/)).toBeInTheDocument()
 })

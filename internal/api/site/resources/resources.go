@@ -330,6 +330,10 @@ func automationSteps(def string) []siteapi.SiteAutomationStep {
 		default:
 			step.Subject = siteapi.NewOptString(s.Subject)
 			step.Body = siteapi.NewOptString(s.Body)
+			if doc := stepDoc(s.Doc); doc != nil {
+				step.Doc = siteapi.NewOptSiteAutomationStepDoc(doc)
+				step.EditorVersion = siteapi.NewOptString(s.EditorVersion)
+			}
 		}
 		steps = append(steps, step)
 	}
@@ -344,6 +348,7 @@ func AutomationSteps(steps []siteapi.SiteAutomationStep) []automations.Step {
 			Type:    string(s.Type),
 			Subject: s.Subject.Or(""),
 			Body:    s.Body.Or(""),
+			Doc:     docJSON(s.Doc),
 			Seconds: int(s.Seconds.Or(0)),
 			Tag:     s.Tag.Or(""),
 
@@ -357,6 +362,40 @@ func AutomationSteps(steps []siteapi.SiteAutomationStep) []automations.Step {
 		})
 	}
 	return out
+}
+
+// stepDoc is an email step's stored editor document as the opaque object of the contract; nil
+// for a step written as HTML.
+func stepDoc(doc json.RawMessage) siteapi.SiteAutomationStepDoc {
+	if len(doc) == 0 {
+		return nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(doc, &fields); err != nil {
+		return nil
+	}
+	out := make(siteapi.SiteAutomationStepDoc, len(fields))
+	for k, v := range fields {
+		out[k] = jx.Raw(v)
+	}
+	return out
+}
+
+// docJSON is a request's opaque document object as the JSON the module renders; nil when the
+// step names none. An empty object is a document (an invalid one), not an absent one.
+func docJSON(o siteapi.OptSiteAutomationStepDoc) json.RawMessage {
+	if !o.Set {
+		return nil
+	}
+	raw := make(map[string]json.RawMessage, len(o.Value))
+	for k, v := range o.Value {
+		raw[k] = json.RawMessage(v)
+	}
+	b, err := json.Marshal(raw)
+	if err != nil {
+		return nil
+	}
+	return b
 }
 
 // segmentDefinition decodes the stored rule group into the typed DTO. A segment with no

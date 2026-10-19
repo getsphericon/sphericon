@@ -795,6 +795,10 @@ const (
 	TagVipID = 1
 	// TagVipName is from fixtures/tags.
 	TagVipName = "vip"
+	// TemplateAuthoredID is from fixtures/email_templates.
+	TemplateAuthoredID = 4
+	// TemplateAuthoredName is from fixtures/email_templates.
+	TemplateAuthoredName = "Product update"
 	// TemplateGlobexID is from fixtures/email_templates.
 	TemplateGlobexID = 900
 	// TemplateGlobexName is from fixtures/email_templates.

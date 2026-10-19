@@ -33,6 +33,24 @@ func TestRecordedEventTriggersAutomationEmail(t *testing.T) {
 	w.Inbox.RequireNone(Match{To: other})
 }
 
+func TestAutomationStepWrittenInTheEditorSendsItsBuiltBody(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	to := w.NewRecipient()
+	w.ImportContacts(to)
+	w.ActivateAuthoredAutomation(AuthoredAutomation{
+		TriggerEvent: "e2e.authored",
+		Subject:      "Written in the editor",
+		Text:         "Built from a document for {{ email }}",
+	})
+
+	w.RecordEvent(to, "e2e.authored")
+
+	msg := w.Inbox.Wait(Match{To: to})
+	assert.Equal(t, "Written in the editor", msg.Subject)
+	assert.Contains(t, msg.HTML, "Built from a document for "+to)
+}
+
 func TestAutomationHTTPStepCallsTheHookThenContinues(t *testing.T) {
 	t.Parallel()
 	w := env.NewWorkspace(t).Ready()

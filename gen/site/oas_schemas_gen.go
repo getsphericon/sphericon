@@ -2850,6 +2850,52 @@ func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAu
 	return d
 }
 
+// NewOptSiteAutomationStepDoc returns new OptSiteAutomationStepDoc with value set to v.
+func NewOptSiteAutomationStepDoc(v SiteAutomationStepDoc) OptSiteAutomationStepDoc {
+	return OptSiteAutomationStepDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteAutomationStepDoc is optional SiteAutomationStepDoc.
+type OptSiteAutomationStepDoc struct {
+	Value SiteAutomationStepDoc
+	Set   bool
+}
+
+// IsSet returns true if OptSiteAutomationStepDoc was set.
+func (o OptSiteAutomationStepDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteAutomationStepDoc) Reset() {
+	var v SiteAutomationStepDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteAutomationStepDoc) SetTo(v SiteAutomationStepDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteAutomationStepDoc) Get() (v SiteAutomationStepDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteAutomationStepDoc) Or(d SiteAutomationStepDoc) SiteAutomationStepDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteCreateEmailTemplateInputDoc returns new OptSiteCreateEmailTemplateInputDoc with value set to v.
 func NewOptSiteCreateEmailTemplateInputDoc(v SiteCreateEmailTemplateInputDoc) OptSiteCreateEmailTemplateInputDoc {
 	return OptSiteCreateEmailTemplateInputDoc{
@@ -5198,6 +5244,13 @@ type SiteAutomationStep struct {
 	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
 	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
 	Body OptString `json:"body"`
+	// The editor's JSON document an email step's body was built from, an opaque object checked by the
+	// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
+	// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
+	// body clears the step's document.
+	Doc OptSiteAutomationStepDoc `json:"doc"`
+	// Version of the editor that rendered the document (email steps, read only).
+	EditorVersion OptString `json:"editorVersion"`
 	// Delay before the next step, in seconds (wait steps).
 	Seconds OptInt32 `json:"seconds"`
 	// Tag name to apply or remove (apply_tag and remove_tag steps).
@@ -5231,6 +5284,16 @@ func (s *SiteAutomationStep) GetSubject() OptString {
 // GetBody returns the value of Body.
 func (s *SiteAutomationStep) GetBody() OptString {
 	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *SiteAutomationStep) GetDoc() OptSiteAutomationStepDoc {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *SiteAutomationStep) GetEditorVersion() OptString {
+	return s.EditorVersion
 }
 
 // GetSeconds returns the value of Seconds.
@@ -5288,6 +5351,16 @@ func (s *SiteAutomationStep) SetBody(val OptString) {
 	s.Body = val
 }
 
+// SetDoc sets the value of Doc.
+func (s *SiteAutomationStep) SetDoc(val OptSiteAutomationStepDoc) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *SiteAutomationStep) SetEditorVersion(val OptString) {
+	s.EditorVersion = val
+}
+
 // SetSeconds sets the value of Seconds.
 func (s *SiteAutomationStep) SetSeconds(val OptInt32) {
 	s.Seconds = val
@@ -5326,6 +5399,21 @@ func (s *SiteAutomationStep) SetClearSecret(val OptBool) {
 // SetHasSecret sets the value of HasSecret.
 func (s *SiteAutomationStep) SetHasSecret(val OptBool) {
 	s.HasSecret = val
+}
+
+// The editor's JSON document an email step's body was built from, an opaque object checked by the
+// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
+// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
+// body clears the step's document.
+type SiteAutomationStepDoc map[string]jx.Raw
+
+func (s *SiteAutomationStepDoc) init() SiteAutomationStepDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 // Kind of automation step.

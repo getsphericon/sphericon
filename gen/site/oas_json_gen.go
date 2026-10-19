@@ -3553,6 +3553,40 @@ func (s *OptSiteAutomationHttpErrorKind) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteAutomationStepDoc as json.
+func (o OptSiteAutomationStepDoc) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SiteAutomationStepDoc from json.
+func (o *OptSiteAutomationStepDoc) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSiteAutomationStepDoc to nil")
+	}
+	o.Set = true
+	o.Value = make(SiteAutomationStepDoc)
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSiteAutomationStepDoc) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSiteAutomationStepDoc) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteCreateEmailTemplateInputDoc as json.
 func (o OptSiteCreateEmailTemplateInputDoc) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -7822,6 +7856,18 @@ func (s *SiteAutomationStep) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Doc.Set {
+			e.FieldStart("doc")
+			s.Doc.Encode(e)
+		}
+	}
+	{
+		if s.EditorVersion.Set {
+			e.FieldStart("editorVersion")
+			s.EditorVersion.Encode(e)
+		}
+	}
+	{
 		if s.Seconds.Set {
 			e.FieldStart("seconds")
 			s.Seconds.Encode(e)
@@ -7875,18 +7921,20 @@ func (s *SiteAutomationStep) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteAutomationStep = [11]string{
+var jsonFieldsNameOfSiteAutomationStep = [13]string{
 	0:  "type",
 	1:  "subject",
 	2:  "body",
-	3:  "seconds",
-	4:  "tag",
-	5:  "id",
-	6:  "url",
-	7:  "headers",
-	8:  "secret",
-	9:  "clearSecret",
-	10: "hasSecret",
+	3:  "doc",
+	4:  "editorVersion",
+	5:  "seconds",
+	6:  "tag",
+	7:  "id",
+	8:  "url",
+	9:  "headers",
+	10: "secret",
+	11: "clearSecret",
+	12: "hasSecret",
 }
 
 // Decode decodes SiteAutomationStep from json.
@@ -7927,6 +7975,26 @@ func (s *SiteAutomationStep) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "doc":
+			if err := func() error {
+				s.Doc.Reset()
+				if err := s.Doc.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		case "editorVersion":
+			if err := func() error {
+				s.EditorVersion.Reset()
+				if err := s.EditorVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"editorVersion\"")
 			}
 		case "seconds":
 			if err := func() error {
@@ -8068,6 +8136,64 @@ func (s *SiteAutomationStep) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteAutomationStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s SiteAutomationStepDoc) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s SiteAutomationStepDoc) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		if len(elem) != 0 {
+			e.Raw(elem)
+		}
+	}
+}
+
+// Decode decodes SiteAutomationStepDoc from json.
+func (s *SiteAutomationStepDoc) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAutomationStepDoc to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem jx.Raw
+		if err := func() error {
+			v, err := d.RawAppend(nil)
+			elem = jx.Raw(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteAutomationStepDoc")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteAutomationStepDoc) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAutomationStepDoc) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
