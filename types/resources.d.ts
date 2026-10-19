@@ -246,6 +246,7 @@ export default interface Resources {
       "testSend": "Test send",
       "testSendButton": "Send test",
       "testSendEmailLabel": "Send a test to",
+      "testSendFrom": "Sent from {{from}}. Until a sending domain is verified this is the platform's own address, not the one your contacts will see.",
       "useTemplate": "Start from template",
       "useTemplateNone": "— none —"
     },
@@ -981,6 +982,44 @@ export default interface Resources {
         "urlLabel": "Endpoint URL"
       },
       "webhooksTitle": "Webhooks"
+    },
+    "setupChecklist": {
+      "checkError": "Could not check the domain",
+      "checkNow": "Check now",
+      "copied": "Copied",
+      "copy": "Copy",
+      "copyDkim": "Copy DKIM value",
+      "description": "Four steps to your first email. Each turns done by itself when the thing exists, in any order.",
+      "dismiss": "Dismiss",
+      "dismissError": "Failed to dismiss the setup checklist",
+      "dismissForbidden": "Only owners and admins can dismiss the setup checklist.",
+      "done": "Done",
+      "loadError": "Failed to load the setup checklist",
+      "recordHint": "Add this DNS record for {{domain}} at your DNS provider:",
+      "steps": {
+        "contact": {
+          "action": "Open Contacts",
+          "description": "Import, the API or the tracker: any one Contact completes this step.",
+          "title": "Add a Contact"
+        },
+        "integration": {
+          "action": "Add an Integration",
+          "description": "SMTP or an SES-compatible service that sends your email.",
+          "title": "Connect an Integration"
+        },
+        "sendingDomain": {
+          "action": "Open Sending domains",
+          "description": "Publish the DKIM record at your DNS provider; verification can take a while and blocks nothing else.",
+          "title": "Verify a Sending domain"
+        },
+        "sentEmail": {
+          "action": "Create a Broadcast",
+          "description": "Create a Broadcast. A test send does not count.",
+          "title": "Send your first email"
+        }
+      },
+      "title": "Set up sphericon",
+      "waitingForDns": "Waiting for DNS"
     },
     "status": {
       "active": "Active",

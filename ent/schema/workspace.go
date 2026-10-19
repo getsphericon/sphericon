@@ -79,6 +79,11 @@ func (Workspace) Fields() []ent.Field {
 		// only by internal/workspacefeed.
 		field.Int64("feed_position").
 			Default(0),
+		// When an owner or admin dismissed the Setup checklist for the whole Workspace
+		// (GLOSSARY "Setup checklist", ADR 0041); NULL while it is not dismissed.
+		field.Time("setup_checklist_dismissed_at").
+			Optional().
+			Nillable(),
 		field.Time("suspended_at").
 			Optional().
 			Nillable(),

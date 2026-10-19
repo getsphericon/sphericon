@@ -194,7 +194,19 @@ type setup struct {
 	licensePub ed25519.PublicKey
 	// certs is where an `sns` Preset gets its signing certificate; nil is the test certificate.
 	certs preset.CertFetcher
+	// noSystemSender builds the Instance without outbound mail.
+	noSystemSender bool
+	// noSystemFrom gives the System sender no default From (it is not a DefaultFromer).
+	noSystemFrom bool
 }
+
+// WithoutSystemSender runs the Instance with no outbound mail, so it has no System sender
+// for a Test send to fall back to (ADR 0041).
+func WithoutSystemSender() Option { return func(s *setup) { s.noSystemSender = true } }
+
+// WithSystemSenderWithoutFrom gives the Instance a System sender that names no From of its own,
+// which a Test send must refuse rather than send with an empty From.
+func WithSystemSenderWithoutFrom() Option { return func(s *setup) { s.noSystemFrom = true } }
 
 // WithRunningVersion sets the version the Instance's Release check compares against, so a
 // test runs as a release build ("0.1.0") instead of the "dev" test build.
@@ -316,7 +328,15 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	client.Use(edition.Hooks()...)
 	bus.Use(edition.Hooks()...)
 	// The Staff hold freezer rides the send chokepoint like the app's.
-	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()), outbound.WithTrackingDomains())
+	outboundOpts := []outbound.Option{outbound.WithFreezers(edition.Freezer()), outbound.WithTrackingDomains(), outbound.WithTestSendBudget(attempts)}
+	switch {
+	case st.noSystemSender:
+	case st.noSystemFrom:
+		outboundOpts = append(outboundOpts, outbound.WithSystemSender(struct{ messaging.EmailSender }{systemMail}))
+	default:
+		outboundOpts = append(outboundOpts, outbound.WithSystemSender(systemFrom{systemMail}))
+	}
+	sender := outbound.New(bus, resolver, tracker, outboundOpts...)
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
 	inline := jobs.NewInline(client, sender, systemMail, stubTXT, nil, cipher, catalog, cfg.AppURL)
@@ -426,6 +446,15 @@ func (s *CapturingSender) Messages() []messaging.EmailMessage {
 	defer s.mu.Unlock()
 	return append([]messaging.EmailMessage(nil), s.sent...)
 }
+
+// SystemFrom is the From address of the test Instance's System sender.
+const SystemFrom = "noreply@sphericon.test"
+
+// systemFrom is the System sender over the capturing system mail: it sends from SystemFrom,
+// where the capturing sender itself defaults to a Workspace's verified domain.
+type systemFrom struct{ *CapturingSender }
+
+func (systemFrom) DefaultFrom() (string, string) { return SystemFrom, "sphericon" }
 
 // fixedResolver returns the same capturing sender for any workspace, so inline
 // broadcast sends work without a configured integration.

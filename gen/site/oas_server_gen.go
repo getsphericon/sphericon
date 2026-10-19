@@ -206,7 +206,9 @@ type Handler interface {
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
 	// SiteBroadcastsTestSend implements SiteBroadcasts_testSend operation.
 	//
-	// Send a one-off rendered preview to a single address.
+	// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
+	// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
+	// address is refused with 422, the System sender's caps answer 429.
 	//
 	// POST /workspaces/{slug}/broadcasts/{id}/test-send
 	SiteBroadcastsTestSend(ctx context.Context, req *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
@@ -544,6 +546,19 @@ type Handler interface {
 	//
 	// POST /workspaces/{slug}/sending-domains/{id}/verify
 	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)
+	// SiteSetupChecklistDismiss implements SiteSetupChecklist_dismiss operation.
+	//
+	// Dismiss the Setup checklist for the whole Workspace (owner and admin only). Idempotent: dismissing a
+	// dismissed checklist changes nothing. Returns the checklist as it now reads.
+	//
+	// POST /workspaces/{slug}/setup-checklist/dismissal
+	SiteSetupChecklistDismiss(ctx context.Context, params SiteSetupChecklistDismissParams) (SiteSetupChecklistDismissRes, error)
+	// SiteSetupChecklistGet implements SiteSetupChecklist_get operation.
+	//
+	// The Workspace's Setup checklist.
+	//
+	// GET /workspaces/{slug}/setup-checklist
+	SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (SiteSetupChecklistGetRes, error)
 	// SiteSuppressionsCreate implements SiteSuppressions_create operation.
 	//
 	// Manually suppress an address (reason = manual; idempotent per address).

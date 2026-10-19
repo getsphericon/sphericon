@@ -16,9 +16,11 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/accounts"
+	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/events"
 )
@@ -33,7 +35,12 @@ type Env struct {
 
 	accounts *accounts.Accounts
 	bus      *events.Bus
+	// sessions issues the cookie a signed-in User of the SPA carries.
+	sessions *apiauth.Sessions
 }
+
+// SystemSenderFrom is the From address of the Instance's System sender in the suite.
+const SystemSenderFrom = "noreply@sphericon.e2e.test"
 
 // Boot starts Mailpit and the full application (event router, job queue, HTTP server)
 // on a free loopback port and returns the Env with a stop function. The database named
@@ -56,6 +63,19 @@ func Boot() (*Env, func(), error) {
 	if err := os.Setenv("SPHERICON_OUTBOUND_ALLOW", hooks.Addr()); err != nil {
 		stopMailpit()
 		return nil, nil, err
+	}
+
+	// The Instance's System sender is Mailpit too: with no verified Sending domain a Test send
+	// goes from it (ADR 0041), and platform mail lands in the same catcher.
+	for k, v := range map[string]string{
+		"SPHERICON_SMTP_HOST":         mp.SMTPHost,
+		"SPHERICON_SMTP_PORT":         strconv.Itoa(mp.SMTPPort),
+		"SPHERICON_SYSTEM_EMAIL_FROM": SystemSenderFrom,
+	} {
+		if err := os.Setenv(k, v); err != nil {
+			stopMailpit()
+			return nil, nil, err
+		}
 	}
 
 	// The listener comes first: the public URL (SPHERICON_APP_URL) is derived from its address.
@@ -102,6 +122,7 @@ func Boot() (*Env, func(), error) {
 		hooks:    hooks,
 		accounts: acc,
 		bus:      bus,
+		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), nil),
 	}, stop, nil
 }
 

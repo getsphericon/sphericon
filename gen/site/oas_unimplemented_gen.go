@@ -295,7 +295,9 @@ func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteB
 
 // SiteBroadcastsTestSend implements SiteBroadcasts_testSend operation.
 //
-// Send a one-off rendered preview to a single address.
+// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
+// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
+// address is refused with 422, the System sender's caps answer 429.
 //
 // POST /workspaces/{slug}/broadcasts/{id}/test-send
 func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (r SiteBroadcastsTestSendRes, _ error) {
@@ -789,6 +791,25 @@ func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params S
 //
 // POST /workspaces/{slug}/sending-domains/{id}/verify
 func (UnimplementedHandler) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (r SiteSendingDomainsVerifyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteSetupChecklistDismiss implements SiteSetupChecklist_dismiss operation.
+//
+// Dismiss the Setup checklist for the whole Workspace (owner and admin only). Idempotent: dismissing a
+// dismissed checklist changes nothing. Returns the checklist as it now reads.
+//
+// POST /workspaces/{slug}/setup-checklist/dismissal
+func (UnimplementedHandler) SiteSetupChecklistDismiss(ctx context.Context, params SiteSetupChecklistDismissParams) (r SiteSetupChecklistDismissRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteSetupChecklistGet implements SiteSetupChecklist_get operation.
+//
+// The Workspace's Setup checklist.
+//
+// GET /workspaces/{slug}/setup-checklist
+func (UnimplementedHandler) SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (r SiteSetupChecklistGetRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

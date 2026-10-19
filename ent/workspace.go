@@ -37,6 +37,8 @@ type Workspace struct {
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
 	// FeedPosition holds the value of the "feed_position" field.
 	FeedPosition int64 `json:"feed_position,omitempty"`
+	// SetupChecklistDismissedAt holds the value of the "setup_checklist_dismissed_at" field.
+	SetupChecklistDismissedAt *time.Time `json:"setup_checklist_dismissed_at,omitempty"`
 	// SuspendedAt holds the value of the "suspended_at" field.
 	SuspendedAt *time.Time `json:"suspended_at,omitempty"`
 	// SuspendedByKind holds the value of the "suspended_by_kind" field.
@@ -352,7 +354,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case workspace.FieldName, workspace.FieldSlug, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
-		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
+		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldSetupChecklistDismissedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -436,6 +438,13 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field feed_position", values[i])
 			} else if value.Valid {
 				_m.FeedPosition = value.Int64
+			}
+		case workspace.FieldSetupChecklistDismissedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field setup_checklist_dismissed_at", values[i])
+			} else if value.Valid {
+				_m.SetupChecklistDismissedAt = new(time.Time)
+				*_m.SetupChecklistDismissedAt = value.Time
 			}
 		case workspace.FieldSuspendedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -685,6 +694,11 @@ func (_m *Workspace) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("feed_position=")
 	builder.WriteString(fmt.Sprintf("%v", _m.FeedPosition))
+	builder.WriteString(", ")
+	if v := _m.SetupChecklistDismissedAt; v != nil {
+		builder.WriteString("setup_checklist_dismissed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.SuspendedAt; v != nil {
 		builder.WriteString("suspended_at=")

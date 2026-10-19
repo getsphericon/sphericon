@@ -22,17 +22,7 @@ type Broadcast struct {
 func (w *Workspace) SendBroadcast(b Broadcast) {
 	w.t.Helper()
 	ctx := w.t.Context()
-	if b.Name == "" {
-		b.Name = "e2e broadcast " + uniq()
-	}
-	res, err := w.api.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-		Name:      b.Name,
-		Subject:   externalapi.NewOptString(b.Subject),
-		Body:      externalapi.NewOptString(b.Body),
-		FromName:  externalapi.NewOptString(w.FromName),
-		FromEmail: externalapi.NewOptEmailAddress(externalapi.EmailAddress(w.FromEmail)),
-	})
-	created := ok[externalapi.BroadcastResource](w.t, "create broadcast", res, err)
+	created := w.createBroadcast(b)
 
 	aud, err := w.api.BroadcastsSetAudience(ctx, &externalapi.SetBroadcastAudienceInput{SegmentId: externalapi.NilEntityId{Null: true}},
 		externalapi.BroadcastsSetAudienceParams{ID: created.ID})
@@ -41,4 +31,20 @@ func (w *Workspace) SendBroadcast(b Broadcast) {
 	sched, err := w.api.BroadcastsSchedule(ctx, &externalapi.ScheduleBroadcastInput{ScheduledAt: externalapi.Timestamp(time.Now())},
 		externalapi.BroadcastsScheduleParams{ID: created.ID})
 	ok[externalapi.BroadcastResource](w.t, "schedule broadcast", sched, err)
+}
+
+// createBroadcast creates a draft Broadcast from the Workspace's FromEmail/FromName.
+func (w *Workspace) createBroadcast(b Broadcast) *externalapi.BroadcastResource {
+	w.t.Helper()
+	if b.Name == "" {
+		b.Name = "e2e broadcast " + uniq()
+	}
+	res, err := w.api.BroadcastsCreate(w.t.Context(), &externalapi.CreateBroadcastInput{
+		Name:      b.Name,
+		Subject:   externalapi.NewOptString(b.Subject),
+		Body:      externalapi.NewOptString(b.Body),
+		FromName:  externalapi.NewOptString(w.FromName),
+		FromEmail: externalapi.NewOptEmailAddress(externalapi.EmailAddress(w.FromEmail)),
+	})
+	return ok[externalapi.BroadcastResource](w.t, "create broadcast", res, err)
 }

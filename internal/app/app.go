@@ -1021,7 +1021,18 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		opts := []outbound.Option{outbound.WithFreezers(edition.Freezer())}
+		attempts, err := do.Invoke[*accounts.Attempts](i)
+		if err != nil {
+			return nil, err
+		}
+		opts := []outbound.Option{outbound.WithFreezers(edition.Freezer()), outbound.WithTestSendBudget(attempts)}
+		if cfg.SystemMailConfigured() {
+			sys, err := do.Invoke[*systemSender](i)
+			if err != nil {
+				return nil, err
+			}
+			opts = append(opts, outbound.WithSystemSender(sys.EmailSender))
+		}
 		if cfg.TrackingCNAMETarget != "" {
 			opts = append(opts, outbound.WithTrackingDomains())
 		}

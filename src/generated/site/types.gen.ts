@@ -2481,6 +2481,57 @@ export type SiteSesConfigInput = {
 };
 
 /**
+ * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
+ */
+export type SiteSetupProgress = {
+  steps: SiteSetupSteps;
+  /**
+   * Every step is done
+   */
+  complete: boolean;
+  /**
+   * An owner or admin dismissed the checklist for the whole Workspace
+   */
+  dismissed: boolean;
+};
+
+/**
+ * Where one Setup checklist step stands, read off the Workspace's own data
+ */
+export const SiteSetupStepStatus = {
+  TODO: 'todo',
+  PENDING: 'pending',
+  DONE: 'done'
+} as const;
+
+/**
+ * Where one Setup checklist step stands, read off the Workspace's own data
+ */
+export type SiteSetupStepStatus = typeof SiteSetupStepStatus[keyof typeof SiteSetupStepStatus];
+
+/**
+ * The four Setup checklist steps, in the order the checklist shows them; none blocks another
+ */
+export type SiteSetupSteps = {
+  /**
+   * At least one Integration exists
+   */
+  integration: SiteSetupStepStatus;
+  /**
+   * At least one Sending domain is verified; pending while one exists unverified
+   */
+  sendingDomain: SiteSetupStepStatus;
+  /**
+   * At least one Contact exists, from any source
+   */
+  contact: SiteSetupStepStatus;
+  /**
+   * At least one Outbound message was sent, from any surface (a Test send is not one)
+   */
+  sentEmail: SiteSetupStepStatus;
+};
+
+/**
  * SMTP config without the password
  */
 export type SiteSmtpConfig = {
@@ -2587,6 +2638,17 @@ export type SiteTestSendBroadcastInput = {
    * Address to send the rendered preview to
    */
   email: EmailAddress;
+};
+
+/**
+ * What a test send did: the address the preview went out from
+ */
+export type SiteTestSendBroadcastResult = {
+  /**
+   * The From address of the preview. A Workspace with a verified Sending domain gets its own
+   * domain; one without gets the System sender, which is not the address Contacts will see.
+   */
+  from: EmailAddress;
 };
 
 /**
@@ -5326,15 +5388,19 @@ export type SiteBroadcastsTestSendErrors = {
    * RFC 7807 validation response
    */
   422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
 };
 
 export type SiteBroadcastsTestSendError = SiteBroadcastsTestSendErrors[keyof SiteBroadcastsTestSendErrors];
 
 export type SiteBroadcastsTestSendResponses = {
   /**
-   * There is no content to send for this request, but the headers may be useful.
+   * The request has succeeded.
    */
-  204: void;
+  200: SiteTestSendBroadcastResult;
 };
 
 export type SiteBroadcastsTestSendResponse = SiteBroadcastsTestSendResponses[keyof SiteBroadcastsTestSendResponses];
@@ -6924,6 +6990,64 @@ export type SiteSendingDomainsVerifyResponses = {
 };
 
 export type SiteSendingDomainsVerifyResponse = SiteSendingDomainsVerifyResponses[keyof SiteSendingDomainsVerifyResponses];
+
+export type SiteSetupChecklistGetData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/setup-checklist';
+};
+
+export type SiteSetupChecklistGetErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteSetupChecklistGetError = SiteSetupChecklistGetErrors[keyof SiteSetupChecklistGetErrors];
+
+export type SiteSetupChecklistGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSetupProgress;
+};
+
+export type SiteSetupChecklistGetResponse = SiteSetupChecklistGetResponses[keyof SiteSetupChecklistGetResponses];
+
+export type SiteSetupChecklistDismissData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/setup-checklist/dismissal';
+};
+
+export type SiteSetupChecklistDismissErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteSetupChecklistDismissError = SiteSetupChecklistDismissErrors[keyof SiteSetupChecklistDismissErrors];
+
+export type SiteSetupChecklistDismissResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSetupProgress;
+};
+
+export type SiteSetupChecklistDismissResponse = SiteSetupChecklistDismissResponses[keyof SiteSetupChecklistDismissResponses];
 
 export type SiteSuppressionsListData = {
   body?: never;

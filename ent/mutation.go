@@ -34742,108 +34742,109 @@ func (m *WebhookEndpointMutation) ResetEdge(name string) error {
 // WorkspaceMutation represents an operation that mutates the Workspace nodes in the graph.
 type WorkspaceMutation struct {
 	config
-	op                          Op
-	typ                         string
-	id                          *int64
-	created_at                  *time.Time
-	updated_at                  *time.Time
-	name                        *string
-	slug                        *string
-	collect_key                 *string
-	require_confirmed_opt_in    *bool
-	postal_address              *string
-	retention_days              *int
-	addretention_days           *int
-	second_factor_required_at   *time.Time
-	feed_position               *int64
-	addfeed_position            *int64
-	suspended_at                *time.Time
-	suspended_by_kind           *workspace.SuspendedByKind
-	suspended_by_id             *string
-	suspension_reason           *string
-	cleared_at                  *time.Time
-	abuse_exempt                *bool
-	abuse_warning_notified_at   *time.Time
-	abuse_freeze_notified_at    *time.Time
-	clearedFields               map[string]struct{}
-	contacts                    map[int64]struct{}
-	removedcontacts             map[int64]struct{}
-	clearedcontacts             bool
-	custom_fields               map[int64]struct{}
-	removedcustom_fields        map[int64]struct{}
-	clearedcustom_fields        bool
-	tags                        map[int64]struct{}
-	removedtags                 map[int64]struct{}
-	clearedtags                 bool
-	segments                    map[int64]struct{}
-	removedsegments             map[int64]struct{}
-	clearedsegments             bool
-	events                      map[int64]struct{}
-	removedevents               map[int64]struct{}
-	clearedevents               bool
-	visitors                    map[int64]struct{}
-	removedvisitors             map[int64]struct{}
-	clearedvisitors             bool
-	api_tokens                  map[int64]struct{}
-	removedapi_tokens           map[int64]struct{}
-	clearedapi_tokens           bool
-	integrations                map[int64]struct{}
-	removedintegrations         map[int64]struct{}
-	clearedintegrations         bool
-	sending_domains             map[int64]struct{}
-	removedsending_domains      map[int64]struct{}
-	clearedsending_domains      bool
-	send_limiters               map[int64]struct{}
-	removedsend_limiters        map[int64]struct{}
-	clearedsend_limiters        bool
-	holds                       map[int64]struct{}
-	removedholds                map[int64]struct{}
-	clearedholds                bool
-	broadcasts                  map[int64]struct{}
-	removedbroadcasts           map[int64]struct{}
-	clearedbroadcasts           bool
-	broadcast_recipients        map[int64]struct{}
-	removedbroadcast_recipients map[int64]struct{}
-	clearedbroadcast_recipients bool
-	email_templates             map[int64]struct{}
-	removedemail_templates      map[int64]struct{}
-	clearedemail_templates      bool
-	automations                 map[int64]struct{}
-	removedautomations          map[int64]struct{}
-	clearedautomations          bool
-	automation_runs             map[int64]struct{}
-	removedautomation_runs      map[int64]struct{}
-	clearedautomation_runs      bool
-	webhook_endpoints           map[int64]struct{}
-	removedwebhook_endpoints    map[int64]struct{}
-	clearedwebhook_endpoints    bool
-	suppressions                map[int64]struct{}
-	removedsuppressions         map[int64]struct{}
-	clearedsuppressions         bool
-	unsubscribes                map[int64]struct{}
-	removedunsubscribes         map[int64]struct{}
-	clearedunsubscribes         bool
-	confirmations               map[int64]struct{}
-	removedconfirmations        map[int64]struct{}
-	clearedconfirmations        bool
-	outbound_messages           map[int64]struct{}
-	removedoutbound_messages    map[int64]struct{}
-	clearedoutbound_messages    bool
-	memberships                 map[int64]struct{}
-	removedmemberships          map[int64]struct{}
-	clearedmemberships          bool
-	invitations                 map[int64]struct{}
-	removedinvitations          map[int64]struct{}
-	clearedinvitations          bool
-	audit_entries               map[int64]struct{}
-	removedaudit_entries        map[int64]struct{}
-	clearedaudit_entries        bool
-	usages                      map[int64]struct{}
-	removedusages               map[int64]struct{}
-	clearedusages               bool
-	done                        bool
-	oldValue                    func(context.Context) (*Workspace, error)
-	predicates                  []predicate.Workspace
+	op                           Op
+	typ                          string
+	id                           *int64
+	created_at                   *time.Time
+	updated_at                   *time.Time
+	name                         *string
+	slug                         *string
+	collect_key                  *string
+	require_confirmed_opt_in     *bool
+	postal_address               *string
+	retention_days               *int
+	addretention_days            *int
+	second_factor_required_at    *time.Time
+	feed_position                *int64
+	addfeed_position             *int64
+	setup_checklist_dismissed_at *time.Time
+	suspended_at                 *time.Time
+	suspended_by_kind            *workspace.SuspendedByKind
+	suspended_by_id              *string
+	suspension_reason            *string
+	cleared_at                   *time.Time
+	abuse_exempt                 *bool
+	abuse_warning_notified_at    *time.Time
+	abuse_freeze_notified_at     *time.Time
+	clearedFields                map[string]struct{}
+	contacts                     map[int64]struct{}
+	removedcontacts              map[int64]struct{}
+	clearedcontacts              bool
+	custom_fields                map[int64]struct{}
+	removedcustom_fields         map[int64]struct{}
+	clearedcustom_fields         bool
+	tags                         map[int64]struct{}
+	removedtags                  map[int64]struct{}
+	clearedtags                  bool
+	segments                     map[int64]struct{}
+	removedsegments              map[int64]struct{}
+	clearedsegments              bool
+	events                       map[int64]struct{}
+	removedevents                map[int64]struct{}
+	clearedevents                bool
+	visitors                     map[int64]struct{}
+	removedvisitors              map[int64]struct{}
+	clearedvisitors              bool
+	api_tokens                   map[int64]struct{}
+	removedapi_tokens            map[int64]struct{}
+	clearedapi_tokens            bool
+	integrations                 map[int64]struct{}
+	removedintegrations          map[int64]struct{}
+	clearedintegrations          bool
+	sending_domains              map[int64]struct{}
+	removedsending_domains       map[int64]struct{}
+	clearedsending_domains       bool
+	send_limiters                map[int64]struct{}
+	removedsend_limiters         map[int64]struct{}
+	clearedsend_limiters         bool
+	holds                        map[int64]struct{}
+	removedholds                 map[int64]struct{}
+	clearedholds                 bool
+	broadcasts                   map[int64]struct{}
+	removedbroadcasts            map[int64]struct{}
+	clearedbroadcasts            bool
+	broadcast_recipients         map[int64]struct{}
+	removedbroadcast_recipients  map[int64]struct{}
+	clearedbroadcast_recipients  bool
+	email_templates              map[int64]struct{}
+	removedemail_templates       map[int64]struct{}
+	clearedemail_templates       bool
+	automations                  map[int64]struct{}
+	removedautomations           map[int64]struct{}
+	clearedautomations           bool
+	automation_runs              map[int64]struct{}
+	removedautomation_runs       map[int64]struct{}
+	clearedautomation_runs       bool
+	webhook_endpoints            map[int64]struct{}
+	removedwebhook_endpoints     map[int64]struct{}
+	clearedwebhook_endpoints     bool
+	suppressions                 map[int64]struct{}
+	removedsuppressions          map[int64]struct{}
+	clearedsuppressions          bool
+	unsubscribes                 map[int64]struct{}
+	removedunsubscribes          map[int64]struct{}
+	clearedunsubscribes          bool
+	confirmations                map[int64]struct{}
+	removedconfirmations         map[int64]struct{}
+	clearedconfirmations         bool
+	outbound_messages            map[int64]struct{}
+	removedoutbound_messages     map[int64]struct{}
+	clearedoutbound_messages     bool
+	memberships                  map[int64]struct{}
+	removedmemberships           map[int64]struct{}
+	clearedmemberships           bool
+	invitations                  map[int64]struct{}
+	removedinvitations           map[int64]struct{}
+	clearedinvitations           bool
+	audit_entries                map[int64]struct{}
+	removedaudit_entries         map[int64]struct{}
+	clearedaudit_entries         bool
+	usages                       map[int64]struct{}
+	removedusages                map[int64]struct{}
+	clearedusages                bool
+	done                         bool
+	oldValue                     func(context.Context) (*Workspace, error)
+	predicates                   []predicate.Workspace
 }
 
 var _ ent.Mutation = (*WorkspaceMutation)(nil)
@@ -35388,6 +35389,55 @@ func (m *WorkspaceMutation) AddedFeedPosition() (r int64, exists bool) {
 func (m *WorkspaceMutation) ResetFeedPosition() {
 	m.feed_position = nil
 	m.addfeed_position = nil
+}
+
+// SetSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field.
+func (m *WorkspaceMutation) SetSetupChecklistDismissedAt(t time.Time) {
+	m.setup_checklist_dismissed_at = &t
+}
+
+// SetupChecklistDismissedAt returns the value of the "setup_checklist_dismissed_at" field in the mutation.
+func (m *WorkspaceMutation) SetupChecklistDismissedAt() (r time.Time, exists bool) {
+	v := m.setup_checklist_dismissed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSetupChecklistDismissedAt returns the old "setup_checklist_dismissed_at" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldSetupChecklistDismissedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSetupChecklistDismissedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSetupChecklistDismissedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSetupChecklistDismissedAt: %w", err)
+	}
+	return oldValue.SetupChecklistDismissedAt, nil
+}
+
+// ClearSetupChecklistDismissedAt clears the value of the "setup_checklist_dismissed_at" field.
+func (m *WorkspaceMutation) ClearSetupChecklistDismissedAt() {
+	m.setup_checklist_dismissed_at = nil
+	m.clearedFields[workspace.FieldSetupChecklistDismissedAt] = struct{}{}
+}
+
+// SetupChecklistDismissedAtCleared returns if the "setup_checklist_dismissed_at" field was cleared in this mutation.
+func (m *WorkspaceMutation) SetupChecklistDismissedAtCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldSetupChecklistDismissedAt]
+	return ok
+}
+
+// ResetSetupChecklistDismissedAt resets all changes to the "setup_checklist_dismissed_at" field.
+func (m *WorkspaceMutation) ResetSetupChecklistDismissedAt() {
+	m.setup_checklist_dismissed_at = nil
+	delete(m.clearedFields, workspace.FieldSetupChecklistDismissedAt)
 }
 
 // SetSuspendedAt sets the "suspended_at" field.
@@ -37153,7 +37203,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -37183,6 +37233,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.feed_position != nil {
 		fields = append(fields, workspace.FieldFeedPosition)
+	}
+	if m.setup_checklist_dismissed_at != nil {
+		fields = append(fields, workspace.FieldSetupChecklistDismissedAt)
 	}
 	if m.suspended_at != nil {
 		fields = append(fields, workspace.FieldSuspendedAt)
@@ -37236,6 +37289,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.SecondFactorRequiredAt()
 	case workspace.FieldFeedPosition:
 		return m.FeedPosition()
+	case workspace.FieldSetupChecklistDismissedAt:
+		return m.SetupChecklistDismissedAt()
 	case workspace.FieldSuspendedAt:
 		return m.SuspendedAt()
 	case workspace.FieldSuspendedByKind:
@@ -37281,6 +37336,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSecondFactorRequiredAt(ctx)
 	case workspace.FieldFeedPosition:
 		return m.OldFeedPosition(ctx)
+	case workspace.FieldSetupChecklistDismissedAt:
+		return m.OldSetupChecklistDismissedAt(ctx)
 	case workspace.FieldSuspendedAt:
 		return m.OldSuspendedAt(ctx)
 	case workspace.FieldSuspendedByKind:
@@ -37375,6 +37432,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFeedPosition(v)
+		return nil
+	case workspace.FieldSetupChecklistDismissedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSetupChecklistDismissedAt(v)
 		return nil
 	case workspace.FieldSuspendedAt:
 		v, ok := value.(time.Time)
@@ -37498,6 +37562,9 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	if m.FieldCleared(workspace.FieldSecondFactorRequiredAt) {
 		fields = append(fields, workspace.FieldSecondFactorRequiredAt)
 	}
+	if m.FieldCleared(workspace.FieldSetupChecklistDismissedAt) {
+		fields = append(fields, workspace.FieldSetupChecklistDismissedAt)
+	}
 	if m.FieldCleared(workspace.FieldSuspendedAt) {
 		fields = append(fields, workspace.FieldSuspendedAt)
 	}
@@ -37541,6 +37608,9 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 		return nil
 	case workspace.FieldSecondFactorRequiredAt:
 		m.ClearSecondFactorRequiredAt()
+		return nil
+	case workspace.FieldSetupChecklistDismissedAt:
+		m.ClearSetupChecklistDismissedAt()
 		return nil
 	case workspace.FieldSuspendedAt:
 		m.ClearSuspendedAt()
@@ -37600,6 +37670,9 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldFeedPosition:
 		m.ResetFeedPosition()
+		return nil
+	case workspace.FieldSetupChecklistDismissedAt:
+		m.ResetSetupChecklistDismissedAt()
 		return nil
 	case workspace.FieldSuspendedAt:
 		m.ResetSuspendedAt()

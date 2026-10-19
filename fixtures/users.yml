@@ -133,3 +133,11 @@
   email: fresh@unverified.test
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+# Owner of Hooli, the Workspace with nothing on it (Setup checklist tests); owns nothing else.
+- id: 18 # fixture: OwnerSally
+  name: Sally
+  email: sally@hooli.test
+  password_hash: '{{argonHash "sally-test-password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'

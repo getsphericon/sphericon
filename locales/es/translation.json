@@ -250,6 +250,7 @@
     "testSend": "Envío de prueba",
     "testSendButton": "Enviar prueba",
     "testSendEmailLabel": "Enviar una prueba a",
+    "testSendFrom": "Enviado desde {{from}}. Hasta que se verifique un dominio de envío, es la dirección de la propia plataforma, no la que verán tus contactos.",
     "useTemplate": "Empezar desde una plantilla",
     "useTemplateNone": "— ninguna —"
   },
@@ -999,6 +1000,44 @@
       "urlLabel": "URL del endpoint"
     },
     "webhooksTitle": "Webhooks"
+  },
+  "setupChecklist": {
+    "checkError": "No se pudo comprobar el dominio",
+    "checkNow": "Comprobar ahora",
+    "copied": "Copiado",
+    "copy": "Copiar",
+    "copyDkim": "Copiar el valor DKIM",
+    "description": "Cuatro pasos hasta tu primer correo. Cada uno se marca solo cuando existe lo necesario, en cualquier orden.",
+    "dismiss": "Descartar",
+    "dismissError": "No se pudo descartar la lista de configuración",
+    "dismissForbidden": "Solo los propietarios y administradores pueden descartar la lista de configuración.",
+    "done": "Hecho",
+    "loadError": "No se pudo cargar la lista de configuración",
+    "recordHint": "Añade este registro DNS para {{domain}} en tu proveedor de DNS:",
+    "steps": {
+      "contact": {
+        "action": "Abrir contactos",
+        "description": "Importación, API o tracker: basta con un contacto.",
+        "title": "Añade un contacto"
+      },
+      "integration": {
+        "action": "Añadir una integración",
+        "description": "SMTP o un servicio compatible con SES que envíe tus correos.",
+        "title": "Conecta una integración"
+      },
+      "sendingDomain": {
+        "action": "Abrir dominios de envío",
+        "description": "Publica el registro DKIM en tu proveedor de DNS; la verificación puede tardar y no bloquea nada más.",
+        "title": "Verifica un dominio de envío"
+      },
+      "sentEmail": {
+        "action": "Crear una difusión",
+        "description": "Crea una difusión. Un envío de prueba no cuenta.",
+        "title": "Envía tu primer correo"
+      }
+    },
+    "title": "Configura sphericon",
+    "waitingForDns": "Esperando al DNS"
   },
   "status": {
     "active": "Activo",

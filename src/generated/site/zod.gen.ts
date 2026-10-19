@@ -720,6 +720,34 @@ export const zSiteSesConfigInput = z.object({
 });
 
 /**
+ * Where one Setup checklist step stands, read off the Workspace's own data
+ */
+export const zSiteSetupStepStatus = z.enum([
+  'todo',
+  'pending',
+  'done'
+]);
+
+/**
+ * The four Setup checklist steps, in the order the checklist shows them; none blocks another
+ */
+export const zSiteSetupSteps = z.object({
+  integration: zSiteSetupStepStatus,
+  sendingDomain: zSiteSetupStepStatus,
+  contact: zSiteSetupStepStatus,
+  sentEmail: zSiteSetupStepStatus
+});
+
+/**
+ * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
+ */
+export const zSiteSetupProgress = z.object({
+  steps: zSiteSetupSteps,
+  complete: z.boolean(),
+  dismissed: z.boolean()
+});
+
+/**
  * SMTP config without the password
  */
 export const zSiteSmtpConfig = z.object({
@@ -802,6 +830,13 @@ export const zSiteSuppressionReason = z.enum([
  */
 export const zSiteTestSendBroadcastInput = z.object({
   email: zEmailAddress
+});
+
+/**
+ * What a test send did: the address the preview went out from
+ */
+export const zSiteTestSendBroadcastResult = z.object({
+  from: zEmailAddress
 });
 
 /**
@@ -2305,9 +2340,9 @@ export const zSiteBroadcastsTestSendPath = z.object({
 });
 
 /**
- * There is no content to send for this request, but the headers may be useful.
+ * The request has succeeded.
  */
-export const zSiteBroadcastsTestSendResponse = z.void();
+export const zSiteBroadcastsTestSendResponse = zSiteTestSendBroadcastResult;
 
 export const zSiteContactsListPath = z.object({
   slug: z.string()
@@ -2691,6 +2726,24 @@ export const zSiteSendingDomainsVerifyPath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteSendingDomainsVerifyResponse = z.void();
+
+export const zSiteSetupChecklistGetPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSetupChecklistGetResponse = zSiteSetupProgress;
+
+export const zSiteSetupChecklistDismissPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSetupChecklistDismissResponse = zSiteSetupProgress;
 
 export const zSiteSuppressionsListPath = z.object({
   slug: z.string()

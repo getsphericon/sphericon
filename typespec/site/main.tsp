@@ -28,6 +28,7 @@ import "./resources/enrollments.tsp";
 import "./resources/webhooks.tsp";
 import "./resources/sending-domains.tsp";
 import "./resources/analytics.tsp";
+import "./resources/setup-checklist.tsp";
 import "./resources/suppressions.tsp";
 import "./resources/transactional-emails.tsp";
 import "./resources/oauth.tsp";

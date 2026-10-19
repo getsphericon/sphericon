@@ -89,7 +89,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "email", Type: field.TypeString},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"login", "staff_login", "password_reset", "register", "email_change"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"login", "staff_login", "password_reset", "register", "email_change", "test_send_user", "test_send_workspace"}},
 		{Name: "failures", Type: field.TypeInt, Default: 0},
 		{Name: "last_attempt_at", Type: field.TypeTime},
 	}
@@ -1232,6 +1232,7 @@ var (
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
 		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
+		{Name: "setup_checklist_dismissed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "suspended_at", Type: field.TypeTime, Nullable: true},
 		{Name: "suspended_by_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"system", "cli", "staff"}},
 		{Name: "suspended_by_id", Type: field.TypeString, Nullable: true},

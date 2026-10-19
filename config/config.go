@@ -611,6 +611,12 @@ func seedDefaults(vars map[string]string, envName string) {
 // where a Secure cookie would never be sent back.
 func (c *Config) SecureCookies() bool { return strings.HasPrefix(c.AppURL, "https://") }
 
+// SystemMailConfigured reports whether the Instance has outbound mail, that is, a System
+// sender: the SES provider, or SMTP with a host. Without it there is none (ADR 0041).
+func (c *Config) SystemMailConfigured() bool {
+	return c.SystemEmailProvider == "ses" || c.SMTPHost != ""
+}
+
 // validate enforces invariants that depend on the deployment environment.
 func (c *Config) validate(envName string) error {
 	// Outside development/test, an empty SPHERICON_JWT_SECRET silently signs auth tokens

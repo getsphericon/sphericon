@@ -199,6 +199,20 @@ rendering, the unsubscribe footer and headers, DKIM signing, the provider call, 
 the result. Every surface goes through it; none re-implements any part.
 _Avoid_: Delivery pipeline, send path (unqualified), mailer
 
+**Test send**:
+A Broadcast's author sending it to one address they name, to see the mail before it goes out. It
+skips Send-eligibility and leaves no Outbound message or `email.sent` Event, so it never shows in
+Activity or the rates. While the Workspace has no verified Sending domain it goes from the System
+sender, and only to the address of the User who asks.
+_Avoid_: Preview (that is rendering without sending), dry run
+
+**System sender**:
+The Instance's own sending identity for platform mail to Users (welcome, email verification,
+password reset, invitations, the unverified-domain notice) and for a Test send from a Workspace
+with no verified Sending domain. It belongs to no Workspace and is absent on an Instance with no
+outbound mail.
+_Avoid_: No-reply sender, platform mailer
+
 **Outbound message**:
 The durable record of one Outbound send — which surface and which of its records it belongs to,
 the Sending source (none for Transactional), the Sending domain, the provider's message id, and
@@ -553,6 +567,15 @@ content and audience definitions, Contact edits and deletes, imports, exports, l
 the data plane, whose facts are already Events and Outbound messages. Readable by owner and
 admin. An Enterprise concept, absent from a plain self-hosted install.
 _Avoid_: Event (that is a Contact/data-plane fact), activity, history, changelog
+
+**Setup checklist**:
+The Workspace's path to its first sent Broadcast, shown on the Overview until it is done or
+dismissed: an Integration, a verified Sending domain, a Contact, a sent email (an Outbound message
+with a sent outcome, from any surface). Each step is
+read off the Workspace's own data, never ticked by hand, so it cannot disagree with the Workspace;
+a Sending domain still waiting for DNS is a step in progress and blocks no later step. A Test send
+does not complete the last step. Dismissing it is one flag on the Workspace, not on a Membership.
+_Avoid_: Onboarding wizard, getting started, tour
 
 ### Usage & holds
 
