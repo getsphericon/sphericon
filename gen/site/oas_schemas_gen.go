@@ -4244,6 +4244,8 @@ type SiteApiTokenResource struct {
 	LastUsedAt OptNilTimestamp `json:"lastUsedAt"`
 	// Expiry, if set.
 	ExpiresAt OptNilTimestamp `json:"expiresAt"`
+	// When the token was revoked, if it was (revoked tokens stay listed).
+	RevokedAt OptNilTimestamp `json:"revokedAt"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -4276,6 +4278,11 @@ func (s *SiteApiTokenResource) GetLastUsedAt() OptNilTimestamp {
 // GetExpiresAt returns the value of ExpiresAt.
 func (s *SiteApiTokenResource) GetExpiresAt() OptNilTimestamp {
 	return s.ExpiresAt
+}
+
+// GetRevokedAt returns the value of RevokedAt.
+func (s *SiteApiTokenResource) GetRevokedAt() OptNilTimestamp {
+	return s.RevokedAt
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -4311,6 +4318,11 @@ func (s *SiteApiTokenResource) SetLastUsedAt(val OptNilTimestamp) {
 // SetExpiresAt sets the value of ExpiresAt.
 func (s *SiteApiTokenResource) SetExpiresAt(val OptNilTimestamp) {
 	s.ExpiresAt = val
+}
+
+// SetRevokedAt sets the value of RevokedAt.
+func (s *SiteApiTokenResource) SetRevokedAt(val OptNilTimestamp) {
+	s.RevokedAt = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

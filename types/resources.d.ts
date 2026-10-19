@@ -935,6 +935,7 @@ export default interface Resources {
         "revokeConfirmDescription": "Applications using this token will immediately lose access.",
         "revokeConfirmTitle": "Revoke token?",
         "revokeError": "Failed to revoke token",
+        "revoked": "Revoked",
         "scopesLabel": "Scopes",
         "secretNotice": "Copy this token now — it won't be shown again."
       },

@@ -6,10 +6,10 @@ import (
 	"crypto/subtle"
 	"errors"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
 	"golang.org/x/oauth2"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -33,6 +33,8 @@ const (
 // concurrent request): the grant is revoked.
 var errRefreshReuse = errors.New("refresh token reuse")
 
+var errUnknownRefreshToken = invalidGrant("unknown or expired refresh token")
+
 // oauthError is a token endpoint failure rendered as an RFC 6749 section 5.2 response.
 type oauthError struct {
 	status      int
@@ -46,8 +48,8 @@ func invalidGrant(description string) *oauthError {
 	return &oauthError{http.StatusBadRequest, "invalid_grant", description}
 }
 
-// issued is a token response: the access token, its lifetime, and the refresh token that
-// replaces it.
+// issued is a token response: the access token, the refresh token that replaces it and the
+// scopes it carries.
 type issued struct {
 	accessToken  string
 	refreshToken string
@@ -177,7 +179,7 @@ func (s *Server) refresh(ctx context.Context, presented, clientID, scope string)
 		WithAPIToken().
 		Only(ctx)
 	if ent.IsNotFound(err) {
-		return nil, invalidGrant("unknown or expired refresh token")
+		return nil, errUnknownRefreshToken
 	}
 	if err != nil {
 		return nil, err
@@ -190,12 +192,15 @@ func (s *Server) refresh(ctx context.Context, presented, clientID, scope string)
 	case row.UsedAt != nil:
 		return nil, s.revokeGrant(ctx, token.ID)
 	case token.RevokedAt != nil, !row.ExpiresAt.After(time.Now()):
-		return nil, invalidGrant("unknown or expired refresh token")
+		return nil, errUnknownRefreshToken
 	}
-	for _, want := range strings.Fields(scope) {
-		if !slices.Contains(token.Scopes, want) {
+	// A scope parameter narrows the grant for good (RFC 6749 section 6); it never widens it.
+	scopes := token.Scopes
+	if want := lo.Uniq(strings.Fields(scope)); len(want) > 0 {
+		if !lo.Every(token.Scopes, want) {
 			return nil, &oauthError{http.StatusBadRequest, "invalid_scope", "scope exceeds the original grant"}
 		}
+		scopes = want
 	}
 
 	secret, err := credentials.GenerateTokenSecret()
@@ -223,13 +228,14 @@ func (s *Server) refresh(ctx context.Context, presented, clientID, scope string)
 		rotated, err := tx.ApiToken.Update().
 			Where(apitoken.ID(token.ID), apitoken.RevokedAtIsNil()).
 			SetSecretHash(hash).
+			SetScopes(scopes).
 			SetExpiresAt(now.Add(accessTokenTTL)).
 			Save(ctx)
 		if err != nil {
 			return err
 		}
 		if rotated == 0 {
-			return invalidGrant("unknown or expired refresh token")
+			return errUnknownRefreshToken
 		}
 		if _, err := tx.OAuthRefreshToken.Delete().
 			Where(oauthrefreshtoken.APITokenID(token.ID), oauthrefreshtoken.ExpiresAtLT(now)).
@@ -245,7 +251,7 @@ func (s *Server) refresh(ctx context.Context, presented, clientID, scope string)
 	if err != nil {
 		return nil, err
 	}
-	return &issued{accessToken: credentials.TokenValue(token.Prefix, secret), refreshToken: next, scopes: token.Scopes}, nil
+	return &issued{accessToken: credentials.TokenValue(token.Prefix, secret), refreshToken: next, scopes: scopes}, nil
 }
 
 // revokeGrant revokes the grant's API token (a rotated refresh token was replayed, so the

@@ -16,7 +16,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
-// SiteTokensList returns the workspace's active (non-revoked) API tokens.
+// SiteTokensList returns the workspace's API tokens; a revoked one stays listed, marked by
+// its revoked_at, so an owner sees a connector that was revoked (by hand or by reuse detection).
 func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokensListParams) (siteapi.SiteTokensListRes, error) {
 	scoped, err := h.scopedFor(ctx, params.Slug)
 	if ent.IsNotFound(err) {
@@ -28,7 +29,6 @@ func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokens
 	}
 
 	tokens, err := scoped.ApiToken().Query().
-		Where(apitoken.RevokedAtIsNil()).
 		Order(ent.Asc(apitoken.FieldID)).
 		All(ctx)
 	if err != nil {

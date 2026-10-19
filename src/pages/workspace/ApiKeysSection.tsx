@@ -1,6 +1,7 @@
 import {
   EmptyState,
   Alert,
+  Badge,
   Button,
   Card,
   Code,
@@ -184,16 +185,21 @@ export function ApiKeysSection({ slug }: { slug: string }) {
           {
             accessor: 'actions',
             title: '',
-            render: (record) => (
-              <Button
-                size="compact-sm"
-                color="red"
-                variant="light"
-                onClick={() => onRevoke(record.id)}
-              >
-                {t(($) => $.settings.tokens.revoke)}
-              </Button>
-            ),
+            render: (record) =>
+              record.revokedAt ? (
+                <Badge color="red" variant="light">
+                  {t(($) => $.settings.tokens.revoked)}
+                </Badge>
+              ) : (
+                <Button
+                  size="compact-sm"
+                  color="red"
+                  variant="light"
+                  onClick={() => onRevoke(record.id)}
+                >
+                  {t(($) => $.settings.tokens.revoke)}
+                </Button>
+              ),
           },
         ]}
         emptyState={<EmptyState title={t(($) => $.settings.tokens.empty)} />}

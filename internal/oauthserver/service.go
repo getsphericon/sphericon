@@ -186,7 +186,7 @@ func validPKCE(s string) bool {
 	return true
 }
 
-func hashSecret(code string) string {
-	sum := sha256.Sum256([]byte(code))
+func hashSecret(secret string) string {
+	sum := sha256.Sum256([]byte(secret))
 	return hex.EncodeToString(sum[:])
 }

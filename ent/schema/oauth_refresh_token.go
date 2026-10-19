@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // OAuthRefreshToken is a single-use refresh token of an MCP connector's grant. The refresh_token
@@ -43,6 +44,13 @@ func (OAuthRefreshToken) Fields() []ent.Field {
 		field.Int64("client_id"),
 		// The grant: the one ApiToken that stays the connector's row in Settings → API keys.
 		field.Int64("api_token_id"),
+	}
+}
+
+func (OAuthRefreshToken) Indexes() []ent.Index {
+	return []ent.Index{
+		// A refresh prunes the grant's expired rows by its token.
+		index.Fields("api_token_id"),
 	}
 }
 

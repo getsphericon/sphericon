@@ -742,6 +742,13 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "oauthrefreshtoken_api_token_id",
+				Unique:  false,
+				Columns: []*schema.Column{OauthRefreshTokensColumns[7]},
+			},
+		},
 	}
 	// OutboundMessagesColumns holds the columns for the "outbound_messages" table.
 	OutboundMessagesColumns = []*schema.Column{
