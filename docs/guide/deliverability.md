@@ -108,7 +108,7 @@ through its hook.
 :::
 
 Each Integration has its own hook URL (`hookUrl`, shown on every read of the integration). To connect
-a provider, open **Settings → Developers**, choose **Inbound** on the Integration, copy the **Hook
+a provider, open **Settings → Sending**, choose **Inbound** on the Integration, copy the **Hook
 URL**, choose the **Preset**, fill its params as JSON and **Save**. A secret is stored encrypted and
 never shown again. **Regenerate URL** replaces the hook URL at once; paste the new one into the
 provider. Changing a secret keeps the old one valid until you choose **Retire old secrets**, so you

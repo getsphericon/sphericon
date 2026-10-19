@@ -50,13 +50,14 @@ configurable retention).
 your terminal, and the installation status that flips once the first event arrives. See
 [Tracking visitors and events](/guide/tracking).
 
-**Sending.** Sending domains with the DKIM, SPF and DMARC records to publish, the optional
-tracking domain for links in your mail, and the suppression list of addresses that are never
-mailed. See [Deliverability and consent](/guide/deliverability).
+**Sending.** Integrations (the SMTP or SES providers the workspace sends through, with the
+inbound hook for bounces and complaints), sending domains with the DKIM, SPF and DMARC records to
+publish, the optional tracking domain for links in your mail, and the suppression list of addresses
+that are never mailed. See [Deliverability and consent](/guide/deliverability) and
+[Presets for provider callbacks](/guide/presets).
 
-**Developers.** Integrations (the SMTP or SES providers the workspace sends through, with the
-inbound hook for bounces and complaints), API keys and webhook endpoints. See
-[Presets for provider callbacks](/guide/presets), [API](/guide/api) and [Webhooks](/guide/webhooks).
+**Developers.** API keys and webhook endpoints. See [API](/guide/api) and
+[Webhooks](/guide/webhooks).
 
 **AI agents (MCP).** The address to add as a connector in Claude or any MCP client so an agent can
 work in the workspace. Only an owner or admin can approve the connection. See

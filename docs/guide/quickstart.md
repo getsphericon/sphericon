@@ -1,30 +1,11 @@
 # Quickstart
 
-This walks you from a running instance to your first broadcast. The same four steps appear as the
+This walks you from a new account to your first broadcast. The same four steps appear as the
 **Setup checklist** on the Overview of a new workspace.
 
-## Run sphericon
-
-::: tip Prefer not to run it?
-[Sphericon Cloud](/guide/cloud) is the hosted edition: skip this section and start at "Create an account and a workspace".
+::: tip Need an instance?
+Use [Sphericon Cloud](/guide/cloud), the hosted edition, or [run sphericon yourself](/self-hosting).
 :::
-
-The quickest way is the published image. PostgreSQL is the only dependency.
-
-```sh
-docker run -p 3000:3000 \
-  -e SPHERICON_ENV=production \
-  -e DATABASE_URL="postgres://user:pass@host:5432/sphericon?sslmode=require" \
-  -e SPHERICON_APP_URL="https://example.com" \
-  -e SPHERICON_JWT_SECRET="$(openssl rand -hex 32)" \
-  -e SPHERICON_ENCRYPTION_KEY="<base64 keyset>" \
-  -e SPHERICON_DB_AUTO_MIGRATE=true \
-  ghcr.io/getsphericon/sphericon:latest
-```
-
-Every variable, and the alternative of running the single binary, is covered in
-[Self-hosting](/self-hosting). To explore with sample data instead, follow the development
-setup in the [README](https://github.com/getsphericon/sphericon#development).
 
 ## Create an account and a workspace
 
@@ -57,7 +38,7 @@ your Integration and your domain, to any address you name.
 
 ### 1. Connect an Integration
 
-In **Settings → Developers** add an SMTP server or an SES-compatible service. Credentials are stored
+In **Settings → Sending** add an SMTP server or an SES-compatible service. Credentials are stored
 encrypted with your `SPHERICON_ENCRYPTION_KEY`.
 
 ### 2. Verify a sending domain

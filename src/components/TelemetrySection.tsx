@@ -1,4 +1,4 @@
-import { Card, Stack, Switch, Text, Title } from '@mantine/core'
+import { Box, Stack, Switch, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -23,7 +23,7 @@ export function TelemetrySection({ state }: { state: SiteInstanceState }) {
   })
 
   return (
-    <Card withBorder>
+    <Box>
       <Title order={4} mb="xs">
         {t(($) => $.instance.telemetry.title)}
       </Title>
@@ -46,6 +46,6 @@ export function TelemetrySection({ state }: { state: SiteInstanceState }) {
           </Text>
         ) : null}
       </Stack>
-    </Card>
+    </Box>
   )
 }

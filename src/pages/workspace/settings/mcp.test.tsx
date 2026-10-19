@@ -27,7 +27,9 @@ test('shows the MCP endpoint of the instance', async () => {
 
   const { screen } = await renderWithRouter(<McpPage />, MCP_ROUTE)
 
-  await expect.element(screen.getByText('https://mcp.sphericon.test/mcp')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('textbox', { name: 'Connector address' }))
+    .toHaveValue('https://mcp.sphericon.test/mcp')
 })
 
 test('links to the MCP guide', async () => {

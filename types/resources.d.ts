@@ -739,7 +739,6 @@ export default interface Resources {
       "copied": "Copied",
       "copy": "Copy",
       "errorTitle": "Failed to update workspace",
-      "generalTitle": "General",
       "installStatusReceived": "Events are arriving",
       "installStatusTitle": "Installation status",
       "installStatusWaiting": "Waiting for the first event…",
@@ -823,19 +822,16 @@ export default interface Resources {
         "providerLabel": "Provider",
         "saved": "Provider saved",
         "secretKept": "Leave blank to keep the stored secret",
-        "title": "Sending providers"
+        "title": "Providers"
       },
       "loadErrorTitle": "Failed to load workspace",
       "mcp": {
+        "addressLabel": "Connector address",
         "apiKeysLink": "API keys",
         "approveNote": "Only an owner or admin can approve the connection.",
-        "description": "Add this address as a custom connector in Claude, or in any client that speaks MCP, so an agent can work in this workspace.",
+        "description": "MCP lets an AI agent work in this workspace for you: read contacts, draft broadcasts, build segments and author automations. Add this address as a connector in any AI client that speaks MCP.",
         "guideLink": "Other ways to connect",
         "memberNote": "You are a member: ask an owner or admin to connect the agent.",
-        "stepAdd": "In Claude open Settings → Connectors → Add custom connector and paste the address.",
-        "stepApprove": "Approve the access on the sphericon screen that opens.",
-        "stepConnect": "Press Connect.",
-        "title": "Connect an AI agent (MCP)",
         "tokenNote": "Approving creates an ordinary API token named “<client> (MCP)”. You can see it and revoke it under"
       },
       "members": {
@@ -866,7 +862,7 @@ export default interface Resources {
         "revokeError": "Failed to revoke invitation",
         "roleLabel": "Role",
         "roleUpdateError": "Failed to update role",
-        "title": "Team members"
+        "title": "Members"
       },
       "nameLabel": "Workspace name",
       "nav": {
@@ -906,7 +902,7 @@ export default interface Resources {
         "spf": "SPF (recommended)",
         "spfHint": "Advisory — does not gate sending.",
         "statusColumn": "Status",
-        "title": "Sending domains",
+        "title": "Domains",
         "tracking": "Tracking domain (optional)",
         "trackingHint": "Puts the links in your mail on your own domain once the CNAME resolves and HTTPS answers.",
         "trackingReason": {
@@ -962,7 +958,7 @@ export default interface Resources {
         "secretNotice": "Copy this token now — it won't be shown again."
       },
       "trackingDescription": "Paste this snippet into the <head> of your site to start collecting events.",
-      "trackingTitle": "Tracking snippet",
+      "trackingTitle": "Embed snippet",
       "viewActivity": "Open activity feed",
       "webhooks": {
         "allEvents": "All events",
