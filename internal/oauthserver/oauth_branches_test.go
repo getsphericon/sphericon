@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 // audit:read is never grantable to a connector (ADR 0016, ADR 0022).
@@ -132,7 +133,7 @@ func TestRegistrationNamesAndBoundsClients(t *testing.T) {
 // A storage outage is a server_error, never a client error or a silent success.
 func TestStorageFailureIsAServerError(t *testing.T) {
 	mux := http.NewServeMux()
-	oauthserver.New(closedClient(t), "https://app.test", "https://app.test").Mount(mux)
+	oauthserver.New(newService(closedClient(t)), "https://app.test", "https://app.test").Mount(mux)
 	do := func(req *http.Request) *httptest.ResponseRecorder {
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
@@ -159,7 +160,7 @@ func TestStorageFailureIsAServerError(t *testing.T) {
 
 func TestServiceDescribeValidatesClientRedirectAndScope(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := oauthserver.NewService(env.DB)
+	s := newService(env.DB)
 
 	_, err := s.Describe(t.Context(), "no-such-client", fixtureRedirectURI, "")
 	assert.ErrorIs(t, err, oauthserver.ErrUnknownClient)
@@ -172,14 +173,14 @@ func TestServiceDescribeValidatesClientRedirectAndScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, req.Scopes, "no scope asked means the default grant")
 
-	_, err = oauthserver.NewService(closedClient(t)).Describe(t.Context(), fixtureClientID, fixtureRedirectURI, "")
+	_, err = newService(closedClient(t)).Describe(t.Context(), fixtureClientID, fixtureRedirectURI, "")
 	require.Error(t, err)
 	assert.NotErrorIs(t, err, oauthserver.ErrUnknownClient, "an outage is not an unknown client")
 }
 
 func TestServiceDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := oauthserver.NewService(env.DB)
+	s := newService(env.DB)
 	good := oauthserver.Decision{
 		ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI, State: "st",
 		CodeChallenge: oauth2.S256ChallengeFromVerifier(verifier), Scope: "contacts:read", WorkspaceID: fixtures.AcmeID, Approve: true,
@@ -234,7 +235,12 @@ func TestServiceDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 	assert.WithinDuration(t, time.Now().Add(5*time.Minute), stored.ExpiresAt, 10*time.Second)
 	assert.NotContains(t, target, stored.CodeHash, "only the hash is stored")
 
-	_, err = oauthserver.NewService(closedClient(t)).Decide(t.Context(), good)
+	_, err = newService(closedClient(t)).Decide(t.Context(), good)
 	require.Error(t, err)
 	assert.NotErrorIs(t, err, oauthserver.ErrUnknownClient)
+}
+
+// newService is the authorization server's service with the production metadata fetcher.
+func newService(db *ent.Client) *oauthserver.Service {
+	return oauthserver.NewService(db, oauthserver.NewFetcher(webhook.Allowlist{}))
 }

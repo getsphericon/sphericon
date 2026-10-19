@@ -17751,6 +17751,7 @@ type OAuthClientMutation struct {
 	name                *string
 	redirect_uris       *[]string
 	appendredirect_uris []string
+	metadata_expires_at *time.Time
 	clearedFields       map[string]struct{}
 	codes               map[int64]struct{}
 	removedcodes        map[int64]struct{}
@@ -18059,6 +18060,55 @@ func (m *OAuthClientMutation) ResetRedirectUris() {
 	m.appendredirect_uris = nil
 }
 
+// SetMetadataExpiresAt sets the "metadata_expires_at" field.
+func (m *OAuthClientMutation) SetMetadataExpiresAt(t time.Time) {
+	m.metadata_expires_at = &t
+}
+
+// MetadataExpiresAt returns the value of the "metadata_expires_at" field in the mutation.
+func (m *OAuthClientMutation) MetadataExpiresAt() (r time.Time, exists bool) {
+	v := m.metadata_expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadataExpiresAt returns the old "metadata_expires_at" field's value of the OAuthClient entity.
+// If the OAuthClient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuthClientMutation) OldMetadataExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadataExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadataExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadataExpiresAt: %w", err)
+	}
+	return oldValue.MetadataExpiresAt, nil
+}
+
+// ClearMetadataExpiresAt clears the value of the "metadata_expires_at" field.
+func (m *OAuthClientMutation) ClearMetadataExpiresAt() {
+	m.metadata_expires_at = nil
+	m.clearedFields[oauthclient.FieldMetadataExpiresAt] = struct{}{}
+}
+
+// MetadataExpiresAtCleared returns if the "metadata_expires_at" field was cleared in this mutation.
+func (m *OAuthClientMutation) MetadataExpiresAtCleared() bool {
+	_, ok := m.clearedFields[oauthclient.FieldMetadataExpiresAt]
+	return ok
+}
+
+// ResetMetadataExpiresAt resets all changes to the "metadata_expires_at" field.
+func (m *OAuthClientMutation) ResetMetadataExpiresAt() {
+	m.metadata_expires_at = nil
+	delete(m.clearedFields, oauthclient.FieldMetadataExpiresAt)
+}
+
 // AddCodeIDs adds the "codes" edge to the OAuthCode entity by ids.
 func (m *OAuthClientMutation) AddCodeIDs(ids ...int64) {
 	if m.codes == nil {
@@ -18147,7 +18197,7 @@ func (m *OAuthClientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OAuthClientMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, oauthclient.FieldCreatedAt)
 	}
@@ -18162,6 +18212,9 @@ func (m *OAuthClientMutation) Fields() []string {
 	}
 	if m.redirect_uris != nil {
 		fields = append(fields, oauthclient.FieldRedirectUris)
+	}
+	if m.metadata_expires_at != nil {
+		fields = append(fields, oauthclient.FieldMetadataExpiresAt)
 	}
 	return fields
 }
@@ -18181,6 +18234,8 @@ func (m *OAuthClientMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case oauthclient.FieldRedirectUris:
 		return m.RedirectUris()
+	case oauthclient.FieldMetadataExpiresAt:
+		return m.MetadataExpiresAt()
 	}
 	return nil, false
 }
@@ -18200,6 +18255,8 @@ func (m *OAuthClientMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldName(ctx)
 	case oauthclient.FieldRedirectUris:
 		return m.OldRedirectUris(ctx)
+	case oauthclient.FieldMetadataExpiresAt:
+		return m.OldMetadataExpiresAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown OAuthClient field %s", name)
 }
@@ -18244,6 +18301,13 @@ func (m *OAuthClientMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRedirectUris(v)
 		return nil
+	case oauthclient.FieldMetadataExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadataExpiresAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown OAuthClient field %s", name)
 }
@@ -18273,7 +18337,11 @@ func (m *OAuthClientMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *OAuthClientMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(oauthclient.FieldMetadataExpiresAt) {
+		fields = append(fields, oauthclient.FieldMetadataExpiresAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -18286,6 +18354,11 @@ func (m *OAuthClientMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *OAuthClientMutation) ClearField(name string) error {
+	switch name {
+	case oauthclient.FieldMetadataExpiresAt:
+		m.ClearMetadataExpiresAt()
+		return nil
+	}
 	return fmt.Errorf("unknown OAuthClient nullable field %s", name)
 }
 
@@ -18307,6 +18380,9 @@ func (m *OAuthClientMutation) ResetField(name string) error {
 		return nil
 	case oauthclient.FieldRedirectUris:
 		m.ResetRedirectUris()
+		return nil
+	case oauthclient.FieldMetadataExpiresAt:
+		m.ResetMetadataExpiresAt()
 		return nil
 	}
 	return fmt.Errorf("unknown OAuthClient field %s", name)

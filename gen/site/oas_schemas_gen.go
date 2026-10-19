@@ -9294,8 +9294,12 @@ func (*SiteMembershipsUpdateUnprocessableEntity) siteMembershipsUpdateRes() {}
 type SiteOAuthAuthorizationRequest struct {
 	// Self-declared client name (untrusted: show as text).
 	ClientName string `json:"clientName"`
+	// Host of the client's metadata document URL when its client_id is one; absent for a registered client.
+	ClientHost OptString `json:"clientHost"`
 	// The URL the user is sent back to.
 	RedirectUri string `json:"redirectUri"`
+	// The redirect URI is on a loopback host: any program on the user's machine can be listening there.
+	LocalRedirect bool `json:"localRedirect"`
 	// Scopes the client asked for that sphericon will grant by default.
 	Scopes []string `json:"scopes"`
 	// Requested send-class scopes: granted only when the user opts in explicitly.
@@ -9307,9 +9311,19 @@ func (s *SiteOAuthAuthorizationRequest) GetClientName() string {
 	return s.ClientName
 }
 
+// GetClientHost returns the value of ClientHost.
+func (s *SiteOAuthAuthorizationRequest) GetClientHost() OptString {
+	return s.ClientHost
+}
+
 // GetRedirectUri returns the value of RedirectUri.
 func (s *SiteOAuthAuthorizationRequest) GetRedirectUri() string {
 	return s.RedirectUri
+}
+
+// GetLocalRedirect returns the value of LocalRedirect.
+func (s *SiteOAuthAuthorizationRequest) GetLocalRedirect() bool {
+	return s.LocalRedirect
 }
 
 // GetScopes returns the value of Scopes.
@@ -9327,9 +9341,19 @@ func (s *SiteOAuthAuthorizationRequest) SetClientName(val string) {
 	s.ClientName = val
 }
 
+// SetClientHost sets the value of ClientHost.
+func (s *SiteOAuthAuthorizationRequest) SetClientHost(val OptString) {
+	s.ClientHost = val
+}
+
 // SetRedirectUri sets the value of RedirectUri.
 func (s *SiteOAuthAuthorizationRequest) SetRedirectUri(val string) {
 	s.RedirectUri = val
+}
+
+// SetLocalRedirect sets the value of LocalRedirect.
+func (s *SiteOAuthAuthorizationRequest) SetLocalRedirect(val bool) {
+	s.LocalRedirect = val
 }
 
 // SetScopes sets the value of Scopes.

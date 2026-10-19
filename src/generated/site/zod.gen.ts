@@ -502,7 +502,9 @@ export const zSiteMembershipRole = z.enum([
  */
 export const zSiteOAuthAuthorizationRequest = z.object({
   clientName: z.string(),
+  clientHost: z.exactOptional(z.string()),
   redirectUri: z.string(),
+  localRedirect: z.boolean(),
   scopes: z.array(z.string()),
   sendScopes: z.array(z.string())
 });

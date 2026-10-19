@@ -1,4 +1,4 @@
-h1:qW+i78ad2LbW8efas4+XMTCn2VqVodoq6LL+9+Zk7kk=
+h1:YfWqpT6ZTx6DOn/NR7IlTfQ0+v/tffw6v+isKj2nzCU=
 20260630101109_init.sql h1:Pgj3WXyEdlsbabERn8ue309EON5bAyWNV1X8O9IkKos=
 20260630175449_send_eligibility_model.sql h1:vEOs/vQyOdwj2FK2h5B0795pY2DVs3jbv3IpH5A/njw=
 20260630204007_transactional_email.sql h1:sotbb1MKWbZO2UzTf7TruRuFpMaXirns67+ithjM1Lc=
@@ -61,3 +61,4 @@ h1:qW+i78ad2LbW8efas4+XMTCn2VqVodoq6LL+9+Zk7kk=
 20261019010003_name=automation_run_failure_detail.sql h1:CXuB3OMG37tC249cvi553nUyKSpof1UqAcZJbUWe/yM=
 20261019115204_name=sending_domain_tracking_reason.sql h1:GECRiwbVGCs9WCEGqHUyNXKmkmnsE0e8NvBX13XTqW0=
 20261019151123_name=outbound_message_app_origin.sql h1:jDh40iV52oXGJ/v4/B+l6tGP2GhmtMW3Njl0iaWu1k8=
+20261019174544_name=oauth_client_metadata_expires.sql h1:tUXSZnnd9suIF651wtwlBslXzj2np5aDPSKoxK4ovOs=
