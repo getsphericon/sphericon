@@ -17,19 +17,20 @@ import (
 // sendingDomainResource builds the API resource, computing the DNS records the
 // user publishes. Built by hand (not goverter) because the records are derived,
 // and the private key is never exposed.
-func sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendingDomainResource {
-	rec := sendingdomains.Records(d)
+func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendingDomainResource {
+	rec := h.sendingDomains.Records(d)
 
 	res := siteapi.SiteSendingDomainResource{
-		ID:           siteapi.EntityId(d.ID),
-		Domain:       d.Domain,
-		DkimSelector: d.DkimSelector,
-		Verified:     d.Verified,
-		DkimRecord:   dnsRecord(rec.DKIM),
-		SpfRecord:    dnsRecord(rec.SPF),
-		DmarcRecord:  dnsRecord(rec.DMARC),
-		CreatedAt:    siteapi.Timestamp(d.CreatedAt),
-		UpdatedAt:    siteapi.Timestamp(d.UpdatedAt),
+		ID:             siteapi.EntityId(d.ID),
+		Domain:         d.Domain,
+		DkimSelector:   d.DkimSelector,
+		Verified:       d.Verified,
+		DkimRecord:     dnsRecord(rec.DKIM),
+		SpfRecord:      dnsRecord(rec.SPF),
+		DmarcRecord:    dnsRecord(rec.DMARC),
+		TrackingRecord: trackingRecord(rec.Tracking),
+		CreatedAt:      siteapi.Timestamp(d.CreatedAt),
+		UpdatedAt:      siteapi.Timestamp(d.UpdatedAt),
 	}
 	if d.LastCheckedAt != nil {
 		res.LastCheckedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*d.LastCheckedAt))
@@ -61,7 +62,7 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 
 	return &siteapi.SiteSendingDomainsListOK{
 		Items: lo.Map(page.Items, func(d *ent.SendingDomain, _ int) siteapi.SiteSendingDomainResource {
-			return sendingDomainResource(d)
+			return h.sendingDomainResource(d)
 		}),
 		Page:       int32(page.Page),
 		PageSize:   int32(page.PageSize),
@@ -94,7 +95,7 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Si
 	case err != nil:
 		return nil, err
 	}
-	res := sendingDomainResource(d)
+	res := h.sendingDomainResource(d)
 	return &res, nil
 }
 
@@ -117,7 +118,7 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	res := sendingDomainResource(d)
+	res := h.sendingDomainResource(d)
 	return &res, nil
 }
 
@@ -163,4 +164,23 @@ func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.
 		return nil, err
 	}
 	return &siteapi.SiteSendingDomainsVerifyNoContent{}, nil
+}
+
+func trackingRecord(t *sendingdomains.TrackingRecord) siteapi.OptSiteTrackingRecord {
+	if t == nil {
+		return siteapi.OptSiteTrackingRecord{}
+	}
+	rec := siteapi.SiteTrackingRecord{
+		Type:   siteapi.SiteTrackingRecordTypeCNAME,
+		Host:   t.Host,
+		Target: t.Target,
+		State:  siteapi.SiteTrackingState(t.State),
+	}
+	if t.CheckedAt != nil {
+		rec.LastCheckedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*t.CheckedAt))
+	}
+	if t.StateChangedAt != nil {
+		rec.StateChangedAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(*t.StateChangedAt))
+	}
+	return siteapi.NewOptSiteTrackingRecord(rec)
 }

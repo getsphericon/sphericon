@@ -1,4 +1,4 @@
-h1:bCGGM6htDW/Qxwe/4KIPIpSqAFJ/6DOhERdURt+DxQY=
+h1:PBOPxBWWcZ5xCEoNFTO3TiodEgWuLjh9CFyTcceVfvs=
 20260630101109_init.sql h1:Pgj3WXyEdlsbabERn8ue309EON5bAyWNV1X8O9IkKos=
 20260630175449_send_eligibility_model.sql h1:vEOs/vQyOdwj2FK2h5B0795pY2DVs3jbv3IpH5A/njw=
 20260630204007_transactional_email.sql h1:sotbb1MKWbZO2UzTf7TruRuFpMaXirns67+ithjM1Lc=
@@ -53,3 +53,7 @@ h1:bCGGM6htDW/Qxwe/4KIPIpSqAFJ/6DOhERdURt+DxQY=
 20261018160923_instance_state.sql h1:V1RQsYAQGEq1BrSK4HbFav3+Soiv8zZL/PUHcmg8tYU=
 20261018220253_integration_ingest_key.sql h1:7TdPXdAngNwRIaTJCtKhQOfgZVwfQLeo9yMCxrfaB4o=
 20261018220524_drop_workspace_ingest_key.sql h1:A77WHsswuaQrvgrg8dmotrR7GnNgnw5adBxU19sntL0=
+20261019000400_sending_domain_tracking.sql h1:wmABGhh//y53eOZ1owpc03YCeR8tthMeEUtmZGq5qVc=
+20261019001353_sending_domain_tracking_host.sql h1:P43XgeWwYScVuwq1g6e0/hyWCYdgTzvr2Kp4ZR5BAzU=
+20261019003433_tracking_host_changes.sql h1:wrnbnX5GIysTbnWBaIiwInj2FKRkkW/nF7471FY2P4s=
+20261019003500_tracking_host_change_trigger.sql h1:64QHtujOYmHvsThuZGEjT+fIeKvna0bmkAJHTfhluq0=

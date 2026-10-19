@@ -17249,6 +17249,42 @@ func (x *SendingDomainScopedCreate) SetNillableVerifiedAt(v *time.Time) *Sending
 	return x
 }
 
+// SetTrackingState sets the "tracking_state" field.
+func (x *SendingDomainScopedCreate) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainScopedCreate {
+	x.b.SetTrackingState(v)
+	return x
+}
+
+// SetNillableTrackingState sets the "tracking_state" field if the given value is not nil.
+func (x *SendingDomainScopedCreate) SetNillableTrackingState(v *sendingdomain.TrackingState) *SendingDomainScopedCreate {
+	x.b.SetNillableTrackingState(v)
+	return x
+}
+
+// SetTrackingCheckedAt sets the "tracking_checked_at" field.
+func (x *SendingDomainScopedCreate) SetTrackingCheckedAt(v time.Time) *SendingDomainScopedCreate {
+	x.b.SetTrackingCheckedAt(v)
+	return x
+}
+
+// SetNillableTrackingCheckedAt sets the "tracking_checked_at" field if the given value is not nil.
+func (x *SendingDomainScopedCreate) SetNillableTrackingCheckedAt(v *time.Time) *SendingDomainScopedCreate {
+	x.b.SetNillableTrackingCheckedAt(v)
+	return x
+}
+
+// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
+func (x *SendingDomainScopedCreate) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedCreate {
+	x.b.SetTrackingStateChangedAt(v)
+	return x
+}
+
+// SetNillableTrackingStateChangedAt sets the "tracking_state_changed_at" field if the given value is not nil.
+func (x *SendingDomainScopedCreate) SetNillableTrackingStateChangedAt(v *time.Time) *SendingDomainScopedCreate {
+	x.b.SetNillableTrackingStateChangedAt(v)
+	return x
+}
+
 func (x *SendingDomainScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -17451,6 +17487,54 @@ func (u *SendingDomainScopedUpsert) UpdateVerifiedAt() *SendingDomainScopedUpser
 // ClearVerifiedAt clears the value of the "verified_at" field.
 func (u *SendingDomainScopedUpsert) ClearVerifiedAt() *SendingDomainScopedUpsert {
 	u.u.SetNull(sendingdomain.FieldVerifiedAt)
+	return u
+}
+
+// SetTrackingState sets the "tracking_state" field.
+func (u *SendingDomainScopedUpsert) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainScopedUpsert {
+	u.u.Set(sendingdomain.FieldTrackingState, v)
+	return u
+}
+
+// UpdateTrackingState sets the "tracking_state" field to the value that was provided on create.
+func (u *SendingDomainScopedUpsert) UpdateTrackingState() *SendingDomainScopedUpsert {
+	u.u.SetExcluded(sendingdomain.FieldTrackingState)
+	return u
+}
+
+// SetTrackingCheckedAt sets the "tracking_checked_at" field.
+func (u *SendingDomainScopedUpsert) SetTrackingCheckedAt(v time.Time) *SendingDomainScopedUpsert {
+	u.u.Set(sendingdomain.FieldTrackingCheckedAt, v)
+	return u
+}
+
+// UpdateTrackingCheckedAt sets the "tracking_checked_at" field to the value that was provided on create.
+func (u *SendingDomainScopedUpsert) UpdateTrackingCheckedAt() *SendingDomainScopedUpsert {
+	u.u.SetExcluded(sendingdomain.FieldTrackingCheckedAt)
+	return u
+}
+
+// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
+func (u *SendingDomainScopedUpsert) ClearTrackingCheckedAt() *SendingDomainScopedUpsert {
+	u.u.SetNull(sendingdomain.FieldTrackingCheckedAt)
+	return u
+}
+
+// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
+func (u *SendingDomainScopedUpsert) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedUpsert {
+	u.u.Set(sendingdomain.FieldTrackingStateChangedAt, v)
+	return u
+}
+
+// UpdateTrackingStateChangedAt sets the "tracking_state_changed_at" field to the value that was provided on create.
+func (u *SendingDomainScopedUpsert) UpdateTrackingStateChangedAt() *SendingDomainScopedUpsert {
+	u.u.SetExcluded(sendingdomain.FieldTrackingStateChangedAt)
+	return u
+}
+
+// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
+func (u *SendingDomainScopedUpsert) ClearTrackingStateChangedAt() *SendingDomainScopedUpsert {
+	u.u.SetNull(sendingdomain.FieldTrackingStateChangedAt)
 	return u
 }
 
@@ -17723,6 +17807,54 @@ func (x *SendingDomainScopedUpdateOne) ClearVerifiedAt() *SendingDomainScopedUpd
 	return x
 }
 
+// SetTrackingState sets the "tracking_state" field.
+func (x *SendingDomainScopedUpdateOne) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainScopedUpdateOne {
+	x.b.SetTrackingState(v)
+	return x
+}
+
+// SetNillableTrackingState sets the "tracking_state" field if the given value is not nil.
+func (x *SendingDomainScopedUpdateOne) SetNillableTrackingState(v *sendingdomain.TrackingState) *SendingDomainScopedUpdateOne {
+	x.b.SetNillableTrackingState(v)
+	return x
+}
+
+// SetTrackingCheckedAt sets the "tracking_checked_at" field.
+func (x *SendingDomainScopedUpdateOne) SetTrackingCheckedAt(v time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetTrackingCheckedAt(v)
+	return x
+}
+
+// SetNillableTrackingCheckedAt sets the "tracking_checked_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdateOne) SetNillableTrackingCheckedAt(v *time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetNillableTrackingCheckedAt(v)
+	return x
+}
+
+// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
+func (x *SendingDomainScopedUpdateOne) ClearTrackingCheckedAt() *SendingDomainScopedUpdateOne {
+	x.b.ClearTrackingCheckedAt()
+	return x
+}
+
+// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
+func (x *SendingDomainScopedUpdateOne) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetTrackingStateChangedAt(v)
+	return x
+}
+
+// SetNillableTrackingStateChangedAt sets the "tracking_state_changed_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdateOne) SetNillableTrackingStateChangedAt(v *time.Time) *SendingDomainScopedUpdateOne {
+	x.b.SetNillableTrackingStateChangedAt(v)
+	return x
+}
+
+// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
+func (x *SendingDomainScopedUpdateOne) ClearTrackingStateChangedAt() *SendingDomainScopedUpdateOne {
+	x.b.ClearTrackingStateChangedAt()
+	return x
+}
+
 func (x *SendingDomainScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -17894,6 +18026,54 @@ func (x *SendingDomainScopedUpdate) SetNillableVerifiedAt(v *time.Time) *Sending
 // ClearVerifiedAt clears the value of the "verified_at" field.
 func (x *SendingDomainScopedUpdate) ClearVerifiedAt() *SendingDomainScopedUpdate {
 	x.b.ClearVerifiedAt()
+	return x
+}
+
+// SetTrackingState sets the "tracking_state" field.
+func (x *SendingDomainScopedUpdate) SetTrackingState(v sendingdomain.TrackingState) *SendingDomainScopedUpdate {
+	x.b.SetTrackingState(v)
+	return x
+}
+
+// SetNillableTrackingState sets the "tracking_state" field if the given value is not nil.
+func (x *SendingDomainScopedUpdate) SetNillableTrackingState(v *sendingdomain.TrackingState) *SendingDomainScopedUpdate {
+	x.b.SetNillableTrackingState(v)
+	return x
+}
+
+// SetTrackingCheckedAt sets the "tracking_checked_at" field.
+func (x *SendingDomainScopedUpdate) SetTrackingCheckedAt(v time.Time) *SendingDomainScopedUpdate {
+	x.b.SetTrackingCheckedAt(v)
+	return x
+}
+
+// SetNillableTrackingCheckedAt sets the "tracking_checked_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdate) SetNillableTrackingCheckedAt(v *time.Time) *SendingDomainScopedUpdate {
+	x.b.SetNillableTrackingCheckedAt(v)
+	return x
+}
+
+// ClearTrackingCheckedAt clears the value of the "tracking_checked_at" field.
+func (x *SendingDomainScopedUpdate) ClearTrackingCheckedAt() *SendingDomainScopedUpdate {
+	x.b.ClearTrackingCheckedAt()
+	return x
+}
+
+// SetTrackingStateChangedAt sets the "tracking_state_changed_at" field.
+func (x *SendingDomainScopedUpdate) SetTrackingStateChangedAt(v time.Time) *SendingDomainScopedUpdate {
+	x.b.SetTrackingStateChangedAt(v)
+	return x
+}
+
+// SetNillableTrackingStateChangedAt sets the "tracking_state_changed_at" field if the given value is not nil.
+func (x *SendingDomainScopedUpdate) SetNillableTrackingStateChangedAt(v *time.Time) *SendingDomainScopedUpdate {
+	x.b.SetNillableTrackingStateChangedAt(v)
+	return x
+}
+
+// ClearTrackingStateChangedAt clears the value of the "tracking_state_changed_at" field.
+func (x *SendingDomainScopedUpdate) ClearTrackingStateChangedAt() *SendingDomainScopedUpdate {
+	x.b.ClearTrackingStateChangedAt()
 	return x
 }
 

@@ -9,3 +9,7 @@ const Staff = "/staff"
 // Service is the prefix of the service endpoints of the Staff surface, served only
 // by the internal listener (ADR 0026).
 const Service = "/service"
+
+// TLSAsk is the path of the edge's on-demand TLS question (ADR 0038), served only by the
+// internal listener.
+const TLSAsk = "/tls/ask"

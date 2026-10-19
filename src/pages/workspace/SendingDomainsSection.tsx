@@ -16,6 +16,7 @@ import {
 import { useForm } from '@mantine/form'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -25,7 +26,10 @@ import {
   siteSendingDomainsListQueryKey,
   siteSendingDomainsVerifyMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteDnsRecord, SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteSendingDomainResource,
+  SiteTrackingState,
+} from '../../generated/site/types.gen.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
@@ -39,10 +43,12 @@ function DnsRecordRow({
   label,
   record,
   hint,
+  status,
 }: {
   label: string
-  record: SiteDnsRecord
+  record: { type: string; host: string; value: string }
   hint?: string
+  status?: ReactNode
 }) {
   return (
     <Table.Tr>
@@ -55,6 +61,7 @@ function DnsRecordRow({
             {hint}
           </Text>
         ) : null}
+        {status}
       </Table.Td>
       <Table.Td>{record.type}</Table.Td>
       <Table.Td>
@@ -75,6 +82,27 @@ function DnsRecordRow({
         </Group>
       </Table.Td>
     </Table.Tr>
+  )
+}
+
+const trackingStateColor: Record<SiteTrackingState, string> = {
+  pending: 'gray',
+  dns_verified: 'yellow',
+  serving: 'teal',
+}
+
+// TrackingStateBadge shows where the Tracking domain stands (ADR 0038).
+function TrackingStateBadge({ state }: { state: SiteTrackingState }) {
+  const { t } = useTranslation()
+  const labels: Record<SiteTrackingState, string> = {
+    pending: t(($) => $.settings.sendingDomains.trackingState.pending),
+    dns_verified: t(($) => $.settings.sendingDomains.trackingState.dnsVerified),
+    serving: t(($) => $.settings.sendingDomains.trackingState.serving),
+  }
+  return (
+    <Badge mt={4} color={trackingStateColor[state]} variant="light">
+      {labels[state]}
+    </Badge>
   )
 }
 
@@ -115,6 +143,18 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
               hint={t(($) => $.settings.sendingDomains.dmarcHint)}
               record={record.dmarcRecord}
             />
+            {record.trackingRecord ? (
+              <DnsRecordRow
+                label={t(($) => $.settings.sendingDomains.tracking)}
+                hint={t(($) => $.settings.sendingDomains.trackingHint)}
+                record={{
+                  type: record.trackingRecord.type,
+                  host: record.trackingRecord.host,
+                  value: record.trackingRecord.target,
+                }}
+                status={<TrackingStateBadge state={record.trackingRecord.state} />}
+              />
+            ) : null}
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>

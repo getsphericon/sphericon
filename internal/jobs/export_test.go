@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -86,4 +87,16 @@ func NewErrorHandler(logger *slog.Logger) river.ErrorHandler { return &errorHand
 
 func NewPurgeAuthAttemptsWorker(client *ent.Client) *PurgeAuthAttemptsWorker {
 	return &PurgeAuthAttemptsWorker{ent: client}
+}
+
+func NewVerifySendingDomainWorkerWithTracking(client *ent.Client, lookup sending.TXTLookup, sender messaging.EmailSender, tracking *trackingdomain.Verifier) *VerifySendingDomainWorker {
+	return &VerifySendingDomainWorker{ent: client, lookup: lookup, sender: sender, tracking: tracking}
+}
+
+func NewRecheckTrackingDomainsWorker(client *ent.Client) *RecheckTrackingDomainsWorker {
+	return &RecheckTrackingDomainsWorker{ent: client}
+}
+
+func NewVerifyTrackingDomainWorker(client *ent.Client, sender messaging.EmailSender, tracking *trackingdomain.Verifier) *VerifyTrackingDomainWorker {
+	return &VerifyTrackingDomainWorker{ent: client, sender: sender, tracking: tracking}
 }

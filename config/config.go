@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"net"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -217,6 +218,20 @@ type Config struct {
 	// `staff` license.
 	InternalAddr string
 
+	// TrackingCNAMETarget is the edge host a Sending domain's Tracking domain CNAME
+	// (track.<domain>) must point at (SPHERICON_TRACKING_CNAME_TARGET, ADR 0038). Empty (the
+	// default) turns the feature off: no tracking record is shown and none is checked.
+	TrackingCNAMETarget string
+
+	// TrackingHostHeader names the request header the edge sets to the customer's
+	// host (SPHERICON_TRACKING_HOST_HEADER, ADR 0038). It is read only from a peer inside
+	// TrackingEdgeCIDRs; empty (the default) means the connection's Host is the only source.
+	TrackingHostHeader string
+
+	// TrackingEdgeCIDRs are the peer address ranges the edge connects from
+	// (SPHERICON_TRACKING_EDGE_CIDRS): the only peers whose TrackingHostHeader is believed.
+	TrackingEdgeCIDRs []netip.Prefix
+
 	// PresetsDir is a directory of the Instance's custom Presets (ADR 0037): every
 	// *.yaml and *.yml file at its root loads beside the built-in ones at start, and a
 	// file that does not load, or reuses a built-in name, stops the start. Empty (the
@@ -316,6 +331,10 @@ type environment struct {
 	InternalAddr    string `env:"SPHERICON_INTERNAL_ADDR"`
 	PresetsDir      string `env:"SPHERICON_PRESETS_DIR"`
 
+	TrackingCNAMETarget string `env:"SPHERICON_TRACKING_CNAME_TARGET"`
+	TrackingHostHeader  string `env:"SPHERICON_TRACKING_HOST_HEADER"`
+	TrackingEdgeCIDRs   string `env:"SPHERICON_TRACKING_EDGE_CIDRS" envDefault:"127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"`
+
 	SystemEmailProvider string `env:"SPHERICON_SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
 	SystemEmailFrom     string `env:"SPHERICON_SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
 	SESRegion           string `env:"SPHERICON_SES_REGION"`
@@ -349,6 +368,11 @@ func Load(envName string) (*Config, error) {
 	maxIdle := e.DBMaxOpenConns
 	if e.DBMaxIdleConns != nil {
 		maxIdle = *e.DBMaxIdleConns
+	}
+
+	edgeCIDRs, err := parseCIDRs("SPHERICON_TRACKING_EDGE_CIDRS", e.TrackingEdgeCIDRs)
+	if err != nil {
+		return nil, err
 	}
 
 	cfg := &Config{
@@ -432,6 +456,10 @@ func Load(envName string) (*Config, error) {
 		InternalAddr:    e.InternalAddr,
 		PresetsDir:      e.PresetsDir,
 
+		TrackingCNAMETarget: strings.ToLower(strings.TrimSuffix(strings.TrimSpace(e.TrackingCNAMETarget), ".")),
+		TrackingHostHeader:  strings.TrimSpace(e.TrackingHostHeader),
+		TrackingEdgeCIDRs:   edgeCIDRs,
+
 		SystemEmailProvider: e.SystemEmailProvider,
 		SystemEmailFrom:     e.SystemEmailFrom,
 		SESRegion:           e.SESRegion,
@@ -450,6 +478,19 @@ func Load(envName string) (*Config, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+// parseCIDRs reads a comma/space-separated list of CIDR prefixes.
+func parseCIDRs(name, list string) ([]netip.Prefix, error) {
+	var out []netip.Prefix
+	for _, f := range strings.FieldsFunc(list, func(r rune) bool { return r == ',' || unicode.IsSpace(r) }) {
+		p, err := netip.ParsePrefix(f)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", name, err)
+		}
+		out = append(out, p.Masked())
+	}
+	return out, nil
 }
 
 // readEnvFiles merges the .env files that exist, later files overriding earlier ones.

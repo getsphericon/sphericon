@@ -32,7 +32,7 @@ func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.Se
 	}
 	return &externalapi.SendingDomainsListOK{
 		Items: lo.Map(page.Items, func(d *ent.SendingDomain, _ int) externalapi.SendingDomainResource {
-			return sendingDomainResource(d)
+			return h.sendingDomainResource(d)
 		}),
 		Page:       int32(page.Page),
 		PageSize:   int32(page.PageSize),
@@ -61,7 +61,7 @@ func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.Cr
 	case err != nil:
 		return nil, err
 	}
-	res := sendingDomainResource(row)
+	res := h.sendingDomainResource(row)
 	return &res, nil
 }
 
@@ -80,7 +80,7 @@ func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.Sen
 	if err != nil {
 		return nil, err
 	}
-	res := sendingDomainResource(row)
+	res := h.sendingDomainResource(row)
 	return &res, nil
 }
 
@@ -105,7 +105,7 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 	case err != nil:
 		return nil, err
 	}
-	res := sendingDomainResource(row)
+	res := h.sendingDomainResource(row)
 	return &res, nil
 }
 
@@ -148,7 +148,7 @@ func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.
 	if err != nil {
 		return nil, err
 	}
-	res := sendingDomainResource(row)
+	res := h.sendingDomainResource(row)
 	return &res, nil
 }
 
@@ -160,18 +160,19 @@ func sendingDomainValidationProblem(v *sendingdomains.ValidationError) externala
 
 // sendingDomainResource is hand-built (not goverter): the DNS records are derived from
 // the row, and the private key is not read at all.
-func sendingDomainResource(d *ent.SendingDomain) externalapi.SendingDomainResource {
-	rec := sendingdomains.Records(d)
+func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) externalapi.SendingDomainResource {
+	rec := h.sendingDomains.Records(d)
 	res := externalapi.SendingDomainResource{
-		ID:           externalapi.EntityId(d.ID),
-		Domain:       d.Domain,
-		DkimSelector: d.DkimSelector,
-		Verified:     d.Verified,
-		DkimRecord:   dnsRecord(rec.DKIM),
-		SpfRecord:    dnsRecord(rec.SPF),
-		DmarcRecord:  dnsRecord(rec.DMARC),
-		CreatedAt:    externalapi.Timestamp(d.CreatedAt),
-		UpdatedAt:    externalapi.Timestamp(d.UpdatedAt),
+		ID:             externalapi.EntityId(d.ID),
+		Domain:         d.Domain,
+		DkimSelector:   d.DkimSelector,
+		Verified:       d.Verified,
+		DkimRecord:     dnsRecord(rec.DKIM),
+		SpfRecord:      dnsRecord(rec.SPF),
+		DmarcRecord:    dnsRecord(rec.DMARC),
+		TrackingRecord: trackingRecord(rec.Tracking),
+		CreatedAt:      externalapi.Timestamp(d.CreatedAt),
+		UpdatedAt:      externalapi.Timestamp(d.UpdatedAt),
 	}
 	if d.LastCheckedAt != nil {
 		res.LastCheckedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*d.LastCheckedAt))
@@ -184,4 +185,23 @@ func sendingDomainResource(d *ent.SendingDomain) externalapi.SendingDomainResour
 
 func dnsRecord(r sendingdomains.Record) externalapi.DnsRecord {
 	return externalapi.DnsRecord{Type: externalapi.DnsRecordTypeTXT, Host: r.Host, Value: r.Value}
+}
+
+func trackingRecord(t *sendingdomains.TrackingRecord) externalapi.OptTrackingRecord {
+	if t == nil {
+		return externalapi.OptTrackingRecord{}
+	}
+	rec := externalapi.TrackingRecord{
+		Type:   externalapi.TrackingRecordTypeCNAME,
+		Host:   t.Host,
+		Target: t.Target,
+		State:  externalapi.TrackingState(t.State),
+	}
+	if t.CheckedAt != nil {
+		rec.LastCheckedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*t.CheckedAt))
+	}
+	if t.StateChangedAt != nil {
+		rec.StateChangedAt = externalapi.NewOptNilTimestamp(externalapi.Timestamp(*t.StateChangedAt))
+	}
+	return externalapi.NewOptTrackingRecord(rec)
 }

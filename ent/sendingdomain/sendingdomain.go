@@ -3,6 +3,7 @@
 package sendingdomain
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -34,6 +35,12 @@ const (
 	FieldLastCheckedAt = "last_checked_at"
 	// FieldVerifiedAt holds the string denoting the verified_at field in the database.
 	FieldVerifiedAt = "verified_at"
+	// FieldTrackingState holds the string denoting the tracking_state field in the database.
+	FieldTrackingState = "tracking_state"
+	// FieldTrackingCheckedAt holds the string denoting the tracking_checked_at field in the database.
+	FieldTrackingCheckedAt = "tracking_checked_at"
+	// FieldTrackingStateChangedAt holds the string denoting the tracking_state_changed_at field in the database.
+	FieldTrackingStateChangedAt = "tracking_state_changed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// Table holds the table name of the sendingdomain in the database.
@@ -60,6 +67,9 @@ var Columns = []string{
 	FieldVerified,
 	FieldLastCheckedAt,
 	FieldVerifiedAt,
+	FieldTrackingState,
+	FieldTrackingCheckedAt,
+	FieldTrackingStateChangedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -88,6 +98,33 @@ var (
 	// DefaultVerified holds the default value on creation for the "verified" field.
 	DefaultVerified bool
 )
+
+// TrackingState defines the type for the "tracking_state" enum field.
+type TrackingState string
+
+// TrackingStatePending is the default value of the TrackingState enum.
+const DefaultTrackingState = TrackingStatePending
+
+// TrackingState values.
+const (
+	TrackingStatePending     TrackingState = "pending"
+	TrackingStateDNSVerified TrackingState = "dns_verified"
+	TrackingStateServing     TrackingState = "serving"
+)
+
+func (ts TrackingState) String() string {
+	return string(ts)
+}
+
+// TrackingStateValidator is a validator for the "tracking_state" field enum values. It is called by the builders before save.
+func TrackingStateValidator(ts TrackingState) error {
+	switch ts {
+	case TrackingStatePending, TrackingStateDNSVerified, TrackingStateServing:
+		return nil
+	default:
+		return fmt.Errorf("sendingdomain: invalid enum value for tracking_state field: %q", ts)
+	}
+}
 
 // OrderOption defines the ordering options for the SendingDomain queries.
 type OrderOption func(*sql.Selector)
@@ -145,6 +182,21 @@ func ByLastCheckedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByVerifiedAt orders the results by the verified_at field.
 func ByVerifiedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVerifiedAt, opts...).ToFunc()
+}
+
+// ByTrackingState orders the results by the tracking_state field.
+func ByTrackingState(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrackingState, opts...).ToFunc()
+}
+
+// ByTrackingCheckedAt orders the results by the tracking_checked_at field.
+func ByTrackingCheckedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrackingCheckedAt, opts...).ToFunc()
+}
+
+// ByTrackingStateChangedAt orders the results by the tracking_state_changed_at field.
+func ByTrackingStateChangedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrackingStateChangedAt, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

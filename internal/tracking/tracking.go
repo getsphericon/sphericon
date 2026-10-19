@@ -38,6 +38,12 @@ func New(secret, baseURL string) *Tracker {
 	return &Tracker{secret: []byte(secret), baseURL: strings.TrimRight(baseURL, "/")}
 }
 
+// OnHost returns a Tracker that signs with the same secret but builds every link on
+// https://<host>, the Tracking domain of one message's Sending domain (ADR 0038).
+func (t *Tracker) OnHost(host string) *Tracker {
+	return &Tracker{secret: t.secret, baseURL: "https://" + host}
+}
+
 // UnsubTarget is the self-describing payload an unsubscribe link carries. The
 // opt-out is destination-keyed (ADR 0001), so the link records against the
 // destination directly — no contact-row lookup, and it survives the contact being

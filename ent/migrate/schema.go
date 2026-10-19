@@ -880,6 +880,9 @@ var (
 		{Name: "verified", Type: field.TypeBool, Default: false},
 		{Name: "last_checked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "verified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "tracking_state", Type: field.TypeEnum, Enums: []string{"pending", "dns_verified", "serving"}, Default: "pending"},
+		{Name: "tracking_checked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "tracking_state_changed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// SendingDomainsTable holds the schema information for the "sending_domains" table.
@@ -890,7 +893,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sending_domains_workspaces_sending_domains",
-				Columns:    []*schema.Column{SendingDomainsColumns[10]},
+				Columns:    []*schema.Column{SendingDomainsColumns[13]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -899,7 +902,15 @@ var (
 			{
 				Name:    "sendingdomain_workspace_id_domain",
 				Unique:  true,
-				Columns: []*schema.Column{SendingDomainsColumns[10], SendingDomainsColumns[3]},
+				Columns: []*schema.Column{SendingDomainsColumns[13], SendingDomainsColumns[3]},
+			},
+			{
+				Name:    "sendingdomain_domain",
+				Unique:  true,
+				Columns: []*schema.Column{SendingDomainsColumns[3]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "tracking_state IN ('dns_verified', 'serving')",
+				},
 			},
 			{
 				Name:    "sendingdomain_last_checked_at",
@@ -1003,6 +1014,28 @@ var (
 				Name:    "tags_name_workspace_id",
 				Unique:  true,
 				Columns: []*schema.Column{TagsColumns[3], TagsColumns[4]},
+			},
+		},
+	}
+	// TrackingHostChangesColumns holds the columns for the "tracking_host_changes" table.
+	TrackingHostChangesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "workspace_id", Type: field.TypeInt64},
+		{Name: "domain", Type: field.TypeString},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"dns_verified", "serving", "removed"}},
+	}
+	// TrackingHostChangesTable holds the schema information for the "tracking_host_changes" table.
+	TrackingHostChangesTable = &schema.Table{
+		Name:       "tracking_host_changes",
+		Columns:    TrackingHostChangesColumns,
+		PrimaryKey: []*schema.Column{TrackingHostChangesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "trackinghostchange_domain",
+				Unique:  false,
+				Columns: []*schema.Column{TrackingHostChangesColumns[4]},
 			},
 		},
 	}
@@ -1266,6 +1299,7 @@ var (
 		StaffMembersTable,
 		SuppressionsTable,
 		TagsTable,
+		TrackingHostChangesTable,
 		UnsubscribesTable,
 		UsagesTable,
 		UsersTable,
@@ -1392,6 +1426,9 @@ func init() {
 	TagsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	TagsTable.Annotation = &entsql.Annotation{
 		Table: "tags",
+	}
+	TrackingHostChangesTable.Annotation = &entsql.Annotation{
+		Table: "tracking_host_changes",
 	}
 	UnsubscribesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	UnsubscribesTable.Annotation = &entsql.Annotation{

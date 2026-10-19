@@ -72,3 +72,11 @@
   abuse_exempt: true
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Ninth tenant (Wayne) - holds a pending claim on a Tracking domain that Umbrella already
+# serves (ADR 0038): a name two Workspaces claim, one of them verified.
+- id: 9 # fixture: Wayne
+  name: Wayne
+  slug: wayne
+  collect_key: omck_test_wayne_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

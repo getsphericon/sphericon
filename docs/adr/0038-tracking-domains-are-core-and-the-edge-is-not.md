@@ -35,10 +35,18 @@ as the CNAME, while a CloudFront multi-tenant distribution validates over HTTP a
 - **The core reads the customer's host from a configured header**, set by the edge and trusted only on
   requests that come from it; how a given edge sets it is the edge's concern. The `ask` endpoint is on
   the internal listener only, so it cannot be used to list customers' domains.
+- **The domains read is a change log, so a removal is reported.** A state filter alone would let a
+  host that leaves `dns_verified` and `serving` vanish without a word, and the edge could never tear it
+  down. The read pages an append-only log (`GET /service/domains/changes`) whose entries say a host
+  became `dns_verified`, became `serving` or was `removed` (its record stopped resolving, its Sending
+  domain was deleted or renamed). A database trigger on the Sending domain
+  table writes the entries, so a write from any path (the recheck job, the console, a delete) is logged,
+  and its advisory lock makes positions commit in the order they were taken. A caller applies entries in
+  order and starts from an empty cursor to rebuild the set.
 - **Only link paths move.** The first-party tracker (`/t.js`, `/collect`) is a separate decision.
 - **The edge is outside the core.** On the hosted service a closed service in `getsphericon/platform`
   reads the domains that are `dns_verified` through a new `domains:read` scope of the service surface
-  (like the Workspace feed) and creates and removes CloudFront multi-tenant distribution tenants with
+  (like the Workspace feed: an opaque cursor, at-least-once) and creates and removes CloudFront multi-tenant distribution tenants with
   ACM certificates; the ALB keeps serving the platform's own four hosts. A Self-hoster runs their own
   proxy, and the core's `ask` endpoint lets Caddy's on-demand TLS decide with no logic of theirs.
 

@@ -27,7 +27,7 @@ typespec/{site,external,collect,staff,service,telemetry}   ──tsp compile─�
   openapi/external  ──ogen──▶ gen/external    (Go server)
   openapi/collect   ──ogen──▶ gen/collect     (Go server)  ──openapi-ts──▶ packages/analytics/src/generated/collect (types only)
   openapi/staff  ──ogen──▶ gen/staff    (Go server)  ──openapi-ts──▶ src/generated/staff (TS client + react-query + zod)
-  openapi/service   ──ogen──▶ gen/service     (Go server, internal listener only)
+  openapi/service   ──ogen──▶ gen/service     (Go server, internal listener only, with the `staff` license)
   openapi/telemetry ──ogen──▶ gen/telemetry   (Go client only, `ogen.telemetry.yml`; embedded in `spec.go`, checked by `internal/telemetryschema`)
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
@@ -213,7 +213,8 @@ the wall clock; it injects the clock.
   (config, sql.DB, ent client, email sender, pubsub, the `http.Handler`). Add new
   dependencies there via `do.Provide`.
 - **HTTP**: `internal/server/server.go` `New()` mounts the four public ogen servers (the fifth,
-  `/service`, is served by `NewInternal` on the internal listener) and the
+  `/service`, is served by `NewInternal` on the internal listener, which also always serves the
+  edge's on-demand TLS `GET /tls/ask`, core, ADR 0038) and the
   public endpoints onto a stdlib `http.ServeMux`, then wraps it with hand-rolled middleware
   (recoverer, requestID, timeout, CORS). Errors render as RFC 7807 `application/problem+json`.
 - **Five API surfaces**, each with its own TypeSpec spec, ogen server, handler package,
@@ -225,8 +226,9 @@ the wall clock; it injects the clock.
     Auth: its own **JWT cookie** (`STAFF_JWT`, `SPHERICON_STAFF_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/staff`.
   - `/service/*` — the service endpoints of the Staff surface, called by a platform service with a
     **Service credential** (ADR 0026): **Bearer** `smsc_…`, limited to scopes (`usage:read`,
-    `workspaces:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
-    the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style): the public mux answers 404 for it.
+    `workspaces:read`, `domains:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
+    the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style; `NewInternal` mounts `/service` only with
+    the `staff` license and always serves the core `GET /tls/ask`): the public mux answers 404 for it.
     Handlers and security handler in `ee/staff` (`service.go`); every operation names its scopes in
     `ServiceOperationScopes` (no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
     `env.IssueServiceCredential`.
@@ -278,7 +280,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      rates (`abuse.Watch`, which the console's `Module.WorkspaceAbuse` and the `/site`
      dashboard's warning also read through the `site.AbuseWatch` seam); and the service usage
      read (`Module.WorkspaceUsage`, `ee/staff/service_usage.go`), scoped over the one
-     Workspace a call names, after its row is loaded, to read its stored Usage figures.
+     Workspace a call names, after its row is loaded, to read its stored Usage figures; and
+     `Module.TrackingHostFeed` (ADR 0038) reads the Instance-wide tracking host change log, which
+     holds hosts and states, no Workspace data, so it scopes over nothing.
 - **The raw `*ent.Client` is allowed only in:** `internal/accounts` (User, Membership,
   Workspace incl. slug resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
@@ -288,7 +292,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   that no Workspace owns, and who decides about it: the Owners of the oldest Workspace, ADR 0032), `internal/suspension` (Workspace
   suspension), `internal/events`
   (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
-  (tracking by recipient id, provider hooks, composition), `ee/audit` (the Audit log bus
+  (tracking by recipient id, provider hooks, composition, and the Instance-wide Tracking host
+  index, ADR 0038: the host gate `trackingHostGate` / `verifiedTrackingHost` in `trackinghost.go`,
+  `tlsAskHandler` and `recipientOnHost` resolve a host to its Workspace before any scope exists), `ee/audit` (the Audit log bus
   subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/retention` (the
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/abuse` (the hourly
   abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor

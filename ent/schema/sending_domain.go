@@ -63,6 +63,21 @@ func (SendingDomain) Fields() []ent.Field {
 		field.Time("verified_at").
 			Optional().
 			Nillable(),
+		// The state of the Tracking domain record track.<domain> (ADR 0038): pending until
+		// a live DNS check finds the CNAME at the Instance's edge host (dns_verified, the
+		// edge may now provision), serving once an HTTPS probe of the host succeeds. Mail
+		// builds its links on the host only while serving. The host itself is derived.
+		field.Enum("tracking_state").
+			Values("pending", "dns_verified", "serving").
+			Default("pending"),
+		// When the Tracking domain was most recently checked (nil = never checked yet).
+		field.Time("tracking_checked_at").
+			Optional().
+			Nillable(),
+		// When tracking_state most recently changed (nil = never changed).
+		field.Time("tracking_state_changed_at").
+			Optional().
+			Nillable(),
 	}
 }
 
@@ -71,6 +86,13 @@ func (SendingDomain) Indexes() []ent.Index {
 		// One row per (workspace, domain).
 		index.Fields("workspace_id", "domain").
 			Unique(),
+		// A Tracking domain host (track.<domain>) belongs to one Workspace across the
+		// Instance (ADR 0038): the host is derived from the domain, so the domain is unique
+		// among rows whose DNS is verified. Unverified claims never block anyone. The
+		// migration builds it CONCURRENTLY (ADR 0033), which atlas cannot emit.
+		index.Fields("domain").
+			Unique().
+			Annotations(entsql.IndexWhere("tracking_state IN ('dns_verified', 'serving')")),
 		// Lets the periodic re-check job find the least-recently-checked rows.
 		index.Fields("last_checked_at"),
 	}

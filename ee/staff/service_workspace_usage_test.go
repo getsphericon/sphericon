@@ -105,5 +105,7 @@ func TestWithoutALicenseTheWorkspaceUsageRouteIsNotServed(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+primary)
 	env.Server.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusNotFound, rec.Code)
-	assert.Nil(t, env.Internal, "no handler for a listener to serve")
+	internal := httptest.NewRecorder()
+	env.Internal.ServeHTTP(internal, req)
+	assert.Equal(t, http.StatusNotFound, internal.Code, "the internal listener routes no service endpoint without the license")
 }

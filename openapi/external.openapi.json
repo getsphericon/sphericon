@@ -10449,6 +10449,14 @@
             ],
             "description": "The suggested DMARC TXT record (advisory bulk-readiness signal)"
           },
+          "trackingRecord": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackingRecord"
+              }
+            ],
+            "description": "The Tracking domain CNAME; absent when the instance has no tracking target configured"
+          },
           "lastCheckedAt": {
             "type": "string",
             "allOf": [
@@ -10762,6 +10770,59 @@
       "Timestamp": {
         "type": "string",
         "format": "date-time"
+      },
+      "TrackingRecord": {
+        "type": "object",
+        "required": ["type", "host", "target", "state"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["CNAME"],
+            "description": "The record type (always CNAME)"
+          },
+          "host": {
+            "type": "string",
+            "description": "The host to create the record at: \"track.\" followed by the domain"
+          },
+          "target": {
+            "type": "string",
+            "description": "The edge host the CNAME must point at"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrackingState"
+              }
+            ],
+            "description": "Where the Tracking domain stands"
+          },
+          "lastCheckedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Tracking domain was most recently checked (null = never)"
+          },
+          "stateChangedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the state most recently changed (null = never)"
+          }
+        },
+        "description": "The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured."
+      },
+      "TrackingState": {
+        "type": "string",
+        "enum": ["pending", "dns_verified", "serving"],
+        "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`"
       },
       "TransactionalSendStatus": {
         "type": "string",

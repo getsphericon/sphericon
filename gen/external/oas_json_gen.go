@@ -16081,6 +16081,39 @@ func (s *OptString) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes TrackingRecord as json.
+func (o OptTrackingRecord) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes TrackingRecord from json.
+func (o *OptTrackingRecord) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptTrackingRecord to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptTrackingRecord) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptTrackingRecord) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes UpdateIntegrationInputParams as json.
 func (o OptUpdateIntegrationInputParams) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -20350,6 +20383,12 @@ func (s *SendingDomainResource) encodeFields(e *jx.Encoder) {
 		s.DmarcRecord.Encode(e)
 	}
 	{
+		if s.TrackingRecord.Set {
+			e.FieldStart("trackingRecord")
+			s.TrackingRecord.Encode(e)
+		}
+	}
+	{
 		if s.LastCheckedAt.Set {
 			e.FieldStart("lastCheckedAt")
 			s.LastCheckedAt.Encode(e)
@@ -20371,7 +20410,7 @@ func (s *SendingDomainResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSendingDomainResource = [11]string{
+var jsonFieldsNameOfSendingDomainResource = [12]string{
 	0:  "id",
 	1:  "domain",
 	2:  "dkimSelector",
@@ -20379,10 +20418,11 @@ var jsonFieldsNameOfSendingDomainResource = [11]string{
 	4:  "dkimRecord",
 	5:  "spfRecord",
 	6:  "dmarcRecord",
-	7:  "lastCheckedAt",
-	8:  "verifiedAt",
-	9:  "createdAt",
-	10: "updatedAt",
+	7:  "trackingRecord",
+	8:  "lastCheckedAt",
+	9:  "verifiedAt",
+	10: "createdAt",
+	11: "updatedAt",
 }
 
 // Decode decodes SendingDomainResource from json.
@@ -20470,6 +20510,16 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"dmarcRecord\"")
 			}
+		case "trackingRecord":
+			if err := func() error {
+				s.TrackingRecord.Reset()
+				if err := s.TrackingRecord.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"trackingRecord\"")
+			}
 		case "lastCheckedAt":
 			if err := func() error {
 				s.LastCheckedAt.Reset()
@@ -20491,7 +20541,7 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"verifiedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -20501,7 +20551,7 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -20521,7 +20571,7 @@ func (s *SendingDomainResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b01111111,
-		0b00000110,
+		0b00001100,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -24919,6 +24969,263 @@ func (s Timestamp) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *Timestamp) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *TrackingRecord) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TrackingRecord) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("host")
+		e.Str(s.Host)
+	}
+	{
+		e.FieldStart("target")
+		e.Str(s.Target)
+	}
+	{
+		e.FieldStart("state")
+		s.State.Encode(e)
+	}
+	{
+		if s.LastCheckedAt.Set {
+			e.FieldStart("lastCheckedAt")
+			s.LastCheckedAt.Encode(e)
+		}
+	}
+	{
+		if s.StateChangedAt.Set {
+			e.FieldStart("stateChangedAt")
+			s.StateChangedAt.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfTrackingRecord = [6]string{
+	0: "type",
+	1: "host",
+	2: "target",
+	3: "state",
+	4: "lastCheckedAt",
+	5: "stateChangedAt",
+}
+
+// Decode decodes TrackingRecord from json.
+func (s *TrackingRecord) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TrackingRecord to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "type":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "host":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Host = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"host\"")
+			}
+		case "target":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Target = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"target\"")
+			}
+		case "state":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.State.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"state\"")
+			}
+		case "lastCheckedAt":
+			if err := func() error {
+				s.LastCheckedAt.Reset()
+				if err := s.LastCheckedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"lastCheckedAt\"")
+			}
+		case "stateChangedAt":
+			if err := func() error {
+				s.StateChangedAt.Reset()
+				if err := s.StateChangedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"stateChangedAt\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TrackingRecord")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfTrackingRecord) {
+					name = jsonFieldsNameOfTrackingRecord[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TrackingRecord) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TrackingRecord) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes TrackingRecordType as json.
+func (s TrackingRecordType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes TrackingRecordType from json.
+func (s *TrackingRecordType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TrackingRecordType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch TrackingRecordType(v) {
+	case TrackingRecordTypeCNAME:
+		*s = TrackingRecordTypeCNAME
+	default:
+		*s = TrackingRecordType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s TrackingRecordType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TrackingRecordType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes TrackingState as json.
+func (s TrackingState) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes TrackingState from json.
+func (s *TrackingState) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TrackingState to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch TrackingState(v) {
+	case TrackingStatePending:
+		*s = TrackingStatePending
+	case TrackingStateDNSVerified:
+		*s = TrackingStateDNSVerified
+	case TrackingStateServing:
+		*s = TrackingStateServing
+	default:
+		*s = TrackingState(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s TrackingState) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TrackingState) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

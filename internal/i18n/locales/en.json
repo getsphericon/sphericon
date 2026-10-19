@@ -17,6 +17,8 @@
   "email.workspace_suspended.body": "Outbound email sending for your sphericon workspace {{.Workspace}} has been suspended.\n\nReason: {{.Reason}}\nSet by: {{.Actor}}\n\nNothing is lost: scheduled broadcasts and automations pause and resume when the suspension is lifted. You can still sign in and view your data. {{if .Support}}To appeal, email {{.Support}}.{{else}}To appeal, contact your sphericon administrator.{{end}}\n",
   "email.workspace_suspended.actor_staff": "sphericon staff",
   "email.workspace_suspended.actor_system": "automated abuse detection",
+  "email.tracking_domain_regressed.subject": "Action required: tracking domain {{.Host}} stopped working",
+  "email.tracking_domain_regressed.body": "The tracking domain \"{{.Host}}\" of your sending domain \"{{.Domain}}\" is now {{.To}} instead of {{.From}}: its CNAME must point at {{.Target}} and the host must answer over HTTPS.\n\nLinks in your email fall back to the app address until it works again.\n",
   "email.abuse_warning.subject": "Warning: email deliverability problem in {{.Workspace}}",
   "email.abuse_warning.body": "Your sphericon workspace {{.Workspace}} is close to having its sending suspended.\n\nThe {{.Metric}} rate on {{.Domain}} is {{.Rate}} over the last 24 hours ({{.Count}} of {{.Total}}), over the warning limit of {{.Limit}}.\n\nNothing is frozen yet. Clean your list and review who you send to: if the rate reaches the freeze limit, all sending for the workspace is suspended automatically.\n\n{{if .Support}}Questions? Email {{.Support}}.{{end}}\n",
   "metric.complaint": "complaint",

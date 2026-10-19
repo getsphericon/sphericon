@@ -744,6 +744,15 @@ export const zSiteTestSendBroadcastInput = z.object({
 });
 
 /**
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`
+ */
+export const zSiteTrackingState = z.enum([
+  'pending',
+  'dns_verified',
+  'serving'
+]);
+
+/**
  * The channel a transactional send went out on (email today; sms reserved)
  */
 export const zSiteTransactionalEmailChannel = z.enum(['email']);
@@ -1242,26 +1251,6 @@ export const zSiteScheduleBroadcastInput = z.object({
 });
 
 /**
- * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
- * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
- * private key is never exposed. `verified` is a live property re-checked in the
- * background — it can flip back if the DNS record disappears.
- */
-export const zSiteSendingDomainResource = z.object({
-  id: zEntityId,
-  domain: z.string(),
-  dkimSelector: z.string(),
-  verified: z.boolean(),
-  dkimRecord: zSiteDnsRecord,
-  spfRecord: zSiteDnsRecord,
-  dmarcRecord: zSiteDnsRecord,
-  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  verifiedAt: z.exactOptional(zTimestamp.nullable()),
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
-});
-
-/**
  * A suppressed destination: the send path skips it on every surface
  */
 export const zSiteSuppressionResource = z.object({
@@ -1280,6 +1269,39 @@ export const zSiteTagResource = z.object({
   id: zEntityId,
   name: z.string(),
   createdAt: zTimestamp
+});
+
+/**
+ * The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured.
+ */
+export const zSiteTrackingRecord = z.object({
+  type: z.enum(['CNAME']),
+  host: z.string(),
+  target: z.string(),
+  state: zSiteTrackingState,
+  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
+  stateChangedAt: z.exactOptional(zTimestamp.nullable())
+});
+
+/**
+ * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
+ * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
+ * private key is never exposed. `verified` is a live property re-checked in the
+ * background — it can flip back if the DNS record disappears.
+ */
+export const zSiteSendingDomainResource = z.object({
+  id: zEntityId,
+  domain: z.string(),
+  dkimSelector: z.string(),
+  verified: z.boolean(),
+  dkimRecord: zSiteDnsRecord,
+  spfRecord: zSiteDnsRecord,
+  dmarcRecord: zSiteDnsRecord,
+  trackingRecord: z.exactOptional(zSiteTrackingRecord),
+  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
+  verifiedAt: z.exactOptional(zTimestamp.nullable()),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
 });
 
 /**

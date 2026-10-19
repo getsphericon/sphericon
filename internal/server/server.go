@@ -117,7 +117,8 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	mux.Handle("/t.js", trackerHandler())
 
 	// Public email engagement endpoints (open pixel, click redirect, unsubscribe).
-	mux.Handle("/e/", trackingHandler(client, bus, site.Tracker, limiter))
+	trackingH := trackingHandler(client, bus, site.Tracker, limiter, cfg.AppURL)
+	mux.Handle("/e/", trackingH)
 
 	// Inbound provider callbacks (ADR 0037): POST /hooks/{key}, the key of one
 	// Integration, read with that Integration's Preset.
@@ -135,7 +136,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// Order (ADR 0025): recoverer, requestID, CORS, client address, rate limit,
 	// timeout. CORS precedes the limiter so a 429 still reaches the browser; guard
 	// sits inside CORS so preflights are answered before the check.
-	return chi.Chain(recoverer, requestID, corsMiddleware(cfg.CORSOrigins), clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), collectEventLimit(cfg.BodyLimits.CollectEvent), guard).Handler(mux), nil
+	return chi.Chain(recoverer, requestID, corsMiddleware(cfg.CORSOrigins), clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), collectEventLimit(cfg.BodyLimits.CollectEvent), guard).Handler(trackingHostGate(cfg, client, mux, trackingH)), nil
 }
 
 // NewExternalAPI builds the external API (/api) ogen server: Bearer API-token
@@ -176,18 +177,19 @@ type ServiceSurface interface {
 // NewInternal builds the handler of the internal listener (ADR 0026): the service
 // endpoints under /service and nothing else, behind the middleware the public server
 // uses where it applies (recoverer, request id, client address, rate limit, timeout,
-// body limit). A nil surface (no `staff` license) yields a nil handler, and the
-// composition root then binds no listener at all.
-func NewInternal(cfg *config.Config, surface ServiceSurface) (http.Handler, error) {
-	if surface == nil {
-		return nil, nil
-	}
-	srv, err := surface.Server(serviceapi.WithErrorHandler(problemErrorHandler))
-	if err != nil {
-		return nil, err
-	}
+// body limit). The edge's on-demand TLS question (paths.TLSAsk, ADR 0038) is core and
+// always served; the service endpoints exist only with a surface, so a nil one (no
+// `staff` license) leaves /service unrouted (404).
+func NewInternal(cfg *config.Config, client *ent.Client, surface ServiceSurface) (http.Handler, error) {
 	mux := http.NewServeMux()
-	mux.Handle(paths.Service+"/", srv)
+	mux.Handle("GET "+paths.TLSAsk, tlsAskHandler(client))
+	if surface != nil {
+		srv, err := surface.Server(serviceapi.WithErrorHandler(problemErrorHandler))
+		if err != nil {
+			return nil, err
+		}
+		mux.Handle(paths.Service+"/", srv)
+	}
 	limiter := ratelimit.New(cfg.RateLimits)
 	return chi.Chain(recoverer, requestID, clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits)).Handler(mux), nil
 }

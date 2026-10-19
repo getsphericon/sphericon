@@ -2920,6 +2920,52 @@ func (o OptSiteSuppressionChannel) Or(d SiteSuppressionChannel) SiteSuppressionC
 	return d
 }
 
+// NewOptSiteTrackingRecord returns new OptSiteTrackingRecord with value set to v.
+func NewOptSiteTrackingRecord(v SiteTrackingRecord) OptSiteTrackingRecord {
+	return OptSiteTrackingRecord{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteTrackingRecord is optional SiteTrackingRecord.
+type OptSiteTrackingRecord struct {
+	Value SiteTrackingRecord
+	Set   bool
+}
+
+// IsSet returns true if OptSiteTrackingRecord was set.
+func (o OptSiteTrackingRecord) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteTrackingRecord) Reset() {
+	var v SiteTrackingRecord
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteTrackingRecord) SetTo(v SiteTrackingRecord) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteTrackingRecord) Get() (v SiteTrackingRecord, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteTrackingRecord) Or(d SiteTrackingRecord) SiteTrackingRecord {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteUpdateIntegrationInputParams returns new OptSiteUpdateIntegrationInputParams with value set to v.
 func NewOptSiteUpdateIntegrationInputParams(v SiteUpdateIntegrationInputParams) OptSiteUpdateIntegrationInputParams {
 	return OptSiteUpdateIntegrationInputParams{
@@ -9820,6 +9866,8 @@ type SiteSendingDomainResource struct {
 	SpfRecord SiteDnsRecord `json:"spfRecord"`
 	// The suggested DMARC TXT record (advisory bulk-readiness signal).
 	DmarcRecord SiteDnsRecord `json:"dmarcRecord"`
+	// The Tracking domain CNAME; absent when the instance has no tracking target configured.
+	TrackingRecord OptSiteTrackingRecord `json:"trackingRecord"`
 	// When the DKIM DNS was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the domain most recently became verified (null = never).
@@ -9863,6 +9911,11 @@ func (s *SiteSendingDomainResource) GetSpfRecord() SiteDnsRecord {
 // GetDmarcRecord returns the value of DmarcRecord.
 func (s *SiteSendingDomainResource) GetDmarcRecord() SiteDnsRecord {
 	return s.DmarcRecord
+}
+
+// GetTrackingRecord returns the value of TrackingRecord.
+func (s *SiteSendingDomainResource) GetTrackingRecord() OptSiteTrackingRecord {
+	return s.TrackingRecord
 }
 
 // GetLastCheckedAt returns the value of LastCheckedAt.
@@ -9918,6 +9971,11 @@ func (s *SiteSendingDomainResource) SetSpfRecord(val SiteDnsRecord) {
 // SetDmarcRecord sets the value of DmarcRecord.
 func (s *SiteSendingDomainResource) SetDmarcRecord(val SiteDnsRecord) {
 	s.DmarcRecord = val
+}
+
+// SetTrackingRecord sets the value of TrackingRecord.
+func (s *SiteSendingDomainResource) SetTrackingRecord(val OptSiteTrackingRecord) {
+	s.TrackingRecord = val
 }
 
 // SetLastCheckedAt sets the value of LastCheckedAt.
@@ -11169,6 +11227,171 @@ func (*SiteTokensDeleteNotFound) siteTokensDeleteRes() {}
 type SiteTokensListOKApplicationJSON []SiteApiTokenResource
 
 func (*SiteTokensListOKApplicationJSON) siteTokensListRes() {}
+
+// The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only;
+// absent when the instance has no tracking target configured.
+// Ref: #/components/schemas/SiteTrackingRecord
+type SiteTrackingRecord struct {
+	// The record type (always CNAME).
+	Type SiteTrackingRecordType `json:"type"`
+	// The host to create the record at: "track." followed by the domain.
+	Host string `json:"host"`
+	// The edge host the CNAME must point at.
+	Target string `json:"target"`
+	// Where the Tracking domain stands.
+	State SiteTrackingState `json:"state"`
+	// When the Tracking domain was most recently checked (null = never).
+	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
+	// When the state most recently changed (null = never).
+	StateChangedAt OptNilTimestamp `json:"stateChangedAt"`
+}
+
+// GetType returns the value of Type.
+func (s *SiteTrackingRecord) GetType() SiteTrackingRecordType {
+	return s.Type
+}
+
+// GetHost returns the value of Host.
+func (s *SiteTrackingRecord) GetHost() string {
+	return s.Host
+}
+
+// GetTarget returns the value of Target.
+func (s *SiteTrackingRecord) GetTarget() string {
+	return s.Target
+}
+
+// GetState returns the value of State.
+func (s *SiteTrackingRecord) GetState() SiteTrackingState {
+	return s.State
+}
+
+// GetLastCheckedAt returns the value of LastCheckedAt.
+func (s *SiteTrackingRecord) GetLastCheckedAt() OptNilTimestamp {
+	return s.LastCheckedAt
+}
+
+// GetStateChangedAt returns the value of StateChangedAt.
+func (s *SiteTrackingRecord) GetStateChangedAt() OptNilTimestamp {
+	return s.StateChangedAt
+}
+
+// SetType sets the value of Type.
+func (s *SiteTrackingRecord) SetType(val SiteTrackingRecordType) {
+	s.Type = val
+}
+
+// SetHost sets the value of Host.
+func (s *SiteTrackingRecord) SetHost(val string) {
+	s.Host = val
+}
+
+// SetTarget sets the value of Target.
+func (s *SiteTrackingRecord) SetTarget(val string) {
+	s.Target = val
+}
+
+// SetState sets the value of State.
+func (s *SiteTrackingRecord) SetState(val SiteTrackingState) {
+	s.State = val
+}
+
+// SetLastCheckedAt sets the value of LastCheckedAt.
+func (s *SiteTrackingRecord) SetLastCheckedAt(val OptNilTimestamp) {
+	s.LastCheckedAt = val
+}
+
+// SetStateChangedAt sets the value of StateChangedAt.
+func (s *SiteTrackingRecord) SetStateChangedAt(val OptNilTimestamp) {
+	s.StateChangedAt = val
+}
+
+// The record type (always CNAME).
+type SiteTrackingRecordType string
+
+const (
+	SiteTrackingRecordTypeCNAME SiteTrackingRecordType = "CNAME"
+)
+
+// AllValues returns all SiteTrackingRecordType values.
+func (SiteTrackingRecordType) AllValues() []SiteTrackingRecordType {
+	return []SiteTrackingRecordType{
+		SiteTrackingRecordTypeCNAME,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteTrackingRecordType) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteTrackingRecordTypeCNAME:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteTrackingRecordType) UnmarshalText(data []byte) error {
+	switch SiteTrackingRecordType(data) {
+	case SiteTrackingRecordTypeCNAME:
+		*s = SiteTrackingRecordTypeCNAME
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host,
+// `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail
+// uses the host only while `serving`.
+// Ref: #/components/schemas/SiteTrackingState
+type SiteTrackingState string
+
+const (
+	SiteTrackingStatePending     SiteTrackingState = "pending"
+	SiteTrackingStateDNSVerified SiteTrackingState = "dns_verified"
+	SiteTrackingStateServing     SiteTrackingState = "serving"
+)
+
+// AllValues returns all SiteTrackingState values.
+func (SiteTrackingState) AllValues() []SiteTrackingState {
+	return []SiteTrackingState{
+		SiteTrackingStatePending,
+		SiteTrackingStateDNSVerified,
+		SiteTrackingStateServing,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteTrackingState) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteTrackingStatePending:
+		return []byte(s), nil
+	case SiteTrackingStateDNSVerified:
+		return []byte(s), nil
+	case SiteTrackingStateServing:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteTrackingState) UnmarshalText(data []byte) error {
+	switch SiteTrackingState(data) {
+	case SiteTrackingStatePending:
+		*s = SiteTrackingStatePending
+		return nil
+	case SiteTrackingStateDNSVerified:
+		*s = SiteTrackingStateDNSVerified
+		return nil
+	case SiteTrackingStateServing:
+		*s = SiteTrackingStateServing
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // The channel a transactional send went out on (email today; sms reserved).
 // Ref: #/components/schemas/SiteTransactionalEmailChannel

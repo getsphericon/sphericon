@@ -17,6 +17,34 @@ model DnsRecord {
   value: string;
 }
 
+/** State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving` */
+enum TrackingState {
+  pending,
+  dns_verified,
+  serving,
+}
+
+/** The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only; absent when the instance has no tracking target configured. */
+model TrackingRecord {
+  /** The record type (always CNAME) */
+  type: "CNAME";
+
+  /** The host to create the record at: "track." followed by the domain */
+  host: string;
+
+  /** The edge host the CNAME must point at */
+  target: string;
+
+  /** Where the Tracking domain stands */
+  state: TrackingState;
+
+  /** When the Tracking domain was most recently checked (null = never) */
+  lastCheckedAt?: Timestamp | null;
+
+  /** When the state most recently changed (null = never) */
+  stateChangedAt?: Timestamp | null;
+}
+
 /**
  * Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the
  * DKIM TXT record. The private key is never returned. `verified` is a live property
@@ -46,6 +74,9 @@ model SendingDomainResource {
 
   /** The suggested DMARC TXT record (advisory bulk-readiness signal) */
   dmarcRecord: DnsRecord;
+
+  /** The Tracking domain CNAME; absent when the instance has no tracking target configured */
+  trackingRecord?: TrackingRecord;
 
   /** When the DKIM DNS was most recently checked (null = never) */
   lastCheckedAt?: Timestamp | null;
