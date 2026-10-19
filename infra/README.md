@@ -61,14 +61,14 @@ Create `infra/production.tfvars` (gitignored) with the plain values, at least:
 
 ```hcl
 image_tag   = "0.1.0"            # the released version
-alarm_email = "ops@example.com"  # receives the CloudWatch alarms (see "Alarms" below)
+alarm_email = "ops@example.com"  # receives the CloudWatch alarms
 ```
 
 Optional: `image_repository` (default `ghcr.io/getsphericon/sphericon`), `otel_service_name`,
 `domain` (`getsphericon.app`, also the app host), `api_host_label` (`api`),
 `tracker_host_label` (`t`), `mcp_host_label` (`mcp`), `region`, `name`, `task_cpu`, `task_memory`, `db_instance_class`,
 `db_allocated_storage`, `db_max_open_conns`, `pgx_max_conns`, `mail_from_label` (`mail`),
-`system_email_from` (default `noreply@<domain>`), `dmarc_rua`, `internal_listener_source_security_group_id` and
+`system_email_from` (default `noreply@<domain>`), `dmarc_rua`, `db_connections_alarm_threshold`, `internal_listener_source_security_group_id` and
 `internal_port` (see below). There are no secret variables.
 
 The internal listener is off by default. Set `internal_listener_source_security_group_id` to the id

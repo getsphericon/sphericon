@@ -310,7 +310,7 @@ aws cloudwatch set-alarm-state --alarm-name sphericon-alb-5xx-rate --state-value
 ```
 
 The email for each arrives within a minute (the state is reset by itself at the next evaluation
-anyway). Use `--profile sphericon` with the commands, as in the Terraform runbook.
+anyway). The commands use the default names (`var.name` = `sphericon`) and `--profile sphericon`, as in the Terraform runbook.
 
 ## Database restore drill
 

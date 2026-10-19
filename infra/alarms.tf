@@ -1,6 +1,6 @@
 # CloudWatch alarms and EventBridge rules for the hosted deployment, all notifying one SNS topic that
 # emails var.alarm_email. Slack: subscribe an AWS Chatbot channel configuration to the topic
-# (infra/README.md); Chatbot is configured once in the console, so it is not Terraform here.
+# (docs/operations/runbook.md); Chatbot is configured once in the console, so it is not Terraform here.
 # Every alarm also notifies on recovery (ok_actions), so the channel shows when it ends.
 
 data "aws_caller_identity" "current" {}
@@ -87,6 +87,7 @@ locals {
 
 # Share of requests answered with a 5xx (by the app or by the load balancer itself), judged only
 # when there are at least 20 requests in the window: a single failure of a quiet period is not a rate.
+# The ALB emits a 5xx series only when such an error occurs, so each is filled with 0.
 resource "aws_cloudwatch_metric_alarm" "alb_5xx_rate" {
   alarm_name          = "${var.name}-alb-5xx-rate"
   alarm_description   = "More than 5% of requests failed with a 5xx over 5 minutes (twice in a row). Runbook: Hosted deployment alarms."
@@ -99,7 +100,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_rate" {
 
   metric_query {
     id          = "rate"
-    expression  = "IF(requests >= 20, 100 * (target_5xx + elb_5xx) / requests, 0)"
+    expression  = "IF(requests >= 20, 100 * (FILL(target_5xx, 0) + FILL(elb_5xx, 0)) / requests, 0)"
     label       = "5xx rate (%)"
     return_data = true
   }
