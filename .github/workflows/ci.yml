@@ -211,6 +211,7 @@ jobs:
   # /healthz, so the file cannot rot.
   compose-smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
