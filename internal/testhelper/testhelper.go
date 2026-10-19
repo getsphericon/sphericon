@@ -194,11 +194,17 @@ type setup struct {
 	licensePub ed25519.PublicKey
 	// certs is where an `sns` Preset gets its signing certificate; nil is the test certificate.
 	certs preset.CertFetcher
+	// oauthFetcher downloads OAuth Client ID Metadata Documents; nil is the production fetcher.
+	oauthFetcher webhook.Doer
 	// noSystemSender builds the Instance without outbound mail.
 	noSystemSender bool
 	// noSystemFrom gives the System sender no default From (it is not a DefaultFromer).
 	noSystemFrom bool
 }
+
+// WithOAuthFetcher replaces the client that downloads OAuth Client ID Metadata Documents, so a
+// test serves a document from an httptest TLS server (the production client refuses loopback).
+func WithOAuthFetcher(f webhook.Doer) Option { return func(s *setup) { s.oauthFetcher = f } }
 
 // WithoutSystemSender runs the Instance with no outbound mail, so it has no System sender
 // for a Test send to fall back to (ADR 0041).
@@ -378,6 +384,10 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build external API")
 	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
 	require.NoError(t, err, "build MCP handler")
+	oauthFetcher := st.oauthFetcher
+	if oauthFetcher == nil {
+		oauthFetcher = oauthserver.NewFetcher(cfg.OutboundAllow)
+	}
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
 	staffHandler, err := server.NewStaffAPI(edition.Staff(bus, systemMail))
 	require.NoError(t, err, "build staff API")
@@ -390,7 +400,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL, MCPURL: cfg.MCPOrigin(),
 		Instance: inst,
-		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
+		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, Integrations: integrationsModule,

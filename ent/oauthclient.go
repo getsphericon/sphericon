@@ -28,6 +28,8 @@ type OAuthClient struct {
 	Name string `json:"name,omitempty"`
 	// RedirectUris holds the value of the "redirect_uris" field.
 	RedirectUris []string `json:"redirect_uris,omitempty"`
+	// MetadataExpiresAt holds the value of the "metadata_expires_at" field.
+	MetadataExpiresAt *time.Time `json:"metadata_expires_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OAuthClientQuery when eager-loading is set.
 	Edges        OAuthClientEdges `json:"edges"`
@@ -63,7 +65,7 @@ func (*OAuthClient) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case oauthclient.FieldClientID, oauthclient.FieldName:
 			values[i] = new(sql.NullString)
-		case oauthclient.FieldCreatedAt, oauthclient.FieldUpdatedAt:
+		case oauthclient.FieldCreatedAt, oauthclient.FieldUpdatedAt, oauthclient.FieldMetadataExpiresAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -117,6 +119,13 @@ func (_m *OAuthClient) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.RedirectUris); err != nil {
 					return fmt.Errorf("unmarshal field redirect_uris: %w", err)
 				}
+			}
+		case oauthclient.FieldMetadataExpiresAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field metadata_expires_at", values[i])
+			} else if value.Valid {
+				_m.MetadataExpiresAt = new(time.Time)
+				*_m.MetadataExpiresAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -173,6 +182,11 @@ func (_m *OAuthClient) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("redirect_uris=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RedirectUris))
+	builder.WriteString(", ")
+	if v := _m.MetadataExpiresAt; v != nil {
+		builder.WriteString("metadata_expires_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

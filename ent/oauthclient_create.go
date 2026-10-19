@@ -69,6 +69,20 @@ func (_c *OAuthClientCreate) SetRedirectUris(v []string) *OAuthClientCreate {
 	return _c
 }
 
+// SetMetadataExpiresAt sets the "metadata_expires_at" field.
+func (_c *OAuthClientCreate) SetMetadataExpiresAt(v time.Time) *OAuthClientCreate {
+	_c.mutation.SetMetadataExpiresAt(v)
+	return _c
+}
+
+// SetNillableMetadataExpiresAt sets the "metadata_expires_at" field if the given value is not nil.
+func (_c *OAuthClientCreate) SetNillableMetadataExpiresAt(v *time.Time) *OAuthClientCreate {
+	if v != nil {
+		_c.SetMetadataExpiresAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OAuthClientCreate) SetID(v int64) *OAuthClientCreate {
 	_c.mutation.SetID(v)
@@ -215,6 +229,10 @@ func (_c *OAuthClientCreate) createSpec() (*OAuthClient, *sqlgraph.CreateSpec) {
 		_spec.SetField(oauthclient.FieldRedirectUris, field.TypeJSON, value)
 		_node.RedirectUris = value
 	}
+	if value, ok := _c.mutation.MetadataExpiresAt(); ok {
+		_spec.SetField(oauthclient.FieldMetadataExpiresAt, field.TypeTime, value)
+		_node.MetadataExpiresAt = &value
+	}
 	if nodes := _c.mutation.CodesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -319,6 +337,24 @@ func (u *OAuthClientUpsert) UpdateRedirectUris() *OAuthClientUpsert {
 	return u
 }
 
+// SetMetadataExpiresAt sets the "metadata_expires_at" field.
+func (u *OAuthClientUpsert) SetMetadataExpiresAt(v time.Time) *OAuthClientUpsert {
+	u.Set(oauthclient.FieldMetadataExpiresAt, v)
+	return u
+}
+
+// UpdateMetadataExpiresAt sets the "metadata_expires_at" field to the value that was provided on create.
+func (u *OAuthClientUpsert) UpdateMetadataExpiresAt() *OAuthClientUpsert {
+	u.SetExcluded(oauthclient.FieldMetadataExpiresAt)
+	return u
+}
+
+// ClearMetadataExpiresAt clears the value of the "metadata_expires_at" field.
+func (u *OAuthClientUpsert) ClearMetadataExpiresAt() *OAuthClientUpsert {
+	u.SetNull(oauthclient.FieldMetadataExpiresAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -412,6 +448,27 @@ func (u *OAuthClientUpsertOne) SetRedirectUris(v []string) *OAuthClientUpsertOne
 func (u *OAuthClientUpsertOne) UpdateRedirectUris() *OAuthClientUpsertOne {
 	return u.Update(func(s *OAuthClientUpsert) {
 		s.UpdateRedirectUris()
+	})
+}
+
+// SetMetadataExpiresAt sets the "metadata_expires_at" field.
+func (u *OAuthClientUpsertOne) SetMetadataExpiresAt(v time.Time) *OAuthClientUpsertOne {
+	return u.Update(func(s *OAuthClientUpsert) {
+		s.SetMetadataExpiresAt(v)
+	})
+}
+
+// UpdateMetadataExpiresAt sets the "metadata_expires_at" field to the value that was provided on create.
+func (u *OAuthClientUpsertOne) UpdateMetadataExpiresAt() *OAuthClientUpsertOne {
+	return u.Update(func(s *OAuthClientUpsert) {
+		s.UpdateMetadataExpiresAt()
+	})
+}
+
+// ClearMetadataExpiresAt clears the value of the "metadata_expires_at" field.
+func (u *OAuthClientUpsertOne) ClearMetadataExpiresAt() *OAuthClientUpsertOne {
+	return u.Update(func(s *OAuthClientUpsert) {
+		s.ClearMetadataExpiresAt()
 	})
 }
 
@@ -674,6 +731,27 @@ func (u *OAuthClientUpsertBulk) SetRedirectUris(v []string) *OAuthClientUpsertBu
 func (u *OAuthClientUpsertBulk) UpdateRedirectUris() *OAuthClientUpsertBulk {
 	return u.Update(func(s *OAuthClientUpsert) {
 		s.UpdateRedirectUris()
+	})
+}
+
+// SetMetadataExpiresAt sets the "metadata_expires_at" field.
+func (u *OAuthClientUpsertBulk) SetMetadataExpiresAt(v time.Time) *OAuthClientUpsertBulk {
+	return u.Update(func(s *OAuthClientUpsert) {
+		s.SetMetadataExpiresAt(v)
+	})
+}
+
+// UpdateMetadataExpiresAt sets the "metadata_expires_at" field to the value that was provided on create.
+func (u *OAuthClientUpsertBulk) UpdateMetadataExpiresAt() *OAuthClientUpsertBulk {
+	return u.Update(func(s *OAuthClientUpsert) {
+		s.UpdateMetadataExpiresAt()
+	})
+}
+
+// ClearMetadataExpiresAt clears the value of the "metadata_expires_at" field.
+func (u *OAuthClientUpsertBulk) ClearMetadataExpiresAt() *OAuthClientUpsertBulk {
+	return u.Update(func(s *OAuthClientUpsert) {
+		s.ClearMetadataExpiresAt()
 	})
 }
 

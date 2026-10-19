@@ -9,7 +9,8 @@ import (
 )
 
 // OAuthClient is an MCP client that registered itself through dynamic client
-// registration (RFC 7591, ADR 0016). All clients are public (PKCE, no secret).
+// registration (RFC 7591) or whose client_id is an HTTPS URL of a Client ID Metadata
+// Document (ADR 0016). All clients are public (PKCE, no secret).
 type OAuthClient struct {
 	ent.Schema
 }
@@ -38,6 +39,11 @@ func (OAuthClient) Fields() []ent.Field {
 		field.String("name").
 			NotEmpty(),
 		field.JSON("redirect_uris", []string{}),
+		// Set only for a Client ID Metadata Document client (client_id is its URL): the
+		// name and redirect URIs are then a cache of the document, fresh until this time.
+		field.Time("metadata_expires_at").
+			Optional().
+			Nillable(),
 	}
 }
 

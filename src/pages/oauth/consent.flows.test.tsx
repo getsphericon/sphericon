@@ -42,6 +42,7 @@ function serve(
       body: {
         clientName: 'Fixture Connector',
         redirectUri: request.redirectUri,
+        localRedirect: false,
         scopes: ['contacts:read'],
         sendScopes: [],
       },

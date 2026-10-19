@@ -55,10 +55,10 @@ type Server struct {
 	resource string
 }
 
-// New builds the server; appURL is the public origin and the OAuth issuer, and
-// mcpURL the origin of the MCP resource (the same as appURL on a single host).
-func New(client *ent.Client, appURL, mcpURL string) *Server {
-	return &Server{Service: NewService(client), issuer: strings.TrimSuffix(appURL, "/"), resource: ResourceURL(mcpURL)}
+// New builds the server over the service; appURL is the public origin and the OAuth issuer,
+// and mcpURL the origin of the MCP resource (the same as appURL on a single host).
+func New(svc *Service, appURL, mcpURL string) *Server {
+	return &Server{Service: svc, issuer: strings.TrimSuffix(appURL, "/"), resource: ResourceURL(mcpURL)}
 }
 
 // Mount registers discovery, registration, authorize and token endpoints.
@@ -83,7 +83,8 @@ func (s *Server) Mount(mux *http.ServeMux) {
 func (s *Server) authServerMetadata(w http.ResponseWriter, _ *http.Request) {
 	meta := struct {
 		oauthex.AuthServerMeta
-		CodeChallengeMethodsSupported []string `json:"code_challenge_methods_supported"`
+		CodeChallengeMethodsSupported     []string `json:"code_challenge_methods_supported"`
+		ClientIDMetadataDocumentSupported bool     `json:"client_id_metadata_document_supported"`
 	}{
 		AuthServerMeta: oauthex.AuthServerMeta{
 			Issuer:                            s.issuer,
@@ -95,7 +96,8 @@ func (s *Server) authServerMetadata(w http.ResponseWriter, _ *http.Request) {
 			GrantTypesSupported:               []string{"authorization_code"},
 			TokenEndpointAuthMethodsSupported: []string{"none"},
 		},
-		CodeChallengeMethodsSupported: []string{"S256"},
+		CodeChallengeMethodsSupported:     []string{"S256"},
+		ClientIDMetadataDocumentSupported: true,
 	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	writeJSON(w, http.StatusOK, meta)
@@ -301,14 +303,20 @@ func validRedirectURI(raw string) bool {
 	case "https":
 		return true
 	case "http":
-		host := u.Hostname()
-		if host == "localhost" {
-			return true
-		}
-		ip := net.ParseIP(host)
-		return ip != nil && ip.IsLoopback()
+		return isLoopback(raw)
 	}
 	return false
+}
+
+// isLoopback reports whether a redirect URI points at this machine.
+func isLoopback(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	host := u.Hostname()
+	ip := net.ParseIP(host)
+	return host == "localhost" || ip != nil && ip.IsLoopback()
 }
 
 func truncate(s string, n int) string {

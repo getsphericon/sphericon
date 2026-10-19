@@ -133,6 +133,17 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
     <Stack maw={480} mx="auto" mt="xl">
       <Title order={3}>{t(($) => $.oauthConsent.title, { client: info.clientName })}</Title>
       <Text>{t(($) => $.oauthConsent.intro, { client: info.clientName })}</Text>
+      {info.clientHost ? (
+        <Text size="sm" c="dimmed">
+          {t(($) => $.oauthConsent.clientHost, { host: info.clientHost })}
+        </Text>
+      ) : null}
+
+      {info.localRedirect ? (
+        <Alert color="yellow" title={t(($) => $.oauthConsent.localhostTitle)}>
+          {t(($) => $.oauthConsent.localhostDescription)}
+        </Alert>
+      ) : null}
 
       <Select
         label={t(($) => $.oauthConsent.workspaceLabel)}

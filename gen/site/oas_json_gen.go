@@ -20230,8 +20230,18 @@ func (s *SiteOAuthAuthorizationRequest) encodeFields(e *jx.Encoder) {
 		e.Str(s.ClientName)
 	}
 	{
+		if s.ClientHost.Set {
+			e.FieldStart("clientHost")
+			s.ClientHost.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("redirectUri")
 		e.Str(s.RedirectUri)
+	}
+	{
+		e.FieldStart("localRedirect")
+		e.Bool(s.LocalRedirect)
 	}
 	{
 		e.FieldStart("scopes")
@@ -20251,11 +20261,13 @@ func (s *SiteOAuthAuthorizationRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteOAuthAuthorizationRequest = [4]string{
+var jsonFieldsNameOfSiteOAuthAuthorizationRequest = [6]string{
 	0: "clientName",
-	1: "redirectUri",
-	2: "scopes",
-	3: "sendScopes",
+	1: "clientHost",
+	2: "redirectUri",
+	3: "localRedirect",
+	4: "scopes",
+	5: "sendScopes",
 }
 
 // Decode decodes SiteOAuthAuthorizationRequest from json.
@@ -20279,8 +20291,18 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"clientName\"")
 			}
+		case "clientHost":
+			if err := func() error {
+				s.ClientHost.Reset()
+				if err := s.ClientHost.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clientHost\"")
+			}
 		case "redirectUri":
-			requiredBitSet[0] |= 1 << 1
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.RedirectUri = string(v)
@@ -20291,8 +20313,20 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"redirectUri\"")
 			}
+		case "localRedirect":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Bool()
+				s.LocalRedirect = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"localRedirect\"")
+			}
 		case "scopes":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				s.Scopes = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -20312,7 +20346,7 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"scopes\"")
 			}
 		case "sendScopes":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				s.SendScopes = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -20341,7 +20375,7 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00111101,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

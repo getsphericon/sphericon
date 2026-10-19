@@ -24,6 +24,8 @@ const (
 	FieldName = "name"
 	// FieldRedirectUris holds the string denoting the redirect_uris field in the database.
 	FieldRedirectUris = "redirect_uris"
+	// FieldMetadataExpiresAt holds the string denoting the metadata_expires_at field in the database.
+	FieldMetadataExpiresAt = "metadata_expires_at"
 	// EdgeCodes holds the string denoting the codes edge name in mutations.
 	EdgeCodes = "codes"
 	// Table holds the table name of the oauthclient in the database.
@@ -45,6 +47,7 @@ var Columns = []string{
 	FieldClientID,
 	FieldName,
 	FieldRedirectUris,
+	FieldMetadataExpiresAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -96,6 +99,11 @@ func ByClientID(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByMetadataExpiresAt orders the results by the metadata_expires_at field.
+func ByMetadataExpiresAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMetadataExpiresAt, opts...).ToFunc()
 }
 
 // ByCodesCount orders the results by codes count.

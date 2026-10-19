@@ -21,6 +21,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
+	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 var (
@@ -43,15 +44,25 @@ const (
 // Service holds the authorization server's state operations.
 type Service struct {
 	ent *ent.Client
+	// fetcher downloads Client ID Metadata Documents; it must be an SSRF-hardened client.
+	fetcher webhook.Doer
 }
 
-// NewService builds the service over the ent client.
-func NewService(client *ent.Client) *Service { return &Service{ent: client} }
+// NewService builds the service over the ent client; fetcher downloads Client ID Metadata
+// Documents and must come from webhook.NewClient or NewClientAllowing.
+func NewService(client *ent.Client, fetcher webhook.Doer) *Service {
+	return &Service{ent: client, fetcher: fetcher}
+}
 
 // Request is a validated authorization request, ready for the consent screen.
 type Request struct {
-	ClientName  string
-	RedirectURI string
+	ClientName string
+	// ClientHost is the host of a metadata client's client_id URL, empty for a registered client.
+	ClientHost string
+	// LocalRedirect is set when the redirect URI is on a loopback host, where any program
+	// on the user's machine can be listening.
+	LocalRedirect bool
+	RedirectURI   string
 	// Scopes are granted by default; SendScopes only on explicit opt-in.
 	Scopes     []string
 	SendScopes []string
@@ -81,7 +92,10 @@ func (s *Service) Describe(ctx context.Context, clientID, redirectURI, scope str
 	if strings.TrimSpace(scope) != "" && len(granted) == 0 && len(send) == 0 {
 		return nil, fmt.Errorf("%w: no supported scope requested", ErrInvalidRequest)
 	}
-	return &Request{ClientName: client.Name, RedirectURI: redirectURI, Scopes: granted, SendScopes: send}, nil
+	return &Request{
+		ClientName: client.Name, ClientHost: ClientHost(clientID), LocalRedirect: isLoopback(redirectURI),
+		RedirectURI: redirectURI, Scopes: granted, SendScopes: send,
+	}, nil
 }
 
 // Decide records the user's decision and returns the URL to send their browser
@@ -124,7 +138,13 @@ func (s *Service) Decide(ctx context.Context, d Decision) (string, error) {
 // client loads a registered client and checks redirectURI against its exact
 // registered list (never a prefix or pattern match).
 func (s *Service) client(ctx context.Context, clientID, redirectURI string) (*ent.OAuthClient, error) {
-	c, err := s.ent.OAuthClient.Query().Where(oauthclient.ClientID(clientID)).Only(ctx)
+	var c *ent.OAuthClient
+	var err error
+	if IsMetadataClientID(clientID) {
+		c, err = s.metadataClient(ctx, clientID)
+	} else {
+		c, err = s.ent.OAuthClient.Query().Where(oauthclient.ClientID(clientID)).Only(ctx)
+	}
 	if ent.IsNotFound(err) {
 		return nil, ErrUnknownClient
 	}

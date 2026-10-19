@@ -10232,15 +10232,23 @@
       },
       "SiteOAuthAuthorizationRequest": {
         "type": "object",
-        "required": ["clientName", "redirectUri", "scopes", "sendScopes"],
+        "required": ["clientName", "redirectUri", "localRedirect", "scopes", "sendScopes"],
         "properties": {
           "clientName": {
             "type": "string",
             "description": "Self-declared client name (untrusted: show as text)"
           },
+          "clientHost": {
+            "type": "string",
+            "description": "Host of the client's metadata document URL when its client_id is one; absent for a registered client"
+          },
           "redirectUri": {
             "type": "string",
             "description": "The URL the user is sent back to"
+          },
+          "localRedirect": {
+            "type": "boolean",
+            "description": "The redirect URI is on a loopback host: any program on the user's machine can be listening there"
           },
           "scopes": {
             "type": "array",

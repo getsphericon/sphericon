@@ -1984,9 +1984,17 @@ export type SiteOAuthAuthorizationRequest = {
    */
   clientName: string;
   /**
+   * Host of the client's metadata document URL when its client_id is one; absent for a registered client
+   */
+  clientHost?: string;
+  /**
    * The URL the user is sent back to
    */
   redirectUri: string;
+  /**
+   * The redirect URI is on a loopback host: any program on the user's machine can be listening there
+   */
+  localRedirect: boolean;
   /**
    * Scopes the client asked for that sphericon will grant by default
    */
