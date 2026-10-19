@@ -37,14 +37,17 @@ type Host struct {
 	OS          string
 	Arch        string
 	Locale      telemetryapi.TelemetryLocale
+	// LicenseExpiredAt is when the license key expired; zero unless it has lapsed (ADR 0035).
+	LicenseExpiredAt time.Time
 }
 
 // HostOf reads the Host of this process: the version it was built as, the edition its
-// license key switches on (a bad key fails boot, so a key that is set is a valid one), where
-// it runs and the configured locale.
-func HostOf(cfg *config.Config, version string) Host {
+// license key switches on (a bad key fails boot, so a key that is set is a valid one, and a
+// lapsed one, whose expiry the caller passes, runs the core: ADR 0035), where it runs and the
+// configured locale.
+func HostOf(cfg *config.Config, version string, licenseExpiredAt time.Time) Host {
 	edition := telemetryapi.TelemetryEditionCore
-	if cfg.LicenseKey != "" {
+	if cfg.LicenseKey != "" && licenseExpiredAt.IsZero() {
 		edition = telemetryapi.TelemetryEditionEe
 	}
 	locale := telemetryapi.TelemetryLocaleEn
@@ -60,6 +63,8 @@ func HostOf(cfg *config.Config, version string) Host {
 		OS:          runtime.GOOS,
 		Arch:        runtime.GOARCH,
 		Locale:      locale,
+
+		LicenseExpiredAt: licenseExpiredAt,
 	}
 }
 

@@ -16538,16 +16538,23 @@ func (s *SiteInstanceState) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.LicenseExpiredAt.Set {
+			e.FieldStart("licenseExpiredAt")
+			s.LicenseExpiredAt.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("telemetrySchemaUrl")
 		e.Str(s.TelemetrySchemaUrl)
 	}
 }
 
-var jsonFieldsNameOfSiteInstanceState = [4]string{
+var jsonFieldsNameOfSiteInstanceState = [5]string{
 	0: "telemetry",
 	1: "noticeAcknowledged",
 	2: "latestRelease",
-	3: "telemetrySchemaUrl",
+	3: "licenseExpiredAt",
+	4: "telemetrySchemaUrl",
 }
 
 // Decode decodes SiteInstanceState from json.
@@ -16591,8 +16598,18 @@ func (s *SiteInstanceState) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"latestRelease\"")
 			}
+		case "licenseExpiredAt":
+			if err := func() error {
+				s.LicenseExpiredAt.Reset()
+				if err := s.LicenseExpiredAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"licenseExpiredAt\"")
+			}
 		case "telemetrySchemaUrl":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.TelemetrySchemaUrl = string(v)
@@ -16613,7 +16630,7 @@ func (s *SiteInstanceState) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001011,
+		0b00010011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

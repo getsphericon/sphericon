@@ -86,6 +86,8 @@ type State struct {
 	NoticeAcknowledged bool
 	// LatestRelease is the bare version of a newer stable release, empty when there is none.
 	LatestRelease string
+	// LicenseExpiredAt is when the license key expired; zero unless it has lapsed (ADR 0035).
+	LicenseExpiredAt time.Time
 	// SchemaURL is the page that documents the Telemetry report's schema.
 	SchemaURL string
 }
@@ -178,9 +180,14 @@ func (m *Module) State(ctx context.Context) (State, error) {
 		Telemetry:          Effective(m.env, row.TelemetryEnabled),
 		NoticeAcknowledged: row.NoticeAcknowledgedAt != nil,
 		LatestRelease:      m.newer(row.LatestRelease),
+		LicenseExpiredAt:   m.host.LicenseExpiredAt,
 		SchemaURL:          m.env.SchemaURL,
 	}, nil
 }
+
+// LicenseExpired reports whether the license key has lapsed, so the Instance runs the core
+// (ADR 0035). Fixed for the life of the process: expiry is judged at boot only.
+func (m *Module) LicenseExpired() bool { return !m.host.LicenseExpiredAt.IsZero() }
 
 // SetTelemetry stores the Owner's choice; ErrTelemetryLocked when the environment decides.
 func (m *Module) SetTelemetry(ctx context.Context, enabled bool) (State, error) {

@@ -71,6 +71,22 @@ func TestSetupPullOnly(t *testing.T) {
 	require.NoError(t, stop(context.Background()))
 }
 
+// sphericon_license_expired is 1 while the license key has lapsed and 0 otherwise (ADR 0035).
+func TestLicenseExpiredGaugeFollowsTheLapse(t *testing.T) {
+	isolate(t)
+	_, err := Setup(context.Background(), &config.Config{OtelServiceName: "sphericon-test"}, "test", BuildInfo{Version: "0.1.0", Commit: "abc"})
+	require.NoError(t, err)
+	var lapsed atomic.Bool
+	require.NoError(t, ObserveLicenseExpired(lapsed.Load))
+
+	_, body := scrape(t)
+	assert.Regexp(t, `sphericon_license_expired(\{[^}]*\})? 0`, body)
+
+	lapsed.Store(true)
+	_, body = scrape(t)
+	assert.Regexp(t, `sphericon_license_expired(\{[^}]*\})? 1`, body)
+}
+
 // The newer release the Release check cached shows next to sphericon_build_info, and the
 // gauge disappears once there is none.
 func TestReleaseAvailableGaugeFollowsTheCachedResult(t *testing.T) {

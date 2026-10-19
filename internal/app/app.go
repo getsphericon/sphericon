@@ -389,6 +389,9 @@ func (a *App) start(ctx context.Context) error {
 	if err := telemetry.ObserveReleaseAvailable(inst.LatestRelease); err != nil {
 		return err
 	}
+	if err := telemetry.ObserveLicenseExpired(inst.LicenseExpired); err != nil {
+		return err
+	}
 	// The metrics listener is bound first: a bind failure (port in use) must fail the
 	// boot, not leave an unmonitored instance.
 	if err := a.bindMetrics(ctx); err != nil {
@@ -813,7 +816,7 @@ func register(injector do.Injector, env string, o options) {
 	})
 
 	// The Enterprise Edition (ADR 0014): what the runtime license key switches on. An
-	// empty key is the plain core; a malformed, forged or expired one fails boot.
+	// empty or expired key is the plain core (ADR 0035); a malformed or forged one fails boot.
 	do.Provide(injector, func(i do.Injector) (*ee.Edition, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -823,7 +826,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		lic, err := licensekey.Parse(cfg.LicenseKey, licensekey.ProductionKey, time.Now())
+		lic, err := licensekey.Load(cfg.LicenseKey, licensekey.ProductionKey, time.Now(), slog.Default())
 		if err != nil {
 			return nil, err
 		}
@@ -1038,7 +1041,12 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return instance.New(client.Client, instance.EnvironmentOf(cfg), instance.HostOf(cfg, buildinfo.Current().Version), nil, instance.WithReleaseSource(source)), nil
+		edition, err := do.Invoke[*ee.Edition](i)
+		if err != nil {
+			return nil, err
+		}
+		lapsedAt, _ := edition.LicenseLapsedAt()
+		return instance.New(client.Client, instance.EnvironmentOf(cfg), instance.HostOf(cfg, buildinfo.Current().Version, lapsedAt), nil, instance.WithReleaseSource(source)), nil
 	})
 
 	// Attempts counts failed logins per account (ADR 0025) over the raw client.

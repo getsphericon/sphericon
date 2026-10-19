@@ -1661,6 +1661,11 @@ export type SiteInstanceState = {
    */
   latestRelease?: string;
   /**
+   * When the Instance's license key expired, set only while it has lapsed: the Instance then
+   * runs the open-source core, and nothing Enterprise is deleted (ADR 0035).
+   */
+  licenseExpiredAt?: Timestamp;
+  /**
    * The page that documents the schema of the Telemetry report
    */
   telemetrySchemaUrl: string;

@@ -458,6 +458,10 @@
     "editTitle": "Editar contacto"
   },
   "instance": {
+    "licenseExpired": {
+      "description": "La clave de licencia Enterprise de esta instancia caducó el {{date}}, por lo que funciona como el núcleo de código abierto. No se ha borrado nada: configura una `SPHERICON_LICENSE_KEY` válida y reinicia para restaurar las funciones Enterprise con sus datos.",
+      "title": "La clave de licencia ha caducado"
+    },
     "notice": {
       "acknowledge": "Entendido",
       "description": "Esta instancia envía al proyecto un informe anónimo al día (versión, despliegue, tamaño aproximado y funciones usadas; nunca nombres, direcciones ni cifras exactas). Está activado por defecto. Puedes desactivarlo en los ajustes de la instancia en cualquier momento.",
