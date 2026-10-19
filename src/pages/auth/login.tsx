@@ -16,6 +16,7 @@ import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AnchorLink } from '../../components/RouterLink.tsx'
 import {
   siteAuthLoginMutation,
   siteAuthResendVerificationMutation,
@@ -190,12 +191,12 @@ export function LoginPage() {
 
           <Group justify="space-between" align="center">
             <Stack gap={2}>
-              <Anchor component="a" href={registerRoute.to} size="sm">
+              <AnchorLink to={registerRoute.to} size="sm">
                 {t(($) => $.login.registerLink)}
-              </Anchor>
-              <Anchor component="a" href={forgotPasswordRoute.to} size="sm">
+              </AnchorLink>
+              <AnchorLink to={forgotPasswordRoute.to} size="sm">
                 {t(($) => $.login.forgotPasswordLink)}
-              </Anchor>
+              </AnchorLink>
             </Stack>
             <Button type="submit" loading={loginMutation.isPending}>
               {t(($) => $.login.submitButton)}

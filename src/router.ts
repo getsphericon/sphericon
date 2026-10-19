@@ -9,6 +9,8 @@ export function createAppRouter(queryClient: QueryClient) {
     context: { queryClient },
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+    // Cross-fade between pages (the browser View Transitions API, wrapped around each navigation).
+    defaultViewTransition: true,
   })
 }
 

@@ -1,9 +1,10 @@
-import { Anchor, Button, Card, Group, PasswordInput, Stack, Text, Title } from '@mantine/core'
+import { Button, Card, Group, PasswordInput, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthVerifyEmailMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as verifyEmailRoute } from '../../routes/verify-email.tsx'
@@ -47,9 +48,9 @@ export function VerifyEmailPage() {
             <Text c="dimmed" ta="center">
               {t(($) => $.verifyEmail.successBody)}
             </Text>
-            <Anchor component="a" href={loginRoute.to} size="sm" mt="md">
+            <AnchorLink to={loginRoute.to} size="sm" mt="md">
               {t(($) => $.verifyEmail.signIn)}
-            </Anchor>
+            </AnchorLink>
           </Stack>
         </Card>
       </Stack>

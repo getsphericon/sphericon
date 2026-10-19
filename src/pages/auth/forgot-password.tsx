@@ -1,8 +1,9 @@
-import { Alert, Anchor, Button, Card, Group, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Button, Card, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthForgotPasswordMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -29,9 +30,9 @@ export function ForgotPasswordPage() {
           <Stack gap="sm">
             <Title order={3}>{t(($) => $.forgotPassword.successTitle)}</Title>
             <Text c="dimmed">{t(($) => $.forgotPassword.successBody)}</Text>
-            <Anchor component="a" href={loginRoute.to} size="sm">
+            <AnchorLink to={loginRoute.to} size="sm">
               {t(($) => $.forgotPassword.backToLogin)}
-            </Anchor>
+            </AnchorLink>
           </Stack>
         </Card>
       </Stack>
@@ -62,9 +63,9 @@ export function ForgotPasswordPage() {
             {...form.getInputProps('email')}
           />
           <Group justify="space-between" align="center">
-            <Anchor component="a" href={loginRoute.to} size="sm">
+            <AnchorLink to={loginRoute.to} size="sm">
               {t(($) => $.forgotPassword.backToLogin)}
-            </Anchor>
+            </AnchorLink>
             <Button type="submit" loading={mutation.isPending}>
               {t(($) => $.forgotPassword.submitButton)}
             </Button>

@@ -1,8 +1,9 @@
-import { Anchor, Card, Loader, Stack, Text, Title } from '@mantine/core'
+import { Card, Loader, Stack, Text, Title } from '@mantine/core'
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthConfirmEmailChangeMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as confirmEmailChangeRoute } from '../../routes/confirm-email-change.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -34,9 +35,9 @@ export function ConfirmEmailChangePage() {
               <Text c="dimmed" ta="center">
                 {t(($) => $.confirmEmailChange.successBody)}
               </Text>
-              <Anchor component="a" href={loginRoute.to} size="sm" mt="md">
+              <AnchorLink to={loginRoute.to} size="sm" mt="md">
                 {t(($) => $.confirmEmailChange.goToLogin)}
-              </Anchor>
+              </AnchorLink>
             </>
           ) : mutation.isError ? (
             <>

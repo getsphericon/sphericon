@@ -1,20 +1,11 @@
-import {
-  Anchor,
-  Button,
-  Card,
-  Group,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
+import { Button, Card, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthRegisterMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteRegisterInput } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
@@ -79,9 +70,9 @@ export function RegisterPage() {
             <Text c="dimmed" ta="center">
               {t(($) => $.registration.createdBody)}
             </Text>
-            <Anchor component="a" href={loginRoute.to} size="sm" mt="md">
+            <AnchorLink to={loginRoute.to} size="sm" mt="md">
               {t(($) => $.registration.signInLink)}
-            </Anchor>
+            </AnchorLink>
           </Stack>
         </Card>
       </Stack>
@@ -97,9 +88,9 @@ export function RegisterPage() {
             <Text c="dimmed" ta="center">
               {t(($) => $.registration.checkEmailBody, { email: sentTo })}
             </Text>
-            <Anchor component="a" href={loginRoute.to} size="sm" mt="md">
+            <AnchorLink to={loginRoute.to} size="sm" mt="md">
               {t(($) => $.registration.loginLink)}
-            </Anchor>
+            </AnchorLink>
           </Stack>
         </Card>
       </Stack>
@@ -133,9 +124,9 @@ export function RegisterPage() {
           )}
 
           <Group justify="space-between" align="center">
-            <Anchor component="a" href={loginRoute.to} size="sm">
+            <AnchorLink to={loginRoute.to} size="sm">
               {t(($) => $.registration.loginLink)}
-            </Anchor>
+            </AnchorLink>
             <Button type="submit" loading={registerMutation.isPending}>
               {t(($) => $.registration.submitButton)}
             </Button>
