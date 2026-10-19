@@ -1,7 +1,12 @@
 import type { KnipConfig } from 'knip'
 
 const config: KnipConfig = {
-  ignore: ['src/generated/**', 'packages/analytics/src/generated/**', 'internal/server/assets/**'],
+  ignore: [
+    'src/generated/**',
+    'packages/analytics/src/generated/**',
+    'internal/server/assets/**',
+    'internal/emaildoc/assets/**',
+  ],
   ignoreDependencies: [
     '@sphericon/analytics',
     '@jsonforms/core',
@@ -20,6 +25,12 @@ const config: KnipConfig = {
         'docs/.vitepress/theme/index.ts',
         'docs/api/*.paths.ts',
       ],
+    },
+    'packages/emaildoc': {
+      // esbuild reads the entry and the shims; `editor-image-extension` is a virtual module that
+      // build.mjs resolves to the editor's internal image chunk.
+      entry: ['src/entry.mjs', 'src/shims.js'],
+      ignoreDependencies: ['editor-image-extension'],
     },
   },
 }

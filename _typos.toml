@@ -14,6 +14,8 @@ extend-exclude = [
   "internal/i18n/locales",
   "locales",
   "internal/server/assets",
+  "internal/emaildoc/assets",
+  "internal/emaildoc/testdata/golden",
   "CHANGELOG.md",
   ".agents/skills",
 ]
