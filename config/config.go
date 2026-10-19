@@ -203,6 +203,11 @@ type Config struct {
 	// inferred from the SMTP settings.
 	RequireEmailVerification bool
 
+	// SignupOpen lets anyone who reaches the Instance register. Only an explicit
+	// SPHERICON_SIGNUP_OPEN=false closes it (ADR 0042): a new User then comes only through an
+	// Invitation or `sphericon user create-owner`.
+	SignupOpen bool
+
 	// Logging: level is one of debug|info|warn|error; format is text|json.
 	// Dev defaults to a human-readable coloured text handler, prod to JSON.
 	LogLevel  string
@@ -333,6 +338,7 @@ type environment struct {
 	DoNotTrack               string `env:"DO_NOT_TRACK"`
 	ReleaseCheck             bool   `env:"SPHERICON_RELEASE_CHECK" envDefault:"true"`
 	RequireEmailVerification string `env:"SPHERICON_REQUIRE_EMAIL_VERIFICATION"`
+	SignupOpen               string `env:"SPHERICON_SIGNUP_OPEN"`
 
 	LogLevel        string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
 	LogFormat       string `env:"SPHERICON_LOG_FORMAT"`
@@ -467,6 +473,7 @@ func Load(envName string) (*Config, error) {
 		ReleaseCheck:            e.ReleaseCheck,
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
+		SignupOpen:               strings.TrimSpace(e.SignupOpen) != "false",
 		LogLevel:                 e.LogLevel,
 		LogFormat:                e.LogFormat,
 

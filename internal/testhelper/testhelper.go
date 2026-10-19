@@ -377,7 +377,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Tokens: authtoken.New(baseCfg.JWTSecret), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New(),
 		SecondFactor:             secondFactor,
 		Clock:                    st.now,
-		RequireEmailVerification: cfg.RequireEmailVerification,
+		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
 	}, external, mcpHandler, staffHandler)
 	require.NoError(t, err, "build server")
 	internalHandler, err := server.NewInternal(&cfg, client, edition.Service(bus))

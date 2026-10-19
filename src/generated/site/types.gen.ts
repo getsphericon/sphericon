@@ -386,7 +386,11 @@ export type EntityId = string;
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
-export const ProblemCode = { SECOND_FACTOR_REQUIRED: 'second_factor_required', EMAIL_VERIFICATION_REQUIRED: 'email_verification_required' } as const;
+export const ProblemCode = {
+  SECOND_FACTOR_REQUIRED: 'second_factor_required',
+  EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
+  SIGNUP_CLOSED: 'signup_closed'
+} as const;
 
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
@@ -3521,6 +3525,10 @@ export type SiteAuthRegisterData = {
 };
 
 export type SiteAuthRegisterErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 conflict response
    */

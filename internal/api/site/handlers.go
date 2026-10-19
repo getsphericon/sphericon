@@ -108,6 +108,8 @@ type Handlers struct {
 	// requireVerification is the email verification gate (ADR 0030): off only on an
 	// install that set SPHERICON_REQUIRE_EMAIL_VERIFICATION=false.
 	requireVerification bool
+	// signupOpen is false on an Instance that closed public sign-up (ADR 0042).
+	signupOpen bool
 	// challenges signs the login challenge on the env clock (ADR 0020).
 	challenges *authtoken.Signer
 }
@@ -198,6 +200,8 @@ type Deps struct {
 	// registration takes a password and yields a Verified User at once, and login
 	// checks no verification.
 	RequireEmailVerification bool
+	// SignupOpen is SPHERICON_SIGNUP_OPEN (ADR 0042): when false, register answers 403.
+	SignupOpen bool
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -210,7 +214,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, billingURL: d.BillingURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, billingURL: d.BillingURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 }

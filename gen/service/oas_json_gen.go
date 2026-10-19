@@ -966,6 +966,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeSecondFactorRequired
 	case ProblemCodeEmailVerificationRequired:
 		*s = ProblemCodeEmailVerificationRequired
+	case ProblemCodeSignupClosed:
+		*s = ProblemCodeSignupClosed
 	default:
 		*s = ProblemCode(v)
 	}

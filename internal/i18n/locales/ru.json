@@ -38,6 +38,7 @@
   "errors.password_required": "укажите пароль",
   "errors.register_required": "укажите имя и email",
   "errors.email_verification_required": "сначала подтвердите email: перейдите по ссылке из письма",
+  "errors.signup_closed": "регистрация на этом сервере закрыта: попросите приглашение у владельца",
   "errors.email_exists": "email уже существует",
   "errors.invalid_credentials": "неверный email или пароль",
   "errors.login_challenge_invalid": "шаг входа устарел, войдите снова",

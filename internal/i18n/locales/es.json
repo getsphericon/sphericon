@@ -38,6 +38,7 @@
   "errors.password_required": "la contraseña es obligatoria",
   "errors.register_required": "el nombre y el email son obligatorios",
   "errors.email_verification_required": "verifica primero tu correo: sigue el enlace que te enviamos",
+  "errors.signup_closed": "el registro está cerrado en esta instancia: pide una invitación a un propietario",
   "errors.email_exists": "el email ya existe",
   "errors.invalid_credentials": "email o contraseña incorrectos",
   "errors.login_challenge_invalid": "el paso de inicio de sesión caducó, inicia sesión de nuevo",

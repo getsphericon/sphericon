@@ -108,7 +108,9 @@ export const siteAuthLogout = <ThrowOnError extends boolean = false>(options?: O
  * `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the
  * request must carry a password (422 otherwise), creates a Verified User with its
  * first Workspace at once (202, no session: the User signs in next), and a taken
- * address answers 409.
+ * address answers 409. An Instance that closed sign-up
+ * (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed`
+ * before anything is read or created; accepting an Invitation still works.
  */
 export const siteAuthRegister = <ThrowOnError extends boolean = false>(options: Options<SiteAuthRegisterData, ThrowOnError>): RequestResult<SiteAuthRegisterResponses, SiteAuthRegisterErrors, ThrowOnError> => (options.client ?? client).post<SiteAuthRegisterResponses, SiteAuthRegisterErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
