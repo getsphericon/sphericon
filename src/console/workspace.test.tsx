@@ -59,7 +59,7 @@ beforeEach(() => {
   worker.use(handleStaffWorkspaceAuditList({ body: { items: [] } }))
 })
 
-test('lists the audit log with a staff member shown as sphericon staff, and loads more', async () => {
+test('lists the audit log with a staff member shown as Sphericon staff, and loads more', async () => {
   worker.use(
     handleStaffWorkspacesGet({ body: HOOLI }),
     handleStaffWorkspaceAuditList(({ request }) =>
@@ -80,7 +80,7 @@ test('lists the audit log with a staff member shown as sphericon staff, and load
               {
                 id: '2',
                 occurredAt: '2026-02-01T00:00:00Z',
-                actor: { kind: 'staff', name: 'sphericon staff' },
+                actor: { kind: 'staff', name: 'Sphericon staff' },
                 action: 'workspace.suspend',
                 target: { type: 'workspace', id: '5', name: 'Hooli' },
               },
@@ -91,7 +91,7 @@ test('lists the audit log with a staff member shown as sphericon staff, and load
   )
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
-  await expect.element(screen.getByText('sphericon staff')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sphericon staff')).toBeInTheDocument()
   await expect.element(screen.getByText('workspace.suspend')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Load more' }).click()
   await expect.element(screen.getByText('tag.create')).toBeInTheDocument()

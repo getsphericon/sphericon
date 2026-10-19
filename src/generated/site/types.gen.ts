@@ -692,7 +692,7 @@ export type SiteApplyTagInput = {
  */
 export type SiteAuditActor = {
   /**
-   * The kind of actor; a staff member is shown to the customer as "sphericon staff"
+   * The kind of actor; a staff member is shown to the customer as "Sphericon staff"
    */
   kind: SiteAuditActorKind;
   /**

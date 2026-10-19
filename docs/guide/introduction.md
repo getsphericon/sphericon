@@ -1,10 +1,10 @@
 # Introduction
 
-sphericon helps you know the people you talk to and reach them with the right email at the right
+Sphericon helps you know the people you talk to and reach them with the right email at the right
 moment. It collects who your contacts are and what they do, lets you describe groups of them,
 and sends to those groups: one-off broadcasts, automated sequences, and transactional mail.
 
-![The sphericon workspace overview](/screenshot.png)
+![The Sphericon workspace overview](/screenshot.png)
 
 ## The model in five ideas
 
@@ -17,7 +17,7 @@ those it has typed [custom fields](/guide/tracking#custom-fields) and tags.
 
 **Event.** An immutable record that something happened: `signed_up`, `viewed_pricing`,
 `email.opened`. Events attach to the contact, so behavior is something you can segment on.
-sphericon's own delivery facts (`email.sent`, `email.opened`, `email.clicked`) are events too, so
+Sphericon's own delivery facts (`email.sent`, `email.opened`, `email.clicked`) are events too, so
 engagement is segmentable the same way as anything you track yourself.
 
 **Segment.** A saved rule that says which contacts match: attributes, custom fields, tags, and
@@ -42,7 +42,7 @@ All three share templates, the same sending domain checks and the same consent r
 ## Where to go next
 
 - [Quickstart](/guide/quickstart): from zero to a first broadcast.
-- [The sphericon app](/guide/app): what each section does.
+- [The Sphericon app](/guide/app): what each section does.
 - [Tracking visitors and events](/guide/tracking): connect your site or product.
 - [Self-hosting](/self-hosting): configuration, migrations and health checks.
 - [Sphericon Cloud](/guide/cloud): the hosted edition, if you would rather not run it yourself.

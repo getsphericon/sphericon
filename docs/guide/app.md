@@ -1,4 +1,4 @@
-# The sphericon app
+# The Sphericon app
 
 Everything in the app happens inside a [workspace](/guide/introduction#the-model-in-five-ideas).
 The sidebar lists its sections; **Settings** has a sidebar of its own. The workspace switcher in
@@ -33,7 +33,7 @@ or remove a tag, wait, post JSON to a URL. Activate and deactivate them here and
 [API](/guide/api): recipient, status, send time and the error when delivery failed.
 
 **Activity.** The live feed of events arriving in the workspace, from the tracker, the API and
-sphericon's own delivery events. Filter by action and open an event to see its properties.
+Sphericon's own delivery events. Filter by action and open an event to see its properties.
 
 **Settings.** Configuration of the workspace, described below.
 

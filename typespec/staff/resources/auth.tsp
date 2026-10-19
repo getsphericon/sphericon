@@ -2,7 +2,7 @@ using TypeSpec.Http;
 
 namespace Sphericon;
 
-/** The authenticated platform Staff member (shown to customers only as "sphericon staff") */
+/** The authenticated platform Staff member (shown to customers only as "Sphericon staff") */
 model StaffResource {
   /** Unique identifier */
   id: EntityId;

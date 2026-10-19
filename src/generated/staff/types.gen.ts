@@ -159,7 +159,7 @@ export type StaffAbuseWarning = {
  */
 export type StaffAuditActor = {
   /**
-   * The kind of actor; a staff member carries no id and the name "sphericon staff"; a service is a Service credential, named as the Staff member who issued it chose
+   * The kind of actor; a staff member carries no id and the name "Sphericon staff"; a service is a Service credential, named as the Staff member who issued it chose
    */
   kind: StaffAuditActorKind;
   /**
@@ -429,7 +429,7 @@ export type StaffRate = {
 };
 
 /**
- * The authenticated platform Staff member (shown to customers only as "sphericon staff")
+ * The authenticated platform Staff member (shown to customers only as "Sphericon staff")
  */
 export type StaffResource = {
   /**

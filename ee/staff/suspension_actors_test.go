@@ -18,7 +18,7 @@ import (
 )
 
 // The stored Audit row keeps the real Staff member id (the platform's own trail); only the
-// customer's view of it says "sphericon staff".
+// customer's view of it says "Sphericon staff".
 func TestTheStoredAuditRowsKeepTheStaffIdWhileTheCustomerSeesStaff(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
@@ -44,7 +44,7 @@ func TestTheStoredAuditRowsKeepTheStaffIdWhileTheCustomerSeesStaff(t *testing.T)
 			continue
 		}
 		seen++
-		assert.Equal(t, "sphericon staff", e.Actor.Name.Value, e.Action)
+		assert.Equal(t, "Sphericon staff", e.Actor.Name.Value, e.Action)
 		assert.False(t, e.Actor.ID.IsSet() && e.Actor.ID.Value != "", e.Action)
 	}
 	assert.Equal(t, 2, seen)

@@ -1,7 +1,7 @@
 # Tracking visitors and events
 
 Tracking turns anonymous visits into contacts you can segment on. A small script runs in the
-browser, assigns each device a visitor id, and sends events to your sphericon instance.
+browser, assigns each device a visitor id, and sends events to your Sphericon instance.
 
 ## Add the tracker
 
@@ -65,7 +65,7 @@ reused on every retry.
 ```
 
 - A repeat of an id in the same workspace is accepted (`204`) and changes nothing: the event is
-  counted once, whether the first attempt reached sphericon or not. Resend a whole batch rather
+  counted once, whether the first attempt reached Sphericon or not. Resend a whole batch rather
   than working out which events arrived. Ids are per workspace, so two workspaces may use the
   same id. An event without a `clientEventId` is not deduplicated.
 - When the database cannot be reached, `/collect` answers `503` with a `Retry-After` header (in

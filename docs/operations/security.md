@@ -1,6 +1,6 @@
 # Security hardening
 
-A checklist for running sphericon in production. These are the settings that are yours to get
+A checklist for running Sphericon in production. These are the settings that are yours to get
 right; the application enforces the rest.
 
 ## Keep metrics on the internal listener

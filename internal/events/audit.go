@@ -33,7 +33,7 @@ func IsStaff(kind string) bool { return kind == ActorStaff || kind == ActorServi
 
 // StaffLabel is how a platform Staff member appears to the customer on every read
 // surface (ADR 0022): the staff identity is never exposed.
-const StaffLabel = "sphericon staff"
+const StaffLabel = "Sphericon staff"
 
 // Actor is who performed a change. Name is a display snapshot (a User's name) so the
 // entry stays readable after the actor is gone.

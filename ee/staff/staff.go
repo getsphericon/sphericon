@@ -40,7 +40,7 @@ import (
 )
 
 // Issuer names the instance in the authenticator app.
-const Issuer = "sphericon staff"
+const Issuer = "Sphericon staff"
 
 // challengeTTL is how long the password step's challenge stays valid.
 const challengeTTL = 5 * time.Minute

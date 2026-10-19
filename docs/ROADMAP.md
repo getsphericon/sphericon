@@ -1,8 +1,8 @@
-# sphericon Roadmap — toward drip.com-level marketing automation
+# Sphericon Roadmap — toward drip.com-level marketing automation
 
 ## Context
 
-sphericon is an open-core marketing automation platform (Go backend + React/Vite frontend,
+Sphericon is an open-core marketing automation platform (Go backend + React/Vite frontend,
 workspace-scoped multi-tenant). The goal is to incrementally bring the product to the level of
 **drip.com**, but as a **general-purpose marketing automation platform** (not the e-commerce-specific
 ECRM that drip is — e-commerce is designed-for architecturally and built later).
@@ -36,7 +36,7 @@ SES-compatible send API, more provider adapters (Yandex/SendGrid/…), SMS chann
 
 For a detailed competitive feature breakdown of drip.com, see
 `research/drip-com-feature-analysis.md`. For an
-analysis of the incumbent open-source competitor's pain points (Mautic) mapped to sphericon's
+analysis of the incumbent open-source competitor's pain points (Mautic) mapped to Sphericon's
 position — and the net-new items it surfaced — see
 `research/mautic-pain-points-analysis.md`.
 
@@ -136,11 +136,11 @@ The core model is in place; the open work is feature breadth on top of it:
 
 Three items below are **not** feature-breadth parity — they come from the incumbent
 competitor analysis (`research/mautic-pain-points-analysis.md`),
-which maps Mautic's most-repeated complaints to sphericon's position. Most of Mautic's systemic
-pains (cron architecture, upgrade friction, Redis/multi-master deployment, dated UI) sphericon
+which maps Mautic's most-repeated complaints to Sphericon's position. Most of Mautic's systemic
+pains (cron architecture, upgrade friction, Redis/multi-master deployment, dated UI) Sphericon
 already neutralises by design; these three are the ones still open for us:
 
-- **Scale validation — highest value.** sphericon's core bet (live rule segments, membership
+- **Scale validation — highest value.** Sphericon's core bet (live rule segments, membership
   _never materialized_ — `GLOSSARY.md`) structurally avoids Mautic's #1 abandonment cause
   (~1M contacts → 5-minute segment editor, hanging pages, ~4 contacts/sec import), **but it is
   unproven at that scale.** Load-test the segment engine (rule → SQL compile + live preview

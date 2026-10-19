@@ -273,14 +273,14 @@ test('the retention control is not offered without its license', async () => {
   await expect.element(screen.getByLabelText('Keep the log for (days)')).not.toBeInTheDocument()
 })
 
-test('a billing hold change is shown as billing activity, attributed to sphericon staff', async () => {
+test('a billing hold change is shown as billing activity, attributed to Sphericon staff', async () => {
   worker.use(
     handleSiteAuditList({
       body: {
         items: [
           entry({
             id: '8',
-            actor: { kind: 'staff', name: 'sphericon staff' },
+            actor: { kind: 'staff', name: 'Sphericon staff' },
             action: 'hold.create',
             billing: true,
             target: { type: 'hold', name: 'billing' },
@@ -295,7 +295,7 @@ test('a billing hold change is shown as billing activity, attributed to spherico
   )
 
   await expect.element(screen.getByText('Billing', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByRole('cell', { name: 'sphericon staff' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('cell', { name: 'Sphericon staff' })).toBeInTheDocument()
 })
 
 test('an entry without a diff or a name falls back gracefully', async () => {

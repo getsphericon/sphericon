@@ -167,7 +167,7 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 		got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, action)
 		require.Lenf(t, got, 1, action)
 		assert.Equal(t, siteapi.SiteAuditActorKindStaff, got[0].Actor.Kind)
-		assert.Equal(t, "sphericon staff", got[0].Actor.Name.Value)
+		assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)
 		assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "", "the StaffMember's identity is never exposed")
 		diff, err := json.Marshal(got[0].Diff.Value)
 		require.NoError(t, err)
@@ -196,7 +196,7 @@ func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionWorkspaceSuspend)
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindStaff, got[0].Actor.Kind)
-	assert.Equal(t, "sphericon staff", got[0].Actor.Name.Value)
+	assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)
 	assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "")
 }
 

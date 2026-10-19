@@ -16,7 +16,7 @@ Three things help with almost every alert:
 
 ## SphericonDown
 
-**Means.** Prometheus cannot scrape a sphericon metrics target for 5 minutes. The process is down,
+**Means.** Prometheus cannot scrape a Sphericon metrics target for 5 minutes. The process is down,
 unreachable, or the metrics listener is not enabled.
 
 **Check.**
@@ -134,7 +134,7 @@ minutes. The `handler` label is one of `persist_event`, `enroll_automations`,
 1. The logs of the process around the failures, for the underlying error.
 2. `update_suppression` and `persist_event` fail mostly on database errors. `enroll_automations`
    fails on a broken automation definition. `dispatch_webhooks` should not fail on a customer's
-   unreachable endpoint (delivery is a river job), so a failure there points at sphericon itself.
+   unreachable endpoint (delivery is a river job), so a failure there points at Sphericon itself.
 3. Correlate with [`SphericonOutboxLagHigh`](#sphericonoutboxlaghigh): failures that keep a message
    from being acknowledged show up as growing lag for that handler's group.
 

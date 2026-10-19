@@ -1,6 +1,6 @@
 # Monitoring
 
-sphericon is one process on one PostgreSQL database, so monitoring comes down to four questions:
+Sphericon is one process on one PostgreSQL database, so monitoring comes down to four questions:
 is the process up and reachable, are requests succeeding, is background work keeping up, and is
 the database and the email provider healthy. This page lists the probes and metrics that answer
 them, proposes service level objectives, and ships example alerting rules. Each alert links to a

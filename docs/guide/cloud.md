@@ -1,6 +1,6 @@
 # Sphericon Cloud
 
-Sphericon Cloud is the hosted edition of sphericon, run by the people who build it. It is the same
+Sphericon Cloud is the hosted edition of Sphericon, run by the people who build it. It is the same
 product you can [self-host](/self-hosting), so everything in this guide applies to both.
 
 ## When the hosted edition fits

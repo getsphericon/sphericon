@@ -175,7 +175,7 @@ test('before the first sent email only the checklist shows and no analytics are 
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
-  await expect.element(screen.getByText('Set up sphericon')).toBeInTheDocument()
+  await expect.element(screen.getByText('Set up Sphericon')).toBeInTheDocument()
   await expect.element(screen.getByText('Waiting for DNS')).toBeInTheDocument()
   await expect.element(screen.getByText('Last 7 days')).not.toBeInTheDocument()
   expect(analyticsRequests).toBe(0)
@@ -195,7 +195,7 @@ test('after the first sent email the usual Overview shows with the checklist on 
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
-  await expect.element(screen.getByText('Set up sphericon')).toBeInTheDocument()
+  await expect.element(screen.getByText('Set up Sphericon')).toBeInTheDocument()
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
 })
 
@@ -209,5 +209,5 @@ test('a finished checklist is not shown', async () => {
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('Set up sphericon')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Set up Sphericon')).not.toBeInTheDocument()
 })
