@@ -1095,7 +1095,9 @@ export const siteBroadcastsSend = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Send a one-off rendered preview to a single address
+ * Send a one-off rendered preview to a single address. While the Workspace has no verified
+ * Sending domain it goes from the System sender and only to the asking User's own address
+ * (ADR 0041): another address is refused with 422, the System sender's caps answer 429.
  */
 export const siteBroadcastsTestSend = <ThrowOnError extends boolean = false>(options: Options<SiteBroadcastsTestSendData, ThrowOnError>): RequestResult<SiteBroadcastsTestSendResponses, SiteBroadcastsTestSendErrors, ThrowOnError> => (options.client ?? client).post<SiteBroadcastsTestSendResponses, SiteBroadcastsTestSendErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

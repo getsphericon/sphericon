@@ -829,6 +829,13 @@ export const zSiteTestSendBroadcastInput = z.object({
 });
 
 /**
+ * What a test send did: the address the preview went out from
+ */
+export const zSiteTestSendBroadcastResult = z.object({
+  from: zEmailAddress
+});
+
+/**
  * Request body for sending a sample event to a webhook endpoint
  */
 export const zSiteTestWebhookInput = z.object({
@@ -2329,9 +2336,9 @@ export const zSiteBroadcastsTestSendPath = z.object({
 });
 
 /**
- * There is no content to send for this request, but the headers may be useful.
+ * The request has succeeded.
  */
-export const zSiteBroadcastsTestSendResponse = z.void();
+export const zSiteBroadcastsTestSendResponse = zSiteTestSendBroadcastResult;
 
 export const zSiteContactsListPath = z.object({
   slug: z.string()

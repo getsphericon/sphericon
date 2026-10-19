@@ -107,6 +107,11 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
           {t(($) => $.broadcasts.testSendButton)}
         </Button>
       </Group>
+      {testSendMutation.data && (
+        <Text size="sm" c="dimmed">
+          {t(($) => $.broadcasts.testSendFrom, { from: testSendMutation.data.from })}
+        </Text>
+      )}
     </>
   )
 }

@@ -67,7 +67,7 @@ test('a test send posts the typed address and confirms without navigating', asyn
   worker.use(
     handleSiteBroadcastsTestSend(async ({ request }) => {
       bodies.push(await request.json())
-      return new HttpResponse(null, { status: 204 })
+      return HttpResponse.json({ from: 'noreply@sphericon.test' })
     }),
   )
   const { screen, navigate } = await renderWithRouter(<DeliveryBlock broadcast={draft} />, MOUNT)
@@ -76,6 +76,7 @@ test('a test send posts the typed address and confirms without navigating', asyn
   await screen.getByRole('button', { name: 'Send test' }).click()
 
   await expect.element(screen.getByText('Test email sent')).toBeInTheDocument()
+  await expect.element(screen.getByText(/Sent from noreply@sphericon\.test/)).toBeInTheDocument()
   expect(bodies).toEqual([{ email: 'qa@example.com' }])
   expect(navigate).not.toHaveBeenCalled()
 })

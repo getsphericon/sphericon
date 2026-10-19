@@ -36,7 +36,9 @@ import (
 // Policy names. They are the `policy` label of ratelimit_rejected_total, so they
 // must stay a small bounded set.
 const (
-	PolicyHuman      = "human"
+	PolicyHuman = "human"
+	// PolicyTestSend is the cap on Test sends from the System sender (ADR 0041).
+	PolicyTestSend   = "test-send"
 	PolicyAPIBurst   = "api-burst"
 	PolicyAPI        = "api"
 	PolicyFailedAuth = "failed-auth"

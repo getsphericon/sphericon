@@ -225,7 +225,9 @@ type Invoker interface {
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
 	// SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 	//
-	// Send a one-off rendered preview to a single address.
+	// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
+	// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
+	// address is refused with 422, the System sender's caps answer 429.
 	//
 	// POST /workspaces/{slug}/broadcasts/{id}/test-send
 	SiteBroadcastsTestSend(ctx context.Context, request *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
@@ -4773,7 +4775,9 @@ func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcas
 
 // SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 //
-// Send a one-off rendered preview to a single address.
+// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
+// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
+// address is refused with 422, the System sender's caps answer 429.
 //
 // POST /workspaces/{slug}/broadcasts/{id}/test-send
 func (c *Client) SiteBroadcastsTestSend(ctx context.Context, request *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error) {

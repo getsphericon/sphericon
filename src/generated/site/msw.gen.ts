@@ -1607,8 +1607,8 @@ export function handleSiteBroadcastsSend(response?: HandleSiteBroadcastsSendResp
 }
 
 export type HandleSiteBroadcastsTestSendResponse = {
-  body: SiteBroadcastsTestSendResponses[204];
-  status?: 204;
+  body: SiteBroadcastsTestSendResponses[200];
+  status?: 200;
 };
 
 /**
@@ -1627,7 +1627,7 @@ export function handleSiteBroadcastsTestSend(response?: HandleSiteBroadcastsTest
     }
     const body = response?.body;
     if (body !== undefined) {
-      return new HttpResponse(body, { status: response?.status ?? 204 });
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
     }
     if (options?.responseFallback === 'passthrough') {
       return;

@@ -2637,6 +2637,17 @@ export type SiteTestSendBroadcastInput = {
 };
 
 /**
+ * What a test send did: the address the preview went out from
+ */
+export type SiteTestSendBroadcastResult = {
+  /**
+   * The From address of the preview. A Workspace with a verified Sending domain gets its own
+   * domain; one without gets the System sender, which is not the address Contacts will see.
+   */
+  from: EmailAddress;
+};
+
+/**
  * Request body for sending a sample event to a webhook endpoint
  */
 export type SiteTestWebhookInput = {
@@ -5369,15 +5380,19 @@ export type SiteBroadcastsTestSendErrors = {
    * RFC 7807 validation response
    */
   422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
 };
 
 export type SiteBroadcastsTestSendError = SiteBroadcastsTestSendErrors[keyof SiteBroadcastsTestSendErrors];
 
 export type SiteBroadcastsTestSendResponses = {
   /**
-   * There is no content to send for this request, but the headers may be useful.
+   * The request has succeeded.
    */
-  204: void;
+  200: SiteTestSendBroadcastResult;
 };
 
 export type SiteBroadcastsTestSendResponse = SiteBroadcastsTestSendResponses[keyof SiteBroadcastsTestSendResponses];
