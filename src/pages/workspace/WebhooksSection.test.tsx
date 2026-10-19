@@ -160,6 +160,23 @@ test('sends a test event and shows what the receiver answered', async () => {
   await expect.element(screen.getByText('Not delivered: HTTP 410')).toBeInTheDocument()
 })
 
+test.each([
+  [{ delivered: true, status: 204 }, 'Delivered: the receiver answered HTTP 204'],
+  [{ delivered: false, kind: 'timeout' }, 'Not delivered: Timed out'],
+  [{ delivered: false }, 'Not delivered: Network error'],
+])('shows the outcome of a test event answered with %o', async (answer, message) => {
+  worker.use(
+    list([endpoint()]),
+    handleSiteWebhooksTest(() => HttpResponse.json(answer)),
+  )
+  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+
+  await screen.getByRole('button', { name: 'Send test event' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Send' }).click()
+
+  await expect.element(screen.getByText(message)).toBeInTheDocument()
+})
+
 test('deletes an endpoint after confirmation', async () => {
   let deleted = false
   worker.use(

@@ -180,6 +180,24 @@ test('an HTTP node with a new URL, header value and secret sends them', () => {
   ])
 })
 
+test('a bare HTTP step opens blank and a header line without a colon keeps its stored value', () => {
+  const { nodes } = stepsToGraph([{ type: 'http', hasSecret: false }])
+
+  expect(nodes[0]?.data.properties).toEqual({
+    stepId: '',
+    url: '',
+    headers: '',
+    body: '',
+    secret: '',
+  })
+  expect(
+    graphToSteps({
+      nodes: [node('a', 'http', { stepId: '', url: '', headers: 'X-Key', body: '', secret: '' })],
+      edges: [],
+    }).steps,
+  ).toEqual([{ type: 'http', body: '', headers: [{ name: 'X-Key' }] }])
+})
+
 test('graphToSteps stops on a cycle instead of looping', () => {
   const graph = {
     nodes: [node('a', 'apply_tag', { tag: 'x' }), node('b', 'apply_tag', { tag: 'y' })],
