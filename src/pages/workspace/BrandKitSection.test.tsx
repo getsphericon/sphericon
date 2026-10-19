@@ -21,6 +21,7 @@ const workspace = (role: SiteWorkspaceResource['role']): SiteWorkspaceResource =
   postalAddress: '',
   accountLinkAvailable: false,
   holds: [],
+  mcpUrl: 'https://example.com/mcp',
   role,
   createdAt: '2026-01-01T00:00:00Z',
 })

@@ -29,9 +29,6 @@ type Broadcast struct {
 // asynchronous job: observe it with Inbox.Wait.
 func (w *Workspace) SendBroadcast(b Broadcast) {
 	w.t.Helper()
-	if b.Name == "" {
-		b.Name = "e2e broadcast " + uniq()
-	}
 	w.ActivateBroadcast(w.createBroadcast(b))
 }
 
@@ -53,6 +50,9 @@ func (w *Workspace) ActivateBroadcast(id externalapi.EntityId) {
 // createBroadcast makes the draft through the external API, from the Body or the Doc.
 func (w *Workspace) createBroadcast(b Broadcast) externalapi.EntityId {
 	w.t.Helper()
+	if b.Name == "" {
+		b.Name = "e2e broadcast " + uniq()
+	}
 	in := &externalapi.CreateBroadcastInput{
 		Name:      b.Name,
 		Subject:   externalapi.NewOptString(b.Subject),
