@@ -144,6 +144,29 @@ needs:
 this Upgrade needs 1 archive(s) the source does not have (nothing was changed): sphericon_0.4.9_linux_amd64.tar.gz
 ```
 
+### Verify a release {#verify}
+
+`upgrade` checks the archive's sha256 against `checksums.txt`. Every release also carries a cosign
+signature of `checksums.txt` and of the image, made keyless by the release workflow
+(`getsphericon/sphericon`), so you can check who built them. Download `checksums.txt` and
+`checksums.txt.sigstore.json` from the release, then:
+
+```sh
+cosign verify-blob checksums.txt \
+  --bundle checksums.txt.sigstore.json \
+  --certificate-identity-regexp '^https://github.com/getsphericon/sphericon/\.github/workflows/release-please\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+sha256sum --check --ignore-missing checksums.txt
+
+cosign verify ghcr.io/getsphericon/sphericon:0.5.0 \
+  --certificate-identity-regexp '^https://github.com/getsphericon/sphericon/\.github/workflows/release-please\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Each archive has an SPDX SBOM on the release (`sphericon_<version>_<os>_<arch>.tar.gz.sbom.json`),
+and the image carries its SBOM as an attestation (`docker buildx imagetools inspect
+ghcr.io/getsphericon/sphericon:0.5.0 --format '{{ json .SBOM }}'`).
+
 ## Helm {#helm}
 
 The chart is published as an OCI artifact at every release, with the chart version equal to the

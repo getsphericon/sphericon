@@ -55,6 +55,36 @@ dockers_v2:
       - linux/arm64
     ids:
       - sphericon
+    # Attach an SBOM attestation to the image (buildx generates it with the push).
+    sbom: true
+
+# Keyless cosign (GitHub OIDC, the workflow's id-token permission): the bundle holds the
+# signature and the Fulcio certificate, so `cosign verify-blob --bundle` needs nothing else.
+signs:
+  - id: checksums
+    cmd: cosign
+    artifacts: checksum
+    signature: '${artifact}.sigstore.json'
+    args:
+      - sign-blob
+      - --yes
+      - --bundle=${signature}
+      - ${artifact}
+
+# Signs the multi-arch manifest on ghcr.io by digest.
+docker_signs:
+  - id: images
+    cmd: cosign
+    artifacts: manifests
+    args:
+      - sign
+      - --yes
+      - ${artifact}@${digest}
+
+# One SPDX SBOM per archive, uploaded to the release next to it (needs syft on the PATH).
+sboms:
+  - id: archives
+    artifacts: archive
 
 # release-please owns the GitHub Release + changelog; just attach artifacts.
 release:
