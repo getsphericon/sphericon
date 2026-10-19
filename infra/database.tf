@@ -1,5 +1,5 @@
-# RDS PostgreSQL: one db.t4g.micro, single AZ, gp3, encrypted, not publicly accessible. Used
-# directly, without a transaction-mode pooler, because river relies on LISTEN/NOTIFY.
+# RDS PostgreSQL: Multi-AZ, gp3, encrypted, not publicly accessible, with deletion protection, a
+# final snapshot and a 14-day backup window (ADR 0028). Used directly, without a transaction-mode pooler, because river relies on LISTEN/NOTIFY.
 
 resource "aws_db_subnet_group" "this" {
   name       = var.name
@@ -30,15 +30,20 @@ resource "aws_db_instance" "pg" {
   db_subnet_group_name   = aws_db_subnet_group.this.name
   vpc_security_group_ids = [aws_security_group.db.id]
   publicly_accessible    = false
-  multi_az               = false
+  multi_az               = var.db_multi_az
 
-  # One day: the AWS free plan caps backup retention (FreeTierRestrictionError above that). Raise it
-  # after upgrading the account plan.
-  backup_retention_period    = 1
+  # Automated backups give point-in-time recovery inside the window (restore drill:
+  # docs/operations/runbook.md).
+  backup_retention_period    = var.db_backup_retention_days
+  copy_tags_to_snapshot      = true
   auto_minor_version_upgrade = true
   apply_immediately          = true
 
-  # A test deployment destroyed and recreated freely (ADR 0028): no protection, no final snapshot.
-  deletion_protection = false
-  skip_final_snapshot = true
+  # db_protected = false makes the environment disposable again (scratch): no protection, no final
+  # snapshot. While protected, destroy fails until it is applied as false (infra/README.md section 7),
+  # and the automated backups outlive the instance so it can still be restored to a point in time.
+  deletion_protection       = var.db_protected
+  skip_final_snapshot       = !var.db_protected
+  final_snapshot_identifier = var.db_protected ? "${var.name}-final" : null
+  delete_automated_backups  = !var.db_protected
 }

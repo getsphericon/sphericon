@@ -107,7 +107,7 @@ a schedule (for example monthly) and after any change to the backup setup.
 If you restore into production instead of a scratch server, stop every replica first, restore,
 then start one replica and verify it before scaling back out.
 
-## After a restore
+## After a restore {#after-a-restore}
 
 Restoring puts the database back at the backup point. The instance carries on from there, and
 three behaviours follow from the architecture:
