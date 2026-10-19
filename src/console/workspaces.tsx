@@ -1,4 +1,4 @@
-import { Badge, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { EmptyState, Badge, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconSearch } from '@tabler/icons-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
@@ -123,7 +123,7 @@ export function ConsoleWorkspacesPage() {
         onRowClick={({ record }) =>
           void navigate({ to: consoleWorkspaceRoute.to, params: { workspaceId: record.id } })
         }
-        noRecordsText={t(($) => $.console.workspaces.empty)}
+        emptyState={<EmptyState title={t(($) => $.console.workspaces.empty)} />}
         totalRecords={workspacesQuery.data?.totalItems ?? 0}
         recordsPerPage={PAGE_SIZE}
         page={page}

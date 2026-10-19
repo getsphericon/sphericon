@@ -1,4 +1,4 @@
-import { Alert, Group, Loader, Stack, Switch, TextInput, Title } from '@mantine/core'
+import { EmptyState, Alert, Group, Loader, Stack, Switch, TextInput, Title } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
@@ -96,7 +96,7 @@ export function ActivityPage() {
         page={page}
         onPageChange={setPage}
         fetching={eventsQuery.isFetching}
-        noRecordsText={t(($) => $.activity.noRecords)}
+        emptyState={<EmptyState title={t(($) => $.activity.noRecords)} />}
       />
     </Stack>
   )

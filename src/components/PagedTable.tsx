@@ -1,4 +1,4 @@
-import { Loader, Stack, Text } from '@mantine/core'
+import { EmptyState, Loader, Stack } from '@mantine/core'
 import { useCounter } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import type { QueryKey, UseQueryOptions } from '@tanstack/react-query'
@@ -24,7 +24,7 @@ interface PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey 
   pageSize?: number
   loadErrorTitle: string
   noRecordsText: string
-  // Shown under the table while the list is empty.
+  // The EmptyState description shown while the list is empty, under the noRecordsText title.
   emptyState?: ReactNode
 }
 
@@ -59,10 +59,8 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
         page={page}
         onPageChange={pageHandlers.set}
         fetching={list.isFetching}
-        noRecordsText={noRecordsText}
+        emptyState={<EmptyState title={noRecordsText} description={emptyState} />}
       />
-
-      {emptyState && !list.isLoading && totalItems === 0 ? <Text>{emptyState}</Text> : null}
     </Stack>
   )
 }

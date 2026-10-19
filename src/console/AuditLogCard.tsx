@@ -1,4 +1,4 @@
-import { Button, Card, Group, Loader, Stack, Table, Text, Title } from '@mantine/core'
+import { Button, Card, EmptyState, Group, Loader, Stack, Table, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -65,11 +65,7 @@ function AuditPage({
   const items = query.data?.items ?? []
   const next = query.data?.nextCursor ?? undefined
   if (first && items.length === 0) {
-    return (
-      <Text c="dimmed" size="sm">
-        {t(($) => $.console.workspace.auditLog.empty)}
-      </Text>
-    )
+    return <EmptyState title={t(($) => $.console.workspace.auditLog.empty)} />
   }
 
   return (

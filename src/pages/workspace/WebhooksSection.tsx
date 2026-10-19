@@ -1,4 +1,5 @@
 import {
+  EmptyState,
   Alert,
   Badge,
   Button,
@@ -348,7 +349,7 @@ export function WebhooksSection({ slug }: { slug: string }) {
             ),
           },
         ]}
-        noRecordsText={t(($) => $.settings.webhooks.empty)}
+        emptyState={<EmptyState title={t(($) => $.settings.webhooks.empty)} />}
       />
     </Card>
   )

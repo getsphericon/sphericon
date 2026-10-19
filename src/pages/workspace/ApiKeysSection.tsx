@@ -1,4 +1,5 @@
 import {
+  EmptyState,
   Alert,
   Button,
   Card,
@@ -194,7 +195,7 @@ export function ApiKeysSection({ slug }: { slug: string }) {
             ),
           },
         ]}
-        noRecordsText={t(($) => $.settings.tokens.empty)}
+        emptyState={<EmptyState title={t(($) => $.settings.tokens.empty)} />}
       />
     </Card>
   )
