@@ -61,6 +61,10 @@ export default defineConfig({
     devLocalePlugin(),
     mswWorkerPlugin(),
   ],
+  // vitest-browser-react imports react-dom/client from inside node_modules, where Vite's first scan
+  // does not see it: found late, it re-bundles the dependencies and reloads a test mid-run, and
+  // that test's page never comes back. Pre-bundle it up front.
+  optimizeDeps: { include: ['react-dom/client'] },
   // Under Vitest browser mode the page loads @vite/client, which would try to open
   // the dev HMR websocket below (wss://sphericon.localhost:443 — unreachable in CI) and
   // race the teardown with an unhandled "WebSocket closed without opened" rejection.
