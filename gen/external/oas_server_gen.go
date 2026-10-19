@@ -253,12 +253,25 @@ type Handler interface {
 	//
 	// GET /integrations
 	IntegrationsList(ctx context.Context, params IntegrationsListParams) (IntegrationsListRes, error)
+	// IntegrationsRegenerateKey implements Integrations_regenerateKey operation.
+	//
+	// Replace the Integration's hook key: the old hook URL stops working at once and the new one must be
+	// pasted into the provider. Needs a person: hidden from MCP.
+	//
+	// POST /integrations/{id}/regenerate-key
+	IntegrationsRegenerateKey(ctx context.Context, params IntegrationsRegenerateKeyParams) (IntegrationsRegenerateKeyRes, error)
 	// IntegrationsUpdate implements Integrations_update operation.
 	//
 	// Update a resource.
 	//
 	// PUT /integrations/{id}
 	IntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params IntegrationsUpdateParams) (IntegrationsUpdateRes, error)
+	// PresetsList implements Presets_list operation.
+	//
+	// List the Presets the Instance offers, with the params schema of each.
+	//
+	// GET /presets
+	PresetsList(ctx context.Context) (PresetsListRes, error)
 	// SegmentsCreate implements Segments_create operation.
 	//
 	// Create a resource.

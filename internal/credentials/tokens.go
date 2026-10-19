@@ -58,9 +58,9 @@ func GenerateCollectKey() (string, error) {
 
 const ingestKeyPrefix = "omik"
 
-// GenerateIngestKey returns a per-workspace secret key that routes inbound
-// provider webhooks (/hooks/{ingest_key}/{provider}). Unlike the collect key it
-// is never exposed in the browser tracker.
+// GenerateIngestKey returns an Integration's hook key (POST /hooks/{key}): the
+// address of one Integration's inbound provider callbacks, which also names its
+// Workspace. Unlike the collect key it is never exposed in the browser tracker.
 func GenerateIngestKey() (string, error) {
 	secret, err := randomString(urlSafeAlphabet, secretLen)
 	if err != nil {

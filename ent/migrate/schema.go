@@ -551,6 +551,9 @@ var (
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "sms"}, Default: "email"},
 		{Name: "provider", Type: field.TypeEnum, Enums: []string{"smtp", "ses"}},
 		{Name: "config_encrypted", Type: field.TypeString},
+		{Name: "preset", Type: field.TypeString, Nullable: true},
+		{Name: "params_encrypted", Type: field.TypeString, Nullable: true},
+		{Name: "ingest_key", Type: field.TypeString, Unique: true},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
 		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "max_per_second", Type: field.TypeInt, Nullable: true},
@@ -569,7 +572,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "integrations_workspaces_integrations",
-				Columns:    []*schema.Column{IntegrationsColumns[15]},
+				Columns:    []*schema.Column{IntegrationsColumns[18]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -578,7 +581,7 @@ var (
 			{
 				Name:    "integration_workspace_id_channel",
 				Unique:  true,
-				Columns: []*schema.Column{IntegrationsColumns[15], IntegrationsColumns[4]},
+				Columns: []*schema.Column{IntegrationsColumns[18], IntegrationsColumns[4]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "is_default",
 				},
@@ -1180,7 +1183,6 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "slug", Type: field.TypeString, Unique: true},
 		{Name: "collect_key", Type: field.TypeString, Unique: true},
-		{Name: "ingest_key", Type: field.TypeString, Unique: true},
 		{Name: "require_confirmed_opt_in", Type: field.TypeBool, Default: false},
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
@@ -1204,7 +1206,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[11], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[10], WorkspacesColumns[0]},
 			},
 		},
 	}

@@ -80,11 +80,6 @@ func CollectKey(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldCollectKey, v))
 }
 
-// IngestKey applies equality check predicate on the "ingest_key" field. It's identical to IngestKeyEQ.
-func IngestKey(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldIngestKey, v))
-}
-
 // RequireConfirmedOptIn applies equality check predicate on the "require_confirmed_opt_in" field. It's identical to RequireConfirmedOptInEQ.
 func RequireConfirmedOptIn(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldRequireConfirmedOptIn, v))
@@ -418,71 +413,6 @@ func CollectKeyEqualFold(v string) predicate.Workspace {
 // CollectKeyContainsFold applies the ContainsFold predicate on the "collect_key" field.
 func CollectKeyContainsFold(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldContainsFold(FieldCollectKey, v))
-}
-
-// IngestKeyEQ applies the EQ predicate on the "ingest_key" field.
-func IngestKeyEQ(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldIngestKey, v))
-}
-
-// IngestKeyNEQ applies the NEQ predicate on the "ingest_key" field.
-func IngestKeyNEQ(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNEQ(FieldIngestKey, v))
-}
-
-// IngestKeyIn applies the In predicate on the "ingest_key" field.
-func IngestKeyIn(vs ...string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldIn(FieldIngestKey, vs...))
-}
-
-// IngestKeyNotIn applies the NotIn predicate on the "ingest_key" field.
-func IngestKeyNotIn(vs ...string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotIn(FieldIngestKey, vs...))
-}
-
-// IngestKeyGT applies the GT predicate on the "ingest_key" field.
-func IngestKeyGT(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGT(FieldIngestKey, v))
-}
-
-// IngestKeyGTE applies the GTE predicate on the "ingest_key" field.
-func IngestKeyGTE(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGTE(FieldIngestKey, v))
-}
-
-// IngestKeyLT applies the LT predicate on the "ingest_key" field.
-func IngestKeyLT(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLT(FieldIngestKey, v))
-}
-
-// IngestKeyLTE applies the LTE predicate on the "ingest_key" field.
-func IngestKeyLTE(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLTE(FieldIngestKey, v))
-}
-
-// IngestKeyContains applies the Contains predicate on the "ingest_key" field.
-func IngestKeyContains(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldContains(FieldIngestKey, v))
-}
-
-// IngestKeyHasPrefix applies the HasPrefix predicate on the "ingest_key" field.
-func IngestKeyHasPrefix(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldHasPrefix(FieldIngestKey, v))
-}
-
-// IngestKeyHasSuffix applies the HasSuffix predicate on the "ingest_key" field.
-func IngestKeyHasSuffix(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldHasSuffix(FieldIngestKey, v))
-}
-
-// IngestKeyEqualFold applies the EqualFold predicate on the "ingest_key" field.
-func IngestKeyEqualFold(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEqualFold(FieldIngestKey, v))
-}
-
-// IngestKeyContainsFold applies the ContainsFold predicate on the "ingest_key" field.
-func IngestKeyContainsFold(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldContainsFold(FieldIngestKey, v))
 }
 
 // RequireConfirmedOptInEQ applies the EQ predicate on the "require_confirmed_opt_in" field.

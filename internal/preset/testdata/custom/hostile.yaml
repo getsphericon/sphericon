@@ -1,0 +1,88 @@
+# yaml-language-server: $schema=../../preset.schema.json
+# A transform that misbehaves on request: the engine's limits and its validation of the
+# program's output are exercised through the Preset's own tests.
+version: 1
+name: hostile
+params:
+  type: object
+  required: [token]
+  properties:
+    token:
+      type: string
+      writeOnly: true
+verify:
+  kind: token
+  secret: token
+  header: X-Token
+transform: |
+  if .body.case == "loop" then [range(infinite) | {id: tostring, destination: "a@example.com", kind: "bounce"}]
+  elif .body.case == "many" then [range(101) | {id: tostring, destination: "a@example.com", kind: "bounce"}]
+  elif .body.case == "address" then [{id: "1", destination: "not an address", kind: "bounce"}]
+  elif .body.case == "kind" then [{id: "1", destination: "a@example.com", kind: "spam"}]
+  elif .body.case == "long" then [{id: ("x" * 300), destination: "a@example.com", kind: "bounce"}]
+  elif .body.case == "shape" then [{id: "1", destination: "a@example.com", kind: "bounce", extra: true}]
+  elif .body.case == "number" then [{id: 1, destination: "a@example.com", kind: "bounce"}]
+  elif .body.case == "multiple" then [], []
+  elif .body.case == "object" then {}
+  elif .body.case == "none" then empty
+  elif .body.case == "env" then [{id: "1", destination: ($ENV.HOME // "env-is-empty@example.com"), kind: "bounce"}]
+  else [] end
+tests:
+  - name: a transform that never ends stops at the timeout
+    params: &params { token: secret }
+    request: { headers: &headers { X-Token: secret }, body: '{"case":"loop"}' }
+    expect: { refused: transform_failed }
+  - name: too many failures are refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"many"}' }
+    expect: { refused: transform_failed }
+  - name: a malformed address is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"address"}' }
+    expect: { refused: transform_failed }
+  - name: an unknown kind is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"kind"}' }
+    expect: { refused: transform_failed }
+  - name: an over-long string is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"long"}' }
+    expect: { refused: transform_failed }
+  - name: a field outside the shape is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"shape"}' }
+    expect: { refused: transform_failed }
+  - name: an id that is not a string is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"number"}' }
+    expect: { refused: transform_failed }
+  - name: more than one result is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"multiple"}' }
+    expect: { refused: transform_failed }
+  - name: a result that is not an array is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"object"}' }
+    expect: { refused: transform_failed }
+  - name: no result is refused
+    params: *params
+    request: { headers: *headers, body: '{"case":"none"}' }
+    expect: { refused: transform_failed }
+  - name: the environment is empty
+    params: *params
+    request: { headers: *headers, body: '{"case":"env"}' }
+    expect:
+      failures:
+        - { id: '1', destination: env-is-empty@example.com, kind: bounce }
+  - name: an event the Preset does not handle yields no failures
+    params: *params
+    request: { headers: *headers, body: '{"case":"delivery"}' }
+    expect: { failures: [] }
+  - name: a header scheme refuses a bad token before parsing the body
+    params: *params
+    request: { headers: { X-Token: wrong }, body: not json }
+    expect: { refused: unauthentic }
+  - name: a verified body that is not JSON is malformed
+    params: *params
+    request: { headers: *headers, body: not json }
+    expect: { refused: malformed }

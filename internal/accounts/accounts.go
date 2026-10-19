@@ -255,15 +255,10 @@ func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name s
 	if err != nil {
 		return nil, err
 	}
-	ingestKey, err := credentials.GenerateIngestKey()
-	if err != nil {
-		return nil, err
-	}
 	ws, err := tx.Workspace.Create().
 		SetName(name).
 		SetSlug(slug).
 		SetCollectKey(collectKey).
-		SetIngestKey(ingestKey).
 		Save(ctx)
 	if err != nil {
 		return nil, err

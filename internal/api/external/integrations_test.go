@@ -28,7 +28,10 @@ func TestExternalIntegrationsListReportsSendLimitAndUsage(t *testing.T) {
 	require.NoError(t, err)
 	list, ok := res.(*externalapi.IntegrationsListOK)
 	require.Truef(t, ok, "got %T", res)
-	require.Len(t, list.Items, 2, "Acme's two Integrations; Globex's is not visible")
+	require.GreaterOrEqual(t, len(list.Items), 2, "Acme's Integrations, ascending by id")
+	for _, it := range list.Items {
+		assert.NotEqual(t, fixtures.IntegrationGlobexName, it.Name, "Globex's Integrations are not visible")
+	}
 
 	def := list.Items[0]
 	assert.Equal(t, fixtures.IntegrationAcmeDefaultName, def.Name)
@@ -55,8 +58,10 @@ func TestExternalIntegrationsListIsPaginatedAndWorkspaceScoped(t *testing.T) {
 	require.NoError(t, err)
 	list := res.(*externalapi.IntegrationsListOK)
 	assert.Len(t, list.Items, 1)
-	assert.Equal(t, int32(2), list.TotalItems)
-	assert.Equal(t, int32(2), list.TotalPages)
+	total, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, int32(total), list.TotalItems)
+	assert.Equal(t, int32(total), list.TotalPages, "one Integration a page")
 
 	all, err := c.IntegrationsList(ctx, externalapi.IntegrationsListParams{})
 	require.NoError(t, err)

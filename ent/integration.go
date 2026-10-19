@@ -33,6 +33,12 @@ type Integration struct {
 	Provider integration.Provider `json:"provider,omitempty"`
 	// ConfigEncrypted holds the value of the "config_encrypted" field.
 	ConfigEncrypted string `json:"-"`
+	// Preset holds the value of the "preset" field.
+	Preset *string `json:"preset,omitempty"`
+	// ParamsEncrypted holds the value of the "params_encrypted" field.
+	ParamsEncrypted string `json:"-"`
+	// IngestKey holds the value of the "ingest_key" field.
+	IngestKey string `json:"ingest_key,omitempty"`
 	// Enabled holds the value of the "enabled" field.
 	Enabled bool `json:"enabled,omitempty"`
 	// IsDefault holds the value of the "is_default" field.
@@ -97,7 +103,7 @@ func (*Integration) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case integration.FieldID, integration.FieldWorkspaceID, integration.FieldMaxPerSecond, integration.FieldMaxPerDay, integration.FieldProviderMaxPerSecond, integration.FieldProviderMaxPerDay:
 			values[i] = new(sql.NullInt64)
-		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted:
+		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted, integration.FieldPreset, integration.FieldParamsEncrypted, integration.FieldIngestKey:
 			values[i] = new(sql.NullString)
 		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldProviderQuotaCheckedAt:
 			values[i] = new(sql.NullTime)
@@ -163,6 +169,25 @@ func (_m *Integration) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field config_encrypted", values[i])
 			} else if value.Valid {
 				_m.ConfigEncrypted = value.String
+			}
+		case integration.FieldPreset:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field preset", values[i])
+			} else if value.Valid {
+				_m.Preset = new(string)
+				*_m.Preset = value.String
+			}
+		case integration.FieldParamsEncrypted:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field params_encrypted", values[i])
+			} else if value.Valid {
+				_m.ParamsEncrypted = value.String
+			}
+		case integration.FieldIngestKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field ingest_key", values[i])
+			} else if value.Valid {
+				_m.IngestKey = value.String
 			}
 		case integration.FieldEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -282,6 +307,16 @@ func (_m *Integration) String() string {
 	builder.WriteString(fmt.Sprintf("%v", _m.Provider))
 	builder.WriteString(", ")
 	builder.WriteString("config_encrypted=<sensitive>")
+	builder.WriteString(", ")
+	if v := _m.Preset; v != nil {
+		builder.WriteString("preset=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("params_encrypted=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("ingest_key=")
+	builder.WriteString(_m.IngestKey)
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))

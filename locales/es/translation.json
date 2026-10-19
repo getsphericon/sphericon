@@ -752,6 +752,31 @@
         "secretAccessKey": "Clave de acceso secreta",
         "username": "Nombre de usuario"
       },
+      "inbound": {
+        "description": "Dónde el proveedor publica rebotes y quejas. Elige cómo se verifican y leen sus avisos; el secreto se guarda cifrado y no se vuelve a mostrar.",
+        "hideSchema": "Ocultar el esquema de parámetros",
+        "hookUrl": "URL del hook",
+        "noPreset": "Sin avisos entrantes",
+        "open": "Entrantes",
+        "params": "Parámetros",
+        "paramsHint": "JSON. Un secreto mostrado como ******** o vacío no cambia; un valor nuevo lo rota y el anterior sigue siendo válido hasta que lo retires.",
+        "paramsInvalid": "Los parámetros deben ser un objeto JSON",
+        "preset": "Preset",
+        "regenerate": "Regenerar URL",
+        "regenerateConfirm": "La URL actual del hook deja de funcionar al instante. Pega la nueva URL en el proveedor.",
+        "regenerateConfirmTitle": "¿Regenerar la URL del hook?",
+        "regenerated": "URL del hook regenerada",
+        "regenerateError": "No se pudo regenerar la URL del hook",
+        "retire": "Retirar secretos antiguos",
+        "retired": "Secretos antiguos retirados",
+        "rotating": "Un secreto se está rotando",
+        "rotatingDescription": "{{names}}: el valor anterior sigue aceptándose junto al nuevo hasta que lo retires.",
+        "save": "Guardar",
+        "saved": "Ajustes de entrantes guardados",
+        "saveError": "No se pudieron guardar los ajustes de entrantes",
+        "showSchema": "Mostrar el esquema de parámetros",
+        "title": "Avisos entrantes: {{name}}"
+      },
       "limits": {
         "cancel": "Cancelar",
         "description": "Limite la velocidad de envío de este proveedor para que un envío grande no supere sus propios límites. Deje un campo vacío para no aplicar límite.",
@@ -850,10 +875,6 @@
       "verify": "Verificar",
       "verifyError": "No se pudo iniciar la verificación",
       "verifyQueued": "Verificación iniciada"
-    },
-    "sesWebhook": {
-      "description": "Registra esta URL como la suscripción HTTPS de tu tema SNS de rebotes y quejas de SES. Las direcciones con rebote o queja se añaden automáticamente a la lista de supresión.",
-      "title": "Webhook de rebotes y quejas de SES"
     },
     "suppressions": {
       "create": "Suprimir",

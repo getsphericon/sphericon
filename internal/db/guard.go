@@ -28,6 +28,8 @@ type Major struct {
 // the Floor of Major N+1.
 var Majors = []Major{
 	{Major: 1, Floor: "v0.0.0"},
+	// workspaces.ingest_key dropped: every Integration has its own hook key (ADR 0037).
+	{Major: 2, Floor: "v0.1.2"},
 }
 
 // SchemaState is the state row: the database's Major and the oldest release that still runs

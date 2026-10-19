@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -82,7 +83,8 @@ func TestMigrationStatusListsPendingAndChangesNothing(t *testing.T) {
 	var after bytes.Buffer
 	require.NoError(t, printMigrationStatus(t.Context(), cfg, &after, false))
 	require.Contains(t, after.String(), "pending: none")
-	require.Contains(t, after.String(), "state:   Major 1, oldest release that runs: v0.0.0 (this binary: Major 1)")
+	last := appdb.Majors[len(appdb.Majors)-1]
+	require.Contains(t, after.String(), fmt.Sprintf("state:   Major %d, oldest release that runs: %s (this binary: Major %d)", last.Major, last.Floor, last.Major))
 }
 
 // `migrate --status --json` is what `upgrade` reads from the release it is about to install: the
@@ -95,7 +97,7 @@ func TestMigrationStatusJSONCarriesTheStateAndTheTableOfMajors(t *testing.T) {
 
 	var b upgrade.Boundaries
 	require.NoError(t, json.Unmarshal(out.Bytes(), &b))
-	require.Equal(t, 1, b.State.Major)
+	require.Equal(t, 1, b.State.Major, "an empty database reports Major 1 until it is migrated")
 	require.Len(t, b.Majors, len(appdb.Majors))
 	require.Equal(t, appdb.Majors[len(appdb.Majors)-1].Major, b.Majors[len(b.Majors)-1].Major)
 }

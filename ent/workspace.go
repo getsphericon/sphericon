@@ -27,8 +27,6 @@ type Workspace struct {
 	Slug string `json:"slug,omitempty"`
 	// CollectKey holds the value of the "collect_key" field.
 	CollectKey string `json:"-"`
-	// IngestKey holds the value of the "ingest_key" field.
-	IngestKey string `json:"-"`
 	// RequireConfirmedOptIn holds the value of the "require_confirmed_opt_in" field.
 	RequireConfirmedOptIn bool `json:"require_confirmed_opt_in,omitempty"`
 	// PostalAddress holds the value of the "postal_address" field.
@@ -352,7 +350,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
-		case workspace.FieldName, workspace.FieldSlug, workspace.FieldCollectKey, workspace.FieldIngestKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
+		case workspace.FieldName, workspace.FieldSlug, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
 		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
 			values[i] = new(sql.NullTime)
@@ -406,12 +404,6 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field collect_key", values[i])
 			} else if value.Valid {
 				_m.CollectKey = value.String
-			}
-		case workspace.FieldIngestKey:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field ingest_key", values[i])
-			} else if value.Valid {
-				_m.IngestKey = value.String
 			}
 		case workspace.FieldRequireConfirmedOptIn:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -674,8 +666,6 @@ func (_m *Workspace) String() string {
 	builder.WriteString(_m.Slug)
 	builder.WriteString(", ")
 	builder.WriteString("collect_key=<sensitive>")
-	builder.WriteString(", ")
-	builder.WriteString("ingest_key=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("require_confirmed_opt_in=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequireConfirmedOptIn))

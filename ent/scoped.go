@@ -11456,6 +11456,36 @@ func (x *IntegrationScopedCreate) SetConfigEncrypted(v string) *IntegrationScope
 	return x
 }
 
+// SetPreset sets the "preset" field.
+func (x *IntegrationScopedCreate) SetPreset(v string) *IntegrationScopedCreate {
+	x.b.SetPreset(v)
+	return x
+}
+
+// SetNillablePreset sets the "preset" field if the given value is not nil.
+func (x *IntegrationScopedCreate) SetNillablePreset(v *string) *IntegrationScopedCreate {
+	x.b.SetNillablePreset(v)
+	return x
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (x *IntegrationScopedCreate) SetParamsEncrypted(v string) *IntegrationScopedCreate {
+	x.b.SetParamsEncrypted(v)
+	return x
+}
+
+// SetNillableParamsEncrypted sets the "params_encrypted" field if the given value is not nil.
+func (x *IntegrationScopedCreate) SetNillableParamsEncrypted(v *string) *IntegrationScopedCreate {
+	x.b.SetNillableParamsEncrypted(v)
+	return x
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (x *IntegrationScopedCreate) SetIngestKey(v string) *IntegrationScopedCreate {
+	x.b.SetIngestKey(v)
+	return x
+}
+
 // SetEnabled sets the "enabled" field.
 func (x *IntegrationScopedCreate) SetEnabled(v bool) *IntegrationScopedCreate {
 	x.b.SetEnabled(v)
@@ -11727,6 +11757,54 @@ func (u *IntegrationScopedUpsert) SetConfigEncrypted(v string) *IntegrationScope
 // UpdateConfigEncrypted sets the "config_encrypted" field to the value that was provided on create.
 func (u *IntegrationScopedUpsert) UpdateConfigEncrypted() *IntegrationScopedUpsert {
 	u.u.SetExcluded(integration.FieldConfigEncrypted)
+	return u
+}
+
+// SetPreset sets the "preset" field.
+func (u *IntegrationScopedUpsert) SetPreset(v string) *IntegrationScopedUpsert {
+	u.u.Set(integration.FieldPreset, v)
+	return u
+}
+
+// UpdatePreset sets the "preset" field to the value that was provided on create.
+func (u *IntegrationScopedUpsert) UpdatePreset() *IntegrationScopedUpsert {
+	u.u.SetExcluded(integration.FieldPreset)
+	return u
+}
+
+// ClearPreset clears the value of the "preset" field.
+func (u *IntegrationScopedUpsert) ClearPreset() *IntegrationScopedUpsert {
+	u.u.SetNull(integration.FieldPreset)
+	return u
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (u *IntegrationScopedUpsert) SetParamsEncrypted(v string) *IntegrationScopedUpsert {
+	u.u.Set(integration.FieldParamsEncrypted, v)
+	return u
+}
+
+// UpdateParamsEncrypted sets the "params_encrypted" field to the value that was provided on create.
+func (u *IntegrationScopedUpsert) UpdateParamsEncrypted() *IntegrationScopedUpsert {
+	u.u.SetExcluded(integration.FieldParamsEncrypted)
+	return u
+}
+
+// ClearParamsEncrypted clears the value of the "params_encrypted" field.
+func (u *IntegrationScopedUpsert) ClearParamsEncrypted() *IntegrationScopedUpsert {
+	u.u.SetNull(integration.FieldParamsEncrypted)
+	return u
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (u *IntegrationScopedUpsert) SetIngestKey(v string) *IntegrationScopedUpsert {
+	u.u.Set(integration.FieldIngestKey, v)
+	return u
+}
+
+// UpdateIngestKey sets the "ingest_key" field to the value that was provided on create.
+func (u *IntegrationScopedUpsert) UpdateIngestKey() *IntegrationScopedUpsert {
+	u.u.SetExcluded(integration.FieldIngestKey)
 	return u
 }
 
@@ -12101,6 +12179,54 @@ func (x *IntegrationScopedUpdateOne) SetNillableConfigEncrypted(v *string) *Inte
 	return x
 }
 
+// SetPreset sets the "preset" field.
+func (x *IntegrationScopedUpdateOne) SetPreset(v string) *IntegrationScopedUpdateOne {
+	x.b.SetPreset(v)
+	return x
+}
+
+// SetNillablePreset sets the "preset" field if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillablePreset(v *string) *IntegrationScopedUpdateOne {
+	x.b.SetNillablePreset(v)
+	return x
+}
+
+// ClearPreset clears the value of the "preset" field.
+func (x *IntegrationScopedUpdateOne) ClearPreset() *IntegrationScopedUpdateOne {
+	x.b.ClearPreset()
+	return x
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (x *IntegrationScopedUpdateOne) SetParamsEncrypted(v string) *IntegrationScopedUpdateOne {
+	x.b.SetParamsEncrypted(v)
+	return x
+}
+
+// SetNillableParamsEncrypted sets the "params_encrypted" field if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillableParamsEncrypted(v *string) *IntegrationScopedUpdateOne {
+	x.b.SetNillableParamsEncrypted(v)
+	return x
+}
+
+// ClearParamsEncrypted clears the value of the "params_encrypted" field.
+func (x *IntegrationScopedUpdateOne) ClearParamsEncrypted() *IntegrationScopedUpdateOne {
+	x.b.ClearParamsEncrypted()
+	return x
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (x *IntegrationScopedUpdateOne) SetIngestKey(v string) *IntegrationScopedUpdateOne {
+	x.b.SetIngestKey(v)
+	return x
+}
+
+// SetNillableIngestKey sets the "ingest_key" field if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillableIngestKey(v *string) *IntegrationScopedUpdateOne {
+	x.b.SetNillableIngestKey(v)
+	return x
+}
+
 // SetEnabled sets the "enabled" field.
 func (x *IntegrationScopedUpdateOne) SetEnabled(v bool) *IntegrationScopedUpdateOne {
 	x.b.SetEnabled(v)
@@ -12401,6 +12527,54 @@ func (x *IntegrationScopedUpdate) SetConfigEncrypted(v string) *IntegrationScope
 // SetNillableConfigEncrypted sets the "config_encrypted" field if the given value is not nil.
 func (x *IntegrationScopedUpdate) SetNillableConfigEncrypted(v *string) *IntegrationScopedUpdate {
 	x.b.SetNillableConfigEncrypted(v)
+	return x
+}
+
+// SetPreset sets the "preset" field.
+func (x *IntegrationScopedUpdate) SetPreset(v string) *IntegrationScopedUpdate {
+	x.b.SetPreset(v)
+	return x
+}
+
+// SetNillablePreset sets the "preset" field if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillablePreset(v *string) *IntegrationScopedUpdate {
+	x.b.SetNillablePreset(v)
+	return x
+}
+
+// ClearPreset clears the value of the "preset" field.
+func (x *IntegrationScopedUpdate) ClearPreset() *IntegrationScopedUpdate {
+	x.b.ClearPreset()
+	return x
+}
+
+// SetParamsEncrypted sets the "params_encrypted" field.
+func (x *IntegrationScopedUpdate) SetParamsEncrypted(v string) *IntegrationScopedUpdate {
+	x.b.SetParamsEncrypted(v)
+	return x
+}
+
+// SetNillableParamsEncrypted sets the "params_encrypted" field if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillableParamsEncrypted(v *string) *IntegrationScopedUpdate {
+	x.b.SetNillableParamsEncrypted(v)
+	return x
+}
+
+// ClearParamsEncrypted clears the value of the "params_encrypted" field.
+func (x *IntegrationScopedUpdate) ClearParamsEncrypted() *IntegrationScopedUpdate {
+	x.b.ClearParamsEncrypted()
+	return x
+}
+
+// SetIngestKey sets the "ingest_key" field.
+func (x *IntegrationScopedUpdate) SetIngestKey(v string) *IntegrationScopedUpdate {
+	x.b.SetIngestKey(v)
+	return x
+}
+
+// SetNillableIngestKey sets the "ingest_key" field if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillableIngestKey(v *string) *IntegrationScopedUpdate {
+	x.b.SetNillableIngestKey(v)
 	return x
 }
 

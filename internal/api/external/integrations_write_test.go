@@ -3,8 +3,10 @@ package external_test
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"testing"
 
+	"github.com/go-faster/jx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -229,4 +231,41 @@ func TestExternalIntegrationsAreWorkspaceIsolated(t *testing.T) {
 	row, err := env.DB.Integration.Get(ctx, fixtures.IntegrationGlobexID)
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.IntegrationGlobexName, row.Name)
+}
+
+// An SES Integration reads its callbacks with the `ses` Preset without being told so, and
+// the SNS topic it accepts is a param of that Preset: returned on read, and refused when it
+// is not a topic ARN.
+func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.ExternalScoped(t, "integrations:read", "integrations:write")
+	ses := func(topic string) *externalapi.CreateIntegrationInput {
+		return &externalapi.CreateIntegrationInput{
+			Name: "SES " + topic,
+			Config: externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
+				Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
+			})},
+			Params: externalapi.NewOptCreateIntegrationInputParams(externalapi.CreateIntegrationInputParams{"topic_arn": jx.Raw(strconv.Quote(topic))}),
+		}
+	}
+
+	bad, err := c.IntegrationsCreate(ctx, ses("not-an-arn"))
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, bad)
+
+	// An SES Integration without a topic could never receive a bounce: it is refused at save.
+	noTopic := ses("unused")
+	noTopic.Params = externalapi.OptCreateIntegrationInputParams{}
+	missing, err := c.IntegrationsCreate(ctx, noTopic)
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, missing)
+
+	const topic = "arn:aws:sns:eu-west-1:123456789012:ses-events"
+	res, err := c.IntegrationsCreate(ctx, ses(topic))
+	require.NoError(t, err)
+	created, ok := res.(*externalapi.IntegrationResource)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, "ses", created.Preset.Or(""))
+	assert.JSONEq(t, strconv.Quote(topic), string(created.Params["topic_arn"]))
 }

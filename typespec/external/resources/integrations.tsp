@@ -1,5 +1,6 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
+using TypeSpec.Rest.Resource;
 using TypeSpec.OpenAPI;
 
 namespace Sphericon;
@@ -118,6 +119,18 @@ model IntegrationResource {
   /** Provider config (secrets redacted) */
   config: IntegrationConfig;
 
+  /** The Preset this Integration's provider callbacks are read with; null when it receives none */
+  preset: string | null;
+
+  /** The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as `********`, never its value */
+  params: Record<unknown>;
+
+  /** Names of the secret params that are rotating: a retiring value is still accepted beside the current one */
+  secretsRetiring: string[];
+
+  /** Where the provider posts this Integration's callbacks: paste it into the provider. The key in it is an address, not the authentication (the Preset's signature or secret is) */
+  hookUrl: string;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -138,6 +151,12 @@ model CreateIntegrationInput {
   maxPerDay?: MaxPerDay | null;
 
   config: IntegrationConfigInput;
+
+  /** Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with */
+  preset?: string | null;
+
+  /** The Preset's params, validated against its `paramsSchema`: read the schema first */
+  params?: Record<unknown>;
 }
 
 /** Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret. */
@@ -153,6 +172,15 @@ model UpdateIntegrationInput {
   maxPerDay?: MaxPerDay | null;
 
   config?: IntegrationConfigInput | null;
+
+  /** Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over */
+  preset?: string | null;
+
+  /** The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired) */
+  params?: Record<unknown>;
+
+  /** Stop accepting the retiring value of every rotating secret */
+  retireSecrets?: boolean;
 }
 
 @tag("Integrations")
@@ -161,4 +189,45 @@ interface Integrations
       IntegrationResource,
       CreateIntegrationInput,
       UpdateIntegrationInput
-    > {}
+    > {
+  /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider. Needs a person: hidden from MCP. */
+  @action("regenerate-key")
+  @autoRoute
+  regenerateKey(...ResourceParameters<IntegrationResource>):
+    | IntegrationResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem;
+}
+
+// --- Presets (ADR 0037) ---
+//
+// Exception to "type fixed structures in the contract": a Preset's params are dynamic by
+// nature (a Postmark token, a Mailgun signing key, an SNS topic), so the contract carries
+// the Preset's JSON Schema (`paramsSchema`) and an Integration's values (`params`) as
+// opaque objects. They are validated server side against that schema, never by the
+// generated client: read `paramsSchema` from `presets_list` before sending `params`.
+
+/** A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks */
+model PresetResource {
+  /** The name an Integration's `preset` refers to */
+  name: string;
+
+  /** What the Preset is for */
+  description: string;
+
+  /** JSON Schema (draft 2020-12) of the `params` an Integration of this Preset takes. A string marked `writeOnly` is a secret: it is never returned by a read. */
+  paramsSchema: Record<unknown>;
+}
+
+@route("/presets")
+@tag("Integrations")
+namespace Presets {
+  /** List the Presets the Instance offers, with the params schema of each */
+  @get
+  op list():
+    | Page<PresetResource>
+    | UnauthorizedProblem
+    | TooManyRequestsProblem;
+}

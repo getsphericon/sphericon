@@ -181,7 +181,7 @@ func TestWorkspaceResponsesCarryMetadataOnly(t *testing.T) {
 		requireMetadataOnly(t, item)
 	}
 	assert.NotContains(t, rec.Body.String(), fixtures.AcmeCollectKey)
-	assert.NotContains(t, rec.Body.String(), fixtures.AcmeIngestKey)
+	assert.NotContains(t, rec.Body.String(), fixtures.IntegrationAcmeGenericAIngestKey)
 }
 
 func TestTheWorkspaceEndpointsRequireAnStaffSession(t *testing.T) {

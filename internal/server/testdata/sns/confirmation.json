@@ -1,0 +1,12 @@
+{
+  "Message": "You have chosen to subscribe to the topic arn:aws:sns:eu-west-1:123456789012:acme-ses-events",
+  "MessageId": "sns-msg-7",
+  "Signature": "RBMWxlFmkIczMQzu1tUiVbAEaFb814jsD6vjFHNu9G5tvDRitw+IeItrNUH+JP0qlokvLht/+9GaeMXVRijAarHGhCWc6alPZa4NbxgjccKVxpW9cLiYm8CoNAWyhfghihGq1PKp0LcHiV+1CsFKTTEo4NB7FA53YbZ3qm0L6MFtRz44DtnjzkAX0qqZGxzht8shitxm4T/UR4Pd5cJAE9qR+f6YdbqoI4rfBvhthXKOvhlRtOcPcJIQhXN3CgrFI5VexkdAwEfqqfrS4cFBhpzkfH5PYUAQrwVCIjnvwWtL7RrtRIERWaYuPFDokz/yPXHj1CKEd2BVVtxxTE61fw==",
+  "SignatureVersion": "2",
+  "SigningCertURL": "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem",
+  "SubscribeURL": "https://sns.eu-west-1.amazonaws.com/?Action=ConfirmSubscription\u0026TopicArn=arn:aws:sns:eu-west-1:123456789012:acme-ses-events\u0026Token=abc",
+  "Timestamp": "2026-01-01T00:00:00.000Z",
+  "Token": "token-sns-msg-7",
+  "TopicArn": "arn:aws:sns:eu-west-1:123456789012:acme-ses-events",
+  "Type": "SubscriptionConfirmation"
+}

@@ -17,6 +17,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -24,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -52,10 +54,28 @@ type Module struct {
 	cipher  *secrets.Cipher
 	catalog *messaging.Catalog
 	quota   QuotaEnqueuer
+	presets *preset.Registry
+	appURL  string
+	confirm func(ctx context.Context, url string) error
 }
 
-func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, quota QuotaEnqueuer) *Module {
-	return &Module{bus: bus, cipher: cipher, catalog: catalog, quota: quota}
+// Option tunes the module.
+type Option func(*Module)
+
+// WithSubscriptionConfirmer replaces how a Preset's confirm action is performed: a GET
+// through the SSRF-guarded client by default.
+func WithSubscriptionConfirmer(f func(ctx context.Context, url string) error) Option {
+	return func(m *Module) { m.confirm = f }
+}
+
+// New builds the module. presets is the Instance's Preset registry and appURL the public
+// origin the hook URLs are built from.
+func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, quota QuotaEnqueuer, presets *preset.Registry, appURL string, opts ...Option) *Module {
+	m := &Module{bus: bus, cipher: cipher, catalog: catalog, quota: quota, presets: presets, appURL: appURL, confirm: confirmByGet}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
 }
 
 // SMTPConfig and SESConfig are the write-side provider settings, secrets included.
@@ -113,6 +133,9 @@ type CreateInput struct {
 	MaxPerSecond Limit
 	MaxPerDay    Limit
 	Config       ConfigInput
+	// Preset and Params are the inbound side (ADR 0037); Params without a Preset is refused.
+	Preset *string
+	Params map[string]any
 }
 
 // UpdateInput is a partial edit; nil fields keep the stored value. A nil Config keeps the
@@ -124,6 +147,10 @@ type UpdateInput struct {
 	MaxPerSecond Limit
 	MaxPerDay    Limit
 	Config       *ConfigInput
+	// Preset, Params and RetireSecrets edit the inbound side; see sealInbound.
+	Preset        PresetChange
+	Params        map[string]any
+	RetireSecrets bool
 }
 
 // Create validates and stores an Integration, sealing its credentials.
@@ -144,6 +171,20 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if in.Enabled != nil {
 		enabled = *in.Enabled
 	}
+	// An SES Integration reads its callbacks with the `ses` Preset unless told otherwise.
+	presetName := in.Preset
+	if presetName == nil && provider == integration.ProviderSes {
+		presetName = new(string)
+		*presetName = "ses"
+	}
+	inb, err := m.sealInbound(nil, inboundChange{preset: PresetChange{Set: presetName != nil, Name: presetName}, params: in.Params})
+	if err != nil {
+		return nil, err
+	}
+	key, err := credentials.GenerateIngestKey()
+	if err != nil {
+		return nil, err
+	}
 
 	var row *ent.Integration
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -155,16 +196,21 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 			}
 		}
 		var err error
-		row, err = ts.Integration().Create().
+		create := ts.Integration().Create().
 			SetName(name).
 			SetChannel(channel).
 			SetProvider(provider).
 			SetConfigEncrypted(sealed).
+			SetIngestKey(key).
+			SetNillablePreset(inb.preset).
 			SetEnabled(enabled).
 			SetIsDefault(in.IsDefault).
 			SetNillableMaxPerSecond(in.MaxPerSecond.Value).
-			SetNillableMaxPerDay(in.MaxPerDay.Value).
-			Save(ctx)
+			SetNillableMaxPerDay(in.MaxPerDay.Value)
+		if inb.sealed != nil {
+			create.SetParamsEncrypted(*inb.sealed)
+		}
+		row, err = create.Save(ctx)
 		return err
 	})
 	if db.IsUniqueViolation(err) {
@@ -219,6 +265,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		sealed = &enc
 	}
 
+	inb, err := m.sealInbound(row, inboundChange{preset: in.Preset, params: in.Params, retireSecrets: in.RetireSecrets})
+	if err != nil {
+		return nil, err
+	}
+
 	// Promoting to default touches sibling rows, so it clears the channel's current
 	// default first, in the same transaction as the update.
 	promote := in.IsDefault != nil && *in.IsDefault && !row.IsDefault
@@ -239,6 +290,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		if sealed != nil {
 			upd.SetConfigEncrypted(*sealed)
+		}
+		if inb.apply {
+			if inb.preset == nil {
+				upd.ClearPreset().ClearParamsEncrypted()
+			} else {
+				upd.SetPreset(*inb.preset).SetParamsEncrypted(*inb.sealed)
+			}
 		}
 		applyLimit(in.MaxPerSecond, upd.SetMaxPerSecond, upd.ClearMaxPerSecond)
 		applyLimit(in.MaxPerDay, upd.SetMaxPerDay, upd.ClearMaxPerDay)
