@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/go-faster/jx"
+	"github.com/samber/lo"
 )
 
 // automationSteps decodes the stored definition into the typed steps DTO. A
@@ -30,6 +31,14 @@ func automationSteps(def string) []externalapi.AutomationStep {
 			step.Seconds = externalapi.NewOptInt32(int32(s.Seconds))
 		case automations.StepApplyTag, automations.StepRemoveTag:
 			step.Tag = externalapi.NewOptString(s.Tag)
+		case automations.StepHTTP:
+			// Masked: the URL, header values and signing secret never leave the server.
+			step.ID = externalapi.NewOptString(s.ID)
+			step.Body = externalapi.NewOptString(s.Body)
+			step.HasSecret = externalapi.NewOptBool(s.Secret != "")
+			step.Headers = lo.Map(s.Headers, func(h automations.Header, _ int) externalapi.AutomationHttpHeader {
+				return externalapi.AutomationHttpHeader{Name: h.Name}
+			})
 		default:
 			step.Subject = externalapi.NewOptString(s.Subject)
 			step.Body = externalapi.NewOptString(s.Body)
@@ -49,6 +58,14 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 			Body:    s.Body.Or(""),
 			Seconds: int(s.Seconds.Or(0)),
 			Tag:     s.Tag.Or(""),
+
+			ID:  s.ID.Or(""),
+			URL: s.URL.Or(""),
+			Headers: lo.Map(s.Headers, func(h externalapi.AutomationHttpHeader, _ int) automations.Header {
+				return automations.Header{Name: h.Name, Value: h.Value.Or("")}
+			}),
+			Secret:      s.Secret.Or(""),
+			ClearSecret: s.ClearSecret.Or(false),
 		})
 	}
 	return out

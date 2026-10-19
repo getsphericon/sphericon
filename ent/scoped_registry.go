@@ -274,6 +274,15 @@ func ScopedEntities() []ScopedEntity {
 				if src.ResumeAt != nil {
 					b.SetResumeAt(*src.ResumeAt)
 				}
+				if src.FailureKind != nil {
+					b.SetFailureKind(*src.FailureKind)
+				}
+				if src.FailureStatus != nil {
+					b.SetFailureStatus(*src.FailureStatus)
+				}
+				if src.FailureExcerpt != nil {
+					b.SetFailureExcerpt(*src.FailureExcerpt)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -1453,6 +1462,24 @@ func ScopedEntities() []ScopedEntity {
 					b.SetEventTypes(src.EventTypes)
 				}
 				b.SetEnabled(src.Enabled)
+				if src.ConsecutiveFailures != nil {
+					b.SetConsecutiveFailures(*src.ConsecutiveFailures)
+				}
+				if src.FailingSince != nil {
+					b.SetFailingSince(*src.FailingSince)
+				}
+				if src.LastErrorKind != nil {
+					b.SetLastErrorKind(*src.LastErrorKind)
+				}
+				if src.LastErrorStatus != nil {
+					b.SetLastErrorStatus(*src.LastErrorStatus)
+				}
+				if src.LastFailureAt != nil {
+					b.SetLastFailureAt(*src.LastFailureAt)
+				}
+				if src.DisabledReason != nil {
+					b.SetDisabledReason(*src.DisabledReason)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

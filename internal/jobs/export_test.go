@@ -8,6 +8,8 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -30,8 +32,8 @@ func NewMemberInviteWorker(sender messaging.EmailSender) *SendMemberInviteWorker
 	return &SendMemberInviteWorker{sender: sender}
 }
 
-func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer) *DeliverWebhookWorker {
-	return &DeliverWebhookWorker{ent: client, cipher: cipher, client: doer}
+func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, bus *events.Bus, sender messaging.EmailSender) *DeliverWebhookWorker {
+	return &DeliverWebhookWorker{ent: client, cipher: cipher, client: doer, now: now, bus: bus, sender: sender}
 }
 
 func NewVerifySendingDomainWorker(client *ent.Client, lookup sending.TXTLookup, sender messaging.EmailSender) *VerifySendingDomainWorker {
@@ -68,6 +70,10 @@ func NewEvaluateTriggerWorker(client *ent.Client) *EvaluateTriggerWorker {
 
 func NewRunStepWorker(client *ent.Client, mod *outbound.Module) *RunStepWorker {
 	return &RunStepWorker{ent: client, mod: mod}
+}
+
+func NewRunHTTPStepWorker(client *ent.Client, mod *automations.Module, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
+	return &RunHTTPStepWorker{ent: client, mod: mod, client: doer, now: now}
 }
 
 func NewSendBroadcastWorker(client *ent.Client, mod *outbound.Module) *SendBroadcastWorker {

@@ -1,9 +1,10 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
 import {
   handleSiteAutomationsGet,
   handleSiteAutomationsUpdate,
+  handleSiteEnrollmentsList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$slug/automations/$automationId/edit.tsx'
@@ -15,6 +16,15 @@ import { AutomationEditPage } from './edit.tsx'
 
 const EDIT_ROUTE = routeMount(automationsEditRoute, { slug: 'test', automationId: '5' })
 const NOW = '2026-01-01T00:00:00Z'
+
+// The page also asks for the failed Enrollments: none unless a test says otherwise.
+beforeEach(() => {
+  worker.use(
+    handleSiteEnrollmentsList({
+      body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
+    }),
+  )
+})
 
 test('loads the automation into the builder', async () => {
   worker.use(
@@ -100,4 +110,78 @@ test('a failed save from the builder shows an error toast', async () => {
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.element(screen.getByText('Failed to save automation')).toBeInTheDocument()
+})
+
+test('shows no failed enrollments when none has a recorded reason', async () => {
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteEnrollmentsList({
+      body: {
+        items: [
+          {
+            id: '9',
+            automationId: '5',
+            contactId: '107',
+            status: 'failed',
+            currentStep: 0,
+            createdAt: NOW,
+            updatedAt: NOW,
+          },
+        ],
+        page: 1,
+        pageSize: 25,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByText('Edit automation')).toBeInTheDocument()
+  await expect.element(screen.getByText('Failed enrollments')).not.toBeInTheDocument()
+})
+
+test('shows no failed enrollments when the list cannot load', async () => {
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteEnrollmentsList(() => problem(500)),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByText('Edit automation')).toBeInTheDocument()
+  await expect.element(screen.getByText('Failed enrollments')).not.toBeInTheDocument()
+})
+
+test('lists the enrollments an HTTP step failed, with the reason and the response', async () => {
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteEnrollmentsList({
+      body: {
+        items: [
+          {
+            id: '9',
+            automationId: '5',
+            contactId: '107',
+            status: 'failed',
+            currentStep: 0,
+            failure: { kind: 'http_status', status: 503, excerpt: 'upstream unavailable' },
+            createdAt: NOW,
+            updatedAt: NOW,
+          },
+        ],
+        page: 1,
+        pageSize: 25,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByText('Failed enrollments')).toBeInTheDocument()
+  await expect.element(screen.getByText('The receiver answered 503')).toBeInTheDocument()
+  await expect.element(screen.getByText('upstream unavailable')).toBeInTheDocument()
 })

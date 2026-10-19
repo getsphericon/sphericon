@@ -6,13 +6,20 @@ import {
   CopyButton,
   Group,
   Loader,
+  Modal,
   MultiSelect,
+  Select,
+  Stack,
+  Text,
   TextInput,
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useDisclosure } from '@mantine/hooks'
+import { modals } from '@mantine/modals'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -20,9 +27,15 @@ import {
   siteWebhooksDeleteMutation,
   siteWebhooksListOptions,
   siteWebhooksListQueryKey,
+  siteWebhooksRegenerateSecretMutation,
+  siteWebhooksTestMutation,
   siteWebhooksUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteWebhookEndpointResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteWebhookEndpointResource,
+  SiteWebhookFailure,
+  SiteWebhookTestResult,
+} from '../../generated/site/types.gen.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from './auditFilter.ts'
@@ -38,6 +51,104 @@ const EVENT_OPTIONS = [
   'email.unsubscribed',
   'audit.entry',
 ]
+
+function FailureText({ failure }: { failure: SiteWebhookFailure }) {
+  const { t } = useTranslation()
+  const reason = {
+    timeout: t(($) => $.settings.webhooks.errorTimeout),
+    blocked_address: t(($) => $.settings.webhooks.errorBlockedAddress),
+    http_status: t(($) => $.settings.webhooks.errorHttpStatus, { status: failure.status ?? 0 }),
+    network: t(($) => $.settings.webhooks.errorNetwork),
+  }[failure.kind]
+  return (
+    <Text size="xs" c="dimmed">
+      {t(($) => $.settings.webhooks.failureSummary, {
+        reason,
+        count: failure.consecutiveFailures,
+        since: new Date(failure.since).toLocaleString(),
+      })}
+    </Text>
+  )
+}
+
+// A sample can be sent for any customer event; audit.entry is Enterprise and has no sample.
+const TEST_EVENT_OPTIONS = EVENT_OPTIONS.filter((name) => name !== 'audit.entry')
+
+function TestResultAlert({ result }: { result: SiteWebhookTestResult }) {
+  const { t } = useTranslation()
+  if (result.delivered) {
+    return (
+      <Alert color="teal" mt="md">
+        {t(($) => $.settings.webhooks.testDelivered, { status: result.status ?? 0 })}
+      </Alert>
+    )
+  }
+  const reason = {
+    timeout: t(($) => $.settings.webhooks.errorTimeout),
+    blocked_address: t(($) => $.settings.webhooks.errorBlockedAddress),
+    http_status: t(($) => $.settings.webhooks.errorHttpStatus, { status: result.status ?? 0 }),
+    network: t(($) => $.settings.webhooks.errorNetwork),
+  }[result.kind ?? 'network']
+  return (
+    <Alert color="red" mt="md">
+      {t(($) => $.settings.webhooks.testFailed, { reason })}
+    </Alert>
+  )
+}
+
+function TestEventButton({ slug, id }: { slug: string; id: string }) {
+  const { t } = useTranslation()
+  const [opened, { open, close }] = useDisclosure(false)
+  const [eventType, setEventType] = useState<string | null>(TEST_EVENT_OPTIONS[0] ?? null)
+  const [result, setResult] = useState<SiteWebhookTestResult | null>(null)
+
+  const testMutation = useResourceMutation({
+    mutation: siteWebhooksTestMutation(),
+    errorTitle: t(($) => $.settings.webhooks.testError),
+    onDone: (data) => setResult(data),
+  })
+
+  return (
+    <>
+      <Button size="compact-sm" variant="default" onClick={open}>
+        {t(($) => $.settings.webhooks.sendTest)}
+      </Button>
+      <Modal
+        opened={opened}
+        onClose={() => {
+          close()
+          setResult(null)
+        }}
+        title={t(($) => $.settings.webhooks.sendTestTitle)}
+      >
+        <Stack gap="sm">
+          <Text size="sm" c="dimmed">
+            {t(($) => $.settings.webhooks.sendTestHint)}
+          </Text>
+          <Select
+            label={t(($) => $.settings.webhooks.testEventLabel)}
+            data={TEST_EVENT_OPTIONS}
+            value={eventType}
+            onChange={setEventType}
+            allowDeselect={false}
+          />
+          <Button
+            loading={testMutation.isPending}
+            disabled={eventType === null}
+            onClick={() => {
+              if (eventType !== null) {
+                testMutation.mutate({ path: { slug, id }, body: { eventType } })
+              }
+            }}
+          >
+            {t(($) => $.settings.webhooks.sendTestSubmit)}
+          </Button>
+        </Stack>
+        {result ? <TestResultAlert result={result} /> : null}
+      </Modal>
+    </>
+  )
+}
 
 export function WebhooksSection({ slug }: { slug: string }) {
   const { t } = useTranslation()
@@ -68,6 +179,26 @@ export function WebhooksSection({ slug }: { slug: string }) {
     invalidate: [queryKey],
     errorTitle: t(($) => $.settings.webhooks.deleteError),
   })
+
+  const regenerateMutation = useResourceMutation({
+    mutation: siteWebhooksRegenerateSecretMutation(),
+    invalidate: [queryKey],
+    successMessage: t(($) => $.settings.webhooks.regenerated),
+    errorTitle: t(($) => $.settings.webhooks.regenerateError),
+  })
+
+  const onRegenerate = (id: string) => {
+    modals.openConfirmModal({
+      title: t(($) => $.settings.webhooks.regenerateConfirmTitle),
+      children: <Text>{t(($) => $.settings.webhooks.regenerateConfirmBody)}</Text>,
+      labels: {
+        cancel: t(($) => $.actions.cancel),
+        confirm: t(($) => $.settings.webhooks.regenerate),
+      },
+      confirmProps: { color: 'red' },
+      onConfirm: () => regenerateMutation.mutate({ path: { slug, id } }),
+    })
+  }
 
   const onToggle = (record: SiteWebhookEndpointResource) =>
     updateMutation.mutate({
@@ -144,11 +275,21 @@ export function WebhooksSection({ slug }: { slug: string }) {
             accessor: 'enabled',
             title: t(($) => $.settings.webhooks.statusColumn),
             render: (record) => (
-              <Badge variant="light" color={record.enabled ? 'teal' : 'gray'}>
-                {record.enabled
-                  ? t(($) => $.settings.webhooks.enabled)
-                  : t(($) => $.settings.webhooks.disabled)}
-              </Badge>
+              <Stack gap={2}>
+                <Badge variant="light" color={record.enabled ? 'teal' : 'gray'}>
+                  {record.enabled
+                    ? t(($) => $.settings.webhooks.enabled)
+                    : t(($) => $.settings.webhooks.disabled)}
+                </Badge>
+                {record.failure ? (
+                  <>
+                    <Badge variant="light" color="red">
+                      {t(($) => $.settings.webhooks.failing)}
+                    </Badge>
+                    <FailureText failure={record.failure} />
+                  </>
+                ) : null}
+              </Stack>
             ),
           },
           {
@@ -176,6 +317,10 @@ export function WebhooksSection({ slug }: { slug: string }) {
                   targetType={AUDIT_TARGET_WEBHOOK_ENDPOINT}
                   targetId={record.id}
                 />
+                <TestEventButton slug={slug} id={record.id} />
+                <Button size="compact-sm" variant="default" onClick={() => onRegenerate(record.id)}>
+                  {t(($) => $.settings.webhooks.regenerate)}
+                </Button>
                 <Button size="compact-sm" variant="default" onClick={() => onToggle(record)}>
                   {record.enabled
                     ? t(($) => $.settings.webhooks.disable)

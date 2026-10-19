@@ -142,6 +142,12 @@ type Handler interface {
 	//
 	// DELETE /workspaces/{slug}/automations/{id}
 	SiteAutomationsDelete(ctx context.Context, params SiteAutomationsDeleteParams) (SiteAutomationsDeleteRes, error)
+	// SiteAutomationsDryRunHttpStep implements SiteAutomations_dryRunHttpStep operation.
+	//
+	// Render an HTTP step's body for a Contact and validate it, calling nothing.
+	//
+	// POST /workspaces/{slug}/automations/dry-run-http-step
+	SiteAutomationsDryRunHttpStep(ctx context.Context, req *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (SiteAutomationsDryRunHttpStepRes, error)
 	// SiteAutomationsGet implements SiteAutomations_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -252,6 +258,18 @@ type Handler interface {
 	//
 	// GET /workspaces/{slug}/custom-fields
 	SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (SiteCustomFieldsListRes, error)
+	// SiteEnrollmentsGet implements SiteEnrollments_get operation.
+	//
+	// Get one Enrollment of an Automation.
+	//
+	// GET /workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}
+	SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (SiteEnrollmentsGetRes, error)
+	// SiteEnrollmentsList implements SiteEnrollments_list operation.
+	//
+	// List an Automation's Enrollments, newest first.
+	//
+	// GET /workspaces/{slug}/automations/{automationId}/enrollments
+	SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (SiteEnrollmentsListRes, error)
 	// SiteEventsActions implements SiteEvents_actions operation.
 	//
 	// Distinct event actions in the workspace, sorted — powers the segment builder.
@@ -661,6 +679,18 @@ type Handler interface {
 	//
 	// GET /workspaces/{slug}/webhooks
 	SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (SiteWebhooksListRes, error)
+	// SiteWebhooksRegenerateSecret implements SiteWebhooks_regenerateSecret operation.
+	//
+	// Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+	//
+	// POST /workspaces/{slug}/webhooks/{id}/regenerate-secret
+	SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (SiteWebhooksRegenerateSecretRes, error)
+	// SiteWebhooksTest implements SiteWebhooks_test operation.
+	//
+	// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+	//
+	// POST /workspaces/{slug}/webhooks/{id}/test
+	SiteWebhooksTest(ctx context.Context, req *SiteTestWebhookInput, params SiteWebhooksTestParams) (SiteWebhooksTestRes, error)
 	// SiteWebhooksUpdate implements SiteWebhooks_update operation.
 	//
 	// Update a resource from the site UI.

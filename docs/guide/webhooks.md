@@ -19,6 +19,20 @@ an endpoint without deleting it. The URL must be an absolute `http` or `https` a
 
 The signing secret is never returned by the API. Read it in the app, where the endpoint is shown.
 
+## Replace the secret and send a test event
+
+If a secret leaks, replace it: `POST /api/webhooks/{id}/regenerate-secret` (token scope
+`webhooks:regenerate`) or **Regenerate secret** in the app. The old secret stops verifying at
+once, so update your receiver with the new one (shown in the app) first or right after.
+
+To check a URL and your signature verification before a real event, send a sample:
+`POST /api/webhooks/{id}/test` with `{"eventType":"contact.created"}` (token scope
+`webhooks:test`), or **Send test event** in the app. The sample is signed like a real delivery and
+sent at once, even to a disabled endpoint. The response says whether the receiver answered 2xx
+(`delivered`), its `status`, and otherwise the error `kind` (`timeout`, `blocked_address`,
+`http_status` or `network`). A test never changes the endpoint's failure state. Both actions are
+recorded in the Audit log.
+
 ## Events
 
 | Event                 | When                                                |
@@ -81,5 +95,25 @@ if verification fails, and use the timestamp to refuse stale replays.
 - Endpoints that resolve to private, loopback, link-local or cloud-metadata addresses are refused,
   so you cannot point a webhook at an internal service. Use a public URL, or a tunnel for local
   development.
+- An endpoint disables itself, and the workspace owners are emailed, when it answers `410 Gone`, or
+  when at least 20 deliveries in a row have failed over more than 2 hours. The workspace's Audit
+  log records the change by the `system` actor. Enabling the endpoint again clears its failure
+  history.
 - Deliveries run on the same durable PostgreSQL job queue as sending, so a restart does not lose
   them. There is no ordering guarantee between events.
+
+## Calling a hook from an automation
+
+An automation can POST to a third-party hook (Slack, Zapier) with an **HTTP step**. It goes through
+the same hardened client and the same retry policy as a webhook delivery, on a queue of its own, so a
+slow receiver never delays event deliveries or other automation steps.
+
+- The body is a Liquid JSON template over the Contact. It is checked again when the step runs; a
+  body that does not render to valid JSON fails the enrollment at once.
+- A `2xx` moves the enrollment on to its next step. Anything else is retried for about three days;
+  a `429` waits for `Retry-After` without spending an attempt. A blocked address is not retried.
+- When the retries are spent, or the address is blocked, the enrollment becomes `failed`. It keeps
+  the closed error kind (`invalid_body`, `timeout`, `blocked_address`, `http_status`, `network`),
+  the receiver's status and the first 1 KiB of its answer. Read them in the automation's editor,
+  or with `GET /automations/{id}/enrollments` (scope `enrollments:read`, MCP tools `enrollments_list` and
+  `enrollments_get`). Nothing after the failed step runs.

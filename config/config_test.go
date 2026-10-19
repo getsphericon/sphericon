@@ -421,3 +421,21 @@ func TestConfigLoadRejectsAbuseLimitsThatCannotWork(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigLoadOutboundAllowIsEmptyByDefaultAndRejectsMalformedValues(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	if _, err := Load("test"); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("SPHERICON_OUTBOUND_ALLOW", "n8n:5678,node-red.lan:1880")
+	if _, err := Load("test"); err != nil {
+		t.Fatalf("a list of host:port pairs must load: %v", err)
+	}
+
+	t.Setenv("SPHERICON_OUTBOUND_ALLOW", "n8n")
+	_, err := Load("test")
+	if err == nil || !strings.Contains(err.Error(), "SPHERICON_OUTBOUND_ALLOW") {
+		t.Fatalf("a malformed value must fail the load naming the variable, got %v", err)
+	}
+}

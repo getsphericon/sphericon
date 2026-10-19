@@ -32,3 +32,25 @@ func TestRecordedEventTriggersAutomationEmail(t *testing.T) {
 	// long been through the same pipeline: its Contact must have received nothing.
 	w.Inbox.RequireNone(Match{To: other})
 }
+
+func TestAutomationHTTPStepCallsTheHookThenContinues(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	to := w.NewRecipient()
+	w.ImportContacts(to)
+	hook := w.NewHook(true)
+	w.ActivateHTTPAutomation(HTTPAutomation{
+		TriggerEvent: "e2e.hooked",
+		Hook:         hook,
+		Body:         `{"email": "{{ email }}"}`,
+		Subject:      "After the hook",
+		EmailBody:    MJML("The hook was called"),
+	})
+
+	w.RecordEvent(to, "e2e.hooked")
+
+	call := hook.Wait()
+	assert.JSONEq(t, `{"email": "`+to+`"}`, call.Body)
+	// The Enrollment moved past the HTTP step: its email step ran.
+	assert.Equal(t, "After the hook", w.Inbox.Wait(Match{To: to}).Subject)
+}

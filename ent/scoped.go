@@ -2859,6 +2859,42 @@ func (x *AutomationRunScopedCreate) SetNillableResumeAt(v *time.Time) *Automatio
 	return x
 }
 
+// SetFailureKind sets the "failure_kind" field.
+func (x *AutomationRunScopedCreate) SetFailureKind(v automationrun.FailureKind) *AutomationRunScopedCreate {
+	x.b.SetFailureKind(v)
+	return x
+}
+
+// SetNillableFailureKind sets the "failure_kind" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableFailureKind(v *automationrun.FailureKind) *AutomationRunScopedCreate {
+	x.b.SetNillableFailureKind(v)
+	return x
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (x *AutomationRunScopedCreate) SetFailureStatus(v int) *AutomationRunScopedCreate {
+	x.b.SetFailureStatus(v)
+	return x
+}
+
+// SetNillableFailureStatus sets the "failure_status" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableFailureStatus(v *int) *AutomationRunScopedCreate {
+	x.b.SetNillableFailureStatus(v)
+	return x
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (x *AutomationRunScopedCreate) SetFailureExcerpt(v string) *AutomationRunScopedCreate {
+	x.b.SetFailureExcerpt(v)
+	return x
+}
+
+// SetNillableFailureExcerpt sets the "failure_excerpt" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableFailureExcerpt(v *string) *AutomationRunScopedCreate {
+	x.b.SetNillableFailureExcerpt(v)
+	return x
+}
+
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationRunScopedCreate) SetAutomation(v *Automation) *AutomationRunScopedCreate {
 	x.b.SetAutomation(v)
@@ -3010,6 +3046,66 @@ func (u *AutomationRunScopedUpsert) UpdateResumeAt() *AutomationRunScopedUpsert 
 // ClearResumeAt clears the value of the "resume_at" field.
 func (u *AutomationRunScopedUpsert) ClearResumeAt() *AutomationRunScopedUpsert {
 	u.u.SetNull(automationrun.FieldResumeAt)
+	return u
+}
+
+// SetFailureKind sets the "failure_kind" field.
+func (u *AutomationRunScopedUpsert) SetFailureKind(v automationrun.FailureKind) *AutomationRunScopedUpsert {
+	u.u.Set(automationrun.FieldFailureKind, v)
+	return u
+}
+
+// UpdateFailureKind sets the "failure_kind" field to the value that was provided on create.
+func (u *AutomationRunScopedUpsert) UpdateFailureKind() *AutomationRunScopedUpsert {
+	u.u.SetExcluded(automationrun.FieldFailureKind)
+	return u
+}
+
+// ClearFailureKind clears the value of the "failure_kind" field.
+func (u *AutomationRunScopedUpsert) ClearFailureKind() *AutomationRunScopedUpsert {
+	u.u.SetNull(automationrun.FieldFailureKind)
+	return u
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (u *AutomationRunScopedUpsert) SetFailureStatus(v int) *AutomationRunScopedUpsert {
+	u.u.Set(automationrun.FieldFailureStatus, v)
+	return u
+}
+
+// AddFailureStatus adds v to the "failure_status" field.
+func (u *AutomationRunScopedUpsert) AddFailureStatus(v int) *AutomationRunScopedUpsert {
+	u.u.Add(automationrun.FieldFailureStatus, v)
+	return u
+}
+
+// UpdateFailureStatus sets the "failure_status" field to the value that was provided on create.
+func (u *AutomationRunScopedUpsert) UpdateFailureStatus() *AutomationRunScopedUpsert {
+	u.u.SetExcluded(automationrun.FieldFailureStatus)
+	return u
+}
+
+// ClearFailureStatus clears the value of the "failure_status" field.
+func (u *AutomationRunScopedUpsert) ClearFailureStatus() *AutomationRunScopedUpsert {
+	u.u.SetNull(automationrun.FieldFailureStatus)
+	return u
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (u *AutomationRunScopedUpsert) SetFailureExcerpt(v string) *AutomationRunScopedUpsert {
+	u.u.Set(automationrun.FieldFailureExcerpt, v)
+	return u
+}
+
+// UpdateFailureExcerpt sets the "failure_excerpt" field to the value that was provided on create.
+func (u *AutomationRunScopedUpsert) UpdateFailureExcerpt() *AutomationRunScopedUpsert {
+	u.u.SetExcluded(automationrun.FieldFailureExcerpt)
+	return u
+}
+
+// ClearFailureExcerpt clears the value of the "failure_excerpt" field.
+func (u *AutomationRunScopedUpsert) ClearFailureExcerpt() *AutomationRunScopedUpsert {
+	u.u.SetNull(automationrun.FieldFailureExcerpt)
 	return u
 }
 
@@ -3232,6 +3328,66 @@ func (x *AutomationRunScopedUpdateOne) ClearResumeAt() *AutomationRunScopedUpdat
 	return x
 }
 
+// SetFailureKind sets the "failure_kind" field.
+func (x *AutomationRunScopedUpdateOne) SetFailureKind(v automationrun.FailureKind) *AutomationRunScopedUpdateOne {
+	x.b.SetFailureKind(v)
+	return x
+}
+
+// SetNillableFailureKind sets the "failure_kind" field if the given value is not nil.
+func (x *AutomationRunScopedUpdateOne) SetNillableFailureKind(v *automationrun.FailureKind) *AutomationRunScopedUpdateOne {
+	x.b.SetNillableFailureKind(v)
+	return x
+}
+
+// ClearFailureKind clears the value of the "failure_kind" field.
+func (x *AutomationRunScopedUpdateOne) ClearFailureKind() *AutomationRunScopedUpdateOne {
+	x.b.ClearFailureKind()
+	return x
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (x *AutomationRunScopedUpdateOne) SetFailureStatus(v int) *AutomationRunScopedUpdateOne {
+	x.b.SetFailureStatus(v)
+	return x
+}
+
+// SetNillableFailureStatus sets the "failure_status" field if the given value is not nil.
+func (x *AutomationRunScopedUpdateOne) SetNillableFailureStatus(v *int) *AutomationRunScopedUpdateOne {
+	x.b.SetNillableFailureStatus(v)
+	return x
+}
+
+// AddFailureStatus adds value to the "failure_status" field.
+func (x *AutomationRunScopedUpdateOne) AddFailureStatus(v int) *AutomationRunScopedUpdateOne {
+	x.b.AddFailureStatus(v)
+	return x
+}
+
+// ClearFailureStatus clears the value of the "failure_status" field.
+func (x *AutomationRunScopedUpdateOne) ClearFailureStatus() *AutomationRunScopedUpdateOne {
+	x.b.ClearFailureStatus()
+	return x
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (x *AutomationRunScopedUpdateOne) SetFailureExcerpt(v string) *AutomationRunScopedUpdateOne {
+	x.b.SetFailureExcerpt(v)
+	return x
+}
+
+// SetNillableFailureExcerpt sets the "failure_excerpt" field if the given value is not nil.
+func (x *AutomationRunScopedUpdateOne) SetNillableFailureExcerpt(v *string) *AutomationRunScopedUpdateOne {
+	x.b.SetNillableFailureExcerpt(v)
+	return x
+}
+
+// ClearFailureExcerpt clears the value of the "failure_excerpt" field.
+func (x *AutomationRunScopedUpdateOne) ClearFailureExcerpt() *AutomationRunScopedUpdateOne {
+	x.b.ClearFailureExcerpt()
+	return x
+}
+
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationRunScopedUpdateOne) SetAutomation(v *Automation) *AutomationRunScopedUpdateOne {
 	x.b.SetAutomation(v)
@@ -3389,6 +3545,66 @@ func (x *AutomationRunScopedUpdate) SetNillableResumeAt(v *time.Time) *Automatio
 // ClearResumeAt clears the value of the "resume_at" field.
 func (x *AutomationRunScopedUpdate) ClearResumeAt() *AutomationRunScopedUpdate {
 	x.b.ClearResumeAt()
+	return x
+}
+
+// SetFailureKind sets the "failure_kind" field.
+func (x *AutomationRunScopedUpdate) SetFailureKind(v automationrun.FailureKind) *AutomationRunScopedUpdate {
+	x.b.SetFailureKind(v)
+	return x
+}
+
+// SetNillableFailureKind sets the "failure_kind" field if the given value is not nil.
+func (x *AutomationRunScopedUpdate) SetNillableFailureKind(v *automationrun.FailureKind) *AutomationRunScopedUpdate {
+	x.b.SetNillableFailureKind(v)
+	return x
+}
+
+// ClearFailureKind clears the value of the "failure_kind" field.
+func (x *AutomationRunScopedUpdate) ClearFailureKind() *AutomationRunScopedUpdate {
+	x.b.ClearFailureKind()
+	return x
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (x *AutomationRunScopedUpdate) SetFailureStatus(v int) *AutomationRunScopedUpdate {
+	x.b.SetFailureStatus(v)
+	return x
+}
+
+// SetNillableFailureStatus sets the "failure_status" field if the given value is not nil.
+func (x *AutomationRunScopedUpdate) SetNillableFailureStatus(v *int) *AutomationRunScopedUpdate {
+	x.b.SetNillableFailureStatus(v)
+	return x
+}
+
+// AddFailureStatus adds value to the "failure_status" field.
+func (x *AutomationRunScopedUpdate) AddFailureStatus(v int) *AutomationRunScopedUpdate {
+	x.b.AddFailureStatus(v)
+	return x
+}
+
+// ClearFailureStatus clears the value of the "failure_status" field.
+func (x *AutomationRunScopedUpdate) ClearFailureStatus() *AutomationRunScopedUpdate {
+	x.b.ClearFailureStatus()
+	return x
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (x *AutomationRunScopedUpdate) SetFailureExcerpt(v string) *AutomationRunScopedUpdate {
+	x.b.SetFailureExcerpt(v)
+	return x
+}
+
+// SetNillableFailureExcerpt sets the "failure_excerpt" field if the given value is not nil.
+func (x *AutomationRunScopedUpdate) SetNillableFailureExcerpt(v *string) *AutomationRunScopedUpdate {
+	x.b.SetNillableFailureExcerpt(v)
+	return x
+}
+
+// ClearFailureExcerpt clears the value of the "failure_excerpt" field.
+func (x *AutomationRunScopedUpdate) ClearFailureExcerpt() *AutomationRunScopedUpdate {
+	x.b.ClearFailureExcerpt()
 	return x
 }
 
@@ -21026,6 +21242,78 @@ func (x *WebhookEndpointScopedCreate) SetNillableEnabled(v *bool) *WebhookEndpoi
 	return x
 }
 
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (x *WebhookEndpointScopedCreate) SetConsecutiveFailures(v int) *WebhookEndpointScopedCreate {
+	x.b.SetConsecutiveFailures(v)
+	return x
+}
+
+// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableConsecutiveFailures(v *int) *WebhookEndpointScopedCreate {
+	x.b.SetNillableConsecutiveFailures(v)
+	return x
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (x *WebhookEndpointScopedCreate) SetFailingSince(v time.Time) *WebhookEndpointScopedCreate {
+	x.b.SetFailingSince(v)
+	return x
+}
+
+// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableFailingSince(v *time.Time) *WebhookEndpointScopedCreate {
+	x.b.SetNillableFailingSince(v)
+	return x
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (x *WebhookEndpointScopedCreate) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointScopedCreate {
+	x.b.SetLastErrorKind(v)
+	return x
+}
+
+// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointScopedCreate {
+	x.b.SetNillableLastErrorKind(v)
+	return x
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (x *WebhookEndpointScopedCreate) SetLastErrorStatus(v int) *WebhookEndpointScopedCreate {
+	x.b.SetLastErrorStatus(v)
+	return x
+}
+
+// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableLastErrorStatus(v *int) *WebhookEndpointScopedCreate {
+	x.b.SetNillableLastErrorStatus(v)
+	return x
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (x *WebhookEndpointScopedCreate) SetLastFailureAt(v time.Time) *WebhookEndpointScopedCreate {
+	x.b.SetLastFailureAt(v)
+	return x
+}
+
+// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointScopedCreate {
+	x.b.SetNillableLastFailureAt(v)
+	return x
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (x *WebhookEndpointScopedCreate) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedCreate {
+	x.b.SetDisabledReason(v)
+	return x
+}
+
+// SetNillableDisabledReason sets the "disabled_reason" field if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableDisabledReason(v *webhookendpoint.DisabledReason) *WebhookEndpointScopedCreate {
+	x.b.SetNillableDisabledReason(v)
+	return x
+}
+
 func (x *WebhookEndpointScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -21186,6 +21474,126 @@ func (u *WebhookEndpointScopedUpsert) SetEnabled(v bool) *WebhookEndpointScopedU
 // UpdateEnabled sets the "enabled" field to the value that was provided on create.
 func (u *WebhookEndpointScopedUpsert) UpdateEnabled() *WebhookEndpointScopedUpsert {
 	u.u.SetExcluded(webhookendpoint.FieldEnabled)
+	return u
+}
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (u *WebhookEndpointScopedUpsert) SetConsecutiveFailures(v int) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldConsecutiveFailures, v)
+	return u
+}
+
+// AddConsecutiveFailures adds v to the "consecutive_failures" field.
+func (u *WebhookEndpointScopedUpsert) AddConsecutiveFailures(v int) *WebhookEndpointScopedUpsert {
+	u.u.Add(webhookendpoint.FieldConsecutiveFailures, v)
+	return u
+}
+
+// UpdateConsecutiveFailures sets the "consecutive_failures" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateConsecutiveFailures() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldConsecutiveFailures)
+	return u
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (u *WebhookEndpointScopedUpsert) ClearConsecutiveFailures() *WebhookEndpointScopedUpsert {
+	u.u.SetNull(webhookendpoint.FieldConsecutiveFailures)
+	return u
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (u *WebhookEndpointScopedUpsert) SetFailingSince(v time.Time) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldFailingSince, v)
+	return u
+}
+
+// UpdateFailingSince sets the "failing_since" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateFailingSince() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldFailingSince)
+	return u
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (u *WebhookEndpointScopedUpsert) ClearFailingSince() *WebhookEndpointScopedUpsert {
+	u.u.SetNull(webhookendpoint.FieldFailingSince)
+	return u
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (u *WebhookEndpointScopedUpsert) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldLastErrorKind, v)
+	return u
+}
+
+// UpdateLastErrorKind sets the "last_error_kind" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateLastErrorKind() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldLastErrorKind)
+	return u
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (u *WebhookEndpointScopedUpsert) ClearLastErrorKind() *WebhookEndpointScopedUpsert {
+	u.u.SetNull(webhookendpoint.FieldLastErrorKind)
+	return u
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (u *WebhookEndpointScopedUpsert) SetLastErrorStatus(v int) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldLastErrorStatus, v)
+	return u
+}
+
+// AddLastErrorStatus adds v to the "last_error_status" field.
+func (u *WebhookEndpointScopedUpsert) AddLastErrorStatus(v int) *WebhookEndpointScopedUpsert {
+	u.u.Add(webhookendpoint.FieldLastErrorStatus, v)
+	return u
+}
+
+// UpdateLastErrorStatus sets the "last_error_status" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateLastErrorStatus() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldLastErrorStatus)
+	return u
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (u *WebhookEndpointScopedUpsert) ClearLastErrorStatus() *WebhookEndpointScopedUpsert {
+	u.u.SetNull(webhookendpoint.FieldLastErrorStatus)
+	return u
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (u *WebhookEndpointScopedUpsert) SetLastFailureAt(v time.Time) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldLastFailureAt, v)
+	return u
+}
+
+// UpdateLastFailureAt sets the "last_failure_at" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateLastFailureAt() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldLastFailureAt)
+	return u
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (u *WebhookEndpointScopedUpsert) ClearLastFailureAt() *WebhookEndpointScopedUpsert {
+	u.u.SetNull(webhookendpoint.FieldLastFailureAt)
+	return u
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (u *WebhookEndpointScopedUpsert) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedUpsert {
+	u.u.Set(webhookendpoint.FieldDisabledReason, v)
+	return u
+}
+
+// UpdateDisabledReason sets the "disabled_reason" field to the value that was provided on create.
+func (u *WebhookEndpointScopedUpsert) UpdateDisabledReason() *WebhookEndpointScopedUpsert {
+	u.u.SetExcluded(webhookendpoint.FieldDisabledReason)
+	return u
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (u *WebhookEndpointScopedUpsert) ClearDisabledReason() *WebhookEndpointScopedUpsert {
+	u.u.SetNull(webhookendpoint.FieldDisabledReason)
 	return u
 }
 
@@ -21416,6 +21824,126 @@ func (x *WebhookEndpointScopedUpdateOne) SetNillableEnabled(v *bool) *WebhookEnd
 	return x
 }
 
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (x *WebhookEndpointScopedUpdateOne) SetConsecutiveFailures(v int) *WebhookEndpointScopedUpdateOne {
+	x.b.SetConsecutiveFailures(v)
+	return x
+}
+
+// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableConsecutiveFailures(v *int) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableConsecutiveFailures(v)
+	return x
+}
+
+// AddConsecutiveFailures adds value to the "consecutive_failures" field.
+func (x *WebhookEndpointScopedUpdateOne) AddConsecutiveFailures(v int) *WebhookEndpointScopedUpdateOne {
+	x.b.AddConsecutiveFailures(v)
+	return x
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (x *WebhookEndpointScopedUpdateOne) ClearConsecutiveFailures() *WebhookEndpointScopedUpdateOne {
+	x.b.ClearConsecutiveFailures()
+	return x
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (x *WebhookEndpointScopedUpdateOne) SetFailingSince(v time.Time) *WebhookEndpointScopedUpdateOne {
+	x.b.SetFailingSince(v)
+	return x
+}
+
+// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableFailingSince(v *time.Time) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableFailingSince(v)
+	return x
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (x *WebhookEndpointScopedUpdateOne) ClearFailingSince() *WebhookEndpointScopedUpdateOne {
+	x.b.ClearFailingSince()
+	return x
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (x *WebhookEndpointScopedUpdateOne) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpdateOne {
+	x.b.SetLastErrorKind(v)
+	return x
+}
+
+// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableLastErrorKind(v)
+	return x
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (x *WebhookEndpointScopedUpdateOne) ClearLastErrorKind() *WebhookEndpointScopedUpdateOne {
+	x.b.ClearLastErrorKind()
+	return x
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (x *WebhookEndpointScopedUpdateOne) SetLastErrorStatus(v int) *WebhookEndpointScopedUpdateOne {
+	x.b.SetLastErrorStatus(v)
+	return x
+}
+
+// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableLastErrorStatus(v *int) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableLastErrorStatus(v)
+	return x
+}
+
+// AddLastErrorStatus adds value to the "last_error_status" field.
+func (x *WebhookEndpointScopedUpdateOne) AddLastErrorStatus(v int) *WebhookEndpointScopedUpdateOne {
+	x.b.AddLastErrorStatus(v)
+	return x
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (x *WebhookEndpointScopedUpdateOne) ClearLastErrorStatus() *WebhookEndpointScopedUpdateOne {
+	x.b.ClearLastErrorStatus()
+	return x
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (x *WebhookEndpointScopedUpdateOne) SetLastFailureAt(v time.Time) *WebhookEndpointScopedUpdateOne {
+	x.b.SetLastFailureAt(v)
+	return x
+}
+
+// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableLastFailureAt(v)
+	return x
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (x *WebhookEndpointScopedUpdateOne) ClearLastFailureAt() *WebhookEndpointScopedUpdateOne {
+	x.b.ClearLastFailureAt()
+	return x
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (x *WebhookEndpointScopedUpdateOne) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdateOne {
+	x.b.SetDisabledReason(v)
+	return x
+}
+
+// SetNillableDisabledReason sets the "disabled_reason" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableDisabledReason(v *webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdateOne {
+	x.b.SetNillableDisabledReason(v)
+	return x
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (x *WebhookEndpointScopedUpdateOne) ClearDisabledReason() *WebhookEndpointScopedUpdateOne {
+	x.b.ClearDisabledReason()
+	return x
+}
+
 func (x *WebhookEndpointScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -21545,6 +22073,126 @@ func (x *WebhookEndpointScopedUpdate) SetEnabled(v bool) *WebhookEndpointScopedU
 // SetNillableEnabled sets the "enabled" field if the given value is not nil.
 func (x *WebhookEndpointScopedUpdate) SetNillableEnabled(v *bool) *WebhookEndpointScopedUpdate {
 	x.b.SetNillableEnabled(v)
+	return x
+}
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (x *WebhookEndpointScopedUpdate) SetConsecutiveFailures(v int) *WebhookEndpointScopedUpdate {
+	x.b.SetConsecutiveFailures(v)
+	return x
+}
+
+// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableConsecutiveFailures(v *int) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableConsecutiveFailures(v)
+	return x
+}
+
+// AddConsecutiveFailures adds value to the "consecutive_failures" field.
+func (x *WebhookEndpointScopedUpdate) AddConsecutiveFailures(v int) *WebhookEndpointScopedUpdate {
+	x.b.AddConsecutiveFailures(v)
+	return x
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (x *WebhookEndpointScopedUpdate) ClearConsecutiveFailures() *WebhookEndpointScopedUpdate {
+	x.b.ClearConsecutiveFailures()
+	return x
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (x *WebhookEndpointScopedUpdate) SetFailingSince(v time.Time) *WebhookEndpointScopedUpdate {
+	x.b.SetFailingSince(v)
+	return x
+}
+
+// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableFailingSince(v *time.Time) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableFailingSince(v)
+	return x
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (x *WebhookEndpointScopedUpdate) ClearFailingSince() *WebhookEndpointScopedUpdate {
+	x.b.ClearFailingSince()
+	return x
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (x *WebhookEndpointScopedUpdate) SetLastErrorKind(v webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpdate {
+	x.b.SetLastErrorKind(v)
+	return x
+}
+
+// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableLastErrorKind(v *webhookendpoint.LastErrorKind) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableLastErrorKind(v)
+	return x
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (x *WebhookEndpointScopedUpdate) ClearLastErrorKind() *WebhookEndpointScopedUpdate {
+	x.b.ClearLastErrorKind()
+	return x
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (x *WebhookEndpointScopedUpdate) SetLastErrorStatus(v int) *WebhookEndpointScopedUpdate {
+	x.b.SetLastErrorStatus(v)
+	return x
+}
+
+// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableLastErrorStatus(v *int) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableLastErrorStatus(v)
+	return x
+}
+
+// AddLastErrorStatus adds value to the "last_error_status" field.
+func (x *WebhookEndpointScopedUpdate) AddLastErrorStatus(v int) *WebhookEndpointScopedUpdate {
+	x.b.AddLastErrorStatus(v)
+	return x
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (x *WebhookEndpointScopedUpdate) ClearLastErrorStatus() *WebhookEndpointScopedUpdate {
+	x.b.ClearLastErrorStatus()
+	return x
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (x *WebhookEndpointScopedUpdate) SetLastFailureAt(v time.Time) *WebhookEndpointScopedUpdate {
+	x.b.SetLastFailureAt(v)
+	return x
+}
+
+// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableLastFailureAt(v)
+	return x
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (x *WebhookEndpointScopedUpdate) ClearLastFailureAt() *WebhookEndpointScopedUpdate {
+	x.b.ClearLastFailureAt()
+	return x
+}
+
+// SetDisabledReason sets the "disabled_reason" field.
+func (x *WebhookEndpointScopedUpdate) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdate {
+	x.b.SetDisabledReason(v)
+	return x
+}
+
+// SetNillableDisabledReason sets the "disabled_reason" field if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableDisabledReason(v *webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdate {
+	x.b.SetNillableDisabledReason(v)
+	return x
+}
+
+// ClearDisabledReason clears the value of the "disabled_reason" field.
+func (x *WebhookEndpointScopedUpdate) ClearDisabledReason() *WebhookEndpointScopedUpdate {
+	x.b.ClearDisabledReason()
 	return x
 }
 

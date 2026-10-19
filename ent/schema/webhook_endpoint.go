@@ -45,6 +45,33 @@ func (WebhookEndpoint) Fields() []ent.Field {
 			Optional(),
 		field.Bool("enabled").
 			Default(true),
+		// Failure state (ADR 0039), written by the delivery worker with no actor so it
+		// is not audited. All nil while the endpoint is healthy; a 2xx clears them.
+		// Failed deliveries in a row.
+		field.Int("consecutive_failures").
+			Optional().
+			Nillable(),
+		// When the current run of failures began.
+		field.Time("failing_since").
+			Optional().
+			Nillable(),
+		// Closed kind of the latest failure; http_status carries last_error_status.
+		field.Enum("last_error_kind").
+			Values("timeout", "blocked_address", "http_status", "network").
+			Optional().
+			Nillable(),
+		field.Int("last_error_status").
+			Optional().
+			Nillable(),
+		field.Time("last_failure_at").
+			Optional().
+			Nillable(),
+		// Why the endpoint turned itself off (ADR 0039): the receiver answered 410, or
+		// failed for longer than the window. Nil for an endpoint an owner disabled.
+		field.Enum("disabled_reason").
+			Values("gone", "persistent_failure").
+			Optional().
+			Nillable(),
 	}
 }
 

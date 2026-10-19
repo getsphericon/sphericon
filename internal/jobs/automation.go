@@ -112,20 +112,28 @@ func (w *RunStepWorker) Work(ctx context.Context, job *river.Job[RunStepArgs]) e
 	if res.Done {
 		return nil
 	}
+	rc := river.ClientFromContext[pgx.Tx](ctx)
+	if res.Enqueue != nil {
+		// The Enrollment is parked: the job inserted here moves it on (or fails it).
+		_, err = rc.Insert(ctx, res.Enqueue, nil)
+		return err
+	}
 	opts := &river.InsertOpts{}
 	if res.ResumeAt != nil {
 		opts.ScheduledAt = *res.ResumeAt
 	}
-	_, err = river.ClientFromContext[pgx.Tx](ctx).Insert(ctx, RunStepArgs{RunID: job.Args.RunID}, opts)
+	_, err = rc.Insert(ctx, RunStepArgs{RunID: job.Args.RunID}, opts)
 	return err
 }
 
 // StepResult tells the worker how to schedule the next step. Done = the run is
 // finished. ResumeAt set = schedule the next step then (a wait); nil = run the
-// next step immediately.
+// next step immediately. Enqueue set = the Enrollment is parked on that job (an HTTP step,
+// which runs on a queue of its own): it moves the run on, so no next step is scheduled.
 type StepResult struct {
 	Done     bool
 	ResumeAt *time.Time
+	Enqueue  river.JobArgs
 }
 
 // RunStep executes the run's current step and advances it. Exported and queue-free
@@ -188,6 +196,10 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 			return StepResult{}, err
 		}
 		return StepResult{}, nil // continue immediately
+
+	case automations.StepHTTP:
+		// The call runs on its own queue (ADR 0039); this job's work ends here.
+		return StepResult{Enqueue: RunHTTPStepArgs{RunID: run.ID, Step: run.CurrentStep}}, nil
 
 	case automations.StepEmail:
 		c, err := scoped.Contact().Get(ctx, run.ContactID)

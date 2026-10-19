@@ -392,8 +392,8 @@ func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 	assert.Subset(t, got.Scopes, []string{
 		"contacts:read", "contacts:write", "events:read", "events:write",
 		"segments:read", "segments:write", "broadcasts:read", "broadcasts:write",
-		"automations:read", "automations:write", "templates:read", "templates:write",
-		"webhooks:read", "webhooks:write", "custom_fields:read", "sending_domains:read", "integrations:read",
+		"automations:read", "automations:write", "enrollments:read", "templates:read", "templates:write",
+		"webhooks:read", "webhooks:write", "webhooks:regenerate", "webhooks:test", "custom_fields:read", "sending_domains:read", "integrations:read",
 	})
 	assert.Empty(t, got.SendScopes)
 	assert.NotContains(t, got.Scopes, "tokens:write", "a connector never mints credentials")

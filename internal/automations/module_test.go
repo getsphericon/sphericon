@@ -14,7 +14,7 @@ import (
 
 func TestModuleIsConfinedToTheScopedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New()
+	m := automations.New(env.Cipher)
 	ctx := context.Background()
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
 

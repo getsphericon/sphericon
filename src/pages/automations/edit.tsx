@@ -6,6 +6,7 @@ import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { siteAutomationsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$slug/automations/$automationId/edit.tsx'
 import { AutomationBuilder } from './AutomationBuilder.tsx'
+import { FailedEnrollments } from './FailedEnrollments.tsx'
 
 export function AutomationEditPage() {
   const { t } = useTranslation()
@@ -31,6 +32,7 @@ export function AutomationEditPage() {
     <Stack>
       <Title order={4}>{t(($) => $.automations.editTitle)}</Title>
       <AutomationBuilder slug={slug} automation={getQuery.data} />
+      <FailedEnrollments slug={slug} automationId={automationId} />
     </Stack>
   )
 }
