@@ -138,6 +138,17 @@ export default interface Resources {
       "emailNodeDescription": "Send an email to the contact.",
       "emailSubjectLabel": "Subject",
       "emptyState": "Create your first automation.",
+      "failedEnrollmentContact": "Contact",
+      "failedEnrollmentReason": "Reason",
+      "failedEnrollmentResponse": "Response",
+      "failedEnrollmentsTitle": "Failed enrollments",
+      "failureKind": {
+        "blocked_address": "The address is not allowed",
+        "http_status": "The receiver answered {{status}}",
+        "invalid_body": "The body is not valid JSON",
+        "network": "The receiver could not be reached",
+        "timeout": "The receiver did not answer in time"
+      },
       "httpBodyHint": "JSON. Merge tags like {{first_name}} are escaped for you, so write them inside quotes.",
       "httpBodyLabel": "JSON body",
       "httpHeadersHint": "One per line: Name: value. Leave a saved header's value empty to keep it.",

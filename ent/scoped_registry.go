@@ -274,6 +274,15 @@ func ScopedEntities() []ScopedEntity {
 				if src.ResumeAt != nil {
 					b.SetResumeAt(*src.ResumeAt)
 				}
+				if src.FailureKind != nil {
+					b.SetFailureKind(*src.FailureKind)
+				}
+				if src.FailureStatus != nil {
+					b.SetFailureStatus(*src.FailureStatus)
+				}
+				if src.FailureExcerpt != nil {
+					b.SetFailureExcerpt(*src.FailureExcerpt)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

@@ -145,6 +145,14 @@ type SiteCustomFieldsListRes interface {
 	siteCustomFieldsListRes()
 }
 
+type SiteEnrollmentsGetRes interface {
+	siteEnrollmentsGetRes()
+}
+
+type SiteEnrollmentsListRes interface {
+	siteEnrollmentsListRes()
+}
+
 type SiteEventsActionsRes interface {
 	siteEventsActionsRes()
 }

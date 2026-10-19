@@ -20,6 +20,7 @@ var grantableScopes = []string{
 	"broadcasts:write",
 	"automations:read",
 	"automations:write",
+	"enrollments:read",
 	"templates:read",
 	"templates:write",
 	"webhooks:read",

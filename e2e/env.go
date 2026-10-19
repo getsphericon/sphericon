@@ -15,6 +15,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/accounts"
@@ -28,6 +29,7 @@ type Env struct {
 	// BaseURL is the application's public URL (the base of every link in an email).
 	BaseURL string
 	mailpit *Mailpit
+	hooks   *Hooks
 
 	accounts *accounts.Accounts
 	bus      *events.Bus
@@ -40,6 +42,19 @@ func Boot() (*Env, func(), error) {
 	ctx := context.Background()
 	mp, stopMailpit, err := StartMailpit(ctx)
 	if err != nil {
+		return nil, nil, err
+	}
+
+	// The third-party receiver is up before the application is built: its address is the
+	// Instance's outbound allowlist, which the configuration reads once (ADR 0039).
+	hooks, stopHooks, err := StartHooks(ctx)
+	if err != nil {
+		stopMailpit()
+		return nil, nil, err
+	}
+	stopMailpit = stopBoth(stopMailpit, stopHooks)
+	if err := os.Setenv("SPHERICON_OUTBOUND_ALLOW", hooks.Addr()); err != nil {
+		stopMailpit()
 		return nil, nil, err
 	}
 
@@ -84,7 +99,16 @@ func Boot() (*Env, func(), error) {
 	return &Env{
 		BaseURL:  a.Config.AppURL,
 		mailpit:  mp,
+		hooks:    hooks,
 		accounts: acc,
 		bus:      bus,
 	}, stop, nil
+}
+
+// stopBoth is one stop function for two.
+func stopBoth(first, second func()) func() {
+	return func() {
+		second()
+		first()
+	}
 }

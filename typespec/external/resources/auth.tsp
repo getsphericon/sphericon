@@ -14,6 +14,7 @@ enum ApiTokenScope {
   broadcastsWrite: "broadcasts:write",
   automationsRead: "automations:read",
   automationsWrite: "automations:write",
+  enrollmentsRead: "enrollments:read",
   templatesRead: "templates:read",
   templatesWrite: "templates:write",
   webhooksRead: "webhooks:read",

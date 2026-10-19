@@ -31,6 +31,12 @@ const (
 	FieldCurrentStep = "current_step"
 	// FieldResumeAt holds the string denoting the resume_at field in the database.
 	FieldResumeAt = "resume_at"
+	// FieldFailureKind holds the string denoting the failure_kind field in the database.
+	FieldFailureKind = "failure_kind"
+	// FieldFailureStatus holds the string denoting the failure_status field in the database.
+	FieldFailureStatus = "failure_status"
+	// FieldFailureExcerpt holds the string denoting the failure_excerpt field in the database.
+	FieldFailureExcerpt = "failure_excerpt"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeAutomation holds the string denoting the automation edge name in mutations.
@@ -64,6 +70,9 @@ var Columns = []string{
 	FieldStatus,
 	FieldCurrentStep,
 	FieldResumeAt,
+	FieldFailureKind,
+	FieldFailureStatus,
+	FieldFailureExcerpt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -117,6 +126,32 @@ func StatusValidator(s Status) error {
 	}
 }
 
+// FailureKind defines the type for the "failure_kind" enum field.
+type FailureKind string
+
+// FailureKind values.
+const (
+	FailureKindInvalidBody    FailureKind = "invalid_body"
+	FailureKindTimeout        FailureKind = "timeout"
+	FailureKindBlockedAddress FailureKind = "blocked_address"
+	FailureKindHTTPStatus     FailureKind = "http_status"
+	FailureKindNetwork        FailureKind = "network"
+)
+
+func (fk FailureKind) String() string {
+	return string(fk)
+}
+
+// FailureKindValidator is a validator for the "failure_kind" field enum values. It is called by the builders before save.
+func FailureKindValidator(fk FailureKind) error {
+	switch fk {
+	case FailureKindInvalidBody, FailureKindTimeout, FailureKindBlockedAddress, FailureKindHTTPStatus, FailureKindNetwork:
+		return nil
+	default:
+		return fmt.Errorf("automationrun: invalid enum value for failure_kind field: %q", fk)
+	}
+}
+
 // OrderOption defines the ordering options for the AutomationRun queries.
 type OrderOption func(*sql.Selector)
 
@@ -163,6 +198,21 @@ func ByCurrentStep(opts ...sql.OrderTermOption) OrderOption {
 // ByResumeAt orders the results by the resume_at field.
 func ByResumeAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldResumeAt, opts...).ToFunc()
+}
+
+// ByFailureKind orders the results by the failure_kind field.
+func ByFailureKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailureKind, opts...).ToFunc()
+}
+
+// ByFailureStatus orders the results by the failure_status field.
+func ByFailureStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailureStatus, opts...).ToFunc()
+}
+
+// ByFailureExcerpt orders the results by the failure_excerpt field.
+func ByFailureExcerpt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailureExcerpt, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

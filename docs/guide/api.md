@@ -23,6 +23,7 @@ integration only what it needs, for example:
 - `segments:read`, `segments:write`
 - `broadcasts:write`, and the separate `broadcasts:send` to actually send
 - `automations:write`, and `automations:activate` to turn one on
+- `enrollments:read` to read where each Contact is in an automation, and why a failed one failed
 - `emails:send` for transactional mail
 - `webhooks:read`, `webhooks:write`, and the separate `webhooks:regenerate` (replace an endpoint's signing secret) and `webhooks:test` (send it a sample event)
 - `integrations:read`, `integrations:write` for sending providers (credentials are write-only: no response ever contains a password or secret key)
@@ -41,6 +42,7 @@ Sending, activating and erasing have their own scopes, so a token that can edit 
 | Templates           | `/templates`                                                         |
 | Broadcasts          | `/broadcasts`, `…/audience`, `…/schedule`, `…/test-send`, `…/report` |
 | Automations         | `/automations`, `…/activate`, `…/deactivate`                         |
+| Enrollments         | `/automations/{id}/enrollments`                                      |
 | Transactional       | `/emails`                                                            |
 | Consent             | `/unsubscribes`, `/suppressions`                                     |
 | Sending domains     | `/sending-domains`, `/sending-domains/rates`                         |

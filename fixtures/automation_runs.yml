@@ -167,6 +167,22 @@
     updated_at: '{{daysAgo 1}}',
   }
 
+# Notify Slack on signup (105, an HTTP step): the receiver kept answering 503, so the
+# Enrollment failed with the closed error kind, the status and the start of the answer.
+- {
+    id: 1101, # fixture: AutomationRunHTTPFailed
+    automation_id: 105,
+    contact_id: 107,
+    workspace_id: 1,
+    status: failed,
+    current_step: 0,
+    failure_kind: http_status,
+    failure_status: 503,
+    failure_excerpt: 'upstream unavailable, try again later',
+    created_at: '{{daysAgo 4}}',
+    updated_at: '{{daysAgo 1}}',
+  }
+
 # Globex (workspace 2): Pat enrolled in the Globex automation.
 - {
     id: 900,

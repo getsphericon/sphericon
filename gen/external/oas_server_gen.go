@@ -217,6 +217,18 @@ type Handler interface {
 	//
 	// POST /emails
 	EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (EmailsSendRes, error)
+	// EnrollmentsGet implements Enrollments_get operation.
+	//
+	// Get one Enrollment of an Automation. Needs the enrollments:read scope.
+	//
+	// GET /automations/{automationId}/enrollments/{enrollmentId}
+	EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (EnrollmentsGetRes, error)
+	// EnrollmentsList implements Enrollments_list operation.
+	//
+	// List an Automation's Enrollments, newest first. Needs the enrollments:read scope.
+	//
+	// GET /automations/{automationId}/enrollments
+	EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (EnrollmentsListRes, error)
 	// EventActionsList implements EventActions_list operation.
 	//
 	// List unique event actions.

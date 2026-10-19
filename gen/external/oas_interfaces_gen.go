@@ -137,6 +137,14 @@ type EmailsSendRes interface {
 	emailsSendRes()
 }
 
+type EnrollmentsGetRes interface {
+	enrollmentsGetRes()
+}
+
+type EnrollmentsListRes interface {
+	enrollmentsListRes()
+}
+
 type EventActionsListRes interface {
 	eventActionsListRes()
 }

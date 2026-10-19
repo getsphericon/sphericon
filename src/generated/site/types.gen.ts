@@ -1489,6 +1489,99 @@ export type SiteEmailTemplateResource = {
 };
 
 /**
+ * What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
+ */
+export type SiteEnrollmentFailure = {
+  /**
+   * The closed error kind
+   */
+  kind: SiteEnrollmentFailureKind;
+  /**
+   * HTTP status the receiver answered; present only for kind `http_status`
+   */
+  status?: number;
+  /**
+   * The first 1 KiB of the receiver's answer, when it sent one
+   */
+  excerpt?: string;
+};
+
+/**
+ * Why an Enrollment failed. A closed set: `invalid_body`, `timeout`, `blocked_address`,
+ * `http_status` (see `status`) and `network`.
+ */
+export const SiteEnrollmentFailureKind = {
+  INVALID_BODY: 'invalid_body',
+  TIMEOUT: 'timeout',
+  BLOCKED_ADDRESS: 'blocked_address',
+  HTTP_STATUS: 'http_status',
+  NETWORK: 'network'
+} as const;
+
+/**
+ * Why an Enrollment failed. A closed set: `invalid_body`, `timeout`, `blocked_address`,
+ * `http_status` (see `status`) and `network`.
+ */
+export type SiteEnrollmentFailureKind = typeof SiteEnrollmentFailureKind[keyof typeof SiteEnrollmentFailureKind];
+
+/**
+ * One Contact's progress through an Automation
+ */
+export type SiteEnrollmentResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The Automation the Contact was enrolled in
+   */
+  automationId: EntityId;
+  /**
+   * The enrolled Contact
+   */
+  contactId: EntityId;
+  /**
+   * Where the Enrollment is
+   */
+  status: SiteEnrollmentStatus;
+  /**
+   * Index of the next step to run (0-based)
+   */
+  currentStep: number;
+  /**
+   * When a waiting Enrollment runs its next step
+   */
+  resumeAt?: Timestamp;
+  /**
+   * Present on a failed Enrollment whose failure an HTTP step recorded
+   */
+  failure?: SiteEnrollmentFailure;
+  /**
+   * When the Contact was enrolled
+   */
+  createdAt: Timestamp;
+  /**
+   * Last update timestamp
+   */
+  updatedAt: Timestamp;
+};
+
+/**
+ * Where a Contact is in an Automation
+ */
+export const SiteEnrollmentStatus = {
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+  EXITED: 'exited'
+} as const;
+
+/**
+ * Where a Contact is in an Automation
+ */
+export type SiteEnrollmentStatus = typeof SiteEnrollmentStatus[keyof typeof SiteEnrollmentStatus];
+
+/**
  * Distinct event actions seen in a workspace (for segment/filter pickers)
  */
 export type SiteEventActionsResult = {
@@ -4435,6 +4528,105 @@ export type SiteAutomationsDryRunHttpStepResponses = {
 };
 
 export type SiteAutomationsDryRunHttpStepResponse = SiteAutomationsDryRunHttpStepResponses[keyof SiteAutomationsDryRunHttpStepResponses];
+
+export type SiteEnrollmentsListData = {
+  body?: never;
+  path: {
+    slug: string;
+    automationId: EntityId;
+  };
+  query?: {
+    /**
+     * Page number (1-based)
+     */
+    page?: number;
+    /**
+     * Page size
+     */
+    pageSize?: number;
+    /**
+     * Only Enrollments in this status
+     */
+    status?: SiteEnrollmentStatus;
+  };
+  url: '/workspaces/{slug}/automations/{automationId}/enrollments';
+};
+
+export type SiteEnrollmentsListErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteEnrollmentsListError = SiteEnrollmentsListErrors[keyof SiteEnrollmentsListErrors];
+
+export type SiteEnrollmentsListResponses = {
+  /**
+   * Paginated response
+   */
+  200: {
+    /**
+     * List of items
+     */
+    items: Array<SiteEnrollmentResource>;
+    /**
+     * Page number (1-based)
+     */
+    page: number;
+    /**
+     * Page size
+     */
+    pageSize: number;
+    /**
+     * Total number of elements
+     */
+    totalItems: number;
+    /**
+     * Total number of pages
+     */
+    totalPages: number;
+  };
+};
+
+export type SiteEnrollmentsListResponse = SiteEnrollmentsListResponses[keyof SiteEnrollmentsListResponses];
+
+export type SiteEnrollmentsGetData = {
+  body?: never;
+  path: {
+    slug: string;
+    automationId: EntityId;
+    enrollmentId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}';
+};
+
+export type SiteEnrollmentsGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteEnrollmentsGetError = SiteEnrollmentsGetErrors[keyof SiteEnrollmentsGetErrors];
+
+export type SiteEnrollmentsGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteEnrollmentResource;
+};
+
+export type SiteEnrollmentsGetResponse = SiteEnrollmentsGetResponses[keyof SiteEnrollmentsGetResponses];
 
 export type SiteAutomationsDeleteData = {
   body?: never;

@@ -3854,6 +3854,10 @@ type AutomationRunMutation struct {
 	current_step      *int
 	addcurrent_step   *int
 	resume_at         *time.Time
+	failure_kind      *automationrun.FailureKind
+	failure_status    *int
+	addfailure_status *int
+	failure_excerpt   *string
 	clearedFields     map[string]struct{}
 	workspace         *int64
 	clearedworkspace  bool
@@ -4309,6 +4313,174 @@ func (m *AutomationRunMutation) ResetResumeAt() {
 	delete(m.clearedFields, automationrun.FieldResumeAt)
 }
 
+// SetFailureKind sets the "failure_kind" field.
+func (m *AutomationRunMutation) SetFailureKind(ak automationrun.FailureKind) {
+	m.failure_kind = &ak
+}
+
+// FailureKind returns the value of the "failure_kind" field in the mutation.
+func (m *AutomationRunMutation) FailureKind() (r automationrun.FailureKind, exists bool) {
+	v := m.failure_kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailureKind returns the old "failure_kind" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldFailureKind(ctx context.Context) (v *automationrun.FailureKind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailureKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailureKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailureKind: %w", err)
+	}
+	return oldValue.FailureKind, nil
+}
+
+// ClearFailureKind clears the value of the "failure_kind" field.
+func (m *AutomationRunMutation) ClearFailureKind() {
+	m.failure_kind = nil
+	m.clearedFields[automationrun.FieldFailureKind] = struct{}{}
+}
+
+// FailureKindCleared returns if the "failure_kind" field was cleared in this mutation.
+func (m *AutomationRunMutation) FailureKindCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldFailureKind]
+	return ok
+}
+
+// ResetFailureKind resets all changes to the "failure_kind" field.
+func (m *AutomationRunMutation) ResetFailureKind() {
+	m.failure_kind = nil
+	delete(m.clearedFields, automationrun.FieldFailureKind)
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (m *AutomationRunMutation) SetFailureStatus(i int) {
+	m.failure_status = &i
+	m.addfailure_status = nil
+}
+
+// FailureStatus returns the value of the "failure_status" field in the mutation.
+func (m *AutomationRunMutation) FailureStatus() (r int, exists bool) {
+	v := m.failure_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailureStatus returns the old "failure_status" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldFailureStatus(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailureStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailureStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailureStatus: %w", err)
+	}
+	return oldValue.FailureStatus, nil
+}
+
+// AddFailureStatus adds i to the "failure_status" field.
+func (m *AutomationRunMutation) AddFailureStatus(i int) {
+	if m.addfailure_status != nil {
+		*m.addfailure_status += i
+	} else {
+		m.addfailure_status = &i
+	}
+}
+
+// AddedFailureStatus returns the value that was added to the "failure_status" field in this mutation.
+func (m *AutomationRunMutation) AddedFailureStatus() (r int, exists bool) {
+	v := m.addfailure_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearFailureStatus clears the value of the "failure_status" field.
+func (m *AutomationRunMutation) ClearFailureStatus() {
+	m.failure_status = nil
+	m.addfailure_status = nil
+	m.clearedFields[automationrun.FieldFailureStatus] = struct{}{}
+}
+
+// FailureStatusCleared returns if the "failure_status" field was cleared in this mutation.
+func (m *AutomationRunMutation) FailureStatusCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldFailureStatus]
+	return ok
+}
+
+// ResetFailureStatus resets all changes to the "failure_status" field.
+func (m *AutomationRunMutation) ResetFailureStatus() {
+	m.failure_status = nil
+	m.addfailure_status = nil
+	delete(m.clearedFields, automationrun.FieldFailureStatus)
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (m *AutomationRunMutation) SetFailureExcerpt(s string) {
+	m.failure_excerpt = &s
+}
+
+// FailureExcerpt returns the value of the "failure_excerpt" field in the mutation.
+func (m *AutomationRunMutation) FailureExcerpt() (r string, exists bool) {
+	v := m.failure_excerpt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailureExcerpt returns the old "failure_excerpt" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldFailureExcerpt(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailureExcerpt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailureExcerpt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailureExcerpt: %w", err)
+	}
+	return oldValue.FailureExcerpt, nil
+}
+
+// ClearFailureExcerpt clears the value of the "failure_excerpt" field.
+func (m *AutomationRunMutation) ClearFailureExcerpt() {
+	m.failure_excerpt = nil
+	m.clearedFields[automationrun.FieldFailureExcerpt] = struct{}{}
+}
+
+// FailureExcerptCleared returns if the "failure_excerpt" field was cleared in this mutation.
+func (m *AutomationRunMutation) FailureExcerptCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldFailureExcerpt]
+	return ok
+}
+
+// ResetFailureExcerpt resets all changes to the "failure_excerpt" field.
+func (m *AutomationRunMutation) ResetFailureExcerpt() {
+	m.failure_excerpt = nil
+	delete(m.clearedFields, automationrun.FieldFailureExcerpt)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *AutomationRunMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -4397,7 +4569,7 @@ func (m *AutomationRunMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationRunMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, automationrun.FieldCreatedAt)
 	}
@@ -4421,6 +4593,15 @@ func (m *AutomationRunMutation) Fields() []string {
 	}
 	if m.resume_at != nil {
 		fields = append(fields, automationrun.FieldResumeAt)
+	}
+	if m.failure_kind != nil {
+		fields = append(fields, automationrun.FieldFailureKind)
+	}
+	if m.failure_status != nil {
+		fields = append(fields, automationrun.FieldFailureStatus)
+	}
+	if m.failure_excerpt != nil {
+		fields = append(fields, automationrun.FieldFailureExcerpt)
 	}
 	return fields
 }
@@ -4446,6 +4627,12 @@ func (m *AutomationRunMutation) Field(name string) (ent.Value, bool) {
 		return m.CurrentStep()
 	case automationrun.FieldResumeAt:
 		return m.ResumeAt()
+	case automationrun.FieldFailureKind:
+		return m.FailureKind()
+	case automationrun.FieldFailureStatus:
+		return m.FailureStatus()
+	case automationrun.FieldFailureExcerpt:
+		return m.FailureExcerpt()
 	}
 	return nil, false
 }
@@ -4471,6 +4658,12 @@ func (m *AutomationRunMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldCurrentStep(ctx)
 	case automationrun.FieldResumeAt:
 		return m.OldResumeAt(ctx)
+	case automationrun.FieldFailureKind:
+		return m.OldFailureKind(ctx)
+	case automationrun.FieldFailureStatus:
+		return m.OldFailureStatus(ctx)
+	case automationrun.FieldFailureExcerpt:
+		return m.OldFailureExcerpt(ctx)
 	}
 	return nil, fmt.Errorf("unknown AutomationRun field %s", name)
 }
@@ -4536,6 +4729,27 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetResumeAt(v)
 		return nil
+	case automationrun.FieldFailureKind:
+		v, ok := value.(automationrun.FailureKind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailureKind(v)
+		return nil
+	case automationrun.FieldFailureStatus:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailureStatus(v)
+		return nil
+	case automationrun.FieldFailureExcerpt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailureExcerpt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationRun field %s", name)
 }
@@ -4550,6 +4764,9 @@ func (m *AutomationRunMutation) AddedFields() []string {
 	if m.addcurrent_step != nil {
 		fields = append(fields, automationrun.FieldCurrentStep)
 	}
+	if m.addfailure_status != nil {
+		fields = append(fields, automationrun.FieldFailureStatus)
+	}
 	return fields
 }
 
@@ -4562,6 +4779,8 @@ func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedContactID()
 	case automationrun.FieldCurrentStep:
 		return m.AddedCurrentStep()
+	case automationrun.FieldFailureStatus:
+		return m.AddedFailureStatus()
 	}
 	return nil, false
 }
@@ -4585,6 +4804,13 @@ func (m *AutomationRunMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddCurrentStep(v)
 		return nil
+	case automationrun.FieldFailureStatus:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailureStatus(v)
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationRun numeric field %s", name)
 }
@@ -4595,6 +4821,15 @@ func (m *AutomationRunMutation) ClearedFields() []string {
 	var fields []string
 	if m.FieldCleared(automationrun.FieldResumeAt) {
 		fields = append(fields, automationrun.FieldResumeAt)
+	}
+	if m.FieldCleared(automationrun.FieldFailureKind) {
+		fields = append(fields, automationrun.FieldFailureKind)
+	}
+	if m.FieldCleared(automationrun.FieldFailureStatus) {
+		fields = append(fields, automationrun.FieldFailureStatus)
+	}
+	if m.FieldCleared(automationrun.FieldFailureExcerpt) {
+		fields = append(fields, automationrun.FieldFailureExcerpt)
 	}
 	return fields
 }
@@ -4612,6 +4847,15 @@ func (m *AutomationRunMutation) ClearField(name string) error {
 	switch name {
 	case automationrun.FieldResumeAt:
 		m.ClearResumeAt()
+		return nil
+	case automationrun.FieldFailureKind:
+		m.ClearFailureKind()
+		return nil
+	case automationrun.FieldFailureStatus:
+		m.ClearFailureStatus()
+		return nil
+	case automationrun.FieldFailureExcerpt:
+		m.ClearFailureExcerpt()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationRun nullable field %s", name)
@@ -4644,6 +4888,15 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 		return nil
 	case automationrun.FieldResumeAt:
 		m.ResetResumeAt()
+		return nil
+	case automationrun.FieldFailureKind:
+		m.ResetFailureKind()
+		return nil
+	case automationrun.FieldFailureStatus:
+		m.ResetFailureStatus()
+		return nil
+	case automationrun.FieldFailureExcerpt:
+		m.ResetFailureExcerpt()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationRun field %s", name)

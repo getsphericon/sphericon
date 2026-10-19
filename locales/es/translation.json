@@ -136,6 +136,17 @@
     "emailNodeDescription": "Enviar un correo al contacto.",
     "emailSubjectLabel": "Asunto",
     "emptyState": "Crea tu primera automatización.",
+    "failedEnrollmentContact": "Contacto",
+    "failedEnrollmentReason": "Motivo",
+    "failedEnrollmentResponse": "Respuesta",
+    "failedEnrollmentsTitle": "Inscripciones fallidas",
+    "failureKind": {
+      "blocked_address": "La dirección no está permitida",
+      "http_status": "El receptor respondió {{status}}",
+      "invalid_body": "El cuerpo no es JSON válido",
+      "network": "No se pudo contactar con el receptor",
+      "timeout": "El receptor no respondió a tiempo"
+    },
     "httpBodyHint": "JSON. Las etiquetas como {{ first_name }} se escapan solas, escríbelas entre comillas.",
     "httpBodyLabel": "Cuerpo JSON",
     "httpHeadersHint": "Una por línea: Nombre: valor. Deja vacío el valor de una cabecera guardada para conservarlo.",

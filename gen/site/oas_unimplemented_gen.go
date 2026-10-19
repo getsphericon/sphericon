@@ -374,6 +374,24 @@ func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params Sit
 	return r, ht.ErrNotImplemented
 }
 
+// SiteEnrollmentsGet implements SiteEnrollments_get operation.
+//
+// Get one Enrollment of an Automation.
+//
+// GET /workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}
+func (UnimplementedHandler) SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (r SiteEnrollmentsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteEnrollmentsList implements SiteEnrollments_list operation.
+//
+// List an Automation's Enrollments, newest first.
+//
+// GET /workspaces/{slug}/automations/{automationId}/enrollments
+func (UnimplementedHandler) SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (r SiteEnrollmentsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteEventsActions implements SiteEvents_actions operation.
 //
 // Distinct event actions in the workspace, sorted — powers the segment builder.

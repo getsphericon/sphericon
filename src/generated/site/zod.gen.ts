@@ -348,6 +348,37 @@ export const zSiteEmailChangeInput = z.object({
 });
 
 /**
+ * Why an Enrollment failed. A closed set: `invalid_body`, `timeout`, `blocked_address`,
+ * `http_status` (see `status`) and `network`.
+ */
+export const zSiteEnrollmentFailureKind = z.enum([
+  'invalid_body',
+  'timeout',
+  'blocked_address',
+  'http_status',
+  'network'
+]);
+
+/**
+ * What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
+ */
+export const zSiteEnrollmentFailure = z.object({
+  kind: zSiteEnrollmentFailureKind,
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  excerpt: z.exactOptional(z.string())
+});
+
+/**
+ * Where a Contact is in an Automation
+ */
+export const zSiteEnrollmentStatus = z.enum([
+  'active',
+  'completed',
+  'failed',
+  'exited'
+]);
+
+/**
  * Distinct event actions seen in a workspace (for segment/filter pickers)
  */
 export const zSiteEventActionsResult = z.object({
@@ -1219,6 +1250,21 @@ export const zSiteEmailTemplateResource = z.object({
 });
 
 /**
+ * One Contact's progress through an Automation
+ */
+export const zSiteEnrollmentResource = z.object({
+  id: zEntityId,
+  automationId: zEntityId,
+  contactId: zEntityId,
+  status: zSiteEnrollmentStatus,
+  currentStep: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  resumeAt: z.exactOptional(zTimestamp),
+  failure: z.exactOptional(zSiteEnrollmentFailure),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
  * A tracked event shown in the activity feed
  */
 export const zSiteEventResource = z.object({
@@ -2017,6 +2063,39 @@ export const zSiteAutomationsDryRunHttpStepPath = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationsDryRunHttpStepResponse = zSiteDryRunHttpStepResult;
+
+export const zSiteEnrollmentsListPath = z.object({
+  slug: z.string(),
+  automationId: zEntityId
+});
+
+export const zSiteEnrollmentsListQuery = z.object({
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  status: z.exactOptional(zSiteEnrollmentStatus)
+});
+
+/**
+ * Paginated response
+ */
+export const zSiteEnrollmentsListResponse = z.object({
+  items: z.array(zSiteEnrollmentResource),
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+export const zSiteEnrollmentsGetPath = z.object({
+  slug: z.string(),
+  automationId: zEntityId,
+  enrollmentId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteEnrollmentsGetResponse = zSiteEnrollmentResource;
 
 export const zSiteAutomationsDeletePath = z.object({
   slug: z.string(),

@@ -13,6 +13,7 @@ import "./resources/contacts.tsp";
 import "./resources/segments.tsp";
 import "./resources/tags.tsp";
 import "./resources/automations.tsp";
+import "./resources/enrollments.tsp";
 import "./resources/broadcasts.tsp";
 import "./resources/emails.tsp";
 import "./resources/events.tsp";

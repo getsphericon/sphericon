@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/doyensec/safeurl"
@@ -19,6 +20,9 @@ import (
 
 // maxResponseBytes caps how much of a receiver's response body we read.
 const maxResponseBytes = 64 << 10
+
+// ExcerptBytes is how much of a receiver's answer a failed call keeps.
+const ExcerptBytes = 1 << 10
 
 // EventHeader carries the event name for receiver-side routing; the signed
 // payload also carries "type". Identity/timestamp/signature use the Standard
@@ -51,35 +55,66 @@ func NewClient(timeout time.Duration) Doer {
 // POSTs it via client. It errors on transport failure or a non-2xx response so
 // the caller can retry. Use a client from NewClient so the SSRF guard applies.
 func Send(ctx context.Context, client Doer, url, secret, eventName, deliveryID string, body []byte) error {
-	wh, err := standardwebhooks.NewWebhook(secret)
-	if err != nil {
-		return fmt.Errorf("webhook secret: %w", err)
-	}
-	ts := time.Now()
-	sig, err := wh.Sign(deliveryID, ts, body)
-	if err != nil {
-		return fmt.Errorf("sign webhook: %w", err)
-	}
+	return Post(ctx, client, Call{
+		URL: url, Secret: secret, ID: deliveryID, Body: body,
+		Headers: map[string]string{EventHeader: eventName},
+	})
+}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+// Call is one outbound POST of a JSON body. A Secret signs it (Standard Webhooks, with ID
+// as the message id); an empty Secret sends it unsigned. Headers are extra request
+// headers, set after the standard ones.
+type Call struct {
+	URL     string
+	Secret  string
+	ID      string
+	Headers map[string]string
+	Body    []byte
+}
+
+// Post makes the call through client, which should come from NewClient or
+// NewClientAllowing. It returns a *DeliveryError for a transport failure or a non-2xx
+// answer; the latter carries the first ExcerptBytes of the receiver's response.
+func Post(ctx context.Context, client Doer, c Call) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL, bytes.NewReader(c.Body))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(standardwebhooks.HeaderWebhookID, deliveryID)
-	req.Header.Set(standardwebhooks.HeaderWebhookTimestamp, strconv.FormatInt(ts.Unix(), 10))
-	req.Header.Set(standardwebhooks.HeaderWebhookSignature, sig)
-	req.Header.Set(EventHeader, eventName)
+	if c.Secret != "" {
+		wh, err := standardwebhooks.NewWebhook(c.Secret)
+		if err != nil {
+			return fmt.Errorf("webhook secret: %w", err)
+		}
+		ts := time.Now()
+		sig, err := wh.Sign(c.ID, ts, c.Body)
+		if err != nil {
+			return fmt.Errorf("sign webhook: %w", err)
+		}
+		req.Header.Set(standardwebhooks.HeaderWebhookID, c.ID)
+		req.Header.Set(standardwebhooks.HeaderWebhookTimestamp, strconv.FormatInt(ts.Unix(), 10))
+		req.Header.Set(standardwebhooks.HeaderWebhookSignature, sig)
+	}
+	for name, value := range c.Headers {
+		req.Header.Set(name, value)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
 		return transportError(err)
 	}
 	defer func() { _ = resp.Body.Close() }()
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxResponseBytes))
+	answer, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return statusError(resp.StatusCode, resp.Header.Get("Retry-After"))
+		failure := statusError(resp.StatusCode, resp.Header.Get("Retry-After"))
+		failure.Excerpt = excerpt(answer)
+		return failure
 	}
 	return nil
+}
+
+// excerpt is the first ExcerptBytes of an answer, with a character cut by the limit dropped.
+func excerpt(answer []byte) string {
+	return strings.ToValidUTF8(string(answer[:min(len(answer), ExcerptBytes)]), "")
 }

@@ -43,6 +43,8 @@ const (
 	SiteContactsListOperation                         OperationName = "SiteContactsList"
 	SiteContactsUpdateOperation                       OperationName = "SiteContactsUpdate"
 	SiteCustomFieldsListOperation                     OperationName = "SiteCustomFieldsList"
+	SiteEnrollmentsGetOperation                       OperationName = "SiteEnrollmentsGet"
+	SiteEnrollmentsListOperation                      OperationName = "SiteEnrollmentsList"
 	SiteEventsActionsOperation                        OperationName = "SiteEventsActions"
 	SiteEventsListOperation                           OperationName = "SiteEventsList"
 	SiteInstanceAcknowledgeNoticeOperation            OperationName = "SiteInstanceAcknowledgeNotice"

@@ -4,6 +4,7 @@ import { expect, test, vi } from 'vitest'
 import {
   handleSiteAutomationsGet,
   handleSiteAutomationsUpdate,
+  handleSiteEnrollmentsList,
 } from '../../generated/site/msw.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$slug/automations/$automationId/edit.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -37,6 +38,9 @@ test('saving a graph whose branches cannot be represented warns that they were d
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(STORED)),
     handleSiteAutomationsUpdate(() => HttpResponse.json(STORED)),
+    handleSiteEnrollmentsList({
+      body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
+    }),
   )
 
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)

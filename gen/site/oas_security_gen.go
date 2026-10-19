@@ -62,6 +62,8 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteContactsListOperation:                         []string{},
 	SiteContactsUpdateOperation:                       []string{},
 	SiteCustomFieldsListOperation:                     []string{},
+	SiteEnrollmentsGetOperation:                       []string{},
+	SiteEnrollmentsListOperation:                      []string{},
 	SiteEventsActionsOperation:                        []string{},
 	SiteEventsListOperation:                           []string{},
 	SiteInstanceAcknowledgeNoticeOperation:            []string{},

@@ -67,6 +67,8 @@ var operationRolesBearerAuth = map[string][]string{
 	ContactsUpdateOperation:            []string{},
 	CustomFieldsListOperation:          []string{},
 	EmailsSendOperation:                []string{},
+	EnrollmentsGetOperation:            []string{},
+	EnrollmentsListOperation:           []string{},
 	EventActionsListOperation:          []string{},
 	EventsBatchSubmitOperation:         []string{},
 	EventsCreateOperation:              []string{},

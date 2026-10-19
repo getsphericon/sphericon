@@ -258,6 +258,18 @@ type Handler interface {
 	//
 	// GET /workspaces/{slug}/custom-fields
 	SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (SiteCustomFieldsListRes, error)
+	// SiteEnrollmentsGet implements SiteEnrollments_get operation.
+	//
+	// Get one Enrollment of an Automation.
+	//
+	// GET /workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}
+	SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (SiteEnrollmentsGetRes, error)
+	// SiteEnrollmentsList implements SiteEnrollments_list operation.
+	//
+	// List an Automation's Enrollments, newest first.
+	//
+	// GET /workspaces/{slug}/automations/{automationId}/enrollments
+	SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (SiteEnrollmentsListRes, error)
 	// SiteEventsActions implements SiteEvents_actions operation.
 	//
 	// Distinct event actions in the workspace, sorted — powers the segment builder.

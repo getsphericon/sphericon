@@ -46,6 +46,19 @@ func (AutomationRun) Fields() []ent.Field {
 		field.Time("resume_at").
 			Optional().
 			Nillable(),
+		// Why a failed enrollment failed, set by an HTTP step (ADR 0039): the closed error
+		// kind, the receiver's status for http_status, and the first 1 KiB of its answer.
+		// Erased with the row (ADR 0021).
+		field.Enum("failure_kind").
+			Values("invalid_body", "timeout", "blocked_address", "http_status", "network").
+			Optional().
+			Nillable(),
+		field.Int("failure_status").
+			Optional().
+			Nillable(),
+		field.String("failure_excerpt").
+			Optional().
+			Nillable(),
 	}
 }
 

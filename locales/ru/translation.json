@@ -136,6 +136,17 @@
     "emailNodeDescription": "Отправить письмо контакту.",
     "emailSubjectLabel": "Тема",
     "emptyState": "Создайте свою первую автоматизацию.",
+    "failedEnrollmentContact": "Контакт",
+    "failedEnrollmentReason": "Причина",
+    "failedEnrollmentResponse": "Ответ",
+    "failedEnrollmentsTitle": "Неудавшиеся запуски",
+    "failureKind": {
+      "blocked_address": "Адрес не разрешён",
+      "http_status": "Получатель ответил {{status}}",
+      "invalid_body": "Тело не является корректным JSON",
+      "network": "Получатель недоступен",
+      "timeout": "Получатель не ответил вовремя"
+    },
     "httpBodyHint": "JSON. Теги вроде {{ first_name }} экранируются автоматически, пишите их внутри кавычек.",
     "httpBodyLabel": "JSON-тело",
     "httpHeadersHint": "По одному в строке: Имя: значение. Оставьте значение сохранённого заголовка пустым, чтобы сохранить его.",

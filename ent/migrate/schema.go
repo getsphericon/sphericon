@@ -157,6 +157,9 @@ var (
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "completed", "failed", "exited"}, Default: "active"},
 		{Name: "current_step", Type: field.TypeInt, Default: 0},
 		{Name: "resume_at", Type: field.TypeTime, Nullable: true},
+		{Name: "failure_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"invalid_body", "timeout", "blocked_address", "http_status", "network"}},
+		{Name: "failure_status", Type: field.TypeInt, Nullable: true},
+		{Name: "failure_excerpt", Type: field.TypeString, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -168,13 +171,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_runs_automations_runs",
-				Columns:    []*schema.Column{AutomationRunsColumns[7]},
+				Columns:    []*schema.Column{AutomationRunsColumns[10]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_runs_workspaces_automation_runs",
-				Columns:    []*schema.Column{AutomationRunsColumns[8]},
+				Columns:    []*schema.Column{AutomationRunsColumns[11]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -183,7 +186,7 @@ var (
 			{
 				Name:    "automation_runs_automation_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationRunsColumns[7], AutomationRunsColumns[3]},
+				Columns: []*schema.Column{AutomationRunsColumns[10], AutomationRunsColumns[3]},
 			},
 		},
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -69,6 +70,10 @@ func NewEvaluateTriggerWorker(client *ent.Client) *EvaluateTriggerWorker {
 
 func NewRunStepWorker(client *ent.Client, mod *outbound.Module) *RunStepWorker {
 	return &RunStepWorker{ent: client, mod: mod}
+}
+
+func NewRunHTTPStepWorker(client *ent.Client, mod *automations.Module, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
+	return &RunHTTPStepWorker{ent: client, mod: mod, client: doer, now: now}
 }
 
 func NewSendBroadcastWorker(client *ent.Client, mod *outbound.Module) *SendBroadcastWorker {

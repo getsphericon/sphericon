@@ -2737,6 +2737,98 @@ func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAu
 	return d
 }
 
+// NewOptSiteEnrollmentFailure returns new OptSiteEnrollmentFailure with value set to v.
+func NewOptSiteEnrollmentFailure(v SiteEnrollmentFailure) OptSiteEnrollmentFailure {
+	return OptSiteEnrollmentFailure{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteEnrollmentFailure is optional SiteEnrollmentFailure.
+type OptSiteEnrollmentFailure struct {
+	Value SiteEnrollmentFailure
+	Set   bool
+}
+
+// IsSet returns true if OptSiteEnrollmentFailure was set.
+func (o OptSiteEnrollmentFailure) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteEnrollmentFailure) Reset() {
+	var v SiteEnrollmentFailure
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteEnrollmentFailure) SetTo(v SiteEnrollmentFailure) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteEnrollmentFailure) Get() (v SiteEnrollmentFailure, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteEnrollmentFailure) Or(d SiteEnrollmentFailure) SiteEnrollmentFailure {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteEnrollmentStatus returns new OptSiteEnrollmentStatus with value set to v.
+func NewOptSiteEnrollmentStatus(v SiteEnrollmentStatus) OptSiteEnrollmentStatus {
+	return OptSiteEnrollmentStatus{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteEnrollmentStatus is optional SiteEnrollmentStatus.
+type OptSiteEnrollmentStatus struct {
+	Value SiteEnrollmentStatus
+	Set   bool
+}
+
+// IsSet returns true if OptSiteEnrollmentStatus was set.
+func (o OptSiteEnrollmentStatus) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteEnrollmentStatus) Reset() {
+	var v SiteEnrollmentStatus
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteEnrollmentStatus) SetTo(v SiteEnrollmentStatus) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteEnrollmentStatus) Get() (v SiteEnrollmentStatus, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteEnrollmentStatus) Or(d SiteEnrollmentStatus) SiteEnrollmentStatus {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteInstanceTelemetryLock returns new OptSiteInstanceTelemetryLock with value set to v.
 func NewOptSiteInstanceTelemetryLock(v SiteInstanceTelemetryLock) OptSiteInstanceTelemetryLock {
 	return OptSiteInstanceTelemetryLock{
@@ -7044,6 +7136,366 @@ func (s *SiteEmailTemplateResource) SetUpdatedAt(val Timestamp) {
 func (*SiteEmailTemplateResource) siteTemplatesCreateRes() {}
 func (*SiteEmailTemplateResource) siteTemplatesGetRes()    {}
 func (*SiteEmailTemplateResource) siteTemplatesUpdateRes() {}
+
+// What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
+// Ref: #/components/schemas/SiteEnrollmentFailure
+type SiteEnrollmentFailure struct {
+	// The closed error kind.
+	Kind SiteEnrollmentFailureKind `json:"kind"`
+	// HTTP status the receiver answered; present only for kind `http_status`.
+	Status OptInt32 `json:"status"`
+	// The first 1 KiB of the receiver's answer, when it sent one.
+	Excerpt OptString `json:"excerpt"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteEnrollmentFailure) GetKind() SiteEnrollmentFailureKind {
+	return s.Kind
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteEnrollmentFailure) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// GetExcerpt returns the value of Excerpt.
+func (s *SiteEnrollmentFailure) GetExcerpt() OptString {
+	return s.Excerpt
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteEnrollmentFailure) SetKind(val SiteEnrollmentFailureKind) {
+	s.Kind = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteEnrollmentFailure) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
+// SetExcerpt sets the value of Excerpt.
+func (s *SiteEnrollmentFailure) SetExcerpt(val OptString) {
+	s.Excerpt = val
+}
+
+// Why an Enrollment failed. A closed set: `invalid_body`, `timeout`, `blocked_address`, `http_status`
+// (see `status`) and `network`.
+// Ref: #/components/schemas/SiteEnrollmentFailureKind
+type SiteEnrollmentFailureKind string
+
+const (
+	SiteEnrollmentFailureKindInvalidBody    SiteEnrollmentFailureKind = "invalid_body"
+	SiteEnrollmentFailureKindTimeout        SiteEnrollmentFailureKind = "timeout"
+	SiteEnrollmentFailureKindBlockedAddress SiteEnrollmentFailureKind = "blocked_address"
+	SiteEnrollmentFailureKindHTTPStatus     SiteEnrollmentFailureKind = "http_status"
+	SiteEnrollmentFailureKindNetwork        SiteEnrollmentFailureKind = "network"
+)
+
+// AllValues returns all SiteEnrollmentFailureKind values.
+func (SiteEnrollmentFailureKind) AllValues() []SiteEnrollmentFailureKind {
+	return []SiteEnrollmentFailureKind{
+		SiteEnrollmentFailureKindInvalidBody,
+		SiteEnrollmentFailureKindTimeout,
+		SiteEnrollmentFailureKindBlockedAddress,
+		SiteEnrollmentFailureKindHTTPStatus,
+		SiteEnrollmentFailureKindNetwork,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteEnrollmentFailureKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteEnrollmentFailureKindInvalidBody:
+		return []byte(s), nil
+	case SiteEnrollmentFailureKindTimeout:
+		return []byte(s), nil
+	case SiteEnrollmentFailureKindBlockedAddress:
+		return []byte(s), nil
+	case SiteEnrollmentFailureKindHTTPStatus:
+		return []byte(s), nil
+	case SiteEnrollmentFailureKindNetwork:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteEnrollmentFailureKind) UnmarshalText(data []byte) error {
+	switch SiteEnrollmentFailureKind(data) {
+	case SiteEnrollmentFailureKindInvalidBody:
+		*s = SiteEnrollmentFailureKindInvalidBody
+		return nil
+	case SiteEnrollmentFailureKindTimeout:
+		*s = SiteEnrollmentFailureKindTimeout
+		return nil
+	case SiteEnrollmentFailureKindBlockedAddress:
+		*s = SiteEnrollmentFailureKindBlockedAddress
+		return nil
+	case SiteEnrollmentFailureKindHTTPStatus:
+		*s = SiteEnrollmentFailureKindHTTPStatus
+		return nil
+	case SiteEnrollmentFailureKindNetwork:
+		*s = SiteEnrollmentFailureKindNetwork
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One Contact's progress through an Automation.
+// Ref: #/components/schemas/SiteEnrollmentResource
+type SiteEnrollmentResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Automation the Contact was enrolled in.
+	AutomationId EntityId `json:"automationId"`
+	// The enrolled Contact.
+	ContactId EntityId `json:"contactId"`
+	// Where the Enrollment is.
+	Status SiteEnrollmentStatus `json:"status"`
+	// Index of the next step to run (0-based).
+	CurrentStep int32 `json:"currentStep"`
+	// When a waiting Enrollment runs its next step.
+	ResumeAt OptTimestamp `json:"resumeAt"`
+	// Present on a failed Enrollment whose failure an HTTP step recorded.
+	Failure OptSiteEnrollmentFailure `json:"failure"`
+	// When the Contact was enrolled.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteEnrollmentResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetAutomationId returns the value of AutomationId.
+func (s *SiteEnrollmentResource) GetAutomationId() EntityId {
+	return s.AutomationId
+}
+
+// GetContactId returns the value of ContactId.
+func (s *SiteEnrollmentResource) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// GetStatus returns the value of Status.
+func (s *SiteEnrollmentResource) GetStatus() SiteEnrollmentStatus {
+	return s.Status
+}
+
+// GetCurrentStep returns the value of CurrentStep.
+func (s *SiteEnrollmentResource) GetCurrentStep() int32 {
+	return s.CurrentStep
+}
+
+// GetResumeAt returns the value of ResumeAt.
+func (s *SiteEnrollmentResource) GetResumeAt() OptTimestamp {
+	return s.ResumeAt
+}
+
+// GetFailure returns the value of Failure.
+func (s *SiteEnrollmentResource) GetFailure() OptSiteEnrollmentFailure {
+	return s.Failure
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteEnrollmentResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SiteEnrollmentResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteEnrollmentResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetAutomationId sets the value of AutomationId.
+func (s *SiteEnrollmentResource) SetAutomationId(val EntityId) {
+	s.AutomationId = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *SiteEnrollmentResource) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// SetStatus sets the value of Status.
+func (s *SiteEnrollmentResource) SetStatus(val SiteEnrollmentStatus) {
+	s.Status = val
+}
+
+// SetCurrentStep sets the value of CurrentStep.
+func (s *SiteEnrollmentResource) SetCurrentStep(val int32) {
+	s.CurrentStep = val
+}
+
+// SetResumeAt sets the value of ResumeAt.
+func (s *SiteEnrollmentResource) SetResumeAt(val OptTimestamp) {
+	s.ResumeAt = val
+}
+
+// SetFailure sets the value of Failure.
+func (s *SiteEnrollmentResource) SetFailure(val OptSiteEnrollmentFailure) {
+	s.Failure = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteEnrollmentResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SiteEnrollmentResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+func (*SiteEnrollmentResource) siteEnrollmentsGetRes() {}
+
+// Where a Contact is in an Automation.
+// Ref: #/components/schemas/SiteEnrollmentStatus
+type SiteEnrollmentStatus string
+
+const (
+	SiteEnrollmentStatusActive    SiteEnrollmentStatus = "active"
+	SiteEnrollmentStatusCompleted SiteEnrollmentStatus = "completed"
+	SiteEnrollmentStatusFailed    SiteEnrollmentStatus = "failed"
+	SiteEnrollmentStatusExited    SiteEnrollmentStatus = "exited"
+)
+
+// AllValues returns all SiteEnrollmentStatus values.
+func (SiteEnrollmentStatus) AllValues() []SiteEnrollmentStatus {
+	return []SiteEnrollmentStatus{
+		SiteEnrollmentStatusActive,
+		SiteEnrollmentStatusCompleted,
+		SiteEnrollmentStatusFailed,
+		SiteEnrollmentStatusExited,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteEnrollmentStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteEnrollmentStatusActive:
+		return []byte(s), nil
+	case SiteEnrollmentStatusCompleted:
+		return []byte(s), nil
+	case SiteEnrollmentStatusFailed:
+		return []byte(s), nil
+	case SiteEnrollmentStatusExited:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteEnrollmentStatus) UnmarshalText(data []byte) error {
+	switch SiteEnrollmentStatus(data) {
+	case SiteEnrollmentStatusActive:
+		*s = SiteEnrollmentStatusActive
+		return nil
+	case SiteEnrollmentStatusCompleted:
+		*s = SiteEnrollmentStatusCompleted
+		return nil
+	case SiteEnrollmentStatusFailed:
+		*s = SiteEnrollmentStatusFailed
+		return nil
+	case SiteEnrollmentStatusExited:
+		*s = SiteEnrollmentStatusExited
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SiteEnrollmentsGetBadRequest ProblemDetails
+
+func (*SiteEnrollmentsGetBadRequest) siteEnrollmentsGetRes() {}
+
+type SiteEnrollmentsGetNotFound ProblemDetails
+
+func (*SiteEnrollmentsGetNotFound) siteEnrollmentsGetRes() {}
+
+type SiteEnrollmentsListBadRequest ProblemDetails
+
+func (*SiteEnrollmentsListBadRequest) siteEnrollmentsListRes() {}
+
+type SiteEnrollmentsListNotFound ProblemDetails
+
+func (*SiteEnrollmentsListNotFound) siteEnrollmentsListRes() {}
+
+// Paginated response.
+type SiteEnrollmentsListOK struct {
+	// List of items.
+	Items []SiteEnrollmentResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteEnrollmentsListOK) GetItems() []SiteEnrollmentResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *SiteEnrollmentsListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *SiteEnrollmentsListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *SiteEnrollmentsListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *SiteEnrollmentsListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *SiteEnrollmentsListOK) SetItems(val []SiteEnrollmentResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *SiteEnrollmentsListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *SiteEnrollmentsListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *SiteEnrollmentsListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *SiteEnrollmentsListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+func (*SiteEnrollmentsListOK) siteEnrollmentsListRes() {}
 
 // Distinct event actions seen in a workspace (for segment/filter pickers).
 // Ref: #/components/schemas/SiteEventActionsResult

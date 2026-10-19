@@ -51,6 +51,8 @@ const (
 	AutomationNotifySlackName = "Notify Slack on signup"
 	// AutomationRunErasableID is from fixtures/automation_runs.
 	AutomationRunErasableID = 3000
+	// AutomationRunHTTPFailedID is from fixtures/automation_runs.
+	AutomationRunHTTPFailedID = 1101
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.
 	AutomationRunWelcomeCompletedID = 1000
 	// AutomationTagOnEngagementID is from fixtures/automations.

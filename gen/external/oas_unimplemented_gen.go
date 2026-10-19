@@ -324,6 +324,24 @@ func (UnimplementedHandler) EmailsSend(ctx context.Context, req *SendTransaction
 	return r, ht.ErrNotImplemented
 }
 
+// EnrollmentsGet implements Enrollments_get operation.
+//
+// Get one Enrollment of an Automation. Needs the enrollments:read scope.
+//
+// GET /automations/{automationId}/enrollments/{enrollmentId}
+func (UnimplementedHandler) EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (r EnrollmentsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// EnrollmentsList implements Enrollments_list operation.
+//
+// List an Automation's Enrollments, newest first. Needs the enrollments:read scope.
+//
+// GET /automations/{automationId}/enrollments
+func (UnimplementedHandler) EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (r EnrollmentsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // EventActionsList implements EventActions_list operation.
 //
 // List unique event actions.

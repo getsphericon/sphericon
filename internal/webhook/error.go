@@ -35,7 +35,9 @@ type DeliveryError struct {
 	Kind       ErrorKind
 	Status     int
 	RetryAfter string
-	cause      error
+	// Excerpt is the first ExcerptBytes of the receiver's answer to a KindHTTPStatus failure.
+	Excerpt string
+	cause   error
 }
 
 func (e *DeliveryError) Error() string {

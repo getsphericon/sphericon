@@ -16,6 +16,7 @@ import (
 	"github.com/riverqueue/rivercontrib/otelriver"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -78,6 +79,12 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, mod: mod})
 	river.AddWorker(workers, &EvaluateTriggerWorker{ent: entClient})
 	river.AddWorker(workers, &RunStepWorker{ent: entClient, mod: mod})
+	river.AddWorker(workers, &RunHTTPStepWorker{
+		ent:    entClient,
+		mod:    automations.New(cipher),
+		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
+		now:    time.Now,
+	})
 	river.AddWorker(workers, &DeliverWebhookWorker{
 		ent:    entClient,
 		cipher: cipher,
@@ -139,6 +146,7 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 			river.QueueDefault: {MaxWorkers: 5},
 			QueueBroadcasts:    {MaxWorkers: 10},
 			QueueWebhooks:      {MaxWorkers: 5},
+			QueueHTTPSteps:     {MaxWorkers: 5},
 		},
 		Workers:      workers,
 		Logger:       logger,

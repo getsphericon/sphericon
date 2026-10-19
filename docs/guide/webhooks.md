@@ -101,3 +101,19 @@ if verification fails, and use the timestamp to refuse stale replays.
   history.
 - Deliveries run on the same durable PostgreSQL job queue as sending, so a restart does not lose
   them. There is no ordering guarantee between events.
+
+## Calling a hook from an automation
+
+An automation can POST to a third-party hook (Slack, Zapier) with an **HTTP step**. It goes through
+the same hardened client and the same retry policy as a webhook delivery, on a queue of its own, so a
+slow receiver never delays event deliveries or other automation steps.
+
+- The body is a Liquid JSON template over the Contact. It is checked again when the step runs; a
+  body that does not render to valid JSON fails the enrollment at once.
+- A `2xx` moves the enrollment on to its next step. Anything else is retried for about three days;
+  a `429` waits for `Retry-After` without spending an attempt. A blocked address is not retried.
+- When the retries are spent, or the address is blocked, the enrollment becomes `failed`. It keeps
+  the closed error kind (`invalid_body`, `timeout`, `blocked_address`, `http_status`, `network`),
+  the receiver's status and the first 1 KiB of its answer. Read them in the automation's editor,
+  or with `GET /automations/{id}/enrollments` (scope `enrollments:read`, MCP tools `enrollments_list` and
+  `enrollments_get`). Nothing after the failed step runs.

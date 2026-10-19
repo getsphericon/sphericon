@@ -42,6 +42,9 @@
       "name": "Site Integrations"
     },
     {
+      "name": "Site Automations"
+    },
+    {
       "name": "Site Analytics"
     },
     {
@@ -70,9 +73,6 @@
     },
     {
       "name": "Site Templates"
-    },
-    {
-      "name": "Site Automations"
     },
     {
       "name": "Site Webhooks"
@@ -2553,6 +2553,175 @@
             }
           }
         }
+      }
+    },
+    "/workspaces/{slug}/automations/{automationId}/enrollments": {
+      "get": {
+        "operationId": "SiteEnrollments_list",
+        "description": "List an Automation's Enrollments, newest first",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "automationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Only Enrollments in this status",
+            "schema": {
+              "$ref": "#/components/schemas/SiteEnrollmentStatus"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SiteEnrollmentResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Automations"]
+      }
+    },
+    "/workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}": {
+      "get": {
+        "operationId": "SiteEnrollments_get",
+        "description": "Get one Enrollment of an Automation",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "automationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "enrollmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteEnrollmentResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Automations"]
       }
     },
     "/workspaces/{slug}/automations/{id}": {
@@ -9236,6 +9405,124 @@
           }
         },
         "description": "Reusable email template used by the site UI"
+      },
+      "SiteEnrollmentFailure": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteEnrollmentFailureKind"
+              }
+            ],
+            "description": "The closed error kind"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status the receiver answered; present only for kind `http_status`"
+          },
+          "excerpt": {
+            "type": "string",
+            "description": "The first 1 KiB of the receiver's answer, when it sent one"
+          }
+        },
+        "description": "What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment."
+      },
+      "SiteEnrollmentFailureKind": {
+        "type": "string",
+        "enum": ["invalid_body", "timeout", "blocked_address", "http_status", "network"],
+        "description": "Why an Enrollment failed. A closed set: `invalid_body`, `timeout`, `blocked_address`,\n`http_status` (see `status`) and `network`."
+      },
+      "SiteEnrollmentResource": {
+        "type": "object",
+        "required": [
+          "id",
+          "automationId",
+          "contactId",
+          "status",
+          "currentStep",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "automationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Automation the Contact was enrolled in"
+          },
+          "contactId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The enrolled Contact"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteEnrollmentStatus"
+              }
+            ],
+            "description": "Where the Enrollment is"
+          },
+          "currentStep": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Index of the next step to run (0-based)"
+          },
+          "resumeAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When a waiting Enrollment runs its next step"
+          },
+          "failure": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteEnrollmentFailure"
+              }
+            ],
+            "description": "Present on a failed Enrollment whose failure an HTTP step recorded"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Contact was enrolled"
+          },
+          "updatedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last update timestamp"
+          }
+        },
+        "description": "One Contact's progress through an Automation"
+      },
+      "SiteEnrollmentStatus": {
+        "type": "string",
+        "enum": ["active", "completed", "failed", "exited"],
+        "description": "Where a Contact is in an Automation"
       },
       "SiteEventActionsResult": {
         "type": "object",
