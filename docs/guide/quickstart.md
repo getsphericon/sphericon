@@ -1,6 +1,7 @@
 # Quickstart
 
-This walks you from a running instance to your first broadcast.
+This walks you from a running instance to your first broadcast. The same four steps appear as the
+**Setup checklist** on the Overview of a new workspace.
 
 ## 1. Run sphericon
 
@@ -30,29 +31,57 @@ setup in the [README](https://github.com/getsphericon/sphericon#development).
 Open the app, register, and create a workspace. A workspace is where everything else lives.
 You can invite teammates later from **Settings**.
 
-## 3. Connect a way to send
+The Overview of a workspace that has not sent an email yet shows the **Setup checklist**: the four
+steps below, each with a link to the page where you do it. A step turns done by itself when the
+thing exists, so you can take them in any order, and none waits for another. The checklist goes
+away once every step is done; an owner or admin can also dismiss it.
+
+## 3. See an email before DNS
+
+You do not have to finish the steps below to see sphericon send. Open a broadcast, write something
+and press **Send test**. While the workspace has no verified sending domain, the test goes out from
+the Instance's own sender (the one that sends verification and password reset mail) and needs no
+Integration. It has two limits:
+
+- It goes only to your own address, the one you registered with. Any other address is refused.
+- Its From is the platform's address, not your domain. The editor shows the address it used, so
+  you know it is not what your contacts will see. It is not signed with your domain either.
+
+It is capped per person and per workspace, so it is for looking at an email, not for sending one.
+A test send is not a real send: it never shows in Activity or the rates, and it does not complete
+the last checklist step. On an instance with no outbound mail configured there is no such sender,
+and the test is refused with that reason. Once a sending domain is verified, a test goes through
+your Integration and your domain, to any address you name.
+
+## 4. The four steps
+
+### Connect an Integration
 
 In **Settings → Integrations** add an SMTP server or an SES-compatible service. Credentials are stored
 encrypted with your `SPHERICON_ENCRYPTION_KEY`.
 
-Then add a **sending domain** and publish the DKIM record sphericon shows you. Mail can only be sent
-from a verified domain; see [Deliverability and consent](/guide/deliverability).
+### Verify a sending domain
 
-## 4. Bring in contacts
+In **Settings → Sending domains** add a **sending domain** and publish the DKIM record sphericon
+shows you. Mail to contacts can only be sent from a verified domain; see
+[Deliverability and consent](/guide/deliverability).
+
+DNS can take time, and nothing else waits for it. While the record has not propagated the domain
+shows as waiting for DNS, and you can go on with the next steps and prepare your first broadcast.
+
+### Bring in contacts
 
 Either [track your site or product](/guide/tracking) so contacts appear as people identify
-themselves, or create and import them through the [API](/guide/api).
+themselves, or create and import them through the [API](/guide/api). One contact completes this step.
 
-## 5. Define a segment
-
-Open **Segments**, build a rule, and watch the live count of matching contacts. See
-[Segments](/guide/segments).
-
-## 6. Send a broadcast
+### Send your first email
 
 1. Create a template, or write the body directly in the broadcast.
-2. Create a broadcast, set the sender and subject, and choose your segment as the audience.
-3. Send a test to yourself, then send it or schedule it.
+2. Create a broadcast, set the sender and subject, and choose an audience. Optionally define a
+   [segment](/guide/segments) first and use it as the audience.
+3. Send a test to yourself, then send it or schedule it. Sending to contacts needs a verified
+   sending domain.
 
-The broadcast report shows sent, opened, clicked and unsubscribed counts. Details are in
+The step is done once any email has been sent, from a broadcast, an automation or a transactional
+call. The broadcast report shows sent, opened, clicked and unsubscribed counts. Details are in
 [Sending email](/guide/sending).

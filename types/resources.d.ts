@@ -984,12 +984,18 @@ export default interface Resources {
       "webhooksTitle": "Webhooks"
     },
     "setupChecklist": {
+      "checkError": "Could not check the domain",
+      "checkNow": "Check now",
+      "copied": "Copied",
+      "copy": "Copy",
+      "copyDkim": "Copy DKIM value",
       "description": "Four steps to your first email. Each turns done by itself when the thing exists, in any order.",
       "dismiss": "Dismiss",
       "dismissError": "Failed to dismiss the setup checklist",
       "dismissForbidden": "Only owners and admins can dismiss the setup checklist.",
       "done": "Done",
       "loadError": "Failed to load the setup checklist",
+      "recordHint": "Add this DNS record for {{domain}} at your DNS provider:",
       "steps": {
         "contact": {
           "action": "Open Contacts",

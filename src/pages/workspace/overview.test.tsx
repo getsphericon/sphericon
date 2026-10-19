@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteAnalyticsOverview,
+  handleSiteSendingDomainsList,
   handleSiteSetupChecklistDismiss,
   handleSiteSetupChecklistGet,
   handleSiteWorkspacesList,
@@ -153,6 +154,9 @@ test('before the first sent email only the checklist shows and no analytics are 
   let analyticsRequests = 0
   worker.use(
     handleSiteWorkspacesList({ body: [] }),
+    handleSiteSendingDomainsList({
+      body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
+    }),
     handleSiteSetupChecklistGet({
       body: {
         steps: {

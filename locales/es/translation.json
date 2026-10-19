@@ -1002,12 +1002,18 @@
     "webhooksTitle": "Webhooks"
   },
   "setupChecklist": {
+    "checkError": "No se pudo comprobar el dominio",
+    "checkNow": "Comprobar ahora",
+    "copied": "Copiado",
+    "copy": "Copiar",
+    "copyDkim": "Copiar el valor DKIM",
     "description": "Cuatro pasos hasta tu primer correo. Cada uno se marca solo cuando existe lo necesario, en cualquier orden.",
     "dismiss": "Descartar",
     "dismissError": "No se pudo descartar la lista de configuración",
     "dismissForbidden": "Solo los propietarios y administradores pueden descartar la lista de configuración.",
     "done": "Hecho",
     "loadError": "No se pudo cargar la lista de configuración",
+    "recordHint": "Añade este registro DNS para {{domain}} en tu proveedor de DNS:",
     "steps": {
       "contact": {
         "action": "Abrir contactos",
