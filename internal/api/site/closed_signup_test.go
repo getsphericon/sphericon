@@ -52,7 +52,7 @@ func TestAClosedInstanceStillAcceptsAnInvitation(t *testing.T) {
 func TestTheFirstOwnerOfAClosedInstanceComesFromCreateOwnerAndSignsIn(t *testing.T) {
 	env := closedInstance(t)
 
-	password, err := accounts.New(env.DB, env.Bus).CreateOwner(t.Context(), "Ada Lovelace", "ada@example.com")
+	password, err := accounts.New(env.DB, env.Bus).CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
 	require.NoError(t, err)
 
 	rec := postLogin(t, env, "ada@example.com", password)

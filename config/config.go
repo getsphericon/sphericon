@@ -473,7 +473,7 @@ func Load(envName string) (*Config, error) {
 		ReleaseCheck:            e.ReleaseCheck,
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
-		SignupOpen:               strings.TrimSpace(e.SignupOpen) != "false",
+		SignupOpen:               !strings.EqualFold(strings.TrimSpace(e.SignupOpen), "false"),
 		LogLevel:                 e.LogLevel,
 		LogFormat:                e.LogFormat,
 

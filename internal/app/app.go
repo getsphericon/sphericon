@@ -621,12 +621,12 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 
 // CreateOwner makes a Verified User with its first Workspace and a one-time password
 // (ADR 0042): the way the first Owner of an Instance that closed sign-up comes to exist.
-func (a *App) CreateOwner(ctx context.Context, name, email string) (string, error) {
+func (a *App) CreateOwner(ctx context.Context, email, name string) (string, error) {
 	acc, err := do.Invoke[*accounts.Accounts](a.injector)
 	if err != nil {
 		return "", err
 	}
-	return acc.CreateOwner(ctx, name, email)
+	return acc.CreateOwner(ctx, email, name)
 }
 
 // CreateStaffMember makes a platform Staff member (ADR 0026) and returns its one-time password:

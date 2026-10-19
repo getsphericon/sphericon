@@ -358,7 +358,7 @@ func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHa
 // Workspace, named after the User, exactly as RegisterVerified makes them. The password
 // is returned once; the unique index on the email refuses a taken address (see
 // db.IsUniqueViolation).
-func (a *Accounts) CreateOwner(ctx context.Context, name, email string) (password string, err error) {
+func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (password string, err error) {
 	password = rand.Text()
 	hash, err := credentials.HashPassword(password)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/mail"
 	"strings"
 
 	"github.com/urfave/cli/v3"
@@ -15,7 +16,7 @@ import (
 // implements it (internal/app); tests use a fake.
 type userOps interface {
 	ResetSecondFactor(ctx context.Context, email string) (bool, error)
-	CreateOwner(ctx context.Context, name, email string) (password string, err error)
+	CreateOwner(ctx context.Context, email, name string) (password string, err error)
 }
 
 // userCommand is the `user` group. `create-owner <email> <name...>` (ADR 0042) is the
@@ -39,7 +40,10 @@ func userCommand(d deps) *cli.Command {
 				if name == "" {
 					return errors.New("a name is required")
 				}
-				password, err := ops.CreateOwner(ctx, name, email)
+				if _, err := mail.ParseAddress(email); err != nil {
+					return fmt.Errorf("%q is not an email address", email)
+				}
+				password, err := ops.CreateOwner(ctx, email, name)
 				if db.IsUniqueViolation(err) {
 					return fmt.Errorf("a user with email %q already exists; nothing changed", email)
 				}
