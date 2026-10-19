@@ -117,7 +117,8 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	mux.Handle("/t.js", trackerHandler())
 
 	// Public email engagement endpoints (open pixel, click redirect, unsubscribe).
-	mux.Handle("/e/", trackingHandler(client, bus, site.Tracker, limiter))
+	trackingH := trackingHandler(client, bus, site.Tracker, limiter, cfg.AppURL)
+	mux.Handle("/e/", trackingH)
 
 	// Inbound provider webhooks (SES bounce/complaint via SNS), routed by the
 	// workspace's secret ingest key: POST /hooks/{key}/{provider}.
@@ -135,7 +136,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// Order (ADR 0025): recoverer, requestID, CORS, client address, rate limit,
 	// timeout. CORS precedes the limiter so a 429 still reaches the browser; guard
 	// sits inside CORS so preflights are answered before the check.
-	return chi.Chain(recoverer, requestID, corsMiddleware(cfg.CORSOrigins), clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), collectEventLimit(cfg.BodyLimits.CollectEvent), guard).Handler(mux), nil
+	return chi.Chain(recoverer, requestID, corsMiddleware(cfg.CORSOrigins), clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), collectEventLimit(cfg.BodyLimits.CollectEvent), guard).Handler(trackingHostGate(cfg, client, mux, trackingH, cfg.JWTSecret)), nil
 }
 
 // NewExternalAPI builds the external API (/api) ogen server: Bearer API-token

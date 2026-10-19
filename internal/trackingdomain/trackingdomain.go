@@ -11,6 +11,9 @@ package trackingdomain
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"net"
 	"strings"
@@ -95,4 +98,20 @@ func (v *Verifier) pointsAtTarget(ctx context.Context, host string) (bool, error
 
 func normalize(host string) string {
 	return strings.ToLower(strings.TrimSuffix(strings.TrimSpace(host), "."))
+}
+
+// ProbePath is the well-known path a Tracking host serves for the serving check
+// (ADR 0038): GET https://<host>/.well-known/sphericon-tracking answers 200 with
+// ProbeValue(secret, host) as the plain-text body. The probe succeeds only when the
+// body equals the value for the host it asked, so an answer from another host, a
+// parked page or a proxy that is not ours does not pass.
+const ProbePath = "/.well-known/sphericon-tracking"
+
+// ProbeValue is the body ProbePath answers for host: a hex HMAC-SHA256 of the lowercase
+// host under secret (the Instance JWT secret), so it is tied to the domain and cannot
+// be guessed or copied from another host. Both sides compute it; nothing is stored.
+func ProbeValue(secret, host string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte("tracking-probe:" + normalize(host)))
+	return hex.EncodeToString(mac.Sum(nil))
 }
