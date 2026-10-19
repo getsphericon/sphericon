@@ -24,7 +24,7 @@ integration only what it needs, for example:
 - `broadcasts:write`, and the separate `broadcasts:send` to actually send
 - `automations:write`, and `automations:activate` to turn one on
 - `emails:send` for transactional mail
-- `webhooks:read`, `webhooks:write`
+- `webhooks:read`, `webhooks:write`, and the separate `webhooks:regenerate` (replace an endpoint's signing secret) and `webhooks:test` (send it a sample event)
 - `integrations:read`, `integrations:write` for sending providers (credentials are write-only: no response ever contains a password or secret key)
 - `sending_domains:read`, `sending_domains:write` for sending domains: create one, publish the returned DKIM record, then `POST /sending-domains/{id}/verify` and read the domain to see whether it verified (the DKIM private key is never returned)
 

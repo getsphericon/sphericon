@@ -107,6 +107,8 @@ const (
 	SiteWebhooksDeleteOperation                       OperationName = "SiteWebhooksDelete"
 	SiteWebhooksGetOperation                          OperationName = "SiteWebhooksGet"
 	SiteWebhooksListOperation                         OperationName = "SiteWebhooksList"
+	SiteWebhooksRegenerateSecretOperation             OperationName = "SiteWebhooksRegenerateSecret"
+	SiteWebhooksTestOperation                         OperationName = "SiteWebhooksTest"
 	SiteWebhooksUpdateOperation                       OperationName = "SiteWebhooksUpdate"
 	SiteWorkspacesAccountLinkOperation                OperationName = "SiteWorkspacesAccountLink"
 	SiteWorkspacesListOperation                       OperationName = "SiteWorkspacesList"

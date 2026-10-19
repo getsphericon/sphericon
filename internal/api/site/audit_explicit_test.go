@@ -273,6 +273,10 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = owner.SiteAuditExport(ctx, siteapi.SiteAuditExportParams{Slug: fixtures.AcmeSlug}) // audit_log.export
 	require.NoError(t, err)
 
+	_, err = owner.SiteWebhooksTest(ctx, &siteapi.SiteTestWebhookInput{EventType: "contact.created"}, // webhook_endpoint.test
+		siteapi.SiteWebhooksTestParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.WebhookCodebasicsID)})
+	require.NoError(t, err)
+
 	_, err = owner.SiteUserSignOutEverywhere(ctx) // user.sign_out_everywhere
 	require.NoError(t, err)
 
@@ -286,7 +290,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	slices.Sort(want)
 	assert.Equal(t, want, seen)
 
-	assert.Equal(t, []string{"internal/accounts/accounts.go", "internal/accounts/roles.go", "internal/api/site/audit.go", "internal/contacts/contacts.go", "internal/events/audit.go", "internal/suspension/suspension.go"},
+	assert.Equal(t, []string{"internal/accounts/accounts.go", "internal/accounts/roles.go", "internal/api/site/audit.go", "internal/contacts/contacts.go", "internal/events/audit.go", "internal/suspension/suspension.go", "internal/webhooks/webhooks.go"},
 		recordAuditCallSites(t), "a new explicit RecordAudit call site: list its actions and drive them above")
 }
 

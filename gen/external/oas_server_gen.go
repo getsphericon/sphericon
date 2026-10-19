@@ -438,6 +438,20 @@ type Handler interface {
 	//
 	// GET /webhooks
 	WebhooksList(ctx context.Context, params WebhooksListParams) (WebhooksListRes, error)
+	// WebhooksRegenerateSecret implements Webhooks_regenerateSecret operation.
+	//
+	// Replace the endpoint's signing secret; the old one stops verifying at once. The new secret is never
+	// returned here: read it in the app. Needs the webhooks:regenerate scope.
+	//
+	// POST /webhooks/{id}/regenerate-secret
+	WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (WebhooksRegenerateSecretRes, error)
+	// WebhooksTest implements Webhooks_test operation.
+	//
+	// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+	// Does not change the endpoint's failure state. Needs the webhooks:test scope.
+	//
+	// POST /webhooks/{id}/test
+	WebhooksTest(ctx context.Context, req *TestWebhookInput, params WebhooksTestParams) (WebhooksTestRes, error)
 	// WebhooksUpdate implements Webhooks_update operation.
 	//
 	// Update a resource.

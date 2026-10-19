@@ -44,6 +44,8 @@ const SCOPE_OPTIONS = [
   'templates:write',
   'webhooks:read',
   'webhooks:write',
+  'webhooks:regenerate',
+  'webhooks:test',
   'custom_fields:read',
   'sending_domains:read',
   'sending_domains:write',

@@ -6572,6 +6572,120 @@
         },
         "tags": ["Site Webhooks"]
       }
+    },
+    "/workspaces/{slug}/webhooks/{id}/regenerate-secret": {
+      "post": {
+        "operationId": "SiteWebhooks_regenerateSecret",
+        "description": "Replace the signing secret. The old one stops verifying at once; the new one is in the response.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.slug"
+          },
+          {
+            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWebhookEndpointResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Webhooks"]
+      }
+    },
+    "/workspaces/{slug}/webhooks/{id}/test": {
+      "post": {
+        "operationId": "SiteWebhooks_test",
+        "description": "Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.slug"
+          },
+          {
+            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWebhookTestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Webhooks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteTestWebhookInput"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "security": [
@@ -10408,6 +10522,17 @@
         },
         "description": "Site request body for a test send"
       },
+      "SiteTestWebhookInput": {
+        "type": "object",
+        "required": ["eventType"],
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "description": "The event name the sample carries, for example `contact.created`"
+          }
+        },
+        "description": "Request body for sending a sample event to a webhook endpoint"
+      },
       "SiteTransactionalEmailChannel": {
         "type": "string",
         "enum": ["email"],
@@ -10899,6 +11024,30 @@
           }
         },
         "description": "The failure state of an endpoint that is currently failing; absent while it is healthy."
+      },
+      "SiteWebhookTestResult": {
+        "type": "object",
+        "required": ["delivered"],
+        "properties": {
+          "delivered": {
+            "type": "boolean",
+            "description": "Whether the receiver answered 2xx"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "description": "HTTP status the receiver answered, when it answered"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteWebhookErrorKind"
+              }
+            ],
+            "description": "Why the delivery failed; absent when delivered"
+          }
+        },
+        "description": "What the receiver answered to a test delivery. The endpoint's failure state is not touched."
       },
       "SiteWorkspaceHold": {
         "type": "object",

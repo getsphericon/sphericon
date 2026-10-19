@@ -975,6 +975,24 @@ func (UnimplementedHandler) SiteWebhooksList(ctx context.Context, params SiteWeb
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWebhooksRegenerateSecret implements SiteWebhooks_regenerateSecret operation.
+//
+// Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+//
+// POST /workspaces/{slug}/webhooks/{id}/regenerate-secret
+func (UnimplementedHandler) SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (r SiteWebhooksRegenerateSecretRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteWebhooksTest implements SiteWebhooks_test operation.
+//
+// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+//
+// POST /workspaces/{slug}/webhooks/{id}/test
+func (UnimplementedHandler) SiteWebhooksTest(ctx context.Context, req *SiteTestWebhookInput, params SiteWebhooksTestParams) (r SiteWebhooksTestRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWebhooksUpdate implements SiteWebhooks_update operation.
 //
 // Update a resource from the site UI.

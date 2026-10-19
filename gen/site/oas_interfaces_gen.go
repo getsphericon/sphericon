@@ -389,6 +389,14 @@ type SiteWebhooksListRes interface {
 	siteWebhooksListRes()
 }
 
+type SiteWebhooksRegenerateSecretRes interface {
+	siteWebhooksRegenerateSecretRes()
+}
+
+type SiteWebhooksTestRes interface {
+	siteWebhooksTestRes()
+}
+
 type SiteWebhooksUpdateRes interface {
 	siteWebhooksUpdateRes()
 }

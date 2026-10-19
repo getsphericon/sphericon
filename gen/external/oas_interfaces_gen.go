@@ -281,6 +281,14 @@ type WebhooksListRes interface {
 	webhooksListRes()
 }
 
+type WebhooksRegenerateSecretRes interface {
+	webhooksRegenerateSecretRes()
+}
+
+type WebhooksTestRes interface {
+	webhooksTestRes()
+}
+
 type WebhooksUpdateRes interface {
 	webhooksUpdateRes()
 }

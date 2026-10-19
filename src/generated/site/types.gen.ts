@@ -2436,6 +2436,16 @@ export type SiteTestSendBroadcastInput = {
 };
 
 /**
+ * Request body for sending a sample event to a webhook endpoint
+ */
+export type SiteTestWebhookInput = {
+  /**
+   * The event name the sample carries, for example `contact.created`
+   */
+  eventType: string;
+};
+
+/**
  * The channel a transactional send went out on (email today; sms reserved)
  */
 export const SiteTransactionalEmailChannel = { EMAIL: 'email' } as const;
@@ -2786,6 +2796,24 @@ export type SiteWebhookFailure = {
    * HTTP status of the latest failure; present only for kind `http_status`
    */
   status?: number;
+};
+
+/**
+ * What the receiver answered to a test delivery. The endpoint's failure state is not touched.
+ */
+export type SiteWebhookTestResult = {
+  /**
+   * Whether the receiver answered 2xx
+   */
+  delivered: boolean;
+  /**
+   * HTTP status the receiver answered, when it answered
+   */
+  status?: number;
+  /**
+   * Why the delivery failed; absent when delivered
+   */
+  kind?: SiteWebhookErrorKind;
 };
 
 /**
@@ -7318,3 +7346,83 @@ export type SiteWebhooksUpdateResponses = {
 };
 
 export type SiteWebhooksUpdateResponse = SiteWebhooksUpdateResponses[keyof SiteWebhooksUpdateResponses];
+
+export type SiteWebhooksRegenerateSecretData = {
+  body?: never;
+  path: {
+    /**
+     * URL-safe unique slug; the route key for nested workspace resources
+     */
+    slug: string;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/webhooks/{id}/regenerate-secret';
+};
+
+export type SiteWebhooksRegenerateSecretErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteWebhooksRegenerateSecretError = SiteWebhooksRegenerateSecretErrors[keyof SiteWebhooksRegenerateSecretErrors];
+
+export type SiteWebhooksRegenerateSecretResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWebhookEndpointResource;
+};
+
+export type SiteWebhooksRegenerateSecretResponse = SiteWebhooksRegenerateSecretResponses[keyof SiteWebhooksRegenerateSecretResponses];
+
+export type SiteWebhooksTestData = {
+  body: SiteTestWebhookInput;
+  path: {
+    /**
+     * URL-safe unique slug; the route key for nested workspace resources
+     */
+    slug: string;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/webhooks/{id}/test';
+};
+
+export type SiteWebhooksTestErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteWebhooksTestError = SiteWebhooksTestErrors[keyof SiteWebhooksTestErrors];
+
+export type SiteWebhooksTestResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWebhookTestResult;
+};
+
+export type SiteWebhooksTestResponse = SiteWebhooksTestResponses[keyof SiteWebhooksTestResponses];

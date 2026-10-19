@@ -1,5 +1,6 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
+using TypeSpec.Rest.Resource;
 
 namespace Sphericon;
 
@@ -79,10 +80,48 @@ model SiteUpdateWebhookEndpointInput {
   enabled?: boolean;
 }
 
+/** Request body for sending a sample event to a webhook endpoint */
+model SiteTestWebhookInput {
+  /** The event name the sample carries, for example `contact.created` */
+  eventType: string;
+}
+
+/** What the receiver answered to a test delivery. The endpoint's failure state is not touched. */
+model SiteWebhookTestResult {
+  /** Whether the receiver answered 2xx */
+  delivered: boolean;
+
+  /** HTTP status the receiver answered, when it answered */
+  status?: int32;
+
+  /** Why the delivery failed; absent when delivered */
+  kind?: SiteWebhookErrorKind;
+}
+
 @tag("Site Webhooks")
 interface SiteWebhooks
   extends WorkspaceCrud<
       SiteWebhookEndpointResource,
       SiteCreateWebhookEndpointInput,
       SiteUpdateWebhookEndpointInput
-    > {}
+    > {
+  /** Replace the signing secret. The old one stops verifying at once; the new one is in the response. */
+  @action("regenerate-secret")
+  @autoRoute
+  regenerateSecret(...ResourceParameters<SiteWebhookEndpointResource>):
+    | SiteWebhookEndpointResource
+    | BadRequestProblem
+    | NotFoundProblem;
+
+  /** Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer */
+  @action("test")
+  @autoRoute
+  test(
+    ...ResourceParameters<SiteWebhookEndpointResource>,
+    @body body: SiteTestWebhookInput,
+  ):
+    | SiteWebhookTestResult
+    | BadRequestProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+}

@@ -10,7 +10,7 @@
   updated_at: '{{daysAgo 70}}'
 - id: 101 # fixture: WebhookCodebasicsDisabled
   url: https://hooks.codebasics.dev/disabled
-  secret_encrypted: '{{ encrypt "whsec_codebasics_disabled" }}'
+  secret_encrypted: '{{ encrypt "whsec_Y29kZWJhc2ljc19kaXNhYmxlZF9zZWNyZXQ=" }}'
   enabled: false
   workspace_id: 1
   created_at: '{{daysAgo 50}}'
