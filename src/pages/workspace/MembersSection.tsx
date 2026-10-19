@@ -8,17 +8,22 @@ import {
   CopyButton,
   Group,
   Loader,
+  Menu,
+  Modal,
   Select,
+  Stack,
   Tabs,
   TextInput,
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteInvitationsCreateMutation,
   siteInvitationsDeleteMutation,
@@ -44,6 +49,11 @@ export function MembersSection({ slug }: { slug: string }) {
   const { t } = useTranslation()
   const confirmRemove = useDeleteConfirmation()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
+  const [inviteOpened, { open: openInvite, close }] = useDisclosure(false)
+  const closeInvite = () => {
+    close()
+    setInviteUrl(null)
+  }
   const role = useCurrentRole(slug)
   const me = useQuery(siteUserGetMeOptions())
   const canManageMembers = canManage(role)
@@ -115,9 +125,10 @@ export function MembersSection({ slug }: { slug: string }) {
 
   return (
     <Card withBorder>
-      <Title order={4} mb="sm">
-        {t(($) => $.settings.members.title)}
-      </Title>
+      <Group justify="space-between" mb="sm">
+        <Title order={4}>{t(($) => $.settings.members.title)}</Title>
+        <Button onClick={openInvite}>{t(($) => $.settings.members.invite)}</Button>
+      </Group>
 
       {membersQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.members.loadError)} mb="md">
@@ -174,25 +185,17 @@ export function MembersSection({ slug }: { slug: string }) {
                 accessor: 'actions',
                 title: '',
                 render: (record) => (
-                  <Group gap="xs" wrap="nowrap" justify="flex-end">
-                    {canManageMembers && record.userId !== me.data?.id ? (
-                      <Button
-                        size="compact-sm"
-                        color="orange"
-                        variant="light"
-                        onClick={() => onResetSecondFactor(record.id)}
-                      >
-                        {t(($) => $.settings.members.resetSecondFactor)}
-                      </Button>
-                    ) : null}
-                    <Button
-                      size="compact-sm"
-                      color="red"
-                      variant="light"
-                      onClick={() => onRemove(record.id)}
-                    >
-                      {t(($) => $.settings.members.remove)}
-                    </Button>
+                  <Group justify="flex-end">
+                    <RowActionsMenu>
+                      {canManageMembers && record.userId !== me.data?.id ? (
+                        <Menu.Item color="orange" onClick={() => onResetSecondFactor(record.id)}>
+                          {t(($) => $.settings.members.resetSecondFactor)}
+                        </Menu.Item>
+                      ) : null}
+                      <Menu.Item color="red" onClick={() => onRemove(record.id)}>
+                        {t(($) => $.settings.members.remove)}
+                      </Menu.Item>
+                    </RowActionsMenu>
                   </Group>
                 ),
               },
@@ -202,55 +205,6 @@ export function MembersSection({ slug }: { slug: string }) {
         </Tabs.Panel>
 
         <Tabs.Panel value="invitations">
-          {inviteUrl ? (
-            <Alert
-              color="yellow"
-              title={t(($) => $.settings.members.inviteUrlNotice)}
-              mb="md"
-              withCloseButton
-              onClose={() => setInviteUrl(null)}
-            >
-              <Group align="center" gap="sm" wrap="nowrap">
-                <Code>{inviteUrl}</Code>
-                <CopyButton value={inviteUrl}>
-                  {({ copied, copy }) => (
-                    <Button size="compact-sm" variant="light" onClick={copy}>
-                      {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-                    </Button>
-                  )}
-                </CopyButton>
-              </Group>
-            </Alert>
-          ) : null}
-
-          <form
-            onSubmit={form.onSubmit((values) =>
-              inviteMutation.mutate({
-                path: { slug },
-                body: { email: values.email.trim(), role: values.role },
-              }),
-            )}
-          >
-            <Group align="flex-end" gap="sm" mb="md">
-              <TextInput
-                label={t(($) => $.settings.members.emailLabel)}
-                type="email"
-                required
-                {...form.getInputProps('email')}
-              />
-              <Select
-                label={t(($) => $.settings.members.roleLabel)}
-                allowDeselect={false}
-                data={INVITABLE_ROLES}
-                w={140}
-                {...form.getInputProps('role')}
-              />
-              <Button type="submit" loading={inviteMutation.isPending}>
-                {t(($) => $.settings.members.invite)}
-              </Button>
-            </Group>
-          </form>
-
           <DataTable
             minHeight={200}
             withTableBorder
@@ -268,14 +222,13 @@ export function MembersSection({ slug }: { slug: string }) {
                 accessor: 'actions',
                 title: '',
                 render: (record) => (
-                  <Button
-                    size="compact-sm"
-                    color="red"
-                    variant="light"
-                    onClick={() => onRevoke(record.id)}
-                  >
-                    {t(($) => $.settings.members.revoke)}
-                  </Button>
+                  <Group justify="flex-end">
+                    <RowActionsMenu>
+                      <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
+                        {t(($) => $.settings.members.revoke)}
+                      </Menu.Item>
+                    </RowActionsMenu>
+                  </Group>
                 ),
               },
             ]}
@@ -283,6 +236,55 @@ export function MembersSection({ slug }: { slug: string }) {
           />
         </Tabs.Panel>
       </Tabs>
+
+      <Modal
+        opened={inviteOpened}
+        onClose={closeInvite}
+        title={t(($) => $.settings.members.invite)}
+      >
+        {inviteUrl ? (
+          <Alert color="yellow" title={t(($) => $.settings.members.inviteUrlNotice)}>
+            <Group align="center" gap="sm" wrap="nowrap">
+              <Code>{inviteUrl}</Code>
+              <CopyButton value={inviteUrl}>
+                {({ copied, copy }) => (
+                  <Button size="compact-sm" variant="light" onClick={copy}>
+                    {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
+                  </Button>
+                )}
+              </CopyButton>
+            </Group>
+          </Alert>
+        ) : (
+          <form
+            onSubmit={form.onSubmit((values) =>
+              inviteMutation.mutate({
+                path: { slug },
+                body: { email: values.email.trim(), role: values.role },
+              }),
+            )}
+          >
+            <Stack>
+              <TextInput
+                label={t(($) => $.settings.members.emailLabel)}
+                type="email"
+                required
+                data-autofocus
+                {...form.getInputProps('email')}
+              />
+              <Select
+                label={t(($) => $.settings.members.roleLabel)}
+                allowDeselect={false}
+                data={INVITABLE_ROLES}
+                {...form.getInputProps('role')}
+              />
+              <Button type="submit" loading={inviteMutation.isPending}>
+                {t(($) => $.settings.members.invite)}
+              </Button>
+            </Stack>
+          </form>
+        )}
+      </Modal>
     </Card>
   )
 }
