@@ -54,6 +54,8 @@ type Tx struct {
 	OAuthClient *OAuthClientClient
 	// OAuthCode is the client for interacting with the OAuthCode builders.
 	OAuthCode *OAuthCodeClient
+	// OAuthRefreshToken is the client for interacting with the OAuthRefreshToken builders.
+	OAuthRefreshToken *OAuthRefreshTokenClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
 	// OutboxMessage is the client for interacting with the OutboxMessage builders.
@@ -243,6 +245,7 @@ func (tx *Tx) init() {
 	tx.Membership = NewMembershipClient(tx.config)
 	tx.OAuthClient = NewOAuthClientClient(tx.config)
 	tx.OAuthCode = NewOAuthCodeClient(tx.config)
+	tx.OAuthRefreshToken = NewOAuthRefreshTokenClient(tx.config)
 	tx.OutboundMessage = NewOutboundMessageClient(tx.config)
 	tx.OutboxMessage = NewOutboxMessageClient(tx.config)
 	tx.OutboxOffset = NewOutboxOffsetClient(tx.config)

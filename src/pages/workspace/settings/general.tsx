@@ -1,4 +1,4 @@
-import { Button, Card, Group, Stack, Textarea, TextInput, Title } from '@mantine/core'
+import { Box, Button, Group, Stack, Textarea, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useTranslation } from 'react-i18next'
 
@@ -28,7 +28,7 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   })
 
   return (
-    <Card withBorder>
+    <Box>
       <Title order={4} mb="sm">
         {t(($) => $.settings.generalTitle)}
       </Title>
@@ -61,7 +61,7 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
           </Group>
         </Stack>
       </form>
-    </Card>
+    </Box>
   )
 }
 

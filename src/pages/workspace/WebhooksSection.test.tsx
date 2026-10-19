@@ -101,8 +101,10 @@ test('creates an endpoint from the form', async () => {
   )
   const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
 
-  await screen.getByLabelText(/^Endpoint URL/).fill('  https://example.com/new  ')
   await screen.getByRole('button', { name: 'Add endpoint' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Endpoint URL/).fill('  https://example.com/new  ')
+  await dialog.getByRole('button', { name: 'Add endpoint' }).click()
 
   await expect.poll(() => bodies).toEqual([{ url: 'https://example.com/new', eventTypes: [] }])
 })
@@ -118,7 +120,8 @@ test('toggles an endpoint off', async () => {
   )
   const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Disable' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Disable' }).click()
 
   await expect
     .poll(() => bodies)
@@ -136,7 +139,8 @@ test('regenerates the secret after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Regenerate secret' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Regenerate secret' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Regenerate secret' }).click()
 
   await expect.poll(() => regenerated).toBe(true)
@@ -153,7 +157,8 @@ test('sends a test event and shows what the receiver answered', async () => {
   )
   const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Send test event' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Send test event' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Send' }).click()
 
   await expect.poll(() => bodies).toEqual([{ eventType: 'contact.created' }])
@@ -171,7 +176,8 @@ test.each([
   )
   const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Send test event' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Send test event' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Send' }).click()
 
   await expect.element(screen.getByText(message)).toBeInTheDocument()
@@ -188,7 +194,8 @@ test('deletes an endpoint after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => deleted).toBe(true)
@@ -208,8 +215,10 @@ test('reports a create failure', async () => {
   )
   const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
 
-  await screen.getByLabelText(/^Endpoint URL/).fill('http://x.test')
   await screen.getByRole('button', { name: 'Add endpoint' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Endpoint URL/).fill('http://x.test')
+  await dialog.getByRole('button', { name: 'Add endpoint' }).click()
 
   await expect.element(screen.getByText('Failed to create webhook')).toBeInTheDocument()
 })

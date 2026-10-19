@@ -66,6 +66,9 @@ type OAuthClient func(*sql.Selector)
 // OAuthCode is the predicate function for oauthcode builders.
 type OAuthCode func(*sql.Selector)
 
+// OAuthRefreshToken is the predicate function for oauthrefreshtoken builders.
+type OAuthRefreshToken func(*sql.Selector)
+
 // OutboundMessage is the predicate function for outboundmessage builders.
 type OutboundMessage func(*sql.Selector)
 

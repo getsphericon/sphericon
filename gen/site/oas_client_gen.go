@@ -681,7 +681,7 @@ type Invoker interface {
 	SiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) (SiteTokensDeleteRes, error)
 	// SiteTokensList invokes SiteTokens_list operation.
 	//
-	// List active (non-revoked) API tokens for the workspace.
+	// List the workspace's API tokens, revoked ones included (marked by `revokedAt`).
 	//
 	// GET /workspaces/{slug}/tokens
 	SiteTokensList(ctx context.Context, params SiteTokensListParams) (SiteTokensListRes, error)
@@ -15110,7 +15110,7 @@ func (c *Client) sendSiteTokensDelete(ctx context.Context, params SiteTokensDele
 
 // SiteTokensList invokes SiteTokens_list operation.
 //
-// List active (non-revoked) API tokens for the workspace.
+// List the workspace's API tokens, revoked ones included (marked by `revokedAt`).
 //
 // GET /workspaces/{slug}/tokens
 func (c *Client) SiteTokensList(ctx context.Context, params SiteTokensListParams) (SiteTokensListRes, error) {

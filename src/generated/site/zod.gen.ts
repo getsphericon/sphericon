@@ -1226,6 +1226,7 @@ export const zSiteApiTokenResource = z.object({
   scopes: z.array(z.string()),
   lastUsedAt: z.exactOptional(zTimestamp.nullable()),
   expiresAt: z.exactOptional(zTimestamp.nullable()),
+  revokedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp
 });
 

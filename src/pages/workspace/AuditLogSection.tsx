@@ -1,10 +1,10 @@
 import {
+  Box,
   EmptyState,
   ActionIcon,
   Alert,
   Badge,
   Button,
-  Card,
   Code,
   Group,
   Loader,
@@ -528,7 +528,7 @@ export function AuditLogSection({
   const filterKey = JSON.stringify(filter)
 
   return (
-    <Card withBorder>
+    <Box>
       <Stack>
         <Group justify="space-between">
           <Title order={4}>{t(($) => $.settings.auditLog.title)}</Title>
@@ -538,6 +538,6 @@ export function AuditLogSection({
         <FilterForm key={filterKey} filter={filter} onChange={onFilterChange} />
         <AuditPage key={filterKey} slug={slug} filter={filter} first />
       </Stack>
-    </Card>
+    </Box>
   )
 }

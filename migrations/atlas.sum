@@ -1,4 +1,4 @@
-h1:7GvAXVp8ko8YCt9/uSW51z2CPWTE8pXjY+YwShfdX2E=
+h1:50ffWwA1PoKGFKacV7/NotbLNlMqvniN/N+22GyPBRg=
 20260630101109_init.sql h1:Pgj3WXyEdlsbabERn8ue309EON5bAyWNV1X8O9IkKos=
 20260630175449_send_eligibility_model.sql h1:vEOs/vQyOdwj2FK2h5B0795pY2DVs3jbv3IpH5A/njw=
 20260630204007_transactional_email.sql h1:sotbb1MKWbZO2UzTf7TruRuFpMaXirns67+ithjM1Lc=
@@ -62,6 +62,7 @@ h1:7GvAXVp8ko8YCt9/uSW51z2CPWTE8pXjY+YwShfdX2E=
 20261019115204_name=sending_domain_tracking_reason.sql h1:GECRiwbVGCs9WCEGqHUyNXKmkmnsE0e8NvBX13XTqW0=
 20261019151123_name=outbound_message_app_origin.sql h1:jDh40iV52oXGJ/v4/B+l6tGP2GhmtMW3Njl0iaWu1k8=
 20261019174544_name=oauth_client_metadata_expires.sql h1:tUXSZnnd9suIF651wtwlBslXzj2np5aDPSKoxK4ovOs=
-20261019190001_template_document.sql h1:EedB1R4EiMlhKumai7pcKDT98B6SIXI2+auZUSzpvlA=
-20261019190002_broadcast_document.sql h1:yO6rd3BiROIK+NMYACON7dCPH+9EpomeqB9zgm85W/A=
-20261019190003_brand_kit.sql h1:NFmBw8r0rtyz+DU4XmQZNykBYAHvGmlujxQROVieooQ=
+20261019181256_name=oauth_refresh_tokens.sql h1:1k/lYXOxI/hL2PeH75rJGXWnSUs3mC1ZAuu6w6NCez4=
+20261019190001_template_document.sql h1:bqoAfaHccJGhk3sGaBm+OVyCeoPAj6nAlZCDJovTO0Q=
+20261019190002_broadcast_document.sql h1:CC/zIa2hog0wiYKC6K3uCaU6vvcyqPZ1FDsQFZH++QM=
+20261019190003_brand_kit.sql h1:9WKZJVEMvaN6vJlPv0BxVQibvgJXfzDjpyUvdBtU/1U=

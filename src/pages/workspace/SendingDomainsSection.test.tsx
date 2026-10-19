@@ -55,8 +55,10 @@ test('adds a domain', async () => {
   )
   const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
 
-  await screen.getByLabelText(/^Domain/).fill(' mail.acme.com ')
   await screen.getByRole('button', { name: 'Add domain' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Domain/).fill(' mail.acme.com ')
+  await dialog.getByRole('button', { name: 'Add domain' }).click()
 
   await expect.poll(() => bodies).toEqual([{ domain: 'mail.acme.com' }])
 })
@@ -72,7 +74,8 @@ test('starts verification', async () => {
   )
   const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Verify' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Verify' }).click()
 
   await expect.poll(() => verified).toBe(true)
   await expect.element(screen.getByText('Verification started')).toBeInTheDocument()
@@ -89,7 +92,8 @@ test('deletes a domain after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => deleted).toBe(true)

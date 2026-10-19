@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/schema"
@@ -585,6 +586,25 @@ func init() {
 	oauthcodeDescScopes := oauthcodeFields[4].Descriptor()
 	// oauthcode.DefaultScopes holds the default value on creation for the scopes field.
 	oauthcode.DefaultScopes = oauthcodeDescScopes.Default.([]string)
+	oauthrefreshtokenMixin := schema.OAuthRefreshToken{}.Mixin()
+	oauthrefreshtokenMixinFields0 := oauthrefreshtokenMixin[0].Fields()
+	_ = oauthrefreshtokenMixinFields0
+	oauthrefreshtokenFields := schema.OAuthRefreshToken{}.Fields()
+	_ = oauthrefreshtokenFields
+	// oauthrefreshtokenDescCreatedAt is the schema descriptor for created_at field.
+	oauthrefreshtokenDescCreatedAt := oauthrefreshtokenMixinFields0[0].Descriptor()
+	// oauthrefreshtoken.DefaultCreatedAt holds the default value on creation for the created_at field.
+	oauthrefreshtoken.DefaultCreatedAt = oauthrefreshtokenDescCreatedAt.Default.(func() time.Time)
+	// oauthrefreshtokenDescUpdatedAt is the schema descriptor for updated_at field.
+	oauthrefreshtokenDescUpdatedAt := oauthrefreshtokenMixinFields0[1].Descriptor()
+	// oauthrefreshtoken.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	oauthrefreshtoken.DefaultUpdatedAt = oauthrefreshtokenDescUpdatedAt.Default.(func() time.Time)
+	// oauthrefreshtoken.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	oauthrefreshtoken.UpdateDefaultUpdatedAt = oauthrefreshtokenDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// oauthrefreshtokenDescTokenHash is the schema descriptor for token_hash field.
+	oauthrefreshtokenDescTokenHash := oauthrefreshtokenFields[1].Descriptor()
+	// oauthrefreshtoken.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
+	oauthrefreshtoken.TokenHashValidator = oauthrefreshtokenDescTokenHash.Validators[0].(func(string) error)
 	outboundmessageMixin := schema.OutboundMessage{}.Mixin()
 	outboundmessageMixinFields0 := outboundmessageMixin[0].Fields()
 	_ = outboundmessageMixinFields0

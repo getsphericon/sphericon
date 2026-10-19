@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -91,7 +92,7 @@ func TestSiteTokensListCreateAndRevoke(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.ProblemDetails{}, nf)
 
-	// Create with an expiry, then revoke it: it drops out of the list.
+	// Create with an expiry, then revoke it.
 	created, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{
 		Name: " CI ", Scopes: []string{"contacts:read"},
 		ExpiresAt: siteapi.NewOptNilTimestamp(siteapi.Timestamp(time.Now().Add(24 * time.Hour))),
@@ -111,6 +112,15 @@ func TestSiteTokensListCreateAndRevoke(t *testing.T) {
 	revoked, err := env.DB.ApiToken.Query().Where(apitoken.ID(stored.ID), apitoken.RevokedAtNotNil()).Exist(ctx)
 	require.NoError(t, err)
 	assert.True(t, revoked)
+
+	// A revoked token stays in the list, marked as revoked.
+	res, err = c.SiteTokensList(ctx, siteapi.SiteTokensListParams{Slug: acme})
+	require.NoError(t, err)
+	list, ok = res.(*siteapi.SiteTokensListOKApplicationJSON)
+	require.Truef(t, ok, "got %T", res)
+	listed, found := lo.Find(*list, func(r siteapi.SiteApiTokenResource) bool { return r.ID == tok.Resource.ID })
+	require.True(t, found)
+	assert.True(t, listed.RevokedAt.IsSet() && !listed.RevokedAt.Null)
 
 	again, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{Slug: acme, ID: tok.Resource.ID})
 	require.NoError(t, err)

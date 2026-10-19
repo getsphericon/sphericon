@@ -2331,7 +2331,7 @@ export const siteTemplatesUpdateMutation = (options?: Partial<Options<SiteTempla
 export const siteTokensListQueryKey = (options: Options<SiteTokensListData>) => createQueryKey('siteTokensList', options);
 
 /**
- * List active (non-revoked) API tokens for the workspace
+ * List the workspace's API tokens, revoked ones included (marked by `revokedAt`)
  */
 export const siteTokensListOptions = (options: Options<SiteTokensListData>) => queryOptions<SiteTokensListResponse, SiteTokensListError, SiteTokensListResponse, ReturnType<typeof siteTokensListQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {

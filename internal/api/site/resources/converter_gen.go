@@ -247,6 +247,7 @@ func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenR
 		}
 		siteapiSiteApiTokenResource.LastUsedAt = optNilTimestamp((*source).LastUsedAt)
 		siteapiSiteApiTokenResource.ExpiresAt = optNilTimestamp((*source).ExpiresAt)
+		siteapiSiteApiTokenResource.RevokedAt = optNilTimestamp((*source).RevokedAt)
 		siteapiSiteApiTokenResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteApiTokenResource

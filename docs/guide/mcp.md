@@ -47,8 +47,10 @@ sphericon app. sphericon serves the discovery metadata (RFC 9728 and RFC 8414), 
 registration and PKCE (S256 only).
 
 - Only a workspace **owner or admin** can approve, because approval mints a token.
-- The result is an ordinary API token named `<client> (MCP)`. It has no refresh token and does
-  not expire. List and revoke it in the workspace settings like any other token.
+- The result is an ordinary API token named `<client> (MCP)`. Its access token lasts one hour and
+  the connector renews it with a rotating refresh token (30 days, single use; replaying a used one
+  revokes the connector). The row stays the same in the workspace settings; revoke it there like
+  any other token and both tokens stop working.
 - The consent screen lets you opt in to the send-class scopes. Token management scopes
   (`tokens:*`) can never be granted to a connector.
 

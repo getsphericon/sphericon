@@ -1,20 +1,24 @@
 import {
+  Box,
   EmptyState,
   Alert,
   Badge,
   Button,
-  Card,
   Group,
   Loader,
+  Menu,
+  Modal,
+  Stack,
   TextInput,
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useCounter } from '@mantine/hooks'
+import { useCounter, useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteSuppressionsCreateMutation,
   siteSuppressionsDeleteMutation,
@@ -43,6 +47,7 @@ export function SuppressionsSection({ slug }: { slug: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
   const [page, pageHandlers] = useCounter(1, { min: 1 })
+  const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
 
   const queryKey = siteSuppressionsListQueryKey({ path: { slug } })
   const suppressionsQuery = useQuery(
@@ -60,6 +65,7 @@ export function SuppressionsSection({ slug }: { slug: string }) {
     errorTitle: t(($) => $.settings.suppressions.createError),
     onDone: () => {
       form.reset()
+      closeCreate()
       pageHandlers.set(1) // newest is first (id desc), so jump to page 1 to show it
     },
   })
@@ -80,40 +86,17 @@ export function SuppressionsSection({ slug }: { slug: string }) {
   const totalItems = suppressionsQuery.data?.totalItems ?? 0
 
   return (
-    <Card withBorder>
-      <Title order={4} mb="sm">
-        {t(($) => $.settings.suppressions.title)}
-      </Title>
+    <Box>
+      <Group justify="space-between" mb="sm">
+        <Title order={4}>{t(($) => $.settings.suppressions.title)}</Title>
+        <Button onClick={openCreate}>{t(($) => $.settings.suppressions.create)}</Button>
+      </Group>
 
       {suppressionsQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.suppressions.loadError)} mb="md">
           {t(($) => $.settings.suppressions.loadError)}
         </Alert>
       ) : null}
-
-      <form
-        onSubmit={form.onSubmit((values) =>
-          createMutation.mutate({
-            path: { slug },
-            body: { destination: values.destination.trim() },
-          }),
-        )}
-      >
-        <Group align="flex-end" gap="sm" mb="md">
-          <TextInput
-            label={t(($) => $.settings.suppressions.emailLabel)}
-            description={t(($) => $.settings.suppressions.emailHint)}
-            placeholder="blocked@example.com"
-            type="email"
-            required
-            w={320}
-            {...form.getInputProps('destination')}
-          />
-          <Button type="submit" loading={createMutation.isPending}>
-            {t(($) => $.settings.suppressions.create)}
-          </Button>
-        </Group>
-      </form>
 
       {suppressionsQuery.isLoading ? <Loader /> : null}
 
@@ -138,14 +121,11 @@ export function SuppressionsSection({ slug }: { slug: string }) {
             title: '',
             render: (record) => (
               <Group justify="flex-end">
-                <Button
-                  size="compact-sm"
-                  color="red"
-                  variant="light"
-                  onClick={() => onDelete(record.id)}
-                >
-                  {t(($) => $.settings.suppressions.delete)}
-                </Button>
+                <RowActionsMenu>
+                  <Menu.Item color="red" onClick={() => onDelete(record.id)}>
+                    {t(($) => $.settings.suppressions.delete)}
+                  </Menu.Item>
+                </RowActionsMenu>
               </Group>
             ),
           },
@@ -156,6 +136,35 @@ export function SuppressionsSection({ slug }: { slug: string }) {
         page={page}
         onPageChange={pageHandlers.set}
       />
-    </Card>
+      <Modal
+        opened={createOpened}
+        onClose={closeCreate}
+        title={t(($) => $.settings.suppressions.create)}
+      >
+        <form
+          onSubmit={form.onSubmit((values) =>
+            createMutation.mutate({
+              path: { slug },
+              body: { destination: values.destination.trim() },
+            }),
+          )}
+        >
+          <Stack>
+            <TextInput
+              label={t(($) => $.settings.suppressions.emailLabel)}
+              description={t(($) => $.settings.suppressions.emailHint)}
+              placeholder="blocked@example.com"
+              type="email"
+              required
+              data-autofocus
+              {...form.getInputProps('destination')}
+            />
+            <Button type="submit" loading={createMutation.isPending}>
+              {t(($) => $.settings.suppressions.create)}
+            </Button>
+          </Stack>
+        </form>
+      </Modal>
+    </Box>
   )
 }

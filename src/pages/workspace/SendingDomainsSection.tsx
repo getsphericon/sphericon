@@ -1,13 +1,15 @@
 import {
+  Box,
   EmptyState,
   Alert,
   Badge,
   Button,
-  Card,
   Code,
   CopyButton,
   Group,
   Loader,
+  Menu,
+  Modal,
   Stack,
   Table,
   Text,
@@ -15,11 +17,13 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteSendingDomainsCreateMutation,
   siteSendingDomainsDeleteMutation,
@@ -189,6 +193,7 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
 export function SendingDomainsSection({ slug }: { slug: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
+  const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
 
   const queryKey = siteSendingDomainsListQueryKey({ path: { slug } })
   const domainsQuery = useQuery(siteSendingDomainsListOptions({ path: { slug } }))
@@ -200,7 +205,10 @@ export function SendingDomainsSection({ slug }: { slug: string }) {
     invalidate: [queryKey],
     successMessage: t(($) => $.settings.sendingDomains.saved),
     errorTitle: t(($) => $.settings.sendingDomains.createError),
-    onDone: () => form.reset(),
+    onDone: () => {
+      form.reset()
+      closeAdd()
+    },
   })
 
   const verifyMutation = useResourceMutation({
@@ -227,10 +235,11 @@ export function SendingDomainsSection({ slug }: { slug: string }) {
   const records = domainsQuery.data?.items ?? []
 
   return (
-    <Card withBorder>
-      <Title order={4} mb="xs">
-        {t(($) => $.settings.sendingDomains.title)}
-      </Title>
+    <Box>
+      <Group justify="space-between" mb="xs">
+        <Title order={4}>{t(($) => $.settings.sendingDomains.title)}</Title>
+        <Button onClick={openAdd}>{t(($) => $.settings.sendingDomains.create)}</Button>
+      </Group>
       <Text c="dimmed" size="sm" mb="md">
         {t(($) => $.settings.sendingDomains.description)}
       </Text>
@@ -240,28 +249,6 @@ export function SendingDomainsSection({ slug }: { slug: string }) {
           {t(($) => $.settings.sendingDomains.loadError)}
         </Alert>
       ) : null}
-
-      <form
-        onSubmit={form.onSubmit((values) =>
-          createMutation.mutate({
-            path: { slug },
-            body: { domain: values.domain.trim() },
-          }),
-        )}
-      >
-        <Group align="flex-end" maw={520} mb="md">
-          <TextInput
-            flex={1}
-            label={t(($) => $.settings.sendingDomains.domainLabel)}
-            placeholder="mail.example.com"
-            required
-            {...form.getInputProps('domain')}
-          />
-          <Button type="submit" loading={createMutation.isPending}>
-            {t(($) => $.settings.sendingDomains.create)}
-          </Button>
-        </Group>
-      </form>
 
       {domainsQuery.isLoading ? <Loader /> : null}
 
@@ -292,29 +279,53 @@ export function SendingDomainsSection({ slug }: { slug: string }) {
             title: '',
             textAlign: 'right',
             render: (record) => (
-              <Group gap="xs" justify="flex-end" wrap="nowrap">
-                <Button
-                  size="compact-sm"
-                  variant="light"
-                  loading={verifyMutation.isPending}
-                  onClick={() => verifyMutation.mutate({ path: { slug, id: record.id } })}
-                >
-                  {t(($) => $.settings.sendingDomains.verify)}
-                </Button>
-                <Button
-                  size="compact-sm"
-                  variant="light"
-                  color="red"
-                  onClick={() => onDelete(record.id)}
-                >
-                  {t(($) => $.settings.sendingDomains.delete)}
-                </Button>
+              // A click in the cell must not toggle the row's expansion.
+              <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
+                <RowActionsMenu>
+                  <Menu.Item
+                    disabled={verifyMutation.isPending}
+                    onClick={() => verifyMutation.mutate({ path: { slug, id: record.id } })}
+                  >
+                    {t(($) => $.settings.sendingDomains.verify)}
+                  </Menu.Item>
+                  <Menu.Item color="red" onClick={() => onDelete(record.id)}>
+                    {t(($) => $.settings.sendingDomains.delete)}
+                  </Menu.Item>
+                </RowActionsMenu>
               </Group>
             ),
           },
         ]}
         rowExpansion={{ content: SendingDomainRowExpansion }}
       />
-    </Card>
+
+      <Modal
+        opened={addOpened}
+        onClose={closeAdd}
+        title={t(($) => $.settings.sendingDomains.create)}
+      >
+        <form
+          onSubmit={form.onSubmit((values) =>
+            createMutation.mutate({
+              path: { slug },
+              body: { domain: values.domain.trim() },
+            }),
+          )}
+        >
+          <Stack>
+            <TextInput
+              label={t(($) => $.settings.sendingDomains.domainLabel)}
+              placeholder="mail.example.com"
+              required
+              data-autofocus
+              {...form.getInputProps('domain')}
+            />
+            <Button type="submit" loading={createMutation.isPending}>
+              {t(($) => $.settings.sendingDomains.create)}
+            </Button>
+          </Stack>
+        </form>
+      </Modal>
+    </Box>
   )
 }

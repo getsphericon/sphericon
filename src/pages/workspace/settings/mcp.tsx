@@ -1,4 +1,5 @@
-import { Anchor, Button, Card, Code, CopyButton, List, Stack, Text, Title } from '@mantine/core'
+import { Box, ActionIcon, Anchor, CopyButton, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { IconCheck, IconCopy } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../../components/RouterLink.tsx'
@@ -18,26 +19,32 @@ function McpSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const url = `${workspace.mcpUrl.replace(/\/$/, '')}/mcp`
 
   return (
-    <Card withBorder>
-      <Title order={4} mb="xs">
-        {t(($) => $.settings.mcp.title)}
-      </Title>
+    <Box>
       <Text c="dimmed" size="sm" mb="sm">
         {t(($) => $.settings.mcp.description)}
       </Text>
-      <Code block>{url}</Code>
-      <CopyButton value={url}>
-        {({ copied, copy }) => (
-          <Button mt="sm" variant="light" onClick={copy}>
-            {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-          </Button>
-        )}
-      </CopyButton>
-      <List type="ordered" size="sm" mt="md" spacing="xs">
-        <List.Item>{t(($) => $.settings.mcp.stepAdd)}</List.Item>
-        <List.Item>{t(($) => $.settings.mcp.stepConnect)}</List.Item>
-        <List.Item>{t(($) => $.settings.mcp.stepApprove)}</List.Item>
-      </List>
+      <TextInput
+        readOnly
+        maw={480}
+        value={url}
+        aria-label={t(($) => $.settings.mcp.addressLabel)}
+        rightSection={
+          <CopyButton value={url}>
+            {({ copied, copy }) => (
+              <Tooltip label={copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}>
+                <ActionIcon
+                  variant="subtle"
+                  color={copied ? 'teal' : 'gray'}
+                  onClick={copy}
+                  aria-label={t(($) => $.settings.copy)}
+                >
+                  {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </CopyButton>
+        }
+      />
       <Text size="sm" mt="md">
         {t(($) => $.settings.mcp.tokenNote)}{' '}
         <AnchorLink to={developersRoute.to} params={{ slug: workspace.slug }} size="sm">
@@ -51,7 +58,7 @@ function McpSection({ workspace }: { workspace: SiteWorkspaceResource }) {
       <Anchor href={MCP_GUIDE_URL} target="_blank" rel="noreferrer" size="sm" mt="xs">
         {t(($) => $.settings.mcp.guideLink)}
       </Anchor>
-    </Card>
+    </Box>
   )
 }
 

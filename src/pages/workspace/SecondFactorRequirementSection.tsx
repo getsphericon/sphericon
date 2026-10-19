@@ -1,4 +1,4 @@
-import { Card, Stack, Switch, Text, Title } from '@mantine/core'
+import { Box, Stack, Switch, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import type { SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
@@ -24,7 +24,7 @@ export function SecondFactorRequirementSection({
   const mutation = useSetSecondFactorRequirement()
 
   return (
-    <Card withBorder>
+    <Box>
       <Title order={4} mb="xs">
         {t(($) => $.secondFactorRequirement.settingTitle)}
       </Title>
@@ -52,6 +52,6 @@ export function SecondFactorRequirementSection({
           </Text>
         ) : null}
       </Stack>
-    </Card>
+    </Box>
   )
 }

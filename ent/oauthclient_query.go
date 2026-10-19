@@ -15,18 +15,20 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
 // OAuthClientQuery is the builder for querying OAuthClient entities.
 type OAuthClientQuery struct {
 	config
-	ctx        *QueryContext
-	order      []oauthclient.OrderOption
-	inters     []Interceptor
-	predicates []predicate.OAuthClient
-	withCodes  *OAuthCodeQuery
-	modifiers  []func(*sql.Selector)
+	ctx               *QueryContext
+	order             []oauthclient.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.OAuthClient
+	withCodes         *OAuthCodeQuery
+	withRefreshTokens *OAuthRefreshTokenQuery
+	modifiers         []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -78,6 +80,28 @@ func (_q *OAuthClientQuery) QueryCodes() *OAuthCodeQuery {
 			sqlgraph.From(oauthclient.Table, oauthclient.FieldID, selector),
 			sqlgraph.To(oauthcode.Table, oauthcode.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, oauthclient.CodesTable, oauthclient.CodesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRefreshTokens chains the current query on the "refresh_tokens" edge.
+func (_q *OAuthClientQuery) QueryRefreshTokens() *OAuthRefreshTokenQuery {
+	query := (&OAuthRefreshTokenClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthclient.Table, oauthclient.FieldID, selector),
+			sqlgraph.To(oauthrefreshtoken.Table, oauthrefreshtoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, oauthclient.RefreshTokensTable, oauthclient.RefreshTokensColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -272,12 +296,13 @@ func (_q *OAuthClientQuery) Clone() *OAuthClientQuery {
 		return nil
 	}
 	return &OAuthClientQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]oauthclient.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.OAuthClient{}, _q.predicates...),
-		withCodes:  _q.withCodes.Clone(),
+		config:            _q.config,
+		ctx:               _q.ctx.Clone(),
+		order:             append([]oauthclient.OrderOption{}, _q.order...),
+		inters:            append([]Interceptor{}, _q.inters...),
+		predicates:        append([]predicate.OAuthClient{}, _q.predicates...),
+		withCodes:         _q.withCodes.Clone(),
+		withRefreshTokens: _q.withRefreshTokens.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -293,6 +318,17 @@ func (_q *OAuthClientQuery) WithCodes(opts ...func(*OAuthCodeQuery)) *OAuthClien
 		opt(query)
 	}
 	_q.withCodes = query
+	return _q
+}
+
+// WithRefreshTokens tells the query-builder to eager-load the nodes that are connected to
+// the "refresh_tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OAuthClientQuery) WithRefreshTokens(opts ...func(*OAuthRefreshTokenQuery)) *OAuthClientQuery {
+	query := (&OAuthRefreshTokenClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRefreshTokens = query
 	return _q
 }
 
@@ -374,8 +410,9 @@ func (_q *OAuthClientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	var (
 		nodes       = []*OAuthClient{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withCodes != nil,
+			_q.withRefreshTokens != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -406,6 +443,13 @@ func (_q *OAuthClientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 			return nil, err
 		}
 	}
+	if query := _q.withRefreshTokens; query != nil {
+		if err := _q.loadRefreshTokens(ctx, query, nodes,
+			func(n *OAuthClient) { n.Edges.RefreshTokens = []*OAuthRefreshToken{} },
+			func(n *OAuthClient, e *OAuthRefreshToken) { n.Edges.RefreshTokens = append(n.Edges.RefreshTokens, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -424,6 +468,36 @@ func (_q *OAuthClientQuery) loadCodes(ctx context.Context, query *OAuthCodeQuery
 	}
 	query.Where(predicate.OAuthCode(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(oauthclient.CodesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ClientID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "client_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *OAuthClientQuery) loadRefreshTokens(ctx context.Context, query *OAuthRefreshTokenQuery, nodes []*OAuthClient, init func(*OAuthClient), assign func(*OAuthClient, *OAuthRefreshToken)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*OAuthClient)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(oauthrefreshtoken.FieldClientID)
+	}
+	query.Where(predicate.OAuthRefreshToken(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(oauthclient.RefreshTokensColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

@@ -55,8 +55,10 @@ test('creates a token and reveals the one-time secret', async () => {
 
   const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
 
-  await screen.getByLabelText(/^Token name/).fill('CI')
   await screen.getByRole('button', { name: 'Create token' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Token name/).fill('CI')
+  await dialog.getByRole('button', { name: 'Create token' }).click()
 
   // The full secret is shown once.
   await expect.element(screen.getByText('omtk_newprefix_supersecret')).toBeInTheDocument()
@@ -72,8 +74,10 @@ test('a plain member who is forbidden to create a token sees why', async () => {
 
   const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
 
-  await screen.getByLabelText(/^Token name/).fill('CI')
   await screen.getByRole('button', { name: 'Create token' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Token name/).fill('CI')
+  await dialog.getByRole('button', { name: 'Create token' }).click()
 
   await expect
     .element(screen.getByText(/Only workspace owners and admins can manage API tokens/))
@@ -103,11 +107,20 @@ test('revokes a token after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
 
-  await screen.getByRole('button', { name: 'Revoke' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Revoke' }).click()
   await expect.element(screen.getByText('Revoke token?')).toBeInTheDocument()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => revoked).toBe(true)
+})
+
+test('a revoked token is marked as revoked and offers no revoke button', async () => {
+  worker.use(listTokens([{ ...token, revokedAt: '2026-06-02T00:00:00Z' }]))
+  const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
+
+  await expect.element(screen.getByText('Revoked')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Revoke' })).not.toBeInTheDocument()
 })
 
 test('a failed revoke shows the error toast', async () => {
@@ -117,7 +130,8 @@ test('a failed revoke shows the error toast', async () => {
   )
   const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
 
-  await screen.getByRole('button', { name: 'Revoke' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Revoke' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.element(screen.getByText(REVOKE_FAILED)).toBeInTheDocument()
@@ -132,7 +146,7 @@ test('shows an error alert when the tokens fail to load', async () => {
     .toBeInTheDocument()
 })
 
-test('the one-time secret can be dismissed', async () => {
+test('closing the modal drops the one-time secret', async () => {
   worker.use(
     listTokens([]),
     handleSiteTokensCreate({
@@ -142,14 +156,12 @@ test('the one-time secret can be dismissed', async () => {
   )
   const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
 
-  await screen.getByLabelText(/^Token name/).fill('CI')
   await screen.getByRole('button', { name: 'Create token' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Token name/).fill('CI')
+  await dialog.getByRole('button', { name: 'Create token' }).click()
   await expect.element(screen.getByText('omtk_secret_value')).toBeInTheDocument()
 
-  await screen
-    .getByRole('alert', { name: /Copy this token now/ })
-    .getByRole('button')
-    .last()
-    .click()
+  await dialog.getByRole('button').first().click()
   await expect.element(screen.getByText('omtk_secret_value')).not.toBeInTheDocument()
 })

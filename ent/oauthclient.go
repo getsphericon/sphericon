@@ -40,9 +40,11 @@ type OAuthClient struct {
 type OAuthClientEdges struct {
 	// Codes holds the value of the codes edge.
 	Codes []*OAuthCode `json:"codes,omitempty"`
+	// RefreshTokens holds the value of the refresh_tokens edge.
+	RefreshTokens []*OAuthRefreshToken `json:"refresh_tokens,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // CodesOrErr returns the Codes value or an error if the edge
@@ -52,6 +54,15 @@ func (e OAuthClientEdges) CodesOrErr() ([]*OAuthCode, error) {
 		return e.Codes, nil
 	}
 	return nil, &NotLoadedError{edge: "codes"}
+}
+
+// RefreshTokensOrErr returns the RefreshTokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e OAuthClientEdges) RefreshTokensOrErr() ([]*OAuthRefreshToken, error) {
+	if e.loadedTypes[1] {
+		return e.RefreshTokens, nil
+	}
+	return nil, &NotLoadedError{edge: "refresh_tokens"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -143,6 +154,11 @@ func (_m *OAuthClient) Value(name string) (ent.Value, error) {
 // QueryCodes queries the "codes" edge of the OAuthClient entity.
 func (_m *OAuthClient) QueryCodes() *OAuthCodeQuery {
 	return NewOAuthClientClient(_m.config).QueryCodes(_m)
+}
+
+// QueryRefreshTokens queries the "refresh_tokens" edge of the OAuthClient entity.
+func (_m *OAuthClient) QueryRefreshTokens() *OAuthRefreshTokenQuery {
+	return NewOAuthClientClient(_m.config).QueryRefreshTokens(_m)
 }
 
 // Update returns a builder for updating this OAuthClient.

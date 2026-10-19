@@ -1,9 +1,9 @@
 import {
+  Box,
   EmptyState,
   Alert,
   Badge,
   Button,
-  Card,
   Code,
   CopyButton,
   Group,
@@ -124,7 +124,7 @@ export function MembersSection({ slug }: { slug: string }) {
     })
 
   return (
-    <Card withBorder>
+    <Box>
       <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.members.title)}</Title>
         <Button onClick={openInvite}>{t(($) => $.settings.members.invite)}</Button>
@@ -285,6 +285,6 @@ export function MembersSection({ slug }: { slug: string }) {
           </form>
         )}
       </Modal>
-    </Card>
+    </Box>
   )
 }
