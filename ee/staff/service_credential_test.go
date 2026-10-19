@@ -336,7 +336,7 @@ func TestARunOfFailedCredentialsBlocksTheClientAddress(t *testing.T) {
 }
 
 // A write made under a credential is attributed to its name in the Audit log, and the
-// Workspace's own team reads it as "sphericon staff".
+// Workspace's own team reads it as "Sphericon staff".
 func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) {
 	h := newHarness(t)
 	cred := h.env.DB.ServiceCredential.GetX(t.Context(), fixtures.ServiceCredentialPrimaryID)

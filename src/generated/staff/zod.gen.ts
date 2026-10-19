@@ -171,7 +171,7 @@ export const zStaffDeliverability = z.object({
 });
 
 /**
- * The authenticated platform Staff member (shown to customers only as "sphericon staff")
+ * The authenticated platform Staff member (shown to customers only as "Sphericon staff")
  */
 export const zStaffResource = z.object({
   id: zEntityId,

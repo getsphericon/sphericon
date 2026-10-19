@@ -20,7 +20,7 @@ function ActorLabel({ entry }: { entry: StaffAuditEntryResource }) {
   if (kind === 'api_token') {
     return name ?? t(($) => $.console.workspace.auditLog.actorToken, { id: id ?? '' })
   }
-  // A Staff member arrives already as "sphericon staff", with no id.
+  // A Staff member arrives already as "Sphericon staff", with no id.
   return name ?? id ?? ''
 }
 

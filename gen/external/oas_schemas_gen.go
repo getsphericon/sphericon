@@ -379,7 +379,7 @@ func (s *ApplyTagInput) SetName(val string) {
 // The actor of an Audit entry.
 // Ref: #/components/schemas/AuditActor
 type AuditActor struct {
-	// The kind of actor; a staff member is shown as "sphericon staff".
+	// The kind of actor; a staff member is shown as "Sphericon staff".
 	Kind AuditActorKind `json:"kind"`
 	// The actor's id (a User id or an API token id); absent for the system.
 	ID OptNilString `json:"id"`

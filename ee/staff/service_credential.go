@@ -214,7 +214,7 @@ func (m *Module) AuthenticateService(ctx context.Context, value string) (*ent.Se
 
 // ServiceActor is who a Service credential's writes are recorded as in the Audit log
 // (ADR 0022): kind `service`, named as the Staff member named the credential. A Workspace's
-// own team reads it as "sphericon staff".
+// own team reads it as "Sphericon staff".
 func ServiceActor(c *ent.ServiceCredential) events.Actor {
 	return events.Actor{Kind: events.ActorService, ID: fmt.Sprint(c.ID), Name: c.Name}
 }

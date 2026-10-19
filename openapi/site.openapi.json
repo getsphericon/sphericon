@@ -8695,7 +8695,7 @@
                 "$ref": "#/components/schemas/SiteAuditActorKind"
               }
             ],
-            "description": "The kind of actor; a staff member is shown to the customer as \"sphericon staff\""
+            "description": "The kind of actor; a staff member is shown to the customer as \"Sphericon staff\""
           },
           "id": {
             "type": "string",

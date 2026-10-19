@@ -1,14 +1,14 @@
 # Deliverability and consent
 
-sphericon treats staying out of the spam folder, and out of trouble, as part of the product rather
+Sphericon treats staying out of the spam folder, and out of trouble, as part of the product rather
 than an add-on. This page describes what happens for you and what you set up once.
 
 ## Sending domains
 
 You can only send from a domain you control and have verified. Add the domain in **Settings →
-Sending**; sphericon generates a DKIM keypair, you publish one TXT record at
+Sending**; Sphericon generates a DKIM keypair, you publish one TXT record at
 `selector._domainkey`, and verification flips the domain on. From then on every message is
-signed by sphericon itself, whichever transport carries it. Sending from an unverified domain is
+signed by Sphericon itself, whichever transport carries it. Sending from an unverified domain is
 rejected on all three surfaces: broadcasts, automations and transactional mail. The one exception is
 a broadcast's test send to your own address, which falls back to the platform's sender until a
 domain is verified ([Quickstart](/guide/quickstart#see-an-email-before-dns)). DNS can take time
@@ -16,7 +16,7 @@ and nothing else in setup waits for it.
 
 ### Tracking domain
 
-By default the open pixel and click links in your mail point at your sphericon instance's own host.
+By default the open pixel and click links in your mail point at your Sphericon instance's own host.
 To put them on your own hostname, open **Settings → Sending**, expand the domain and add the
 **Tracking domain (optional)** row next to the DKIM, SPF and DMARC records. The row appears only when
 your instance has an edge set up for it (`SPHERICON_TRACKING_CNAME_TARGET`, see
@@ -31,7 +31,7 @@ your instance has an edge set up for it (`SPHERICON_TRACKING_CNAME_TARGET`, see
    - **Pending**: the CNAME is missing or does not point at the edge host yet.
    - **DNS verified**: the CNAME is right, so the edge may now get a certificate for the host. Mail
      still uses the instance's host.
-   - **Serving**: sphericon fetched `https://track.<domain>/.well-known/sphericon-tracking` and got
+   - **Serving**: Sphericon fetched `https://track.<domain>/.well-known/sphericon-tracking` and got
      the expected answer, so HTTPS works. New mail from this sending domain now builds its links on
      the tracking domain, so the link host matches your From domain.
 
@@ -52,7 +52,7 @@ unsubscribe and confirm pages redirect to the instance's own host, and everythin
 
 **Removing a domain.** If you delete the sending domain, rename it or remove its CNAME, links already
 in recipients' inboxes keep working through the instance's own host, but the same links on
-`track.<domain>` stop reaching sphericon. Keep the CNAME in place for as long as old mail may still
+`track.<domain>` stop reaching Sphericon. Keep the CNAME in place for as long as old mail may still
 be opened or clicked. The design is in [ADR 0038](../adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)
 and [ADR 0036](../adr/0036-paths-embedded-in-sent-mail-and-customer-sites-outlive-a-major.md).
 
@@ -102,7 +102,7 @@ recorded in
 [ADR 0037](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0037-inbound-provider-callbacks-are-presets-on-an-integration.md).
 
 ::: warning
-Plain SMTP with no provider callback gets no Suppression: sphericon never learns that a message
+Plain SMTP with no provider callback gets no Suppression: Sphericon never learns that a message
 bounced. SMTP alone is for tests and small volumes; for real sending use a provider below, connected
 through its hook.
 :::

@@ -1,9 +1,9 @@
 ---
 layout: home
 hero:
-  name: sphericon
+  name: Sphericon
   text: Documentation
-  tagline: Guides, operations and API reference for sphericon, the open-core marketing automation platform. Self-host it or use Sphericon Cloud.
+  tagline: Guides, operations and API reference for Sphericon, the open-core marketing automation platform. Self-host it or use Sphericon Cloud.
   actions:
     - theme: brand
       text: Quickstart

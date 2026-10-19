@@ -316,7 +316,7 @@ func (m *Module) Reset(ctx context.Context, userID int64, actor events.Actor, wo
 }
 
 // ResetByStaff is Reset from the staff member command: the platform Staff member `by`
-// (shown to customers as "sphericon staff") is recorded in every Workspace the User
+// (shown to customers as "Sphericon staff") is recorded in every Workspace the User
 // holds a Membership in.
 func (m *Module) ResetByStaff(ctx context.Context, userID int64, by string) error {
 	actor := events.Actor{Kind: events.ActorStaff, ID: by}

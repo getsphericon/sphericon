@@ -15,7 +15,7 @@ import (
 
 // Actor is who suspends or lifts a suspension (ADR 0026): the automated abuse detector
 // (System), the staff member command (CLI) or a platform Staff member, whose real id is kept on
-// the internal record while the customer sees only "sphericon staff".
+// the internal record while the customer sees only "Sphericon staff".
 type Actor struct {
 	Kind workspace.SuspendedByKind
 	ID   string // a Staff member's id; empty for System and CLI
@@ -43,7 +43,7 @@ func (a Actor) validate() error {
 
 // auditActor is the actor of the Audit entry. System is the system actor; the CLI is
 // platform staff acting from the server, recorded as a Staff member named "cli". Customers
-// see both staff member kinds only as "sphericon staff" (ADR 0022).
+// see both staff member kinds only as "Sphericon staff" (ADR 0022).
 func (a Actor) auditActor() events.Actor {
 	switch a.Kind {
 	case workspace.SuspendedByKindSystem:

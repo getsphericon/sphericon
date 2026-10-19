@@ -13,7 +13,7 @@ enum StaffAuditActorKind {
 
 /** The actor of an Audit entry */
 model StaffAuditActor {
-  /** The kind of actor; a staff member carries no id and the name "sphericon staff"; a service is a Service credential, named as the Staff member who issued it chose */
+  /** The kind of actor; a staff member carries no id and the name "Sphericon staff"; a service is a Service credential, named as the Staff member who issued it chose */
   kind: StaffAuditActorKind;
 
   /** The actor's id (a User id or an API token id); absent for the system and a staff member */

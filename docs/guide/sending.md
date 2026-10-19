@@ -1,6 +1,6 @@
 # Sending email
 
-sphericon has three send surfaces. They differ in who triggers them, and they share templates,
+Sphericon has three send surfaces. They differ in who triggers them, and they share templates,
 sending domains and consent rules.
 
 ## Templates
@@ -82,5 +82,5 @@ Bounces and complaints become suppressions only through the integration's hook, 
 **Inbound** with a Preset (SES, Postmark, Mailgun or generic). Plain SMTP gets none: see
 [Bounces and complaints](/guide/deliverability#bounces-and-complaints).
 
-Credentials are encrypted at rest. Because DKIM signing happens in sphericon itself, switching
+Credentials are encrypted at rest. Because DKIM signing happens in Sphericon itself, switching
 transport does not mean re-verifying your domain.

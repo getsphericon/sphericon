@@ -931,7 +931,7 @@
                 "$ref": "#/components/schemas/StaffAuditActorKind"
               }
             ],
-            "description": "The kind of actor; a staff member carries no id and the name \"sphericon staff\"; a service is a Service credential, named as the Staff member who issued it chose"
+            "description": "The kind of actor; a staff member carries no id and the name \"Sphericon staff\"; a service is a Service credential, named as the Staff member who issued it chose"
           },
           "id": {
             "type": "string",
@@ -1280,7 +1280,7 @@
             "description": "Login email"
           }
         },
-        "description": "The authenticated platform Staff member (shown to customers only as \"sphericon staff\")"
+        "description": "The authenticated platform Staff member (shown to customers only as \"Sphericon staff\")"
       },
       "StaffSecondFactorInput": {
         "type": "object",

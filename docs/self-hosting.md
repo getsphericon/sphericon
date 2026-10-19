@@ -1,6 +1,6 @@
-# Self-hosting sphericon
+# Self-hosting Sphericon
 
-sphericon ships as a **single self-contained artifact** — one Go binary (or one Docker image)
+Sphericon ships as a **single self-contained artifact** — one Go binary (or one Docker image)
 with the React SPA, the tracker snippet (`/t.js`), and the database migrations all
 embedded. The only external dependency at runtime is **PostgreSQL** (the background queue
 and pub/sub both ride on Postgres — no Redis, no object storage, no separate worker).
@@ -270,7 +270,7 @@ workspace. Do not expose it before one of these:
 
 ## HTTPS and reverse proxy
 
-sphericon speaks plain HTTP on `PORT`. Put a reverse proxy in front for TLS, and set `SPHERICON_APP_URL` to the
+Sphericon speaks plain HTTP on `PORT`. Put a reverse proxy in front for TLS, and set `SPHERICON_APP_URL` to the
 public `https://` origin: tracking pixels, click links, unsubscribe links and OAuth metadata are
 built from it, so a wrong value breaks mail already sent. `sphericon doctor` checks that it is well formed, https
 and reachable, and warns when it differs from the origin in recently sent mail
@@ -309,7 +309,7 @@ Do not expose `SPHERICON_METRICS_ADDR` through the proxy.
 
 A workspace can put its mail's links on `track.<sending domain>` (see
 [Tracking domain](guide/deliverability#tracking-domain)). The core never terminates TLS for those hosts:
-your proxy does, and sphericon only answers three questions ([ADR 0038](adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)).
+your proxy does, and Sphericon only answers three questions ([ADR 0038](adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)).
 
 1. Which edge host should customers CNAME to? Set `SPHERICON_TRACKING_CNAME_TARGET` (for example
    `edge.example.com`, a name that resolves to your proxy). Unset, the console shows no tracking row.
@@ -355,7 +355,7 @@ with `SPHERICON_INTERNAL_ADDR=127.0.0.1:3400`, `SPHERICON_TRACKING_CNAME_TARGET=
 and `SPHERICON_TRACKING_HOST_HEADER=X-Forwarded-Host`. Point `edge.example.com` at the same machine.
 
 A domain goes `pending`, then `dns_verified` (CNAME correct, `ask` answers 200), then `serving`
-(sphericon fetched its own well-known path over HTTPS). A job rechecks every `dns_verified` and `serving` domain every 15 minutes. Until a
+(Sphericon fetched its own well-known path over HTTPS). A job rechecks every `dns_verified` and `serving` domain every 15 minutes. Until a
 domain is `serving`, and again if it regresses, mail uses `SPHERICON_APP_URL`. Removing a Sending domain
 or its CNAME leaves links already sent working on the Instance's host and dead on the customer's.
 

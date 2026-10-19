@@ -203,3 +203,60 @@ variable "db_connections_alarm_threshold" {
   type        = number
   default     = 150
 }
+
+# Web application firewall (waf.tf).
+
+variable "waf_mode" {
+  description = "\"count\" counts what the web ACL would block, \"block\" enforces it. Ship in count, read the sampled requests (runbook, \"Web application firewall\"), then switch."
+  type        = string
+  default     = "count"
+
+  validation {
+    condition     = contains(["count", "block"], var.waf_mode)
+    error_message = "Must be \"count\" or \"block\"."
+  }
+}
+
+variable "waf_managed_rule_groups" {
+  description = "AWS managed rule groups on the web ACL, in priority order."
+  type        = list(string)
+  default = [
+    "AWSManagedRulesCommonRuleSet",
+    "AWSManagedRulesKnownBadInputsRuleSet",
+    "AWSManagedRulesAmazonIpReputationList",
+  ]
+}
+
+variable "waf_common_count_rules" {
+  description = "Rules of AWSManagedRulesCommonRuleSet kept in count mode even when waf_mode is \"block\": the body size limit (8 KB) and the XSS body check match the email HTML and MJML the app posts and large /collect batches (ADR 0025 caps those at 500 KB)."
+  type        = list(string)
+  default     = ["SizeRestrictions_BODY", "CrossSiteScripting_BODY"]
+}
+
+variable "waf_log_retention_days" {
+  description = "Retention of the log group that holds the requests the web ACL counted or blocked (waf.tf). Must cover the count-mode review."
+  type        = number
+  default     = 30
+}
+
+variable "waf_rate_limit" {
+  description = "Requests per source address over waf_rate_window_seconds before the rate rule for the MCP host and /collect fires. Agent connectors share egress addresses, so keep it well above one client's rate; the per-Workspace limits of ADR 0025 stay the precise ones."
+  type        = number
+  default     = 2000
+
+  validation {
+    condition     = var.waf_rate_limit >= 10
+    error_message = "A WAF rate-based rule needs a limit of at least 10."
+  }
+}
+
+variable "waf_rate_window_seconds" {
+  description = "Evaluation window of the rate rule: 60, 120, 300 or 600."
+  type        = number
+  default     = 300
+
+  validation {
+    condition     = contains([60, 120, 300, 600], var.waf_rate_window_seconds)
+    error_message = "Must be 60, 120, 300 or 600."
+  }
+}

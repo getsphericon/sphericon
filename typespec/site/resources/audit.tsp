@@ -12,7 +12,7 @@ enum SiteAuditActorKind {
 
 /** The actor of an Audit entry */
 model SiteAuditActor {
-  /** The kind of actor; a staff member is shown to the customer as "sphericon staff" */
+  /** The kind of actor; a staff member is shown to the customer as "Sphericon staff" */
   kind: SiteAuditActorKind;
 
   /** The actor's id (a User id or an API token id); absent for the system */

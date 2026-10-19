@@ -32,7 +32,7 @@ func TestNotifyWorkspaceSuspendedEmailsOwners(t *testing.T) {
 	assert.Contains(t, msgs[0].Text, "automated abuse detection", "who set it is stated")
 }
 
-// A Staff member or the CLI appears to the customer as "sphericon staff"; the Staff member's
+// A Staff member or the CLI appears to the customer as "Sphericon staff"; the Staff member's
 // real id never leaves the platform.
 func TestNotifyWorkspaceSuspendedShowsStaffForStaffAndCLI(t *testing.T) {
 	for name, by := range map[string]suspension.Actor{"staff": suspension.StaffMember("op-42"), "cli": suspension.CLI} {
@@ -46,7 +46,7 @@ func TestNotifyWorkspaceSuspendedShowsStaffForStaffAndCLI(t *testing.T) {
 
 			msgs := env.SystemMail.Messages()
 			require.Len(t, msgs, 1)
-			assert.Contains(t, msgs[0].Text, "Set by: sphericon staff")
+			assert.Contains(t, msgs[0].Text, "Set by: Sphericon staff")
 			assert.NotContains(t, msgs[0].Text, "op-42")
 		})
 	}

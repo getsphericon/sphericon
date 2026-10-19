@@ -1,6 +1,6 @@
 # Scaling and tuning
 
-This page covers the connection budget, why a connection pooler in front of sphericon is not
+This page covers the connection budget, why a connection pooler in front of Sphericon is not
 recommended, and the retention settings that keep the database bounded. All defaults below are
 the shipped ones.
 
@@ -32,7 +32,7 @@ lower `SPHERICON_PGX_MAX_CONNS` below the worker total.
 
 ## PgBouncer and other poolers
 
-Do not put PgBouncer (or another transaction-pooling proxy) between sphericon and PostgreSQL:
+Do not put PgBouncer (or another transaction-pooling proxy) between Sphericon and PostgreSQL:
 
 - The job queue (river) relies on `LISTEN`/`NOTIFY` to wake workers. Notifications are tied to a
   session, which a transaction-mode pooler does not preserve.

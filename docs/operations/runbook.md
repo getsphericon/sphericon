@@ -16,7 +16,7 @@ Three things help with almost every alert:
 
 ## SphericonDown
 
-**Means.** Prometheus cannot scrape a sphericon metrics target for 5 minutes. The process is down,
+**Means.** Prometheus cannot scrape a Sphericon metrics target for 5 minutes. The process is down,
 unreachable, or the metrics listener is not enabled.
 
 **Check.**
@@ -134,7 +134,7 @@ minutes. The `handler` label is one of `persist_event`, `enroll_automations`,
 1. The logs of the process around the failures, for the underlying error.
 2. `update_suppression` and `persist_event` fail mostly on database errors. `enroll_automations`
    fails on a broken automation definition. `dispatch_webhooks` should not fail on a customer's
-   unreachable endpoint (delivery is a river job), so a failure there points at sphericon itself.
+   unreachable endpoint (delivery is a river job), so a failure there points at Sphericon itself.
 3. Correlate with [`SphericonOutboxLagHigh`](#sphericonoutboxlaghigh): failures that keep a message
    from being acknowledged show up as growing lag for that handler's group.
 
@@ -311,6 +311,34 @@ aws cloudwatch set-alarm-state --alarm-name sphericon-alb-5xx-rate --state-value
 
 The email for each arrives within a minute (the state is reset by itself at the next evaluation
 anyway). The commands use the default names (`var.name` = `sphericon`) and `--profile sphericon`, as in the Terraform runbook.
+
+## Web application firewall
+
+The hosted ALB has a WAF web ACL (`infra/waf.tf`, [ADR 0028](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0028-saas-hosting-terraform-on-aws-ecs-fargate.md)):
+the AWS managed common, known bad inputs and IP reputation rule groups, and a rate rule per source
+address over `mcp.<domain>` and `/collect` (`waf_rate_limit` per `waf_rate_window_seconds`). It
+costs about $9 a month plus $0.60 per million requests and the log group (only counted and blocked requests). Its `waf_mode` is `count` (the default) or
+`block`.
+
+To move from count to block:
+
+1. Let count mode run for a week of traffic. Every counted or blocked request is logged to the
+   CloudWatch log group `aws-waf-logs-<name>` (`waf_log_retention_days`, 30 by default; the
+   `authorization` and `cookie` headers are redacted). The console's sampled requests keep only
+   about three hours. In Logs Insights, group by rule:
+   `stats count(*) by terminatingRuleId, httpRequest.host, httpRequest.uri`, and read the
+   `CountedRequests` metric of each rule in CloudWatch.
+2. Check that no legitimate `/collect` or `mcp.<domain>` request (`/mcp`, the OAuth discovery
+   documents), OAuth redirect or `/site` request is among them: query-string and user-agent rules of
+   the common set and the IP reputation list are the likely false positives. A managed rule that
+   matches real traffic goes into `waf_common_count_rules` (common set only; keep that group in
+   `waf_managed_rule_groups`) or out of `waf_managed_rule_groups`; the rate limit is raised with
+   `waf_rate_limit`. The rate rule counts one address across both hosts, and agent connectors share
+   egress addresses.
+3. Set `waf_mode = "block"`, plan and apply.
+
+A legitimate client refused after the switch gets a `403`: find its rule in the log group and
+set `waf_mode = "count"` again while you tune it.
 
 ## Database restore drill
 
