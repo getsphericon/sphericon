@@ -1,6 +1,7 @@
 import { AreaChart, DonutChart } from '@mantine/charts'
 import {
   Alert,
+  EmptyState,
   Group,
   Loader,
   SegmentedControl,
@@ -163,9 +164,7 @@ export function OverviewPage() {
                   ]}
                 />
               ) : (
-                <Text size="sm" c="dimmed">
-                  {t(($) => $.analytics.contacts.empty)}
-                </Text>
+                <EmptyState title={t(($) => $.analytics.contacts.empty)} />
               )}
             </Stack>
 

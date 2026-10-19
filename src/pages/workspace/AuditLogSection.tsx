@@ -1,4 +1,5 @@
 import {
+  EmptyState,
   ActionIcon,
   Alert,
   Badge,
@@ -208,11 +209,13 @@ function AuditPage({
   const next = query.data?.nextCursor ?? undefined
   if (first && items.length === 0) {
     return (
-      <Text c="dimmed" size="sm">
-        {Object.keys(auditQuery(filter)).length > 0
-          ? t(($) => $.settings.auditLog.noMatches)
-          : t(($) => $.settings.auditLog.empty)}
-      </Text>
+      <EmptyState
+        title={
+          Object.keys(auditQuery(filter)).length > 0
+            ? t(($) => $.settings.auditLog.noMatches)
+            : t(($) => $.settings.auditLog.empty)
+        }
+      />
     )
   }
 

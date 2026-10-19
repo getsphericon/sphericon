@@ -1,4 +1,14 @@
-import { Alert, Badge, Button, Card, Group, Loader, TextInput, Title } from '@mantine/core'
+import {
+  EmptyState,
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Loader,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useCounter } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
@@ -139,7 +149,7 @@ export function SuppressionsSection({ slug }: { slug: string }) {
             ),
           },
         ]}
-        noRecordsText={t(($) => $.settings.suppressions.empty)}
+        emptyState={<EmptyState title={t(($) => $.settings.suppressions.empty)} />}
         totalRecords={totalItems}
         recordsPerPage={PAGE_SIZE}
         page={page}

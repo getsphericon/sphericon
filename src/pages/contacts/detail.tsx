@@ -1,4 +1,14 @@
-import { Button, Card, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import {
+  EmptyState,
+  Button,
+  Card,
+  Group,
+  Loader,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -239,7 +249,7 @@ export function ContactDetailPage() {
         page={page}
         onPageChange={setPage}
         fetching={eventsQuery.isFetching}
-        noRecordsText={t(($) => $.activity.noRecords)}
+        emptyState={<EmptyState title={t(($) => $.activity.noRecords)} />}
       />
     </Stack>
   )

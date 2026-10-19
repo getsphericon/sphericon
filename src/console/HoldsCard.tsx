@@ -1,4 +1,4 @@
-import { Card, Group, Stack, Table, Text, Title } from '@mantine/core'
+import { Card, EmptyState, Group, Stack, Table, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { BillingBadge } from '../components/BillingBadge.tsx'
@@ -15,9 +15,7 @@ export function HoldsCard({ holds }: { holds: StaffHold[] }) {
       <Stack>
         <Title order={4}>{t(($) => $.console.workspace.holds.title)}</Title>
         {holds.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t(($) => $.console.workspace.holds.empty)}
-          </Text>
+          <EmptyState title={t(($) => $.console.workspace.holds.empty)} />
         ) : (
           <Table.ScrollContainer minWidth={640}>
             <Table withTableBorder>

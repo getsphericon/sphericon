@@ -1,4 +1,5 @@
 import {
+  EmptyState,
   Alert,
   Badge,
   Button,
@@ -268,7 +269,7 @@ export function SendingDomainsSection({ slug }: { slug: string }) {
         withTableBorder
         records={records}
         idAccessor="id"
-        noRecordsText={t(($) => $.settings.sendingDomains.empty)}
+        emptyState={<EmptyState title={t(($) => $.settings.sendingDomains.empty)} />}
         columns={[
           { accessor: 'domain' },
           {

@@ -1,4 +1,5 @@
 import {
+  EmptyState,
   Alert,
   Button,
   Card,
@@ -183,7 +184,7 @@ export function MembersSection({ slug }: { slug: string }) {
             ),
           },
         ]}
-        noRecordsText={t(($) => $.settings.members.membersEmpty)}
+        emptyState={<EmptyState title={t(($) => $.settings.members.membersEmpty)} />}
       />
 
       <Title order={5} mb="xs">
@@ -266,7 +267,7 @@ export function MembersSection({ slug }: { slug: string }) {
             ),
           },
         ]}
-        noRecordsText={t(($) => $.settings.members.invitationsEmpty)}
+        emptyState={<EmptyState title={t(($) => $.settings.members.invitationsEmpty)} />}
       />
     </Card>
   )

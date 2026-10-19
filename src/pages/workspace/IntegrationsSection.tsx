@@ -1,4 +1,5 @@
 import {
+  EmptyState,
   Alert,
   Button,
   Card,
@@ -358,7 +359,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
             ),
           },
         ]}
-        noRecordsText={t(($) => $.settings.integrations.empty)}
+        emptyState={<EmptyState title={t(($) => $.settings.integrations.empty)} />}
       />
       <SendLimitModal slug={slug} integration={editing} onClose={() => setEditing(null)} />
       <InboundModal slug={slug} integration={inbound} onClose={() => setInbound(null)} />
