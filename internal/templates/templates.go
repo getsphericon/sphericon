@@ -40,6 +40,10 @@ type CreateInput struct {
 	// Doc is the editor's JSON document, empty when the Template is written as HTML. The body is
 	// built from it in the same save (ADR 0040).
 	Doc json.RawMessage
+	// Prepared is Doc already rendered by emailrender.FromDocument, for a caller that renders
+	// before it opens a transaction so that no database connection is held through the render.
+	// Nil renders Doc here; a Body is never combined with it.
+	Prepared *emailrender.Authored
 }
 
 // UpdateInput changes a Template; nil fields are left as they are. A Doc is rendered to the
@@ -73,16 +77,21 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.EmailTe
 // Create stores a Template. A blank name is ErrBlankName; a subject, body or document that
 // cannot render is emailrender.ErrInvalidContent; the body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.EmailTemplate, error) {
-	c, err := content(ctx, in.Subject, in.Body, in.Doc)
-	if err != nil {
-		return nil, err
+	var c emailrender.Content
+	if in.Prepared != nil && len(in.Doc) > 0 && in.Body == nil {
+		c = emailrender.Content{Body: &in.Prepared.Body, Authored: in.Prepared}
+	} else {
+		var err error
+		if c, err = emailrender.ResolveContent(ctx, in.Subject, in.Body, in.Doc, ErrBodyAndDoc); err != nil {
+			return nil, err
+		}
 	}
 	create := s.EmailTemplate().Create().
 		SetName(in.Name).
 		SetNillableSubject(in.Subject).
-		SetNillableBody(c.body)
-	if c.authored != nil {
-		create.SetDoc(in.Doc).SetEditorVersion(c.authored.EditorVersion)
+		SetNillableBody(c.Body)
+	if c.Authored != nil {
+		create.SetDoc(in.Doc).SetEditorVersion(c.Authored.EditorVersion)
 	}
 	tpl, err := create.Save(ctx)
 	return tpl, mapWriteError(err)
@@ -90,18 +99,18 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 
 // Update applies the given fields. A blank name is ErrBlankName.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.EmailTemplate, error) {
-	c, err := content(ctx, in.Subject, in.Body, in.Doc)
+	c, err := emailrender.ResolveContent(ctx, in.Subject, in.Body, in.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
 	}
 	update := s.EmailTemplate().UpdateOneID(id).
 		SetNillableName(in.Name).
 		SetNillableSubject(in.Subject).
-		SetNillableBody(c.body)
+		SetNillableBody(c.Body)
 	switch {
-	case c.authored != nil:
-		update.SetDoc(in.Doc).SetEditorVersion(c.authored.EditorVersion)
-	case c.body != nil:
+	case c.Authored != nil:
+		update.SetDoc(in.Doc).SetEditorVersion(c.Authored.EditorVersion)
+	case c.Body != nil:
 		update.ClearDoc().ClearEditorVersion()
 	}
 	tpl, err := update.Save(ctx)
@@ -118,31 +127,6 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		return ErrNotFound
 	}
 	return err
-}
-
-// written is what a save stores of the message content.
-type written struct {
-	// body is the body to store; nil when the write names none.
-	body *string
-	// authored is set when the content is a document: its body is body.
-	authored *emailrender.Authored
-}
-
-// content resolves the body of a write. A document is rendered to it (the one render of the
-// save, never on the send path); a body is validated and sanitized; neither leaves it alone.
-func content(ctx context.Context, subject, body *string, doc json.RawMessage) (written, error) {
-	if len(doc) == 0 {
-		b, err := emailrender.PrepareFields(subject, body)
-		return written{body: b}, err
-	}
-	if body != nil {
-		return written{}, ErrBodyAndDoc
-	}
-	authored, err := emailrender.FromDocument(ctx, subject, doc)
-	if err != nil {
-		return written{}, err
-	}
-	return written{body: &authored.Body, authored: &authored}, nil
 }
 
 // mapWriteError relabels only a validation failure of the name field; any other

@@ -183,12 +183,24 @@ func heapBytes() uint64 {
 	return sample[0].Value.Uint64()
 }
 
+func overLimit(baseline, growth uint64) bool {
+	heap := heapBytes()
+	return heap > baseline && heap-baseline > growth
+}
+
 // guard stops the call that is running on this vm when it runs past its time, when the process
-// heap grows past the memory limit, or when ctx ends: it interrupts the runtime, which fails the
-// call within milliseconds. The returned stop function ends the watch and says whether it had to
-// interrupt; a runtime that was interrupted must be discarded.
+// heap stays past the memory limit, or when ctx ends: it interrupts the runtime, which fails the
+// call within milliseconds. The heap counter is process-wide, so another goroutine's burst of
+// allocations reads as growth too: the call is stopped only when the heap stays over the limit on
+// several polls in a row (200 ms), which a burst that does not last never does. The returned stop
+// function ends the watch and says whether it had to interrupt; a runtime that was interrupted must be discarded.
 func (v *vm) guard(ctx context.Context, cfg callConfig) (stop func() stopReason) {
-	const memoryPoll = 20 * time.Millisecond
+	const (
+		memoryPoll = 20 * time.Millisecond
+		// memorySustained is how many polls in a row must read over the limit (200 ms).
+		memorySustained = 10
+	)
+	over := 0
 	done := make(chan struct{})
 	result := make(chan stopReason, 1)
 	baseline := heapBytes()
@@ -212,7 +224,12 @@ func (v *vm) guard(ctx context.Context, cfg callConfig) (stop func() stopReason)
 				result <- stopCanceled
 				return
 			case <-poll.C:
-				if heapBytes() > baseline && heapBytes()-baseline > cfg.memoryGrowth {
+				if overLimit(baseline, cfg.memoryGrowth) {
+					over++
+				} else {
+					over = 0
+				}
+				if over >= memorySustained {
 					v.rt.Interrupt("memory")
 					result <- stopMemory
 					return

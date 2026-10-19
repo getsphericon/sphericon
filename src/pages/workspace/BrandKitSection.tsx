@@ -30,7 +30,7 @@ import type {
   SiteSaveBrandKitInput,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
-import { canManage } from '../../hooks/useCurrentRole.ts'
+import { canManageBrandKit } from '../../hooks/useCurrentRole.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 const MAX_RADIUS = 32
@@ -204,7 +204,7 @@ function BrandKitForm({
 }
 
 // BrandKitSection edits the Workspace's Brand kit (ADR 0040): the colors, fonts, logo, button
-// style and footer the editor offers. Owners and admins save it; every member sees it. Saving it
+// style and footer the editor offers. Owners save it; every member sees it. Saving it
 // changes no message already written.
 export function BrandKitSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const { t } = useTranslation()
@@ -230,7 +230,7 @@ export function BrandKitSection({ workspace }: { workspace: SiteWorkspaceResourc
           key={kitQuery.data.updatedAt ?? 'unsaved'}
           slug={slug}
           kit={kitQuery.data}
-          canChange={canManage(workspace.role)}
+          canChange={canManageBrandKit(workspace.role)}
         />
       ) : null}
     </Card>

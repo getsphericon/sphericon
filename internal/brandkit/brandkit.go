@@ -91,11 +91,22 @@ func (m *Module) Save(ctx context.Context, s *ent.Scoped, in Input) (Kit, error)
 	if err != nil {
 		return Kit{}, err
 	}
+	// The starters of a first save are rendered here, before the transaction that writes them.
+	current, err := m.Get(ctx, s)
+	if err != nil {
+		return Kit{}, err
+	}
+	var starters []renderedStarter
+	if !current.Saved {
+		if starters, err = renderStarters(ctx, kitOfInput(in)); err != nil {
+			return Kit{}, err
+		}
+	}
 	var saved *ent.BrandKit
 	// A second first save that loses the race hits the unique index of the Workspace; it runs again
 	// as an update, so the starters are made once.
 	for attempt := 0; ; attempt++ {
-		saved, err = m.save(ctx, s, in)
+		saved, err = m.save(ctx, s, in, starters)
 		if ent.IsConstraintError(err) && attempt == 0 {
 			continue
 		}
@@ -107,7 +118,7 @@ func (m *Module) Save(ctx context.Context, s *ent.Scoped, in Input) (Kit, error)
 	return kitOf(saved), nil
 }
 
-func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input) (*ent.BrandKit, error) {
+func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input, starters []renderedStarter) (*ent.BrandKit, error) {
 	var saved *ent.BrandKit
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.BrandKit().Query().Only(ctx)
@@ -127,7 +138,7 @@ func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input) (*ent.BrandK
 			if err != nil {
 				return err
 			}
-			_, err = m.createStarters(ctx, ts, kitOf(saved))
+			_, err = m.createStarters(ctx, ts, starters)
 			return err
 		case err != nil:
 			return err
@@ -159,22 +170,49 @@ func (m *Module) RecreateStarterTemplates(ctx context.Context, s *ent.Scoped) ([
 	if !kit.Saved {
 		return nil, ErrNotSaved
 	}
+	starters, err := renderStarters(ctx, kit)
+	if err != nil {
+		return nil, err
+	}
 	var made []*ent.EmailTemplate
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		var err error
-		made, err = m.createStarters(ctx, ts, kit)
+		made, err = m.createStarters(ctx, ts, starters)
 		return err
 	})
 	return made, err
 }
 
-func (m *Module) createStarters(ctx context.Context, s *ent.Scoped, kit Kit) ([]*ent.EmailTemplate, error) {
-	var made []*ent.EmailTemplate
+// renderedStarter is a starter with its document already rendered to the body to store.
+type renderedStarter struct {
+	starter  Starter
+	authored emailrender.Authored
+}
+
+// renderStarters renders the four starter documents. The first render of a process starts the
+// document runtime, which takes seconds, so it runs before a transaction opens: a transaction
+// never holds its database connection through a render.
+func renderStarters(ctx context.Context, kit Kit) ([]renderedStarter, error) {
+	var out []renderedStarter
 	for _, starter := range Starters(kit) {
+		authored, err := emailrender.FromDocument(ctx, &starter.Subject, starter.Doc)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, renderedStarter{starter: starter, authored: authored})
+	}
+	return out, nil
+}
+
+// createStarters writes rendered starters as Templates, inside the caller's transaction.
+func (m *Module) createStarters(ctx context.Context, s *ent.Scoped, starters []renderedStarter) ([]*ent.EmailTemplate, error) {
+	var made []*ent.EmailTemplate
+	for _, r := range starters {
 		tpl, err := m.templates.Create(ctx, s, templates.CreateInput{
-			Name:    starter.Name,
-			Subject: &starter.Subject,
-			Doc:     starter.Doc,
+			Name:     r.starter.Name,
+			Subject:  &r.starter.Subject,
+			Doc:      r.starter.Doc,
+			Prepared: &r.authored,
 		})
 		if err != nil {
 			return nil, err
@@ -182,6 +220,21 @@ func (m *Module) createStarters(ctx context.Context, s *ent.Scoped, kit Kit) ([]
 		made = append(made, tpl)
 	}
 	return made, nil
+}
+
+func kitOfInput(in Input) Kit {
+	return Kit{
+		Saved:           true,
+		AccentColor:     in.AccentColor,
+		TextColor:       in.TextColor,
+		BackgroundColor: in.BackgroundColor,
+		HeadingFont:     in.HeadingFont,
+		BodyFont:        in.BodyFont,
+		LogoURL:         in.LogoURL,
+		ButtonTextColor: in.ButtonTextColor,
+		ButtonRadius:    in.ButtonRadius,
+		FooterText:      in.FooterText,
+	}
 }
 
 func kitOf(row *ent.BrandKit) Kit {

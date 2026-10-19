@@ -54,9 +54,14 @@ type Limits struct {
 	MaxNodes int
 	// Timeout is how long one call may run once a runtime is ready.
 	Timeout time.Duration
+	// StartTimeout is how long a call waits for a runtime to start (the first call of a process,
+	// or the first after one was discarded), on top of Timeout. A start takes seconds, many more on
+	// a busy machine; a call that gives up leaves the start running for the next one.
+	StartTimeout time.Duration
 	// MemoryGrowth is how many bytes the process heap may grow during one call. The heap counter is
-	// process-wide, so another goroutine's allocations count too; the limit is a guard, not an
-	// accounting.
+	// process-wide, so another goroutine's allocations count too; the call is stopped only when the
+	// growth stays over the limit for a fifth of a second, which a passing burst does not, so the
+	// limit is a guard, not an accounting.
 	MemoryGrowth uint64
 }
 
@@ -68,6 +73,7 @@ func DefaultLimits() Limits {
 		MaxDepth:     24,
 		MaxNodes:     3000,
 		Timeout:      30 * time.Second,
+		StartTimeout: 2 * time.Minute,
 		MemoryGrowth: 384 << 20,
 	}
 }
@@ -197,25 +203,71 @@ func (r *Renderer) prepare(doc []byte) error {
 	return checkRules(root)
 }
 
+// startResult is a runtime start that finished.
+type startResult struct {
+	rt  *vm
+	err error
+}
+
+// startWithin starts a runtime for the slot the caller holds, waiting no longer than ctx and the
+// Renderer's StartTimeout (the start has a bound of its own, apart from the call's time limit). The start itself
+// cannot be interrupted, so a call that gives up leaves it running: the slot is handed back when it
+// finishes, with the runtime when it started, so the work is not lost and the next call finds the
+// slot busy only for as long as the start takes. On error the caller no longer holds the slot.
+func (r *Renderer) startWithin(ctx context.Context) (*vm, error) {
+	finished := make(chan startResult, 1)
+	go func() {
+		rt, err := r.program.start()
+		finished <- startResult{rt: rt, err: err}
+	}()
+	timer := time.NewTimer(r.limits.StartTimeout)
+	defer timer.Stop()
+
+	var abandoned error
+	select {
+	case res := <-finished:
+		if res.err != nil {
+			r.slots <- nil
+			return nil, fmt.Errorf("start the document runtime: %w", res.err)
+		}
+		r.started.Store(true)
+		return res.rt, nil
+	case <-ctx.Done():
+		abandoned = ctx.Err()
+	case <-timer.C:
+		abandoned = ErrTimeout
+	}
+	go func() {
+		res := <-finished
+		if res.err == nil {
+			r.started.Store(true)
+		}
+		r.slots <- res.rt
+	}()
+	return nil, abandoned
+}
+
 // withRuntime runs fn on a runtime under the call's limits. A runtime that was stopped, or whose
 // state is unknown after an error, is discarded.
 func (r *Renderer) withRuntime(ctx context.Context, cfg callConfig, fn func(*vm) error) error {
+	// A call whose context has ended takes no slot, even when one is free.
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	var rt *vm
 	select {
 	case rt = <-r.slots:
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-	defer func() { r.slots <- rt }()
-
 	if rt == nil {
-		started, err := r.program.start()
+		started, err := r.startWithin(ctx)
 		if err != nil {
-			return fmt.Errorf("start the document runtime: %w", err)
+			return err
 		}
 		rt = started
-		r.started.Store(true)
 	}
+	defer func() { r.slots <- rt }()
 
 	stop := rt.guard(ctx, cfg)
 	err := fn(rt)

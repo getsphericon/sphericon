@@ -193,7 +193,7 @@ func TestSiteBrandKitEditChangesNoMessageAlreadyWritten(t *testing.T) {
 	assert.Equal(t, before, take())
 }
 
-func TestSiteBrandKitIsReadByEveryMemberAndWrittenByOwnersAndAdmins(t *testing.T) {
+func TestSiteBrandKitIsReadByEveryMemberAndWrittenByOwnersOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
@@ -208,7 +208,15 @@ func TestSiteBrandKitIsReadByEveryMemberAndWrittenByOwnersAndAdmins(t *testing.T
 	assert.Equal(t, "#0a7d5a", getBrandKit(t, member, fixtures.InitechSlug).AccentColor, "a refused save changes nothing")
 
 	admin := env.SiteActor(t, fixtures.InitechAdminAdaEmail)
-	assert.IsType(t, &siteapi.SiteBrandKitResource{}, saveBrandKit(t, admin, fixtures.InitechSlug, brandKitInput()))
+	assert.Equal(t, "#0a7d5a", getBrandKit(t, admin, fixtures.InitechSlug).AccentColor, "an admin reads it too")
+	assert.IsType(t, &siteapi.SiteBrandKitSaveForbidden{}, saveBrandKit(t, admin, fixtures.InitechSlug, brandKitInput()))
+	res, err = admin.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{Slug: fixtures.InitechSlug})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteBrandKitRecreateStarterTemplatesForbidden{}, res)
+	assert.Equal(t, "#0a7d5a", getBrandKit(t, admin, fixtures.InitechSlug).AccentColor, "a refused save changes nothing")
+
+	owner := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
+	assert.IsType(t, &siteapi.SiteBrandKitResource{}, saveBrandKit(t, owner, fixtures.InitechSlug, brandKitInput()))
 }
 
 func TestSiteBrandKitIsWorkspaceScoped(t *testing.T) {

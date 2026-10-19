@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
-const errBrandKitForbidden = "only owners and admins can change the Brand kit"
+const errBrandKitForbidden = "only owners can change the Brand kit"
 
 // brandKitResource maps the module's Kit to the API resource, by hand: a Workspace with no saved
 // Brand kit has no row to convert.
@@ -57,7 +57,7 @@ func (h *Handlers) SiteBrandKitGet(ctx context.Context, params siteapi.SiteBrand
 }
 
 // SiteBrandKitSave saves the Brand kit: the first save also makes the starter Templates. Owners
-// and admins only.
+// only.
 func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBrandKitInput, params siteapi.SiteBrandKitSaveParams) (siteapi.SiteBrandKitSaveRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
 	if ent.IsNotFound(err) {
@@ -101,7 +101,7 @@ func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBr
 }
 
 // SiteBrandKitRecreateStarterTemplates makes the starter Templates again from the saved Brand
-// kit. Owners and admins only.
+// kit. Owners only.
 func (h *Handlers) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params siteapi.SiteBrandKitRecreateStarterTemplatesParams) (siteapi.SiteBrandKitRecreateStarterTemplatesRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
 	if ent.IsNotFound(err) {

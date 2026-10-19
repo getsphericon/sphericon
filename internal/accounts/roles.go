@@ -47,10 +47,10 @@ func CanManageIntegrations(role membership.Role) bool {
 }
 
 // CanManageBrandKit reports whether role may save the Workspace's Brand kit and recreate its
-// starter Templates (ADR 0040). It is the Workspace's visual identity, so it is an owner/admin
+// starter Templates (ADR 0040). It is the Workspace's visual identity, so it is an owner-only
 // action; every member may read it, because every member edits messages.
 func CanManageBrandKit(role membership.Role) bool {
-	return role == membership.RoleOwner || role == membership.RoleAdmin
+	return role == membership.RoleOwner
 }
 
 // CanErase reports whether role may erase a Contact (ADR 0021), an irreversible action

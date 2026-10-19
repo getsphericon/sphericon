@@ -1053,7 +1053,7 @@ export const siteBrandKitGetOptions = (options: Options<SiteBrandKitGetData>) =>
 });
 
 /**
- * Save the Brand kit (owner and admin only). The first save also creates the starter
+ * Save the Brand kit (owner only). The first save also creates the starter
  * Templates (a welcome, a receipt, a digest and a one-button message) in its brand; a later
  * save creates none and changes no message already written. A change is recorded as an Audit
  * entry.
@@ -1073,7 +1073,7 @@ export const siteBrandKitSaveMutation = (options?: Partial<Options<SiteBrandKitS
 };
 
 /**
- * Create the starter Templates again from the saved Brand kit (owner and admin only). It adds
+ * Create the starter Templates again from the saved Brand kit (owner only). It adds
  * new Templates and never touches one that exists or a message already written. Answers 422
  * until the Brand kit has been saved.
  */

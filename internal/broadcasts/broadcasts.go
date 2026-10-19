@@ -172,11 +172,11 @@ type Fields struct {
 // Create makes a draft Broadcast. Nothing here schedules or sends. A subject, body or document
 // that cannot render is emailrender.ErrInvalidContent; the body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broadcast, error) {
-	c, err := content(ctx, f.Subject, f.Body, f.Doc)
+	c, err := emailrender.ResolveContent(ctx, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
 	}
-	body := c.body
+	body := c.Body
 	q := s.Broadcast().Create().
 		SetNillableFromName(f.FromName).
 		SetNillableFromEmail(f.FromEmail).
@@ -191,8 +191,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 	if body != nil {
 		q.SetBody(*body)
 	}
-	if c.authored != nil {
-		q.SetDoc(f.Doc).SetEditorVersion(c.authored.EditorVersion)
+	if c.Authored != nil {
+		q.SetDoc(f.Doc).SetEditorVersion(c.Authored.EditorVersion)
 	}
 	return q.Save(ctx)
 }
@@ -218,7 +218,7 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (
 // Update edits a draft. The UPDATE only matches a draft row, so a Broadcast that was
 // claimed for sending in the meantime is never edited.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) (*ent.Broadcast, error) {
-	c, err := content(ctx, f.Subject, f.Body, f.Doc)
+	c, err := emailrender.ResolveContent(ctx, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
 	}
@@ -227,13 +227,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) 
 		SetNillableSubject(f.Subject).
 		SetNillableFromName(f.FromName).
 		SetNillableFromEmail(f.FromEmail).
-		SetNillableBody(c.body).
+		SetNillableBody(c.Body).
 		SetNillableSegmentID(f.SegmentID).
 		SetNillableIntegrationID(f.IntegrationID)
 	switch {
-	case c.authored != nil:
-		u.SetDoc(f.Doc).SetEditorVersion(c.authored.EditorVersion)
-	case c.body != nil:
+	case c.Authored != nil:
+		u.SetDoc(f.Doc).SetEditorVersion(c.Authored.EditorVersion)
+	case c.Body != nil:
 		u.ClearDoc().ClearEditorVersion()
 	}
 	if f.ClearFromName {
@@ -249,31 +249,6 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) 
 		u.ClearIntegrationID()
 	}
 	return m.editDraft(ctx, s, id, u)
-}
-
-// written is what a save stores of the message content.
-type written struct {
-	// body is the body to store; nil when the write names none.
-	body *string
-	// authored is set when the content is a document: its body is body.
-	authored *emailrender.Authored
-}
-
-// content resolves the body of a write. A document is rendered to it (the one render of the
-// save, never on the send path); a body is validated and sanitized; neither leaves it alone.
-func content(ctx context.Context, subject, body *string, doc json.RawMessage) (written, error) {
-	if len(doc) == 0 {
-		b, err := emailrender.PrepareFields(subject, body)
-		return written{body: b}, err
-	}
-	if body != nil {
-		return written{}, ErrBodyAndDoc
-	}
-	authored, err := emailrender.FromDocument(ctx, subject, doc)
-	if err != nil {
-		return written{}, err
-	}
-	return written{body: &authored.Body, authored: &authored}, nil
 }
 
 // SetAudience points a draft at a Segment, or at all active contacts when segmentID

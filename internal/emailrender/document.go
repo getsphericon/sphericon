@@ -30,14 +30,19 @@ type Authored struct {
 // result goes through PrepareFields like any body, so the stored HTML survives SanitizeHTML
 // unchanged.
 //
-// A document that is invalid, too large or does not render within its limits is
-// ErrInvalidContent with the reason; subject, when not nil, is checked with the body. A failure
-// of the runtime itself is returned as it is.
+// A document that is invalid or too large for the editor is ErrInvalidContent with the reason;
+// subject, when not nil, is checked with the body. A render that could not run (the request
+// ended, or a time or memory limit of ours stopped it) says nothing about the document: it is
+// ErrRenderUnavailable, which a client may retry. A failure of the runtime itself is returned as
+// it is.
 func FromDocument(ctx context.Context, subject *string, doc []byte) (Authored, error) {
 	out, err := emaildoc.Default().Render(ctx, doc)
 	if err != nil {
-		if isDocumentRefusal(err) {
+		switch {
+		case isDocumentRefusal(err):
 			return Authored{}, fmt.Errorf("%w: %w", ErrInvalidContent, err)
+		case isRenderUnavailable(err):
+			return Authored{}, fmt.Errorf("%w: %w", ErrRenderUnavailable, err)
 		}
 		return Authored{}, err
 	}
@@ -49,11 +54,54 @@ func FromDocument(ctx context.Context, subject *string, doc []byte) (Authored, e
 	return Authored{Body: *body, EditorVersion: emaildoc.EditorVersion()}, nil
 }
 
+// ErrRenderUnavailable is a document render that could not run to its end for a reason that is not
+// the document's: the request's context ended, or the render hit the time or memory limit of the
+// server. It is retryable and never a claim that the document is invalid.
+var ErrRenderUnavailable = errors.New("the email could not be rendered right now, try again")
+
+// Content is what a write stores of a message's content.
+type Content struct {
+	// Body is the body to store; nil when the write names none.
+	Body *string
+	// Authored is set when the content is a document: its body is Body.
+	Authored *Authored
+}
+
+// ResolveContent resolves the body of a write: the one place Templates, Broadcasts and Automation
+// steps decide it. A document is rendered to it (the one render of the save, never on the send
+// path); a body is validated and sanitized; neither leaves the content alone; both is errBoth,
+// the caller's own refusal.
+func ResolveContent(ctx context.Context, subject, body *string, doc []byte, errBoth error) (Content, error) {
+	if len(doc) == 0 {
+		b, err := PrepareFields(subject, body)
+		return Content{Body: b}, err
+	}
+	if body != nil {
+		return Content{}, errBoth
+	}
+	authored, err := FromDocument(ctx, subject, doc)
+	if err != nil {
+		return Content{}, err
+	}
+	return Content{Body: &authored.Body, Authored: &authored}, nil
+}
+
 // isDocumentRefusal tells what the author can fix (the document) from what they cannot.
 func isDocumentRefusal(err error) bool {
 	for _, target := range []error{
 		emaildoc.ErrInvalid, emaildoc.ErrTooLarge, emaildoc.ErrTooDeep, emaildoc.ErrTooManyNodes,
-		emaildoc.ErrTimeout, emaildoc.ErrMemoryLimit,
+	} {
+		if errors.Is(err, target) {
+			return true
+		}
+	}
+	return false
+}
+
+// isRenderUnavailable is a render that ended for a reason outside the document.
+func isRenderUnavailable(err error) bool {
+	for _, target := range []error{
+		emaildoc.ErrTimeout, emaildoc.ErrMemoryLimit, context.Canceled, context.DeadlineExceeded,
 	} {
 		if errors.Is(err, target) {
 			return true

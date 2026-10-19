@@ -92,7 +92,7 @@ test('a saved kit is recreated into starter templates only after a confirmation'
       return HttpResponse.json([], { status: 201 })
     }),
   )
-  const { screen } = await renderWithRouter(<BrandKitSection workspace={workspace('admin')} />)
+  const { screen } = await renderWithRouter(<BrandKitSection workspace={workspace('owner')} />)
 
   await screen.getByRole('button', { name: 'Recreate the starter templates' }).click()
   await expect.element(screen.getByText(/Templates and messages that already exist/)).toBeVisible()
@@ -104,17 +104,20 @@ test('a saved kit is recreated into starter templates only after a confirmation'
   await expect.poll(() => recreated).toBe(1)
 })
 
-test('a member sees the Brand kit but cannot change it', async () => {
-  worker.use(handleSiteBrandKitGet({ body: KIT }))
-  const { screen } = await renderWithRouter(<BrandKitSection workspace={workspace('member')} />)
+test.each(['member', 'admin'] as const)(
+  '%s sees the Brand kit but cannot change it',
+  async (role) => {
+    worker.use(handleSiteBrandKitGet({ body: KIT }))
+    const { screen } = await renderWithRouter(<BrandKitSection workspace={workspace(role)} />)
 
-  await expect.element(screen.getByLabelText('Footer')).toHaveValue('Acme Inc')
-  await expect.element(screen.getByLabelText('Footer')).toBeDisabled()
-  await expect
-    .element(screen.getByText('Only owners and admins can change the Brand kit.'))
-    .toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
-})
+    await expect.element(screen.getByLabelText('Footer')).toHaveValue('Acme Inc')
+    await expect.element(screen.getByLabelText('Footer')).toBeDisabled()
+    await expect
+      .element(screen.getByText('Only owners can change the Brand kit.'))
+      .toBeInTheDocument()
+    await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+  },
+)
 
 test('a refused value shows the reason the server gave', async () => {
   worker.use(

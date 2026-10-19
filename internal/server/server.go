@@ -26,6 +26,7 @@ import (
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/clientip"
 	dbpkg "github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/paths"
@@ -198,6 +199,9 @@ func NewInternal(cfg *config.Config, client *ent.Client, surface ServiceSurface)
 // restarting database to come back, short enough that a client's events stay fresh.
 const collectRetryAfter = "5"
 
+// renderRetryAfter is the Retry-After (seconds) of a 503 for a document render that could not run.
+const renderRetryAfter = "5"
+
 // collectErrorHandler is problemErrorHandler for /collect, which also tells its client
 // to retry: a database that cannot be reached is a 503 with Retry-After, because a
 // retried event is counted once (clientEventId) and a client can send it again safely.
@@ -227,6 +231,13 @@ func problemErrorHandler(_ context.Context, w http.ResponseWriter, _ *http.Reque
 	if errors.As(err, &known) {
 		status, code, detail := known.Problem()
 		writeCodedProblem(w, status, code, detail)
+		return
+	}
+	// A render that could not run (the request ended, a limit of ours stopped it) is no fault of
+	// the document and no crash: the client may try again.
+	if errors.Is(err, emailrender.ErrRenderUnavailable) {
+		w.Header().Set("Retry-After", renderRetryAfter)
+		writeProblem(w, http.StatusServiceUnavailable, emailrender.ErrRenderUnavailable.Error())
 		return
 	}
 	code := http.StatusInternalServerError

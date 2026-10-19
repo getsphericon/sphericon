@@ -3044,7 +3044,7 @@
       },
       "put": {
         "operationId": "SiteBrandKit_save",
-        "description": "Save the Brand kit (owner and admin only). The first save also creates the starter\nTemplates (a welcome, a receipt, a digest and a one-button message) in its brand; a later\nsave creates none and changes no message already written. A change is recorded as an Audit\nentry.",
+        "description": "Save the Brand kit (owner only). The first save also creates the starter\nTemplates (a welcome, a receipt, a digest and a one-button message) in its brand; a later\nsave creates none and changes no message already written. A change is recorded as an Audit\nentry.",
         "parameters": [
           {
             "name": "slug",
@@ -3113,7 +3113,7 @@
     "/workspaces/{slug}/brand-kit/starter-templates": {
       "post": {
         "operationId": "SiteBrandKit_recreateStarterTemplates",
-        "description": "Create the starter Templates again from the saved Brand kit (owner and admin only). It adds\nnew Templates and never touches one that exists or a message already written. Answers 422\nuntil the Brand kit has been saved.",
+        "description": "Create the starter Templates again from the saved Brand kit (owner only). It adds\nnew Templates and never touches one that exists or a message already written. Answers 422\nuntil the Brand kit has been saved.",
         "parameters": [
           {
             "name": "slug",

@@ -60,6 +60,8 @@ var (
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
 	// without a tag name, or an email step whose content cannot render.
 	ErrInvalidStep = errors.New("automations: invalid step")
+
+	errBodyAndDoc = errors.New("automations: a step writes a body or a doc, not both")
 )
 
 // build renders every email step that holds a document to its body, in the same save (ADR 0040,
@@ -73,17 +75,20 @@ func build(ctx context.Context, steps []Step) ([]Step, error) {
 		if s.Type != StepEmail || len(s.Doc) == 0 {
 			continue
 		}
+		var body *string
 		if s.Body != "" {
+			body = &s.Body
+		}
+		c, err := emailrender.ResolveContent(ctx, &s.Subject, body, s.Doc, errBodyAndDoc)
+		switch {
+		case errors.Is(err, errBodyAndDoc):
 			return nil, fmt.Errorf("%w: step %d: write a body or a doc, not both", ErrInvalidStep, i+1)
-		}
-		authored, err := emailrender.FromDocument(ctx, &s.Subject, s.Doc)
-		if errors.Is(err, emailrender.ErrInvalidContent) {
+		case errors.Is(err, emailrender.ErrInvalidContent):
 			return nil, fmt.Errorf("%w: step %d: %w", ErrInvalidStep, i+1, err)
-		}
-		if err != nil {
+		case err != nil:
 			return nil, err
 		}
-		out[i].Body, out[i].EditorVersion = authored.Body, authored.EditorVersion
+		out[i].Body, out[i].EditorVersion = c.Authored.Body, c.Authored.EditorVersion
 	}
 	return out, nil
 }
