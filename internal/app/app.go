@@ -60,6 +60,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/telemetry"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
@@ -76,8 +77,9 @@ type App struct {
 	// Metrics is the opt-in Prometheus listener (ADR 0018); nil when SPHERICON_METRICS_ADDR
 	// is empty and for the command app.
 	Metrics *telemetry.MetricsServer
-	// Internal is the opt-in internal listener of the service endpoints (ADR 0026); nil
-	// when SPHERICON_INTERNAL_ADDR is empty, without the `staff` license, and for the command app.
+	// Internal is the opt-in internal listener: the edge's TLS ask (ADR 0038, always) and the
+	// service endpoints (ADR 0026, with the `staff` license); nil when SPHERICON_INTERNAL_ADDR
+	// is empty and for the command app.
 	Internal *sidelistener.Server
 
 	injector       *do.RootScope
@@ -138,6 +140,26 @@ type systemSender struct {
 	messaging.EmailSender
 }
 
+// trackingVerifier checks Tracking domain CNAMEs against the configured edge host; nil
+// while SPHERICON_TRACKING_CNAME_TARGET is unset (ADR 0038).
+func trackingVerifier(cfg *config.Config, bus *events.Bus) *trackingdomain.Verifier {
+	if cfg.TrackingCNAMETarget == "" {
+		return nil
+	}
+	return &trackingdomain.Verifier{
+		Lookup: net.DefaultResolver.LookupCNAME,
+		Target: cfg.TrackingCNAMETarget,
+		Now:    time.Now,
+		// The SSRF-guarded client: a customer's DNS names the host the probe dials.
+		HTTP:   webhook.NewClient(trackingProbeTimeout),
+		Secret: cfg.JWTSecret,
+		Events: bus,
+	}
+}
+
+// trackingProbeTimeout bounds one HTTPS probe of a Tracking domain.
+const trackingProbeTimeout = 10 * time.Second
+
 // dkimLookup is the DI-provided DKIM DNS resolver for sending-domain
 // verification (ADR 0010). The composition root is the single place that decides
 // the implementation — real DNS in prod, a seeded-domain-trusting stub in dev —
@@ -166,8 +188,8 @@ type outboundModule struct{ *outbound.Module }
 // externalAPI is the external (/api) ogen server; the MCP surface dispatches through it.
 type externalAPI struct{ http.Handler }
 
-// internalHandler is the internal listener's handler (ADR 0026); its Handler is nil
-// without the `staff` license.
+// internalHandler is the internal listener's handler: the TLS ask always, /service with
+// the `staff` license (ADR 0026, ADR 0038).
 type internalHandler struct{ http.Handler }
 
 // mcpHandler is the /mcp surface (ADR 0016), projected from the external contract.
@@ -281,8 +303,9 @@ func New(env string, opts ...Option) (*App, error) {
 		metrics = telemetry.NewMetricsServer(cfg.MetricsAddr)
 	}
 
-	// The internal listener exists only when an address is configured and the
-	// `staff` license gives it something to serve (ADR 0026).
+	// The internal listener exists only when an address is configured: it always
+	// serves the edge's TLS ask (ADR 0038), the service endpoints only with the
+	// `staff` license (ADR 0026).
 	var internal *sidelistener.Server
 	if cfg.InternalAddr != "" {
 		ih, err := do.Invoke[*internalHandler](injector)
@@ -290,9 +313,7 @@ func New(env string, opts ...Option) (*App, error) {
 			_ = injector.Shutdown()
 			return nil, err
 		}
-		if ih.Handler != nil {
-			internal = sidelistener.New("internal", cfg.InternalAddr, ih.Handler, sidelistener.WithTimeouts(30*time.Second, 2*time.Minute))
-		}
+		internal = sidelistener.New("internal", cfg.InternalAddr, ih.Handler, sidelistener.WithTimeouts(30*time.Second, 2*time.Minute))
 	}
 
 	addr := ":" + cfg.Port
@@ -942,7 +963,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL, cfg.OutboundAllow,
+		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL, cfg.OutboundAllow,
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 			edition.Jobs(bus.Bus, sys.EmailSender), inst.Jobs(), reporter.Jobs())
 		if err != nil {
@@ -979,7 +1000,15 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return &outboundModule{outbound.New(bus.Bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))}, nil
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		opts := []outbound.Option{outbound.WithFreezers(edition.Freezer())}
+		if cfg.TrackingCNAMETarget != "" {
+			opts = append(opts, outbound.WithTrackingDomains())
+		}
+		return &outboundModule{outbound.New(bus.Bus, resolver, tracker, opts...)}, nil
 	})
 
 	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).
@@ -1103,7 +1132,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return sendingdomains.New(bus.Bus, cipher, jc.Client), nil
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		return sendingdomains.New(bus.Bus, cipher, jc.Client, cfg.TrackingCNAMETarget), nil
 	})
 
 	do.Provide(injector, func(do.Injector) (*templates.Module, error) {
@@ -1216,7 +1249,7 @@ func register(injector do.Injector, env string, o options) {
 	})
 
 	// The handler of the internal listener (ADR 0026): the service endpoints of the
-	// Staff surface. Nil without the `staff` license.
+	// Staff surface (with the `staff` license) and the edge's TLS ask (always).
 	do.Provide(injector, func(i do.Injector) (*internalHandler, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -1230,7 +1263,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		h, err := server.NewInternal(cfg, edition.Service(bus.Bus))
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		h, err := server.NewInternal(cfg, client.Client, edition.Service(bus.Bus))
 		if err != nil {
 			return nil, err
 		}

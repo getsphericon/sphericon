@@ -786,13 +786,14 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
-func (*ProblemDetailsHeaders) serviceHoldsClearRes()        {}
-func (*ProblemDetailsHeaders) serviceHoldsListRes()         {}
-func (*ProblemDetailsHeaders) serviceHoldsSetRes()          {}
-func (*ProblemDetailsHeaders) serviceIdentityGetRes()       {}
-func (*ProblemDetailsHeaders) serviceUsageListRes()         {}
-func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes() {}
-func (*ProblemDetailsHeaders) serviceWorkspaceUsageGetRes() {}
+func (*ProblemDetailsHeaders) serviceHoldsClearRes()           {}
+func (*ProblemDetailsHeaders) serviceHoldsListRes()            {}
+func (*ProblemDetailsHeaders) serviceHoldsSetRes()             {}
+func (*ProblemDetailsHeaders) serviceIdentityGetRes()          {}
+func (*ProblemDetailsHeaders) serviceTrackingHostFeedListRes() {}
+func (*ProblemDetailsHeaders) serviceUsageListRes()            {}
+func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes()    {}
+func (*ProblemDetailsHeaders) serviceWorkspaceUsageGetRes()    {}
 
 type ServiceHoldsClearNotFound ProblemDetails
 
@@ -872,6 +873,7 @@ type ServiceScope string
 const (
 	ServiceScopeUsageRead      ServiceScope = "usage:read"
 	ServiceScopeWorkspacesRead ServiceScope = "workspaces:read"
+	ServiceScopeDomainsRead    ServiceScope = "domains:read"
 	ServiceScopeHoldsWrite     ServiceScope = "holds:write"
 )
 
@@ -880,6 +882,7 @@ func (ServiceScope) AllValues() []ServiceScope {
 	return []ServiceScope{
 		ServiceScopeUsageRead,
 		ServiceScopeWorkspacesRead,
+		ServiceScopeDomainsRead,
 		ServiceScopeHoldsWrite,
 	}
 }
@@ -890,6 +893,8 @@ func (s ServiceScope) MarshalText() ([]byte, error) {
 	case ServiceScopeUsageRead:
 		return []byte(s), nil
 	case ServiceScopeWorkspacesRead:
+		return []byte(s), nil
+	case ServiceScopeDomainsRead:
 		return []byte(s), nil
 	case ServiceScopeHoldsWrite:
 		return []byte(s), nil
@@ -907,8 +912,171 @@ func (s *ServiceScope) UnmarshalText(data []byte) error {
 	case ServiceScopeWorkspacesRead:
 		*s = ServiceScopeWorkspacesRead
 		return nil
+	case ServiceScopeDomainsRead:
+		*s = ServiceScopeDomainsRead
+		return nil
 	case ServiceScopeHoldsWrite:
 		*s = ServiceScopeHoldsWrite
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One change of a Tracking domain host.
+// Ref: #/components/schemas/ServiceTrackingHostChange
+type ServiceTrackingHostChange struct {
+	// The host, `track.<Sending domain>`.
+	Host string `json:"host"`
+	// The Workspace that held the host at this change.
+	WorkspaceId EntityId `json:"workspaceId"`
+	// What the host became; `removed` is the explicit report that it left the verified states. Entries of
+	// one host arrive in the order they happened, so the last one read is its current state.
+	State ServiceTrackingHostState `json:"state"`
+	// When the change was recorded.
+	ChangedAt Timestamp `json:"changedAt"`
+}
+
+// GetHost returns the value of Host.
+func (s *ServiceTrackingHostChange) GetHost() string {
+	return s.Host
+}
+
+// GetWorkspaceId returns the value of WorkspaceId.
+func (s *ServiceTrackingHostChange) GetWorkspaceId() EntityId {
+	return s.WorkspaceId
+}
+
+// GetState returns the value of State.
+func (s *ServiceTrackingHostChange) GetState() ServiceTrackingHostState {
+	return s.State
+}
+
+// GetChangedAt returns the value of ChangedAt.
+func (s *ServiceTrackingHostChange) GetChangedAt() Timestamp {
+	return s.ChangedAt
+}
+
+// SetHost sets the value of Host.
+func (s *ServiceTrackingHostChange) SetHost(val string) {
+	s.Host = val
+}
+
+// SetWorkspaceId sets the value of WorkspaceId.
+func (s *ServiceTrackingHostChange) SetWorkspaceId(val EntityId) {
+	s.WorkspaceId = val
+}
+
+// SetState sets the value of State.
+func (s *ServiceTrackingHostChange) SetState(val ServiceTrackingHostState) {
+	s.State = val
+}
+
+// SetChangedAt sets the value of ChangedAt.
+func (s *ServiceTrackingHostChange) SetChangedAt(val Timestamp) {
+	s.ChangedAt = val
+}
+
+type ServiceTrackingHostFeedListBadRequest ProblemDetails
+
+func (*ServiceTrackingHostFeedListBadRequest) serviceTrackingHostFeedListRes() {}
+
+type ServiceTrackingHostFeedListForbidden ProblemDetails
+
+func (*ServiceTrackingHostFeedListForbidden) serviceTrackingHostFeedListRes() {}
+
+type ServiceTrackingHostFeedListUnauthorized ProblemDetails
+
+func (*ServiceTrackingHostFeedListUnauthorized) serviceTrackingHostFeedListRes() {}
+
+// One page of the Tracking host feed.
+// Ref: #/components/schemas/ServiceTrackingHostFeedPage
+type ServiceTrackingHostFeedPage struct {
+	// Changes after the requested cursor, in the order they were made.
+	Items []ServiceTrackingHostChange `json:"items"`
+	// Pass it back as the cursor to read what follows this page. It is the requested cursor itself when
+	// the page is empty. Saving it is what advances the caller: the core keeps no position of its own.
+	NextCursor string `json:"nextCursor"`
+	// Whether more entries follow this page right now.
+	HasMore bool `json:"hasMore"`
+}
+
+// GetItems returns the value of Items.
+func (s *ServiceTrackingHostFeedPage) GetItems() []ServiceTrackingHostChange {
+	return s.Items
+}
+
+// GetNextCursor returns the value of NextCursor.
+func (s *ServiceTrackingHostFeedPage) GetNextCursor() string {
+	return s.NextCursor
+}
+
+// GetHasMore returns the value of HasMore.
+func (s *ServiceTrackingHostFeedPage) GetHasMore() bool {
+	return s.HasMore
+}
+
+// SetItems sets the value of Items.
+func (s *ServiceTrackingHostFeedPage) SetItems(val []ServiceTrackingHostChange) {
+	s.Items = val
+}
+
+// SetNextCursor sets the value of NextCursor.
+func (s *ServiceTrackingHostFeedPage) SetNextCursor(val string) {
+	s.NextCursor = val
+}
+
+// SetHasMore sets the value of HasMore.
+func (s *ServiceTrackingHostFeedPage) SetHasMore(val bool) {
+	s.HasMore = val
+}
+
+func (*ServiceTrackingHostFeedPage) serviceTrackingHostFeedListRes() {}
+
+// What a Tracking domain host did at one change.
+// Ref: #/components/schemas/ServiceTrackingHostState
+type ServiceTrackingHostState string
+
+const (
+	ServiceTrackingHostStateDNSVerified ServiceTrackingHostState = "dns_verified"
+	ServiceTrackingHostStateServing     ServiceTrackingHostState = "serving"
+	ServiceTrackingHostStateRemoved     ServiceTrackingHostState = "removed"
+)
+
+// AllValues returns all ServiceTrackingHostState values.
+func (ServiceTrackingHostState) AllValues() []ServiceTrackingHostState {
+	return []ServiceTrackingHostState{
+		ServiceTrackingHostStateDNSVerified,
+		ServiceTrackingHostStateServing,
+		ServiceTrackingHostStateRemoved,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ServiceTrackingHostState) MarshalText() ([]byte, error) {
+	switch s {
+	case ServiceTrackingHostStateDNSVerified:
+		return []byte(s), nil
+	case ServiceTrackingHostStateServing:
+		return []byte(s), nil
+	case ServiceTrackingHostStateRemoved:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ServiceTrackingHostState) UnmarshalText(data []byte) error {
+	switch ServiceTrackingHostState(data) {
+	case ServiceTrackingHostStateDNSVerified:
+		*s = ServiceTrackingHostStateDNSVerified
+		return nil
+	case ServiceTrackingHostStateServing:
+		*s = ServiceTrackingHostStateServing
+		return nil
+	case ServiceTrackingHostStateRemoved:
+		*s = ServiceTrackingHostStateRemoved
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

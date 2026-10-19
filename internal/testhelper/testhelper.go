@@ -171,6 +171,10 @@ type TestEnv struct {
 }
 
 // Option tunes the server a test builds with Setup.
+// TrackingCNAMETarget is the edge host the test instance names for Tracking domain CNAMEs
+// (SPHERICON_TRACKING_CNAME_TARGET); WithConfig clears it to test the feature off.
+const TrackingCNAMETarget = "edge.sphericon.test"
+
 type Option func(*setup)
 
 // setup is what the options edit: a private copy of the test config, the clock the
@@ -243,6 +247,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	cfg := *baseCfg
 	cfg.RateLimits = config.RateLimits{}
+	cfg.TrackingCNAMETarget = TrackingCNAMETarget
 	st := &setup{cfg: &cfg, now: time.Now, version: buildinfo.Current().Version}
 	for _, opt := range opts {
 		opt(st)
@@ -295,10 +300,10 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	client.Use(edition.Hooks()...)
 	bus.Use(edition.Hooks()...)
 	// The Staff hold freezer rides the send chokepoint like the app's.
-	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))
+	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()), outbound.WithTrackingDomains())
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
-	inline := jobs.NewInline(client, sender, systemMail, stubTXT, cipher, catalog, cfg.AppURL)
+	inline := jobs.NewInline(client, sender, systemMail, stubTXT, nil, cipher, catalog, cfg.AppURL)
 	// The transactional send surface resolves a workspace sender directly (not via
 	// river), so it gets the same capturing resolver — its sends land in CustomerMail.
 	// inline implements every enqueue seam (broadcast, welcome, account mail,
@@ -324,7 +329,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	}
 	confirmations := &Confirmations{}
 	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
-	sendingDomainsModule := sendingdomains.New(bus, cipher, inline)
+	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
 	automationsModule := automations.New(cipher)
 	broadcastsModule := broadcasts.New(inline)
 	acc := accounts.New(client, bus)
@@ -358,7 +363,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		RequireEmailVerification: cfg.RequireEmailVerification,
 	}, external, mcpHandler, staffHandler)
 	require.NoError(t, err, "build server")
-	internalHandler, err := server.NewInternal(&cfg, edition.Service(bus))
+	internalHandler, err := server.NewInternal(&cfg, client, edition.Service(bus))
 	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{

@@ -16,8 +16,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/trackingdomain"
 )
 
 // recheckBatchSize bounds how many domains one periodic tick re-checks, so a
@@ -35,15 +38,19 @@ func (VerifySendingDomainArgs) Kind() string { return "sending_domain_verify" }
 
 type VerifySendingDomainWorker struct {
 	river.WorkerDefaults[VerifySendingDomainArgs]
-	ent    *ent.Client
-	lookup sending.TXTLookup
-	sender messaging.EmailSender // platform sender for the verified→unverified alert
+	ent      *ent.Client
+	lookup   sending.TXTLookup
+	sender   messaging.EmailSender    // platform sender for the verified→unverified alert
+	tracking *trackingdomain.Verifier // nil: the Tracking domain feature is off
 }
 
 func (w *VerifySendingDomainWorker) Work(ctx context.Context, job *river.Job[VerifySendingDomainArgs]) error {
+	// The Tracking domain check is independent of DKIM: a DKIM lookup error is returned
+	// (the job retries) but never skips it.
 	_, flipped, err := VerifySendingDomainByID(ctx, w.ent, w.lookup, job.Args.SendingDomainID)
+	trackErr := VerifyTrackingDomainByID(ctx, w.ent, w.tracking, w.sender, job.Args.SendingDomainID)
 	if err != nil {
-		return err
+		return errors.Join(err, trackErr)
 	}
 	if flipped {
 		// Best-effort: a failed alert must not fail (and retry) the verification.
@@ -52,7 +59,7 @@ func (w *VerifySendingDomainWorker) Work(ctx context.Context, job *river.Job[Ver
 				"sending_domain_id", job.Args.SendingDomainID, "err", nerr)
 		}
 	}
-	return nil
+	return trackErr
 }
 
 // --- periodic re-check of all domains (verified is a live property, ADR 0010) ---
@@ -80,6 +87,54 @@ func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, job *river.Job[R
 	rc := river.ClientFromContext[pgx.Tx](ctx)
 	for _, id := range ids {
 		if _, err := rc.Insert(ctx, VerifySendingDomainArgs{SendingDomainID: id}, nil); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// --- periodic re-check of Tracking domains (independent of the DKIM re-check) ---
+
+type VerifyTrackingDomainArgs struct {
+	SendingDomainID int64 `json:"sending_domain_id"`
+}
+
+func (VerifyTrackingDomainArgs) Kind() string { return "tracking_domain_verify" }
+
+type VerifyTrackingDomainWorker struct {
+	river.WorkerDefaults[VerifyTrackingDomainArgs]
+	ent      *ent.Client
+	sender   messaging.EmailSender
+	tracking *trackingdomain.Verifier // nil: the Tracking domain feature is off
+}
+
+func (w *VerifyTrackingDomainWorker) Work(ctx context.Context, job *river.Job[VerifyTrackingDomainArgs]) error {
+	return VerifyTrackingDomainByID(ctx, w.ent, w.tracking, w.sender, job.Args.SendingDomainID)
+}
+
+type RecheckTrackingDomainsArgs struct{}
+
+func (RecheckTrackingDomainsArgs) Kind() string { return "tracking_domain_recheck" }
+
+type RecheckTrackingDomainsWorker struct {
+	river.WorkerDefaults[RecheckTrackingDomainsArgs]
+	ent *ent.Client
+}
+
+// Work fans the tick out into one VerifyTrackingDomain job for every Sending domain
+// whose Tracking domain is dns_verified or serving, so a host that stops answering is
+// demoted within one tick. There is no batch limit and no DKIM dependency: a pending
+// Tracking domain is only checked when its owner clicks Verify.
+func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, job *river.Job[RecheckTrackingDomainsArgs]) error {
+	ids, err := w.ent.SendingDomain.Query().
+		Where(sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
+		IDs(ctx)
+	if err != nil {
+		return err
+	}
+	rc := river.ClientFromContext[pgx.Tx](ctx)
+	for _, id := range ids {
+		if _, err := rc.Insert(ctx, VerifyTrackingDomainArgs{SendingDomainID: id}, nil); err != nil {
 			return err
 		}
 	}
@@ -201,4 +256,51 @@ func NotifySendingDomainUnverified(ctx context.Context, client *ent.Client, send
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// VerifyTrackingDomainByID re-checks a Sending domain's Tracking domain (the CNAME, then
+// the HTTPS probe) and stores the state (ADR 0038). A nil verifier (the feature is off)
+// does nothing. A host another Workspace already holds leaves this claim pending and is
+// not an error: retrying cannot change it. A host that was dns_verified or serving and
+// went back a step notifies the Workspace's Owners, best-effort; every change publishes
+// its domain event inside the Check.
+func VerifyTrackingDomainByID(ctx context.Context, client *ent.Client, v *trackingdomain.Verifier, sender messaging.EmailSender, id int64) error {
+	if v == nil {
+		return nil
+	}
+	dom, err := client.SendingDomain.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	next, err := v.Check(ctx, client.Scoped(dom.WorkspaceID), id)
+	if errors.Is(err, trackingdomain.ErrHostTaken) {
+		slog.InfoContext(ctx, "tracking host held by another workspace",
+			"sending_domain_id", id, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if sender != nil && trackingRank(next) < trackingRank(dom.TrackingState) {
+		host := sendingdomains.TrackingHost(dom.Domain)
+		data := map[string]any{"Host": host, "Domain": dom.Domain, "From": dom.TrackingState, "To": next, "Target": v.Target}
+		subject := i18n.T("email.tracking_domain_regressed.subject", data)
+		body := i18n.T("email.tracking_domain_regressed.body", data)
+		if nerr := NotifyWorkspaceOwners(ctx, client, sender, dom.WorkspaceID, subject, body); nerr != nil {
+			slog.WarnContext(ctx, "notify tracking domain regression failed", "sending_domain_id", id, "err", nerr)
+		}
+	}
+	return nil
+}
+
+// trackingRank orders the states from least to most verified.
+func trackingRank(s sendingdomain.TrackingState) int {
+	switch s {
+	case sendingdomain.TrackingStateServing:
+		return 2
+	case sendingdomain.TrackingStateDNSVerified:
+		return 1
+	default:
+		return 0
+	}
 }

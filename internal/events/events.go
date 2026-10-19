@@ -102,17 +102,18 @@ type identifiable interface {
 // serialized envelope can be decoded back into the right Go type. All variants
 // are ours and finite — there is no catch-all.
 var registry = map[string]func() DomainEvent{
-	NameContactCreated:     func() DomainEvent { return &ContactCreated{} },
-	NameContactErased:      func() DomainEvent { return &ContactErased{} },
-	NameEmailSent:          func() DomainEvent { return &EmailEngagement{} },
-	NameEmailOpened:        func() DomainEvent { return &EmailEngagement{} },
-	NameEmailClicked:       func() DomainEvent { return &EmailEngagement{} },
-	NameEmailUnsubscribed:  func() DomainEvent { return &EmailEngagement{} },
-	NameEmailBounced:       func() DomainEvent { return &EmailDeliveryFailure{} },
-	NameEmailComplained:    func() DomainEvent { return &EmailDeliveryFailure{} },
-	NameMarketingConfirmed: func() DomainEvent { return &MarketingConfirmed{} },
-	NameCollected:          func() DomainEvent { return &CollectedEvent{} },
-	NameAuditEntry:         func() DomainEvent { return &AuditEntry{} },
+	NameContactCreated:        func() DomainEvent { return &ContactCreated{} },
+	NameContactErased:         func() DomainEvent { return &ContactErased{} },
+	NameEmailSent:             func() DomainEvent { return &EmailEngagement{} },
+	NameEmailOpened:           func() DomainEvent { return &EmailEngagement{} },
+	NameEmailClicked:          func() DomainEvent { return &EmailEngagement{} },
+	NameEmailUnsubscribed:     func() DomainEvent { return &EmailEngagement{} },
+	NameEmailBounced:          func() DomainEvent { return &EmailDeliveryFailure{} },
+	NameEmailComplained:       func() DomainEvent { return &EmailDeliveryFailure{} },
+	NameMarketingConfirmed:    func() DomainEvent { return &MarketingConfirmed{} },
+	NameCollected:             func() DomainEvent { return &CollectedEvent{} },
+	NameAuditEntry:            func() DomainEvent { return &AuditEntry{} },
+	NameTrackingDomainChanged: func() DomainEvent { return &TrackingDomainChanged{} },
 }
 
 // Decode reconstructs the typed event from an envelope.

@@ -7663,6 +7663,52 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// NewOptTrackingRecord returns new OptTrackingRecord with value set to v.
+func NewOptTrackingRecord(v TrackingRecord) OptTrackingRecord {
+	return OptTrackingRecord{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTrackingRecord is optional TrackingRecord.
+type OptTrackingRecord struct {
+	Value TrackingRecord
+	Set   bool
+}
+
+// IsSet returns true if OptTrackingRecord was set.
+func (o OptTrackingRecord) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTrackingRecord) Reset() {
+	var v TrackingRecord
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTrackingRecord) SetTo(v TrackingRecord) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTrackingRecord) Get() (v TrackingRecord, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTrackingRecord) Or(d TrackingRecord) TrackingRecord {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptUpdateIntegrationInputParams returns new OptUpdateIntegrationInputParams with value set to v.
 func NewOptUpdateIntegrationInputParams(v UpdateIntegrationInputParams) OptUpdateIntegrationInputParams {
 	return OptUpdateIntegrationInputParams{
@@ -9486,6 +9532,8 @@ type SendingDomainResource struct {
 	SpfRecord DnsRecord `json:"spfRecord"`
 	// The suggested DMARC TXT record (advisory bulk-readiness signal).
 	DmarcRecord DnsRecord `json:"dmarcRecord"`
+	// The Tracking domain CNAME; absent when the instance has no tracking target configured.
+	TrackingRecord OptTrackingRecord `json:"trackingRecord"`
 	// When the DKIM DNS was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the domain most recently became verified (null = never).
@@ -9529,6 +9577,11 @@ func (s *SendingDomainResource) GetSpfRecord() DnsRecord {
 // GetDmarcRecord returns the value of DmarcRecord.
 func (s *SendingDomainResource) GetDmarcRecord() DnsRecord {
 	return s.DmarcRecord
+}
+
+// GetTrackingRecord returns the value of TrackingRecord.
+func (s *SendingDomainResource) GetTrackingRecord() OptTrackingRecord {
+	return s.TrackingRecord
 }
 
 // GetLastCheckedAt returns the value of LastCheckedAt.
@@ -9584,6 +9637,11 @@ func (s *SendingDomainResource) SetSpfRecord(val DnsRecord) {
 // SetDmarcRecord sets the value of DmarcRecord.
 func (s *SendingDomainResource) SetDmarcRecord(val DnsRecord) {
 	s.DmarcRecord = val
+}
+
+// SetTrackingRecord sets the value of TrackingRecord.
+func (s *SendingDomainResource) SetTrackingRecord(val OptTrackingRecord) {
+	s.TrackingRecord = val
 }
 
 // SetLastCheckedAt sets the value of LastCheckedAt.
@@ -10831,6 +10889,171 @@ func (s *TestWebhookInput) SetEventType(val string) {
 type TimeZoneName string
 
 type Timestamp time.Time
+
+// The Tracking domain CNAME of a Sending domain (ADR 0038): `host` must point at `target`. Read-only;
+// absent when the instance has no tracking target configured.
+// Ref: #/components/schemas/TrackingRecord
+type TrackingRecord struct {
+	// The record type (always CNAME).
+	Type TrackingRecordType `json:"type"`
+	// The host to create the record at: "track." followed by the domain.
+	Host string `json:"host"`
+	// The edge host the CNAME must point at.
+	Target string `json:"target"`
+	// Where the Tracking domain stands.
+	State TrackingState `json:"state"`
+	// When the Tracking domain was most recently checked (null = never).
+	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
+	// When the state most recently changed (null = never).
+	StateChangedAt OptNilTimestamp `json:"stateChangedAt"`
+}
+
+// GetType returns the value of Type.
+func (s *TrackingRecord) GetType() TrackingRecordType {
+	return s.Type
+}
+
+// GetHost returns the value of Host.
+func (s *TrackingRecord) GetHost() string {
+	return s.Host
+}
+
+// GetTarget returns the value of Target.
+func (s *TrackingRecord) GetTarget() string {
+	return s.Target
+}
+
+// GetState returns the value of State.
+func (s *TrackingRecord) GetState() TrackingState {
+	return s.State
+}
+
+// GetLastCheckedAt returns the value of LastCheckedAt.
+func (s *TrackingRecord) GetLastCheckedAt() OptNilTimestamp {
+	return s.LastCheckedAt
+}
+
+// GetStateChangedAt returns the value of StateChangedAt.
+func (s *TrackingRecord) GetStateChangedAt() OptNilTimestamp {
+	return s.StateChangedAt
+}
+
+// SetType sets the value of Type.
+func (s *TrackingRecord) SetType(val TrackingRecordType) {
+	s.Type = val
+}
+
+// SetHost sets the value of Host.
+func (s *TrackingRecord) SetHost(val string) {
+	s.Host = val
+}
+
+// SetTarget sets the value of Target.
+func (s *TrackingRecord) SetTarget(val string) {
+	s.Target = val
+}
+
+// SetState sets the value of State.
+func (s *TrackingRecord) SetState(val TrackingState) {
+	s.State = val
+}
+
+// SetLastCheckedAt sets the value of LastCheckedAt.
+func (s *TrackingRecord) SetLastCheckedAt(val OptNilTimestamp) {
+	s.LastCheckedAt = val
+}
+
+// SetStateChangedAt sets the value of StateChangedAt.
+func (s *TrackingRecord) SetStateChangedAt(val OptNilTimestamp) {
+	s.StateChangedAt = val
+}
+
+// The record type (always CNAME).
+type TrackingRecordType string
+
+const (
+	TrackingRecordTypeCNAME TrackingRecordType = "CNAME"
+)
+
+// AllValues returns all TrackingRecordType values.
+func (TrackingRecordType) AllValues() []TrackingRecordType {
+	return []TrackingRecordType{
+		TrackingRecordTypeCNAME,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TrackingRecordType) MarshalText() ([]byte, error) {
+	switch s {
+	case TrackingRecordTypeCNAME:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TrackingRecordType) UnmarshalText(data []byte) error {
+	switch TrackingRecordType(data) {
+	case TrackingRecordTypeCNAME:
+		*s = TrackingRecordTypeCNAME
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host,
+// `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail
+// uses the host only while `serving`.
+// Ref: #/components/schemas/TrackingState
+type TrackingState string
+
+const (
+	TrackingStatePending     TrackingState = "pending"
+	TrackingStateDNSVerified TrackingState = "dns_verified"
+	TrackingStateServing     TrackingState = "serving"
+)
+
+// AllValues returns all TrackingState values.
+func (TrackingState) AllValues() []TrackingState {
+	return []TrackingState{
+		TrackingStatePending,
+		TrackingStateDNSVerified,
+		TrackingStateServing,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TrackingState) MarshalText() ([]byte, error) {
+	switch s {
+	case TrackingStatePending:
+		return []byte(s), nil
+	case TrackingStateDNSVerified:
+		return []byte(s), nil
+	case TrackingStateServing:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TrackingState) UnmarshalText(data []byte) error {
+	switch TrackingState(data) {
+	case TrackingStatePending:
+		*s = TrackingStatePending
+		return nil
+	case TrackingStateDNSVerified:
+		*s = TrackingStateDNSVerified
+		return nil
+	case TrackingStateServing:
+		*s = TrackingStateServing
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // Outcome of a transactional send.
 // Ref: #/components/schemas/TransactionalSendStatus

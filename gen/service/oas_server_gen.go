@@ -34,6 +34,18 @@ type Handler interface {
 	//
 	// GET /identity
 	ServiceIdentityGet(ctx context.Context) (ServiceIdentityGetRes, error)
+	// ServiceTrackingHostFeedList implements ServiceTrackingHostFeed_list operation.
+	//
+	// The changes of Tracking domain hosts since an opaque cursor, in the order they were made: a host
+	// entering `dns_verified` or `serving`, moving between them, or leaving them, which is reported as
+	// `removed` and never as silence. A caller that applies each entry in order (provision on
+	// `dns_verified` and `serving`, tear down on `removed`) mirrors the Instance's verified hosts, and a
+	// caller that starts from an empty cursor rebuilds the whole set. Delivery is at-least-once: replaying
+	// a cursor returns the same entries, so applying one twice must change nothing. Needs the
+	// `domains:read` scope.
+	//
+	// GET /domains/changes
+	ServiceTrackingHostFeedList(ctx context.Context, params ServiceTrackingHostFeedListParams) (ServiceTrackingHostFeedListRes, error)
 	// ServiceUsageList implements ServiceUsage_list operation.
 	//
 	// The figures of every Workspace for a Usage period, by Workspace id: Live usage for the open period,

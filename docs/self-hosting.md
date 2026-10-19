@@ -27,7 +27,10 @@ the binary). `SPHERICON_ENV` selects the environment (`development` by default; 
 | `SPHERICON_MCP_URL`                                                                                                   | no                               | _(empty: `SPHERICON_APP_URL`)_          | Public origin of a dedicated MCP host, e.g. `https://mcp.example.com`. The MCP resource is then `${SPHERICON_MCP_URL}/mcp` while the OAuth issuer and consent screen stay on `SPHERICON_APP_URL`. Leave empty on a single host.                                                                                                                                                                                                                                           |
 | `PORT`                                                                                                                | no                               | `3000`                                  | HTTP listen port.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `SPHERICON_METRICS_ADDR`                                                                                              | no                               | — (off)                                 | `host:port` for the opt-in Prometheus listener. Must differ from `PORT`; see [Prometheus metrics](#prometheus-metrics).                                                                                                                                                                                                                                                                                                                                                   |
-| `SPHERICON_INTERNAL_ADDR`                                                                                             | no                               | — (off)                                 | `host:port` for the opt-in internal listener that serves the Service credential endpoints of the Staff surface (needs the `staff` license). Must differ from `PORT` and `SPHERICON_METRICS_ADDR`; see [Service credentials](#service-credentials).                                                                                                                                                                                                                        |
+| `SPHERICON_INTERNAL_ADDR`                                                                                             | no                               | — (off)                                 | `host:port` for the opt-in internal listener that serves the edge's on-demand TLS `ask` (`GET /tls/ask?domain=`, always, [ADR 0038](adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)) and the Service credential endpoints of the Staff surface (these need the `staff` license). Must differ from `PORT` and `SPHERICON_METRICS_ADDR`; see [Service credentials](#service-credentials).                                                                        |
+| `SPHERICON_TRACKING_CNAME_TARGET`                                                                                     | no                               | — (off)                                 | The edge host a Sending domain's Tracking domain CNAME (`track.<domain>`) must point at (ADR 0038), for example `edge.example.com`. Unset turns the feature off: no tracking record is shown on a Sending domain.                                                                                                                                                                                                                                                         |
+| `SPHERICON_TRACKING_HOST_HEADER`                                                                                      | no                               | — (off)                                 | Name of the request header your edge sets to the customer's host (for example `X-Forwarded-Host`), so a request for a verified Tracking domain is served only link paths (ADR 0038). Believed only from a peer inside `SPHERICON_TRACKING_EDGE_CIDRS`; from anyone else it is ignored. Unset: the connection's `Host` is used. Have the proxy for the Instance's own host drop this header.                                                                               |
+| `SPHERICON_TRACKING_EDGE_CIDRS`                                                                                       | no                               | loopback and private ranges             | Comma-separated CIDRs the edge connects from: the only peers whose `SPHERICON_TRACKING_HOST_HEADER` is trusted. Narrow it to your proxy or load balancer.                                                                                                                                                                                                                                                                                                                 |
 | `SPHERICON_PRESETS_DIR`                                                                                               | no                               | — (built-in only)                       | Directory of custom Presets: every `*.yaml` / `*.yml` file at its root loads beside the built-in ones at start, and a file that does not load or reuses a built-in name stops the start. A Workspace never supplies one. Test a file first with `sphericon preset test`; see [Presets](/guide/presets).                                                                                                                                                                   |
 | `SPHERICON_DB_AUTO_MIGRATE`                                                                                           | no                               | `false`                                 | Apply embedded migrations on startup. Convenient for single-replica; see below.                                                                                                                                                                                                                                                                                                                                                                                           |
 | `SPHERICON_DB_MIGRATE_TIMEOUT`                                                                                        | no                               | `10m`                                   | With auto-migrate on, the longest a start waits for the migration lock and the run before it fails. `0` is no limit. `sphericon migrate` itself has no limit.                                                                                                                                                                                                                                                                                                             |
@@ -249,6 +252,57 @@ server {
 
 Do not expose `SPHERICON_METRICS_ADDR` through the proxy.
 
+### Tracking domains
+
+A workspace can put its mail's links on `track.<sending domain>` (see
+[Tracking domain](guide/deliverability#tracking-domain)). The core never terminates TLS for those hosts:
+your proxy does, and sphericon only answers three questions ([ADR 0038](adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)).
+
+1. Which edge host should customers CNAME to? Set `SPHERICON_TRACKING_CNAME_TARGET` (for example
+   `edge.example.com`, a name that resolves to your proxy). Unset, the console shows no tracking row.
+2. Which host did the request ask for? Your proxy sets the header named by
+   `SPHERICON_TRACKING_HOST_HEADER` (for example `X-Forwarded-Host`) to the customer's host. It is
+   believed only from a peer inside `SPHERICON_TRACKING_EDGE_CIDRS`; narrow that to your proxy.
+3. May a certificate be issued for this host? `GET /tls/ask?domain=<host>` on the internal listener
+   (`SPHERICON_INTERNAL_ADDR`) answers 200 when the host is the `track.` host of a Sending domain whose
+   CNAME is verified, 404 otherwise. It is on the internal listener only, so publish that port to the
+   proxy and never through the public ingress.
+
+Caddy's on-demand TLS fits directly: it asks the endpoint before it requests a certificate.
+
+```caddyfile
+{
+  on_demand_tls {
+    ask http://127.0.0.1:3400/tls/ask
+  }
+}
+
+# the Instance's own host: drop the header so nobody can forge a tracking host
+mail.example.com {
+  reverse_proxy 127.0.0.1:3000 {
+    header_up -X-Forwarded-Host
+  }
+}
+
+# every customer Tracking domain; the certificate is issued on the first request
+https:// {
+  tls {
+    on_demand
+  }
+  reverse_proxy 127.0.0.1:3000 {
+    header_up X-Forwarded-Host {host}
+  }
+}
+```
+
+with `SPHERICON_INTERNAL_ADDR=127.0.0.1:3400`, `SPHERICON_TRACKING_CNAME_TARGET=edge.example.com`
+and `SPHERICON_TRACKING_HOST_HEADER=X-Forwarded-Host`. Point `edge.example.com` at the same machine.
+
+A domain goes `pending`, then `dns_verified` (CNAME correct, `ask` answers 200), then `serving`
+(sphericon fetched its own well-known path over HTTPS). A job rechecks every `dns_verified` and `serving` domain every 15 minutes. Until a
+domain is `serving`, and again if it regresses, mail uses `SPHERICON_APP_URL`. Removing a Sending domain
+or its CNAME leaves links already sent working on the Instance's host and dead on the customer's.
+
 The external API can also live on its own host, such as `api.example.com`, if the proxy rewrites
 `/*` to `/api/*` (`rewrite ^/(.*)$ /api/$1 break;` in nginx, `rewrite * /api{uri}` in Caddy). The
 binary itself stays path-based.
@@ -309,12 +363,13 @@ The service endpoints are served only by a separate internal listener, never on 
 It is off by default: set `SPHERICON_INTERNAL_ADDR` (`host:port`, for example `127.0.0.1:3400` or
 `0.0.0.0:3400` in a container) to bind it, and publish that port only to the calling service, never
 through the public ingress. An empty `SPHERICON_INTERNAL_ADDR` means no listener and no route for the endpoints
-anywhere. An address using the same port as `PORT` or `SPHERICON_METRICS_ADDR`, a malformed one, or one already
+anywhere. Without the `staff` license the listener still serves `GET /tls/ask?domain=<host>` for the edge
+(200 for the Tracking domain host of a Sending domain whose CNAME is verified, 404 otherwise), and `/service` is 404. An address using the same port as `PORT` or `SPHERICON_METRICS_ADDR`, a malformed one, or one already
 in use fails startup. The endpoints live under `/service` on that listener.
 
 A credential is created, rotated and revoked only from the command line; no endpoint can mint or
 change one. It carries a name and one or more scopes (`usage:read`, `workspaces:read`,
-`holds:write`) and an optional expiry. Its value is shown once and only a hash is stored.
+`domains:read`, `holds:write`) and an optional expiry. Its value is shown once and only a hash is stored.
 
 ```sh
 sphericon service-credential create --expires-in 8760h service-a usage:read,workspaces:read

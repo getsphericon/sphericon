@@ -17,6 +17,10 @@ type ServiceIdentityGetRes interface {
 	serviceIdentityGetRes()
 }
 
+type ServiceTrackingHostFeedListRes interface {
+	serviceTrackingHostFeedListRes()
+}
+
 type ServiceUsageListRes interface {
 	serviceUsageListRes()
 }

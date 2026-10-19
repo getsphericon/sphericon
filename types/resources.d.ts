@@ -876,6 +876,13 @@ export default interface Resources {
         "spfHint": "Advisory — does not gate sending.",
         "statusColumn": "Status",
         "title": "Sending domains",
+        "tracking": "Tracking domain (optional)",
+        "trackingHint": "Puts the links in your mail on your own domain once the CNAME resolves and HTTPS answers.",
+        "trackingState": {
+          "dnsVerified": "DNS verified",
+          "pending": "Pending",
+          "serving": "Serving"
+        },
         "verified": "Verified",
         "verify": "Verify",
         "verifyError": "Failed to start verification",

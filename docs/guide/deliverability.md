@@ -11,6 +11,41 @@ Sending domains**; sphericon generates a DKIM keypair, you publish one TXT recor
 signed by sphericon itself, whichever transport carries it. Sending from an unverified domain is
 rejected on all three surfaces: broadcasts, automations and transactional mail.
 
+### Tracking domain
+
+By default the open pixel and click links in your mail point at your sphericon instance's own host.
+To put them on your own hostname, open **Settings → Sending domains**, expand the domain and add the
+**Tracking domain (optional)** row next to the DKIM, SPF and DMARC records. The row appears only when
+your instance has an edge set up for it (`SPHERICON_TRACKING_CNAME_TARGET`, see
+[Self-hosting](../self-hosting#tracking-domains)); on Sphericon Cloud it is always there.
+
+1. At your DNS provider, add a `CNAME` record. The host is `track.<your sending domain>` (a fixed
+   name, you cannot pick another label) and the value is the edge host shown in the row.
+2. Click **Verify** (it checks the tracking CNAME and HTTPS along with the DKIM record), or wait: a
+   domain that is DNS verified or Serving is rechecked every 15 minutes. A **Pending** domain is
+   only checked when you click **Verify**.
+3. The row shows where the domain stands:
+   - **Pending**: the CNAME is missing or does not point at the edge host yet.
+   - **DNS verified**: the CNAME is right, so the edge may now get a certificate for the host. Mail
+     still uses the instance's host.
+   - **Serving**: sphericon fetched `https://track.<domain>/.well-known/sphericon-tracking` and got
+     the expected answer, so HTTPS works. New mail from this sending domain now builds its links on
+     the tracking domain, so the link host matches your From domain.
+
+A certificate takes time to issue, so a domain stays in **DNS verified** until HTTPS answers. Until the
+domain is **Serving**, no message carries a link that could fail TLS. If a later check finds the CNAME
+gone or HTTPS broken, the domain drops back and new mail goes out on the instance's host again; the
+workspace Owners are told.
+
+The tracking domain serves only link paths: clicks, opens and the one-click unsubscribe. The
+unsubscribe and confirm pages redirect to the instance's own host, and everything else on it answers 404.
+
+**Removing a domain.** If you delete the sending domain, rename it or remove its CNAME, links already
+in recipients' inboxes keep working through the instance's own host, but the same links on
+`track.<domain>` stop reaching sphericon. Keep the CNAME in place for as long as old mail may still
+be opened or clicked. The design is in [ADR 0038](../adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)
+and [ADR 0036](../adr/0036-paths-embedded-in-sent-mail-and-customer-sites-outlive-a-major.md).
+
 ## Who may be mailed
 
 There is no "subscribed" status on a contact. Whether a message may reach an address is decided

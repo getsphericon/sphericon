@@ -645,6 +645,9 @@ func (e *SendingDomain) auditFields() map[string]any {
 		"verified":                   e.Verified,
 		"last_checked_at":            derefAudit(e.LastCheckedAt),
 		"verified_at":                derefAudit(e.VerifiedAt),
+		"tracking_state":             e.TrackingState,
+		"tracking_checked_at":        derefAudit(e.TrackingCheckedAt),
+		"tracking_state_changed_at":  derefAudit(e.TrackingStateChangedAt),
 	}
 }
 

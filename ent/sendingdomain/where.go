@@ -105,6 +105,16 @@ func VerifiedAt(v time.Time) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldEQ(FieldVerifiedAt, v))
 }
 
+// TrackingCheckedAt applies equality check predicate on the "tracking_checked_at" field. It's identical to TrackingCheckedAtEQ.
+func TrackingCheckedAt(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldTrackingCheckedAt, v))
+}
+
+// TrackingStateChangedAt applies equality check predicate on the "tracking_state_changed_at" field. It's identical to TrackingStateChangedAtEQ.
+func TrackingStateChangedAt(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldTrackingStateChangedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldEQ(FieldCreatedAt, v))
@@ -573,6 +583,126 @@ func VerifiedAtIsNil() predicate.SendingDomain {
 // VerifiedAtNotNil applies the NotNil predicate on the "verified_at" field.
 func VerifiedAtNotNil() predicate.SendingDomain {
 	return predicate.SendingDomain(sql.FieldNotNull(FieldVerifiedAt))
+}
+
+// TrackingStateEQ applies the EQ predicate on the "tracking_state" field.
+func TrackingStateEQ(v TrackingState) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldTrackingState, v))
+}
+
+// TrackingStateNEQ applies the NEQ predicate on the "tracking_state" field.
+func TrackingStateNEQ(v TrackingState) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNEQ(FieldTrackingState, v))
+}
+
+// TrackingStateIn applies the In predicate on the "tracking_state" field.
+func TrackingStateIn(vs ...TrackingState) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIn(FieldTrackingState, vs...))
+}
+
+// TrackingStateNotIn applies the NotIn predicate on the "tracking_state" field.
+func TrackingStateNotIn(vs ...TrackingState) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotIn(FieldTrackingState, vs...))
+}
+
+// TrackingCheckedAtEQ applies the EQ predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldTrackingCheckedAt, v))
+}
+
+// TrackingCheckedAtNEQ applies the NEQ predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtNEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNEQ(FieldTrackingCheckedAt, v))
+}
+
+// TrackingCheckedAtIn applies the In predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIn(FieldTrackingCheckedAt, vs...))
+}
+
+// TrackingCheckedAtNotIn applies the NotIn predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtNotIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotIn(FieldTrackingCheckedAt, vs...))
+}
+
+// TrackingCheckedAtGT applies the GT predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtGT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGT(FieldTrackingCheckedAt, v))
+}
+
+// TrackingCheckedAtGTE applies the GTE predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtGTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGTE(FieldTrackingCheckedAt, v))
+}
+
+// TrackingCheckedAtLT applies the LT predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtLT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLT(FieldTrackingCheckedAt, v))
+}
+
+// TrackingCheckedAtLTE applies the LTE predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtLTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLTE(FieldTrackingCheckedAt, v))
+}
+
+// TrackingCheckedAtIsNil applies the IsNil predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtIsNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIsNull(FieldTrackingCheckedAt))
+}
+
+// TrackingCheckedAtNotNil applies the NotNil predicate on the "tracking_checked_at" field.
+func TrackingCheckedAtNotNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotNull(FieldTrackingCheckedAt))
+}
+
+// TrackingStateChangedAtEQ applies the EQ predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldEQ(FieldTrackingStateChangedAt, v))
+}
+
+// TrackingStateChangedAtNEQ applies the NEQ predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtNEQ(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNEQ(FieldTrackingStateChangedAt, v))
+}
+
+// TrackingStateChangedAtIn applies the In predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIn(FieldTrackingStateChangedAt, vs...))
+}
+
+// TrackingStateChangedAtNotIn applies the NotIn predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtNotIn(vs ...time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotIn(FieldTrackingStateChangedAt, vs...))
+}
+
+// TrackingStateChangedAtGT applies the GT predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtGT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGT(FieldTrackingStateChangedAt, v))
+}
+
+// TrackingStateChangedAtGTE applies the GTE predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtGTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldGTE(FieldTrackingStateChangedAt, v))
+}
+
+// TrackingStateChangedAtLT applies the LT predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtLT(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLT(FieldTrackingStateChangedAt, v))
+}
+
+// TrackingStateChangedAtLTE applies the LTE predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtLTE(v time.Time) predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldLTE(FieldTrackingStateChangedAt, v))
+}
+
+// TrackingStateChangedAtIsNil applies the IsNil predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtIsNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldIsNull(FieldTrackingStateChangedAt))
+}
+
+// TrackingStateChangedAtNotNil applies the NotNil predicate on the "tracking_state_changed_at" field.
+func TrackingStateChangedAtNotNil() predicate.SendingDomain {
+	return predicate.SendingDomain(sql.FieldNotNull(FieldTrackingStateChangedAt))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

@@ -58,7 +58,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Name:        "create",
 			Usage:       "create a Service credential and print its value once",
 			ArgsUsage:   "<name> <scope>[,<scope>...]",
-			Description: "scopes: usage:read, workspaces:read, holds:write",
+			Description: "scopes: usage:read, workspaces:read, domains:read, holds:write",
 			Flags:       []cli.Flag{expiresIn()},
 			Arguments: []cli.Argument{
 				&cli.StringArg{Name: "name", Required: true},
@@ -195,7 +195,7 @@ func serviceCredentialError(err error, id int64) error {
 	case errors.Is(err, staff.ErrNotLicensed):
 		return errors.New(noLicense)
 	case errors.Is(err, staff.ErrInvalidScope):
-		return fmt.Errorf("a service credential needs one or more known scopes (usage:read, workspaces:read, holds:write)")
+		return fmt.Errorf("a service credential needs one or more known scopes (usage:read, workspaces:read, domains:read, holds:write)")
 	case errors.Is(err, staff.ErrInvalidCredential):
 		return errors.New("a service credential needs a name and an expiry in the future")
 	case errors.Is(err, staff.ErrCredentialNotFound):
