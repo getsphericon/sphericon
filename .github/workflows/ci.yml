@@ -232,23 +232,14 @@ jobs:
             echo "SPHERICON_ENCRYPTION_KEY=$(docker run --rm ghcr.io/getsphericon/sphericon:ci genkey)"
           } > .env
 
-      - name: Start the stack
-        run: docker compose up -d
+      # --wait returns once every service is healthy (the image HEALTHCHECK hits /healthz) and
+      # fails if one exits non-zero, so a failed `migrate` fails the step.
+      - name: Start the stack and wait until healthy
+        run: docker compose up -d --wait --wait-timeout 120
 
-      - name: Wait for /healthz
-        run: |
-          for _ in $(seq 1 60); do
-            if curl -fsS http://localhost:3000/healthz; then exit 0; fi
-            sleep 2
-          done
-          docker compose ps --all
-          docker compose logs
-          exit 1
-
-      - name: Check migrate exited 0
-        run: |
-          code=$(docker compose ps --all --format '{{.ExitCode}}' migrate)
-          test "$code" = "0"
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
 
       - name: Stop the stack
         if: always()
