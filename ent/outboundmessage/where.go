@@ -150,6 +150,11 @@ func TemplateID(v int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldTemplateID, v))
 }
 
+// AppOrigin applies equality check predicate on the "app_origin" field. It's identical to AppOriginEQ.
+func AppOrigin(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldAppOrigin, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldCreatedAt, v))
@@ -1238,6 +1243,81 @@ func TemplateIDIsNil() predicate.OutboundMessage {
 // TemplateIDNotNil applies the NotNil predicate on the "template_id" field.
 func TemplateIDNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldTemplateID))
+}
+
+// AppOriginEQ applies the EQ predicate on the "app_origin" field.
+func AppOriginEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldAppOrigin, v))
+}
+
+// AppOriginNEQ applies the NEQ predicate on the "app_origin" field.
+func AppOriginNEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldAppOrigin, v))
+}
+
+// AppOriginIn applies the In predicate on the "app_origin" field.
+func AppOriginIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldAppOrigin, vs...))
+}
+
+// AppOriginNotIn applies the NotIn predicate on the "app_origin" field.
+func AppOriginNotIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldAppOrigin, vs...))
+}
+
+// AppOriginGT applies the GT predicate on the "app_origin" field.
+func AppOriginGT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldAppOrigin, v))
+}
+
+// AppOriginGTE applies the GTE predicate on the "app_origin" field.
+func AppOriginGTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldAppOrigin, v))
+}
+
+// AppOriginLT applies the LT predicate on the "app_origin" field.
+func AppOriginLT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldAppOrigin, v))
+}
+
+// AppOriginLTE applies the LTE predicate on the "app_origin" field.
+func AppOriginLTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldAppOrigin, v))
+}
+
+// AppOriginContains applies the Contains predicate on the "app_origin" field.
+func AppOriginContains(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContains(FieldAppOrigin, v))
+}
+
+// AppOriginHasPrefix applies the HasPrefix predicate on the "app_origin" field.
+func AppOriginHasPrefix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasPrefix(FieldAppOrigin, v))
+}
+
+// AppOriginHasSuffix applies the HasSuffix predicate on the "app_origin" field.
+func AppOriginHasSuffix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasSuffix(FieldAppOrigin, v))
+}
+
+// AppOriginIsNil applies the IsNil predicate on the "app_origin" field.
+func AppOriginIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldAppOrigin))
+}
+
+// AppOriginNotNil applies the NotNil predicate on the "app_origin" field.
+func AppOriginNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldAppOrigin))
+}
+
+// AppOriginEqualFold applies the EqualFold predicate on the "app_origin" field.
+func AppOriginEqualFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEqualFold(FieldAppOrigin, v))
+}
+
+// AppOriginContainsFold applies the ContainsFold predicate on the "app_origin" field.
+func AppOriginContainsFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContainsFold(FieldAppOrigin, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

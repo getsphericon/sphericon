@@ -175,6 +175,8 @@ func TestMarketingCarriesFooterAndOneClickHeader(t *testing.T) {
 	assert.Equal(t, eligibility.SourceBroadcasts, *row.SendingSource)
 	require.NotNil(t, row.ContactID)
 	assert.Equal(t, int64(fixtures.ContactAliceID), *row.ContactID)
+	require.NotNil(t, row.AppOrigin, "the origin its links were built on, for `sphericon doctor` (ADR 0036)")
+	assert.Equal(t, "http://local", *row.AppOrigin)
 }
 
 func TestMarketingWithoutTrackerFailsClosed(t *testing.T) {

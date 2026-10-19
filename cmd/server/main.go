@@ -37,6 +37,10 @@ func main() {
 			// `upgrade --check` found a newer release: it already said so on stdout (ADR 0034).
 			os.Exit(exitNewerRelease)
 		}
+		if errors.Is(err, errChecksFailed) {
+			// `doctor` already printed what failed.
+			os.Exit(1)
+		}
 		fatal("sphericon", err)
 	}
 }

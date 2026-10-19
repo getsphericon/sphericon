@@ -238,6 +238,22 @@
   workspace_id: 3
   created_at: '2026-01-02 00:00:00'
   updated_at: '2026-01-02 00:00:00'
+# Initech: a broadcast send whose links were built on an origin the Instance has since left
+# (`sphericon doctor` warns about it, ADR 0036).
+- id: 304 # fixture: OutboundMessageMovedOrigin
+  kind: broadcast
+  idempotency_key: 'broadcast:3002'
+  channel: email
+  destination: moved@initech.test
+  broadcast_id: 300
+  status: sent
+  sending_domain: mail.initech.test
+  app_origin: 'https://old.initech.test'
+  sent_at: '2026-01-03 00:00:00'
+  claimed_at: '2026-01-03 00:00:00'
+  workspace_id: 3
+  created_at: '2026-01-03 00:00:00'
+  updated_at: '2026-01-03 00:00:00'
 # Export subject: one send linked to contact 800, one transactional send to the
 # same destination with no Contact.
 - id: 800

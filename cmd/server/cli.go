@@ -28,6 +28,8 @@ type deps struct {
 	// changelog is the text `upgrade-notes` reads: the one embedded in this binary.
 	changelog string
 	now       func() time.Time
+	// doctor is what `doctor` reaches outside the process for.
+	doctor doctorSeams
 	// open boots the minimal command app (no listener, no event router, no workers) and
 	// returns its ops and the function that shuts it down. It runs only once the
 	// arguments have parsed.
@@ -39,6 +41,7 @@ func newDeps(env string) deps {
 		env:       env,
 		changelog: changelog.Embedded(),
 		now:       time.Now,
+		doctor:    newDoctorSeams(),
 		open: func(ctx context.Context) (commandOps, func(), error) {
 			a, err := app.NewCommandApp(env)
 			if err != nil {
@@ -61,6 +64,7 @@ func newRoot(d deps) *cli.Command {
 			versionCommand(),
 			genkeyCommand(),
 			migrateCommand(d.env),
+			doctorCommand(d),
 			upgradeCommand(),
 			upgradeNotesCommand(d.changelog),
 			workspaceCommand(d),

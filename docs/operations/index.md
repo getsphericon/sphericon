@@ -9,6 +9,7 @@ after: sizing, backups, upgrades and monitoring.
 | [Backup and restore](./backup)   | You are setting up backups or rehearsing a disaster recovery.      |
 | [Upgrading](./upgrading)         | You are moving to a new release or a new PostgreSQL major version. |
 | [Monitoring](./monitoring)       | You are wiring probes, metrics, SLOs and Prometheus alerts.        |
+| [Doctor](./doctor)               | Something is misconfigured and you want to know what.              |
 | [Runbook](./runbook)             | An alert fired and you need to know what to check.                 |
 | [Scaling and tuning](./scaling)  | You are sizing replicas and connections or tuning retention.       |
 | [Security hardening](./security) | You are preparing for production or rotating secrets.              |

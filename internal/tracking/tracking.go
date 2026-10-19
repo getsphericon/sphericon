@@ -38,6 +38,9 @@ func New(secret, baseURL string) *Tracker {
 	return &Tracker{secret: []byte(secret), baseURL: strings.TrimRight(baseURL, "/")}
 }
 
+// Origin is the public origin the Tracker builds its links on, without a trailing slash.
+func (t *Tracker) Origin() string { return t.baseURL }
+
 // OnHost returns a Tracker that signs with the same secret but builds every link on
 // https://<host>, the Tracking domain of one message's Sending domain (ADR 0038).
 func (t *Tracker) OnHost(host string) *Tracker {

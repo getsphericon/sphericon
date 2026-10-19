@@ -191,6 +191,8 @@ runs under an orchestrator's liveness probe, and roll the replicas one at a time
 [refusal](#refusals) names, oldest first. Offline, move the image with `docker save` and
 `docker load`.
 
+After an upgrade or a change of configuration, [`sphericon doctor`](./doctor) checks the whole Instance.
+
 To look before you act, `migrate --status` prints the schema's current Major and release, the
 newest the binary knows and the migrations that would run, and changes nothing (`./sphericon
 migrate --status` for a binary, or the same `docker run ... migrate --status`):

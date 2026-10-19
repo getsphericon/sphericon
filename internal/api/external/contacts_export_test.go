@@ -94,7 +94,7 @@ func TestExternalContactsExportByIDReturnsTheFullBundle(t *testing.T) {
 // has no DTO field, which for an Art. 15 export would be silently withheld data. So
 // every column of each exported entity is either a field of its DTO or named here as
 // deliberately left out: the tenant id (every row is the caller's), the contact
-// back-reference (the document is that contact), internal links and keys, and
+// back-reference (the document is that contact), internal links and keys, the Instance origin of a message (a setting, not the subject's data), and
 // updated_at on rows that are written once.
 func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 	covered := func(dto reflect.Type, columns []string, left ...string) {
@@ -113,7 +113,7 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 	covered(reflect.TypeFor[externalapi.ContactExportSuppression](), suppression.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportConfirmation](), confirmation.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportOutboundMessage](), outboundmessage.Columns,
-		"workspace_id", "contact_id", "updated_at", "idempotency_key", "broadcast_recipient_id", "automation_run_id", "integration_id")
+		"workspace_id", "contact_id", "updated_at", "idempotency_key", "broadcast_recipient_id", "automation_run_id", "integration_id", "app_origin")
 	covered(reflect.TypeFor[externalapi.ContactExportBroadcastRecipient](), broadcastrecipient.Columns,
 		"workspace_id", "contact_id", "updated_at", "outbound_message_id", "deferred_until")
 }

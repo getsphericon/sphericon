@@ -5,9 +5,11 @@ import (
 	"maps"
 	"net"
 	"net/netip"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -607,7 +609,7 @@ func (c *Config) validate(envName string) error {
 	// Outside development/test, an empty SPHERICON_JWT_SECRET silently signs auth tokens
 	// with an empty key — refuse to boot rather than ship that footgun.
 	if !isDevEnv(envName) && !isE2E(envName) {
-		if err := validateJWTSecret(c.JWTSecret); err != nil {
+		if err := ValidateJWTSecret(c.JWTSecret); err != nil {
 			return err
 		}
 	}
@@ -751,7 +753,10 @@ const minJWTSecretLength = 32
 // development secrets; a secret containing one was copied, not generated.
 var placeholderSecretMarkers = []string{"change-me", "changeme", "change-in-production", "dev-secret", "a-strong-secret"}
 
-func validateJWTSecret(secret string) error {
+// ValidateJWTSecret applies the production rule for SPHERICON_JWT_SECRET: present, long
+// enough and not a documented placeholder. Load applies it outside development; `sphericon
+// doctor` applies it everywhere.
+func ValidateJWTSecret(secret string) error {
 	if secret == "" {
 		return fmt.Errorf("SPHERICON_JWT_SECRET is required outside development")
 	}
@@ -825,4 +830,40 @@ func parseExplicitBool(v string) *bool {
 		return &off
 	}
 	return nil
+}
+
+// secretEnvNames are the variables whose values must never be printed.
+var secretEnvNames = []string{
+	"DATABASE_URL",
+	"SPHERICON_JWT_SECRET",
+	"SPHERICON_STAFF_JWT_SECRET",
+	"SPHERICON_ENCRYPTION_KEY",
+	"SPHERICON_SMTP_PASS",
+	"SPHERICON_LICENSE_KEY",
+	"SPHERICON_SES_ACCESS_KEY_ID",
+	"SPHERICON_SES_SECRET_ACCESS_KEY",
+	"SPHERICON_ACCOUNT_LINK_SIGNING_KEY",
+	"SPHERICON_BOOTSTRAP_TOKEN",
+}
+
+// SecretValues lists every secret value of the process: the ones in cfg (nil when the load
+// failed) and the ones still in the environment, plus the password inside DATABASE_URL, raw
+// and as the URL spells it. `sphericon doctor` redacts them from everything it prints.
+func SecretValues(cfg *Config) []string {
+	var values []string
+	for _, name := range secretEnvNames {
+		values = append(values, os.Getenv(name))
+	}
+	if cfg != nil {
+		values = append(values, cfg.DatabaseURL, cfg.JWTSecret, cfg.StaffJWTSecret, cfg.EncryptionKey, cfg.SMTPPass,
+			cfg.LicenseKey, cfg.SESAccessKeyID, cfg.SESSecretAccessKey, cfg.AccountLinkSigningKey, cfg.BootstrapToken)
+	}
+	for _, v := range slices.Clone(values) {
+		if u, err := url.Parse(v); err == nil && u.User != nil {
+			if pw, ok := u.User.Password(); ok {
+				values = append(values, pw, url.QueryEscape(pw), url.PathEscape(pw))
+			}
+		}
+	}
+	return slices.DeleteFunc(values, func(v string) bool { return v == "" })
 }

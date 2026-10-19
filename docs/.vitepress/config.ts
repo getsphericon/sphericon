@@ -51,6 +51,7 @@ export default defineConfig({
             { text: 'Backup and restore', link: '/operations/backup' },
             { text: 'Upgrading', link: '/operations/upgrading' },
             { text: 'Monitoring', link: '/operations/monitoring' },
+            { text: 'Diagnosing with doctor', link: '/operations/doctor' },
             { text: 'Runbook', link: '/operations/runbook' },
             { text: 'Scaling and tuning', link: '/operations/scaling' },
             { text: 'Security hardening', link: '/operations/security' },

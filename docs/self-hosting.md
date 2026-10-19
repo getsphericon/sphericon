@@ -5,7 +5,7 @@ with the React SPA, the tracker snippet (`/t.js`), and the database migrations a
 embedded. The only external dependency at runtime is **PostgreSQL** (the background queue
 and pub/sub both ride on Postgres — no Redis, no object storage, no separate worker).
 
-- **PostgreSQL:** 14+ recommended.
+- **PostgreSQL:** 14 to 18 (the test suite runs on 18). `sphericon doctor` checks it.
 
 > Would rather not run it? [Sphericon Cloud](/guide/cloud) is the hosted edition.
 
@@ -229,7 +229,9 @@ for `--check`, `--version`, `--from` (offline) and what to do when a step refuse
 
 sphericon speaks plain HTTP on `PORT`. Put a reverse proxy in front for TLS, and set `SPHERICON_APP_URL` to the
 public `https://` origin: tracking pixels, click links, unsubscribe links and OAuth metadata are
-built from it, so a wrong value breaks mail already sent.
+built from it, so a wrong value breaks mail already sent. `sphericon doctor` checks that it is well formed, https
+and reachable, and warns when it differs from the origin in recently sent mail
+([Diagnosing with doctor](./operations/doctor)).
 
 Caddy gets and renews certificates by itself:
 

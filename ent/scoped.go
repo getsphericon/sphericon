@@ -14696,6 +14696,18 @@ func (x *OutboundMessageScopedCreate) SetNillableTemplateID(v *int64) *OutboundM
 	return x
 }
 
+// SetAppOrigin sets the "app_origin" field.
+func (x *OutboundMessageScopedCreate) SetAppOrigin(v string) *OutboundMessageScopedCreate {
+	x.b.SetAppOrigin(v)
+	return x
+}
+
+// SetNillableAppOrigin sets the "app_origin" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableAppOrigin(v *string) *OutboundMessageScopedCreate {
+	x.b.SetNillableAppOrigin(v)
+	return x
+}
+
 func (x *OutboundMessageScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m

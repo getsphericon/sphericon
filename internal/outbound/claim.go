@@ -36,6 +36,9 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		SetIdempotencyKey(req.Key).
 		SetDestination(dest).
 		SetClaimedAt(claimTime())
+	if m.tracker != nil {
+		create.SetAppOrigin(m.tracker.Origin())
+	}
 	if g.domain != "" {
 		create.SetSendingDomain(g.domain)
 	}
