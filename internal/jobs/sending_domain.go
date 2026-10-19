@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/trackingdomain"
 )
 
 // recheckBatchSize bounds how many domains one periodic tick re-checks, so a
@@ -35,9 +36,10 @@ func (VerifySendingDomainArgs) Kind() string { return "sending_domain_verify" }
 
 type VerifySendingDomainWorker struct {
 	river.WorkerDefaults[VerifySendingDomainArgs]
-	ent    *ent.Client
-	lookup sending.TXTLookup
-	sender messaging.EmailSender // platform sender for the verified→unverified alert
+	ent      *ent.Client
+	lookup   sending.TXTLookup
+	sender   messaging.EmailSender    // platform sender for the verified→unverified alert
+	tracking *trackingdomain.Verifier // nil: the Tracking domain feature is off
 }
 
 func (w *VerifySendingDomainWorker) Work(ctx context.Context, job *river.Job[VerifySendingDomainArgs]) error {
@@ -52,7 +54,7 @@ func (w *VerifySendingDomainWorker) Work(ctx context.Context, job *river.Job[Ver
 				"sending_domain_id", job.Args.SendingDomainID, "err", nerr)
 		}
 	}
-	return nil
+	return VerifyTrackingDomainByID(ctx, w.ent, w.tracking, job.Args.SendingDomainID)
 }
 
 // --- periodic re-check of all domains (verified is a live property, ADR 0010) ---
@@ -201,4 +203,25 @@ func NotifySendingDomainUnverified(ctx context.Context, client *ent.Client, send
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// VerifyTrackingDomainByID re-checks a Sending domain's Tracking domain CNAME and stores
+// the state (ADR 0038). A nil verifier (the feature is off) does nothing. A host another
+// Workspace already holds leaves this claim pending and is not an error: retrying cannot
+// change it.
+func VerifyTrackingDomainByID(ctx context.Context, client *ent.Client, v *trackingdomain.Verifier, id int64) error {
+	if v == nil {
+		return nil
+	}
+	dom, err := client.SendingDomain.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	_, err = v.Check(ctx, client.Scoped(dom.WorkspaceID), id)
+	if errors.Is(err, trackingdomain.ErrHostTaken) {
+		slog.InfoContext(ctx, "tracking host held by another workspace",
+			"sending_domain_id", id, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
+		return nil
+	}
+	return err
 }

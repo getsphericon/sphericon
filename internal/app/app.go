@@ -58,6 +58,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/telemetry"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -133,6 +134,19 @@ type eventsBus struct {
 // config via the messaging catalog. Distinct from a workspace's customer sender.
 type systemSender struct {
 	messaging.EmailSender
+}
+
+// trackingVerifier checks Tracking domain CNAMEs against the configured edge host; nil
+// while SPHERICON_TRACKING_CNAME_TARGET is unset (ADR 0038).
+func trackingVerifier(cfg *config.Config) *trackingdomain.Verifier {
+	if cfg.TrackingCNAMETarget == "" {
+		return nil
+	}
+	return &trackingdomain.Verifier{
+		Lookup: net.DefaultResolver.LookupCNAME,
+		Target: cfg.TrackingCNAMETarget,
+		Now:    time.Now,
+	}
 }
 
 // dkimLookup is the DI-provided DKIM DNS resolver for sending-domain
@@ -918,7 +932,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, catalog, cfg.AppURL,
+		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg), catalog, cfg.AppURL,
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 			edition.Jobs(bus.Bus, sys.EmailSender), inst.Jobs(), reporter.Jobs())
 		if err != nil {

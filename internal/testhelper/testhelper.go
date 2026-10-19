@@ -290,7 +290,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()))
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
-	inline := jobs.NewInline(client, sender, systemMail, stubTXT, cipher, catalog, cfg.AppURL)
+	inline := jobs.NewInline(client, sender, systemMail, stubTXT, nil, cipher, catalog, cfg.AppURL)
 	// The transactional send surface resolves a workspace sender directly (not via
 	// river), so it gets the same capturing resolver — its sends land in CustomerMail.
 	// inline implements every enqueue seam (broadcast, welcome, account mail,

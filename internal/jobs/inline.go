@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/trackingdomain"
 )
 
 // Inline is the synchronous adapter of the enqueue seam (the Rails `:inline`
@@ -23,6 +24,7 @@ type Inline struct {
 	mod          *outbound.Module
 	systemSender messaging.EmailSender
 	lookup       sending.TXTLookup
+	tracking     *trackingdomain.Verifier
 	cipher       *secrets.Cipher
 	catalog      *messaging.Catalog
 	appURL       string
@@ -32,8 +34,8 @@ type Inline struct {
 // Outbound send module every workspace email goes through. lookup resolves DKIM TXT for sending-
 // domain verification (a stub in tests avoids real DNS). appURL builds account-
 // email links.
-func NewInline(entClient *ent.Client, mod *outbound.Module, systemSender messaging.EmailSender, lookup sending.TXTLookup, cipher *secrets.Cipher, catalog *messaging.Catalog, appURL string) *Inline {
-	return &Inline{ent: entClient, mod: mod, systemSender: systemSender, lookup: lookup, cipher: cipher, catalog: catalog, appURL: appURL}
+func NewInline(entClient *ent.Client, mod *outbound.Module, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, cipher *secrets.Cipher, catalog *messaging.Catalog, appURL string) *Inline {
+	return &Inline{ent: entClient, mod: mod, systemSender: systemSender, lookup: lookup, tracking: tracking, cipher: cipher, catalog: catalog, appURL: appURL}
 }
 
 // EnqueueBroadcast runs the broadcast send now. A future scheduledAt is skipped:

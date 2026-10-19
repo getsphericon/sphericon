@@ -902,6 +902,14 @@ var (
 				Columns: []*schema.Column{SendingDomainsColumns[13], SendingDomainsColumns[3]},
 			},
 			{
+				Name:    "sendingdomain_domain",
+				Unique:  true,
+				Columns: []*schema.Column{SendingDomainsColumns[3]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "tracking_state IN ('dns_verified', 'serving')",
+				},
+			},
+			{
 				Name:    "sendingdomain_last_checked_at",
 				Unique:  false,
 				Columns: []*schema.Column{SendingDomainsColumns[8]},

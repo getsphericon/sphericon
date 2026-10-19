@@ -240,7 +240,7 @@ func TestInlineSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	inline := jobs.NewInline(env.DB, newMod(env, resolvingTo(&fakeSender{})), env.SystemMail, gone, envCipher(t), registry.Default(), "http://local")
+	inline := jobs.NewInline(env.DB, newMod(env, resolvingTo(&fakeSender{})), env.SystemMail, gone, nil, envCipher(t), registry.Default(), "http://local")
 
 	require.NoError(t, inline.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))
 	require.Len(t, env.SystemMail.Messages(), 1)
