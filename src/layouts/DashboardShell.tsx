@@ -50,9 +50,6 @@ export function DashboardShell({
           <Group gap="sm" wrap="nowrap">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <Title order={3}>{t(($) => $.app.name)}</Title>
-          </Group>
-          <Group gap="sm" wrap="nowrap">
-            {headerRight}
             <Button
               component="a"
               href={DOCS_URL}
@@ -63,6 +60,9 @@ export function DashboardShell({
             >
               {t(($) => $.nav.docs)}
             </Button>
+          </Group>
+          <Group gap="sm" wrap="nowrap">
+            {headerRight}
             <ThemeToggle />
           </Group>
         </Group>
