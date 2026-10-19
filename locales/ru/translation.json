@@ -515,6 +515,13 @@
     "verifyRequiredMessage": "Перейдите по ссылке из письма, чтобы подтвердить адрес и задать пароль, а затем войдите.",
     "verifyRequiredTitle": "Сначала подтвердите email"
   },
+  "messageEditor": {
+    "insertVariable": "Вставить переменную",
+    "label": "Сообщение",
+    "placeholder": "Напишите сообщение",
+    "sourceHint": "Это сообщение написано как HTML, поэтому оно открыто как исходный код. При сохранении оно остаётся HTML.",
+    "sourceLabel": "Тело"
+  },
   "nav": {
     "activity": "Активность",
     "automations": "Автоматизации",
@@ -1023,8 +1030,6 @@
   },
   "templates": {
     "addTemplate": "Новый шаблон",
-    "bodyHint": "HTML-разметка. Используйте merge-теги, например {{ first_name }}.",
-    "bodyLabel": "Тело",
     "createTitle": "Новый шаблон",
     "editTitle": "Редактировать шаблон",
     "emptyState": "Создайте свой первый шаблон.",

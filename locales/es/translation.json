@@ -513,6 +513,13 @@
     "verifyRequiredMessage": "Sigue el enlace que te enviamos por correo para confirmar tu dirección y establecer tu contraseña, y luego inicia sesión.",
     "verifyRequiredTitle": "Verifica primero tu correo"
   },
+  "messageEditor": {
+    "insertVariable": "Insertar variable",
+    "label": "Mensaje",
+    "placeholder": "Escribe tu mensaje",
+    "sourceHint": "Este mensaje se escribió como HTML, por eso se abre como código fuente. Al guardar sigue siendo HTML.",
+    "sourceLabel": "Cuerpo"
+  },
   "nav": {
     "activity": "Actividad",
     "automations": "Automatizaciones",
@@ -1016,8 +1023,6 @@
   },
   "templates": {
     "addTemplate": "Nueva plantilla",
-    "bodyHint": "Marcado HTML. Usa etiquetas de combinación como {{ first_name }}.",
-    "bodyLabel": "Cuerpo",
     "createTitle": "Nueva plantilla",
     "editTitle": "Editar plantilla",
     "emptyState": "Crea tu primera plantilla.",

@@ -5,6 +5,7 @@ import * as z from 'zod'
 import { SiteSegmentCombinator, SiteSegmentOperator } from '../../generated/site/types.gen.ts'
 import type { SiteSegmentRuleGroup, SiteSegmentRuleNode } from '../../generated/site/types.gen.ts'
 import { zSiteSegmentRuleGroup } from '../../generated/site/zod.gen.ts'
+import { jsonText } from '../../utils/jsonText.ts'
 
 // A Segment is always a rule: the empty group matches every contact.
 export const emptyGroup: SiteSegmentRuleGroup = {
@@ -62,19 +63,6 @@ export function toGroup(query: RuleGroupType): SiteSegmentRuleGroup {
   }
 }
 
-// The form holds a rule group as JSON text (form state is strings); this codec is the one
-// place the text meets the typed group, validated by the generated schema.
-const jsonText = z.codec(z.string(), z.json(), {
-  decode: (text, ctx) => {
-    try {
-      return z.json().parse(JSON.parse(text))
-    } catch {
-      ctx.issues.push({ code: 'invalid_format', format: 'json', input: text })
-      return z.NEVER
-    }
-  },
-  encode: (value) => JSON.stringify(value),
-})
-
+// The form holds a rule group as JSON text (jsonText); validated by the generated schema.
 export const definitionCodec: z.ZodType<SiteSegmentRuleGroup, string> =
   jsonText.pipe(zSiteSegmentRuleGroup)

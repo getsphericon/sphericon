@@ -509,6 +509,13 @@ export default interface Resources {
       "verifyRequiredMessage": "Follow the link we emailed you to confirm your address and set your password, then sign in.",
       "verifyRequiredTitle": "Verify your email first"
     },
+    "messageEditor": {
+      "insertVariable": "Insert variable",
+      "label": "Message",
+      "placeholder": "Write your message",
+      "sourceHint": "This message was written as HTML, so it opens as source. Saving keeps it as HTML.",
+      "sourceLabel": "Body"
+    },
     "nav": {
       "activity": "Activity",
       "automations": "Automations",
@@ -998,8 +1005,6 @@ export default interface Resources {
     },
     "templates": {
       "addTemplate": "New template",
-      "bodyHint": "HTML markup. Use merge tags like {{first_name}}.",
-      "bodyLabel": "Body",
       "createTitle": "New template",
       "editTitle": "Edit template",
       "emptyState": "Create your first template.",

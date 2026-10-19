@@ -37,6 +37,7 @@
     "@mantine/hooks": "^9.7.3",
     "@mantine/modals": "^9.7.3",
     "@mantine/notifications": "^9.7.3",
+    "@react-email/editor": "1.7.14",
     "@react-querybuilder/mantine": "^8.25.0",
     "@sphericon/analytics": "workspace:*",
     "@tabler/icons-react": "^3.49.0",
