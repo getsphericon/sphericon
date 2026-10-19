@@ -1,4 +1,4 @@
-h1:7uQbbd5ytfHbuJkR4x5XvjBjvHXMQloQI3rHP4oXOnA=
+h1:8/M9H4zaLLoqSa4N33xgbdsBKFR9JNODLNVugx2+bTw=
 20260630101109_init.sql h1:Pgj3WXyEdlsbabERn8ue309EON5bAyWNV1X8O9IkKos=
 20260630175449_send_eligibility_model.sql h1:vEOs/vQyOdwj2FK2h5B0795pY2DVs3jbv3IpH5A/njw=
 20260630204007_transactional_email.sql h1:sotbb1MKWbZO2UzTf7TruRuFpMaXirns67+ithjM1Lc=
@@ -62,3 +62,4 @@ h1:7uQbbd5ytfHbuJkR4x5XvjBjvHXMQloQI3rHP4oXOnA=
 20261019115204_name=sending_domain_tracking_reason.sql h1:GECRiwbVGCs9WCEGqHUyNXKmkmnsE0e8NvBX13XTqW0=
 20261019151123_name=outbound_message_app_origin.sql h1:jDh40iV52oXGJ/v4/B+l6tGP2GhmtMW3Njl0iaWu1k8=
 20261019155948_template_document.sql h1:hfVyT72VNfXc/ec77iaNPk8xjNiY0zub5IE8gXJkmYs=
+20261019162432_broadcast_document.sql h1:tIwCoIo8fvcdonEHWrmHR6+wO+PpsJQoxOjxLKlk2/U=

@@ -184,8 +184,6 @@
     "audienceAll": "All active contacts",
     "audienceLabel": "Audience",
     "audienceNote": "Unsubscribed contacts are always excluded.",
-    "bodyHint": "HTML markup. Use merge tags like {{ first_name }}.",
-    "bodyLabel": "Email body",
     "createTitle": "New broadcast",
     "deliveryHint": "Send now, or schedule it for a future time. Only draft broadcasts can be sent.",
     "deliveryLabel": "Delivery",

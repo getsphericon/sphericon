@@ -184,8 +184,6 @@
     "audienceAll": "Todos los contactos activos",
     "audienceLabel": "Audiencia",
     "audienceNote": "Los contactos dados de baja siempre se excluyen.",
-    "bodyHint": "Marcado HTML. Usa etiquetas de combinación como {{ first_name }}.",
-    "bodyLabel": "Cuerpo del correo",
     "createTitle": "Nueva campaña",
     "deliveryHint": "Envía ahora o prográmala para más tarde. Solo se pueden enviar las campañas en borrador.",
     "deliveryLabel": "Entrega",

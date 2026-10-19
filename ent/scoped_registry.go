@@ -342,6 +342,12 @@ func ScopedEntities() []ScopedEntity {
 					b.SetFromEmail(*src.FromEmail)
 				}
 				b.SetBody(src.Body)
+				if !reflect.ValueOf(src.Doc).IsZero() {
+					b.SetDoc(src.Doc)
+				}
+				if src.EditorVersion != nil {
+					b.SetEditorVersion(*src.EditorVersion)
+				}
 				b.SetBodyText(src.BodyText)
 				if src.SegmentID != nil {
 					b.SetSegmentID(remap("Segment", *src.SegmentID))

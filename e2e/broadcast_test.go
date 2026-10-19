@@ -63,3 +63,30 @@ func TestBroadcastWithHostileContentArrivesSanitized(t *testing.T) {
 	assert.NotContains(t, msg.HTML, "evil.example")
 	assert.Contains(t, msg.HTML, "fine</a>", "legitimate links stay")
 }
+
+// A Broadcast written in the editor arrives as the message the server built from its document:
+// the same path as any Broadcast, tracked and with the unsubscribe footer.
+func TestBroadcastWrittenInTheEditorIsDelivered(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	to := w.NewRecipient()
+
+	w.ImportContacts(to)
+	w.SendBroadcast(Broadcast{
+		Subject: "From the editor",
+		Doc: []byte(`{"type":"doc","content":[` +
+			`{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Big news"}]},` +
+			`{"type":"paragraph","content":[{"type":"text","text":"Hello {{ email }}"}]},` +
+			`{"type":"button","attrs":{"href":"https://example.com/news","alignment":"center"},"content":[{"type":"text","text":"Read more"}]}]}`),
+	})
+	msg := w.Inbox.Wait(Match{To: to})
+
+	assert.Equal(t, "From the editor", msg.Subject)
+	assert.Contains(t, msg.HTML, "Big news")
+	assert.Contains(t, msg.HTML, "Hello "+to, "the merge tag is filled for the recipient")
+	assert.Contains(t, msg.HTML, "Read more")
+	assert.Contains(t, msg.HTML, env.BaseURL+"/e/c/", "the button's link goes through the click tracker")
+	assert.NotContains(t, msg.HTML, `href="https://example.com/news"`)
+	assert.Contains(t, msg.HTML, env.BaseURL+"/e/o/", "the open pixel is added")
+	assert.Contains(t, msg.HTML, "unsubscribe</a>", "the unsubscribe footer is added")
+}

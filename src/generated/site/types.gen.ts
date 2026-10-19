@@ -984,6 +984,16 @@ export type SiteBroadcastResource = {
    */
   body: string;
   /**
+   * The editor's JSON document the body was built from; null when the body was written as HTML
+   */
+  doc?: {
+    [key: string]: unknown;
+  } | null;
+  /**
+   * Version of the editor that rendered the document; null with it
+   */
+  editorVersion?: string | null;
+  /**
    * Derived plain-text body
    */
   bodyText: string;
@@ -1186,9 +1196,16 @@ export type SiteCreateBroadcastInput = {
    */
   fromEmail?: EmailAddress | null;
   /**
-   * HTML body with Liquid merge tags
+   * HTML body with Liquid merge tags. Write this or `doc`, not both.
    */
   body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
   /**
    * Target segment; null/omitted means all active contacts
    */
@@ -2766,9 +2783,16 @@ export type SiteUpdateBroadcastInput = {
    */
   fromEmail?: EmailAddress | null;
   /**
-   * HTML body with Liquid merge tags
+   * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
    */
   body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
   /**
    * Target segment; null means all active contacts
    */

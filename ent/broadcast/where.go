@@ -95,6 +95,11 @@ func Body(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldBody, v))
 }
 
+// EditorVersion applies equality check predicate on the "editor_version" field. It's identical to EditorVersionEQ.
+func EditorVersion(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldEditorVersion, v))
+}
+
 // BodyText applies equality check predicate on the "body_text" field. It's identical to BodyTextEQ.
 func BodyText(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldBodyText, v))
@@ -608,6 +613,91 @@ func BodyEqualFold(v string) predicate.Broadcast {
 // BodyContainsFold applies the ContainsFold predicate on the "body" field.
 func BodyContainsFold(v string) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldContainsFold(FieldBody, v))
+}
+
+// DocIsNil applies the IsNil predicate on the "doc" field.
+func DocIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldDoc))
+}
+
+// DocNotNil applies the NotNil predicate on the "doc" field.
+func DocNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldDoc))
+}
+
+// EditorVersionEQ applies the EQ predicate on the "editor_version" field.
+func EditorVersionEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldEditorVersion, v))
+}
+
+// EditorVersionNEQ applies the NEQ predicate on the "editor_version" field.
+func EditorVersionNEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldEditorVersion, v))
+}
+
+// EditorVersionIn applies the In predicate on the "editor_version" field.
+func EditorVersionIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIn(FieldEditorVersion, vs...))
+}
+
+// EditorVersionNotIn applies the NotIn predicate on the "editor_version" field.
+func EditorVersionNotIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotIn(FieldEditorVersion, vs...))
+}
+
+// EditorVersionGT applies the GT predicate on the "editor_version" field.
+func EditorVersionGT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGT(FieldEditorVersion, v))
+}
+
+// EditorVersionGTE applies the GTE predicate on the "editor_version" field.
+func EditorVersionGTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGTE(FieldEditorVersion, v))
+}
+
+// EditorVersionLT applies the LT predicate on the "editor_version" field.
+func EditorVersionLT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLT(FieldEditorVersion, v))
+}
+
+// EditorVersionLTE applies the LTE predicate on the "editor_version" field.
+func EditorVersionLTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLTE(FieldEditorVersion, v))
+}
+
+// EditorVersionContains applies the Contains predicate on the "editor_version" field.
+func EditorVersionContains(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContains(FieldEditorVersion, v))
+}
+
+// EditorVersionHasPrefix applies the HasPrefix predicate on the "editor_version" field.
+func EditorVersionHasPrefix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasPrefix(FieldEditorVersion, v))
+}
+
+// EditorVersionHasSuffix applies the HasSuffix predicate on the "editor_version" field.
+func EditorVersionHasSuffix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasSuffix(FieldEditorVersion, v))
+}
+
+// EditorVersionIsNil applies the IsNil predicate on the "editor_version" field.
+func EditorVersionIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldEditorVersion))
+}
+
+// EditorVersionNotNil applies the NotNil predicate on the "editor_version" field.
+func EditorVersionNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldEditorVersion))
+}
+
+// EditorVersionEqualFold applies the EqualFold predicate on the "editor_version" field.
+func EditorVersionEqualFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEqualFold(FieldEditorVersion, v))
+}
+
+// EditorVersionContainsFold applies the ContainsFold predicate on the "editor_version" field.
+func EditorVersionContainsFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContainsFold(FieldEditorVersion, v))
 }
 
 // BodyTextEQ applies the EQ predicate on the "body_text" field.

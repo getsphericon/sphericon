@@ -11,11 +11,13 @@ import { zSiteCreateBroadcastInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/edit.tsx'
+import { docCodec } from '../../utils/messageDoc.ts'
 import { BroadcastForm } from './BroadcastForm.tsx'
 import { DeliveryBlock } from './DeliveryBlock.tsx'
 
 // The integration is not edited here, so it never round-trips into the payload. The name is
-// required on both create and update.
+// required on both create and update. The document is held as JSON text; a blank one is absent,
+// so a source-only save writes a body.
 const broadcastSchema = resourceFormSchema(
   zSiteCreateBroadcastInput
     .pick({
@@ -25,7 +27,7 @@ const broadcastSchema = resourceFormSchema(
       segmentId: true,
       body: true,
     })
-    .extend({ name: z.string().min(1) }),
+    .extend({ name: z.string().min(1), doc: z.exactOptional(docCodec) }),
 )
 
 const broadcastResource = defineResource({
