@@ -494,6 +494,9 @@ fi
 
 ["check:infra"]
 description = "Terraform (infra/): fmt --check and validate (init without the backend, so no credentials or network state are needed)"
+# A data dir of its own: the one `mise run infra` initializes holds the S3 backend, which makes even
+# `init -backend=false` ask for AWS credentials.
+env = { TF_DATA_DIR = "{{config_root}}/infra/.terraform-check" }
 run = [
   "terraform -chdir=infra fmt -check -diff -recursive",
   "terraform -chdir=infra init -backend=false -input=false -lockfile=readonly",

@@ -1,4 +1,5 @@
 .terraform/
+.terraform-check/
 *.tfstate*
 *.tfvars
 backend.hcl

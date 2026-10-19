@@ -228,7 +228,7 @@ variable "waf_managed_rule_groups" {
 }
 
 variable "waf_common_count_rules" {
-  description = "Rules of AWSManagedRulesCommonRuleSet kept in count mode even when waf_mode is \"block\": the body size limit (8 KB) and the XSS body check match the email HTML and MJML the app posts and large /collect batches (ADR 0025 caps those at 500 KB)."
+  description = "Rules of AWSManagedRulesCommonRuleSet kept in count mode even when waf_mode is \"block\": the body size limit (8 KB) and the XSS body check match the email HTML and editor documents the app posts and large /collect batches (ADR 0025 caps those at 500 KB)."
   type        = list(string)
   default     = ["SizeRestrictions_BODY", "CrossSiteScripting_BODY"]
 }
