@@ -234,6 +234,21 @@ func TestMCPToolCallReturnsTheAPIResult(t *testing.T) {
 	require.False(t, res.IsError, text(t, res))
 }
 
+// A body an agent saves over MCP is sanitized like one saved through the API (ADR 0040).
+func TestMCPSanitizesBodiesOnSave(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, "templates:write"))
+
+	res := call(t, s, "templates_create", map[string]any{
+		"name": "Hostile",
+		"body": `<p onclick="steal()">Hi {{ first_name }}</p><script>alert(1)</script>`,
+	})
+	require.False(t, res.IsError, text(t, res))
+	var created map[string]any
+	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &created))
+	assert.Equal(t, `<p>Hi {{ first_name }}</p>`, created["body"])
+}
+
 // An agent reads the Send rate limit and 24-hour usage of the Integrations over MCP,
 // with the same scope the /api read needs.
 func TestMCPIntegrationsListReadsSendLimitAndUsage(t *testing.T) {

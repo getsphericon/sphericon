@@ -34,6 +34,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/k3a/html2text v1.5.1
 	github.com/lmittmann/tint v1.2.1
+	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/mokevnin/pgcleaner v0.2.0
 	github.com/nicksnyder/go-i18n/v2 v2.6.1
@@ -101,6 +102,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.43.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.51.4 // indirect
 	github.com/aws/smithy-go v1.28.5 // indirect
+	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/boombuler/barcode v1.1.0 // indirect
@@ -124,6 +126,7 @@ require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
+	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.25.0 // indirect

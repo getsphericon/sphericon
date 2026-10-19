@@ -78,7 +78,13 @@ What shaped this decision:
    established library and an allowlist that keeps tables, inline styles, `<style>` and Outlook
    conditional comments and strips script, iframe, form, `on*` handlers and `javascript:` URLs. And again
    in full on the rendered message for each recipient, after Liquid, because a variable can carry markup
-   or a URL that the first pass never saw; the values of variables are HTML-escaped when bound.
+   or a URL that the first pass never saw. The values of variables in the body are HTML-escaped by the Liquid
+   engine's auto-escape as they are written (not pre-escaped in the bindings); `{{ value | safe }}` is the
+   explicit raw output for a Transactional variable that carries HTML on purpose, and the second pass still
+   sanitizes it. The subject is plain text, rendered by a separate engine with no escaping. The sanitizer is
+   bluemonday behind `emailrender.SanitizeHTML`: Liquid tags are masked while it runs, comments, `<style>`
+   blocks and the doctype are lifted out and checked on their own, and the HTML hidden by a conditional
+   comment is sanitized with the VML elements allowed.
 9. **Liquid.** Variables (`{{ first_name }}`) are a first-class feature of the editor. `{% if %}` and
    `{% for %}` still run (Liquid runs over the whole HTML) but the editor offers no block for them, and a
    tag placed between table rows or around a table is not supported inside it. Nothing in the repo uses

@@ -70,7 +70,7 @@ func Decode(definition string) ([]Step, error) {
 }
 
 // Encode serializes steps into the stored definition, dropping the fields that do
-// not belong to each step's type and trimming tag names.
+// not belong to each step's type, trimming tag names and sanitizing an email step's body.
 func Encode(steps []Step) (string, error) {
 	stored := make([]Step, 0, len(steps))
 	for _, s := range steps {
@@ -82,7 +82,7 @@ func Encode(steps []Step) (string, error) {
 		case StepHTTP:
 			stored = append(stored, Step{Type: StepHTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
 		default:
-			stored = append(stored, Step{Type: StepEmail, Subject: s.Subject, Body: s.Body})
+			stored = append(stored, Step{Type: StepEmail, Subject: s.Subject, Body: emailrender.SanitizeHTML(s.Body)})
 		}
 	}
 	b, err := json.Marshal(stored)

@@ -163,9 +163,10 @@ type Fields struct {
 }
 
 // Create makes a draft Broadcast. Nothing here schedules or sends. A subject or body that
-// cannot render is emailrender.ErrInvalidContent.
+// cannot render is emailrender.ErrInvalidContent; the body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broadcast, error) {
-	if err := emailrender.ValidateFields(f.Subject, f.Body); err != nil {
+	body, err := emailrender.PrepareFields(f.Subject, f.Body)
+	if err != nil {
 		return nil, err
 	}
 	q := s.Broadcast().Create().
@@ -179,8 +180,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 	if f.Subject != nil {
 		q.SetSubject(*f.Subject)
 	}
-	if f.Body != nil {
-		q.SetBody(*f.Body)
+	if body != nil {
+		q.SetBody(*body)
 	}
 	return q.Save(ctx)
 }
@@ -206,7 +207,8 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (
 // Update edits a draft. The UPDATE only matches a draft row, so a Broadcast that was
 // claimed for sending in the meantime is never edited.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) (*ent.Broadcast, error) {
-	if err := emailrender.ValidateFields(f.Subject, f.Body); err != nil {
+	body, err := emailrender.PrepareFields(f.Subject, f.Body)
+	if err != nil {
 		return nil, err
 	}
 	u := s.Broadcast().Update().Where(draftOf(id)).
@@ -214,7 +216,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) 
 		SetNillableSubject(f.Subject).
 		SetNillableFromName(f.FromName).
 		SetNillableFromEmail(f.FromEmail).
-		SetNillableBody(f.Body).
+		SetNillableBody(body).
 		SetNillableSegmentID(f.SegmentID).
 		SetNillableIntegrationID(f.IntegrationID)
 	if f.ClearFromName {

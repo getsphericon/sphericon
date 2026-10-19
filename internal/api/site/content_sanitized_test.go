@@ -1,0 +1,56 @@
+package site_test
+
+import (
+	"context"
+	"testing"
+
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+const hostileBody = `<p onclick="steal()">Hi {{ first_name }}</p><script>alert(1)</script><a href="javascript:alert(1)">x</a>`
+
+// The body is sanitized where it is saved: a Template and a Broadcast keep the merge tags
+// and lose script, event handlers and javascript: URLs (ADR 0040).
+func TestSiteSanitizesBodiesOnSave(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	slug := fixtures.AcmeSlug
+
+	created, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
+		Name: "Hostile", Body: siteapi.NewOptString(hostileBody),
+	}, siteapi.SiteTemplatesCreateParams{Slug: slug})
+	require.NoError(t, err)
+	tpl, ok := created.(*siteapi.SiteEmailTemplateResource)
+	require.Truef(t, ok, "got %T", created)
+	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, tpl.Body)
+
+	updated, err := c.SiteTemplatesUpdate(ctx, &siteapi.SiteUpdateEmailTemplateInput{
+		Body: siteapi.NewOptString(`<img src="x" onerror="alert(1)">{{ first_name }}`),
+	}, siteapi.SiteTemplatesUpdateParams{Slug: slug, ID: tpl.ID})
+	require.NoError(t, err)
+	upd, ok := updated.(*siteapi.SiteEmailTemplateResource)
+	require.Truef(t, ok, "got %T", updated)
+	assert.NotContains(t, upd.Body, "onerror")
+	assert.Contains(t, upd.Body, "{{ first_name }}")
+
+	bc, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
+		Name: "Hostile", Body: siteapi.NewOptString(hostileBody),
+	}, siteapi.SiteBroadcastsCreateParams{Slug: slug})
+	require.NoError(t, err)
+	created2, ok := bc.(*siteapi.SiteBroadcastResource)
+	require.Truef(t, ok, "got %T", bc)
+	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, created2.Body)
+
+	bu, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+		Body: siteapi.NewOptString(hostileBody),
+	}, siteapi.SiteBroadcastsUpdateParams{Slug: slug, ID: fixtures.BroadcastDraftID})
+	require.NoError(t, err)
+	updated2, ok := bu.(*siteapi.SiteBroadcastResource)
+	require.Truef(t, ok, "got %T", bu)
+	assert.Equal(t, `<p>Hi {{ first_name }}</p>x`, updated2.Body)
+}

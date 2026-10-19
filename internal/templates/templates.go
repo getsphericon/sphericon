@@ -61,28 +61,30 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.EmailTe
 }
 
 // Create stores a Template. A blank name is ErrBlankName; a subject or body that cannot
-// render is emailrender.ErrInvalidContent.
+// render is emailrender.ErrInvalidContent; the body is stored sanitized.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.EmailTemplate, error) {
-	if err := emailrender.ValidateFields(in.Subject, in.Body); err != nil {
+	body, err := emailrender.PrepareFields(in.Subject, in.Body)
+	if err != nil {
 		return nil, err
 	}
 	tpl, err := s.EmailTemplate().Create().
 		SetName(in.Name).
 		SetNillableSubject(in.Subject).
-		SetNillableBody(in.Body).
+		SetNillableBody(body).
 		Save(ctx)
 	return tpl, mapWriteError(err)
 }
 
 // Update applies the given fields. A blank name is ErrBlankName.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.EmailTemplate, error) {
-	if err := emailrender.ValidateFields(in.Subject, in.Body); err != nil {
+	body, err := emailrender.PrepareFields(in.Subject, in.Body)
+	if err != nil {
 		return nil, err
 	}
 	tpl, err := s.EmailTemplate().UpdateOneID(id).
 		SetNillableName(in.Name).
 		SetNillableSubject(in.Subject).
-		SetNillableBody(in.Body).
+		SetNillableBody(body).
 		Save(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound

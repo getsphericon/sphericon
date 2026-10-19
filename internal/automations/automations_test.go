@@ -54,6 +54,14 @@ func TestEncodeKeepsOnlyTheFieldsOfEachStepType(t *testing.T) {
 	assert.Equal(t, "[]", empty)
 }
 
+func TestEncodeSanitizesAnEmailStepBody(t *testing.T) {
+	def, err := automations.Encode([]automations.Step{
+		{Type: automations.StepEmail, Subject: "Hi", Body: `<p onclick="x()">Hi {{ first_name }}</p><script>alert(1)</script>`},
+	})
+	require.NoError(t, err)
+	assert.JSONEq(t, `[{"type":"email","subject":"Hi","body":"<p>Hi {{ first_name }}</p>"}]`, def)
+}
+
 func TestCreateStoresADraftWithEncodedSteps(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher)
