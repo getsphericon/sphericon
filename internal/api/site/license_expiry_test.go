@@ -26,14 +26,19 @@ type lapse struct {
 	expiredOn              time.Time
 }
 
+// lapseNow is the frozen clock of the lapse scenarios, so the keys' dates never drift.
+var lapseNow = time.Date(2026, 6, 1, 8, 0, 0, 0, time.UTC)
+
+func lapseClock() time.Time { return lapseNow }
+
 func newLapse(t *testing.T) lapse {
 	t.Helper()
 	pub, priv, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 	_, other, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
-	l := lapse{pub: pub, expiredOn: time.Now().Add(-24 * time.Hour).Truncate(time.Second)}
-	future := time.Now().Add(24 * time.Hour)
+	l := lapse{pub: pub, expiredOn: lapseNow.Add(-24 * time.Hour)}
+	future := lapseNow.Add(24 * time.Hour)
 	features := []licensekey.Feature{licensekey.FeatureAudit, licensekey.FeatureRetention, licensekey.FeatureStaff}
 	l.expired, err = licensekey.Issue(priv, &l.expiredOn, features...)
 	require.NoError(t, err)
@@ -46,7 +51,7 @@ func newLapse(t *testing.T) lapse {
 
 func TestAnExpiredLicenseKeyBootsAsTheCoreAndTheOwnerSeesWhen(t *testing.T) {
 	l := newLapse(t)
-	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.expired))
+	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.expired), testhelper.WithClock(lapseClock))
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	state := instanceState(t, john)
@@ -62,7 +67,7 @@ func TestAnExpiredLicenseKeyBootsAsTheCoreAndTheOwnerSeesWhen(t *testing.T) {
 
 func TestAValidLicenseKeyShowsNoLapse(t *testing.T) {
 	l := newLapse(t)
-	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.valid))
+	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.valid), testhelper.WithClock(lapseClock))
 
 	assert.False(t, instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).LicenseExpiredAt.Set)
 }
@@ -70,14 +75,14 @@ func TestAValidLicenseKeyShowsNoLapse(t *testing.T) {
 func TestAForgedLicenseKeyIsRefusedEvenWhenItIsNotExpired(t *testing.T) {
 	l := newLapse(t)
 
-	_, err := licensekey.Load(l.forged, l.pub, time.Now(), slog.Default())
+	_, err := licensekey.Load(l.forged, l.pub, lapseNow, slog.Default())
 
 	assert.ErrorIs(t, err, licensekey.ErrInvalid)
 }
 
 func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	l := newLapse(t)
-	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.expired))
+	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.expired), testhelper.WithClock(lapseClock))
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	rows := acme.AuditEntry().Query().CountX(t.Context())
 	require.Positive(t, rows, "the fixtures carry an Audit entry")
@@ -85,7 +90,7 @@ func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	require.False(t, listed, "dark while the key is lapsed")
 
 	// Renewal: the same database read under the renewed key, as after a restart.
-	renewed, err := licensekey.Parse(l.valid, l.pub, time.Now())
+	renewed, err := licensekey.Parse(l.valid, l.pub, lapseNow)
 	require.NoError(t, err)
 	log := audit.NewLog(renewed)
 	require.True(t, log.Licensed())
