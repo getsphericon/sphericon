@@ -362,8 +362,6 @@ type environment struct {
 	SESSecretAccessKey  string `env:"SPHERICON_SES_SECRET_ACCESS_KEY"`
 }
 
-// Load reads the configuration from the process environment layered over the .env
-// files (see envFiles): a variable the process sets wins over every file.
 // loadVars reads the variables of the process: the env files, then the environment over
 // them, then the `_FILE` siblings of the secrets.
 func loadVars(envName string) (map[string]string, error) {
@@ -395,6 +393,8 @@ func EncryptionKey(envName string) (string, error) {
 	return vars["SPHERICON_ENCRYPTION_KEY"], nil
 }
 
+// Load reads the configuration from the process environment layered over the .env
+// files (see envFiles): a variable the process sets wins over every file.
 func Load(envName string) (*Config, error) {
 	vars, err := loadVars(envName)
 	if err != nil {

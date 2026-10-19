@@ -112,7 +112,7 @@ func Retire(keysetBase64 string) (string, error) {
 }
 
 // Current reports whether a stored value is sealed under the primary key. Tink ciphertext starts
-// with a version byte (0) and the 4-byte big-endian id of the key that sealed it.
+// with the byte 1 and the 4-byte big-endian id of the key that sealed it.
 func (c *Cipher) Current(value string) (bool, error) {
 	ct, err := base64.StdEncoding.DecodeString(value)
 	if err != nil || len(ct) < 5 {

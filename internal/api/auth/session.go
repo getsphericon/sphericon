@@ -30,7 +30,7 @@ const sessionIssuer = "sphericon"
 // the token (SPHERICON_SESSION_TTL, no refresh). It is the one place a session is minted; the
 // login operation, and later the Second factor step, hand its cookie to the client.
 type Sessions struct {
-	tokens   *gptoken.Service
+	// verifier signs with its first service (the primary secret) and verifies with all.
 	verifier verifier
 	ttl      time.Duration
 	secure   bool
@@ -46,7 +46,6 @@ func NewSessions(jwtSecret string, ttl time.Duration, secure bool, now func() ti
 		now = time.Now
 	}
 	return &Sessions{
-		tokens:   newTokenService(jwtSecret),
 		verifier: newVerifier(jwtSecret, verifyWith),
 		ttl:      ttl,
 		secure:   secure,
@@ -68,7 +67,7 @@ func (s *Sessions) Issue(u *ent.User) (*http.Cookie, error) {
 		User: &gptoken.User{Name: u.Email, ID: "user_" + strconv.FormatInt(u.ID, 10), Email: u.Email},
 	}
 	StampUser(&claims, u)
-	tk, err := s.tokens.Token(claims)
+	tk, err := s.verifier[0].Token(claims)
 	if err != nil {
 		return nil, err
 	}
