@@ -1,11 +1,13 @@
-import { AppShell, Burger, Group, Title } from '@mantine/core'
+import { AppShell, Burger, Button, Group, Title } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
+import { IconBook } from '@tabler/icons-react'
 import { Outlet, useLocation } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ThemeToggle } from '../components/ThemeToggle.tsx'
+import { DOCS_URL } from '../utils/docs.ts'
 
 // DashboardShell is the common authenticated chrome shared by the
 // workspace-scoped and account (workspace-independent) layouts: the brand
@@ -51,6 +53,16 @@ export function DashboardShell({
           </Group>
           <Group gap="sm" wrap="nowrap">
             {headerRight}
+            <Button
+              component="a"
+              href={DOCS_URL}
+              target="_blank"
+              rel="noreferrer"
+              variant="subtle"
+              leftSection={<IconBook size={18} />}
+            >
+              {t(($) => $.nav.docs)}
+            </Button>
             <ThemeToggle />
           </Group>
         </Group>

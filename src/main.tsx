@@ -36,7 +36,7 @@ function Root() {
       <I18nextProvider i18n={i18n}>
         <MantineProvider defaultColorScheme="auto">
           <ModalsProvider>
-            <Notifications position="top-right" />
+            <Notifications position="top-right" stackable />
             <RouterProvider router={router} />
           </ModalsProvider>
         </MantineProvider>

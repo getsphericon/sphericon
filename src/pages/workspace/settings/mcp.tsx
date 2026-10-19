@@ -1,11 +1,15 @@
-import { Button, Card, Code, CopyButton, List, Stack, Text, Title } from '@mantine/core'
+import { Anchor, Button, Card, Code, CopyButton, List, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { Route as developersRoute } from '../../../routes/workspaces/$slug/settings/developers.tsx'
 import { Route as mcpRoute } from '../../../routes/workspaces/$slug/settings/mcp.tsx'
+import { DOCS_URL } from '../../../utils/docs.ts'
 import { SettingsFrame } from './SettingsFrame.tsx'
+
+// The guide with the Bearer token setup the app does not repeat.
+const MCP_GUIDE_URL = `${DOCS_URL}/guide/mcp`
 
 // McpSection tells how to connect an AI agent: the endpoint to paste into a connector
 // and what approving it does. Everyone sees it, but only an Owner or Admin can approve.
@@ -44,6 +48,9 @@ function McpSection({ workspace }: { workspace: SiteWorkspaceResource }) {
         {t(($) => $.settings.mcp.approveNote)}
         {workspace.role === 'member' ? ` ${t(($) => $.settings.mcp.memberNote)}` : ''}
       </Text>
+      <Anchor href={MCP_GUIDE_URL} target="_blank" rel="noreferrer" size="sm" mt="xs">
+        {t(($) => $.settings.mcp.guideLink)}
+      </Anchor>
     </Card>
   )
 }

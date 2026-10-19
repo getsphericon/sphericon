@@ -30,6 +30,16 @@ test('shows the MCP endpoint of the instance', async () => {
   await expect.element(screen.getByText('https://mcp.sphericon.test/mcp')).toBeInTheDocument()
 })
 
+test('links to the MCP guide', async () => {
+  worker.use(handleSiteWorkspacesList({ body: [workspace] }))
+
+  const { screen } = await renderWithRouter(<McpPage />, MCP_ROUTE)
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Other ways to connect' }))
+    .toHaveAttribute('href', 'https://docs.getsphericon.app/guide/mcp')
+})
+
 test('tells a plain member that only an owner or admin can connect an agent', async () => {
   worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }))
 

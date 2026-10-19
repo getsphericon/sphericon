@@ -57,12 +57,12 @@ your Integration and your domain, to any address you name.
 
 ### 1. Connect an Integration
 
-In **Settings → Integrations** add an SMTP server or an SES-compatible service. Credentials are stored
+In **Settings → Developers** add an SMTP server or an SES-compatible service. Credentials are stored
 encrypted with your `SPHERICON_ENCRYPTION_KEY`.
 
 ### 2. Verify a sending domain
 
-In **Settings → Sending domains** add a **sending domain** and publish the DKIM record sphericon
+In **Settings → Sending** add a **sending domain** and publish the DKIM record sphericon
 shows you. Mail to contacts can only be sent from a verified domain; see
 [Deliverability and consent](/guide/deliverability).
 

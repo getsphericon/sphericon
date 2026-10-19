@@ -70,7 +70,7 @@ status `suppressed`.
 
 ## Transports
 
-Add one or more integrations in **Settings → Integrations**:
+Add one or more integrations in **Settings → Developers**:
 
 - **SMTP**: any server that accepts SMTP.
 - **SES-compatible API**: Amazon SES, or any service that implements the same API, such as Yandex
