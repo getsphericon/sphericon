@@ -24,3 +24,5 @@ stop_on_error = true
 
 [log]
 time = true
+# Hide the per-directory "watching ..." lines (watcher logs); keep main air messages.
+main_only = true
