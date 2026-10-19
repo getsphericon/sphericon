@@ -130,18 +130,20 @@ func (m *Module) ActiveHolds(ctx context.Context, workspaceID int64) ([]*ent.Hol
 	if err := m.licensed(); err != nil {
 		return nil, err
 	}
-	if _, err := m.ent.Workspace.Get(ctx, workspaceID); err != nil {
+	s, err := m.scopeOver(ctx, workspaceID)
+	if err != nil {
 		return nil, err
 	}
-	return holds.Active(ctx, m.ent.Scoped(workspaceID), m.now())
+	return holds.Active(ctx, s, m.now())
 }
 
 // holdScope loads the Workspace row and scopes over it, acting as the credential.
 func (m *Module) holdScope(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64) (*ent.Scoped, error) {
-	if _, err := m.ent.Workspace.Get(ctx, workspaceID); err != nil {
+	s, err := m.scopeOver(ctx, workspaceID)
+	if err != nil {
 		return nil, err
 	}
-	return bus.Act(m.ent.Scoped(workspaceID), ServiceActor(cred)), nil
+	return bus.Act(s, ServiceActor(cred)), nil
 }
 
 // ServiceHoldsList lists a Workspace's active holds.

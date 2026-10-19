@@ -67,6 +67,16 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, bus *events.Bus, id int
 	return ws, changed, err
 }
 
+// scopeOver loads the Workspace row and scopes over it: the one place the console and the
+// service endpoints turn a Workspace id into a scope (AGENTS.md, scope list item 7).
+// ent.IsNotFound for an unknown Workspace.
+func (m *Module) scopeOver(ctx context.Context, workspaceID int64) (*ent.Scoped, error) {
+	if _, err := m.ent.Workspace.Get(ctx, workspaceID); err != nil {
+		return nil, err
+	}
+	return m.ent.Scoped(workspaceID), nil
+}
+
 // Rate is a numerator over a denominator; Rate is nil (undefined) below the volume
 // floor.
 type Rate = reputation.Rate

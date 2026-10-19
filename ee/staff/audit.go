@@ -22,8 +22,9 @@ func (m *Module) AuditEntries(ctx context.Context, workspaceID, cursor int64, li
 	if err := m.licensed(); err != nil {
 		return nil, 0, err
 	}
-	if _, err := m.ent.Workspace.Get(ctx, workspaceID); err != nil {
+	s, err := m.scopeOver(ctx, workspaceID)
+	if err != nil {
 		return nil, 0, err
 	}
-	return m.audit.Entries(ctx, m.ent.Scoped(workspaceID), events.AuditFilter{}, cursor, limit)
+	return m.audit.Entries(ctx, s, events.AuditFilter{}, cursor, limit)
 }

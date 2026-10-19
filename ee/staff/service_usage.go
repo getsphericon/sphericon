@@ -85,10 +85,11 @@ func (h *ServiceHandlers) ServiceWorkspaceUsageGet(ctx context.Context, params s
 // WorkspaceUsage reads one Workspace's stored figures for a period, scoped over the one
 // Workspace the call names after its row is loaded. ent.IsNotFound for an unknown Workspace.
 func (m *Module) WorkspaceUsage(ctx context.Context, workspaceID int64, period time.Time) (usage.WorkspaceUsage, error) {
-	if _, err := m.ent.Workspace.Get(ctx, workspaceID); err != nil {
+	s, err := m.scopeOver(ctx, workspaceID)
+	if err != nil {
 		return usage.WorkspaceUsage{}, err
 	}
-	return usage.Get(ctx, m.ent.Scoped(workspaceID), period)
+	return usage.Get(ctx, s, period)
 }
 
 func usageResource(w usage.WorkspaceUsage) serviceapi.WorkspaceUsageResource {
