@@ -60,6 +60,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/upgrade"
+	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samber/do/v2"
@@ -138,7 +139,7 @@ type systemSender struct {
 
 // trackingVerifier checks Tracking domain CNAMEs against the configured edge host; nil
 // while SPHERICON_TRACKING_CNAME_TARGET is unset (ADR 0038).
-func trackingVerifier(cfg *config.Config) *trackingdomain.Verifier {
+func trackingVerifier(cfg *config.Config, bus *events.Bus) *trackingdomain.Verifier {
 	if cfg.TrackingCNAMETarget == "" {
 		return nil
 	}
@@ -146,8 +147,15 @@ func trackingVerifier(cfg *config.Config) *trackingdomain.Verifier {
 		Lookup: net.DefaultResolver.LookupCNAME,
 		Target: cfg.TrackingCNAMETarget,
 		Now:    time.Now,
+		// The SSRF-guarded client: a customer's DNS names the host the probe dials.
+		HTTP:   webhook.NewClient(trackingProbeTimeout),
+		Secret: cfg.JWTSecret,
+		Events: bus,
 	}
 }
+
+// trackingProbeTimeout bounds one HTTPS probe of a Tracking domain.
+const trackingProbeTimeout = 10 * time.Second
 
 // dkimLookup is the DI-provided DKIM DNS resolver for sending-domain
 // verification (ADR 0010). The composition root is the single place that decides
@@ -933,7 +941,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg), catalog, cfg.AppURL,
+		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL,
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 			edition.Jobs(bus.Bus, sys.EmailSender), inst.Jobs(), reporter.Jobs())
 		if err != nil {

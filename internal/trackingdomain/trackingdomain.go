@@ -1,7 +1,7 @@
 // Package trackingdomain verifies a Sending domain's Tracking domain (ADR 0038): a live
 // DNS check that track.<domain> is a CNAME to the Instance's edge host, and the state
-// that check keeps (pending -> dns_verified). The serving step (an HTTPS probe) and the
-// periodic recheck build on Check.
+// that check keeps (pending -> dns_verified), and the HTTPS probe that moves a verified
+// host to serving. The periodic job calls Check for every row.
 //
 // The resolver and the clock are injected, so nothing here reads the network or the wall
 // clock. A host is unique across the Instance among rows in dns_verified or serving; the
@@ -15,13 +15,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"io"
 	"net"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 )
 
@@ -33,24 +36,37 @@ var ErrHostTaken = errors.New("tracking host is verified by another workspace")
 // it; a host with no CNAME answers itself or a not-found error.
 type CNAMELookup func(ctx context.Context, host string) (string, error)
 
+// Doer is the HTTP client the probe uses: the SSRF-guarded one in production.
+type Doer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 // Verifier checks Tracking domains against Target, the edge host the CNAME must reach.
+// With HTTP and Secret set it also proves serving: a host reaches serving only when the
+// HTTPS probe answers ProbeValue(Secret, host). Without HTTP no host ever becomes serving.
 type Verifier struct {
 	Lookup CNAMELookup
 	Target string
 	Now    func() time.Time
+	HTTP   Doer
+	Secret string
+	Events *events.Bus
 }
 
-// Check re-verifies one Sending domain's Tracking domain from live DNS and stores the
-// outcome: the check time always, and the state when it changes. A CNAME at Target moves
-// pending to dns_verified (serving stays serving); anything else sends the state back to
-// pending. A resolver failure other than not-found returns its error and changes nothing.
-// It returns the resulting state, with ErrHostTaken when the host is held elsewhere.
+// Check re-verifies one Sending domain's Tracking domain from live DNS and, once the
+// CNAME is right, the HTTPS probe, and stores the outcome: the check time always, and
+// the state when it changes, with a TrackingDomainChanged event in the same transaction.
+// DNS gone sends the state back to pending; a CNAME at Target with a failing probe is
+// dns_verified (a serving host falls back to it); a passing probe is serving. A resolver
+// failure other than not-found returns its error and changes nothing. It returns the
+// resulting state, with ErrHostTaken when the host is held elsewhere.
 func (v *Verifier) Check(ctx context.Context, s *ent.Scoped, id int64) (sendingdomain.TrackingState, error) {
 	row, err := s.SendingDomain().Get(ctx, id)
 	if err != nil {
 		return "", err
 	}
-	ok, err := v.pointsAtTarget(ctx, sendingdomains.TrackingHost(row.Domain))
+	host := sendingdomains.TrackingHost(row.Domain)
+	ok, err := v.pointsAtTarget(ctx, host)
 	if err != nil {
 		return "", err
 	}
@@ -58,17 +74,19 @@ func (v *Verifier) Check(ctx context.Context, s *ent.Scoped, id int64) (sendingd
 	now := v.Now()
 	next := sendingdomain.TrackingStatePending
 	if ok {
-		next = row.TrackingState
-		if next == sendingdomain.TrackingStatePending {
-			next = sendingdomain.TrackingStateDNSVerified
+		next = sendingdomain.TrackingStateDNSVerified
+		switch {
+		case v.HTTP == nil:
+			// No way to prove serving: keep what the row has, never promote.
+			if row.TrackingState != sendingdomain.TrackingStatePending {
+				next = row.TrackingState
+			}
+		case v.probe(ctx, host):
+			next = sendingdomain.TrackingStateServing
 		}
 	}
 
-	upd := s.SendingDomain().UpdateOneID(id).SetTrackingCheckedAt(now)
-	if next != row.TrackingState {
-		upd.SetTrackingState(next).SetTrackingStateChangedAt(now)
-	}
-	err = upd.Exec(ctx)
+	err = v.store(ctx, s, row, next, now)
 	if db.IsUniqueViolation(err) {
 		// Another Workspace verified the host first. Record the check, keep the state.
 		if cerr := s.SendingDomain().UpdateOneID(id).SetTrackingCheckedAt(now).Exec(ctx); cerr != nil {
@@ -80,6 +98,46 @@ func (v *Verifier) Check(ctx context.Context, s *ent.Scoped, id int64) (sendingd
 		return "", err
 	}
 	return next, nil
+}
+
+func (v *Verifier) store(ctx context.Context, s *ent.Scoped, row *ent.SendingDomain, next sendingdomain.TrackingState, now time.Time) error {
+	if next == row.TrackingState {
+		return s.SendingDomain().UpdateOneID(row.ID).SetTrackingCheckedAt(now).Exec(ctx)
+	}
+	return v.Events.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		err := ts.SendingDomain().UpdateOneID(row.ID).
+			SetTrackingCheckedAt(now).SetTrackingState(next).SetTrackingStateChangedAt(now).Exec(ctx)
+		if err != nil {
+			return err
+		}
+		return pub.Publish(ctx, &events.TrackingDomainChanged{
+			WorkspaceID: row.WorkspaceID, SendingDomainID: row.ID,
+			Host: sendingdomains.TrackingHost(row.Domain),
+			From: string(row.TrackingState), To: string(next),
+		})
+	})
+}
+
+// probe reports whether https://host/ProbePath answers 200 with the host's ProbeValue.
+// Any failure, an error, another status or another body, is a failed probe.
+func (v *Verifier) probe(ctx context.Context, host string) bool {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+host+ProbePath, nil)
+	if err != nil {
+		return false
+	}
+	resp, err := v.HTTP.Do(req)
+	if err != nil {
+		return false
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return false
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<10))
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(body)) == ProbeValue(v.Secret, host)
 }
 
 // pointsAtTarget reports whether host's CNAME resolves to Target. A missing record is

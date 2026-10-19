@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 )
 
@@ -54,7 +55,7 @@ func (w *VerifySendingDomainWorker) Work(ctx context.Context, job *river.Job[Ver
 				"sending_domain_id", job.Args.SendingDomainID, "err", nerr)
 		}
 	}
-	return VerifyTrackingDomainByID(ctx, w.ent, w.tracking, job.Args.SendingDomainID)
+	return VerifyTrackingDomainByID(ctx, w.ent, w.tracking, w.sender, job.Args.SendingDomainID)
 }
 
 // --- periodic re-check of all domains (verified is a live property, ADR 0010) ---
@@ -205,11 +206,13 @@ func NotifySendingDomainUnverified(ctx context.Context, client *ent.Client, send
 	return errors.Join(errs...)
 }
 
-// VerifyTrackingDomainByID re-checks a Sending domain's Tracking domain CNAME and stores
-// the state (ADR 0038). A nil verifier (the feature is off) does nothing. A host another
-// Workspace already holds leaves this claim pending and is not an error: retrying cannot
-// change it.
-func VerifyTrackingDomainByID(ctx context.Context, client *ent.Client, v *trackingdomain.Verifier, id int64) error {
+// VerifyTrackingDomainByID re-checks a Sending domain's Tracking domain (the CNAME, then
+// the HTTPS probe) and stores the state (ADR 0038). A nil verifier (the feature is off)
+// does nothing. A host another Workspace already holds leaves this claim pending and is
+// not an error: retrying cannot change it. A host that was dns_verified or serving and
+// went back a step notifies the Workspace's Owners, best-effort; every change publishes
+// its domain event inside the Check.
+func VerifyTrackingDomainByID(ctx context.Context, client *ent.Client, v *trackingdomain.Verifier, sender messaging.EmailSender, id int64) error {
 	if v == nil {
 		return nil
 	}
@@ -217,11 +220,39 @@ func VerifyTrackingDomainByID(ctx context.Context, client *ent.Client, v *tracki
 	if err != nil {
 		return err
 	}
-	_, err = v.Check(ctx, client.Scoped(dom.WorkspaceID), id)
+	next, err := v.Check(ctx, client.Scoped(dom.WorkspaceID), id)
 	if errors.Is(err, trackingdomain.ErrHostTaken) {
 		slog.InfoContext(ctx, "tracking host held by another workspace",
 			"sending_domain_id", id, "workspace_id", dom.WorkspaceID, "domain", dom.Domain)
 		return nil
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	if sender != nil && trackingRank(next) < trackingRank(dom.TrackingState) {
+		host := sendingdomains.TrackingHost(dom.Domain)
+		subject := fmt.Sprintf("Action required: tracking domain %s stopped working", host)
+		body := fmt.Sprintf(
+			"The tracking domain %q of your sending domain %q is now %s instead of %s: "+
+				"its CNAME must point at %s and the host must answer over HTTPS.\n\n"+
+				"Links in your email fall back to the app address until it works again.\n",
+			host, dom.Domain, next, dom.TrackingState, v.Target,
+		)
+		if nerr := NotifyWorkspaceOwners(ctx, client, sender, dom.WorkspaceID, subject, body); nerr != nil {
+			slog.WarnContext(ctx, "notify tracking domain regression failed", "sending_domain_id", id, "err", nerr)
+		}
+	}
+	return nil
+}
+
+// trackingRank orders the states from least to most verified.
+func trackingRank(s sendingdomain.TrackingState) int {
+	switch s {
+	case sendingdomain.TrackingStateServing:
+		return 2
+	case sendingdomain.TrackingStateDNSVerified:
+		return 1
+	default:
+		return 0
+	}
 }
