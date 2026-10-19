@@ -239,6 +239,57 @@ server {
 
 Do not expose `SPHERICON_METRICS_ADDR` through the proxy.
 
+### Tracking domains
+
+A workspace can put its mail's links on `track.<sending domain>` (see
+[Tracking domain](guide/deliverability#tracking-domain)). The core never terminates TLS for those hosts:
+your proxy does, and sphericon only answers three questions ([ADR 0038](adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)).
+
+1. Which edge host should customers CNAME to? Set `SPHERICON_TRACKING_CNAME_TARGET` (for example
+   `edge.example.com`, a name that resolves to your proxy). Unset, the console shows no tracking row.
+2. Which host did the request ask for? Your proxy sets the header named by
+   `SPHERICON_TRACKING_HOST_HEADER` (for example `X-Forwarded-Host`) to the customer's host. It is
+   believed only from a peer inside `SPHERICON_TRACKING_EDGE_CIDRS`; narrow that to your proxy.
+3. May a certificate be issued for this host? `GET /tls/ask?domain=<host>` on the internal listener
+   (`SPHERICON_INTERNAL_ADDR`) answers 200 when the host is the `track.` host of a Sending domain whose
+   CNAME is verified, 404 otherwise. It is on the internal listener only, so publish that port to the
+   proxy and never through the public ingress.
+
+Caddy's on-demand TLS fits directly: it asks the endpoint before it requests a certificate.
+
+```caddyfile
+{
+  on_demand_tls {
+    ask http://127.0.0.1:3400/tls/ask
+  }
+}
+
+# the Instance's own host: drop the header so nobody can forge a tracking host
+mail.example.com {
+  reverse_proxy 127.0.0.1:3000 {
+    header_up -X-Forwarded-Host
+  }
+}
+
+# every customer Tracking domain; the certificate is issued on the first request
+https:// {
+  tls {
+    on_demand
+  }
+  reverse_proxy 127.0.0.1:3000 {
+    header_up X-Forwarded-Host {host}
+  }
+}
+```
+
+with `SPHERICON_INTERNAL_ADDR=127.0.0.1:3400`, `SPHERICON_TRACKING_CNAME_TARGET=edge.example.com`
+and `SPHERICON_TRACKING_HOST_HEADER=X-Forwarded-Host`. Point `edge.example.com` at the same machine.
+
+A domain goes `pending`, then `dns_verified` (CNAME correct, `ask` answers 200), then `serving`
+(sphericon fetched its own well-known path over HTTPS). A job rechecks every 15 minutes. Until a
+domain is `serving`, and again if it regresses, mail uses `SPHERICON_APP_URL`. Removing a Sending domain
+or its CNAME leaves links already sent working on the Instance's host and dead on the customer's.
+
 The external API can also live on its own host, such as `api.example.com`, if the proxy rewrites
 `/*` to `/api/*` (`rewrite ^/(.*)$ /api/$1 break;` in nginx, `rewrite * /api{uri}` in Caddy). The
 binary itself stays path-based.
