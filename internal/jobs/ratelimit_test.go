@@ -50,7 +50,7 @@ func TestBroadcastThroughALimitedIntegrationLosesNoRecipient(t *testing.T) {
 					next = at
 				}
 			}
-			time.Sleep(next.Sub(now))
+			testhelper.Elapse(next.Sub(now))
 			now = time.Now()
 			for _, id := range ids {
 				at, queued := wake[id]
@@ -118,7 +118,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
 		assert.Len(t, fs.sent, 3, "the step has not sent")
 
-		time.Sleep(3 * time.Second)
+		testhelper.Elapse(3 * time.Second)
 		res, err = jobs.RunStep(ctx, env.DB, mod, runIDs[0])
 		require.NoError(t, err)
 		assert.Nil(t, res.ResumeAt)

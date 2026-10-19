@@ -79,7 +79,7 @@ func TestDeferredSendLeavesNoClaimAndSendsExactlyOnceAfterTheWait(t *testing.T) 
 		require.NoError(t, err)
 		before := n
 		// The deferred key left no row: no claim, so nothing for a retry to trip on.
-		time.Sleep(res.Wait)
+		testhelper.Elapse(res.Wait)
 		retry := send(t, m, env, "bc:b")
 		assert.Equal(t, outbound.Sent, retry.Outcome)
 		assert.False(t, retry.Replayed)
@@ -104,7 +104,7 @@ func TestDailyLimitIsRollingAndReportsItsOwnWait(t *testing.T) {
 		require.Equal(t, outbound.Deferral, res.Outcome)
 		assert.Equal(t, 12*time.Hour, res.Wait, "2 per 24h refills one token every 12 hours")
 
-		time.Sleep(12 * time.Hour)
+		testhelper.Elapse(12 * time.Hour)
 		assert.Equal(t, outbound.Sent, send(t, m, env, "bc:3").Outcome, "capacity returns gradually, not at a window edge")
 		assert.Equal(t, outbound.Deferral, send(t, m, env, "bc:4").Outcome)
 	})
@@ -121,9 +121,9 @@ func TestReservationTakesFromBothBucketsOrNone(t *testing.T) {
 		require.Equal(t, outbound.Deferral, send(t, m, env, "bc:2").Outcome)
 
 		// Had the denials taken a daily token, the daily bucket would now be empty.
-		time.Sleep(time.Second)
+		testhelper.Elapse(time.Second)
 		assert.Equal(t, outbound.Sent, send(t, m, env, "bc:2").Outcome, "the denied attempts spent no daily capacity")
-		time.Sleep(time.Second)
+		testhelper.Elapse(time.Second)
 		assert.Equal(t, outbound.Deferral, send(t, m, env, "bc:3").Outcome, "the daily bucket is now spent")
 	})
 }
@@ -202,9 +202,9 @@ func TestTransactionalSendsSpendCapacityAndDelayLaterMarketingSends(t *testing.T
 		require.Equal(t, outbound.Deferral, res.Outcome)
 		assert.Equal(t, 3*time.Second, res.Wait, "debt of two tokens plus the one the Broadcast needs")
 
-		time.Sleep(2 * time.Second)
+		testhelper.Elapse(2 * time.Second)
 		assert.Equal(t, outbound.Deferral, send(t, m, env, "bc:1").Outcome)
-		time.Sleep(time.Second)
+		testhelper.Elapse(time.Second)
 		assert.Equal(t, outbound.Sent, send(t, m, env, "bc:1").Outcome)
 	})
 }

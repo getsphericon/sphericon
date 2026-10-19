@@ -2,8 +2,6 @@ package emaildoc_test
 
 import (
 	"context"
-	"runtime"
-	"sync"
 	"testing"
 	"time"
 
@@ -48,37 +46,17 @@ func TestTheStartTimeoutBoundsTheRuntimeStart(t *testing.T) {
 }
 
 // The heap counter is process-wide, so a burst of allocations by something else that does not
-// last must not stop a render that is not its cause.
-func TestAnotherGoroutinesAllocationBurstDoesNotStopARender(t *testing.T) {
-	newsletter := readDoc(t, "newsletter.json")
-	require.NoError(t, shared().Validate(context.Background(), newsletter))
+// last must not stop a render that is not its cause: only polls over the limit in a row count.
+func TestOnlyAnUnbrokenRunOfPollsOverTheLimitStopsARender(t *testing.T) {
+	s := emaildoc.NewSustained(3)
 
-	stop := make(chan struct{})
-	var bursts sync.WaitGroup
-	bursts.Add(1)
-	go func() {
-		defer bursts.Done()
-		for {
-			select {
-			case <-stop:
-				return
-			default:
-			}
-			burst := make([]byte, 160<<20)
-			burst[0] = 1
-			time.Sleep(5 * time.Millisecond)
-			runtime.KeepAlive(burst)
-			runtime.GC()
-			time.Sleep(150 * time.Millisecond)
-		}
-	}()
-	defer func() {
-		close(stop)
-		bursts.Wait()
-	}()
-
-	for range 15 {
-		_, err := shared().Render(context.Background(), newsletter, emaildoc.WithMemoryGrowth(96<<20))
-		require.NoError(t, err)
+	for range 10 {
+		require.False(t, s.Observe(true))
+		require.False(t, s.Observe(true), "two polls over the limit are a burst, not growth")
+		require.False(t, s.Observe(false), "a poll back under the limit starts the count again")
 	}
+
+	require.False(t, s.Observe(true))
+	require.False(t, s.Observe(true))
+	require.True(t, s.Observe(true), "the limit stayed over for the whole run")
 }

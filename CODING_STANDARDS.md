@@ -29,6 +29,13 @@ The rules a change is reviewed against. How the repo is built, run and generated
   other test rides the transaction `pgcleaner` hands out, which rolls back. A `t.Cleanup` that
   deletes rows, a purge or a reset at the top of a test means a test is committing outside its
   transaction: fix that test.
+- **No `time.Sleep`, anywhere.** A sleep is a guess about how long something takes: it makes a test
+  slow where it guesses high and flaky where it guesses low, and in code it hides a missing signal.
+  Wait on the condition (a channel, `assert.Eventually`, a returned handle), and write the logic so
+  it can be tested without waiting: a decision that needs elapsed time takes a clock, one that
+  needs a run of events is a small pure type fed those events. A test that must move time inside a
+  `testing/synctest` bubble calls `testhelper.Elapse(d)`, which advances the bubble's fake clock
+  and returns at once. `forbidigo` rejects `time.Sleep` everywhere.
 - **No tests of built-in behaviour.** A test exercises sphericon's own code. One whose only subject is a
   Mantine component, the standard library or another dependency (a copy button showing "Copied", a
   library's defaults or retries) is deleted, and none is added.
