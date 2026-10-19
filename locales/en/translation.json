@@ -526,6 +526,11 @@
     "templates": "Templates",
     "transactionalEmails": "Transactional emails"
   },
+  "notFound": {
+    "description": "The page you are looking for does not exist or has moved.",
+    "home": "Go to the app",
+    "title": "Page not found"
+  },
   "notifications": {
     "automationActivated": "Automation activated",
     "automationCreated": "Automation created",
