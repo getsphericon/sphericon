@@ -638,7 +638,7 @@ type Handler interface {
 	SiteTokensDelete(ctx context.Context, params SiteTokensDeleteParams) (SiteTokensDeleteRes, error)
 	// SiteTokensList implements SiteTokens_list operation.
 	//
-	// List active (non-revoked) API tokens for the workspace.
+	// List the workspace's API tokens, revoked ones included (marked by `revokedAt`).
 	//
 	// GET /workspaces/{slug}/tokens
 	SiteTokensList(ctx context.Context, params SiteTokensListParams) (SiteTokensListRes, error)

@@ -6395,7 +6395,7 @@
     "/workspaces/{slug}/tokens": {
       "get": {
         "operationId": "SiteTokens_list",
-        "description": "List active (non-revoked) API tokens for the workspace",
+        "description": "List the workspace's API tokens, revoked ones included (marked by `revokedAt`)",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteApiTokenResourceParentKey"
@@ -8440,6 +8440,16 @@
             ],
             "nullable": true,
             "description": "Expiry, if set"
+          },
+          "revokedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the token was revoked, if it was (revoked tokens stay listed)"
           },
           "createdAt": {
             "allOf": [

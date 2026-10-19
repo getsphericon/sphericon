@@ -78,7 +78,7 @@ func TestDiscoveryDocuments(t *testing.T) {
 	assert.Equal(t, base+"/oauth/token", as["token_endpoint"])
 	assert.Equal(t, base+"/oauth/register", as["registration_endpoint"])
 	assert.Equal(t, []any{"code"}, as["response_types_supported"])
-	assert.Equal(t, []any{"authorization_code"}, as["grant_types_supported"])
+	assert.Equal(t, []any{"authorization_code", "refresh_token"}, as["grant_types_supported"])
 	assert.Equal(t, []any{"S256"}, as["code_challenge_methods_supported"])
 	assert.Equal(t, []any{"none"}, as["token_endpoint_auth_methods_supported"])
 }

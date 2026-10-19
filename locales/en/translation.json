@@ -966,6 +966,7 @@
       "revoke": "Revoke",
       "revokeConfirmDescription": "Applications using this token will immediately lose access.",
       "revokeConfirmTitle": "Revoke token?",
+      "revoked": "Revoked",
       "revokeError": "Failed to revoke token",
       "scopesLabel": "Scopes",
       "secretNotice": "Copy this token now — it won't be shown again."

@@ -931,7 +931,7 @@ func (UnimplementedHandler) SiteTokensDelete(ctx context.Context, params SiteTok
 
 // SiteTokensList implements SiteTokens_list operation.
 //
-// List active (non-revoked) API tokens for the workspace.
+// List the workspace's API tokens, revoked ones included (marked by `revokedAt`).
 //
 // GET /workspaces/{slug}/tokens
 func (UnimplementedHandler) SiteTokensList(ctx context.Context, params SiteTokensListParams) (r SiteTokensListRes, _ error) {

@@ -5526,19 +5526,26 @@ func (s *SiteApiTokenResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.RevokedAt.Set {
+			e.FieldStart("revokedAt")
+			s.RevokedAt.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfSiteApiTokenResource = [7]string{
+var jsonFieldsNameOfSiteApiTokenResource = [8]string{
 	0: "id",
 	1: "name",
 	2: "prefix",
 	3: "scopes",
 	4: "lastUsedAt",
 	5: "expiresAt",
-	6: "createdAt",
+	6: "revokedAt",
+	7: "createdAt",
 }
 
 // Decode decodes SiteApiTokenResource from json.
@@ -5624,8 +5631,18 @@ func (s *SiteApiTokenResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"expiresAt\"")
 			}
+		case "revokedAt":
+			if err := func() error {
+				s.RevokedAt.Reset()
+				if err := s.RevokedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revokedAt\"")
+			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -5644,7 +5661,7 @@ func (s *SiteApiTokenResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01001111,
+		0b10001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

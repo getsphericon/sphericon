@@ -668,6 +668,10 @@ export type SiteApiTokenResource = {
    */
   expiresAt?: Timestamp | null;
   /**
+   * When the token was revoked, if it was (revoked tokens stay listed)
+   */
+  revokedAt?: Timestamp | null;
+  /**
    * Creation timestamp
    */
   createdAt: Timestamp;

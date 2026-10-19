@@ -28,6 +28,8 @@ const (
 	FieldMetadataExpiresAt = "metadata_expires_at"
 	// EdgeCodes holds the string denoting the codes edge name in mutations.
 	EdgeCodes = "codes"
+	// EdgeRefreshTokens holds the string denoting the refresh_tokens edge name in mutations.
+	EdgeRefreshTokens = "refresh_tokens"
 	// Table holds the table name of the oauthclient in the database.
 	Table = "oauth_clients"
 	// CodesTable is the table that holds the codes relation/edge.
@@ -37,6 +39,13 @@ const (
 	CodesInverseTable = "oauth_codes"
 	// CodesColumn is the table column denoting the codes relation/edge.
 	CodesColumn = "client_id"
+	// RefreshTokensTable is the table that holds the refresh_tokens relation/edge.
+	RefreshTokensTable = "oauth_refresh_tokens"
+	// RefreshTokensInverseTable is the table name for the OAuthRefreshToken entity.
+	// It exists in this package in order to avoid circular dependency with the "oauthrefreshtoken" package.
+	RefreshTokensInverseTable = "oauth_refresh_tokens"
+	// RefreshTokensColumn is the table column denoting the refresh_tokens relation/edge.
+	RefreshTokensColumn = "client_id"
 )
 
 // Columns holds all SQL columns for oauthclient fields.
@@ -119,10 +128,31 @@ func ByCodes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newCodesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByRefreshTokensCount orders the results by refresh_tokens count.
+func ByRefreshTokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRefreshTokensStep(), opts...)
+	}
+}
+
+// ByRefreshTokens orders the results by refresh_tokens terms.
+func ByRefreshTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRefreshTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newCodesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CodesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, CodesTable, CodesColumn),
+	)
+}
+func newRefreshTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RefreshTokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RefreshTokensTable, RefreshTokensColumn),
 	)
 }

@@ -28,6 +28,9 @@ model SiteApiTokenResource {
   /** Expiry, if set */
   expiresAt?: Timestamp | null;
 
+  /** When the token was revoked, if it was (revoked tokens stay listed) */
+  revokedAt?: Timestamp | null;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 }
@@ -49,7 +52,7 @@ model SiteCreateTokenResponse {
 // the one-time secret rather than the resource. Nested via @parentResource + @autoRoute.
 @tag("Site Tokens")
 namespace SiteTokens {
-  /** List active (non-revoked) API tokens for the workspace */
+  /** List the workspace's API tokens, revoked ones included (marked by `revokedAt`) */
   @listsResource(SiteApiTokenResource)
   @get
   @autoRoute

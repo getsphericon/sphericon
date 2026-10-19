@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
@@ -129,6 +130,7 @@ func checkColumn(t, c string) error {
 			membership.Table:         membership.ValidColumn,
 			oauthclient.Table:        oauthclient.ValidColumn,
 			oauthcode.Table:          oauthcode.ValidColumn,
+			oauthrefreshtoken.Table:  oauthrefreshtoken.ValidColumn,
 			outboundmessage.Table:    outboundmessage.ValidColumn,
 			outboxmessage.Table:      outboxmessage.ValidColumn,
 			outboxoffset.Table:       outboxoffset.ValidColumn,

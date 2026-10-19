@@ -2,7 +2,6 @@ package oauthserver
 
 import (
 	"crypto/rand"
-	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"net"
@@ -10,14 +9,9 @@ import (
 	"net/url"
 	"slices"
 	"strings"
-	"time"
 
-	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/oauthcode"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
-	"golang.org/x/oauth2"
 )
 
 // Paths served by the Go binary. The consent screen is the SPA route ConsentPath.
@@ -93,7 +87,7 @@ func (s *Server) authServerMetadata(w http.ResponseWriter, _ *http.Request) {
 			RegistrationEndpoint:              s.issuer + registerPath,
 			ScopesSupported:                   SupportedScopes(),
 			ResponseTypesSupported:            []string{"code"},
-			GrantTypesSupported:               []string{"authorization_code"},
+			GrantTypesSupported:               []string{grantAuthorizationCode, grantRefreshToken},
 			TokenEndpointAuthMethodsSupported: []string{"none"},
 		},
 		CodeChallengeMethodsSupported:     []string{"S256"},
@@ -124,7 +118,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		registrationError(w, "invalid_client_metadata", "only token_endpoint_auth_method none is supported (public clients with PKCE)")
 		return
 	}
-	if len(meta.GrantTypes) > 0 && !slices.Contains(meta.GrantTypes, "authorization_code") {
+	if len(meta.GrantTypes) > 0 && !slices.Contains(meta.GrantTypes, grantAuthorizationCode) {
 		registrationError(w, "invalid_client_metadata", "grant_types must include authorization_code")
 		return
 	}
@@ -149,7 +143,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		ClientRegistrationMetadata: oauthex.ClientRegistrationMetadata{
 			RedirectURIs:            row.RedirectUris,
 			TokenEndpointAuthMethod: "none",
-			GrantTypes:              []string{"authorization_code"},
+			GrantTypes:              []string{grantAuthorizationCode, grantRefreshToken},
 			ResponseTypes:           []string{"code"},
 			ClientName:              row.Name,
 		},
@@ -200,96 +194,6 @@ func checkAuthorizeParams(q url.Values, resource string) (kind, msg string) {
 		return "invalid_target", "unknown resource"
 	}
 	return "", ""
-}
-
-// token exchanges an authorization code (with its PKCE verifier) for an ordinary
-// scoped API token.
-func (s *Server) token(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_request", "body must be form encoded")
-		return
-	}
-	if r.PostForm.Get("grant_type") != "authorization_code" {
-		writeOAuthError(w, http.StatusBadRequest, "unsupported_grant_type", "only authorization_code is supported")
-		return
-	}
-	if res := r.PostForm.Get("resource"); res != "" && res != s.resource {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_target", "unknown resource")
-		return
-	}
-	ctx := r.Context()
-
-	grant, err := s.ent.OAuthCode.Query().
-		Where(oauthcode.CodeHash(hashCode(r.PostForm.Get("code")))).
-		WithClient().
-		Only(ctx)
-	if ent.IsNotFound(err) {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "unknown or expired code")
-		return
-	}
-	if err != nil {
-		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
-		return
-	}
-
-	verifier := r.PostForm.Get("code_verifier")
-	switch {
-	case grant.Edges.Client.ClientID != r.PostForm.Get("client_id"),
-		grant.RedirectURI != r.PostForm.Get("redirect_uri"):
-		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "client or redirect_uri does not match the authorization request")
-		return
-	case !validPKCE(verifier),
-		subtle.ConstantTimeCompare([]byte(oauth2.S256ChallengeFromVerifier(verifier)), []byte(grant.CodeChallenge)) != 1:
-		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "code_verifier does not match")
-		return
-	}
-
-	// Single use: only the request that flips used_at wins.
-	now := time.Now()
-	claimed, err := s.ent.OAuthCode.Update().
-		Where(oauthcode.ID(grant.ID), oauthcode.UsedAtIsNil(), oauthcode.ExpiresAtGT(now)).
-		SetUsedAt(now).
-		Save(ctx)
-	if err != nil {
-		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
-		return
-	}
-	if claimed == 0 {
-		writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "unknown or expired code")
-		return
-	}
-
-	prefix, err := credentials.GenerateTokenPrefix()
-	if err != nil {
-		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
-		return
-	}
-	secret, err := credentials.GenerateTokenSecret()
-	if err != nil {
-		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
-		return
-	}
-	hash, err := credentials.HashTokenSecret(secret)
-	if err != nil {
-		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
-		return
-	}
-	if _, err := s.ent.ApiToken.Create().
-		SetName(grant.Edges.Client.Name + " (MCP)").
-		SetPrefix(prefix).
-		SetSecretHash(hash).
-		SetScopes(grant.Scopes).
-		SetWorkspaceID(grant.WorkspaceID).
-		Save(ctx); err != nil {
-		writeOAuthError(w, http.StatusInternalServerError, "server_error", "")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, map[string]any{
-		"access_token": credentials.TokenValue(prefix, secret),
-		"token_type":   "Bearer",
-		"scope":        strings.Join(grant.Scopes, " "),
-	})
 }
 
 // validRedirectURI accepts https URLs and http on a loopback host, with no
