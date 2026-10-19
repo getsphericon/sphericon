@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -97,4 +98,18 @@ func TestLoadWarnsWithTheExpiryDateOfALapsedKey(t *testing.T) {
 	_, err = licensekey.Load("", pub, now, slog.New(slog.NewTextHandler(&out, nil)))
 	require.NoError(t, err)
 	assert.Empty(t, out.String(), "no key is the core, not a lapse")
+}
+
+func TestParseRefusesAKeyThatIsNotValidYet(t *testing.T) {
+	pub, priv, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+	now := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	key, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+		"features": []string{"audit"}, "nbf": now.Add(time.Hour).Unix(),
+	}).SignedString(priv)
+	require.NoError(t, err)
+
+	_, err = licensekey.Parse(key, pub, now)
+
+	assert.ErrorIs(t, err, licensekey.ErrInvalid)
 }

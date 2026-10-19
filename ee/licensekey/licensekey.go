@@ -83,6 +83,9 @@ func Parse(key string, pub ed25519.PublicKey, now time.Time) (*License, error) {
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
+	if c.NotBefore != nil && now.Before(c.NotBefore.Time) {
+		return nil, fmt.Errorf("%w: not valid before %s", ErrInvalid, c.NotBefore.Time.UTC().Format(time.RFC3339))
+	}
 	if c.ExpiresAt != nil && !now.Before(c.ExpiresAt.Time) {
 		return &License{lapsedAt: c.ExpiresAt.Time}, nil
 	}
