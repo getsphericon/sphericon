@@ -71,6 +71,19 @@ func New(bus *events.Bus, cipher *secrets.Cipher, verify VerifyEnqueuer, trackin
 // TrackingHost is the Tracking domain of a Sending domain: track.<domain> (ADR 0038).
 func TrackingHost(domain string) string { return "track." + domain }
 
+// ServingTrackingHost returns the Tracking domain of the Workspace's Sending domain when
+// its state is serving, and "" otherwise (including an unknown domain): mail builds its
+// links on that host, or on the Instance's host when this is empty (ADR 0038).
+func ServingTrackingHost(ctx context.Context, s *ent.Scoped, domain string) (string, error) {
+	ok, err := s.SendingDomain().Query().
+		Where(sendingdomain.Domain(domain), sendingdomain.TrackingStateEQ(sendingdomain.TrackingStateServing)).
+		Exist(ctx)
+	if err != nil || !ok {
+		return "", err
+	}
+	return TrackingHost(domain), nil
+}
+
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
 type CreateInput struct {
 	Domain   string
