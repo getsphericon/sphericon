@@ -602,13 +602,13 @@ func seedDefaults(vars map[string]string, envName string) {
 // instance is served over HTTPS (SPHERICON_APP_URL reflects the public scheme, even though a proxy
 // terminates TLS and the Go server listens on plain HTTP). Local http dev stays false,
 // where a Secure cookie would never be sent back.
+func (c *Config) SecureCookies() bool { return strings.HasPrefix(c.AppURL, "https://") }
+
 // SystemMailConfigured reports whether the Instance has outbound mail, that is, a System
 // sender: the SES provider, or SMTP with a host. Without it there is none (ADR 0041).
 func (c *Config) SystemMailConfigured() bool {
 	return c.SystemEmailProvider == "ses" || c.SMTPHost != ""
 }
-
-func (c *Config) SecureCookies() bool { return strings.HasPrefix(c.AppURL, "https://") }
 
 // validate enforces invariants that depend on the deployment environment.
 func (c *Config) validate(envName string) error {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -91,6 +92,51 @@ func TestSiteTestSendFromTheSystemSenderIsCappedPerUserPerHour(t *testing.T) {
 	assert.Len(t, env.SystemMail.Messages(), accounts.TestSendPerUserHour, "the refused one sent nothing")
 }
 
+func TestSiteTestSendFromTheSystemSenderIsCappedPerWorkspacePerDay(t *testing.T) {
+	clock := &movableClock{t: time.Now()}
+	env := testhelper.Setup(t, testhelper.WithClock(clock.now))
+	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
+	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
+
+	// Jane spends her hourly budget four times over, an hour apart: the Workspace's twenty.
+	for round := range accounts.TestSendPerWorkspaceDay / accounts.TestSendPerUserHour {
+		for i := range accounts.TestSendPerUserHour {
+			res, err := testSendAsJane(env, jane, fixtures.OwnerJaneEmail)
+			require.NoError(t, err)
+			require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res, "round %d send %d", round, i+1)
+		}
+		clock.t = clock.t.Add(61 * time.Minute)
+	}
+
+	// Another User, with a budget of her own, is the Workspace's twenty-first.
+	res, err := testSendAsJane(env, mary, fixtures.MemberMaryEmail)
+	require.NoError(t, err)
+	limited, ok := res.(*siteapi.ProblemDetailsHeaders)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, siteapi.NewOptInt32(http.StatusTooManyRequests), limited.Response.Status)
+	assert.EqualValues(t, accounts.TestSendPerWorkspaceDay, limited.XRateLimitLimit)
+	assert.Len(t, env.SystemMail.Messages(), accounts.TestSendPerWorkspaceDay, "the refused one sent nothing")
+}
+
+func TestSiteTestSendLeavesTheSentEmailStepTodo(t *testing.T) {
+	env := testhelper.Setup(t)
+	_, err := suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.HooliID, suspension.CLI)
+	require.NoError(t, err)
+	c := env.SiteActor(t, fixtures.OwnerSallyEmail)
+
+	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.SiteTestSendBroadcastInput{Email: siteapi.EmailAddress(fixtures.OwnerSallyEmail)},
+		siteapi.SiteBroadcastsTestSendParams{Slug: fixtures.HooliSlug, ID: idStr(fixtures.BroadcastHooliID)})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)
+	require.Len(t, env.SystemMail.Messages(), 1)
+
+	checklist, err := c.SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{Slug: fixtures.HooliSlug})
+	require.NoError(t, err)
+	progress, ok := checklist.(*siteapi.SiteSetupProgress)
+	require.Truef(t, ok, "got %T", checklist)
+	assert.Equal(t, todo, progress.Steps.SentEmail, "a Test send is not a sent email")
+}
+
 func TestSiteTestSendFromASuspendedWorkspaceIsRefusedWithItsReason(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
@@ -116,6 +162,19 @@ func TestSiteTestSendOnAnInstanceWithNoSystemSenderIsRefusedWithItsReason(t *tes
 	refused, ok := res.(*siteapi.SiteBroadcastsTestSendUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
 	assert.Contains(t, refused.Detail.Value, "outbound mail is not configured")
+}
+
+func TestSiteTestSendFromASystemSenderWithNoFromIsRefusedNotSentWithAnEmptyOne(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithSystemSenderWithoutFrom())
+	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
+
+	res, err := testSendAsJane(env, c, fixtures.OwnerJaneEmail)
+	require.NoError(t, err)
+
+	refused, ok := res.(*siteapi.SiteBroadcastsTestSendUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Contains(t, refused.Detail.Value, "outbound mail is not configured")
+	assert.Empty(t, env.SystemMail.Messages())
 }
 
 func TestSiteTestSendWithAVerifiedDomainKeepsTheOrdinaryPath(t *testing.T) {

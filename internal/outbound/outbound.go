@@ -101,7 +101,8 @@ const (
 	// RefuseOtherRecipient: the Workspace has no verified Sending domain, so a Test send
 	// may only go to the address of the User who asks.
 	RefuseOtherRecipient = "other_recipient"
-	// RefuseNoSystemSender: the Instance has no outbound mail, so there is no System sender.
+	// RefuseNoSystemSender: the Instance has no outbound mail, so there is no System sender
+	// (or one that names no From to send from).
 	RefuseNoSystemSender = "no_system_sender"
 )
 
@@ -822,6 +823,14 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 	if err != nil {
 		return Result{Outcome: Failed, Reason: err.Error()}, nil
 	}
+	// A System sender that names no From cannot send: refuse before a slot is taken.
+	from, name := "", ""
+	if d, ok := m.system.(messaging.DefaultFromer); ok {
+		from, name = d.DefaultFrom()
+	}
+	if from == "" {
+		return Result{Outcome: Refused, Reason: RefuseNoSystemSender}, nil
+	}
 	if m.testBudget != nil {
 		c, err := m.testBudget.TakeTestSend(ctx, req.Asker.UserID, s.WorkspaceID())
 		if err != nil {
@@ -830,10 +839,6 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 		if c.Wait > 0 {
 			return Result{Outcome: Deferral, Wait: c.Wait, Limit: c.Limit}, nil
 		}
-	}
-	from, name := "", ""
-	if d, ok := m.system.(messaging.DefaultFromer); ok {
-		from, name = d.DefaultFrom()
 	}
 	built.msg.From, built.msg.FromName, built.msg.To = from, name, to
 	if _, err := m.system.Send(ctx, built.msg); err != nil {

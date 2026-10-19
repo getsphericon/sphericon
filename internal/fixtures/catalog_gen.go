@@ -89,6 +89,10 @@ const (
 	BroadcastGlobexID = 900
 	// BroadcastGlobexName is from fixtures/broadcasts.
 	BroadcastGlobexName = "Globex only"
+	// BroadcastHooliID is from fixtures/broadcasts.
+	BroadcastHooliID = 910
+	// BroadcastHooliName is from fixtures/broadcasts.
+	BroadcastHooliName = "Hooli only"
 	// BroadcastInitechID is from fixtures/broadcasts.
 	BroadcastInitechID = 300
 	// BroadcastInitechName is from fixtures/broadcasts.

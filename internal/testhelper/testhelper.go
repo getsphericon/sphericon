@@ -196,11 +196,17 @@ type setup struct {
 	certs preset.CertFetcher
 	// noSystemSender builds the Instance without outbound mail.
 	noSystemSender bool
+	// noSystemFrom gives the System sender no default From (it is not a DefaultFromer).
+	noSystemFrom bool
 }
 
 // WithoutSystemSender runs the Instance with no outbound mail, so it has no System sender
 // for a Test send to fall back to (ADR 0041).
 func WithoutSystemSender() Option { return func(s *setup) { s.noSystemSender = true } }
+
+// WithSystemSenderWithoutFrom gives the Instance a System sender that names no From of its own,
+// which a Test send must refuse rather than send with an empty From.
+func WithSystemSenderWithoutFrom() Option { return func(s *setup) { s.noSystemFrom = true } }
 
 // WithRunningVersion sets the version the Instance's Release check compares against, so a
 // test runs as a release build ("0.1.0") instead of the "dev" test build.
@@ -323,7 +329,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	bus.Use(edition.Hooks()...)
 	// The Staff hold freezer rides the send chokepoint like the app's.
 	outboundOpts := []outbound.Option{outbound.WithFreezers(edition.Freezer()), outbound.WithTrackingDomains(), outbound.WithTestSendBudget(attempts)}
-	if !st.noSystemSender {
+	switch {
+	case st.noSystemSender:
+	case st.noSystemFrom:
+		outboundOpts = append(outboundOpts, outbound.WithSystemSender(struct{ messaging.EmailSender }{systemMail}))
+	default:
 		outboundOpts = append(outboundOpts, outbound.WithSystemSender(systemFrom{systemMail}))
 	}
 	sender := outbound.New(bus, resolver, tracker, outboundOpts...)
