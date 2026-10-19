@@ -279,6 +279,9 @@ The hosted database ([ADR 0028](https://github.com/getsphericon/sphericon/blob/m
 is RDS Multi-AZ with 14 days of automated backups. Rehearse a restore into a scratch instance
 after any change to the backup setup and at least quarterly. It never touches production.
 
+The names below are the defaults (`var.name` = `sphericon`); find the database security group with
+`aws rds describe-db-instances --db-instance-identifier sphericon --query 'DBInstances[0].VpcSecurityGroups[0].VpcSecurityGroupId' --output text`.
+
 1. Pick the point: `aws rds describe-db-instances --db-instance-identifier sphericon --query 'DBInstances[0].LatestRestorableTime'`.
    Note the time of the "incident" you simulate (for example five minutes earlier).
 2. Restore to a point in time into a new instance (start a stopwatch):
@@ -291,8 +294,16 @@ after any change to the backup setup and at least quarterly. It never touches pr
    aws rds wait db-instance-available --db-instance-identifier sphericon-drill
    ```
 
-   To rehearse the snapshot path instead, use `restore-db-instance-from-db-snapshot` with the latest
-   automated snapshot (or `sphericon-final` after a scratch destroy).
+   To rehearse the snapshot path instead, replace the restore command with:
+
+   ```sh
+   aws rds restore-db-instance-from-db-snapshot --db-snapshot-identifier <snapshot id> \
+     --db-instance-identifier sphericon-drill --db-instance-class db.t4g.small --no-multi-az \
+     --db-subnet-group-name sphericon --vpc-security-group-ids <db security group id> --no-publicly-accessible
+   ```
+
+   The snapshot is the latest automated one (`aws rds describe-db-snapshots --db-instance-identifier sphericon`)
+   or `sphericon-final` after a destroy.
 
 3. Verify as in [Restore drill](./backup#restore-drill): run the same version of sphericon against the
    drill instance with a throwaway SMTP sink, `GET /readyz` returns `200`, and counts match

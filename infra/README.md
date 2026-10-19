@@ -159,6 +159,10 @@ mise run infra -- apply -var db_protected=false
 mise run infra -- destroy -var db_protected=false
 ```
 
+The automated backups kept by `db_protected` outlive the instance and are billed until their
+retention ends (`aws rds delete-db-instance-automated-backup` removes them). A later plain `apply`
+turns protection back on: pass the variable every time, or set it in a tfvars file.
+
 Never do this to production without a snapshot you have restored (the runbook's restore drill). A
 second destroy with protection on fails on an existing `sphericon-final`: delete that snapshot first.
 Destroy removes the service, the database **and all its data**, the zone, the SES identity, the
