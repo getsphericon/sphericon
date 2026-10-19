@@ -206,3 +206,49 @@ jobs:
 
       - name: Run frontend tests
         run: mise run test:frontend
+
+  # compose.yaml is the Self-hoster's entry point: build the image, start the file and wait for
+  # /healthz, so the file cannot rot.
+  compose-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker build --tag ghcr.io/getsphericon/sphericon:ci .
+
+      - name: Write .env
+        run: |
+          {
+            echo "SPHERICON_VERSION=ci"
+            echo "SPHERICON_APP_URL=http://localhost:3000"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 32)"
+            echo "SPHERICON_JWT_SECRET=$(openssl rand -hex 32)"
+            echo "SPHERICON_ENCRYPTION_KEY=$(docker run --rm ghcr.io/getsphericon/sphericon:ci genkey)"
+          } > .env
+
+      - name: Start the stack
+        run: docker compose up -d
+
+      - name: Wait for /healthz
+        run: |
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/healthz; then exit 0; fi
+            sleep 2
+          done
+          docker compose ps --all
+          docker compose logs
+          exit 1
+
+      - name: Check migrate exited 0
+        run: |
+          code=$(docker compose ps --all --format '{{.ExitCode}}' migrate)
+          test "$code" = "0"
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down --volumes
