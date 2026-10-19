@@ -379,9 +379,11 @@ test('exempting asks for confirmation first, then calls the API', async () => {
 
 test('an exempt workspace offers to police it again', async () => {
   const policed: string[] = []
+  let reads = 0
   worker.use(
-    handleStaffWorkspacesGet({
-      body: { ...HOOLI, exempt: true, abuse: { exempt: true } },
+    handleStaffWorkspacesGet(() => {
+      reads += 1
+      return HttpResponse.json({ ...HOOLI, exempt: true, abuse: { exempt: true } })
     }),
     handleStaffWorkspacesUnexempt(({ params }) => {
       policed.push(params.workspaceId)
@@ -395,4 +397,6 @@ test('an exempt workspace offers to police it again', async () => {
   await screen.getByRole('dialog').getByRole('button', { name: 'Police again' }).click()
 
   await expect.poll(() => policed).toEqual(['5'])
+  // The page reads the workspace again after the change; let that read finish inside the test.
+  await expect.poll(() => reads).toBeGreaterThan(1)
 })

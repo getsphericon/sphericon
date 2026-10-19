@@ -6,6 +6,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -146,6 +147,9 @@ func TestMemoryHungryRenderIsStoppedAndTheRuntimeReplaced(t *testing.T) {
 		paragraphs[i] = paragraph(strings.Repeat("memory ", 10))
 	}
 
+	// The guard measures growth from the heap at the start of the call: begin from the live heap,
+	// not from one still holding garbage that a collection mid-render would drop below it.
+	runtime.GC()
 	_, err := shared().Render(context.Background(), doc(paragraphs...), emaildoc.WithMemoryGrowth(1<<20))
 	require.ErrorIs(t, err, emaildoc.ErrMemoryLimit)
 
