@@ -389,7 +389,11 @@ func (a *App) start(ctx context.Context) error {
 	if err := telemetry.ObserveReleaseAvailable(inst.LatestRelease); err != nil {
 		return err
 	}
-	if err := telemetry.ObserveLicenseExpired(inst.LicenseExpired); err != nil {
+	edition, err := do.Invoke[*ee.Edition](a.injector)
+	if err != nil {
+		return err
+	}
+	if err := telemetry.ObserveLicenseExpired(func() bool { _, lapsed := edition.LicenseLapsedAt(); return lapsed }); err != nil {
 		return err
 	}
 	// The metrics listener is bound first: a bind failure (port in use) must fail the
