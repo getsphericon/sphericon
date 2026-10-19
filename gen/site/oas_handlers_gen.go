@@ -18157,7 +18157,7 @@ func (s *Server) handleSiteTokensDeleteRequest(args [2]string, argsEscaped bool,
 
 // handleSiteTokensListRequest handles SiteTokens_list operation.
 //
-// List active (non-revoked) API tokens for the workspace.
+// List the workspace's API tokens, revoked ones included (marked by `revokedAt`).
 //
 // GET /workspaces/{slug}/tokens
 func (s *Server) handleSiteTokensListRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

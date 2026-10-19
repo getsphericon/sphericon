@@ -2034,7 +2034,7 @@ export const siteTemplatesUpdate = <ThrowOnError extends boolean = false>(option
 });
 
 /**
- * List active (non-revoked) API tokens for the workspace
+ * List the workspace's API tokens, revoked ones included (marked by `revokedAt`)
  */
 export const siteTokensList = <ThrowOnError extends boolean = false>(options: Options<SiteTokensListData, ThrowOnError>): RequestResult<SiteTokensListResponses, SiteTokensListErrors, ThrowOnError> => (options.client ?? client).get<SiteTokensListResponses, SiteTokensListErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

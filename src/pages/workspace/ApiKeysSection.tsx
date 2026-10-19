@@ -2,6 +2,7 @@ import {
   Box,
   EmptyState,
   Alert,
+  Badge,
   Button,
   Code,
   CopyButton,
@@ -148,15 +149,20 @@ export function ApiKeysSection({ slug }: { slug: string }) {
           {
             accessor: 'actions',
             title: '',
-            render: (record) => (
-              <Group justify="flex-end">
-                <RowActionsMenu>
-                  <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
-                    {t(($) => $.settings.tokens.revoke)}
-                  </Menu.Item>
-                </RowActionsMenu>
-              </Group>
-            ),
+            render: (record) =>
+              record.revokedAt ? (
+                <Badge color="red" variant="light">
+                  {t(($) => $.settings.tokens.revoked)}
+                </Badge>
+              ) : (
+                <Group justify="flex-end">
+                  <RowActionsMenu>
+                    <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
+                      {t(($) => $.settings.tokens.revoke)}
+                    </Menu.Item>
+                  </RowActionsMenu>
+                </Group>
+              ),
           },
         ]}
         emptyState={<EmptyState title={t(($) => $.settings.tokens.empty)} />}

@@ -115,6 +115,14 @@ test('revokes a token after confirmation', async () => {
   await expect.poll(() => revoked).toBe(true)
 })
 
+test('a revoked token is marked as revoked and offers no revoke button', async () => {
+  worker.use(listTokens([{ ...token, revokedAt: '2026-06-02T00:00:00Z' }]))
+  const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
+
+  await expect.element(screen.getByText('Revoked')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Revoke' })).not.toBeInTheDocument()
+})
+
 test('a failed revoke shows the error toast', async () => {
   worker.use(
     listTokens([token]),
