@@ -22,7 +22,6 @@ const checklist = (sendingDomain: 'todo' | 'pending' | 'done') =>
   ({
     steps: { integration: 'done', sendingDomain, contact: 'todo', sentEmail: 'todo' },
     complete: false,
-    dismissed: false,
   }) as const
 
 const domain: SiteSendingDomainResource = {

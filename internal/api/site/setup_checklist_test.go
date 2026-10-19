@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
@@ -44,51 +43,6 @@ func TestSiteSetupChecklistHidesAForeignWorkspace(t *testing.T) {
 	assert.IsType(t, &siteapi.ProblemDetails{}, res)
 }
 
-func dismissChecklist(t *testing.T, c *siteapi.Client, slug string) siteapi.SiteSetupChecklistDismissRes {
-	t.Helper()
-	res, err := c.SiteSetupChecklistDismiss(context.Background(), siteapi.SiteSetupChecklistDismissParams{Slug: slug})
-	require.NoError(t, err)
-	return res
-}
-
-func TestSiteSetupChecklistDismissalIsSharedAndIdempotent(t *testing.T) {
-	env := testhelper.Setup(t)
-	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
-
-	first, ok := dismissChecklist(t, john, fixtures.AcmeSlug).(*siteapi.SiteSetupProgress)
-	require.True(t, ok)
-	assert.True(t, first.Dismissed)
-
-	entries := env.OutboxEvents(t, events.NameAuditEntry)
-	require.Len(t, entries, 1)
-	assert.Equal(t, events.ActionWorkspaceUpdate, entries[0].(*events.AuditEntry).Action)
-	assert.Contains(t, entries[0].(*events.AuditEntry).Diff, "setup_checklist_dismissed_at")
-
-	again, ok := dismissChecklist(t, john, fixtures.AcmeSlug).(*siteapi.SiteSetupProgress)
-	require.True(t, ok)
-	assert.True(t, again.Dismissed)
-	assert.Len(t, env.OutboxEvents(t, events.NameAuditEntry), 1, "a second dismissal records nothing")
-
-	// A member sees the dismissal too.
-	res, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{Slug: fixtures.AcmeSlug})
-	require.NoError(t, err)
-	assert.True(t, res.(*siteapi.SiteSetupProgress).Dismissed)
-}
-
-func TestSiteSetupChecklistDismissalRoles(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	ada, ok := dismissChecklist(t, env.SiteActor(t, fixtures.InitechAdminAdaEmail), fixtures.InitechSlug).(*siteapi.SiteSetupProgress)
-	require.True(t, ok, "an admin may dismiss")
-	assert.True(t, ada.Dismissed)
-
-	assert.IsType(t, &siteapi.SiteSetupChecklistDismissForbidden{}, dismissChecklist(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmeSlug))
-	assert.IsType(t, &siteapi.SiteSetupChecklistDismissNotFound{}, dismissChecklist(t, env.SiteActor(t, fixtures.OutsiderOscarEmail), fixtures.AcmeSlug))
-
-	still := setupChecklist(t, fixtures.OwnerJohnEmail, fixtures.AcmeSlug)
-	assert.False(t, still.Dismissed, "a refused dismissal changes nothing")
-}
-
 func TestSiteSetupChecklistStates(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -113,7 +67,6 @@ func TestSiteSetupChecklistStates(t *testing.T) {
 			got := setupChecklist(t, tc.owner, tc.slug)
 			assert.Equal(t, tc.want, got.Steps)
 			assert.Equal(t, tc.complete, got.Complete)
-			assert.False(t, got.Dismissed)
 		})
 	}
 }

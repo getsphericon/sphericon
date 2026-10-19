@@ -34,7 +34,7 @@ You can invite teammates later from **Settings**.
 The Overview of a workspace that has not sent an email yet shows the **Setup checklist**: the four
 steps below, each with a link to the page where you do it. A step turns done by itself when the
 thing exists, so you can take them in any order, and none waits for another. The checklist goes
-away once every step is done; an owner or admin can also dismiss it.
+away once every step is done.
 
 ## See an email before DNS
 

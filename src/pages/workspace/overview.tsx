@@ -21,7 +21,6 @@ import {
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
-import { canManage } from '../../hooks/useCurrentRole.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$slug/index.tsx'
 import { formatPercent } from '../../utils/percent.ts'
 import { SetupChecklist } from './SetupChecklist.tsx'
@@ -30,7 +29,7 @@ const RANGES: SiteAnalyticsRange[] = ['7d', '30d', '90d']
 
 // OverviewPage is the workspace dashboard. Until the Workspace has sent its first email it shows
 // only the Setup checklist and requests no analytics; afterwards the checklist (until it is
-// finished or dismissed) sits on top of the KPI cards and charts.
+// finished) sits on top of the KPI cards and charts.
 export function OverviewPage() {
   const { t } = useTranslation()
   const { slug } = overviewRoute.useParams()
@@ -39,11 +38,9 @@ export function OverviewPage() {
   const workspace = workspacesQuery.data?.find((w) => w.slug === slug)
   const checklistQuery = useQuery(siteSetupChecklistGetOptions({ path: { slug } }))
   const checklist = checklistQuery.data
-  const showChecklist = checklist !== undefined && !checklist.dismissed && !checklist.complete
-  // The checklist alone, no analytics, until the first email is sent; a dismissed one gives up
-  // waiting for it.
-  const showAnalytics =
-    checklist !== undefined && (checklist.dismissed || checklist.steps.sentEmail === 'done')
+  const showChecklist = checklist !== undefined && !checklist.complete
+  // The checklist alone, no analytics, until the first email is sent.
+  const showAnalytics = checklist?.steps.sentEmail === 'done'
 
   return (
     <Stack>
@@ -59,9 +56,7 @@ export function OverviewPage() {
         />
       )}
 
-      {showChecklist && (
-        <SetupChecklist slug={slug} checklist={checklist} canDismiss={canManage(workspace?.role)} />
-      )}
+      {showChecklist && <SetupChecklist slug={slug} checklist={checklist} />}
 
       {showAnalytics && <AnalyticsOverview slug={slug} />}
     </Stack>

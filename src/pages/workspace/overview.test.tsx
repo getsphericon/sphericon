@@ -4,7 +4,6 @@ import { expect, test } from 'vitest'
 import {
   handleSiteAnalyticsOverview,
   handleSiteSendingDomainsList,
-  handleSiteSetupChecklistDismiss,
   handleSiteSetupChecklistGet,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
@@ -18,7 +17,6 @@ import { OverviewPage } from './overview.tsx'
 const finished = {
   steps: { integration: 'done', sendingDomain: 'done', contact: 'done', sentEmail: 'done' },
   complete: true,
-  dismissed: false,
 } as const
 
 const overview = {
@@ -166,7 +164,6 @@ test('before the first sent email only the checklist shows and no analytics are 
           sentEmail: 'todo',
         },
         complete: false,
-        dismissed: false,
       },
     }),
     handleSiteAnalyticsOverview(() => {
@@ -190,7 +187,6 @@ test('after the first sent email the usual Overview shows with the checklist on 
       body: {
         steps: { integration: 'done', sendingDomain: 'done', contact: 'todo', sentEmail: 'done' },
         complete: false,
-        dismissed: false,
       },
     }),
     handleSiteAnalyticsOverview({ body: overview }),
@@ -200,27 +196,6 @@ test('after the first sent email the usual Overview shows with the checklist on 
 
   await expect.element(screen.getByText('Set up sphericon')).toBeInTheDocument()
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
-})
-
-test('a dismissed checklist leaves the usual Overview, zeros included', async () => {
-  worker.use(
-    handleSiteWorkspacesList({ body: [] }),
-    handleSiteSetupChecklistGet({
-      body: {
-        steps: { integration: 'todo', sendingDomain: 'todo', contact: 'todo', sentEmail: 'todo' },
-        complete: false,
-        dismissed: true,
-      },
-    }),
-    handleSiteAnalyticsOverview({
-      body: { ...overview, contacts: { total: 0, active: 0, unsubscribed: 0, newInRange: 0 } },
-    }),
-  )
-
-  const { screen } = await renderWithRouter(<OverviewPage />, mount)
-
-  await expect.element(screen.getByText('No contacts yet')).toBeInTheDocument()
-  await expect.element(screen.getByText('Set up sphericon')).not.toBeInTheDocument()
 })
 
 test('a finished checklist is not shown', async () => {
@@ -234,57 +209,4 @@ test('a finished checklist is not shown', async () => {
 
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Set up sphericon')).not.toBeInTheDocument()
-})
-
-const open = {
-  steps: { integration: 'todo', sendingDomain: 'todo', contact: 'todo', sentEmail: 'todo' },
-  complete: false,
-  dismissed: false,
-} as const
-
-const workspaceAs = (role: 'owner' | 'admin' | 'member') => ({
-  id: '1',
-  name: 'Acme',
-  slug: 'test',
-  collectKey: 'k',
-  postalAddress: '',
-  accountLinkAvailable: false,
-  holds: [],
-  role,
-  createdAt: '2026-01-01T00:00:00Z',
-})
-
-test('an owner dismisses the checklist and gets the usual Overview', async () => {
-  let dismissals = 0
-  worker.use(
-    handleSiteWorkspacesList({ body: [workspaceAs('owner')] }),
-    handleSiteSetupChecklistGet(() => HttpResponse.json({ ...open, dismissed: dismissals > 0 })),
-    handleSiteSetupChecklistDismiss(() => {
-      dismissals++
-      return HttpResponse.json({ ...open, dismissed: true })
-    }),
-    handleSiteAnalyticsOverview({
-      body: { ...overview, contacts: { total: 0, active: 0, unsubscribed: 0, newInRange: 0 } },
-    }),
-  )
-
-  const { screen } = await renderWithRouter(<OverviewPage />, mount)
-
-  await screen.getByRole('button', { name: 'Dismiss' }).click()
-
-  await expect.element(screen.getByText('No contacts yet')).toBeInTheDocument()
-  await expect.element(screen.getByText('Set up sphericon')).not.toBeInTheDocument()
-  expect(dismissals).toBe(1)
-})
-
-test('a member sees the checklist but no dismiss action', async () => {
-  worker.use(
-    handleSiteWorkspacesList({ body: [workspaceAs('member')] }),
-    handleSiteSetupChecklistGet({ body: open }),
-  )
-
-  const { screen } = await renderWithRouter(<OverviewPage />, mount)
-
-  await expect.element(screen.getByText('Set up sphericon')).toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
 })

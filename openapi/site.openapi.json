@@ -5820,55 +5820,6 @@
         "tags": ["Site Setup Checklist"]
       }
     },
-    "/workspaces/{slug}/setup-checklist/dismissal": {
-      "post": {
-        "operationId": "SiteSetupChecklist_dismiss",
-        "description": "Dismiss the Setup checklist for the whole Workspace (owner and admin only). Idempotent:\ndismissing a dismissed checklist changes nothing. Returns the checklist as it now reads.",
-        "parameters": [
-          {
-            "name": "slug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SiteSetupProgress"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "RFC 7807 forbidden response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Setup Checklist"]
-      }
-    },
     "/workspaces/{slug}/suppressions": {
       "post": {
         "operationId": "SiteSuppressions_create",
@@ -10949,7 +10900,7 @@
       },
       "SiteSetupProgress": {
         "type": "object",
-        "required": ["steps", "complete", "dismissed"],
+        "required": ["steps", "complete"],
         "properties": {
           "steps": {
             "$ref": "#/components/schemas/SiteSetupSteps"
@@ -10957,10 +10908,6 @@
           "complete": {
             "type": "boolean",
             "description": "Every step is done"
-          },
-          "dismissed": {
-            "type": "boolean",
-            "description": "An owner or admin dismissed the checklist for the whole Workspace"
           }
         },
         "description": "The Workspace's Setup checklist: a point-in-time read model, never ticked by hand"

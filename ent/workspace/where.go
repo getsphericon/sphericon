@@ -105,11 +105,6 @@ func FeedPosition(v int64) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldFeedPosition, v))
 }
 
-// SetupChecklistDismissedAt applies equality check predicate on the "setup_checklist_dismissed_at" field. It's identical to SetupChecklistDismissedAtEQ.
-func SetupChecklistDismissedAt(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldSetupChecklistDismissedAt, v))
-}
-
 // SuspendedAt applies equality check predicate on the "suspended_at" field. It's identical to SuspendedAtEQ.
 func SuspendedAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSuspendedAt, v))
@@ -643,56 +638,6 @@ func FeedPositionLT(v int64) predicate.Workspace {
 // FeedPositionLTE applies the LTE predicate on the "feed_position" field.
 func FeedPositionLTE(v int64) predicate.Workspace {
 	return predicate.Workspace(sql.FieldLTE(FieldFeedPosition, v))
-}
-
-// SetupChecklistDismissedAtEQ applies the EQ predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldSetupChecklistDismissedAt, v))
-}
-
-// SetupChecklistDismissedAtNEQ applies the NEQ predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtNEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNEQ(FieldSetupChecklistDismissedAt, v))
-}
-
-// SetupChecklistDismissedAtIn applies the In predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldIn(FieldSetupChecklistDismissedAt, vs...))
-}
-
-// SetupChecklistDismissedAtNotIn applies the NotIn predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtNotIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotIn(FieldSetupChecklistDismissedAt, vs...))
-}
-
-// SetupChecklistDismissedAtGT applies the GT predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtGT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGT(FieldSetupChecklistDismissedAt, v))
-}
-
-// SetupChecklistDismissedAtGTE applies the GTE predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtGTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGTE(FieldSetupChecklistDismissedAt, v))
-}
-
-// SetupChecklistDismissedAtLT applies the LT predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtLT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLT(FieldSetupChecklistDismissedAt, v))
-}
-
-// SetupChecklistDismissedAtLTE applies the LTE predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtLTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLTE(FieldSetupChecklistDismissedAt, v))
-}
-
-// SetupChecklistDismissedAtIsNil applies the IsNil predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtIsNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldIsNull(FieldSetupChecklistDismissedAt))
-}
-
-// SetupChecklistDismissedAtNotNil applies the NotNil predicate on the "setup_checklist_dismissed_at" field.
-func SetupChecklistDismissedAtNotNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotNull(FieldSetupChecklistDismissedAt))
 }
 
 // SuspendedAtEQ applies the EQ predicate on the "suspended_at" field.

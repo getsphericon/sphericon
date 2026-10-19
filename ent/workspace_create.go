@@ -163,20 +163,6 @@ func (_c *WorkspaceCreate) SetNillableFeedPosition(v *int64) *WorkspaceCreate {
 	return _c
 }
 
-// SetSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field.
-func (_c *WorkspaceCreate) SetSetupChecklistDismissedAt(v time.Time) *WorkspaceCreate {
-	_c.mutation.SetSetupChecklistDismissedAt(v)
-	return _c
-}
-
-// SetNillableSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field if the given value is not nil.
-func (_c *WorkspaceCreate) SetNillableSetupChecklistDismissedAt(v *time.Time) *WorkspaceCreate {
-	if v != nil {
-		_c.SetSetupChecklistDismissedAt(*v)
-	}
-	return _c
-}
-
 // SetSuspendedAt sets the "suspended_at" field.
 func (_c *WorkspaceCreate) SetSuspendedAt(v time.Time) *WorkspaceCreate {
 	_c.mutation.SetSuspendedAt(v)
@@ -855,10 +841,6 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
 		_node.FeedPosition = value
 	}
-	if value, ok := _c.mutation.SetupChecklistDismissedAt(); ok {
-		_spec.SetField(workspace.FieldSetupChecklistDismissedAt, field.TypeTime, value)
-		_node.SetupChecklistDismissedAt = &value
-	}
 	if value, ok := _c.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
 		_node.SuspendedAt = &value
@@ -1481,24 +1463,6 @@ func (u *WorkspaceUpsert) AddFeedPosition(v int64) *WorkspaceUpsert {
 	return u
 }
 
-// SetSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field.
-func (u *WorkspaceUpsert) SetSetupChecklistDismissedAt(v time.Time) *WorkspaceUpsert {
-	u.Set(workspace.FieldSetupChecklistDismissedAt, v)
-	return u
-}
-
-// UpdateSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field to the value that was provided on create.
-func (u *WorkspaceUpsert) UpdateSetupChecklistDismissedAt() *WorkspaceUpsert {
-	u.SetExcluded(workspace.FieldSetupChecklistDismissedAt)
-	return u
-}
-
-// ClearSetupChecklistDismissedAt clears the value of the "setup_checklist_dismissed_at" field.
-func (u *WorkspaceUpsert) ClearSetupChecklistDismissedAt() *WorkspaceUpsert {
-	u.SetNull(workspace.FieldSetupChecklistDismissedAt)
-	return u
-}
-
 // SetSuspendedAt sets the "suspended_at" field.
 func (u *WorkspaceUpsert) SetSuspendedAt(v time.Time) *WorkspaceUpsert {
 	u.Set(workspace.FieldSuspendedAt, v)
@@ -1846,27 +1810,6 @@ func (u *WorkspaceUpsertOne) AddFeedPosition(v int64) *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) UpdateFeedPosition() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateFeedPosition()
-	})
-}
-
-// SetSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field.
-func (u *WorkspaceUpsertOne) SetSetupChecklistDismissedAt(v time.Time) *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSetupChecklistDismissedAt(v)
-	})
-}
-
-// UpdateSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertOne) UpdateSetupChecklistDismissedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSetupChecklistDismissedAt()
-	})
-}
-
-// ClearSetupChecklistDismissedAt clears the value of the "setup_checklist_dismissed_at" field.
-func (u *WorkspaceUpsertOne) ClearSetupChecklistDismissedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearSetupChecklistDismissedAt()
 	})
 }
 
@@ -2406,27 +2349,6 @@ func (u *WorkspaceUpsertBulk) AddFeedPosition(v int64) *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) UpdateFeedPosition() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateFeedPosition()
-	})
-}
-
-// SetSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field.
-func (u *WorkspaceUpsertBulk) SetSetupChecklistDismissedAt(v time.Time) *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSetupChecklistDismissedAt(v)
-	})
-}
-
-// UpdateSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertBulk) UpdateSetupChecklistDismissedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSetupChecklistDismissedAt()
-	})
-}
-
-// ClearSetupChecklistDismissedAt clears the value of the "setup_checklist_dismissed_at" field.
-func (u *WorkspaceUpsertBulk) ClearSetupChecklistDismissedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearSetupChecklistDismissedAt()
 	})
 }
 

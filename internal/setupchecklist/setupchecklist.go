@@ -28,8 +28,6 @@ type Steps struct {
 // Checklist is the read model for one Workspace.
 type Checklist struct {
 	Steps Steps
-	// Dismissed reports that an owner or admin dismissed the checklist for the Workspace.
-	Dismissed bool
 }
 
 // Complete reports whether every step is done.
@@ -41,11 +39,7 @@ func (c Checklist) Complete() bool {
 // Read computes the checklist of the Workspace behind s.
 func Read(ctx context.Context, s *ent.Scoped) (Checklist, error) {
 	var c Checklist
-	ws, err := s.Workspace(ctx)
-	if err != nil {
-		return Checklist{}, err
-	}
-	c.Dismissed = ws.SetupChecklistDismissedAt != nil
+	var err error
 
 	if c.Steps.Integration, err = exists(s.Integration().Query().Exist(ctx)); err != nil {
 		return Checklist{}, err

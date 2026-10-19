@@ -204,26 +204,6 @@ func (_u *WorkspaceUpdate) AddFeedPosition(v int64) *WorkspaceUpdate {
 	return _u
 }
 
-// SetSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field.
-func (_u *WorkspaceUpdate) SetSetupChecklistDismissedAt(v time.Time) *WorkspaceUpdate {
-	_u.mutation.SetSetupChecklistDismissedAt(v)
-	return _u
-}
-
-// SetNillableSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field if the given value is not nil.
-func (_u *WorkspaceUpdate) SetNillableSetupChecklistDismissedAt(v *time.Time) *WorkspaceUpdate {
-	if v != nil {
-		_u.SetSetupChecklistDismissedAt(*v)
-	}
-	return _u
-}
-
-// ClearSetupChecklistDismissedAt clears the value of the "setup_checklist_dismissed_at" field.
-func (_u *WorkspaceUpdate) ClearSetupChecklistDismissedAt() *WorkspaceUpdate {
-	_u.mutation.ClearSetupChecklistDismissedAt()
-	return _u
-}
-
 // SetSuspendedAt sets the "suspended_at" field.
 func (_u *WorkspaceUpdate) SetSuspendedAt(v time.Time) *WorkspaceUpdate {
 	_u.mutation.SetSuspendedAt(v)
@@ -1408,12 +1388,6 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedFeedPosition(); ok {
 		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.SetupChecklistDismissedAt(); ok {
-		_spec.SetField(workspace.FieldSetupChecklistDismissedAt, field.TypeTime, value)
-	}
-	if _u.mutation.SetupChecklistDismissedAtCleared() {
-		_spec.ClearField(workspace.FieldSetupChecklistDismissedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
@@ -2757,26 +2731,6 @@ func (_u *WorkspaceUpdateOne) AddFeedPosition(v int64) *WorkspaceUpdateOne {
 	return _u
 }
 
-// SetSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field.
-func (_u *WorkspaceUpdateOne) SetSetupChecklistDismissedAt(v time.Time) *WorkspaceUpdateOne {
-	_u.mutation.SetSetupChecklistDismissedAt(v)
-	return _u
-}
-
-// SetNillableSetupChecklistDismissedAt sets the "setup_checklist_dismissed_at" field if the given value is not nil.
-func (_u *WorkspaceUpdateOne) SetNillableSetupChecklistDismissedAt(v *time.Time) *WorkspaceUpdateOne {
-	if v != nil {
-		_u.SetSetupChecklistDismissedAt(*v)
-	}
-	return _u
-}
-
-// ClearSetupChecklistDismissedAt clears the value of the "setup_checklist_dismissed_at" field.
-func (_u *WorkspaceUpdateOne) ClearSetupChecklistDismissedAt() *WorkspaceUpdateOne {
-	_u.mutation.ClearSetupChecklistDismissedAt()
-	return _u
-}
-
 // SetSuspendedAt sets the "suspended_at" field.
 func (_u *WorkspaceUpdateOne) SetSuspendedAt(v time.Time) *WorkspaceUpdateOne {
 	_u.mutation.SetSuspendedAt(v)
@@ -3991,12 +3945,6 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if value, ok := _u.mutation.AddedFeedPosition(); ok {
 		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.SetupChecklistDismissedAt(); ok {
-		_spec.SetField(workspace.FieldSetupChecklistDismissedAt, field.TypeTime, value)
-	}
-	if _u.mutation.SetupChecklistDismissedAtCleared() {
-		_spec.ClearField(workspace.FieldSetupChecklistDismissedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)

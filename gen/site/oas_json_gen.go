@@ -26389,82 +26389,6 @@ func (s *SiteSesConfigKind) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes SiteSetupChecklistDismissForbidden as json.
-func (s *SiteSetupChecklistDismissForbidden) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes SiteSetupChecklistDismissForbidden from json.
-func (s *SiteSetupChecklistDismissForbidden) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SiteSetupChecklistDismissForbidden to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = SiteSetupChecklistDismissForbidden(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SiteSetupChecklistDismissForbidden) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SiteSetupChecklistDismissForbidden) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes SiteSetupChecklistDismissNotFound as json.
-func (s *SiteSetupChecklistDismissNotFound) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes SiteSetupChecklistDismissNotFound from json.
-func (s *SiteSetupChecklistDismissNotFound) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SiteSetupChecklistDismissNotFound to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = SiteSetupChecklistDismissNotFound(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SiteSetupChecklistDismissNotFound) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SiteSetupChecklistDismissNotFound) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode implements json.Marshaler.
 func (s *SiteSetupProgress) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -26482,16 +26406,11 @@ func (s *SiteSetupProgress) encodeFields(e *jx.Encoder) {
 		e.FieldStart("complete")
 		e.Bool(s.Complete)
 	}
-	{
-		e.FieldStart("dismissed")
-		e.Bool(s.Dismissed)
-	}
 }
 
-var jsonFieldsNameOfSiteSetupProgress = [3]string{
+var jsonFieldsNameOfSiteSetupProgress = [2]string{
 	0: "steps",
 	1: "complete",
-	2: "dismissed",
 }
 
 // Decode decodes SiteSetupProgress from json.
@@ -26525,18 +26444,6 @@ func (s *SiteSetupProgress) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"complete\"")
 			}
-		case "dismissed":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Bool()
-				s.Dismissed = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"dismissed\"")
-			}
 		default:
 			return d.Skip()
 		}
@@ -26547,7 +26454,7 @@ func (s *SiteSetupProgress) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

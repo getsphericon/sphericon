@@ -2489,10 +2489,6 @@ export type SiteSetupProgress = {
    * Every step is done
    */
   complete: boolean;
-  /**
-   * An owner or admin dismissed the checklist for the whole Workspace
-   */
-  dismissed: boolean;
 };
 
 /**
@@ -7017,37 +7013,6 @@ export type SiteSetupChecklistGetResponses = {
 };
 
 export type SiteSetupChecklistGetResponse = SiteSetupChecklistGetResponses[keyof SiteSetupChecklistGetResponses];
-
-export type SiteSetupChecklistDismissData = {
-  body?: never;
-  path: {
-    slug: string;
-  };
-  query?: never;
-  url: '/workspaces/{slug}/setup-checklist/dismissal';
-};
-
-export type SiteSetupChecklistDismissErrors = {
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-};
-
-export type SiteSetupChecklistDismissError = SiteSetupChecklistDismissErrors[keyof SiteSetupChecklistDismissErrors];
-
-export type SiteSetupChecklistDismissResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteSetupProgress;
-};
-
-export type SiteSetupChecklistDismissResponse = SiteSetupChecklistDismissResponses[keyof SiteSetupChecklistDismissResponses];
 
 export type SiteSuppressionsListData = {
   body?: never;

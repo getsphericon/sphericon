@@ -1,10 +1,9 @@
-import { Badge, Button, Card, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
+import { Badge, Card, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
 import { IconCheck, IconCircle, IconClock } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteSetupProgress, SiteSetupStepStatus } from '../../generated/site/types.gen.ts'
-import { useDismissSetupChecklist } from '../../hooks/useDismissSetupChecklist.ts'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$slug/broadcasts/new.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
 import { Route as settingsRoute } from '../../routes/workspaces/$slug/settings.tsx'
@@ -58,36 +57,20 @@ function StepLink({
 export function SetupChecklist({
   slug,
   checklist,
-  canDismiss,
 }: {
   slug: string
   checklist: SiteSetupProgress
-  canDismiss: boolean
 }) {
   const { t } = useTranslation()
-  const dismiss = useDismissSetupChecklist(slug)
   return (
     <Card withBorder padding="lg">
       <Stack gap="md">
-        <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
-          <Stack gap={2}>
-            <Title order={3}>{t(($) => $.setupChecklist.title)}</Title>
-            <Text size="sm" c="dimmed">
-              {t(($) => $.setupChecklist.description)}
-            </Text>
-          </Stack>
-          {canDismiss && (
-            <Button
-              variant="subtle"
-              color="gray"
-              size="xs"
-              loading={dismiss.isPending}
-              onClick={() => dismiss.mutate({ path: { slug } })}
-            >
-              {t(($) => $.setupChecklist.dismiss)}
-            </Button>
-          )}
-        </Group>
+        <Stack gap={2}>
+          <Title order={3}>{t(($) => $.setupChecklist.title)}</Title>
+          <Text size="sm" c="dimmed">
+            {t(($) => $.setupChecklist.description)}
+          </Text>
+        </Stack>
         {STEPS.map(({ key: step, to }) => {
           const status = checklist.steps[step]
           return (

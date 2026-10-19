@@ -11283,22 +11283,12 @@ func (s *SiteSesConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
-type SiteSetupChecklistDismissForbidden ProblemDetails
-
-func (*SiteSetupChecklistDismissForbidden) siteSetupChecklistDismissRes() {}
-
-type SiteSetupChecklistDismissNotFound ProblemDetails
-
-func (*SiteSetupChecklistDismissNotFound) siteSetupChecklistDismissRes() {}
-
 // The Workspace's Setup checklist: a point-in-time read model, never ticked by hand.
 // Ref: #/components/schemas/SiteSetupProgress
 type SiteSetupProgress struct {
 	Steps SiteSetupSteps `json:"steps"`
 	// Every step is done.
 	Complete bool `json:"complete"`
-	// An owner or admin dismissed the checklist for the whole Workspace.
-	Dismissed bool `json:"dismissed"`
 }
 
 // GetSteps returns the value of Steps.
@@ -11311,11 +11301,6 @@ func (s *SiteSetupProgress) GetComplete() bool {
 	return s.Complete
 }
 
-// GetDismissed returns the value of Dismissed.
-func (s *SiteSetupProgress) GetDismissed() bool {
-	return s.Dismissed
-}
-
 // SetSteps sets the value of Steps.
 func (s *SiteSetupProgress) SetSteps(val SiteSetupSteps) {
 	s.Steps = val
@@ -11326,13 +11311,7 @@ func (s *SiteSetupProgress) SetComplete(val bool) {
 	s.Complete = val
 }
 
-// SetDismissed sets the value of Dismissed.
-func (s *SiteSetupProgress) SetDismissed(val bool) {
-	s.Dismissed = val
-}
-
-func (*SiteSetupProgress) siteSetupChecklistDismissRes() {}
-func (*SiteSetupProgress) siteSetupChecklistGetRes()     {}
+func (*SiteSetupProgress) siteSetupChecklistGetRes() {}
 
 // Where one Setup checklist step stands, read off the Workspace's own data.
 // Ref: #/components/schemas/SiteSetupStepStatus

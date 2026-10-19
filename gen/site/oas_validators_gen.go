@@ -4182,22 +4182,6 @@ func (s SiteSesConfigKind) Validate() error {
 	}
 }
 
-func (s *SiteSetupChecklistDismissForbidden) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteSetupChecklistDismissNotFound) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *SiteSetupProgress) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer

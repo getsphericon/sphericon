@@ -743,8 +743,7 @@ export const zSiteSetupSteps = z.object({
  */
 export const zSiteSetupProgress = z.object({
   steps: zSiteSetupSteps,
-  complete: z.boolean(),
-  dismissed: z.boolean()
+  complete: z.boolean()
 });
 
 /**
@@ -2735,15 +2734,6 @@ export const zSiteSetupChecklistGetPath = z.object({
  * The request has succeeded.
  */
 export const zSiteSetupChecklistGetResponse = zSiteSetupProgress;
-
-export const zSiteSetupChecklistDismissPath = z.object({
-  slug: z.string()
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteSetupChecklistDismissResponse = zSiteSetupProgress;
 
 export const zSiteSuppressionsListPath = z.object({
   slug: z.string()
