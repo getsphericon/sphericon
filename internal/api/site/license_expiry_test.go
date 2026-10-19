@@ -9,9 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ee/audit"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -75,15 +77,19 @@ func TestAForgedLicenseKeyIsRefusedEvenWhenItIsNotExpired(t *testing.T) {
 
 func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	l := newLapse(t)
-	lapsed := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.expired))
-	rows := lapsed.DB.AuditEntry.Query().CountX(t.Context())
+	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.expired))
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	rows := acme.AuditEntry().Query().CountX(t.Context())
 	require.Positive(t, rows, "the fixtures carry an Audit entry")
-	_, listed := auditList(t, lapsed.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug).(*siteapi.SiteAuditEntryList)
-	require.False(t, listed)
+	_, listed := auditList(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug).(*siteapi.SiteAuditEntryList)
+	require.False(t, listed, "dark while the key is lapsed")
 
-	renewed := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.valid))
-
-	assert.Equal(t, rows, renewed.DB.AuditEntry.Query().CountX(t.Context()), "nothing was deleted or altered")
-	page := auditPage(t, renewed.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug)
-	assert.Len(t, page.Items, renewed.DB.Scoped(fixtures.AcmeID).AuditEntry().Query().CountX(t.Context()))
+	// Renewal: the same database read under the renewed key, as after a restart.
+	renewed, err := licensekey.Parse(l.valid, l.pub, time.Now())
+	require.NoError(t, err)
+	log := audit.NewLog(renewed)
+	require.True(t, log.Licensed())
+	entries, _, err := log.Entries(t.Context(), acme, events.AuditFilter{}, 0, rows+1)
+	require.NoError(t, err)
+	assert.Len(t, entries, rows, "nothing was deleted or altered while lapsed")
 }
