@@ -35,6 +35,9 @@ func instanceState(s instance.State) *siteapi.SiteInstanceState {
 	if s.LatestRelease != "" {
 		out.LatestRelease = siteapi.NewOptString(s.LatestRelease)
 	}
+	if !s.LicenseExpiredAt.IsZero() {
+		out.LicenseExpiredAt = siteapi.NewOptTimestamp(siteapi.Timestamp(s.LicenseExpiredAt))
+	}
 	return out
 }
 

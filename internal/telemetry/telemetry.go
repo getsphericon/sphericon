@@ -141,6 +141,23 @@ func ObserveReleaseAvailable(latest func(context.Context) (string, error)) error
 	return err
 }
 
+// ObserveLicenseExpired registers sphericon_license_expired: 1 while the license key has
+// lapsed and the Instance runs the core (ADR 0035), 0 otherwise, so the SaaS deployment
+// alerts on it. Call it after Setup.
+func ObserveLicenseExpired(expired func() bool) error {
+	_, err := otel.GetMeterProvider().Meter("sphericon").Int64ObservableGauge("sphericon_license_expired",
+		otelmetric.WithDescription("1 when the license key has expired and the Instance runs the open-source core."),
+		otelmetric.WithInt64Callback(func(_ context.Context, o otelmetric.Int64Observer) error {
+			if expired() {
+				o.Observe(1)
+			} else {
+				o.Observe(0)
+			}
+			return nil
+		}))
+	return err
+}
+
 // loadConfig parses the file OTEL_CONFIG_FILE names (environment references in it
 // are resolved by otelconf), or returns an empty configuration when it is unset.
 func loadConfig() (*otelconf.OpenTelemetryConfiguration, error) {

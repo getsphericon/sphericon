@@ -414,17 +414,6 @@ export const zSiteInstanceTelemetry = z.object({
 });
 
 /**
- * What an Instance's Owner sees and decides about the Instance itself: it belongs to no
- * Workspace. Only the Owners of the oldest existing Workspace may read or change it.
- */
-export const zSiteInstanceState = z.object({
-  telemetry: zSiteInstanceTelemetry,
-  noticeAcknowledged: z.boolean(),
-  latestRelease: z.exactOptional(z.string()),
-  telemetrySchemaUrl: z.string()
-});
-
-/**
  * Delivery channel an integration belongs to
  */
 export const zSiteIntegrationChannel = z.enum(['email', 'sms']);
@@ -1310,6 +1299,18 @@ export const zSiteEventResource = z.object({
   properties: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
   occurredAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp
+});
+
+/**
+ * What an Instance's Owner sees and decides about the Instance itself: it belongs to no
+ * Workspace. Only the Owners of the oldest existing Workspace may read or change it.
+ */
+export const zSiteInstanceState = z.object({
+  telemetry: zSiteInstanceTelemetry,
+  noticeAcknowledged: z.boolean(),
+  latestRelease: z.exactOptional(z.string()),
+  licenseExpiredAt: z.exactOptional(zTimestamp),
+  telemetrySchemaUrl: z.string()
 });
 
 /**

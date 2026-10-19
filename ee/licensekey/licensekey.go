@@ -14,6 +14,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -37,12 +38,23 @@ const (
 // The matching private key stays with the license issuer.
 var ProductionKey = mustDecodeKey("GAQfTzJEjCIbmnwiSJLtjL/aiEwabOdZ2SVYIG9ZxZk=")
 
-// ErrInvalid means a non-empty key failed verification: malformed, forged or expired.
+// ErrInvalid means a non-empty key failed verification: malformed or forged. An expired key
+// with a valid signature is not an error (ADR 0035): it loads as a License that licenses nothing.
 var ErrInvalid = errors.New("licensekey: invalid key")
 
 // License is the set of licensed features. The zero value and nil license nothing.
 type License struct {
 	features map[Feature]bool
+	lapsedAt time.Time
+}
+
+// LapsedAt returns when the key expired and true, or false when the key has not lapsed (or
+// there is no key). A lapsed License licenses nothing (ADR 0035). Safe on a nil License.
+func (l *License) LapsedAt() (time.Time, bool) {
+	if l == nil || l.lapsedAt.IsZero() {
+		return time.Time{}, false
+	}
+	return l.lapsedAt, true
 }
 
 // Has reports whether the feature is licensed. Safe on a nil License.
@@ -56,9 +68,10 @@ type claims struct {
 }
 
 // Parse verifies key against pub at time now. An empty key is not an error: it is the
-// unlicensed core, and yields a License that licenses nothing. Anything else that does
-// not verify returns ErrInvalid, so a mistyped key fails at boot instead of silently
-// running unlicensed.
+// unlicensed core, and yields a License that licenses nothing. So does a key with a valid
+// signature past its expiry (ADR 0035): the License reports when it lapsed (LapsedAt). Anything
+// else that does not verify returns ErrInvalid, so a mistyped or forged key fails at boot
+// instead of silently running unlicensed.
 func Parse(key string, pub ed25519.PublicKey, now time.Time) (*License, error) {
 	if key == "" {
 		return &License{}, nil
@@ -66,13 +79,30 @@ func Parse(key string, pub ed25519.PublicKey, now time.Time) (*License, error) {
 	var c claims
 	if _, err := jwt.ParseWithClaims(key, &c, func(*jwt.Token) (any, error) { return pub, nil },
 		jwt.WithValidMethods([]string{jwt.SigningMethodEdDSA.Alg()}),
-		jwt.WithTimeFunc(func() time.Time { return now }),
+		jwt.WithoutClaimsValidation(), // the signature is verified; expiry is judged below
 	); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	if c.ExpiresAt != nil && !now.Before(c.ExpiresAt.Time) {
+		return &License{lapsedAt: c.ExpiresAt.Time}, nil
 	}
 	l := &License{features: make(map[Feature]bool, len(c.Features))}
 	for _, f := range c.Features {
 		l.features[f] = true
+	}
+	return l, nil
+}
+
+// Load is Parse for the composition root: a lapsed key logs a warning naming its expiry
+// date, since the Instance now starts as the core instead of failing (ADR 0035).
+func Load(key string, pub ed25519.PublicKey, now time.Time, log *slog.Logger) (*License, error) {
+	l, err := Parse(key, pub, now)
+	if err != nil {
+		return nil, err
+	}
+	if at, ok := l.LapsedAt(); ok {
+		log.Warn("the license key expired: running the open-source core until a valid key is set",
+			"expired", at.UTC().Format(time.DateOnly))
 	}
 	return l, nil
 }

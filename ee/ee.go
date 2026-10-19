@@ -128,6 +128,9 @@ func (e *Edition) Freezer() outbound.Freezer {
 // agree on it.
 func (e *Edition) HoldsHonoured() bool { return e.lic.Has(licensekey.FeatureStaff) }
 
+// LicenseLapsedAt is when the license key expired, false unless it has lapsed (ADR 0035).
+func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() }
+
 // Abuse is the abuse detector (ADR 0026): the pass the hourly job runs, and the read of
 // a Workspace's standing. It suspends through the core mechanism, so it takes the event
 // bus, and tells owners through the system (platform) sender. Unlicensed it does nothing.

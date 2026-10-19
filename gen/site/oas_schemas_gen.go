@@ -8042,6 +8042,9 @@ type SiteInstanceState struct {
 	// than the running version; absent otherwise, and always absent for a build whose version is not a
 	// release or when `SPHERICON_RELEASE_CHECK` is off.
 	LatestRelease OptString `json:"latestRelease"`
+	// When the Instance's license key expired, set only while it has lapsed: the Instance then runs the
+	// open-source core, and nothing Enterprise is deleted (ADR 0035).
+	LicenseExpiredAt OptTimestamp `json:"licenseExpiredAt"`
 	// The page that documents the schema of the Telemetry report.
 	TelemetrySchemaUrl string `json:"telemetrySchemaUrl"`
 }
@@ -8059,6 +8062,11 @@ func (s *SiteInstanceState) GetNoticeAcknowledged() bool {
 // GetLatestRelease returns the value of LatestRelease.
 func (s *SiteInstanceState) GetLatestRelease() OptString {
 	return s.LatestRelease
+}
+
+// GetLicenseExpiredAt returns the value of LicenseExpiredAt.
+func (s *SiteInstanceState) GetLicenseExpiredAt() OptTimestamp {
+	return s.LicenseExpiredAt
 }
 
 // GetTelemetrySchemaUrl returns the value of TelemetrySchemaUrl.
@@ -8079,6 +8087,11 @@ func (s *SiteInstanceState) SetNoticeAcknowledged(val bool) {
 // SetLatestRelease sets the value of LatestRelease.
 func (s *SiteInstanceState) SetLatestRelease(val OptString) {
 	s.LatestRelease = val
+}
+
+// SetLicenseExpiredAt sets the value of LicenseExpiredAt.
+func (s *SiteInstanceState) SetLicenseExpiredAt(val OptTimestamp) {
+	s.LicenseExpiredAt = val
 }
 
 // SetTelemetrySchemaUrl sets the value of TelemetrySchemaUrl.

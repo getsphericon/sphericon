@@ -454,6 +454,10 @@ export default interface Resources {
       "editTitle": "Edit contact"
     },
     "instance": {
+      "licenseExpired": {
+        "description": "The Enterprise license key of this instance expired on {{date}}, so it runs the open-source core. Nothing was deleted: set a valid `SPHERICON_LICENSE_KEY` and restart to restore the Enterprise features with their data.",
+        "title": "The license key has expired"
+      },
       "notice": {
         "acknowledge": "Got it",
         "description": "This instance sends the project one anonymous report a day (version, deployment, rough size and which features are used; never names, addresses or exact numbers). It is on by default. You can switch it off in the instance settings at any time.",

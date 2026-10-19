@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -188,6 +189,9 @@ type setup struct {
 	// version is the running version the Instance module judges releases against; the
 	// test build is "dev", which is no release.
 	version string
+	// licenseKey is the key WithLicenseKey loads against licensePub; a nil licensePub keeps the default license.
+	licenseKey string
+	licensePub ed25519.PublicKey
 	// certs is where an `sns` Preset gets its signing certificate; nil is the test certificate.
 	certs preset.CertFetcher
 }
@@ -240,6 +244,13 @@ var testLicense = sync.OnceValues(func() (*licensekey.License, error) {
 	return licensekey.Parse(key, pub, time.Now())
 })
 
+// WithLicenseKey builds the instance as the composition root does for SPHERICON_LICENSE_KEY: the
+// key is loaded through licensekey.Load against pub, so a lapsed key boots as the core and a
+// forged one fails the test's setup (ADR 0035).
+func WithLicenseKey(pub ed25519.PublicKey, key string) Option {
+	return func(s *setup) { s.licenseKey, s.licensePub = key, pub }
+}
+
 func Setup(t *testing.T, opts ...Option) *TestEnv {
 	t.Helper()
 	initBaseline()
@@ -283,6 +294,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	if !st.unlicensed {
 		lic, err = testLicense()
 		require.NoError(t, err, "mint test license")
+	}
+	if st.licensePub != nil {
+		lic, err = licensekey.Load(st.licenseKey, st.licensePub, st.now(), slog.Default())
+		require.NoError(t, err, "load license key")
+		cfg.LicenseKey = st.licenseKey
 	}
 	attempts := accounts.NewAttempts(client,
 		accounts.WithClock(st.now),
@@ -349,7 +365,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build account link")
 	source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
 	require.NoError(t, err, "build release source")
-	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version), st.now, instance.WithReleaseSource(source))
+	lapsedAt, _ := edition.LicenseLapsedAt()
+	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
 		Instance: inst,
