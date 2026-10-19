@@ -235,28 +235,20 @@ func (s *TelemetryIntegrationKind) UnmarshalText(data []byte) error {
 type TelemetryLocale string
 
 const (
-	TelemetryLocaleRu TelemetryLocale = "ru"
 	TelemetryLocaleEn TelemetryLocale = "en"
-	TelemetryLocaleEs TelemetryLocale = "es"
 )
 
 // AllValues returns all TelemetryLocale values.
 func (TelemetryLocale) AllValues() []TelemetryLocale {
 	return []TelemetryLocale{
-		TelemetryLocaleRu,
 		TelemetryLocaleEn,
-		TelemetryLocaleEs,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (s TelemetryLocale) MarshalText() ([]byte, error) {
 	switch s {
-	case TelemetryLocaleRu:
-		return []byte(s), nil
 	case TelemetryLocaleEn:
-		return []byte(s), nil
-	case TelemetryLocaleEs:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -266,14 +258,8 @@ func (s TelemetryLocale) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *TelemetryLocale) UnmarshalText(data []byte) error {
 	switch TelemetryLocale(data) {
-	case TelemetryLocaleRu:
-		*s = TelemetryLocaleRu
-		return nil
 	case TelemetryLocaleEn:
 		*s = TelemetryLocaleEn
-		return nil
-	case TelemetryLocaleEs:
-		*s = TelemetryLocaleEs
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

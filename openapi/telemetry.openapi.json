@@ -65,7 +65,7 @@
       },
       "TelemetryLocale": {
         "type": "string",
-        "enum": ["ru", "en", "es"]
+        "enum": ["en"]
       },
       "TelemetryReport": {
         "type": "object",

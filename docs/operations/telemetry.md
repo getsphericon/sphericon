@@ -21,7 +21,7 @@ receiver stores no source address. The report carries:
   nothing, and a `schemaVersion`.
 - **The build:** `appVersion`, `edition` (`core` or `ee`), `os`, `arch` and the deploy shape
   (`binary`, `container`, `kubernetes` or `unknown`).
-- **The environment:** the Postgres major version, the configured locale (`ru`, `en` or `es`) and
+- **The environment:** the Postgres major version, the configured locale (`en`) and
   `instanceAgeDays`, the whole days since the first start.
 - **Order-of-magnitude counts:** `workspaces`, identified `contacts` (erased ones excluded) and
   `emailsSent30d`. A count is a bucket (`0`, `1-9`, `10-99`, `100-999`, `1000-9999`, `10000-99999`,

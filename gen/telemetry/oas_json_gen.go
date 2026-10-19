@@ -203,12 +203,8 @@ func (s *TelemetryLocale) Decode(d *jx.Decoder) error {
 	}
 	// Try to use constant string.
 	switch TelemetryLocale(v) {
-	case TelemetryLocaleRu:
-		*s = TelemetryLocaleRu
 	case TelemetryLocaleEn:
 		*s = TelemetryLocaleEn
-	case TelemetryLocaleEs:
-		*s = TelemetryLocaleEs
 	default:
 		*s = TelemetryLocale(v)
 	}
