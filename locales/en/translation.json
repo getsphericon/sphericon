@@ -837,15 +837,12 @@
     },
     "loadErrorTitle": "Failed to load workspace",
     "mcp": {
+      "addressLabel": "Connector address",
       "apiKeysLink": "API keys",
       "approveNote": "Only an owner or admin can approve the connection.",
-      "description": "Add this address as a custom connector in Claude, or in any client that speaks MCP, so an agent can work in this workspace.",
+      "description": "MCP lets an AI agent work in this workspace for you: read contacts, draft broadcasts, build segments and author automations. Add this address as a connector in any AI client that speaks MCP.",
       "guideLink": "Other ways to connect",
       "memberNote": "You are a member: ask an owner or admin to connect the agent.",
-      "stepAdd": "In Claude open Settings → Connectors → Add custom connector and paste the address.",
-      "stepApprove": "Approve the access on the sphericon screen that opens.",
-      "stepConnect": "Press Connect.",
-      "title": "Connect an AI agent (MCP)",
       "tokenNote": "Approving creates an ordinary API token named “<client> (MCP)”. You can see it and revoke it under"
     },
     "members": {

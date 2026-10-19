@@ -1,4 +1,4 @@
-import { Badge, Button, Card, Code, CopyButton, Group, Stack, Text, Title } from '@mantine/core'
+import { Box, Badge, Button, Code, CopyButton, Group, Stack, Text, Title } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
@@ -57,7 +57,7 @@ function TestEvent({ collectKey }: { collectKey: string }) {
   ].join('\n')
 
   return (
-    <Card withBorder>
+    <Box>
       <Title order={4} mb="xs">
         {t(($) => $.settings.testEventTitle)}
       </Title>
@@ -72,7 +72,7 @@ function TestEvent({ collectKey }: { collectKey: string }) {
           </Button>
         )}
       </CopyButton>
-    </Card>
+    </Box>
   )
 }
 
@@ -84,7 +84,7 @@ function TrackingSection({ collectKey, slug }: { collectKey: string; slug: strin
   const snippet = `<script async src="${origin}/t.js" data-collect-key="${collectKey}" data-collect-url="${origin}"></script>`
 
   return (
-    <Card withBorder>
+    <Box>
       <Title order={4} mb="xs">
         {t(($) => $.settings.trackingTitle)}
       </Title>
@@ -100,7 +100,7 @@ function TrackingSection({ collectKey, slug }: { collectKey: string; slug: strin
         )}
       </CopyButton>
       <InstallStatus slug={slug} />
-    </Card>
+    </Box>
   )
 }
 
