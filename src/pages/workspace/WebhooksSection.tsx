@@ -1,12 +1,13 @@
 import {
+  Box,
   EmptyState,
   Alert,
   Badge,
   Button,
-  Card,
   CopyButton,
   Group,
   Loader,
+  Menu,
   Modal,
   MultiSelect,
   Select,
@@ -23,6 +24,7 @@ import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteWebhooksCreateMutation,
   siteWebhooksDeleteMutation,
@@ -97,9 +99,16 @@ function TestResultAlert({ result }: { result: SiteWebhookTestResult }) {
   )
 }
 
-function TestEventButton({ slug, id }: { slug: string; id: string }) {
+function TestEventModal({
+  slug,
+  id,
+  onClose,
+}: {
+  slug: string
+  id: string | null
+  onClose: () => void
+}) {
   const { t } = useTranslation()
-  const [opened, { open, close }] = useDisclosure(false)
   const [eventType, setEventType] = useState<string | null>(TEST_EVENT_OPTIONS[0] ?? null)
   const [result, setResult] = useState<SiteWebhookTestResult | null>(null)
 
@@ -110,50 +119,47 @@ function TestEventButton({ slug, id }: { slug: string; id: string }) {
   })
 
   return (
-    <>
-      <Button size="compact-sm" variant="default" onClick={open}>
-        {t(($) => $.settings.webhooks.sendTest)}
-      </Button>
-      <Modal
-        opened={opened}
-        onClose={() => {
-          close()
-          setResult(null)
-        }}
-        title={t(($) => $.settings.webhooks.sendTestTitle)}
-      >
-        <Stack gap="sm">
-          <Text size="sm" c="dimmed">
-            {t(($) => $.settings.webhooks.sendTestHint)}
-          </Text>
-          <Select
-            label={t(($) => $.settings.webhooks.testEventLabel)}
-            data={TEST_EVENT_OPTIONS}
-            value={eventType}
-            onChange={setEventType}
-            allowDeselect={false}
-          />
-          <Button
-            loading={testMutation.isPending}
-            disabled={eventType === null}
-            onClick={() => {
-              if (eventType !== null) {
-                testMutation.mutate({ path: { slug, id }, body: { eventType } })
-              }
-            }}
-          >
-            {t(($) => $.settings.webhooks.sendTestSubmit)}
-          </Button>
-        </Stack>
-        {result ? <TestResultAlert result={result} /> : null}
-      </Modal>
-    </>
+    <Modal
+      opened={id !== null}
+      onClose={() => {
+        onClose()
+        setResult(null)
+      }}
+      title={t(($) => $.settings.webhooks.sendTestTitle)}
+    >
+      <Stack gap="sm">
+        <Text size="sm" c="dimmed">
+          {t(($) => $.settings.webhooks.sendTestHint)}
+        </Text>
+        <Select
+          label={t(($) => $.settings.webhooks.testEventLabel)}
+          data={TEST_EVENT_OPTIONS}
+          value={eventType}
+          onChange={setEventType}
+          allowDeselect={false}
+        />
+        <Button
+          loading={testMutation.isPending}
+          disabled={eventType === null || id === null}
+          onClick={() => {
+            if (eventType !== null && id !== null) {
+              testMutation.mutate({ path: { slug, id }, body: { eventType } })
+            }
+          }}
+        >
+          {t(($) => $.settings.webhooks.sendTestSubmit)}
+        </Button>
+      </Stack>
+      {result ? <TestResultAlert result={result} /> : null}
+    </Modal>
   )
 }
 
 export function WebhooksSection({ slug }: { slug: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
+  const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
+  const [testingId, setTestingId] = useState<string | null>(null)
 
   const queryKey = siteWebhooksListQueryKey({ path: { slug } })
   const webhooksQuery = useQuery(siteWebhooksListOptions({ path: { slug } }))
@@ -166,7 +172,10 @@ export function WebhooksSection({ slug }: { slug: string }) {
     mutation: siteWebhooksCreateMutation(),
     invalidate: [queryKey],
     errorTitle: t(($) => $.settings.webhooks.createError),
-    onDone: () => form.reset(),
+    onDone: () => {
+      form.reset()
+      closeCreate()
+    },
   })
 
   const updateMutation = useResourceMutation({
@@ -216,45 +225,17 @@ export function WebhooksSection({ slug }: { slug: string }) {
   const records = webhooksQuery.data?.items ?? []
 
   return (
-    <Card withBorder>
-      <Title order={4} mb="sm">
-        {t(($) => $.settings.webhooksTitle)}
-      </Title>
+    <Box>
+      <Group justify="space-between" mb="sm">
+        <Title order={4}>{t(($) => $.settings.webhooksTitle)}</Title>
+        <Button onClick={openCreate}>{t(($) => $.settings.webhooks.create)}</Button>
+      </Group>
 
       {webhooksQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.webhooks.loadError)} mb="md">
           {t(($) => $.settings.webhooks.loadError)}
         </Alert>
       ) : null}
-
-      <form
-        onSubmit={form.onSubmit((values) =>
-          createMutation.mutate({
-            path: { slug },
-            body: { url: values.url.trim(), eventTypes: values.eventTypes },
-          }),
-        )}
-      >
-        <Group align="flex-end" gap="sm" mb="md">
-          <TextInput
-            label={t(($) => $.settings.webhooks.urlLabel)}
-            placeholder="https://example.com/hook"
-            required
-            w={320}
-            {...form.getInputProps('url')}
-          />
-          <MultiSelect
-            label={t(($) => $.settings.webhooks.eventsLabel)}
-            description={t(($) => $.settings.webhooks.eventsHint)}
-            data={EVENT_OPTIONS}
-            w={320}
-            {...form.getInputProps('eventTypes')}
-          />
-          <Button type="submit" loading={createMutation.isPending}>
-            {t(($) => $.settings.webhooks.create)}
-          </Button>
-        </Group>
-      </form>
 
       {webhooksQuery.isLoading ? <Loader /> : null}
 
@@ -323,35 +304,69 @@ export function WebhooksSection({ slug }: { slug: string }) {
             accessor: 'actions',
             title: '',
             render: (record) => (
-              <Group gap="xs" wrap="nowrap">
+              <Group gap="xs" wrap="nowrap" justify="flex-end">
                 <ChangeHistoryLink
                   slug={slug}
                   targetType={AUDIT_TARGET_WEBHOOK_ENDPOINT}
                   targetId={record.id}
                 />
-                <TestEventButton slug={slug} id={record.id} />
-                <Button size="compact-sm" variant="default" onClick={() => onRegenerate(record.id)}>
-                  {t(($) => $.settings.webhooks.regenerate)}
-                </Button>
-                <Button size="compact-sm" variant="default" onClick={() => onToggle(record)}>
-                  {record.enabled
-                    ? t(($) => $.settings.webhooks.disable)
-                    : t(($) => $.settings.webhooks.enable)}
-                </Button>
-                <Button
-                  size="compact-sm"
-                  color="red"
-                  variant="light"
-                  onClick={() => onDelete(record.id)}
-                >
-                  {t(($) => $.settings.webhooks.delete)}
-                </Button>
+                <RowActionsMenu>
+                  <Menu.Item onClick={() => setTestingId(record.id)}>
+                    {t(($) => $.settings.webhooks.sendTest)}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => onRegenerate(record.id)}>
+                    {t(($) => $.settings.webhooks.regenerate)}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => onToggle(record)}>
+                    {record.enabled
+                      ? t(($) => $.settings.webhooks.disable)
+                      : t(($) => $.settings.webhooks.enable)}
+                  </Menu.Item>
+                  <Menu.Item color="red" onClick={() => onDelete(record.id)}>
+                    {t(($) => $.settings.webhooks.delete)}
+                  </Menu.Item>
+                </RowActionsMenu>
               </Group>
             ),
           },
         ]}
         emptyState={<EmptyState title={t(($) => $.settings.webhooks.empty)} />}
       />
-    </Card>
+
+      <Modal
+        opened={createOpened}
+        onClose={closeCreate}
+        title={t(($) => $.settings.webhooks.create)}
+      >
+        <form
+          onSubmit={form.onSubmit((values) =>
+            createMutation.mutate({
+              path: { slug },
+              body: { url: values.url.trim(), eventTypes: values.eventTypes },
+            }),
+          )}
+        >
+          <Stack>
+            <TextInput
+              label={t(($) => $.settings.webhooks.urlLabel)}
+              placeholder="https://example.com/hook"
+              required
+              data-autofocus
+              {...form.getInputProps('url')}
+            />
+            <MultiSelect
+              label={t(($) => $.settings.webhooks.eventsLabel)}
+              description={t(($) => $.settings.webhooks.eventsHint)}
+              data={EVENT_OPTIONS}
+              {...form.getInputProps('eventTypes')}
+            />
+            <Button type="submit" loading={createMutation.isPending}>
+              {t(($) => $.settings.webhooks.create)}
+            </Button>
+          </Stack>
+        </form>
+      </Modal>
+      <TestEventModal slug={slug} id={testingId} onClose={() => setTestingId(null)} />
+    </Box>
   )
 }

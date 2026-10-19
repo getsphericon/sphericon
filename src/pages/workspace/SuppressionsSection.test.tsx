@@ -58,8 +58,10 @@ test('adds a suppression', async () => {
   )
   const { screen } = await renderWithRouter(<SuppressionsSection slug={SLUG} />)
 
-  await screen.getByLabelText(/^Email address/).fill('blocked@example.com')
   await screen.getByRole('button', { name: 'Suppress' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Email address/).fill('blocked@example.com')
+  await dialog.getByRole('button', { name: 'Suppress' }).click()
 
   await expect.poll(() => bodies).toEqual([{ destination: 'blocked@example.com' }])
 })
@@ -75,7 +77,8 @@ test('removes a suppression after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<SuppressionsSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Remove' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Remove' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => deleted).toBe(true)
@@ -119,8 +122,10 @@ test('reports a create failure', async () => {
   )
   const { screen } = await renderWithRouter(<SuppressionsSection slug={SLUG} />)
 
-  await screen.getByLabelText(/^Email address/).fill('x@example.com')
   await screen.getByRole('button', { name: 'Suppress' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Email address/).fill('x@example.com')
+  await dialog.getByRole('button', { name: 'Suppress' }).click()
 
   await expect.element(screen.getByText('Failed to suppress address')).toBeInTheDocument()
 })

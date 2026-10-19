@@ -97,11 +97,13 @@ test('connects an SMTP provider', async () => {
   worker.use(list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
 
-  await screen.getByLabelText(/^Name/).fill(' Mailer ')
-  await screen.getByLabelText(/^SMTP host/).fill('smtp.acme.com')
-  await screen.getByLabelText(/^From address/).fill('hi@acme.com')
-  await screen.getByLabelText('Set as default').click()
   await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Name/).fill(' Mailer ')
+  await dialog.getByLabelText(/^SMTP host/).fill('smtp.acme.com')
+  await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
+  await dialog.getByLabelText('Set as default').click()
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
 
   await expect
     .poll(() => bodies)
@@ -129,15 +131,17 @@ test('connects an Amazon SES provider', async () => {
   worker.use(list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
 
-  await screen.getByRole('combobox', { name: 'Provider' }).click()
-  await screen.getByRole('option', { name: 'Amazon SES' }).click()
-  await screen.getByLabelText(/^Name/).fill('SES')
-  await screen.getByLabelText(/^AWS region/).fill('eu-west-1')
-  await screen.getByLabelText(/^Access key ID/).fill('AKIA')
-  await screen.getByLabelText(/^Secret access key/).fill('shh')
-  await screen.getByLabelText(/^From address/).fill('hi@acme.com')
-  await screen.getByLabelText(/^From name/).fill('Acme')
   await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('combobox', { name: 'Provider' }).click()
+  await screen.getByRole('option', { name: 'Amazon SES' }).click()
+  await dialog.getByLabelText(/^Name/).fill('SES')
+  await dialog.getByLabelText(/^AWS region/).fill('eu-west-1')
+  await dialog.getByLabelText(/^Access key ID/).fill('AKIA')
+  await dialog.getByLabelText(/^Secret access key/).fill('shh')
+  await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
+  await dialog.getByLabelText(/^From name/).fill('Acme')
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
 
   await expect
     .poll(() => bodies)
@@ -171,7 +175,8 @@ test('deletes a provider after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Delete' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => deleted).toBe(true)
@@ -191,10 +196,12 @@ test('reports a create failure', async () => {
   )
   const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
 
-  await screen.getByLabelText(/^Name/).fill('X')
-  await screen.getByLabelText(/^SMTP host/).fill('h')
-  await screen.getByLabelText(/^From address/).fill('a@b.co')
   await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Name/).fill('X')
+  await dialog.getByLabelText(/^SMTP host/).fill('h')
+  await dialog.getByLabelText(/^From address/).fill('a@b.co')
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
 
   await expect.element(screen.getByText('Failed to save provider')).toBeInTheDocument()
 })
@@ -270,12 +277,14 @@ test('connects a provider with send limits', async () => {
   worker.use(list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
 
-  await screen.getByLabelText(/^Name/).fill('Mailer')
-  await screen.getByLabelText(/^SMTP host/).fill('smtp.acme.com')
-  await screen.getByLabelText(/^From address/).fill('hi@acme.com')
-  await screen.getByLabelText('Max per second').fill('5')
-  await screen.getByLabelText('Max per 24 hours').fill('1000')
   await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByLabelText(/^Name/).fill('Mailer')
+  await dialog.getByLabelText(/^SMTP host/).fill('smtp.acme.com')
+  await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
+  await dialog.getByLabelText('Max per second').fill('5')
+  await dialog.getByLabelText('Max per 24 hours').fill('1000')
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
 
   await expect
     .poll(() => bodies)
@@ -287,7 +296,8 @@ test('edits only the limits of an existing provider, and a blank clears one', as
   worker.use(list([limited]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Limits' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Limits' }).click()
   const dialog = screen.getByRole('dialog')
   await expect.element(dialog.getByLabelText('Max per second')).toHaveValue('14')
   await dialog.getByLabelText('Max per second').fill('20')
@@ -336,7 +346,8 @@ test('shows the hook URL and chooses a Preset with its params', async () => {
   )
   const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Inbound' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Inbound' }).click()
   await expect.element(screen.getByText('https://app.test/hooks/omik_one')).toBeInTheDocument()
   await screen.getByRole('combobox', { name: 'Preset' }).click()
   await screen.getByRole('option', { name: 'generic' }).click()
@@ -358,7 +369,8 @@ test('retires the old secrets of a rotating Preset', async () => {
   )
   const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Inbound' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Inbound' }).click()
   await screen.getByRole('button', { name: 'Retire old secrets' }).click()
 
   await expect.poll(() => bodies).toEqual([{ retireSecrets: true }])
@@ -376,7 +388,8 @@ test('regenerates the hook URL after a confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
 
-  await screen.getByRole('button', { name: 'Inbound' }).click()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Inbound' }).click()
   await screen.getByRole('button', { name: 'Regenerate URL' }).click()
   await screen
     .getByRole('dialog', { name: 'Regenerate the hook URL?' })
