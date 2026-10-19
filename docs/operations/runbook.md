@@ -272,3 +272,42 @@ reviews accounts above roughly this rate, and mailbox providers start filtering.
 **Fix.** Stop the offending broadcast now. Complaining addresses are suppressed automatically;
 confirm that the `suppression` consumer is current. Fix the source of the audience or the
 unsubscribe flow before sending again, and respond to the provider if they open a review.
+
+## Database restore drill
+
+The hosted database ([ADR 0028](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0028-saas-hosting-terraform-on-aws-ecs-fargate.md))
+is RDS Multi-AZ with 14 days of automated backups. Rehearse a restore into a scratch instance
+after any change to the backup setup and at least quarterly. It never touches production.
+
+1. Pick the point: `aws rds describe-db-instances --db-instance-identifier sphericon --query 'DBInstances[0].LatestRestorableTime'`.
+   Note the time of the "incident" you simulate (for example five minutes earlier).
+2. Restore to a point in time into a new instance (start a stopwatch):
+
+   ```sh
+   aws rds restore-db-instance-to-point-in-time \
+     --source-db-instance-identifier sphericon --target-db-instance-identifier sphericon-drill \
+     --restore-time <UTC timestamp> --db-instance-class db.t4g.small --no-multi-az \
+     --db-subnet-group-name sphericon --vpc-security-group-ids <db security group id> --no-publicly-accessible
+   aws rds wait db-instance-available --db-instance-identifier sphericon-drill
+   ```
+
+   To rehearse the snapshot path instead, use `restore-db-instance-from-db-snapshot` with the latest
+   automated snapshot (or `sphericon-final` after a scratch destroy).
+
+3. Verify as in [Restore drill](./backup#restore-drill): run the same version of sphericon against the
+   drill instance with a throwaway SMTP sink, `GET /readyz` returns `200`, and counts match
+   production at the restore time. Run `SHOW max_connections` there too.
+4. Stop the stopwatch and record the results below, then delete the instance
+   (`aws rds delete-db-instance --db-instance-identifier sphericon-drill --skip-final-snapshot`).
+
+**RPO** is the gap between the failure and the restored point: RDS archives transaction logs about
+every five minutes, so point-in-time recovery loses up to about five minutes, and a Multi-AZ
+failover loses nothing (synchronous standby). **RTO** is the restore time (step 2 plus 3), plus
+repointing `DATABASE_URL` and redeploying; a Multi-AZ failover alone is 1-2 minutes with no action.
+The restore time grows with the database size.
+
+| Date                                                                    | Source | Size | RTO (restore to `/readyz`) | RPO (restored point vs. target) | Who |
+| ----------------------------------------------------------------------- | ------ | ---- | -------------------------- | ------------------------------- | --- |
+| _not yet measured: needs the account owner's access to the AWS account_ |        |      |                            |                                 |     |
+
+After a restore into production, read [After a restore](./backup#after-a-restore) first.

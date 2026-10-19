@@ -144,12 +144,17 @@ https://$(mise run infra -- output -raw alb_dns_name)/readyz`.
 
 ## 7. Destroy and recreate
 
-The environment is a test deployment: no deletion protection, no final snapshot.
+The database is protected (`db_protected`, default true): deletion protection, a final snapshot
+`sphericon-final` and kept automated backups. To destroy a **scratch** environment, turn that off
+first, then destroy:
 
 ```sh
-mise run infra -- destroy
+mise run infra -- apply -var db_protected=false
+mise run infra -- destroy -var db_protected=false
 ```
 
+Never do this to production without a snapshot you have restored (the runbook's restore drill). A
+second destroy with protection on fails on an existing `sphericon-final`: delete that snapshot first.
 Destroy removes the service, the database **and all its data**, the zone, the SES identity, the
 runtime secret and the records. The state bucket and `sphericon/app` stay (never delete them with
 the environment). To recreate, run sections 4 to 6 again, with these effects:
