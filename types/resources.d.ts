@@ -1065,7 +1065,6 @@ export default interface Resources {
         "suppressed": "Suppressed"
       },
       "statusLabel": "Status",
-      "subtitle": "Single-recipient emails sent through the API.",
       "title": "Transactional emails"
     },
     "unsubscribe": {
