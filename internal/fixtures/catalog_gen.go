@@ -498,7 +498,7 @@ const (
 	// IntegrationGlobexSesNoTopicIngestKey is from fixtures/integrations.
 	IntegrationGlobexSesNoTopicIngestKey = "omik_test_integrationglobexsesnotopic"
 	// IntegrationGlobexSesNoTopicName is from fixtures/integrations.
-	IntegrationGlobexSesNoTopicName = "Globex SES (no SNS topic yet)"
+	IntegrationGlobexSesNoTopicName = "Globex SES (stored without an SNS topic)"
 	// InvitationGlobexEmail is from fixtures/invitations.
 	InvitationGlobexEmail = "invited@globex.test"
 	// InvitationGlobexID is from fixtures/invitations.

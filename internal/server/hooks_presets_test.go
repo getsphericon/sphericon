@@ -129,6 +129,18 @@ func TestPostmarkIntegrationRefusesWrongCredentialsAndChangesNothing(t *testing.
 	assert.False(t, suppressed(t, env, fixtures.ContactAliceEmail))
 }
 
+// A verified request our Preset cannot read is our failure, not the provider's: 5xx, so the
+// provider retries once the Preset is fixed, and nothing is published.
+func TestAVerifiedRequestTheTransformCannotReadAnswers5xxAndChangesNothing(t *testing.T) {
+	env := setupHooks(t)
+	body := `{"RecordType":"Bounce","ID":202,"Type":"HardBounce","From":"News <hello@Codebasics.dev>"}`
+
+	rec := postmarkPost(t, env, fixtures.IntegrationAcmePostmarkIngestKey, postmarkUser, postmarkToken, body)
+
+	assert.GreaterOrEqual(t, rec.Code, http.StatusInternalServerError)
+	assert.Empty(t, env.OutboxEvents(t, events.NameEmailBounced, events.NameEmailComplained))
+}
+
 func TestMailgunIntegrationSuppressesPermanentFailuresAndComplaintsOnly(t *testing.T) {
 	env := setupHooks(t)
 	key := fixtures.IntegrationAcmeMailgunIngestKey

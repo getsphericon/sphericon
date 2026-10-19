@@ -138,10 +138,22 @@ func (m *Module) openParams(row *ent.Integration) (map[string]any, error) {
 	return stored, nil
 }
 
-// inbound is the stored inbound side an Integration write leaves behind.
+// inbound is what an Integration write leaves behind on the inbound side. apply is false
+// when the write does not touch it (the row keeps its Preset and params as stored); true
+// with a nil sealed clears both.
 type inbound struct {
+	apply  bool
 	preset *string
 	sealed *string // nil: no params
+}
+
+// inboundChange is the inbound part of a write: the Preset, the params to merge over the
+// stored ones (nil: unchanged) and whether the retiring secret of every rotating pair is
+// dropped.
+type inboundChange struct {
+	preset        PresetChange
+	params        map[string]any
+	retireSecrets bool
 }
 
 // sealInbound validates a write's Preset and params against the stored ones and returns
@@ -149,42 +161,42 @@ type inbound struct {
 // valid for the new, so its params must be given in full. Within one Preset a secret that
 // is omitted, blank or masked keeps its stored value, and a new value rotates it: the old
 // current value stays accepted, as the retiring one, until retired.
-func (m *Module) sealInbound(row *ent.Integration, change PresetChange, params map[string]any, retire bool) (inbound, bool, error) {
+func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, error) {
 	var prevName *string
 	if row != nil {
 		prevName = row.Preset
 	}
 	name := prevName
-	if change.Set {
-		name = change.Name
+	if in.preset.Set {
+		name = in.preset.Name
 	}
 	changed := !samePreset(prevName, name)
-	if row != nil && !changed && params == nil && !retire {
-		return inbound{}, false, nil
+	if row != nil && !changed && in.params == nil && !in.retireSecrets {
+		return inbound{}, nil
 	}
 	if name == nil {
-		if len(params) > 0 {
-			return inbound{}, false, &ValidationError{Field: "params", Message: i18n.T("errors.preset_params_without_preset", nil)}
+		if len(in.params) > 0 {
+			return inbound{}, &ValidationError{Field: "params", Message: i18n.T("errors.preset_params_without_preset", nil)}
 		}
-		return inbound{}, row != nil && changed, nil
+		return inbound{apply: row != nil && changed}, nil
 	}
 	p, ok := m.presets.Get(*name)
 	if !ok {
-		return inbound{}, false, &ValidationError{Field: "preset", Message: i18n.T("errors.preset_unknown", map[string]any{"Name": *name})}
+		return inbound{}, &ValidationError{Field: "preset", Message: i18n.T("errors.preset_unknown", map[string]any{"Name": *name})}
 	}
 
 	var prev map[string]any
 	if row != nil && !changed && row.ParamsEncrypted != "" {
 		var err error
 		if prev, err = m.openParams(row); err != nil {
-			return inbound{}, false, err
+			return inbound{}, err
 		}
 	}
-	stored, plain := mergeParams(p, prev, params)
+	stored, plain := mergeParams(p, prev, in.params)
 	if err := p.ValidateParams(plain); err != nil {
-		return inbound{}, false, &ValidationError{Field: "params", Message: i18n.T("errors.preset_params_invalid", map[string]any{"Detail": err.Error()})}
+		return inbound{}, &ValidationError{Field: "params", Message: i18n.T("errors.preset_params_invalid", map[string]any{"Detail": err.Error()})}
 	}
-	if retire {
+	if in.retireSecrets {
 		for _, s := range p.SecretParams() {
 			if list, ok := stored[s].([]any); ok && len(list) > 0 {
 				stored[s] = list[0]
@@ -193,13 +205,13 @@ func (m *Module) sealInbound(row *ent.Integration, change PresetChange, params m
 	}
 	raw, err := json.Marshal(stored)
 	if err != nil {
-		return inbound{}, false, err
+		return inbound{}, err
 	}
 	sealed, err := m.cipher.Encrypt(raw)
 	if err != nil {
-		return inbound{}, false, err
+		return inbound{}, err
 	}
-	return inbound{preset: name, sealed: &sealed}, true, nil
+	return inbound{apply: true, preset: name, sealed: &sealed}, nil
 }
 
 // mergeParams builds the stored params (a rotating secret is [current, retiring]) and
@@ -219,7 +231,7 @@ func mergeParams(p *preset.Preset, prev, in map[string]any) (stored, plain map[s
 	for name := range secret {
 		incoming, _ := in[name].(string)
 		_, given := in[name]
-		old := currentOf(prev[name])
+		old := currentSecret(prev[name])
 		switch {
 		case given && incoming != "" && incoming != SecretMask:
 			plain[name] = incoming
@@ -230,8 +242,10 @@ func mergeParams(p *preset.Preset, prev, in map[string]any) (stored, plain map[s
 			} else {
 				stored[name] = incoming
 			}
-		case given && incoming == "" && !isString(in[name]):
-			// a non-string is the schema's to refuse
+		case given && incoming == "" && !isJSONString(in[name]):
+			// The write sent a non-string (a number, null, a list) for a secret; "" above is
+			// also what a non-string reads as. Pass it through so the schema refuses it,
+			// rather than treating it as "keep the stored secret".
 			plain[name] = in[name]
 			stored[name] = in[name]
 		default:
@@ -244,7 +258,9 @@ func mergeParams(p *preset.Preset, prev, in map[string]any) (stored, plain map[s
 	return stored, plain
 }
 
-func currentOf(v any) string {
+// currentSecret is the value a stored secret is accepted as today: a plain secret itself,
+// a rotating pair's first (current) element, "" for anything else.
+func currentSecret(v any) string {
 	switch x := v.(type) {
 	case string:
 		return x
@@ -257,7 +273,7 @@ func currentOf(v any) string {
 	return ""
 }
 
-func isString(v any) bool { _, ok := v.(string); return ok }
+func isJSONString(v any) bool { _, ok := v.(string); return ok }
 
 func secretSet(p *preset.Preset) map[string]bool {
 	out := map[string]bool{}

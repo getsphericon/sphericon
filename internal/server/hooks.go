@@ -126,7 +126,9 @@ func (h *hook) servePreset(w http.ResponseWriter, r *http.Request, row *ent.Inte
 		writeProblem(w, http.StatusBadRequest, "the request is malformed")
 		return
 	case errors.Is(err, preset.ErrTransformFailed):
-		writeProblem(w, http.StatusUnprocessableEntity, "the request could not be read")
+		// The request was verified, so the fault is the Preset's: the provider retries.
+		log.Error("hooks: preset transform failed", "integration_id", row.ID, "preset", p.Name(), "err", err)
+		writeProblem(w, http.StatusInternalServerError, "the request could not be read")
 		return
 	case err != nil:
 		log.Error("hooks: preset failed", "integration_id", row.ID, "preset", p.Name(), "err", err)

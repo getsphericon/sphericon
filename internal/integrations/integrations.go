@@ -177,7 +177,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		presetName = new(string)
 		*presetName = "ses"
 	}
-	inb, _, err := m.sealInbound(nil, PresetChange{Set: presetName != nil, Name: presetName}, in.Params, false)
+	inb, err := m.sealInbound(nil, inboundChange{preset: PresetChange{Set: presetName != nil, Name: presetName}, params: in.Params})
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		sealed = &enc
 	}
 
-	inb, applyInbound, err := m.sealInbound(row, in.Preset, in.Params, in.RetireSecrets)
+	inb, err := m.sealInbound(row, inboundChange{preset: in.Preset, params: in.Params, retireSecrets: in.RetireSecrets})
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if sealed != nil {
 			upd.SetConfigEncrypted(*sealed)
 		}
-		if applyInbound {
+		if inb.apply {
 			if inb.preset == nil {
 				upd.ClearPreset().ClearParamsEncrypted()
 			} else {

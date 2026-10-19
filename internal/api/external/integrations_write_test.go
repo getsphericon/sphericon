@@ -254,6 +254,13 @@ func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, bad)
 
+	// An SES Integration without a topic could never receive a bounce: it is refused at save.
+	noTopic := ses("unused")
+	noTopic.Params = externalapi.OptCreateIntegrationInputParams{}
+	missing, err := c.IntegrationsCreate(ctx, noTopic)
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.IntegrationsCreateUnprocessableEntity{}, missing)
+
 	const topic = "arn:aws:sns:eu-west-1:123456789012:ses-events"
 	res, err := c.IntegrationsCreate(ctx, ses(topic))
 	require.NoError(t, err)

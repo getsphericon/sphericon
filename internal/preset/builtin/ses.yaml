@@ -4,12 +4,13 @@ name: ses
 description: Amazon SES bounces and complaints, delivered through an SNS topic.
 params:
   type: object
+  required: [topic_arn]
   additionalProperties: false
   properties:
     topic_arn:
       type: string
       title: SNS topic ARN
-      description: The one SNS topic your SES bounces and complaints are published to. A signed notification from any other topic is refused; without a topic the hook refuses every notification.
+      description: The one SNS topic your SES bounces and complaints are published to. A signed notification from any other topic is refused.
       pattern: ^arn:aws[a-z-]*:sns:[a-z0-9-]+:[0-9]+:[A-Za-z0-9_-]+$
 verify:
   kind: sns
