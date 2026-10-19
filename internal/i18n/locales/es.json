@@ -51,6 +51,8 @@
   "errors.current_password_incorrect": "la contraseña actual es incorrecta",
   "errors.second_factor_code_invalid": "el código no es válido",
   "errors.second_factor_already_active": "ya hay un segundo factor activo",
+  "errors.instance_owner_only": "solo los propietarios del espacio de trabajo más antiguo pueden gestionar la instancia",
+  "errors.telemetry_locked": "el entorno decide el informe de telemetría; cámbialo allí",
   "errors.second_factor_no_pending": "primero inicia la activación",
   "errors.second_factor_not_active": "no hay ningún segundo factor activo",
   "errors.second_factor_reset_self": "desactiva tu propio segundo factor en la configuración de tu cuenta",

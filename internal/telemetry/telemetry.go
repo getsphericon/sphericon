@@ -123,6 +123,24 @@ func Setup(ctx context.Context, cfg *config.Config, env string, build BuildInfo)
 	}, nil
 }
 
+// ObserveReleaseAvailable registers sphericon_release_available{latest} 1 next to
+// sphericon_build_info: present while the Release check (ADR 0032) has cached a newer
+// release, absent otherwise. latest reads that cached result (it asks nobody) and runs on
+// every scrape; a read that fails reports nothing. Call it after Setup.
+func ObserveReleaseAvailable(latest func(context.Context) (string, error)) error {
+	_, err := otel.GetMeterProvider().Meter("sphericon").Int64ObservableGauge("sphericon_release_available",
+		otelmetric.WithDescription("A newer release exists than the one this process runs; always 1, labelled with it."),
+		otelmetric.WithInt64Callback(func(ctx context.Context, o otelmetric.Int64Observer) error {
+			v, err := latest(ctx)
+			if err != nil || v == "" {
+				return nil
+			}
+			o.Observe(1, otelmetric.WithAttributes(attribute.String("latest", v)))
+			return nil
+		}))
+	return err
+}
+
 // loadConfig parses the file OTEL_CONFIG_FILE names (environment references in it
 // are resolved by otelconf), or returns an empty configuration when it is unset.
 func loadConfig() (*otelconf.OpenTelemetryConfiguration, error) {

@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -72,6 +73,7 @@ const (
 	TypeEmailTemplate      = "EmailTemplate"
 	TypeEvent              = "Event"
 	TypeHold               = "Hold"
+	TypeInstanceState      = "InstanceState"
 	TypeIntegration        = "Integration"
 	TypeInvitation         = "Invitation"
 	TypeMembership         = "Membership"
@@ -13386,6 +13388,814 @@ func (m *HoldMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Hold edge %s", name)
+}
+
+// InstanceStateMutation represents an operation that mutates the InstanceState nodes in the graph.
+type InstanceStateMutation struct {
+	config
+	op                        Op
+	typ                       string
+	id                        *int64
+	created_at                *time.Time
+	updated_at                *time.Time
+	instance_id               *string
+	telemetry_enabled         *bool
+	notice_acknowledged_at    *time.Time
+	last_report_sent_at       *time.Time
+	latest_release            *string
+	latest_release_checked_at *time.Time
+	clearedFields             map[string]struct{}
+	done                      bool
+	oldValue                  func(context.Context) (*InstanceState, error)
+	predicates                []predicate.InstanceState
+}
+
+var _ ent.Mutation = (*InstanceStateMutation)(nil)
+
+// instancestateOption allows management of the mutation configuration using functional options.
+type instancestateOption func(*InstanceStateMutation)
+
+// newInstanceStateMutation creates new mutation for the InstanceState entity.
+func newInstanceStateMutation(c config, op Op, opts ...instancestateOption) *InstanceStateMutation {
+	m := &InstanceStateMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeInstanceState,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withInstanceStateID sets the ID field of the mutation.
+func withInstanceStateID(id int64) instancestateOption {
+	return func(m *InstanceStateMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *InstanceState
+		)
+		m.oldValue = func(ctx context.Context) (*InstanceState, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().InstanceState.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withInstanceState sets the old InstanceState of the mutation.
+func withInstanceState(node *InstanceState) instancestateOption {
+	return func(m *InstanceStateMutation) {
+		m.oldValue = func(context.Context) (*InstanceState, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m InstanceStateMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m InstanceStateMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of InstanceState entities.
+func (m *InstanceStateMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *InstanceStateMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *InstanceStateMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().InstanceState.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *InstanceStateMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *InstanceStateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *InstanceStateMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *InstanceStateMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *InstanceStateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *InstanceStateMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetInstanceID sets the "instance_id" field.
+func (m *InstanceStateMutation) SetInstanceID(s string) {
+	m.instance_id = &s
+}
+
+// InstanceID returns the value of the "instance_id" field in the mutation.
+func (m *InstanceStateMutation) InstanceID() (r string, exists bool) {
+	v := m.instance_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInstanceID returns the old "instance_id" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldInstanceID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInstanceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInstanceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInstanceID: %w", err)
+	}
+	return oldValue.InstanceID, nil
+}
+
+// ResetInstanceID resets all changes to the "instance_id" field.
+func (m *InstanceStateMutation) ResetInstanceID() {
+	m.instance_id = nil
+}
+
+// SetTelemetryEnabled sets the "telemetry_enabled" field.
+func (m *InstanceStateMutation) SetTelemetryEnabled(b bool) {
+	m.telemetry_enabled = &b
+}
+
+// TelemetryEnabled returns the value of the "telemetry_enabled" field in the mutation.
+func (m *InstanceStateMutation) TelemetryEnabled() (r bool, exists bool) {
+	v := m.telemetry_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTelemetryEnabled returns the old "telemetry_enabled" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldTelemetryEnabled(ctx context.Context) (v *bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTelemetryEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTelemetryEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTelemetryEnabled: %w", err)
+	}
+	return oldValue.TelemetryEnabled, nil
+}
+
+// ClearTelemetryEnabled clears the value of the "telemetry_enabled" field.
+func (m *InstanceStateMutation) ClearTelemetryEnabled() {
+	m.telemetry_enabled = nil
+	m.clearedFields[instancestate.FieldTelemetryEnabled] = struct{}{}
+}
+
+// TelemetryEnabledCleared returns if the "telemetry_enabled" field was cleared in this mutation.
+func (m *InstanceStateMutation) TelemetryEnabledCleared() bool {
+	_, ok := m.clearedFields[instancestate.FieldTelemetryEnabled]
+	return ok
+}
+
+// ResetTelemetryEnabled resets all changes to the "telemetry_enabled" field.
+func (m *InstanceStateMutation) ResetTelemetryEnabled() {
+	m.telemetry_enabled = nil
+	delete(m.clearedFields, instancestate.FieldTelemetryEnabled)
+}
+
+// SetNoticeAcknowledgedAt sets the "notice_acknowledged_at" field.
+func (m *InstanceStateMutation) SetNoticeAcknowledgedAt(t time.Time) {
+	m.notice_acknowledged_at = &t
+}
+
+// NoticeAcknowledgedAt returns the value of the "notice_acknowledged_at" field in the mutation.
+func (m *InstanceStateMutation) NoticeAcknowledgedAt() (r time.Time, exists bool) {
+	v := m.notice_acknowledged_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNoticeAcknowledgedAt returns the old "notice_acknowledged_at" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldNoticeAcknowledgedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNoticeAcknowledgedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNoticeAcknowledgedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNoticeAcknowledgedAt: %w", err)
+	}
+	return oldValue.NoticeAcknowledgedAt, nil
+}
+
+// ClearNoticeAcknowledgedAt clears the value of the "notice_acknowledged_at" field.
+func (m *InstanceStateMutation) ClearNoticeAcknowledgedAt() {
+	m.notice_acknowledged_at = nil
+	m.clearedFields[instancestate.FieldNoticeAcknowledgedAt] = struct{}{}
+}
+
+// NoticeAcknowledgedAtCleared returns if the "notice_acknowledged_at" field was cleared in this mutation.
+func (m *InstanceStateMutation) NoticeAcknowledgedAtCleared() bool {
+	_, ok := m.clearedFields[instancestate.FieldNoticeAcknowledgedAt]
+	return ok
+}
+
+// ResetNoticeAcknowledgedAt resets all changes to the "notice_acknowledged_at" field.
+func (m *InstanceStateMutation) ResetNoticeAcknowledgedAt() {
+	m.notice_acknowledged_at = nil
+	delete(m.clearedFields, instancestate.FieldNoticeAcknowledgedAt)
+}
+
+// SetLastReportSentAt sets the "last_report_sent_at" field.
+func (m *InstanceStateMutation) SetLastReportSentAt(t time.Time) {
+	m.last_report_sent_at = &t
+}
+
+// LastReportSentAt returns the value of the "last_report_sent_at" field in the mutation.
+func (m *InstanceStateMutation) LastReportSentAt() (r time.Time, exists bool) {
+	v := m.last_report_sent_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastReportSentAt returns the old "last_report_sent_at" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldLastReportSentAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastReportSentAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastReportSentAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastReportSentAt: %w", err)
+	}
+	return oldValue.LastReportSentAt, nil
+}
+
+// ClearLastReportSentAt clears the value of the "last_report_sent_at" field.
+func (m *InstanceStateMutation) ClearLastReportSentAt() {
+	m.last_report_sent_at = nil
+	m.clearedFields[instancestate.FieldLastReportSentAt] = struct{}{}
+}
+
+// LastReportSentAtCleared returns if the "last_report_sent_at" field was cleared in this mutation.
+func (m *InstanceStateMutation) LastReportSentAtCleared() bool {
+	_, ok := m.clearedFields[instancestate.FieldLastReportSentAt]
+	return ok
+}
+
+// ResetLastReportSentAt resets all changes to the "last_report_sent_at" field.
+func (m *InstanceStateMutation) ResetLastReportSentAt() {
+	m.last_report_sent_at = nil
+	delete(m.clearedFields, instancestate.FieldLastReportSentAt)
+}
+
+// SetLatestRelease sets the "latest_release" field.
+func (m *InstanceStateMutation) SetLatestRelease(s string) {
+	m.latest_release = &s
+}
+
+// LatestRelease returns the value of the "latest_release" field in the mutation.
+func (m *InstanceStateMutation) LatestRelease() (r string, exists bool) {
+	v := m.latest_release
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLatestRelease returns the old "latest_release" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldLatestRelease(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLatestRelease is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLatestRelease requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLatestRelease: %w", err)
+	}
+	return oldValue.LatestRelease, nil
+}
+
+// ClearLatestRelease clears the value of the "latest_release" field.
+func (m *InstanceStateMutation) ClearLatestRelease() {
+	m.latest_release = nil
+	m.clearedFields[instancestate.FieldLatestRelease] = struct{}{}
+}
+
+// LatestReleaseCleared returns if the "latest_release" field was cleared in this mutation.
+func (m *InstanceStateMutation) LatestReleaseCleared() bool {
+	_, ok := m.clearedFields[instancestate.FieldLatestRelease]
+	return ok
+}
+
+// ResetLatestRelease resets all changes to the "latest_release" field.
+func (m *InstanceStateMutation) ResetLatestRelease() {
+	m.latest_release = nil
+	delete(m.clearedFields, instancestate.FieldLatestRelease)
+}
+
+// SetLatestReleaseCheckedAt sets the "latest_release_checked_at" field.
+func (m *InstanceStateMutation) SetLatestReleaseCheckedAt(t time.Time) {
+	m.latest_release_checked_at = &t
+}
+
+// LatestReleaseCheckedAt returns the value of the "latest_release_checked_at" field in the mutation.
+func (m *InstanceStateMutation) LatestReleaseCheckedAt() (r time.Time, exists bool) {
+	v := m.latest_release_checked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLatestReleaseCheckedAt returns the old "latest_release_checked_at" field's value of the InstanceState entity.
+// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InstanceStateMutation) OldLatestReleaseCheckedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLatestReleaseCheckedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLatestReleaseCheckedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLatestReleaseCheckedAt: %w", err)
+	}
+	return oldValue.LatestReleaseCheckedAt, nil
+}
+
+// ClearLatestReleaseCheckedAt clears the value of the "latest_release_checked_at" field.
+func (m *InstanceStateMutation) ClearLatestReleaseCheckedAt() {
+	m.latest_release_checked_at = nil
+	m.clearedFields[instancestate.FieldLatestReleaseCheckedAt] = struct{}{}
+}
+
+// LatestReleaseCheckedAtCleared returns if the "latest_release_checked_at" field was cleared in this mutation.
+func (m *InstanceStateMutation) LatestReleaseCheckedAtCleared() bool {
+	_, ok := m.clearedFields[instancestate.FieldLatestReleaseCheckedAt]
+	return ok
+}
+
+// ResetLatestReleaseCheckedAt resets all changes to the "latest_release_checked_at" field.
+func (m *InstanceStateMutation) ResetLatestReleaseCheckedAt() {
+	m.latest_release_checked_at = nil
+	delete(m.clearedFields, instancestate.FieldLatestReleaseCheckedAt)
+}
+
+// Where appends a list predicates to the InstanceStateMutation builder.
+func (m *InstanceStateMutation) Where(ps ...predicate.InstanceState) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the InstanceStateMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *InstanceStateMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.InstanceState, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *InstanceStateMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *InstanceStateMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (InstanceState).
+func (m *InstanceStateMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *InstanceStateMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, instancestate.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, instancestate.FieldUpdatedAt)
+	}
+	if m.instance_id != nil {
+		fields = append(fields, instancestate.FieldInstanceID)
+	}
+	if m.telemetry_enabled != nil {
+		fields = append(fields, instancestate.FieldTelemetryEnabled)
+	}
+	if m.notice_acknowledged_at != nil {
+		fields = append(fields, instancestate.FieldNoticeAcknowledgedAt)
+	}
+	if m.last_report_sent_at != nil {
+		fields = append(fields, instancestate.FieldLastReportSentAt)
+	}
+	if m.latest_release != nil {
+		fields = append(fields, instancestate.FieldLatestRelease)
+	}
+	if m.latest_release_checked_at != nil {
+		fields = append(fields, instancestate.FieldLatestReleaseCheckedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *InstanceStateMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case instancestate.FieldCreatedAt:
+		return m.CreatedAt()
+	case instancestate.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case instancestate.FieldInstanceID:
+		return m.InstanceID()
+	case instancestate.FieldTelemetryEnabled:
+		return m.TelemetryEnabled()
+	case instancestate.FieldNoticeAcknowledgedAt:
+		return m.NoticeAcknowledgedAt()
+	case instancestate.FieldLastReportSentAt:
+		return m.LastReportSentAt()
+	case instancestate.FieldLatestRelease:
+		return m.LatestRelease()
+	case instancestate.FieldLatestReleaseCheckedAt:
+		return m.LatestReleaseCheckedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *InstanceStateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case instancestate.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case instancestate.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case instancestate.FieldInstanceID:
+		return m.OldInstanceID(ctx)
+	case instancestate.FieldTelemetryEnabled:
+		return m.OldTelemetryEnabled(ctx)
+	case instancestate.FieldNoticeAcknowledgedAt:
+		return m.OldNoticeAcknowledgedAt(ctx)
+	case instancestate.FieldLastReportSentAt:
+		return m.OldLastReportSentAt(ctx)
+	case instancestate.FieldLatestRelease:
+		return m.OldLatestRelease(ctx)
+	case instancestate.FieldLatestReleaseCheckedAt:
+		return m.OldLatestReleaseCheckedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown InstanceState field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *InstanceStateMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case instancestate.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case instancestate.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case instancestate.FieldInstanceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInstanceID(v)
+		return nil
+	case instancestate.FieldTelemetryEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTelemetryEnabled(v)
+		return nil
+	case instancestate.FieldNoticeAcknowledgedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNoticeAcknowledgedAt(v)
+		return nil
+	case instancestate.FieldLastReportSentAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastReportSentAt(v)
+		return nil
+	case instancestate.FieldLatestRelease:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLatestRelease(v)
+		return nil
+	case instancestate.FieldLatestReleaseCheckedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLatestReleaseCheckedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown InstanceState field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *InstanceStateMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *InstanceStateMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *InstanceStateMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown InstanceState numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *InstanceStateMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(instancestate.FieldTelemetryEnabled) {
+		fields = append(fields, instancestate.FieldTelemetryEnabled)
+	}
+	if m.FieldCleared(instancestate.FieldNoticeAcknowledgedAt) {
+		fields = append(fields, instancestate.FieldNoticeAcknowledgedAt)
+	}
+	if m.FieldCleared(instancestate.FieldLastReportSentAt) {
+		fields = append(fields, instancestate.FieldLastReportSentAt)
+	}
+	if m.FieldCleared(instancestate.FieldLatestRelease) {
+		fields = append(fields, instancestate.FieldLatestRelease)
+	}
+	if m.FieldCleared(instancestate.FieldLatestReleaseCheckedAt) {
+		fields = append(fields, instancestate.FieldLatestReleaseCheckedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *InstanceStateMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *InstanceStateMutation) ClearField(name string) error {
+	switch name {
+	case instancestate.FieldTelemetryEnabled:
+		m.ClearTelemetryEnabled()
+		return nil
+	case instancestate.FieldNoticeAcknowledgedAt:
+		m.ClearNoticeAcknowledgedAt()
+		return nil
+	case instancestate.FieldLastReportSentAt:
+		m.ClearLastReportSentAt()
+		return nil
+	case instancestate.FieldLatestRelease:
+		m.ClearLatestRelease()
+		return nil
+	case instancestate.FieldLatestReleaseCheckedAt:
+		m.ClearLatestReleaseCheckedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown InstanceState nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *InstanceStateMutation) ResetField(name string) error {
+	switch name {
+	case instancestate.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case instancestate.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case instancestate.FieldInstanceID:
+		m.ResetInstanceID()
+		return nil
+	case instancestate.FieldTelemetryEnabled:
+		m.ResetTelemetryEnabled()
+		return nil
+	case instancestate.FieldNoticeAcknowledgedAt:
+		m.ResetNoticeAcknowledgedAt()
+		return nil
+	case instancestate.FieldLastReportSentAt:
+		m.ResetLastReportSentAt()
+		return nil
+	case instancestate.FieldLatestRelease:
+		m.ResetLatestRelease()
+		return nil
+	case instancestate.FieldLatestReleaseCheckedAt:
+		m.ResetLatestReleaseCheckedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown InstanceState field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *InstanceStateMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *InstanceStateMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *InstanceStateMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *InstanceStateMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *InstanceStateMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *InstanceStateMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *InstanceStateMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown InstanceState unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *InstanceStateMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown InstanceState edge %s", name)
 }
 
 // IntegrationMutation represents an operation that mutates the Integration nodes in the graph.

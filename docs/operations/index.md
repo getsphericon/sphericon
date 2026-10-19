@@ -12,6 +12,7 @@ after: sizing, backups, upgrades and monitoring.
 | [Runbook](./runbook)             | An alert fired and you need to know what to check.                 |
 | [Scaling and tuning](./scaling)  | You are sizing replicas and connections or tuning retention.       |
 | [Security hardening](./security) | You are preparing for production or rotating secrets.              |
+| [Telemetry](./telemetry)         | You want to know what the Instance sends, or turn it off.          |
 | [Self-hosting](../self-hosting)  | You are installing, configuring or wiring health checks.           |
 
 ::: tip

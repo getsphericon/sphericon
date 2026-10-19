@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
 import { siteTagsListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import {
+  handleSiteInstanceGetState,
   handleSiteTagsList,
   handleSiteWorkspacesList,
   handleSiteWorkspacesSetSecondFactorRequirement,
@@ -20,6 +21,11 @@ import { worker } from '../test/worker.ts'
 import { WorkspaceLayout } from './WorkspaceLayout.tsx'
 
 const MOUNT = routeMount(workspaceRoute, { slug: 'acme' })
+
+// Most users may not manage the Instance: its state is refused to them.
+beforeEach(() => {
+  worker.use(handleSiteInstanceGetState(() => problem(403)))
+})
 
 const workspace = (over: Partial<SiteWorkspaceResource>): SiteWorkspaceResource => ({
   id: '1',

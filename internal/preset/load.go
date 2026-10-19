@@ -173,12 +173,16 @@ func compileParams(params map[string]any) (*jsonschema.Schema, error) {
 func deepest(ve *jsonschema.ValidationError) []string {
 	best := ve.InstanceLocation
 	for _, c := range ve.Causes {
-		if loc := deepest(c); len(loc) > len(best) {
+		if loc := deepest(c); len(loc) > len(best) || (len(loc) == len(best) && isKind(best) && !isKind(loc)) {
 			best = loc
 		}
 	}
 	return best
 }
+
+// isKind reports whether a location is the `kind` discriminator of a verify block: a
+// `kind` that does not match one oneOf branch is that branch's noise, never the mistake.
+func isKind(loc []string) bool { return len(loc) > 0 && loc[len(loc)-1] == "kind" }
 
 // lineOf finds the 1-based line of the node at a path of map keys and sequence
 // indexes, or of the deepest node on it that exists.

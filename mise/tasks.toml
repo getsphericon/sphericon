@@ -263,6 +263,9 @@ run = "pnpm exec tsp compile typespec/staff"
 ["generate:typespec-service"]
 run = "pnpm exec tsp compile typespec/service"
 
+["generate:typespec-telemetry"]
+run = "pnpm exec tsp compile typespec/telemetry"
+
 ["generate:typespec"]
 description = "TypeSpec -> OpenAPI"
 depends = [
@@ -271,6 +274,7 @@ depends = [
   "generate:typespec-collect",
   "generate:typespec-staff",
   "generate:typespec-service",
+  "generate:typespec-telemetry",
 ]
 
 ["generate:openapi"]
@@ -293,6 +297,7 @@ run = [
   "mise/scripts/heavy.sh go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
   "mise/scripts/heavy.sh go tool ogen --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
   "mise/scripts/heavy.sh go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
+  "mise/scripts/heavy.sh go tool ogen --config ogen.telemetry.yml --target gen/telemetry --package telemetryapi --clean openapi/telemetry.openapi.json",
   "mise/scripts/heavy.sh go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources",
 ]
 
@@ -343,6 +348,7 @@ depends = [
   "check:typos",
   "check:adr",
   "check:env",
+  "check:telemetry",
   "check:helm",
   "check:infra",
   "check:shell",
@@ -473,6 +479,14 @@ pkg="$out/sphericon-$version.tgz"
 test "$(helm show chart "$pkg" | sed -n 's/^appVersion: *//p' | tr -d '"')" = "$version" \
   || { echo "error: packaged appVersion is not $version"; exit 1; }
 if [ -n "${usage_registry:-}" ]; then helm push "$pkg" "$usage_registry"; fi
+'''
+
+["check:telemetry"]
+description = "The hosted production task sets SPHERICON_TELEMETRY to false (ADR 0032)"
+run = '''
+if ! grep -qE '^[[:space:]]*SPHERICON_TELEMETRY[[:space:]]*=[[:space:]]*"false"[[:space:]]*$' infra/ecs.tf; then
+  echo 'error: infra/ecs.tf local.plain_env must set SPHERICON_TELEMETRY = "false" (the hosted deployment never reports on itself)'; exit 1
+fi
 '''
 
 ["check:infra"]

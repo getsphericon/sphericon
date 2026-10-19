@@ -9,3 +9,10 @@ import _ "embed"
 //
 //go:embed openapi/external.openapi.json
 var ExternalOpenAPI []byte
+
+// TelemetryOpenAPI is the generated Telemetry report OpenAPI document (ADR 0032),
+// the published contract every built report is validated against
+// (internal/telemetryschema).
+//
+//go:embed openapi/telemetry.openapi.json
+var TelemetryOpenAPI []byte

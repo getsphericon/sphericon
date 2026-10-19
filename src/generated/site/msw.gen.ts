@@ -3,7 +3,7 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, SiteAnalyticsOverviewResponses, SiteAuditExportResponses, SiteAuditGetRetentionResponses, SiteAuditListResponses, SiteAuditSetRetentionData, SiteAuditSetRetentionResponses, SiteAuthConfirmEmailChangeData, SiteAuthConfirmEmailChangeResponses, SiteAuthForgotPasswordData, SiteAuthForgotPasswordResponses, SiteAuthLoginData, SiteAuthLoginResponses, SiteAuthLogoutResponses, SiteAuthRegisterData, SiteAuthRegisterResponses, SiteAuthResendVerificationData, SiteAuthResendVerificationResponses, SiteAuthResetPasswordData, SiteAuthResetPasswordResponses, SiteAuthSecondFactorData, SiteAuthSecondFactorResponses, SiteAuthVerifyEmailData, SiteAuthVerifyEmailResponses, SiteAutomationsActivateResponses, SiteAutomationsCreateData, SiteAutomationsCreateResponses, SiteAutomationsDeactivateResponses, SiteAutomationsDeleteResponses, SiteAutomationsGetResponses, SiteAutomationsListResponses, SiteAutomationsUpdateData, SiteAutomationsUpdateResponses, SiteBroadcastsCreateData, SiteBroadcastsCreateResponses, SiteBroadcastsDeleteResponses, SiteBroadcastsGetResponses, SiteBroadcastsListResponses, SiteBroadcastsScheduleData, SiteBroadcastsScheduleResponses, SiteBroadcastsSendResponses, SiteBroadcastsTestSendData, SiteBroadcastsTestSendResponses, SiteBroadcastsUpdateData, SiteBroadcastsUpdateResponses, SiteContactsCreateData, SiteContactsCreateResponses, SiteContactsDeleteResponses, SiteContactsExportResponses, SiteContactsGetResponses, SiteContactsListResponses, SiteContactsUpdateData, SiteContactsUpdateResponses, SiteCustomFieldsListResponses, SiteEventsActionsResponses, SiteEventsListResponses, SiteIntegrationsCreateData, SiteIntegrationsCreateResponses, SiteIntegrationsDeleteResponses, SiteIntegrationsGetResponses, SiteIntegrationsListResponses, SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsUpdateData, SiteIntegrationsUpdateResponses, SiteInvitationsCreateData, SiteInvitationsCreateResponses, SiteInvitationsDeleteResponses, SiteInvitationsListResponses, SiteMembershipsDeleteResponses, SiteMembershipsListResponses, SiteMembershipsResetSecondFactorResponses, SiteMembershipsUpdateData, SiteMembershipsUpdateResponses, SiteOAuthDecideData, SiteOAuthDecideResponses, SiteOAuthDescribeResponses, SitePresetsListResponses, SitePublicConfirmationsPerformResponses, SitePublicInvitationsAcceptData, SitePublicInvitationsAcceptResponses, SitePublicInvitationsLookupResponses, SitePublicUnsubscribesPerformResponses, SiteSecondFactorConfirmEnrollmentData, SiteSecondFactorConfirmEnrollmentResponses, SiteSecondFactorDisableData, SiteSecondFactorDisableResponses, SiteSecondFactorGetStatusResponses, SiteSecondFactorRegenerateRecoveryCodesData, SiteSecondFactorRegenerateRecoveryCodesResponses, SiteSecondFactorStartEnrollmentData, SiteSecondFactorStartEnrollmentResponses, SiteSegmentsCreateData, SiteSegmentsCreateResponses, SiteSegmentsDeleteResponses, SiteSegmentsGetResponses, SiteSegmentsListResponses, SiteSegmentsPreviewData, SiteSegmentsPreviewResponses, SiteSegmentsUpdateData, SiteSegmentsUpdateResponses, SiteSendingDomainsCreateData, SiteSendingDomainsCreateResponses, SiteSendingDomainsDeleteResponses, SiteSendingDomainsGetResponses, SiteSendingDomainsListResponses, SiteSendingDomainsVerifyResponses, SiteSuppressionsCreateData, SiteSuppressionsCreateResponses, SiteSuppressionsDeleteResponses, SiteSuppressionsListResponses, SiteTagsApplyData, SiteTagsApplyResponses, SiteTagsListForContactResponses, SiteTagsListResponses, SiteTagsRemoveResponses, SiteTemplatesCreateData, SiteTemplatesCreateResponses, SiteTemplatesDeleteResponses, SiteTemplatesGetResponses, SiteTemplatesListResponses, SiteTemplatesUpdateData, SiteTemplatesUpdateResponses, SiteTokensCreateData, SiteTokensCreateResponses, SiteTokensDeleteResponses, SiteTokensListResponses, SiteTransactionalEmailsListResponses, SiteUserEmailChangeData, SiteUserEmailChangeResponses, SiteUserGetMeResponses, SiteUserSignOutEverywhereResponses, SiteUserUpdateMeData, SiteUserUpdateMeResponses, SiteWebhooksCreateData, SiteWebhooksCreateResponses, SiteWebhooksDeleteResponses, SiteWebhooksGetResponses, SiteWebhooksListResponses, SiteWebhooksUpdateData, SiteWebhooksUpdateResponses, SiteWorkspacesAccountLinkResponses, SiteWorkspacesListResponses, SiteWorkspacesSetSecondFactorRequirementData, SiteWorkspacesSetSecondFactorRequirementResponses, SiteWorkspacesUpdateData, SiteWorkspacesUpdateResponses } from './types.gen.ts';
+import type { ClientOptions, SiteAnalyticsOverviewResponses, SiteAuditExportResponses, SiteAuditGetRetentionResponses, SiteAuditListResponses, SiteAuditSetRetentionData, SiteAuditSetRetentionResponses, SiteAuthConfirmEmailChangeData, SiteAuthConfirmEmailChangeResponses, SiteAuthForgotPasswordData, SiteAuthForgotPasswordResponses, SiteAuthLoginData, SiteAuthLoginResponses, SiteAuthLogoutResponses, SiteAuthRegisterData, SiteAuthRegisterResponses, SiteAuthResendVerificationData, SiteAuthResendVerificationResponses, SiteAuthResetPasswordData, SiteAuthResetPasswordResponses, SiteAuthSecondFactorData, SiteAuthSecondFactorResponses, SiteAuthVerifyEmailData, SiteAuthVerifyEmailResponses, SiteAutomationsActivateResponses, SiteAutomationsCreateData, SiteAutomationsCreateResponses, SiteAutomationsDeactivateResponses, SiteAutomationsDeleteResponses, SiteAutomationsGetResponses, SiteAutomationsListResponses, SiteAutomationsUpdateData, SiteAutomationsUpdateResponses, SiteBroadcastsCreateData, SiteBroadcastsCreateResponses, SiteBroadcastsDeleteResponses, SiteBroadcastsGetResponses, SiteBroadcastsListResponses, SiteBroadcastsScheduleData, SiteBroadcastsScheduleResponses, SiteBroadcastsSendResponses, SiteBroadcastsTestSendData, SiteBroadcastsTestSendResponses, SiteBroadcastsUpdateData, SiteBroadcastsUpdateResponses, SiteContactsCreateData, SiteContactsCreateResponses, SiteContactsDeleteResponses, SiteContactsExportResponses, SiteContactsGetResponses, SiteContactsListResponses, SiteContactsUpdateData, SiteContactsUpdateResponses, SiteCustomFieldsListResponses, SiteEventsActionsResponses, SiteEventsListResponses, SiteInstanceAcknowledgeNoticeResponses, SiteInstanceGetStateResponses, SiteInstancePreviewTelemetryReportResponses, SiteInstanceSetTelemetryData, SiteInstanceSetTelemetryResponses, SiteIntegrationsCreateData, SiteIntegrationsCreateResponses, SiteIntegrationsDeleteResponses, SiteIntegrationsGetResponses, SiteIntegrationsListResponses, SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsUpdateData, SiteIntegrationsUpdateResponses, SiteInvitationsCreateData, SiteInvitationsCreateResponses, SiteInvitationsDeleteResponses, SiteInvitationsListResponses, SiteMembershipsDeleteResponses, SiteMembershipsListResponses, SiteMembershipsResetSecondFactorResponses, SiteMembershipsUpdateData, SiteMembershipsUpdateResponses, SiteOAuthDecideData, SiteOAuthDecideResponses, SiteOAuthDescribeResponses, SitePresetsListResponses, SitePublicConfirmationsPerformResponses, SitePublicInvitationsAcceptData, SitePublicInvitationsAcceptResponses, SitePublicInvitationsLookupResponses, SitePublicUnsubscribesPerformResponses, SiteSecondFactorConfirmEnrollmentData, SiteSecondFactorConfirmEnrollmentResponses, SiteSecondFactorDisableData, SiteSecondFactorDisableResponses, SiteSecondFactorGetStatusResponses, SiteSecondFactorRegenerateRecoveryCodesData, SiteSecondFactorRegenerateRecoveryCodesResponses, SiteSecondFactorStartEnrollmentData, SiteSecondFactorStartEnrollmentResponses, SiteSegmentsCreateData, SiteSegmentsCreateResponses, SiteSegmentsDeleteResponses, SiteSegmentsGetResponses, SiteSegmentsListResponses, SiteSegmentsPreviewData, SiteSegmentsPreviewResponses, SiteSegmentsUpdateData, SiteSegmentsUpdateResponses, SiteSendingDomainsCreateData, SiteSendingDomainsCreateResponses, SiteSendingDomainsDeleteResponses, SiteSendingDomainsGetResponses, SiteSendingDomainsListResponses, SiteSendingDomainsVerifyResponses, SiteSuppressionsCreateData, SiteSuppressionsCreateResponses, SiteSuppressionsDeleteResponses, SiteSuppressionsListResponses, SiteTagsApplyData, SiteTagsApplyResponses, SiteTagsListForContactResponses, SiteTagsListResponses, SiteTagsRemoveResponses, SiteTemplatesCreateData, SiteTemplatesCreateResponses, SiteTemplatesDeleteResponses, SiteTemplatesGetResponses, SiteTemplatesListResponses, SiteTemplatesUpdateData, SiteTemplatesUpdateResponses, SiteTokensCreateData, SiteTokensCreateResponses, SiteTokensDeleteResponses, SiteTokensListResponses, SiteTransactionalEmailsListResponses, SiteUserEmailChangeData, SiteUserEmailChangeResponses, SiteUserGetMeResponses, SiteUserSignOutEverywhereResponses, SiteUserUpdateMeData, SiteUserUpdateMeResponses, SiteWebhooksCreateData, SiteWebhooksCreateResponses, SiteWebhooksDeleteResponses, SiteWebhooksGetResponses, SiteWebhooksListResponses, SiteWebhooksUpdateData, SiteWebhooksUpdateResponses, SiteWorkspacesAccountLinkResponses, SiteWorkspacesListResponses, SiteWorkspacesSetSecondFactorRequirementData, SiteWorkspacesSetSecondFactorRequirementResponses, SiteWorkspacesUpdateData, SiteWorkspacesUpdateResponses } from './types.gen.ts';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
   baseUrl?: ClientOptions['baseUrl'];
@@ -273,6 +273,114 @@ export function handleSitePublicConfirmationsPerform(response?: HandleSitePublic
     const body = response?.body;
     if (body !== undefined) {
       return new HttpResponse(body, { status: response?.status ?? 204 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleSiteInstanceGetStateResponse = {
+  body: SiteInstanceGetStateResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /instance` operation.
+ */
+export function handleSiteInstanceGetState(response?: HandleSiteInstanceGetStateResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<never, never>(`${options?.baseUrl ?? '*'}/instance`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleSiteInstanceAcknowledgeNoticeResponse = {
+  body: SiteInstanceAcknowledgeNoticeResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `POST /instance/notice/acknowledge` operation.
+ */
+export function handleSiteInstanceAcknowledgeNotice(response?: HandleSiteInstanceAcknowledgeNoticeResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.post<never, never>(`${options?.baseUrl ?? '*'}/instance/notice/acknowledge`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleSiteInstanceSetTelemetryResponse = {
+  body: SiteInstanceSetTelemetryResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `PUT /instance/telemetry` operation.
+ */
+export function handleSiteInstanceSetTelemetry(response?: HandleSiteInstanceSetTelemetryResponse | HttpResponseResolver<never, SiteInstanceSetTelemetryData['body']>, options?: RequestHandlerOptions): HttpHandler {
+  return http.put<never, SiteInstanceSetTelemetryData['body']>(`${options?.baseUrl ?? '*'}/instance/telemetry`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleSiteInstancePreviewTelemetryReportResponse = {
+  body: SiteInstancePreviewTelemetryReportResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /instance/telemetry/preview` operation.
+ */
+export function handleSiteInstancePreviewTelemetryReport(response?: HandleSiteInstancePreviewTelemetryReportResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<never, never>(`${options?.baseUrl ?? '*'}/instance/telemetry/preview`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
     }
     if (options?.responseFallback === 'passthrough') {
       return;
@@ -3237,6 +3345,22 @@ export type MswHandlerFactories = {
    */
   sitePublicConfirmationsPerform: typeof handleSitePublicConfirmationsPerform;
   /**
+   * Handler for the `GET /instance` operation.
+   */
+  siteInstanceGetState: typeof handleSiteInstanceGetState;
+  /**
+   * Handler for the `POST /instance/notice/acknowledge` operation.
+   */
+  siteInstanceAcknowledgeNotice: typeof handleSiteInstanceAcknowledgeNotice;
+  /**
+   * Handler for the `PUT /instance/telemetry` operation.
+   */
+  siteInstanceSetTelemetry: typeof handleSiteInstanceSetTelemetry;
+  /**
+   * Handler for the `GET /instance/telemetry/preview` operation.
+   */
+  siteInstancePreviewTelemetryReport: typeof handleSiteInstancePreviewTelemetryReport;
+  /**
    * Handler for the `GET /invitations/{token}` operation.
    */
   sitePublicInvitationsLookup: typeof handleSitePublicInvitationsLookup;
@@ -3635,6 +3759,10 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     siteAuthSecondFactor: wrap(handleSiteAuthSecondFactor),
     siteAuthVerifyEmail: wrap(handleSiteAuthVerifyEmail),
     sitePublicConfirmationsPerform: wrap(handleSitePublicConfirmationsPerform),
+    siteInstanceGetState: wrap(handleSiteInstanceGetState),
+    siteInstanceAcknowledgeNotice: wrap(handleSiteInstanceAcknowledgeNotice),
+    siteInstanceSetTelemetry: wrap(handleSiteInstanceSetTelemetry),
+    siteInstancePreviewTelemetryReport: wrap(handleSiteInstancePreviewTelemetryReport),
     sitePublicInvitationsLookup: wrap(handleSitePublicInvitationsLookup),
     sitePublicInvitationsAccept: wrap(handleSitePublicInvitationsAccept),
     siteUserGetMe: wrap(handleSiteUserGetMe),
@@ -3786,6 +3914,8 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.siteWebhooksDelete, overrides.siteWebhooksDelete),
       invoke(pick.siteWebhooksGet, overrides.siteWebhooksGet),
       invoke(pick.siteWebhooksUpdate, overrides.siteWebhooksUpdate),
+      invoke(pick.siteInstanceAcknowledgeNotice, overrides.siteInstanceAcknowledgeNotice),
+      invoke(pick.siteInstancePreviewTelemetryReport, overrides.siteInstancePreviewTelemetryReport),
       invoke(pick.siteSecondFactorDisable, overrides.siteSecondFactorDisable),
       invoke(pick.siteSecondFactorStartEnrollment, overrides.siteSecondFactorStartEnrollment),
       invoke(pick.siteSecondFactorRegenerateRecoveryCodes, overrides.siteSecondFactorRegenerateRecoveryCodes),
@@ -3829,6 +3959,7 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.siteAuthResetPassword, overrides.siteAuthResetPassword),
       invoke(pick.siteAuthSecondFactor, overrides.siteAuthSecondFactor),
       invoke(pick.siteAuthVerifyEmail, overrides.siteAuthVerifyEmail),
+      invoke(pick.siteInstanceSetTelemetry, overrides.siteInstanceSetTelemetry),
       invoke(pick.siteUserEmailChange, overrides.siteUserEmailChange),
       invoke(pick.siteSecondFactorGetStatus, overrides.siteSecondFactorGetStatus),
       invoke(pick.siteUserSignOutEverywhere, overrides.siteUserSignOutEverywhere),
@@ -3838,6 +3969,7 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.sitePublicInvitationsLookup, overrides.sitePublicInvitationsLookup),
       invoke(pick.sitePublicUnsubscribesPerform, overrides.sitePublicUnsubscribesPerform),
       invoke(pick.siteWorkspacesUpdate, overrides.siteWorkspacesUpdate),
+      invoke(pick.siteInstanceGetState, overrides.siteInstanceGetState),
       invoke(pick.siteUserGetMe, overrides.siteUserGetMe),
       invoke(pick.siteUserUpdateMe, overrides.siteUserUpdateMe),
       invoke(pick.sitePresetsList, overrides.sitePresetsList),
