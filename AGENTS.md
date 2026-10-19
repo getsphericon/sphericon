@@ -203,6 +203,10 @@ the wall clock; it injects the clock.
   release-please renders only the text of that footer into CHANGELOG.md, never a footer of its own,
   and `sphericon upgrade-notes` reads the `Upgrade:` lines from its BREAKING CHANGES section; the
   repository squashes with the PR title and the commit messages).
+- **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is
+  tables, columns, constraints and indexes. Logic that must run on every write (a change log, a
+  counter, a derived row) lives in Go: an ent hook (like `internal/workspacefeed`) or the domain
+  module, inside the same transaction.
 - `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the outbox and
   river migrations (they were created at boot) needs a `db:reset`.
 - Test DB is separate (`SPHERICON_ENV=test`); tests get it from the migrations, see "Common commands".
