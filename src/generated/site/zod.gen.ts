@@ -1549,6 +1549,7 @@ export const zSiteWorkspaceResource = z.object({
   suspensionReason: z.exactOptional(z.string().nullable()),
   supportEmail: z.exactOptional(z.string().nullable()),
   billingUrl: z.exactOptional(z.string().nullable()),
+  mcpUrl: z.string(),
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),

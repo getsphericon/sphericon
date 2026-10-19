@@ -516,6 +516,7 @@ export default interface Resources {
       "automations": "Automations",
       "broadcasts": "Broadcasts",
       "contacts": "Contacts",
+      "docs": "Docs",
       "overview": "Overview",
       "segments": "Segments",
       "settings": "Settings",
@@ -733,6 +734,7 @@ export default interface Resources {
         "title": "Audit log",
         "to": "To"
       },
+      "backToWorkspace": "Back to workspace",
       "copied": "Copied",
       "copy": "Copy",
       "errorTitle": "Failed to update workspace",
@@ -823,6 +825,18 @@ export default interface Resources {
         "title": "Sending providers"
       },
       "loadErrorTitle": "Failed to load workspace",
+      "mcp": {
+        "apiKeysLink": "API keys",
+        "approveNote": "Only an owner or admin can approve the connection.",
+        "description": "Add this address as a custom connector in Claude, or in any client that speaks MCP, so an agent can work in this workspace.",
+        "guideLink": "Other ways to connect",
+        "memberNote": "You are a member: ask an owner or admin to connect the agent.",
+        "stepAdd": "In Claude open Settings → Connectors → Add custom connector and paste the address.",
+        "stepApprove": "Approve the access on the sphericon screen that opens.",
+        "stepConnect": "Press Connect.",
+        "title": "Connect an AI agent (MCP)",
+        "tokenNote": "Approving creates an ordinary API token named “<client> (MCP)”. You can see it and revoke it under"
+      },
       "members": {
         "created": "Created",
         "emailLabel": "Email",
@@ -854,6 +868,14 @@ export default interface Resources {
         "title": "Team members"
       },
       "nameLabel": "Workspace name",
+      "nav": {
+        "developers": "Developers",
+        "general": "General",
+        "mcp": "AI agents (MCP)",
+        "sending": "Sending",
+        "team": "Team and security",
+        "tracking": "Tracking"
+      },
       "postalAddressDescription": "Shown in the footer of every marketing email. US law (CAN-SPAM) requires a valid physical postal address.",
       "postalAddressLabel": "Postal address",
       "postalAddressPlaceholder": "Acme Inc, 123 Main St, Springfield, IL 62704, USA",
@@ -921,7 +943,6 @@ export default interface Resources {
       },
       "testEventDescription": "Send a test event from your terminal, then watch it appear in the activity feed.",
       "testEventTitle": "Send a test event",
-      "title": "Settings",
       "tokens": {
         "create": "Create token",
         "createError": "Failed to create token",

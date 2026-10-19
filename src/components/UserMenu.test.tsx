@@ -3,7 +3,7 @@ import { expect, test, vi } from 'vitest'
 
 import { handleSiteAuthLogout, handleSiteWorkspacesAccountLink } from '../generated/site/msw.gen.ts'
 import { Route as profileRoute } from '../routes/account/index.tsx'
-import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$slug/settings/index.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { worker } from '../test/worker.ts'

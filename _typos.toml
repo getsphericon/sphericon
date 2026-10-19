@@ -1,5 +1,5 @@
 [files]
-# Generated code, lockfiles and translated catalogs (ru/es are not English).
+# Generated code, lockfiles and catalogs.
 extend-exclude = [
   "gen",
   "ent/*.go",

@@ -71,11 +71,7 @@ func (s TelemetryIntegrationKind) Validate() error {
 
 func (s TelemetryLocale) Validate() error {
 	switch s {
-	case "ru":
-		return nil
 	case "en":
-		return nil
-	case "es":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

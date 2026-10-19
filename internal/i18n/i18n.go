@@ -5,8 +5,7 @@
 // Locale is a property of the deployment (a SaaS instance runs per country),
 // fixed at process start via SPHERICON_APP_LOCALE — there is no per-request or per-user
 // locale. So the translator is a process-global, configured once at boot
-// (Configure) and read-only thereafter. English is the default and the fallback
-// for any message a non-English catalog is missing.
+// (Configure) and read-only thereafter. English is the only catalog.
 package i18n
 
 import (
@@ -22,9 +21,9 @@ import (
 //go:embed locales/*.json
 var localesFS embed.FS
 
-// supported lists the locales shipped with the binary. Kept in lockstep with the
+// supported lists the locales shipped with the binary: English only. Kept in lockstep with the
 // frontend's SUPPORTED_LOCALES (src/i18n.ts) and the Vite dev plugin.
-var supported = []string{"en", "ru", "es"}
+var supported = []string{"en"}
 
 var (
 	bundle *goi18n.Bundle

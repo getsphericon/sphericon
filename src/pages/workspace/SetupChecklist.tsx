@@ -6,15 +6,16 @@ import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteSetupProgress, SiteSetupStepStatus } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$slug/broadcasts/new.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
-import { Route as settingsRoute } from '../../routes/workspaces/$slug/settings.tsx'
+import { Route as developersRoute } from '../../routes/workspaces/$slug/settings/developers.tsx'
+import { Route as sendingRoute } from '../../routes/workspaces/$slug/settings/sending.tsx'
 import { SetupDomainStep } from './SetupDomainStep.tsx'
 
 type StepKey = keyof SiteSetupProgress['steps']
 
 // The steps in the order the checklist shows them, each with the existing page where it is done.
 const STEPS = [
-  { key: 'integration', to: settingsRoute.to },
-  { key: 'sendingDomain', to: settingsRoute.to },
+  { key: 'integration', to: developersRoute.to },
+  { key: 'sendingDomain', to: sendingRoute.to },
   { key: 'contact', to: contactsRoute.to },
   { key: 'sentEmail', to: broadcastsCreateRoute.to },
 ] as const satisfies readonly { key: StepKey; to: string }[]

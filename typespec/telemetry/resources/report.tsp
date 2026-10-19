@@ -28,9 +28,7 @@ enum TelemetryDeployShape {
 }
 
 enum TelemetryLocale {
-  ru,
   en,
-  es,
 }
 
 enum TelemetryIntegrationKind {

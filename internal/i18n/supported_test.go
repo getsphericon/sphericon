@@ -7,7 +7,7 @@ import (
 
 func TestSupportedListsShippedLocalesAndReturnsACopy(t *testing.T) {
 	got := Supported()
-	for _, want := range []string{"en", "ru", "es"} {
+	for _, want := range []string{"en"} {
 		if !slices.Contains(got, want) {
 			t.Errorf("Supported() = %v, missing %q", got, want)
 		}

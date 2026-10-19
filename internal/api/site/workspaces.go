@@ -53,6 +53,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	if h.billingURL != "" {
 		r.BillingUrl = siteapi.NewOptNilString(h.billingURL)
 	}
+	r.McpUrl = h.mcpURL
 	r.AccountLinkAvailable = h.accountLink != nil && m.Role == membership.RoleOwner
 	if end, ok := secondfactor.Deadline(m); ok {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))

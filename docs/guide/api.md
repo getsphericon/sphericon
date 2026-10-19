@@ -15,7 +15,7 @@ collect APIs.
 
 ## Tokens and scopes
 
-Create an API token under **Settings → API keys**. Each token carries scopes, so you can hand an
+Create an API token under **Settings → Developers**. Each token carries scopes, so you can hand an
 integration only what it needs, for example:
 
 - `contacts:read`, `contacts:write`, and the separate `contacts:erase` to delete (erase) a contact

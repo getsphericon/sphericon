@@ -50,19 +50,13 @@ func HostOf(cfg *config.Config, version string, licenseExpiredAt time.Time) Host
 	if cfg.LicenseKey != "" && licenseExpiredAt.IsZero() {
 		edition = telemetryapi.TelemetryEditionEe
 	}
-	locale := telemetryapi.TelemetryLocaleEn
-	if l := telemetryapi.TelemetryLocale(cfg.Locale); slices.Contains([]telemetryapi.TelemetryLocale{
-		telemetryapi.TelemetryLocaleRu, telemetryapi.TelemetryLocaleEn, telemetryapi.TelemetryLocaleEs,
-	}, l) {
-		locale = l
-	}
 	return Host{
 		AppVersion:  version,
 		Edition:     edition,
 		DeployShape: DeployShapeOf(upgrade.DetectContainer()),
 		OS:          runtime.GOOS,
 		Arch:        runtime.GOARCH,
-		Locale:      locale,
+		Locale:      telemetryapi.TelemetryLocaleEn,
 
 		LicenseExpiredAt: licenseExpiredAt,
 	}
