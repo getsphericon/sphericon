@@ -312,7 +312,6 @@ run = [
   "go tool moq -out internal/messaging/mocks_gen_test.go -pkg messaging_test ./internal/messaging EmailSender",
   "go tool moq -out internal/events/mocks_gen_test.go -pkg events ./internal/events Enroller WebhookDispatcher",
   "go tool moq -out internal/events/mocks_ext_gen_test.go -pkg events_test ./internal/events Enroller WebhookDispatcher",
-  "go tool moq -out cmd/server/mocks_gen_test.go -pkg main ./cmd/server workspaceOps staffOps serviceCredentialOps",
 ]
 
 ["generate:fixtures"]

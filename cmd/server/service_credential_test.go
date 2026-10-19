@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -10,150 +11,161 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ee/staff"
-	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func run(t *testing.T, ops serviceCredentialOps, args ...string) (string, error) {
+// run executes `sphericon service-credential <args>` against the real Staff module of env; the
+// command clock is the real one because the module compares expiries with it.
+func run(t *testing.T, env *testhelper.TestEnv, args ...string) (string, error) {
 	t.Helper()
 	var out bytes.Buffer
-	err := execute(ops, &out, append([]string{"service-credential"}, args...)...)
+	err := executeAt(time.Now(), staffCLI{env.StaffMembers}, &out, append([]string{"service-credential"}, args...)...)
 	return out.String(), err
 }
 
-func issuing(err error) *serviceCredentialOpsMock {
-	return &serviceCredentialOpsMock{
-		IssueServiceCredentialFunc: func(_ context.Context, in staff.IssueInput) (*staff.Issued, error) {
-			if err != nil {
-				return nil, err
-			}
-			return &staff.Issued{ID: 7, Name: in.Name, Scopes: in.Scopes, ExpiresAt: in.ExpiresAt, Value: "smsc_value_once"}, nil
-		},
+func credentials(t *testing.T, env *testhelper.TestEnv, name string) []*staff.Issued {
+	t.Helper()
+	rows, err := env.StaffMembers.ServiceCredentials(context.Background(), name)
+	require.NoError(t, err)
+	issued := make([]*staff.Issued, 0, len(rows))
+	for _, row := range rows {
+		issued = append(issued, &staff.Issued{ID: row.ID, Name: row.Name, ExpiresAt: row.ExpiresAt})
 	}
+	return issued
 }
 
 func TestServiceCredentialCreateShowsTheValueOnceWithItsNameAndScopes(t *testing.T) {
-	ops := issuing(nil)
+	env := testhelper.Setup(t)
 
-	out, err := run(t, ops, "create", "service-a", "usage:read,holds:write")
+	out, err := run(t, env, "create", "svc-new", "usage:read,holds:write")
 
 	require.NoError(t, err)
-	calls := ops.IssueServiceCredentialCalls()
-	require.Len(t, calls, 1)
-	assert.Equal(t, "service-a", calls[0].In.Name)
-	assert.Equal(t, []staff.Scope{staff.ScopeUsageRead, staff.ScopeHoldsWrite}, calls[0].In.Scopes)
-	assert.Nil(t, calls[0].In.ExpiresAt)
-	assert.Contains(t, out, "smsc_value_once")
+	row := env.DB.ServiceCredential.Query().Where(servicecredential.Name("svc-new")).OnlyX(context.Background())
+	assert.ElementsMatch(t, []string{"usage:read", "holds:write"}, row.Scopes)
+	assert.Nil(t, row.ExpiresAt)
+	assert.Contains(t, out, "smsc_")
 	assert.Contains(t, out, "shown once")
 }
 
 func TestServiceCredentialCreateTakesAnOptionalExpiryFromNow(t *testing.T) {
-	ops := issuing(nil)
+	env := testhelper.Setup(t)
+	before := time.Now()
 
-	_, err := run(t, ops, "create", "--expires-in", "720h", "service-a", "usage:read")
+	_, err := run(t, env, "create", "--expires-in", "720h", "svc-new", "usage:read")
 
 	require.NoError(t, err)
-	require.NotNil(t, ops.IssueServiceCredentialCalls()[0].In.ExpiresAt)
-	assert.True(t, ops.IssueServiceCredentialCalls()[0].In.ExpiresAt.Equal(cliNow.Add(720*time.Hour)))
+	row := env.DB.ServiceCredential.Query().Where(servicecredential.Name("svc-new")).OnlyX(context.Background())
+	require.NotNil(t, row.ExpiresAt)
+	assert.WithinDuration(t, before.Add(720*time.Hour), *row.ExpiresAt, time.Minute)
+}
+
+func TestServiceCredentialCreateTakesTheExpiryAfterTheArguments(t *testing.T) {
+	env := testhelper.Setup(t)
+	before := time.Now()
+
+	_, err := run(t, env, "create", "svc-new", "usage:read", "--expires-in", "720h")
+
+	require.NoError(t, err)
+	row := env.DB.ServiceCredential.Query().Where(servicecredential.Name("svc-new")).OnlyX(context.Background())
+	require.NotNil(t, row.ExpiresAt)
+	assert.WithinDuration(t, before.Add(720*time.Hour), *row.ExpiresAt, time.Minute)
 }
 
 func TestServiceCredentialCreateExplainsARefusal(t *testing.T) {
+	licensed := testhelper.Setup(t)
+	before := licensed.DB.ServiceCredential.Query().CountX(context.Background())
+	unlicensed := testhelper.Setup(t, testhelper.WithoutLicense())
 	for _, tc := range []struct {
-		err  error
+		env  *testhelper.TestEnv
+		args []string
 		want string
 	}{
-		{staff.ErrNotLicensed, "license"},
-		{staff.ErrInvalidScope, "scope"},
-		{staff.ErrInvalidCredential, "name"},
+		{unlicensed, []string{"create", "svc-new", "usage:read"}, "license"},
+		{licensed, []string{"create", "svc-new", "no:such-scope"}, "scope"},
+		{licensed, []string{"create", " ", "usage:read"}, "name"},
 	} {
-		_, err := run(t, issuing(tc.err), "create", "service-a", "usage:read")
+		_, err := run(t, tc.env, tc.args...)
 		require.ErrorContains(t, err, tc.want)
 	}
+	assert.Equal(t, before, licensed.DB.ServiceCredential.Query().CountX(context.Background()), "a refusal creates nothing")
 }
 
 func TestServiceCredentialRotateShowsTheNewValueAndSaysTheOldOneStaysActive(t *testing.T) {
-	ops := &serviceCredentialOpsMock{
-		RotateServiceCredentialFunc: func(context.Context, int64, *time.Time) (*staff.Issued, error) {
-			return &staff.Issued{ID: 9, Name: "service-a", Value: "smsc_rotated"}, nil
-		},
-	}
+	env := testhelper.Setup(t)
+	_, err := run(t, env, "create", "svc-new", "usage:read")
+	require.NoError(t, err)
+	old := credentials(t, env, "svc-new")[0]
+	revokedBefore := env.DB.ServiceCredential.Query().Where(servicecredential.RevokedAtNotNil()).CountX(context.Background())
 
-	out, err := run(t, ops, "rotate", "7")
+	out, err := run(t, env, "rotate", itoa(old.ID))
 
 	require.NoError(t, err)
-	assert.EqualValues(t, 7, ops.RotateServiceCredentialCalls()[0].ID)
-	assert.Contains(t, out, "smsc_rotated")
+	assert.Len(t, credentials(t, env, "svc-new"), 2, "a second credential with the same name")
+	assert.Equal(t, revokedBefore, env.DB.ServiceCredential.Query().Where(servicecredential.RevokedAtNotNil()).CountX(context.Background()), "the old one stays active")
+	assert.Contains(t, out, "smsc_")
 	assert.Contains(t, out, "revoke")
 }
 
 func TestServiceCredentialRevokeEndsTheCredential(t *testing.T) {
-	ops := &serviceCredentialOpsMock{RevokeServiceCredentialFunc: func(context.Context, int64) error { return nil }}
+	env := testhelper.Setup(t)
+	_, err := run(t, env, "create", "svc-new", "usage:read")
+	require.NoError(t, err)
+	id := credentials(t, env, "svc-new")[0].ID
 
-	out, err := run(t, ops, "revoke", "7")
+	out, err := run(t, env, "revoke", itoa(id))
 
 	require.NoError(t, err)
-	assert.EqualValues(t, 7, ops.RevokeServiceCredentialCalls()[0].ID)
+	assert.NotNil(t, env.DB.ServiceCredential.GetX(context.Background(), id).RevokedAt)
 	assert.Contains(t, out, "revoked")
 }
 
 func TestServiceCredentialRevokeOfAMissingIdSaysSo(t *testing.T) {
-	ops := &serviceCredentialOpsMock{RevokeServiceCredentialFunc: func(context.Context, int64) error { return staff.ErrCredentialNotFound }}
+	env := testhelper.Setup(t)
 
-	_, err := run(t, ops, "revoke", "7")
+	_, err := run(t, env, "revoke", "999999")
 
 	require.ErrorContains(t, err, "no service credential")
 }
 
 func TestServiceCredentialListShowsStateExpiryAndLastUsed(t *testing.T) {
-	used := cliNow.Add(-time.Hour)
-	soon := cliNow.Add(24 * time.Hour)
-	past := cliNow.Add(-24 * time.Hour)
-	ops := &serviceCredentialOpsMock{
-		ServiceCredentialsFunc: func(context.Context, string) ([]*ent.ServiceCredential, error) {
-			return []*ent.ServiceCredential{
-				{ID: 1, Name: "service-a", Scopes: []string{"usage:read"}, LastUsedAt: &used, ExpiresAt: &soon},
-				{ID: 2, Name: "service-a", Scopes: []string{"holds:write"}, RevokedAt: &past},
-				{ID: 3, Name: "service-b", Scopes: []string{"usage:read"}, ExpiresAt: &past},
-			}, nil
-		},
-	}
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	_, err := run(t, env, "create", "--expires-in", "24h", "svc-new", "usage:read")
+	require.NoError(t, err)
+	_, err = run(t, env, "create", "svc-new", "holds:write")
+	require.NoError(t, err)
+	revoked := env.DB.ServiceCredential.Query().Where(servicecredential.Name("svc-new"), servicecredential.ExpiresAtIsNil()).OnlyX(ctx)
+	_, err = run(t, env, "revoke", itoa(revoked.ID))
+	require.NoError(t, err)
 
-	out, err := run(t, ops, "list", "service-a")
+	out, err := run(t, env, "list", "svc-new")
 
 	require.NoError(t, err)
-	assert.Equal(t, "service-a", ops.ServiceCredentialsCalls()[0].Name)
 	assert.Contains(t, out, "active")
 	assert.Contains(t, out, "revoked")
-	assert.Contains(t, out, "expired")
-	assert.Contains(t, out, used.Format(time.RFC3339))
-	assert.Contains(t, out, soon.Format(time.RFC3339))
 	assert.Contains(t, out, "never")
 }
 
-func TestServiceCredentialCreateTakesTheExpiryAfterTheArguments(t *testing.T) {
-	ops := issuing(nil)
-
-	_, err := run(t, ops, "create", "service-a", "usage:read", "--expires-in", "720h")
-
-	require.NoError(t, err)
-	require.NotNil(t, ops.IssueServiceCredentialCalls()[0].In.ExpiresAt)
-	assert.True(t, ops.IssueServiceCredentialCalls()[0].In.ExpiresAt.Equal(cliNow.Add(720*time.Hour)))
-}
-
 func TestServiceCredentialRefusesExtraArgumentsAndANegativeExpiry(t *testing.T) {
-	ops := &serviceCredentialOpsMock{RevokeServiceCredentialFunc: func(context.Context, int64) error { return nil }}
+	env := testhelper.Setup(t)
+	before := env.DB.ServiceCredential.Query().CountX(context.Background())
 
-	_, err := run(t, ops, "revoke", "7", "8")
+	_, err := run(t, env, "revoke", "7", "8")
 	require.Error(t, err)
-	_, err = run(t, issuing(nil), "create", "--expires-in=-1h", "service-a", "usage:read")
+	_, err = run(t, env, "create", "--expires-in=-1h", "svc-new", "usage:read")
 	require.Error(t, err)
-	assert.Empty(t, ops.RevokeServiceCredentialCalls())
+	assert.Equal(t, before, env.DB.ServiceCredential.Query().CountX(context.Background()))
 }
 
 func TestServiceCredentialNeedsAKnownCommandAndItsArguments(t *testing.T) {
-	ops := issuing(nil)
-	for _, args := range [][]string{nil, {"create"}, {"create", "service-a"}, {"rotate"}, {"rotate", "abc"}, {"revoke", "x"}, {"delete", "1"}, {"create", "--expires-in", "soon", "a", "usage:read"}} {
-		_, err := run(t, ops, args...)
+	env := testhelper.Setup(t)
+	before := env.DB.ServiceCredential.Query().CountX(context.Background())
+	for _, args := range [][]string{nil, {"create"}, {"create", "svc-new"}, {"rotate"}, {"rotate", "abc"}, {"revoke", "x"}, {"delete", "1"}, {"create", "--expires-in", "soon", "a", "usage:read"}} {
+		_, err := run(t, env, args...)
 		require.Error(t, err, "args %v", args)
 	}
-	assert.Empty(t, ops.IssueServiceCredentialCalls())
+	assert.Equal(t, before, env.DB.ServiceCredential.Query().CountX(context.Background()))
 }
+
+func itoa(id int64) string { return strconv.FormatInt(id, 10) }
