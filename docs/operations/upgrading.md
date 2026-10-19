@@ -154,18 +154,19 @@ signature of `checksums.txt` and of the image, made keyless by the release workf
 ```sh
 cosign verify-blob checksums.txt \
   --bundle checksums.txt.sigstore.json \
-  --certificate-identity-regexp '^https://github.com/getsphericon/sphericon/\.github/workflows/release-please\.yml@' \
+  --certificate-identity-regexp '^https://github\.com/getsphericon/sphericon/\.github/workflows/release-please\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
-sha256sum --check --ignore-missing checksums.txt
+sha256sum --check --ignore-missing checksums.txt   # macOS: shasum -a 256 --check --ignore-missing
 
 cosign verify ghcr.io/getsphericon/sphericon:0.5.0 \
-  --certificate-identity-regexp '^https://github.com/getsphericon/sphericon/\.github/workflows/release-please\.yml@' \
+  --certificate-identity-regexp '^https://github\.com/getsphericon/sphericon/\.github/workflows/release-please\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
 Each archive has an SPDX SBOM on the release (`sphericon_<version>_<os>_<arch>.tar.gz.sbom.json`),
 and the image carries its SBOM as an attestation (`docker buildx imagetools inspect
-ghcr.io/getsphericon/sphericon:0.5.0 --format '{{ json .SBOM }}'`).
+ghcr.io/getsphericon/sphericon:0.5.0 --format '{{ json .SBOM }}'`). That attestation is a
+BuildKit one, not covered by the cosign signature.
 
 ## Helm {#helm}
 

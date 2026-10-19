@@ -71,11 +71,12 @@ signs:
       - --bundle=${signature}
       - ${artifact}
 
-# Signs the multi-arch manifest on ghcr.io by digest.
+# Signs the image on ghcr.io by digest. `all` because dockers_v2 registers one multi-arch
+# artifact of its own type, which `manifests` or `images` alone may not select.
 docker_signs:
   - id: images
     cmd: cosign
-    artifacts: manifests
+    artifacts: all
     args:
       - sign
       - --yes
