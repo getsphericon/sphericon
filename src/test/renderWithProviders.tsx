@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { render } from 'vitest-browser-react'
 
+import { trackQueryClient } from './queryClients.ts'
+
 // Mirrors the provider stack from src/main.tsx so components render the same way
 // they do in the app. A fresh QueryClient per render keeps tests isolated;
 // retries are off so failed requests surface immediately instead of after delays.
@@ -19,6 +21,7 @@ function makeQueryClient() {
 
 export function renderWithProviders(ui: ReactNode) {
   const queryClient = makeQueryClient()
+  trackQueryClient(queryClient)
 
   function Wrapper({ children }: { children: ReactNode }) {
     return (

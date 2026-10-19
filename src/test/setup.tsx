@@ -15,6 +15,7 @@ import { handleSiteBrandKitGet } from '../generated/site/msw.gen.ts'
 import { client as staffClient } from '../generated/staff/client.gen.ts'
 import { createAppRouter } from '../router.ts'
 import { UNSAVED_BRAND_KIT } from './payloads.ts'
+import { settled } from './queryClients.ts'
 import { worker } from './worker.ts'
 
 // The app pins the generated client's base URL in src/main.tsx; mirror it here.
@@ -71,6 +72,7 @@ beforeEach(() => {
 // are still installed (or they would be answered by the next test's handlers and reported there).
 const FLUSH_PATH = '/__flush'
 afterEach(async () => {
+  await settled()
   worker.use(http.get(FLUSH_PATH, () => new HttpResponse(null)))
   await fetch(FLUSH_PATH)
   await Promise.all(recording.splice(0))
