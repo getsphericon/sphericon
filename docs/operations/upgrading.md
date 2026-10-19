@@ -164,9 +164,13 @@ cosign verify ghcr.io/getsphericon/sphericon:0.5.0 \
 ```
 
 Each archive has an SPDX SBOM on the release (`sphericon_<version>_<os>_<arch>.tar.gz.sbom.json`),
-and the image carries its SBOM as an attestation (`docker buildx imagetools inspect
-ghcr.io/getsphericon/sphericon:0.5.0 --format '{{ json .SBOM }}'`). That attestation is a
-BuildKit one, not covered by the cosign signature.
+and the image carries its SBOM as an attestation:
+
+```sh
+docker buildx imagetools inspect ghcr.io/getsphericon/sphericon:0.5.0 --format '{{ json .SBOM }}'
+```
+
+That attestation is a BuildKit one, not covered by the cosign signature.
 
 ## Helm {#helm}
 
