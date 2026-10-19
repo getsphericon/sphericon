@@ -17,6 +17,8 @@
   "email.workspace_suspended.body": "Se ha suspendido el envío de correos salientes de su espacio de trabajo de sphericon {{.Workspace}}.\n\nMotivo: {{.Reason}}\nEstablecido por: {{.Actor}}\n\nNo se pierde nada: los envíos programados y las automatizaciones se pausan y se reanudan cuando se levante la suspensión. Aún puede iniciar sesión y consultar sus datos. {{if .Support}}Para apelar, escriba a {{.Support}}.{{else}}Para apelar, póngase en contacto con su administrador de sphericon.{{end}}\n",
   "email.workspace_suspended.actor_staff": "personal de sphericon",
   "email.workspace_suspended.actor_system": "detección automática de abusos",
+  "email.tracking_domain_regressed.subject": "Acción requerida: el dominio de seguimiento {{.Host}} dejó de funcionar",
+  "email.tracking_domain_regressed.body": "El dominio de seguimiento \"{{.Host}}\" de su dominio de envío \"{{.Domain}}\" ahora está en {{.To}} en lugar de {{.From}}: su CNAME debe apuntar a {{.Target}} y el host debe responder por HTTPS.\n\nHasta que vuelva a funcionar, los enlaces de sus correos usan la dirección de la aplicación.\n",
   "email.abuse_warning.subject": "Aviso: problema de entregabilidad de correo en {{.Workspace}}",
   "email.abuse_warning.body": "El envío de su espacio de trabajo de sphericon {{.Workspace}} está cerca de suspenderse.\n\nLa tasa de {{.Metric}} de {{.Domain}} en las últimas 24 horas es {{.Rate}} ({{.Count}} de {{.Total}}), por encima del límite de aviso de {{.Limit}}.\n\nTodavía no se ha bloqueado nada. Depure su lista y revise a quién escribe: si se alcanza el límite de bloqueo, todo el envío del espacio de trabajo se suspende automáticamente.\n\n{{if .Support}}¿Dudas? Escriba a {{.Support}}.{{end}}\n",
   "metric.complaint": "quejas",

@@ -58,7 +58,9 @@ password, no cookie, no TOTP, no console access.
 - **Served only on an internal listener**, in the manner of the metrics listener
   ([[0018-metrics-opt-in-internal-listener]]): the service endpoints are a separate TypeSpec
   surface and ogen server (`/service`), bound to `SPHERICON_INTERNAL_ADDR`, empty by default and then no
-  listener and no route anywhere; an address equal to the public `PORT` (or `SPHERICON_METRICS_ADDR`) is a
+  listener and no route anywhere (the listener also always serves the core edge's TLS `ask`,
+  [[0038-tracking-domains-are-core-and-the-edge-is-not]], but mounts `/service` only with the `staff`
+  license); an address equal to the public `PORT` (or `SPHERICON_METRICS_ADDR`) is a
   configuration error and a bind failure is fatal. The public port answers 404 for `/service`. The
   network boundary is the first control and the credential the second.
 - Rate limited per credential (`SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE`) and per client address on failed
@@ -67,7 +69,8 @@ password, no cookie, no TOTP, no console access.
   credential's id and its name, in the manner of an API token. Like a Staff member it is staff of the
   platform: every customer-facing read shows it as "sphericon staff" with no id
   ([[0022-audit-log-ee-captured-at-scoped-client]]), and only the Staff console names it.
-- All of it runs under the same `staff` license feature; unlicensed, nothing is served and the
+- All of it runs under the same `staff` license feature; unlicensed, no service endpoint is served
+  (`/service` answers 404, even on the internal listener, which then serves only the TLS `ask`) and the
   commands refuse.
 
 ### Console v1 shows metadata only

@@ -91,6 +91,8 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 	// DNS; verified is a live property re-validated by the periodic job below.
 	river.AddWorker(workers, &VerifySendingDomainWorker{ent: entClient, lookup: lookup, sender: systemSender, tracking: tracking})
 	river.AddWorker(workers, &RecheckSendingDomainsWorker{ent: entClient})
+	river.AddWorker(workers, &VerifyTrackingDomainWorker{ent: entClient, sender: systemSender, tracking: tracking})
+	river.AddWorker(workers, &RecheckTrackingDomainsWorker{ent: entClient})
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
 	river.AddWorker(workers, &RefreshSendQuotasWorker{ent: entClient})
@@ -149,6 +151,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				river.PeriodicInterval(15*time.Minute),
 				func() (river.JobArgs, *river.InsertOpts) {
 					return RecheckSendingDomainsArgs{}, nil
+				},
+				&river.PeriodicJobOpts{RunOnStart: true},
+			),
+			// Tracking domains are re-checked on their own cadence (ADR 0038).
+			river.NewPeriodicJob(
+				river.PeriodicInterval(15*time.Minute),
+				func() (river.JobArgs, *river.InsertOpts) {
+					return RecheckTrackingDomainsArgs{}, nil
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),

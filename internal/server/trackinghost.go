@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
+	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 )
 
@@ -33,8 +34,8 @@ func trackingHostFrom(ctx context.Context) (trackingHost, bool) {
 // next unchanged, so the Instance's own host serves everything as before; the one
 // exception is a header the edge set that names a customer host which is not verified:
 // it answers 404 instead of falling through to the SPA. link is the link-path handler
-// (/e/); secret keys the well-known probe value.
-func trackingHostGate(cfg *config.Config, client *ent.Client, next, link http.Handler, secret string) http.Handler {
+// (/e/). The well-known probe value is keyed by cfg.JWTSecret.
+func trackingHostGate(cfg *config.Config, client *ent.Client, next, link http.Handler) http.Handler {
 	appHost := appHostname(cfg.AppURL)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		host, fromEdge := requestHost(cfg, r)
@@ -42,8 +43,8 @@ func trackingHostGate(cfg *config.Config, client *ent.Client, next, link http.Ha
 			next.ServeHTTP(w, r)
 			return
 		}
-		ws, ok := verifiedTrackingHost(r.Context(), client, host)
-		if !ok {
+		ws, ok, err := verifiedTrackingHost(r.Context(), client, host)
+		if err != nil || !ok {
 			if fromEdge {
 				http.NotFound(w, r)
 				return
@@ -55,7 +56,7 @@ func trackingHostGate(cfg *config.Config, client *ent.Client, next, link http.Ha
 		case r.URL.Path == trackingdomain.ProbePath && (r.Method == http.MethodGet || r.Method == http.MethodHead):
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.Header().Set("Cache-Control", "no-store")
-			_, _ = w.Write([]byte(trackingdomain.ProbeValue(secret, host)))
+			_, _ = w.Write([]byte(trackingdomain.ProbeValue(cfg.JWTSecret, host)))
 		case isLinkPath(r.URL.Path):
 			ctx := context.WithValue(r.Context(), trackingHostKey{}, trackingHost{host: host, workspaceID: ws})
 			link.ServeHTTP(w, r.WithContext(ctx))
@@ -122,16 +123,20 @@ func appHostname(appURL string) string {
 
 // verifiedTrackingHost resolves host to its Workspace when it is the Tracking domain of
 // a Sending domain in dns_verified or serving. The partial unique index makes it one row.
-func verifiedTrackingHost(ctx context.Context, client *ent.Client, host string) (int64, bool) {
-	domain, ok := strings.CutPrefix(host, "track.")
-	if !ok || domain == "" {
-		return 0, false
+// ok is false, with a nil error, for a host that is not one; err is a failed lookup.
+func verifiedTrackingHost(ctx context.Context, client *ent.Client, host string) (workspaceID int64, ok bool, err error) {
+	domain, isHost := sendingdomains.DomainOfTrackingHost(host)
+	if !isHost {
+		return 0, false, nil
 	}
 	row, err := client.SendingDomain.Query().
 		Where(sendingdomain.Domain(domain), sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
 		Only(ctx)
-	if err != nil {
-		return 0, false
+	if ent.IsNotFound(err) {
+		return 0, false, nil
 	}
-	return row.WorkspaceID, true
+	if err != nil {
+		return 0, false, err
+	}
+	return row.WorkspaceID, true, nil
 }

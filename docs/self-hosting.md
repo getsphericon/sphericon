@@ -286,7 +286,7 @@ with `SPHERICON_INTERNAL_ADDR=127.0.0.1:3400`, `SPHERICON_TRACKING_CNAME_TARGET=
 and `SPHERICON_TRACKING_HOST_HEADER=X-Forwarded-Host`. Point `edge.example.com` at the same machine.
 
 A domain goes `pending`, then `dns_verified` (CNAME correct, `ask` answers 200), then `serving`
-(sphericon fetched its own well-known path over HTTPS). A job rechecks every 15 minutes. Until a
+(sphericon fetched its own well-known path over HTTPS). A job rechecks every `dns_verified` and `serving` domain every 15 minutes. Until a
 domain is `serving`, and again if it regresses, mail uses `SPHERICON_APP_URL`. Removing a Sending domain
 or its CNAME leaves links already sent working on the Instance's host and dead on the customer's.
 

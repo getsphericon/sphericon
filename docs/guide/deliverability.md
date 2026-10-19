@@ -21,7 +21,9 @@ your instance has an edge set up for it (`SPHERICON_TRACKING_CNAME_TARGET`, see
 
 1. At your DNS provider, add a `CNAME` record. The host is `track.<your sending domain>` (a fixed
    name, you cannot pick another label) and the value is the edge host shown in the row.
-2. Wait: sphericon rechecks the tracking CNAME and HTTPS every 15 minutes.
+2. Click **Verify** (it checks the tracking CNAME and HTTPS along with the DKIM record), or wait: a
+   domain that is DNS verified or Serving is rechecked every 15 minutes. A **Pending** domain is
+   only checked when you click **Verify**.
 3. The row shows where the domain stands:
    - **Pending**: the CNAME is missing or does not point at the edge host yet.
    - **DNS verified**: the CNAME is right, so the edge may now get a certificate for the host. Mail

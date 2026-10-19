@@ -75,8 +75,9 @@ type App struct {
 	// Metrics is the opt-in Prometheus listener (ADR 0018); nil when SPHERICON_METRICS_ADDR
 	// is empty and for the command app.
 	Metrics *telemetry.MetricsServer
-	// Internal is the opt-in internal listener of the service endpoints (ADR 0026); nil
-	// when SPHERICON_INTERNAL_ADDR is empty, without the `staff` license, and for the command app.
+	// Internal is the opt-in internal listener: the edge's TLS ask (ADR 0038, always) and the
+	// service endpoints (ADR 0026, with the `staff` license); nil when SPHERICON_INTERNAL_ADDR
+	// is empty and for the command app.
 	Internal *sidelistener.Server
 
 	injector       *do.RootScope
@@ -185,8 +186,8 @@ type outboundModule struct{ *outbound.Module }
 // externalAPI is the external (/api) ogen server; the MCP surface dispatches through it.
 type externalAPI struct{ http.Handler }
 
-// internalHandler is the internal listener's handler (ADR 0026); its Handler is nil
-// without the `staff` license.
+// internalHandler is the internal listener's handler: the TLS ask always, /service with
+// the `staff` license (ADR 0026, ADR 0038).
 type internalHandler struct{ http.Handler }
 
 // mcpHandler is the /mcp surface (ADR 0016), projected from the external contract.
@@ -304,9 +305,7 @@ func New(env string, opts ...Option) (*App, error) {
 			_ = injector.Shutdown()
 			return nil, err
 		}
-		if ih.Handler != nil {
-			internal = sidelistener.New("internal", cfg.InternalAddr, ih.Handler, sidelistener.WithTimeouts(30*time.Second, 2*time.Minute))
-		}
+		internal = sidelistener.New("internal", cfg.InternalAddr, ih.Handler, sidelistener.WithTimeouts(30*time.Second, 2*time.Minute))
 	}
 
 	addr := ":" + cfg.Port

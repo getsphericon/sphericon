@@ -69,7 +69,20 @@ func New(bus *events.Bus, cipher *secrets.Cipher, verify VerifyEnqueuer, trackin
 }
 
 // TrackingHost is the Tracking domain of a Sending domain: track.<domain> (ADR 0038).
-func TrackingHost(domain string) string { return "track." + domain }
+func TrackingHost(domain string) string { return trackingLabel + domain }
+
+const trackingLabel = "track."
+
+// DomainOfTrackingHost is the inverse of TrackingHost: the Sending domain a Tracking
+// domain host belongs to, lowercased. ok is false for anything that is not such a host.
+func DomainOfTrackingHost(host string) (string, bool) {
+	host = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(host), "."))
+	domain, found := strings.CutPrefix(host, trackingLabel)
+	if !found || domain == "" || strings.ContainsAny(domain, "/:@ ?#") {
+		return "", false
+	}
+	return domain, true
+}
 
 // ServingTrackingHost returns the Tracking domain of the Workspace's Sending domain when
 // its state is serving, and "" otherwise (including an unknown domain): mail builds its

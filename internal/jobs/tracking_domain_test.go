@@ -72,3 +72,40 @@ func TestVerifyTrackingDomainByID_promotionNotifiesNobody(t *testing.T) {
 	assert.Equal(t, sendingdomain.TrackingStateServing, row.TrackingState)
 	assert.Empty(t, env.SystemMail.Messages())
 }
+
+func TestVerifySendingDomainWorker_dkimFailureStillRunsTheTrackingCheck(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	zones := map[string]mockdns.Zone{"track.serving.umbrella.test.": {CNAME: testhelper.TrackingCNAMETarget + "."}}
+	down := probeFunc(func(*http.Request) (*http.Response, error) { return nil, errors.New("connection refused") })
+	servfail := func(context.Context, string) ([]string, error) { return nil, errors.New("servfail") }
+
+	w := jobs.NewVerifySendingDomainWorkerWithTracking(env.DB, servfail, env.SystemMail, trackingVerifier(env, t, zones, down))
+	err := w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainTrackingServingID}))
+	require.Error(t, err, "the DKIM lookup error is still reported")
+
+	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainTrackingServingID)
+	require.NoError(t, err)
+	assert.Equal(t, sendingdomain.TrackingStateDNSVerified, row.TrackingState)
+}
+
+func TestRecheckTrackingDomainsWorker_demotesAServingHostThatStopsAnswering(t *testing.T) {
+	e := newRiverEnv(t)
+	ctx := e.workCtx()
+
+	require.NoError(t, jobs.NewRecheckTrackingDomainsWorker(e.DB).Work(ctx, job(jobs.RecheckTrackingDomainsArgs{})))
+	kinds := e.queued(t)
+	require.NotEmpty(t, kinds)
+	for _, k := range kinds {
+		assert.Equal(t, "tracking_domain_verify", k)
+	}
+
+	zones := map[string]mockdns.Zone{"track.serving.umbrella.test.": {CNAME: testhelper.TrackingCNAMETarget + "."}}
+	down := probeFunc(func(*http.Request) (*http.Response, error) { return nil, errors.New("connection refused") })
+	w := jobs.NewVerifyTrackingDomainWorker(e.DB, e.SystemMail, trackingVerifier(e.TestEnv, t, zones, down))
+	require.NoError(t, w.Work(ctx, job(jobs.VerifyTrackingDomainArgs{SendingDomainID: fixtures.SendingDomainTrackingServingID})))
+
+	row, err := e.DB.SendingDomain.Get(ctx, fixtures.SendingDomainTrackingServingID)
+	require.NoError(t, err)
+	assert.Equal(t, sendingdomain.TrackingStateDNSVerified, row.TrackingState)
+}
