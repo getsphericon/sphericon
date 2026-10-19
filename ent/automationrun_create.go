@@ -112,6 +112,48 @@ func (_c *AutomationRunCreate) SetNillableResumeAt(v *time.Time) *AutomationRunC
 	return _c
 }
 
+// SetFailureKind sets the "failure_kind" field.
+func (_c *AutomationRunCreate) SetFailureKind(v automationrun.FailureKind) *AutomationRunCreate {
+	_c.mutation.SetFailureKind(v)
+	return _c
+}
+
+// SetNillableFailureKind sets the "failure_kind" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableFailureKind(v *automationrun.FailureKind) *AutomationRunCreate {
+	if v != nil {
+		_c.SetFailureKind(*v)
+	}
+	return _c
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (_c *AutomationRunCreate) SetFailureStatus(v int) *AutomationRunCreate {
+	_c.mutation.SetFailureStatus(v)
+	return _c
+}
+
+// SetNillableFailureStatus sets the "failure_status" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableFailureStatus(v *int) *AutomationRunCreate {
+	if v != nil {
+		_c.SetFailureStatus(*v)
+	}
+	return _c
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (_c *AutomationRunCreate) SetFailureExcerpt(v string) *AutomationRunCreate {
+	_c.mutation.SetFailureExcerpt(v)
+	return _c
+}
+
+// SetNillableFailureExcerpt sets the "failure_excerpt" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableFailureExcerpt(v *string) *AutomationRunCreate {
+	if v != nil {
+		_c.SetFailureExcerpt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationRunCreate) SetID(v int64) *AutomationRunCreate {
 	_c.mutation.SetID(v)
@@ -214,6 +256,11 @@ func (_c *AutomationRunCreate) check() error {
 			return &ValidationError{Name: "current_step", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.current_step": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.FailureKind(); ok {
+		if err := automationrun.FailureKindValidator(v); err != nil {
+			return &ValidationError{Name: "failure_kind", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.failure_kind": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "AutomationRun.workspace"`)}
 	}
@@ -276,6 +323,18 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.ResumeAt(); ok {
 		_spec.SetField(automationrun.FieldResumeAt, field.TypeTime, value)
 		_node.ResumeAt = &value
+	}
+	if value, ok := _c.mutation.FailureKind(); ok {
+		_spec.SetField(automationrun.FieldFailureKind, field.TypeEnum, value)
+		_node.FailureKind = &value
+	}
+	if value, ok := _c.mutation.FailureStatus(); ok {
+		_spec.SetField(automationrun.FieldFailureStatus, field.TypeInt, value)
+		_node.FailureStatus = &value
+	}
+	if value, ok := _c.mutation.FailureExcerpt(); ok {
+		_spec.SetField(automationrun.FieldFailureExcerpt, field.TypeString, value)
+		_node.FailureExcerpt = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -465,6 +524,66 @@ func (u *AutomationRunUpsert) ClearResumeAt() *AutomationRunUpsert {
 	return u
 }
 
+// SetFailureKind sets the "failure_kind" field.
+func (u *AutomationRunUpsert) SetFailureKind(v automationrun.FailureKind) *AutomationRunUpsert {
+	u.Set(automationrun.FieldFailureKind, v)
+	return u
+}
+
+// UpdateFailureKind sets the "failure_kind" field to the value that was provided on create.
+func (u *AutomationRunUpsert) UpdateFailureKind() *AutomationRunUpsert {
+	u.SetExcluded(automationrun.FieldFailureKind)
+	return u
+}
+
+// ClearFailureKind clears the value of the "failure_kind" field.
+func (u *AutomationRunUpsert) ClearFailureKind() *AutomationRunUpsert {
+	u.SetNull(automationrun.FieldFailureKind)
+	return u
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (u *AutomationRunUpsert) SetFailureStatus(v int) *AutomationRunUpsert {
+	u.Set(automationrun.FieldFailureStatus, v)
+	return u
+}
+
+// UpdateFailureStatus sets the "failure_status" field to the value that was provided on create.
+func (u *AutomationRunUpsert) UpdateFailureStatus() *AutomationRunUpsert {
+	u.SetExcluded(automationrun.FieldFailureStatus)
+	return u
+}
+
+// AddFailureStatus adds v to the "failure_status" field.
+func (u *AutomationRunUpsert) AddFailureStatus(v int) *AutomationRunUpsert {
+	u.Add(automationrun.FieldFailureStatus, v)
+	return u
+}
+
+// ClearFailureStatus clears the value of the "failure_status" field.
+func (u *AutomationRunUpsert) ClearFailureStatus() *AutomationRunUpsert {
+	u.SetNull(automationrun.FieldFailureStatus)
+	return u
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (u *AutomationRunUpsert) SetFailureExcerpt(v string) *AutomationRunUpsert {
+	u.Set(automationrun.FieldFailureExcerpt, v)
+	return u
+}
+
+// UpdateFailureExcerpt sets the "failure_excerpt" field to the value that was provided on create.
+func (u *AutomationRunUpsert) UpdateFailureExcerpt() *AutomationRunUpsert {
+	u.SetExcluded(automationrun.FieldFailureExcerpt)
+	return u
+}
+
+// ClearFailureExcerpt clears the value of the "failure_excerpt" field.
+func (u *AutomationRunUpsert) ClearFailureExcerpt() *AutomationRunUpsert {
+	u.SetNull(automationrun.FieldFailureExcerpt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -632,6 +751,76 @@ func (u *AutomationRunUpsertOne) UpdateResumeAt() *AutomationRunUpsertOne {
 func (u *AutomationRunUpsertOne) ClearResumeAt() *AutomationRunUpsertOne {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.ClearResumeAt()
+	})
+}
+
+// SetFailureKind sets the "failure_kind" field.
+func (u *AutomationRunUpsertOne) SetFailureKind(v automationrun.FailureKind) *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetFailureKind(v)
+	})
+}
+
+// UpdateFailureKind sets the "failure_kind" field to the value that was provided on create.
+func (u *AutomationRunUpsertOne) UpdateFailureKind() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateFailureKind()
+	})
+}
+
+// ClearFailureKind clears the value of the "failure_kind" field.
+func (u *AutomationRunUpsertOne) ClearFailureKind() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearFailureKind()
+	})
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (u *AutomationRunUpsertOne) SetFailureStatus(v int) *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetFailureStatus(v)
+	})
+}
+
+// AddFailureStatus adds v to the "failure_status" field.
+func (u *AutomationRunUpsertOne) AddFailureStatus(v int) *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.AddFailureStatus(v)
+	})
+}
+
+// UpdateFailureStatus sets the "failure_status" field to the value that was provided on create.
+func (u *AutomationRunUpsertOne) UpdateFailureStatus() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateFailureStatus()
+	})
+}
+
+// ClearFailureStatus clears the value of the "failure_status" field.
+func (u *AutomationRunUpsertOne) ClearFailureStatus() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearFailureStatus()
+	})
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (u *AutomationRunUpsertOne) SetFailureExcerpt(v string) *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetFailureExcerpt(v)
+	})
+}
+
+// UpdateFailureExcerpt sets the "failure_excerpt" field to the value that was provided on create.
+func (u *AutomationRunUpsertOne) UpdateFailureExcerpt() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateFailureExcerpt()
+	})
+}
+
+// ClearFailureExcerpt clears the value of the "failure_excerpt" field.
+func (u *AutomationRunUpsertOne) ClearFailureExcerpt() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearFailureExcerpt()
 	})
 }
 
@@ -968,6 +1157,76 @@ func (u *AutomationRunUpsertBulk) UpdateResumeAt() *AutomationRunUpsertBulk {
 func (u *AutomationRunUpsertBulk) ClearResumeAt() *AutomationRunUpsertBulk {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.ClearResumeAt()
+	})
+}
+
+// SetFailureKind sets the "failure_kind" field.
+func (u *AutomationRunUpsertBulk) SetFailureKind(v automationrun.FailureKind) *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetFailureKind(v)
+	})
+}
+
+// UpdateFailureKind sets the "failure_kind" field to the value that was provided on create.
+func (u *AutomationRunUpsertBulk) UpdateFailureKind() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateFailureKind()
+	})
+}
+
+// ClearFailureKind clears the value of the "failure_kind" field.
+func (u *AutomationRunUpsertBulk) ClearFailureKind() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearFailureKind()
+	})
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (u *AutomationRunUpsertBulk) SetFailureStatus(v int) *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetFailureStatus(v)
+	})
+}
+
+// AddFailureStatus adds v to the "failure_status" field.
+func (u *AutomationRunUpsertBulk) AddFailureStatus(v int) *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.AddFailureStatus(v)
+	})
+}
+
+// UpdateFailureStatus sets the "failure_status" field to the value that was provided on create.
+func (u *AutomationRunUpsertBulk) UpdateFailureStatus() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateFailureStatus()
+	})
+}
+
+// ClearFailureStatus clears the value of the "failure_status" field.
+func (u *AutomationRunUpsertBulk) ClearFailureStatus() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearFailureStatus()
+	})
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (u *AutomationRunUpsertBulk) SetFailureExcerpt(v string) *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetFailureExcerpt(v)
+	})
+}
+
+// UpdateFailureExcerpt sets the "failure_excerpt" field to the value that was provided on create.
+func (u *AutomationRunUpsertBulk) UpdateFailureExcerpt() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateFailureExcerpt()
+	})
+}
+
+// ClearFailureExcerpt clears the value of the "failure_excerpt" field.
+func (u *AutomationRunUpsertBulk) ClearFailureExcerpt() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.ClearFailureExcerpt()
 	})
 }
 

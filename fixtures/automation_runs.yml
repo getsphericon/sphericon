@@ -167,6 +167,22 @@
     updated_at: '{{daysAgo 1}}',
   }
 
+# Notify Slack on signup (105, an HTTP step): the receiver kept answering 503, so the
+# Enrollment failed with the closed error kind, the status and the start of the answer.
+- {
+    id: 1101, # fixture: AutomationRunHTTPFailed
+    automation_id: 105,
+    contact_id: 107,
+    workspace_id: 1,
+    status: failed,
+    current_step: 0,
+    failure_kind: http_status,
+    failure_status: 503,
+    failure_excerpt: 'upstream unavailable, try again later',
+    created_at: '{{daysAgo 4}}',
+    updated_at: '{{daysAgo 1}}',
+  }
+
 # Globex (workspace 2): Pat enrolled in the Globex automation.
 - {
     id: 900,
@@ -188,6 +204,35 @@
     status: active,
     current_step: 0,
     resume_at: '{{daysAhead 1}}',
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }
+
+# Initech, Enrollments of the HTTP step that failed with the start of the receiver's answer:
+# one of ContactErasable (erased with the Contact) and one of ContactBystander (kept).
+- {
+    id: 3001, # fixture: AutomationRunErasableHTTPFailed
+    automation_id: 301,
+    contact_id: 300,
+    workspace_id: 3,
+    status: failed,
+    current_step: 0,
+    failure_kind: http_status,
+    failure_status: 500,
+    failure_excerpt: 'erin@initech.test rejected',
+    created_at: '2026-01-02 00:00:00',
+    updated_at: '2026-01-02 00:00:00',
+  }
+- {
+    id: 3002, # fixture: AutomationRunBystanderHTTPFailed
+    automation_id: 301,
+    contact_id: 301,
+    workspace_id: 3,
+    status: failed,
+    current_step: 0,
+    failure_kind: http_status,
+    failure_status: 500,
+    failure_excerpt: 'ben@initech.test rejected',
     created_at: '2026-01-02 00:00:00',
     updated_at: '2026-01-02 00:00:00',
   }

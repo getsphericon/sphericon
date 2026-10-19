@@ -44,8 +44,11 @@ func (Automation) Fields() []ent.Field {
 			NotEmpty(),
 		// JSON array of steps: [{"type":"email","subject":..,"body":<mjml>},
 		// {"type":"wait","seconds":N}].
+		// Sensitive: HTTP steps carry sealed URL, header values and secret (ADR 0039),
+		// so the Audit entry only says the definition changed.
 		field.String("definition").
-			Default("[]"),
+			Default("[]").
+			Annotations(Sensitive{}),
 	}
 }
 

@@ -74,7 +74,7 @@ run = "go run ./cmd/db drop"
 ["db:migrate-atlas"]
 description = "Apply Atlas migrations"
 depends = ["db:up"]
-run = "atlas migrate apply --env local --allow-dirty"
+run = "atlas migrate apply --env local --allow-dirty --tx-mode none"
 
 ["db:migrate"]
 description = "Apply the migrations: the app schema, river's tables and the domain-event outbox"
@@ -218,7 +218,7 @@ usage = 'arg "[go_test_args]" var=#true default="./e2e/..." help="packages and f
 run = [
   "go run ./cmd/db drop",
   "go run ./cmd/db create",
-  "atlas migrate apply --env local --allow-dirty",
+  "atlas migrate apply --env local --allow-dirty --tx-mode none",
   '''eval "set -- $usage_go_test_args"; mise/scripts/heavy.sh go test -tags e2e -count=1 -p 1 -shuffle=on "$@"''',
 ]
 

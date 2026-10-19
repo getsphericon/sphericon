@@ -59,6 +59,12 @@ type Handler interface {
 	//
 	// DELETE /automations/{id}
 	AutomationsDelete(ctx context.Context, params AutomationsDeleteParams) (AutomationsDeleteRes, error)
+	// AutomationsDryRunHttpStep implements Automations_dryRunHttpStep operation.
+	//
+	// Render an HTTP step's body for a Contact and validate it, calling nothing.
+	//
+	// POST /automations/dry-run-http-step
+	AutomationsDryRunHttpStep(ctx context.Context, req *DryRunHttpStepInput) (AutomationsDryRunHttpStepRes, error)
 	// AutomationsGet implements Automations_get operation.
 	//
 	// Get a resource by ID.
@@ -211,6 +217,18 @@ type Handler interface {
 	//
 	// POST /emails
 	EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (EmailsSendRes, error)
+	// EnrollmentsGet implements Enrollments_get operation.
+	//
+	// Get one Enrollment of an Automation. Needs the enrollments:read scope.
+	//
+	// GET /automations/{automationId}/enrollments/{enrollmentId}
+	EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (EnrollmentsGetRes, error)
+	// EnrollmentsList implements Enrollments_list operation.
+	//
+	// List an Automation's Enrollments, newest first. Needs the enrollments:read scope.
+	//
+	// GET /automations/{automationId}/enrollments
+	EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (EnrollmentsListRes, error)
 	// EventActionsList implements EventActions_list operation.
 	//
 	// List unique event actions.
@@ -445,6 +463,20 @@ type Handler interface {
 	//
 	// GET /webhooks
 	WebhooksList(ctx context.Context, params WebhooksListParams) (WebhooksListRes, error)
+	// WebhooksRegenerateSecret implements Webhooks_regenerateSecret operation.
+	//
+	// Replace the endpoint's signing secret; the old one stops verifying at once. The new secret is never
+	// returned here: read it in the app. Needs the webhooks:regenerate scope.
+	//
+	// POST /webhooks/{id}/regenerate-secret
+	WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (WebhooksRegenerateSecretRes, error)
+	// WebhooksTest implements Webhooks_test operation.
+	//
+	// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+	// Does not change the endpoint's failure state. Needs the webhooks:test scope.
+	//
+	// POST /webhooks/{id}/test
+	WebhooksTest(ctx context.Context, req *TestWebhookInput, params WebhooksTestParams) (WebhooksTestRes, error)
 	// WebhooksUpdate implements Webhooks_update operation.
 	//
 	// Update a resource.

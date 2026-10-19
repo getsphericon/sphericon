@@ -56,8 +56,9 @@ Erasure also stops what was about to happen to the person, in the same transacti
   recipient total shrinks with them. A Broadcast left with nothing pending settles as sent.
 - Queued background work that refers to the contact or its address is deleted from the internal
   queues: pending domain events (the outbox), queued automation work, queued Broadcast sends and
-  queued webhook deliveries whose payload names the contact or its address. A job that is already
-  running is not interrupted.
+  queued webhook deliveries whose payload names the contact or its address, and queued HTTP
+  steps of its automation runs. A failed HTTP step's response excerpt is kept on the run, so it is
+  deleted with the run. A job that is already running is not interrupted.
 - A send that was queued just before the request is dropped at the last check before delivery,
   because the contact no longer exists. A message already handed to the email provider is not
   recalled.

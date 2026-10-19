@@ -94,6 +94,15 @@ func (UnimplementedHandler) AutomationsDelete(ctx context.Context, params Automa
 	return r, ht.ErrNotImplemented
 }
 
+// AutomationsDryRunHttpStep implements Automations_dryRunHttpStep operation.
+//
+// Render an HTTP step's body for a Contact and validate it, calling nothing.
+//
+// POST /automations/dry-run-http-step
+func (UnimplementedHandler) AutomationsDryRunHttpStep(ctx context.Context, req *DryRunHttpStepInput) (r AutomationsDryRunHttpStepRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // AutomationsGet implements Automations_get operation.
 //
 // Get a resource by ID.
@@ -312,6 +321,24 @@ func (UnimplementedHandler) CustomFieldsList(ctx context.Context) (r CustomField
 //
 // POST /emails
 func (UnimplementedHandler) EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (r EmailsSendRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// EnrollmentsGet implements Enrollments_get operation.
+//
+// Get one Enrollment of an Automation. Needs the enrollments:read scope.
+//
+// GET /automations/{automationId}/enrollments/{enrollmentId}
+func (UnimplementedHandler) EnrollmentsGet(ctx context.Context, params EnrollmentsGetParams) (r EnrollmentsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// EnrollmentsList implements Enrollments_list operation.
+//
+// List an Automation's Enrollments, newest first. Needs the enrollments:read scope.
+//
+// GET /automations/{automationId}/enrollments
+func (UnimplementedHandler) EnrollmentsList(ctx context.Context, params EnrollmentsListParams) (r EnrollmentsListRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -660,6 +687,26 @@ func (UnimplementedHandler) WebhooksGet(ctx context.Context, params WebhooksGetP
 //
 // GET /webhooks
 func (UnimplementedHandler) WebhooksList(ctx context.Context, params WebhooksListParams) (r WebhooksListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// WebhooksRegenerateSecret implements Webhooks_regenerateSecret operation.
+//
+// Replace the endpoint's signing secret; the old one stops verifying at once. The new secret is never
+// returned here: read it in the app. Needs the webhooks:regenerate scope.
+//
+// POST /webhooks/{id}/regenerate-secret
+func (UnimplementedHandler) WebhooksRegenerateSecret(ctx context.Context, params WebhooksRegenerateSecretParams) (r WebhooksRegenerateSecretRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// WebhooksTest implements Webhooks_test operation.
+//
+// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+// Does not change the endpoint's failure state. Needs the webhooks:test scope.
+//
+// POST /webhooks/{id}/test
+func (UnimplementedHandler) WebhooksTest(ctx context.Context, req *TestWebhookInput, params WebhooksTestParams) (r WebhooksTestRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

@@ -141,6 +141,73 @@ func (_u *AutomationRunUpdate) ClearResumeAt() *AutomationRunUpdate {
 	return _u
 }
 
+// SetFailureKind sets the "failure_kind" field.
+func (_u *AutomationRunUpdate) SetFailureKind(v automationrun.FailureKind) *AutomationRunUpdate {
+	_u.mutation.SetFailureKind(v)
+	return _u
+}
+
+// SetNillableFailureKind sets the "failure_kind" field if the given value is not nil.
+func (_u *AutomationRunUpdate) SetNillableFailureKind(v *automationrun.FailureKind) *AutomationRunUpdate {
+	if v != nil {
+		_u.SetFailureKind(*v)
+	}
+	return _u
+}
+
+// ClearFailureKind clears the value of the "failure_kind" field.
+func (_u *AutomationRunUpdate) ClearFailureKind() *AutomationRunUpdate {
+	_u.mutation.ClearFailureKind()
+	return _u
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (_u *AutomationRunUpdate) SetFailureStatus(v int) *AutomationRunUpdate {
+	_u.mutation.ResetFailureStatus()
+	_u.mutation.SetFailureStatus(v)
+	return _u
+}
+
+// SetNillableFailureStatus sets the "failure_status" field if the given value is not nil.
+func (_u *AutomationRunUpdate) SetNillableFailureStatus(v *int) *AutomationRunUpdate {
+	if v != nil {
+		_u.SetFailureStatus(*v)
+	}
+	return _u
+}
+
+// AddFailureStatus adds value to the "failure_status" field.
+func (_u *AutomationRunUpdate) AddFailureStatus(v int) *AutomationRunUpdate {
+	_u.mutation.AddFailureStatus(v)
+	return _u
+}
+
+// ClearFailureStatus clears the value of the "failure_status" field.
+func (_u *AutomationRunUpdate) ClearFailureStatus() *AutomationRunUpdate {
+	_u.mutation.ClearFailureStatus()
+	return _u
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (_u *AutomationRunUpdate) SetFailureExcerpt(v string) *AutomationRunUpdate {
+	_u.mutation.SetFailureExcerpt(v)
+	return _u
+}
+
+// SetNillableFailureExcerpt sets the "failure_excerpt" field if the given value is not nil.
+func (_u *AutomationRunUpdate) SetNillableFailureExcerpt(v *string) *AutomationRunUpdate {
+	if v != nil {
+		_u.SetFailureExcerpt(*v)
+	}
+	return _u
+}
+
+// ClearFailureExcerpt clears the value of the "failure_excerpt" field.
+func (_u *AutomationRunUpdate) ClearFailureExcerpt() *AutomationRunUpdate {
+	_u.mutation.ClearFailureExcerpt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationRunUpdate) SetWorkspace(v *Workspace) *AutomationRunUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -216,6 +283,11 @@ func (_u *AutomationRunUpdate) check() error {
 			return &ValidationError{Name: "current_step", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.current_step": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.FailureKind(); ok {
+		if err := automationrun.FailureKindValidator(v); err != nil {
+			return &ValidationError{Name: "failure_kind", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.failure_kind": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationRun.workspace"`)
 	}
@@ -266,6 +338,27 @@ func (_u *AutomationRunUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.ResumeAtCleared() {
 		_spec.ClearField(automationrun.FieldResumeAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FailureKind(); ok {
+		_spec.SetField(automationrun.FieldFailureKind, field.TypeEnum, value)
+	}
+	if _u.mutation.FailureKindCleared() {
+		_spec.ClearField(automationrun.FieldFailureKind, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.FailureStatus(); ok {
+		_spec.SetField(automationrun.FieldFailureStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedFailureStatus(); ok {
+		_spec.AddField(automationrun.FieldFailureStatus, field.TypeInt, value)
+	}
+	if _u.mutation.FailureStatusCleared() {
+		_spec.ClearField(automationrun.FieldFailureStatus, field.TypeInt)
+	}
+	if value, ok := _u.mutation.FailureExcerpt(); ok {
+		_spec.SetField(automationrun.FieldFailureExcerpt, field.TypeString, value)
+	}
+	if _u.mutation.FailureExcerptCleared() {
+		_spec.ClearField(automationrun.FieldFailureExcerpt, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -457,6 +550,73 @@ func (_u *AutomationRunUpdateOne) ClearResumeAt() *AutomationRunUpdateOne {
 	return _u
 }
 
+// SetFailureKind sets the "failure_kind" field.
+func (_u *AutomationRunUpdateOne) SetFailureKind(v automationrun.FailureKind) *AutomationRunUpdateOne {
+	_u.mutation.SetFailureKind(v)
+	return _u
+}
+
+// SetNillableFailureKind sets the "failure_kind" field if the given value is not nil.
+func (_u *AutomationRunUpdateOne) SetNillableFailureKind(v *automationrun.FailureKind) *AutomationRunUpdateOne {
+	if v != nil {
+		_u.SetFailureKind(*v)
+	}
+	return _u
+}
+
+// ClearFailureKind clears the value of the "failure_kind" field.
+func (_u *AutomationRunUpdateOne) ClearFailureKind() *AutomationRunUpdateOne {
+	_u.mutation.ClearFailureKind()
+	return _u
+}
+
+// SetFailureStatus sets the "failure_status" field.
+func (_u *AutomationRunUpdateOne) SetFailureStatus(v int) *AutomationRunUpdateOne {
+	_u.mutation.ResetFailureStatus()
+	_u.mutation.SetFailureStatus(v)
+	return _u
+}
+
+// SetNillableFailureStatus sets the "failure_status" field if the given value is not nil.
+func (_u *AutomationRunUpdateOne) SetNillableFailureStatus(v *int) *AutomationRunUpdateOne {
+	if v != nil {
+		_u.SetFailureStatus(*v)
+	}
+	return _u
+}
+
+// AddFailureStatus adds value to the "failure_status" field.
+func (_u *AutomationRunUpdateOne) AddFailureStatus(v int) *AutomationRunUpdateOne {
+	_u.mutation.AddFailureStatus(v)
+	return _u
+}
+
+// ClearFailureStatus clears the value of the "failure_status" field.
+func (_u *AutomationRunUpdateOne) ClearFailureStatus() *AutomationRunUpdateOne {
+	_u.mutation.ClearFailureStatus()
+	return _u
+}
+
+// SetFailureExcerpt sets the "failure_excerpt" field.
+func (_u *AutomationRunUpdateOne) SetFailureExcerpt(v string) *AutomationRunUpdateOne {
+	_u.mutation.SetFailureExcerpt(v)
+	return _u
+}
+
+// SetNillableFailureExcerpt sets the "failure_excerpt" field if the given value is not nil.
+func (_u *AutomationRunUpdateOne) SetNillableFailureExcerpt(v *string) *AutomationRunUpdateOne {
+	if v != nil {
+		_u.SetFailureExcerpt(*v)
+	}
+	return _u
+}
+
+// ClearFailureExcerpt clears the value of the "failure_excerpt" field.
+func (_u *AutomationRunUpdateOne) ClearFailureExcerpt() *AutomationRunUpdateOne {
+	_u.mutation.ClearFailureExcerpt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationRunUpdateOne) SetWorkspace(v *Workspace) *AutomationRunUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -545,6 +705,11 @@ func (_u *AutomationRunUpdateOne) check() error {
 			return &ValidationError{Name: "current_step", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.current_step": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.FailureKind(); ok {
+		if err := automationrun.FailureKindValidator(v); err != nil {
+			return &ValidationError{Name: "failure_kind", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.failure_kind": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationRun.workspace"`)
 	}
@@ -612,6 +777,27 @@ func (_u *AutomationRunUpdateOne) sqlSave(ctx context.Context) (_node *Automatio
 	}
 	if _u.mutation.ResumeAtCleared() {
 		_spec.ClearField(automationrun.FieldResumeAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FailureKind(); ok {
+		_spec.SetField(automationrun.FieldFailureKind, field.TypeEnum, value)
+	}
+	if _u.mutation.FailureKindCleared() {
+		_spec.ClearField(automationrun.FieldFailureKind, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.FailureStatus(); ok {
+		_spec.SetField(automationrun.FieldFailureStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedFailureStatus(); ok {
+		_spec.AddField(automationrun.FieldFailureStatus, field.TypeInt, value)
+	}
+	if _u.mutation.FailureStatusCleared() {
+		_spec.ClearField(automationrun.FieldFailureStatus, field.TypeInt)
+	}
+	if value, ok := _u.mutation.FailureExcerpt(); ok {
+		_spec.SetField(automationrun.FieldFailureExcerpt, field.TypeString, value)
+	}
+	if _u.mutation.FailureExcerptCleared() {
+		_spec.ClearField(automationrun.FieldFailureExcerpt, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

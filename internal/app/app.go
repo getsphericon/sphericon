@@ -963,7 +963,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL,
+		jc, err := jobs.NewClient(pool.Pool, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL, cfg.OutboundAllow,
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 			edition.Jobs(bus.Bus, sys.EmailSender), inst.Jobs(), reporter.Jobs())
 		if err != nil {
@@ -1156,11 +1156,23 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return webhooks.New(cipher, edition.Audit), nil
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		return webhooks.New(bus.Bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow)), nil
 	})
 
-	do.Provide(injector, func(do.Injector) (*automations.Module, error) {
-		return automations.New(), nil
+	do.Provide(injector, func(i do.Injector) (*automations.Module, error) {
+		cipher, err := do.Invoke[*secrets.Cipher](i)
+		if err != nil {
+			return nil, err
+		}
+		return automations.New(cipher), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*eventlog.Module, error) {

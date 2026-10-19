@@ -90,6 +90,16 @@ func ResumeAt(v time.Time) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldResumeAt, v))
 }
 
+// FailureStatus applies equality check predicate on the "failure_status" field. It's identical to FailureStatusEQ.
+func FailureStatus(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldFailureStatus, v))
+}
+
+// FailureExcerpt applies equality check predicate on the "failure_excerpt" field. It's identical to FailureExcerptEQ.
+func FailureExcerpt(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldFailureExcerpt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldCreatedAt, v))
@@ -358,6 +368,161 @@ func ResumeAtIsNil() predicate.AutomationRun {
 // ResumeAtNotNil applies the NotNil predicate on the "resume_at" field.
 func ResumeAtNotNil() predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNotNull(FieldResumeAt))
+}
+
+// FailureKindEQ applies the EQ predicate on the "failure_kind" field.
+func FailureKindEQ(v FailureKind) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldFailureKind, v))
+}
+
+// FailureKindNEQ applies the NEQ predicate on the "failure_kind" field.
+func FailureKindNEQ(v FailureKind) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldFailureKind, v))
+}
+
+// FailureKindIn applies the In predicate on the "failure_kind" field.
+func FailureKindIn(vs ...FailureKind) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldFailureKind, vs...))
+}
+
+// FailureKindNotIn applies the NotIn predicate on the "failure_kind" field.
+func FailureKindNotIn(vs ...FailureKind) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldFailureKind, vs...))
+}
+
+// FailureKindIsNil applies the IsNil predicate on the "failure_kind" field.
+func FailureKindIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldFailureKind))
+}
+
+// FailureKindNotNil applies the NotNil predicate on the "failure_kind" field.
+func FailureKindNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldFailureKind))
+}
+
+// FailureStatusEQ applies the EQ predicate on the "failure_status" field.
+func FailureStatusEQ(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldFailureStatus, v))
+}
+
+// FailureStatusNEQ applies the NEQ predicate on the "failure_status" field.
+func FailureStatusNEQ(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldFailureStatus, v))
+}
+
+// FailureStatusIn applies the In predicate on the "failure_status" field.
+func FailureStatusIn(vs ...int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldFailureStatus, vs...))
+}
+
+// FailureStatusNotIn applies the NotIn predicate on the "failure_status" field.
+func FailureStatusNotIn(vs ...int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldFailureStatus, vs...))
+}
+
+// FailureStatusGT applies the GT predicate on the "failure_status" field.
+func FailureStatusGT(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldFailureStatus, v))
+}
+
+// FailureStatusGTE applies the GTE predicate on the "failure_status" field.
+func FailureStatusGTE(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldFailureStatus, v))
+}
+
+// FailureStatusLT applies the LT predicate on the "failure_status" field.
+func FailureStatusLT(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldFailureStatus, v))
+}
+
+// FailureStatusLTE applies the LTE predicate on the "failure_status" field.
+func FailureStatusLTE(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldFailureStatus, v))
+}
+
+// FailureStatusIsNil applies the IsNil predicate on the "failure_status" field.
+func FailureStatusIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldFailureStatus))
+}
+
+// FailureStatusNotNil applies the NotNil predicate on the "failure_status" field.
+func FailureStatusNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldFailureStatus))
+}
+
+// FailureExcerptEQ applies the EQ predicate on the "failure_excerpt" field.
+func FailureExcerptEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptNEQ applies the NEQ predicate on the "failure_excerpt" field.
+func FailureExcerptNEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptIn applies the In predicate on the "failure_excerpt" field.
+func FailureExcerptIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldFailureExcerpt, vs...))
+}
+
+// FailureExcerptNotIn applies the NotIn predicate on the "failure_excerpt" field.
+func FailureExcerptNotIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldFailureExcerpt, vs...))
+}
+
+// FailureExcerptGT applies the GT predicate on the "failure_excerpt" field.
+func FailureExcerptGT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptGTE applies the GTE predicate on the "failure_excerpt" field.
+func FailureExcerptGTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptLT applies the LT predicate on the "failure_excerpt" field.
+func FailureExcerptLT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptLTE applies the LTE predicate on the "failure_excerpt" field.
+func FailureExcerptLTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptContains applies the Contains predicate on the "failure_excerpt" field.
+func FailureExcerptContains(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContains(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptHasPrefix applies the HasPrefix predicate on the "failure_excerpt" field.
+func FailureExcerptHasPrefix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasPrefix(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptHasSuffix applies the HasSuffix predicate on the "failure_excerpt" field.
+func FailureExcerptHasSuffix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasSuffix(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptIsNil applies the IsNil predicate on the "failure_excerpt" field.
+func FailureExcerptIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldFailureExcerpt))
+}
+
+// FailureExcerptNotNil applies the NotNil predicate on the "failure_excerpt" field.
+func FailureExcerptNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldFailureExcerpt))
+}
+
+// FailureExcerptEqualFold applies the EqualFold predicate on the "failure_excerpt" field.
+func FailureExcerptEqualFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEqualFold(FieldFailureExcerpt, v))
+}
+
+// FailureExcerptContainsFold applies the ContainsFold predicate on the "failure_excerpt" field.
+func FailureExcerptContainsFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContainsFold(FieldFailureExcerpt, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

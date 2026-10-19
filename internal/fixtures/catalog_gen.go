@@ -39,12 +39,26 @@ const (
 	AutomationHoldDemoID = 103
 	// AutomationHoldDemoName is from fixtures/automations.
 	AutomationHoldDemoName = "Hold demo"
+	// AutomationInitechHTTPID is from fixtures/automations.
+	AutomationInitechHTTPID = 301
+	// AutomationInitechHTTPName is from fixtures/automations.
+	AutomationInitechHTTPName = "Initech hook"
 	// AutomationInitechID is from fixtures/automations.
 	AutomationInitechID = 300
 	// AutomationInitechName is from fixtures/automations.
 	AutomationInitechName = "Initech onboarding"
+	// AutomationNotifySlackID is from fixtures/automations.
+	AutomationNotifySlackID = 105
+	// AutomationNotifySlackName is from fixtures/automations.
+	AutomationNotifySlackName = "Notify Slack on signup"
+	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
+	AutomationRunBystanderHTTPFailedID = 3002
+	// AutomationRunErasableHTTPFailedID is from fixtures/automation_runs.
+	AutomationRunErasableHTTPFailedID = 3001
 	// AutomationRunErasableID is from fixtures/automation_runs.
 	AutomationRunErasableID = 3000
+	// AutomationRunHTTPFailedID is from fixtures/automation_runs.
+	AutomationRunHTTPFailedID = 1101
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.
 	AutomationRunWelcomeCompletedID = 1000
 	// AutomationTagOnEngagementID is from fixtures/automations.
@@ -867,8 +881,6 @@ const (
 	WayneCollectKey = "omck_test_wayne_collect_key"
 	// WayneID is from fixtures/workspaces.
 	WayneID = 9
-	// WayneIngestKey is from fixtures/workspaces.
-	WayneIngestKey = "omik_test_wayne_ingest_key"
 	// WayneName is from fixtures/workspaces.
 	WayneName = "Wayne"
 	// WayneSlug is from fixtures/workspaces.
@@ -877,6 +889,14 @@ const (
 	WebhookCodebasicsDisabledID = 101
 	// WebhookCodebasicsDisabledURL is from fixtures/webhook_endpoints.
 	WebhookCodebasicsDisabledURL = "https://hooks.codebasics.dev/disabled"
+	// WebhookCodebasicsFailingID is from fixtures/webhook_endpoints.
+	WebhookCodebasicsFailingID = 102
+	// WebhookCodebasicsFailingURL is from fixtures/webhook_endpoints.
+	WebhookCodebasicsFailingURL = "https://failing.codebasics.dev/hook"
+	// WebhookCodebasicsGoneID is from fixtures/webhook_endpoints.
+	WebhookCodebasicsGoneID = 103
+	// WebhookCodebasicsGoneURL is from fixtures/webhook_endpoints.
+	WebhookCodebasicsGoneURL = "https://gone.codebasics.dev/hook"
 	// WebhookCodebasicsID is from fixtures/webhook_endpoints.
 	WebhookCodebasicsID = 100
 	// WebhookCodebasicsURL is from fixtures/webhook_endpoints.

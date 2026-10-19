@@ -487,7 +487,7 @@ type composed struct {
 // on the unsubscribe footer, the open/click tracking and the one-click header. Any
 // error here is deterministic for this message, so the caller records it as Failed.
 func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req Request, dest string, ws *ent.Workspace) (composed, error) {
-	email, err := emailrender.RenderEmail(req.Subject, req.Body, bindings(req.Contact, req.Variables))
+	email, err := emailrender.RenderEmail(req.Subject, req.Body, Bindings(req.Contact, req.Variables))
 	if err != nil {
 		return composed{}, err
 	}
@@ -544,10 +544,10 @@ func (m *Module) compose(ctx context.Context, s *ent.Scoped, domain string, req 
 	return out, nil
 }
 
-// bindings builds the Liquid merge-tag context: the Contact's custom fields first,
+// Bindings builds the Liquid merge-tag context: the Contact's custom fields first,
 // then its core fields (so a custom field can never shadow email/first_name/
 // last_name), then the Request's own variables, which win.
-func bindings(c *ent.Contact, vars map[string]any) map[string]any {
+func Bindings(c *ent.Contact, vars map[string]any) map[string]any {
 	b := map[string]any{}
 	if c != nil {
 		for k, v := range c.CustomFields {

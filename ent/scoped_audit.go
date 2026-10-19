@@ -192,7 +192,9 @@ func (b *ApiTokenCreateBulk) auditRebind(c *Client) {
 }
 
 // AutomationAuditSensitive lists the Automation fields whose values never reach the Audit log.
-var AutomationAuditSensitive = map[string]bool{}
+var AutomationAuditSensitive = map[string]bool{
+	"definition": true,
+}
 
 // auditFields maps every audited field of the Automation to its value.
 func (e *Automation) auditFields() map[string]any {
@@ -746,10 +748,16 @@ var WebhookEndpointAuditSensitive = map[string]bool{
 // auditFields maps every audited field of the WebhookEndpoint to its value.
 func (e *WebhookEndpoint) auditFields() map[string]any {
 	return map[string]any{
-		"url":              e.URL,
-		"secret_encrypted": e.SecretEncrypted,
-		"event_types":      e.EventTypes,
-		"enabled":          e.Enabled,
+		"url":                  e.URL,
+		"secret_encrypted":     e.SecretEncrypted,
+		"event_types":          e.EventTypes,
+		"enabled":              e.Enabled,
+		"consecutive_failures": derefAudit(e.ConsecutiveFailures),
+		"failing_since":        derefAudit(e.FailingSince),
+		"last_error_kind":      derefAudit(e.LastErrorKind),
+		"last_error_status":    derefAudit(e.LastErrorStatus),
+		"last_failure_at":      derefAudit(e.LastFailureAt),
+		"disabled_reason":      derefAudit(e.DisabledReason),
 	}
 }
 

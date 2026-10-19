@@ -72,9 +72,10 @@ var (
 		"suppressions_create", "unsubscribes_create",
 		"templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
 		"webhooks_list", "webhooks_create", "webhooks_get", "webhooks_update", "webhooks_delete",
+		"webhooks_regenerate_secret", "webhooks_test",
 		"tags_list", "tags_list_for_contact", "tags_apply", "tags_remove",
 		"automations_list", "automations_create", "automations_get", "automations_update", "automations_delete",
-		"automations_deactivate",
+		"automations_deactivate", "automations_dry_run_http_step", "enrollments_list", "enrollments_get",
 	}
 	sendTools = []string{"emails_send", "broadcasts_schedule", "broadcasts_unschedule", "automations_activate"}
 )
@@ -151,7 +152,7 @@ func TestMCPRegenerateKeyIsHiddenAndPresetsListIsATool(t *testing.T) {
 	got := listedTools(t, env.MCPClient(t, env.ScopedBearer(t, "integrations:read")))
 
 	for _, name := range toolNames(got) {
-		assert.NotContains(t, name, "regenerate")
+		assert.NotContains(t, name, "integrations_regenerate")
 	}
 	assert.Contains(t, toolNames(got), "presets_list")
 }

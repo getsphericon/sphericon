@@ -172,6 +172,19 @@ export const zSiteAuditTarget = z.object({
 });
 
 /**
+ * Closed error kind of an HTTP step's body
+ */
+export const zSiteAutomationHttpErrorKind = z.enum(['invalid_body']);
+
+/**
+ * One request header of an HTTP step. The value is a secret: it is never returned.
+ */
+export const zSiteAutomationHttpHeader = z.object({
+  name: z.string(),
+  value: z.exactOptional(z.string())
+});
+
+/**
  * Automation lifecycle status
  */
 export const zSiteAutomationStatus = z.enum(['draft', 'active']);
@@ -183,7 +196,8 @@ export const zSiteAutomationStepType = z.enum([
   'email',
   'wait',
   'apply_tag',
-  'remove_tag'
+  'remove_tag',
+  'http'
 ]);
 
 /**
@@ -195,7 +209,13 @@ export const zSiteAutomationStep = z.object({
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
   seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  tag: z.exactOptional(z.string())
+  tag: z.exactOptional(z.string()),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader)),
+  secret: z.exactOptional(z.string()),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean())
 });
 
 /**
@@ -302,6 +322,23 @@ export const zSiteDnsRecord = z.object({
 });
 
 /**
+ * Request body for rendering an HTTP step's body for a Contact
+ */
+export const zSiteDryRunHttpStepInput = z.object({
+  body: z.string(),
+  contactId: zEntityId
+});
+
+/**
+ * The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
+ */
+export const zSiteDryRunHttpStepResult = z.object({
+  body: z.exactOptional(z.string()),
+  errorKind: z.exactOptional(zSiteAutomationHttpErrorKind),
+  detail: z.exactOptional(z.string())
+});
+
+/**
  * Request a change of the login email. The new address must be confirmed via a
  * link sent to it before the change takes effect.
  */
@@ -309,6 +346,37 @@ export const zSiteEmailChangeInput = z.object({
   newEmail: zEmailAddress,
   currentPassword: z.string()
 });
+
+/**
+ * Why an Enrollment failed. A closed set: `invalid_body`, `timeout`, `blocked_address`,
+ * `http_status` (see `status`) and `network`.
+ */
+export const zSiteEnrollmentFailureKind = z.enum([
+  'invalid_body',
+  'timeout',
+  'blocked_address',
+  'http_status',
+  'network'
+]);
+
+/**
+ * What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
+ */
+export const zSiteEnrollmentFailure = z.object({
+  kind: zSiteEnrollmentFailureKind,
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  excerpt: z.exactOptional(z.string())
+});
+
+/**
+ * Where a Contact is in an Automation
+ */
+export const zSiteEnrollmentStatus = z.enum([
+  'active',
+  'completed',
+  'failed',
+  'exited'
+]);
 
 /**
  * Distinct event actions seen in a workspace (for segment/filter pickers)
@@ -744,6 +812,13 @@ export const zSiteTestSendBroadcastInput = z.object({
 });
 
 /**
+ * Request body for sending a sample event to a webhook endpoint
+ */
+export const zSiteTestWebhookInput = z.object({
+  eventType: z.string()
+});
+
+/**
  * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers; mail uses the host only while `serving`
  */
 export const zSiteTrackingState = z.enum([
@@ -854,6 +929,35 @@ export const zSiteUpdateWorkspaceInput = z.object({
 export const zSiteVerifyEmailInput = z.object({
   token: z.string(),
   password: z.string()
+});
+
+/**
+ * Why an endpoint turned itself off. A closed set: `gone` (the receiver answered 410
+ * Gone) and `persistent_failure` (deliveries failed for longer than the window).
+ * Absent for an endpoint an owner disabled, and while the endpoint is enabled.
+ */
+export const zSiteWebhookDisabledReason = z.enum(['gone', 'persistent_failure']);
+
+/**
+ * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
+ * time), `blocked_address` (the URL names an address this instance does not permit),
+ * `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
+ * failure).
+ */
+export const zSiteWebhookErrorKind = z.enum([
+  'timeout',
+  'blocked_address',
+  'http_status',
+  'network'
+]);
+
+/**
+ * What the receiver answered to a test delivery. The endpoint's failure state is not touched.
+ */
+export const zSiteWebhookTestResult = z.object({
+  delivered: z.boolean(),
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  kind: z.exactOptional(zSiteWebhookErrorKind)
 });
 
 export const zTimeZoneName = z.string();
@@ -1176,6 +1280,21 @@ export const zSiteEmailTemplateResource = z.object({
 });
 
 /**
+ * One Contact's progress through an Automation
+ */
+export const zSiteEnrollmentResource = z.object({
+  id: zEntityId,
+  automationId: zEntityId,
+  contactId: zEntityId,
+  status: zSiteEnrollmentStatus,
+  currentStep: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  resumeAt: z.exactOptional(zTimestamp),
+  failure: z.exactOptional(zSiteEnrollmentFailure),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
  * A tracked event shown in the activity feed
  */
 export const zSiteEventResource = z.object({
@@ -1330,6 +1449,17 @@ export const zSiteUserResource = z.object({
 });
 
 /**
+ * The failure state of an endpoint that is currently failing; absent while it is healthy.
+ */
+export const zSiteWebhookFailure = z.object({
+  consecutiveFailures: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  since: zTimestamp,
+  lastFailureAt: zTimestamp,
+  kind: zSiteWebhookErrorKind,
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
  * Webhook endpoint resource used by the site UI
  */
 export const zSiteWebhookEndpointResource = z.object({
@@ -1338,6 +1468,8 @@ export const zSiteWebhookEndpointResource = z.object({
   secret: z.string(),
   eventTypes: z.array(z.string()),
   enabled: z.boolean(),
+  disabledReason: z.exactOptional(zSiteWebhookDisabledReason),
+  failure: z.exactOptional(zSiteWebhookFailure),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -1972,6 +2104,50 @@ export const zSiteAutomationsCreatePath = z.object({
  * The request has succeeded and a new resource has been created as a result.
  */
 export const zSiteAutomationsCreateResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsDryRunHttpStepBody = zSiteDryRunHttpStepInput;
+
+export const zSiteAutomationsDryRunHttpStepPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsDryRunHttpStepResponse = zSiteDryRunHttpStepResult;
+
+export const zSiteEnrollmentsListPath = z.object({
+  slug: z.string(),
+  automationId: zEntityId
+});
+
+export const zSiteEnrollmentsListQuery = z.object({
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  status: z.exactOptional(zSiteEnrollmentStatus)
+});
+
+/**
+ * Paginated response
+ */
+export const zSiteEnrollmentsListResponse = z.object({
+  items: z.array(zSiteEnrollmentResource),
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+export const zSiteEnrollmentsGetPath = z.object({
+  slug: z.string(),
+  automationId: zEntityId,
+  enrollmentId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteEnrollmentsGetResponse = zSiteEnrollmentResource;
 
 export const zSiteAutomationsDeletePath = z.object({
   slug: z.string(),
@@ -2741,6 +2917,28 @@ export const zSiteWebhooksUpdatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteWebhooksUpdateResponse = zSiteWebhookEndpointResource;
+
+export const zSiteWebhooksRegenerateSecretPath = z.object({
+  slug: z.string(),
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWebhooksRegenerateSecretResponse = zSiteWebhookEndpointResource;
+
+export const zSiteWebhooksTestBody = zSiteTestWebhookInput;
+
+export const zSiteWebhooksTestPath = z.object({
+  slug: z.string(),
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWebhooksTestResponse = zSiteWebhookTestResult;
 
 export const zSiteSegmentsListPath = z.object({
   slug: z.string()

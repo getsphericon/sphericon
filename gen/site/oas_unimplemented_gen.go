@@ -201,6 +201,15 @@ func (UnimplementedHandler) SiteAutomationsDelete(ctx context.Context, params Si
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAutomationsDryRunHttpStep implements SiteAutomations_dryRunHttpStep operation.
+//
+// Render an HTTP step's body for a Contact and validate it, calling nothing.
+//
+// POST /workspaces/{slug}/automations/dry-run-http-step
+func (UnimplementedHandler) SiteAutomationsDryRunHttpStep(ctx context.Context, req *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (r SiteAutomationsDryRunHttpStepRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAutomationsGet implements SiteAutomations_get operation.
 //
 // Get a resource by ID for the site UI.
@@ -362,6 +371,24 @@ func (UnimplementedHandler) SiteContactsUpdate(ctx context.Context, req *SiteUpd
 //
 // GET /workspaces/{slug}/custom-fields
 func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (r SiteCustomFieldsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteEnrollmentsGet implements SiteEnrollments_get operation.
+//
+// Get one Enrollment of an Automation.
+//
+// GET /workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}
+func (UnimplementedHandler) SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (r SiteEnrollmentsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteEnrollmentsList implements SiteEnrollments_list operation.
+//
+// List an Automation's Enrollments, newest first.
+//
+// GET /workspaces/{slug}/automations/{automationId}/enrollments
+func (UnimplementedHandler) SiteEnrollmentsList(ctx context.Context, params SiteEnrollmentsListParams) (r SiteEnrollmentsListRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -981,6 +1008,24 @@ func (UnimplementedHandler) SiteWebhooksGet(ctx context.Context, params SiteWebh
 //
 // GET /workspaces/{slug}/webhooks
 func (UnimplementedHandler) SiteWebhooksList(ctx context.Context, params SiteWebhooksListParams) (r SiteWebhooksListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteWebhooksRegenerateSecret implements SiteWebhooks_regenerateSecret operation.
+//
+// Replace the signing secret. The old one stops verifying at once; the new one is in the response.
+//
+// POST /workspaces/{slug}/webhooks/{id}/regenerate-secret
+func (UnimplementedHandler) SiteWebhooksRegenerateSecret(ctx context.Context, params SiteWebhooksRegenerateSecretParams) (r SiteWebhooksRegenerateSecretRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteWebhooksTest implements SiteWebhooks_test operation.
+//
+// Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer.
+//
+// POST /workspaces/{slug}/webhooks/{id}/test
+func (UnimplementedHandler) SiteWebhooksTest(ctx context.Context, req *SiteTestWebhookInput, params SiteWebhooksTestParams) (r SiteWebhooksTestRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

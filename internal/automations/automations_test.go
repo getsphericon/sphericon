@@ -56,7 +56,7 @@ func TestEncodeKeepsOnlyTheFieldsOfEachStepType(t *testing.T) {
 
 func TestCreateStoresADraftWithEncodedSteps(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New()
+	m := automations.New(env.Cipher)
 	ctx := context.Background()
 
 	a, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
@@ -79,7 +79,7 @@ func TestCreateStoresADraftWithEncodedSteps(t *testing.T) {
 
 func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New()
+	m := automations.New(env.Cipher)
 	ctx := context.Background()
 	before, err := env.DB.Automation.Query().Count(ctx)
 	require.NoError(t, err)
@@ -109,7 +109,7 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 
 func TestListIsNewestFirstWithinTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	page, err := automations.New().List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100})
+	page, err := automations.New(env.Cipher).List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	require.Greater(t, page.TotalItems, 1)
 	for i, a := range page.Items {
@@ -122,7 +122,7 @@ func TestListIsNewestFirstWithinTheWorkspace(t *testing.T) {
 
 func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New()
+	m := automations.New(env.Cipher)
 	ctx := context.Background()
 	before, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
@@ -143,7 +143,7 @@ func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 
 func TestActivateAndDeactivateFlipTheStatus(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New()
+	m := automations.New(env.Cipher)
 	ctx := context.Background()
 
 	off, err := m.Deactivate(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
@@ -160,7 +160,7 @@ func TestActivateAndDeactivateFlipTheStatus(t *testing.T) {
 
 func TestDeleteRemovesTheAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New()
+	m := automations.New(env.Cipher)
 	ctx := context.Background()
 	a, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "Temp", TriggerEvent: "x"})
 	require.NoError(t, err)
@@ -175,7 +175,7 @@ func TestDeleteRemovesTheAutomation(t *testing.T) {
 // row is untouched.
 func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New()
+	m := automations.New(env.Cipher)
 	ctx := context.Background()
 	foreign, err := env.DB.Automation.Create().SetWorkspaceID(fixtures.GlobexID).SetName("Globex flow").SetTriggerEvent("x").Save(ctx)
 	require.NoError(t, err)

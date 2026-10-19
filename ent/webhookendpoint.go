@@ -33,6 +33,18 @@ type WebhookEndpoint struct {
 	EventTypes []string `json:"event_types,omitempty"`
 	// Enabled holds the value of the "enabled" field.
 	Enabled bool `json:"enabled,omitempty"`
+	// ConsecutiveFailures holds the value of the "consecutive_failures" field.
+	ConsecutiveFailures *int `json:"consecutive_failures,omitempty"`
+	// FailingSince holds the value of the "failing_since" field.
+	FailingSince *time.Time `json:"failing_since,omitempty"`
+	// LastErrorKind holds the value of the "last_error_kind" field.
+	LastErrorKind *webhookendpoint.LastErrorKind `json:"last_error_kind,omitempty"`
+	// LastErrorStatus holds the value of the "last_error_status" field.
+	LastErrorStatus *int `json:"last_error_status,omitempty"`
+	// LastFailureAt holds the value of the "last_failure_at" field.
+	LastFailureAt *time.Time `json:"last_failure_at,omitempty"`
+	// DisabledReason holds the value of the "disabled_reason" field.
+	DisabledReason *webhookendpoint.DisabledReason `json:"disabled_reason,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the WebhookEndpointQuery when eager-loading is set.
 	Edges        WebhookEndpointEdges `json:"edges"`
@@ -68,11 +80,11 @@ func (*WebhookEndpoint) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case webhookendpoint.FieldEnabled:
 			values[i] = new(sql.NullBool)
-		case webhookendpoint.FieldID, webhookendpoint.FieldWorkspaceID:
+		case webhookendpoint.FieldID, webhookendpoint.FieldWorkspaceID, webhookendpoint.FieldConsecutiveFailures, webhookendpoint.FieldLastErrorStatus:
 			values[i] = new(sql.NullInt64)
-		case webhookendpoint.FieldURL, webhookendpoint.FieldSecretEncrypted:
+		case webhookendpoint.FieldURL, webhookendpoint.FieldSecretEncrypted, webhookendpoint.FieldLastErrorKind, webhookendpoint.FieldDisabledReason:
 			values[i] = new(sql.NullString)
-		case webhookendpoint.FieldCreatedAt, webhookendpoint.FieldUpdatedAt:
+		case webhookendpoint.FieldCreatedAt, webhookendpoint.FieldUpdatedAt, webhookendpoint.FieldFailingSince, webhookendpoint.FieldLastFailureAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -139,6 +151,48 @@ func (_m *WebhookEndpoint) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Enabled = value.Bool
 			}
+		case webhookendpoint.FieldConsecutiveFailures:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field consecutive_failures", values[i])
+			} else if value.Valid {
+				_m.ConsecutiveFailures = new(int)
+				*_m.ConsecutiveFailures = int(value.Int64)
+			}
+		case webhookendpoint.FieldFailingSince:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field failing_since", values[i])
+			} else if value.Valid {
+				_m.FailingSince = new(time.Time)
+				*_m.FailingSince = value.Time
+			}
+		case webhookendpoint.FieldLastErrorKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field last_error_kind", values[i])
+			} else if value.Valid {
+				_m.LastErrorKind = new(webhookendpoint.LastErrorKind)
+				*_m.LastErrorKind = webhookendpoint.LastErrorKind(value.String)
+			}
+		case webhookendpoint.FieldLastErrorStatus:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field last_error_status", values[i])
+			} else if value.Valid {
+				_m.LastErrorStatus = new(int)
+				*_m.LastErrorStatus = int(value.Int64)
+			}
+		case webhookendpoint.FieldLastFailureAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_failure_at", values[i])
+			} else if value.Valid {
+				_m.LastFailureAt = new(time.Time)
+				*_m.LastFailureAt = value.Time
+			}
+		case webhookendpoint.FieldDisabledReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field disabled_reason", values[i])
+			} else if value.Valid {
+				_m.DisabledReason = new(webhookendpoint.DisabledReason)
+				*_m.DisabledReason = webhookendpoint.DisabledReason(value.String)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -199,6 +253,36 @@ func (_m *WebhookEndpoint) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
+	builder.WriteString(", ")
+	if v := _m.ConsecutiveFailures; v != nil {
+		builder.WriteString("consecutive_failures=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.FailingSince; v != nil {
+		builder.WriteString("failing_since=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.LastErrorKind; v != nil {
+		builder.WriteString("last_error_kind=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.LastErrorStatus; v != nil {
+		builder.WriteString("last_error_status=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.LastFailureAt; v != nil {
+		builder.WriteString("last_failure_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.DisabledReason; v != nil {
+		builder.WriteString("disabled_reason=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

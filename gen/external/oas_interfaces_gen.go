@@ -41,6 +41,10 @@ type AutomationsDeleteRes interface {
 	automationsDeleteRes()
 }
 
+type AutomationsDryRunHttpStepRes interface {
+	automationsDryRunHttpStepRes()
+}
+
 type AutomationsGetRes interface {
 	automationsGetRes()
 }
@@ -131,6 +135,14 @@ type CustomFieldsListRes interface {
 
 type EmailsSendRes interface {
 	emailsSendRes()
+}
+
+type EnrollmentsGetRes interface {
+	enrollmentsGetRes()
+}
+
+type EnrollmentsListRes interface {
+	enrollmentsListRes()
 }
 
 type EventActionsListRes interface {
@@ -283,6 +295,14 @@ type WebhooksGetRes interface {
 
 type WebhooksListRes interface {
 	webhooksListRes()
+}
+
+type WebhooksRegenerateSecretRes interface {
+	webhooksRegenerateSecretRes()
+}
+
+type WebhooksTestRes interface {
+	webhooksTestRes()
 }
 
 type WebhooksUpdateRes interface {

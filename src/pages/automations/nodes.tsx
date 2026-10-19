@@ -9,11 +9,13 @@ export const EMAIL_NODE_TYPE = 'email'
 export const WAIT_NODE_TYPE = 'wait'
 export const APPLY_TAG_NODE_TYPE = 'apply_tag'
 export const REMOVE_TAG_NODE_TYPE = 'remove_tag'
+export const HTTP_NODE_TYPE = 'http'
 
 // Phosphor icon names (WBIcon) the SDK renders in the palette and node header.
 export const EMAIL_NODE_ICON = 'Envelope'
 export const WAIT_NODE_ICON = 'Timer'
 export const TAG_NODE_ICON: WBIcon = 'Tag'
+export const HTTP_NODE_ICON: WBIcon = 'WebhooksLogo'
 
 // useAutomationNodeTypes builds the palette definitions for the visual builder.
 // Memoized so the array keeps a stable reference across renders — the SDK
@@ -77,6 +79,51 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               scope: '#/properties/seconds',
               inputType: 'number',
               placeholder: '3600',
+            },
+          ],
+        } satisfies UISchema,
+      },
+      {
+        type: HTTP_NODE_TYPE,
+        icon: HTTP_NODE_ICON,
+        label: t(($) => $.automations.stepHttp),
+        description: t(($) => $.automations.httpNodeDescription),
+        defaultPropertiesData: { stepId: '', url: '', headers: '', body: '{}', secret: '' },
+        schema: {
+          type: 'object',
+          required: ['body'],
+          properties: {
+            ...sharedProperties,
+            url: { type: 'string', label: t(($) => $.automations.httpUrlLabel) },
+            headers: { type: 'string', label: t(($) => $.automations.httpHeadersLabel) },
+            body: { type: 'string', label: t(($) => $.automations.httpBodyLabel) },
+            secret: { type: 'string', label: t(($) => $.automations.httpSecretLabel) },
+          },
+        },
+        uischema: {
+          type: 'VerticalLayout',
+          elements: [
+            {
+              type: 'Text',
+              scope: '#/properties/url',
+              placeholder: t(($) => $.automations.httpUrlHint),
+            },
+            {
+              type: 'TextArea',
+              scope: '#/properties/headers',
+              minRows: 2,
+              placeholder: t(($) => $.automations.httpHeadersHint),
+            },
+            {
+              type: 'TextArea',
+              scope: '#/properties/body',
+              minRows: 6,
+              placeholder: t(($) => $.automations.httpBodyHint),
+            },
+            {
+              type: 'Text',
+              scope: '#/properties/secret',
+              placeholder: t(($) => $.automations.httpSecretHint),
             },
           ],
         } satisfies UISchema,

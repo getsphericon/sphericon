@@ -43,6 +43,7 @@ var operationRolesBearerAuth = map[string][]string{
 	AutomationsCreateOperation:         []string{},
 	AutomationsDeactivateOperation:     []string{},
 	AutomationsDeleteOperation:         []string{},
+	AutomationsDryRunHttpStepOperation: []string{},
 	AutomationsGetOperation:            []string{},
 	AutomationsListOperation:           []string{},
 	AutomationsUpdateOperation:         []string{},
@@ -66,6 +67,8 @@ var operationRolesBearerAuth = map[string][]string{
 	ContactsUpdateOperation:            []string{},
 	CustomFieldsListOperation:          []string{},
 	EmailsSendOperation:                []string{},
+	EnrollmentsGetOperation:            []string{},
+	EnrollmentsListOperation:           []string{},
 	EventActionsListOperation:          []string{},
 	EventsBatchSubmitOperation:         []string{},
 	EventsCreateOperation:              []string{},
@@ -104,6 +107,8 @@ var operationRolesBearerAuth = map[string][]string{
 	WebhooksDeleteOperation:            []string{},
 	WebhooksGetOperation:               []string{},
 	WebhooksListOperation:              []string{},
+	WebhooksRegenerateSecretOperation:  []string{},
+	WebhooksTestOperation:              []string{},
 	WebhooksUpdateOperation:            []string{},
 }
 

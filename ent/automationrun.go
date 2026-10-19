@@ -35,6 +35,12 @@ type AutomationRun struct {
 	CurrentStep int `json:"current_step,omitempty"`
 	// ResumeAt holds the value of the "resume_at" field.
 	ResumeAt *time.Time `json:"resume_at,omitempty"`
+	// FailureKind holds the value of the "failure_kind" field.
+	FailureKind *automationrun.FailureKind `json:"failure_kind,omitempty"`
+	// FailureStatus holds the value of the "failure_status" field.
+	FailureStatus *int `json:"failure_status,omitempty"`
+	// FailureExcerpt holds the value of the "failure_excerpt" field.
+	FailureExcerpt *string `json:"failure_excerpt,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationRunQuery when eager-loading is set.
 	Edges        AutomationRunEdges `json:"edges"`
@@ -79,9 +85,9 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldCurrentStep:
+		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldCurrentStep, automationrun.FieldFailureStatus:
 			values[i] = new(sql.NullInt64)
-		case automationrun.FieldStatus:
+		case automationrun.FieldStatus, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
 		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldResumeAt:
 			values[i] = new(sql.NullTime)
@@ -155,6 +161,27 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 				_m.ResumeAt = new(time.Time)
 				*_m.ResumeAt = value.Time
 			}
+		case automationrun.FieldFailureKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field failure_kind", values[i])
+			} else if value.Valid {
+				_m.FailureKind = new(automationrun.FailureKind)
+				*_m.FailureKind = automationrun.FailureKind(value.String)
+			}
+		case automationrun.FieldFailureStatus:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field failure_status", values[i])
+			} else if value.Valid {
+				_m.FailureStatus = new(int)
+				*_m.FailureStatus = int(value.Int64)
+			}
+		case automationrun.FieldFailureExcerpt:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field failure_excerpt", values[i])
+			} else if value.Valid {
+				_m.FailureExcerpt = new(string)
+				*_m.FailureExcerpt = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -225,6 +252,21 @@ func (_m *AutomationRun) String() string {
 	if v := _m.ResumeAt; v != nil {
 		builder.WriteString("resume_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.FailureKind; v != nil {
+		builder.WriteString("failure_kind=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.FailureStatus; v != nil {
+		builder.WriteString("failure_status=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.FailureExcerpt; v != nil {
+		builder.WriteString("failure_excerpt=")
+		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')
 	return builder.String()

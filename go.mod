@@ -51,6 +51,7 @@ require (
 	github.com/riverqueue/river/riverdriver v0.49.0
 	github.com/riverqueue/river/riverdriver/riverdatabasesql v0.49.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.49.0
+	github.com/riverqueue/river/rivershared v0.49.0
 	github.com/riverqueue/river/rivertype v0.49.0
 	github.com/riverqueue/rivercontrib/otelriver v0.12.0
 	github.com/robbiet480/go.sns v0.0.0-20230523235941-e8d832c79d68
@@ -152,7 +153,6 @@ require (
 	github.com/prometheus/client_model v0.6.3 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.22.0 // indirect
-	github.com/riverqueue/river/rivershared v0.49.0 // indirect
 	github.com/rs/zerolog v1.35.1 // indirect
 	github.com/samber/go-type-to-string v1.8.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect

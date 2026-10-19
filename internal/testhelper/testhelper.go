@@ -59,6 +59,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/getsphericon/sphericon/internal/upgrade"
+	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/go-testfixtures/testfixtures/v3"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -315,7 +316,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	erasureModule := erasure.New(bus)
 	templatesModule := templates.New()
 	tagsModule := tags.New()
-	webhooksModule := webhooks.New(cipher, edition.Audit)
+	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow))
 	// An `sns` Preset checks signatures against the test certificate, so a test posts a
 	// notification signed offline; confirmations are recorded, never fetched.
 	certs := st.certs
@@ -329,7 +330,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	confirmations := &Confirmations{}
 	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
-	automationsModule := automations.New()
+	automationsModule := automations.New(cipher)
 	broadcastsModule := broadcasts.New(inline)
 	acc := accounts.New(client, bus)
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{

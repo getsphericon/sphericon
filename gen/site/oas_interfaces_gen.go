@@ -69,6 +69,10 @@ type SiteAutomationsDeleteRes interface {
 	siteAutomationsDeleteRes()
 }
 
+type SiteAutomationsDryRunHttpStepRes interface {
+	siteAutomationsDryRunHttpStepRes()
+}
+
 type SiteAutomationsGetRes interface {
 	siteAutomationsGetRes()
 }
@@ -139,6 +143,14 @@ type SiteContactsUpdateRes interface {
 
 type SiteCustomFieldsListRes interface {
 	siteCustomFieldsListRes()
+}
+
+type SiteEnrollmentsGetRes interface {
+	siteEnrollmentsGetRes()
+}
+
+type SiteEnrollmentsListRes interface {
+	siteEnrollmentsListRes()
 }
 
 type SiteEventsActionsRes interface {
@@ -387,6 +399,14 @@ type SiteWebhooksGetRes interface {
 
 type SiteWebhooksListRes interface {
 	siteWebhooksListRes()
+}
+
+type SiteWebhooksRegenerateSecretRes interface {
+	siteWebhooksRegenerateSecretRes()
+}
+
+type SiteWebhooksTestRes interface {
+	siteWebhooksTestRes()
 }
 
 type SiteWebhooksUpdateRes interface {

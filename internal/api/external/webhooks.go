@@ -19,13 +19,32 @@ import (
 // must render as an empty list.
 func webhookResource(e webhooks.Endpoint) externalapi.WebhookResource {
 	return externalapi.WebhookResource{
-		ID:         externalapi.EntityId(e.ID),
-		URL:        e.URL,
-		EventTypes: lo.Ternary(e.EventTypes == nil, []string{}, e.EventTypes),
-		Enabled:    e.Enabled,
-		CreatedAt:  externalapi.Timestamp(e.CreatedAt),
-		UpdatedAt:  externalapi.Timestamp(e.UpdatedAt),
+		ID:             externalapi.EntityId(e.ID),
+		URL:            e.URL,
+		EventTypes:     lo.Ternary(e.EventTypes == nil, []string{}, e.EventTypes),
+		Enabled:        e.Enabled,
+		Failure:        webhookFailure(e),
+		DisabledReason: webhookDisabledReason(e),
+		CreatedAt:      externalapi.Timestamp(e.CreatedAt),
+		UpdatedAt:      externalapi.Timestamp(e.UpdatedAt),
 	}
+}
+
+// webhookFailure maps the endpoint's failure state; it is absent while the endpoint is healthy.
+func webhookFailure(e webhooks.Endpoint) externalapi.OptWebhookFailure {
+	if e.ConsecutiveFailures == nil || e.FailingSince == nil || e.LastFailureAt == nil || e.LastErrorKind == nil {
+		return externalapi.OptWebhookFailure{}
+	}
+	f := externalapi.WebhookFailure{
+		ConsecutiveFailures: int32(*e.ConsecutiveFailures),
+		Since:               externalapi.Timestamp(*e.FailingSince),
+		LastFailureAt:       externalapi.Timestamp(*e.LastFailureAt),
+		Kind:                externalapi.WebhookErrorKind(*e.LastErrorKind),
+	}
+	if e.LastErrorStatus != nil {
+		f.Status = externalapi.NewOptInt32(int32(*e.LastErrorStatus))
+	}
+	return externalapi.NewOptWebhookFailure(f)
 }
 
 // webhookRuleProblem maps a webhooks rule sentinel to its 422; ok is false for any
@@ -153,4 +172,12 @@ func (h *Handlers) WebhooksDelete(ctx context.Context, params externalapi.Webhoo
 		return nil, err
 	}
 	return &externalapi.WebhooksDeleteNoContent{}, nil
+}
+
+// webhookDisabledReason maps why the endpoint turned itself off; absent otherwise.
+func webhookDisabledReason(e webhooks.Endpoint) externalapi.OptWebhookDisabledReason {
+	if e.DisabledReason == nil {
+		return externalapi.OptWebhookDisabledReason{}
+	}
+	return externalapi.NewOptWebhookDisabledReason(externalapi.WebhookDisabledReason(*e.DisabledReason))
 }
