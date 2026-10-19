@@ -26,14 +26,14 @@ var errChecksFailed = errors.New("doctor: a check failed")
 // doctorSeams are the reaches outside the process that `doctor` makes, so a test swaps them.
 type doctorSeams struct {
 	dialSMTP  func(ctx context.Context, cfg *config.Config) error
-	http      *http.Client
+	client    *http.Client
 	lookupTXT func(ctx context.Context, name string) ([]string, error)
 }
 
 func newDoctorSeams() doctorSeams {
 	return doctorSeams{
 		dialSMTP:  dialSMTP,
-		http:      &http.Client{Timeout: 10 * time.Second},
+		client:    &http.Client{Timeout: 10 * time.Second},
 		lookupTXT: net.DefaultResolver.LookupTXT,
 	}
 }
@@ -61,7 +61,7 @@ func doctorCommand(d deps) *cli.Command {
 				Build:            buildinfo.Current(),
 				Now:              d.now,
 				DialSMTP:         d.doctor.dialSMTP,
-				HTTP:             d.doctor.http,
+				HTTP:             d.doctor.client,
 				LookupTXT:        d.doctor.lookupTXT,
 				LicensePublicKey: licensekey.ProductionKey,
 			}

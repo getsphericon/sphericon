@@ -171,7 +171,12 @@ func checkSecrets(r *Report, in Input) {
 	}
 
 	if err := config.ValidateJWTSecret(cfg.JWTSecret); err != nil {
-		r.add("jwt secret", Fail, err.Error(), "Generate one with `openssl rand -hex 32` and set it as SPHERICON_JWT_SECRET.")
+		// Development boots without it (Load only enforces it elsewhere): a warning there.
+		status := Fail
+		if cfg.IsDev {
+			status = Warn
+		}
+		r.add("jwt secret", status, err.Error(), "Generate one with `openssl rand -hex 32` and set it as SPHERICON_JWT_SECRET.")
 		return
 	}
 	r.add("jwt secret", Pass, "SPHERICON_JWT_SECRET is present and strong enough", "")

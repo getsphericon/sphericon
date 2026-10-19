@@ -30,7 +30,7 @@ func doctorDeps(smtpErr error) deps {
 		now: func() time.Time { return cliNow },
 		doctor: doctorSeams{
 			dialSMTP: func(context.Context, *config.Config) error { return smtpErr },
-			http: &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+			client: &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 				return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
 			})},
 			lookupTXT: func(_ context.Context, name string) ([]string, error) {

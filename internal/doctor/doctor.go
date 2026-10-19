@@ -61,13 +61,16 @@ type Report struct {
 }
 
 // Failed reports whether any check failed; warnings do not count.
-func (r Report) Failed() bool {
+func (r Report) Failed() bool { return r.count(Fail) > 0 }
+
+func (r Report) count(status Status) int {
+	n := 0
 	for _, c := range r.Checks {
-		if c.Status == Fail {
-			return true
+		if c.Status == status {
+			n++
 		}
 	}
-	return false
+	return n
 }
 
 func (r *Report) add(name string, status Status, detail, fix string) {
@@ -98,9 +101,8 @@ type Input struct {
 	LookupTXT sending.TXTLookup
 }
 
-// Run performs every check, in the order the report prints them. A check that cannot run
-// because an earlier one failed (no configuration, no database) is reported as failed too,
-// so the report always lists the same checks.
+// Run performs every check, in the order the report prints them. Without a configuration it
+// reports that alone; without a database, each check that needs one fails by name.
 func Run(ctx context.Context, in Input) Report {
 	var r Report
 	if in.ConfigErr != nil || in.Config == nil {
@@ -129,15 +131,7 @@ func (r Report) WriteText(w io.Writer) {
 			_, _ = fmt.Fprintf(w, "       fix: %s\n", c.Fix)
 		}
 	}
-	failed, warned := 0, 0
-	for _, c := range r.Checks {
-		switch c.Status {
-		case Fail:
-			failed++
-		case Warn:
-			warned++
-		}
-	}
+	failed, warned := r.count(Fail), r.count(Warn)
 	_, _ = fmt.Fprintf(w, "\n%d checks, %d failed, %d warnings\n", len(r.Checks), failed, warned)
 }
 
