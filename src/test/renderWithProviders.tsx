@@ -25,7 +25,7 @@ export function renderWithProviders(ui: ReactNode) {
       <QueryClientProvider client={queryClient}>
         <MantineProvider>
           <ModalsProvider>
-            <Notifications position="top-right" stackable />
+            <Notifications position="top-right" layout="stacked" />
             {children}
           </ModalsProvider>
         </MantineProvider>

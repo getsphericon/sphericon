@@ -57,6 +57,7 @@ test('lists members and pending invitations', async () => {
   const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
 
   await expect.element(screen.getByText('ann@example.com')).toBeInTheDocument()
+  await screen.getByRole('tab', { name: /Pending invitations/ }).click()
   await expect.element(screen.getByText('new@example.com')).toBeInTheDocument()
 })
 
@@ -75,6 +76,7 @@ test('invites a member and reveals the invite link', async () => {
   )
   const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
 
+  await screen.getByRole('tab', { name: /Pending invitations/ }).click()
   await screen
     .getByLabelText(/^Email/)
     .last()
@@ -102,6 +104,7 @@ test('revokes an invitation after confirmation', async () => {
   )
   const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
 
+  await screen.getByRole('tab', { name: /Pending invitations/ }).click()
   await screen.getByRole('button', { name: 'Revoke' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
