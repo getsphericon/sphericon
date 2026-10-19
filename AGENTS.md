@@ -22,12 +22,13 @@ hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `internal/api/{site,external}/resources` packages and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock — regenerate instead.
 
 ```
-typespec/{site,external,collect,staff,service}   ──tsp compile──▶  openapi/*.openapi.json
+typespec/{site,external,collect,staff,service,telemetry}   ──tsp compile──▶  openapi/*.openapi.json
   openapi/site      ──ogen──▶ gen/site       (Go server)   ──openapi-ts──▶ src/generated/site (TS client + react-query + zod)
   openapi/external  ──ogen──▶ gen/external    (Go server)
   openapi/collect   ──ogen──▶ gen/collect     (Go server)  ──openapi-ts──▶ packages/analytics/src/generated/collect (types only)
   openapi/staff  ──ogen──▶ gen/staff    (Go server)  ──openapi-ts──▶ src/generated/staff (TS client + react-query + zod)
   openapi/service   ──ogen──▶ gen/service     (Go server, internal listener only)
+  openapi/telemetry ──ogen──▶ gen/telemetry   (Go client only, `ogen.telemetry.yml`; embedded in `spec.go`, checked by `internal/telemetryschema`)
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
@@ -283,7 +284,8 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
-  codes, ADR 0020: they belong to the User, not a Workspace), `internal/suspension` (Workspace
+  codes, ADR 0020: they belong to the User, not a Workspace), `internal/instance` (the Instance state row
+  that no Workspace owns, and who decides about it: the Owners of the oldest Workspace, ADR 0032), `internal/suspension` (Workspace
   suspension), `internal/events`
   (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition), `ee/audit` (the Audit log bus

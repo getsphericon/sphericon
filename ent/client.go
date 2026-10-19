@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -86,6 +87,8 @@ type Client struct {
 	Event *EventClient
 	// Hold is the client for interacting with the Hold builders.
 	Hold *HoldClient
+	// InstanceState is the client for interacting with the InstanceState builders.
+	InstanceState *InstanceStateClient
 	// Integration is the client for interacting with the Integration builders.
 	Integration *IntegrationClient
 	// Invitation is the client for interacting with the Invitation builders.
@@ -156,6 +159,7 @@ func (c *Client) init() {
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
 	c.Event = NewEventClient(c.config)
 	c.Hold = NewHoldClient(c.config)
+	c.InstanceState = NewInstanceStateClient(c.config)
 	c.Integration = NewIntegrationClient(c.config)
 	c.Invitation = NewInvitationClient(c.config)
 	c.Membership = NewMembershipClient(c.config)
@@ -284,6 +288,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EmailTemplate:      NewEmailTemplateClient(cfg),
 		Event:              NewEventClient(cfg),
 		Hold:               NewHoldClient(cfg),
+		InstanceState:      NewInstanceStateClient(cfg),
 		Integration:        NewIntegrationClient(cfg),
 		Invitation:         NewInvitationClient(cfg),
 		Membership:         NewMembershipClient(cfg),
@@ -339,6 +344,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EmailTemplate:      NewEmailTemplateClient(cfg),
 		Event:              NewEventClient(cfg),
 		Hold:               NewHoldClient(cfg),
+		InstanceState:      NewInstanceStateClient(cfg),
 		Integration:        NewIntegrationClient(cfg),
 		Invitation:         NewInvitationClient(cfg),
 		Membership:         NewMembershipClient(cfg),
@@ -393,11 +399,11 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
-		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
-		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.Unsubscribe,
-		c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.EmailTemplate, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage,
+		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
+		c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -409,11 +415,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
-		c.EmailTemplate, c.Event, c.Hold, c.Integration, c.Invitation, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
-		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag, c.Unsubscribe,
-		c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.EmailTemplate, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage,
+		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
+		c.Unsubscribe, c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -448,6 +454,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Event.mutate(ctx, m)
 	case *HoldMutation:
 		return c.Hold.mutate(ctx, m)
+	case *InstanceStateMutation:
+		return c.InstanceState.mutate(ctx, m)
 	case *IntegrationMutation:
 		return c.Integration.mutate(ctx, m)
 	case *InvitationMutation:
@@ -2545,6 +2553,139 @@ func (c *HoldClient) mutate(ctx context.Context, m *HoldMutation) (Value, error)
 		return (&HoldDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Hold mutation op: %q", m.Op())
+	}
+}
+
+// InstanceStateClient is a client for the InstanceState schema.
+type InstanceStateClient struct {
+	config
+}
+
+// NewInstanceStateClient returns a client for the InstanceState from the given config.
+func NewInstanceStateClient(c config) *InstanceStateClient {
+	return &InstanceStateClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `instancestate.Hooks(f(g(h())))`.
+func (c *InstanceStateClient) Use(hooks ...Hook) {
+	c.hooks.InstanceState = append(c.hooks.InstanceState, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `instancestate.Intercept(f(g(h())))`.
+func (c *InstanceStateClient) Intercept(interceptors ...Interceptor) {
+	c.inters.InstanceState = append(c.inters.InstanceState, interceptors...)
+}
+
+// Create returns a builder for creating a InstanceState entity.
+func (c *InstanceStateClient) Create() *InstanceStateCreate {
+	mutation := newInstanceStateMutation(c.config, OpCreate)
+	return &InstanceStateCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of InstanceState entities.
+func (c *InstanceStateClient) CreateBulk(builders ...*InstanceStateCreate) *InstanceStateCreateBulk {
+	return &InstanceStateCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InstanceStateClient) MapCreateBulk(slice any, setFunc func(*InstanceStateCreate, int)) *InstanceStateCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InstanceStateCreateBulk{err: fmt.Errorf("calling to InstanceStateClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InstanceStateCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InstanceStateCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for InstanceState.
+func (c *InstanceStateClient) Update() *InstanceStateUpdate {
+	mutation := newInstanceStateMutation(c.config, OpUpdate)
+	return &InstanceStateUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InstanceStateClient) UpdateOne(_m *InstanceState) *InstanceStateUpdateOne {
+	mutation := newInstanceStateMutation(c.config, OpUpdateOne, withInstanceState(_m))
+	return &InstanceStateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InstanceStateClient) UpdateOneID(id int64) *InstanceStateUpdateOne {
+	mutation := newInstanceStateMutation(c.config, OpUpdateOne, withInstanceStateID(id))
+	return &InstanceStateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for InstanceState.
+func (c *InstanceStateClient) Delete() *InstanceStateDelete {
+	mutation := newInstanceStateMutation(c.config, OpDelete)
+	return &InstanceStateDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InstanceStateClient) DeleteOne(_m *InstanceState) *InstanceStateDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InstanceStateClient) DeleteOneID(id int64) *InstanceStateDeleteOne {
+	builder := c.Delete().Where(instancestate.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InstanceStateDeleteOne{builder}
+}
+
+// Query returns a query builder for InstanceState.
+func (c *InstanceStateClient) Query() *InstanceStateQuery {
+	return &InstanceStateQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInstanceState},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a InstanceState entity by its id.
+func (c *InstanceStateClient) Get(ctx context.Context, id int64) (*InstanceState, error) {
+	return c.Query().Where(instancestate.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InstanceStateClient) GetX(ctx context.Context, id int64) *InstanceState {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *InstanceStateClient) Hooks() []Hook {
+	return c.hooks.InstanceState
+}
+
+// Interceptors returns the client interceptors.
+func (c *InstanceStateClient) Interceptors() []Interceptor {
+	return c.inters.InstanceState
+}
+
+func (c *InstanceStateClient) mutate(ctx context.Context, m *InstanceStateMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InstanceStateCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InstanceStateUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InstanceStateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InstanceStateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown InstanceState mutation op: %q", m.Op())
 	}
 }
 
@@ -6412,20 +6553,20 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode,
-		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
-		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
-		Suppression, Tag, Unsubscribe, Usage, User, Visitor, WebhookEndpoint,
-		Workspace []ent.Hook
+		Hold, InstanceState, Integration, Invitation, Membership, OAuthClient,
+		OAuthCode, OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode,
+		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
+		StaffMember, Suppression, Tag, Unsubscribe, Usage, User, Visitor,
+		WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
-		Hold, Integration, Invitation, Membership, OAuthClient, OAuthCode,
-		OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode, SchemaState,
-		Segment, SendLimiter, SendingDomain, ServiceCredential, StaffMember,
-		Suppression, Tag, Unsubscribe, Usage, User, Visitor, WebhookEndpoint,
-		Workspace []ent.Interceptor
+		Hold, InstanceState, Integration, Invitation, Membership, OAuthClient,
+		OAuthCode, OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode,
+		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
+		StaffMember, Suppression, Tag, Unsubscribe, Usage, User, Visitor,
+		WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

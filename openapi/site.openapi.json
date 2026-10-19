@@ -57,6 +57,9 @@
       "name": "Site Audit"
     },
     {
+      "name": "Site Instance"
+    },
+    {
       "name": "Site Contacts"
     },
     {
@@ -775,6 +778,147 @@
         },
         "tags": ["Site Consent"],
         "security": [{}]
+      }
+    },
+    "/instance": {
+      "get": {
+        "operationId": "SiteInstance_getState",
+        "description": "Read the Instance state. Refused to everyone but the Owners of the oldest Workspace.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteInstanceState"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Instance"]
+      }
+    },
+    "/instance/notice/acknowledge": {
+      "post": {
+        "operationId": "SiteInstance_acknowledgeNotice",
+        "description": "Acknowledge the one-time Telemetry report notice. Idempotent.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteInstanceState"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Instance"]
+      }
+    },
+    "/instance/telemetry": {
+      "put": {
+        "operationId": "SiteInstance_setTelemetry",
+        "description": "Switch the Telemetry report on or off. Answers 409 while the environment decides.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteInstanceState"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Instance"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteInstanceTelemetryInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/instance/telemetry/preview": {
+      "get": {
+        "operationId": "SiteInstance_previewTelemetryReport",
+        "description": "The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the\npublished schema describes, built by the code that sends it. Works whether or not sending is\non. Refused to everyone but the Owners of the oldest Workspace.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Instance"]
       }
     },
     "/invitations/{token}": {
@@ -8991,6 +9135,72 @@
           }
         },
         "description": "Request a password-reset link (always accepted; no account enumeration)"
+      },
+      "SiteInstanceState": {
+        "type": "object",
+        "required": ["telemetry", "noticeAcknowledged", "telemetrySchemaUrl"],
+        "properties": {
+          "telemetry": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteInstanceTelemetry"
+              }
+            ],
+            "description": "The Telemetry report setting"
+          },
+          "noticeAcknowledged": {
+            "type": "boolean",
+            "description": "Whether the one-time notice about the Telemetry report was acknowledged"
+          },
+          "latestRelease": {
+            "type": "string",
+            "description": "The newest stable release (a bare version such as `0.4.0`) when the Release check found\none newer than the running version; absent otherwise, and always absent for a build whose\nversion is not a release or when `SPHERICON_RELEASE_CHECK` is off."
+          },
+          "telemetrySchemaUrl": {
+            "type": "string",
+            "description": "The page that documents the schema of the Telemetry report"
+          }
+        },
+        "description": "What an Instance's Owner sees and decides about the Instance itself: it belongs to no\nWorkspace. Only the Owners of the oldest existing Workspace may read or change it."
+      },
+      "SiteInstanceTelemetry": {
+        "type": "object",
+        "required": ["enabled", "locked"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the Instance sends the Telemetry report"
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Whether the environment decides, which makes the in-app switch read-only"
+          },
+          "lockedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteInstanceTelemetryLock"
+              }
+            ],
+            "description": "What decides, set when locked"
+          }
+        },
+        "description": "The Telemetry report setting as it applies right now (ADR 0032)"
+      },
+      "SiteInstanceTelemetryInput": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "The Owner's choice"
+          }
+        },
+        "description": "Switch the Telemetry report on or off"
+      },
+      "SiteInstanceTelemetryLock": {
+        "type": "string",
+        "enum": ["environment", "do_not_track"],
+        "description": "Why the environment, not the Owner, decides the Telemetry report"
       },
       "SiteIntegrationChannel": {
         "type": "string",

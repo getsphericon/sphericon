@@ -1,0 +1,6 @@
+# The Telemetry spec is client-only: the receiver is a separate service outside this repository.
+generator:
+  features:
+    disable:
+      - paths/server
+      - webhooks/server

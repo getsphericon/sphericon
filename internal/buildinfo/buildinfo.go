@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"runtime/debug"
 	"strings"
+
+	"golang.org/x/mod/semver"
 )
 
 // Set by -ldflags "-X github.com/getsphericon/sphericon/internal/buildinfo.Version=..." etc.
@@ -78,3 +80,12 @@ func Semver(v string) string { return "v" + strings.TrimPrefix(v, "v") }
 
 // Bare is v without the leading "v" ("0.1.0"), the form of archive names and Results.
 func Bare(v string) string { return strings.TrimPrefix(v, "v") }
+
+// IsRelease reports whether v is a stable release version ("v1.2.3", "1.2.3"): a plain
+// semantic version, not "dev", a commit-derived pseudo-version, a prerelease or one with build
+// metadata. It is the one answer to "is this a release" for the Telemetry report and the
+// Release check (ADR 0032).
+func IsRelease(v string) bool {
+	s := Semver(v)
+	return semver.IsValid(s) && semver.Prerelease(s) == "" && semver.Build(s) == ""
+}

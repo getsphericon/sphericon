@@ -279,13 +279,22 @@ _Avoid_: Run, automation run, journey instance, subscription
 
 **Step**:
 One node in an Automation's **ordered, linear** sequence; an Enrollment points at exactly one
-current Step. Four kinds today: **send** (an email — it holds its _own copy_ of Message
+current Step. Five kinds today: **send** (an email — it holds its _own copy_ of Message
 content, per the marketing copy-at-author-time rule), **wait** (a delay before the next
-Step), and **apply tag** / **remove tag** (change the enrolled Contact's Tags; they send
-nothing and move straight on). The Enrollment's single "current step" pointer is deliberate: there is no branching,
+Step), **apply tag** / **remove tag** (change the enrolled Contact's Tags; they send
+nothing and move straight on), and **HTTP step** (below). The Enrollment's single "current step" pointer is deliberate: there is no branching,
 no parallel paths, no per-step conditions yet. Conditional / branching steps are a real
 future want but are **deferred until the sequence builder is real** — not modelled now.
 _Avoid_: Action, node, block, stage
+
+**HTTP step**:
+A Step kind that **sphericon calls** a third party's URL (a Slack, Zapier or CRM hook) for the
+enrolled Contact. It holds its _own_ URL, headers and a templated JSON body (the author-time copy
+rule again), and signs the request only when its author sets a secret. The Enrollment moves on
+after a 2xx; when the retries are spent it becomes `failed`, recording the status or the kind of
+error and the first 1 KiB of the response, never skipping the step. Distinct from a Webhook
+endpoint: that one is subscribed to events, this one runs when an Enrollment reaches it.
+_Avoid_: Webhook step, action
 
 **Template** (email template):
 A workspace-scoped, named, reusable piece of email content — a **starting point copied at
@@ -318,6 +327,13 @@ default per (workspace, channel). Broadcasts and Automations send _through_ an I
 workspace default when unspecified). Sending is one half of a loop: bounces and complaints come
 back via the Integration's Ingest hook and land in Suppression.
 _Avoid_: Provider (alone), ESP, sender, connector
+
+**Tracking domain**:
+The hostname `track.<sending domain>`, a CNAME to the Instance's edge, under which the links in mail
+sent from that Sending domain (click, open, unsubscribe, confirm) are built, so recipients see the
+sender's own domain. Set up with the Sending domain's DNS records but verified on its own; it serves
+only those link paths, and until it is serving, new mail uses the Instance's own host.
+_Avoid_: Click domain, link domain, custom domain (unqualified)
 
 **Sending domain**:
 A workspace-scoped, DNS-verified domain that a Contact's mail may be sent _from_ — the
@@ -430,8 +446,9 @@ _Avoid_: Spam filter, auto-ban
 
 **Webhook endpoint** (outbound):
 A workspace-scoped HTTP destination that **sphericon calls** when domain events occur — subscribes
-to event types (empty = all) and signs each delivery (HMAC). Outbound only; the opposite of an
-Ingest hook.
+to event types (empty = all) and signs each delivery (HMAC). It remembers its own failures and
+**disables itself** on a 410 or after persistent failure (a 429 is not a failure), and its owners
+are told by email. Outbound only; the opposite of an Ingest hook.
 _Avoid_: Webhook (unqualified), callback
 
 **Ingest hook** (inbound provider webhook):
