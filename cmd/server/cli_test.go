@@ -14,6 +14,7 @@ type testOps struct {
 	userOps
 	staffOps
 	serviceCredentialOps
+	rekeyOps
 }
 
 var cliNow = time.Date(2026, time.March, 1, 12, 0, 0, 0, time.UTC)
@@ -26,6 +27,7 @@ func execute(fake any, out io.Writer, args ...string) error {
 	ops.userOps, _ = fake.(userOps)
 	ops.staffOps, _ = fake.(staffOps)
 	ops.serviceCredentialOps, _ = fake.(serviceCredentialOps)
+	ops.rekeyOps, _ = fake.(rekeyOps)
 
 	return runDeps(deps{
 		env: "test",

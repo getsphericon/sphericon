@@ -195,7 +195,25 @@ type setup struct {
 	licensePub ed25519.PublicKey
 	// certs is where an `sns` Preset gets its signing certificate; nil is the test certificate.
 	certs preset.CertFetcher
+	// oauthFetcher downloads OAuth Client ID Metadata Documents; nil is the production fetcher.
+	oauthFetcher webhook.Doer
+	// noSystemSender builds the Instance without outbound mail.
+	noSystemSender bool
+	// noSystemFrom gives the System sender no default From (it is not a DefaultFromer).
+	noSystemFrom bool
 }
+
+// WithOAuthFetcher replaces the client that downloads OAuth Client ID Metadata Documents, so a
+// test serves a document from an httptest TLS server (the production client refuses loopback).
+func WithOAuthFetcher(f webhook.Doer) Option { return func(s *setup) { s.oauthFetcher = f } }
+
+// WithoutSystemSender runs the Instance with no outbound mail, so it has no System sender
+// for a Test send to fall back to (ADR 0041).
+func WithoutSystemSender() Option { return func(s *setup) { s.noSystemSender = true } }
+
+// WithSystemSenderWithoutFrom gives the Instance a System sender that names no From of its own,
+// which a Test send must refuse rather than send with an empty From.
+func WithSystemSenderWithoutFrom() Option { return func(s *setup) { s.noSystemFrom = true } }
 
 // WithRunningVersion sets the version the Instance's Release check compares against, so a
 // test runs as a release build ("0.1.0") instead of the "dev" test build.
@@ -284,7 +302,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	stubTXT := func(context.Context, string) ([]string, error) {
 		return nil, &net.DNSError{IsNotFound: true}
 	}
-	tracker := tracking.New(cfg.JWTSecret, cfg.AppURL)
+	tracker := tracking.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...)
 	// Cipher (over the fixture-sealing key) and provider catalog for the site
 	// handlers and the inline jobs — mirrors the app's DI singletons, except that
 	// SES's quota lookup is answered by a fake instead of the AWS API.
@@ -308,7 +326,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	if st.volumeFloor > 0 {
 		limits.VolumeFloor = st.volumeFloor
 	}
-	edition, err := ee.New(client, lic, cipher, cfg.JWTSecret, staff.Config{
+	edition, err := ee.New(client, lic, cipher, cfg.JWTSecrets(), staff.Config{
 		Secret: newStaffSecret(), SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
 		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail,
 	})
@@ -317,7 +335,15 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	client.Use(edition.Hooks()...)
 	bus.Use(edition.Hooks()...)
 	// The Staff hold freezer rides the send chokepoint like the app's.
-	sender := outbound.New(bus, resolver, tracker, outbound.WithFreezers(edition.Freezer()), outbound.WithTrackingDomains())
+	outboundOpts := []outbound.Option{outbound.WithFreezers(edition.Freezer()), outbound.WithTrackingDomains(), outbound.WithTestSendBudget(attempts)}
+	switch {
+	case st.noSystemSender:
+	case st.noSystemFrom:
+		outboundOpts = append(outboundOpts, outbound.WithSystemSender(struct{ messaging.EmailSender }{systemMail}))
+	default:
+		outboundOpts = append(outboundOpts, outbound.WithSystemSender(systemMailFrom{systemMail}))
+	}
+	sender := outbound.New(bus, resolver, tracker, outboundOpts...)
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
 	inline := jobs.NewInline(client, sender, systemMail, stubTXT, nil, cipher, catalog, cfg.AppURL)
@@ -360,6 +386,10 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build external API")
 	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
 	require.NoError(t, err, "build MCP handler")
+	oauthFetcher := st.oauthFetcher
+	if oauthFetcher == nil {
+		oauthFetcher = oauthserver.NewFetcher(cfg.OutboundAllow)
+	}
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
 	staffHandler, err := server.NewStaffAPI(edition.Staff(bus, systemMail))
 	require.NoError(t, err, "build staff API")
@@ -370,16 +400,16 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	lapsedAt, _ := edition.LicenseLapsedAt()
 	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
-		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL,
+		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, BillingURL: cfg.BillingURL, MCPURL: cfg.MCPOrigin(),
 		Instance: inst,
-		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
+		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
 		Automations: automationsModule, Broadcasts: broadcastsModule,
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, Integrations: integrationsModule,
 		Tokens: authtoken.New(baseCfg.JWTSecret), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New(),
 		SecondFactor:             secondFactor,
 		Clock:                    st.now,
-		RequireEmailVerification: cfg.RequireEmailVerification,
+		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
 	}, external, mcpHandler, staffHandler)
 	require.NoError(t, err, "build server")
 	internalHandler, err := server.NewInternal(&cfg, client, edition.Service(bus))
@@ -428,6 +458,15 @@ func (s *CapturingSender) Messages() []messaging.EmailMessage {
 	defer s.mu.Unlock()
 	return append([]messaging.EmailMessage(nil), s.sent...)
 }
+
+// SystemFrom is the From address of the test Instance's System sender.
+const SystemFrom = "noreply@sphericon.test"
+
+// systemMailFrom is the System sender over the capturing system mail: it sends from SystemFrom,
+// where the capturing sender itself defaults to a Workspace's verified domain.
+type systemMailFrom struct{ *CapturingSender }
+
+func (systemMailFrom) DefaultFrom() (string, string) { return SystemFrom, "sphericon" }
 
 // fixedResolver returns the same capturing sender for any workspace, so inline
 // broadcast sends work without a configured integration.

@@ -32,7 +32,7 @@ import { Route as WorkspacesSlugRouteRouteImport } from './routes/workspaces/$sl
 import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed/index'
 import { Route as WorkspacesSlugIndexRouteImport } from './routes/workspaces/$slug/index'
 import { Route as WorkspacesSlugActivityRouteImport } from './routes/workspaces/$slug/activity'
-import { Route as WorkspacesSlugSettingsRouteImport } from './routes/workspaces/$slug/settings'
+import { Route as WorkspacesSlugSettingsRouteRouteImport } from './routes/workspaces/$slug/settings/route'
 import { Route as ConsoleAuthedWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/workspaces.$workspaceId'
 import { Route as WorkspacesSlugAutomationsIndexRouteImport } from './routes/workspaces/$slug/automations/index'
 import { Route as WorkspacesSlugAutomationsNewRouteImport } from './routes/workspaces/$slug/automations/new'
@@ -42,6 +42,12 @@ import { Route as WorkspacesSlugContactsIndexRouteImport } from './routes/worksp
 import { Route as WorkspacesSlugContactsNewRouteImport } from './routes/workspaces/$slug/contacts/new'
 import { Route as WorkspacesSlugSegmentsIndexRouteImport } from './routes/workspaces/$slug/segments/index'
 import { Route as WorkspacesSlugSegmentsNewRouteImport } from './routes/workspaces/$slug/segments/new'
+import { Route as WorkspacesSlugSettingsIndexRouteImport } from './routes/workspaces/$slug/settings/index'
+import { Route as WorkspacesSlugSettingsDevelopersRouteImport } from './routes/workspaces/$slug/settings/developers'
+import { Route as WorkspacesSlugSettingsMcpRouteImport } from './routes/workspaces/$slug/settings/mcp'
+import { Route as WorkspacesSlugSettingsSendingRouteImport } from './routes/workspaces/$slug/settings/sending'
+import { Route as WorkspacesSlugSettingsTeamRouteImport } from './routes/workspaces/$slug/settings/team'
+import { Route as WorkspacesSlugSettingsTrackingRouteImport } from './routes/workspaces/$slug/settings/tracking'
 import { Route as WorkspacesSlugTemplatesIndexRouteImport } from './routes/workspaces/$slug/templates/index'
 import { Route as WorkspacesSlugTemplatesNewRouteImport } from './routes/workspaces/$slug/templates/new'
 import { Route as WorkspacesSlugTransactionalEmailsIndexRouteImport } from './routes/workspaces/$slug/transactional-emails/index'
@@ -167,11 +173,12 @@ const WorkspacesSlugActivityRoute = WorkspacesSlugActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => WorkspacesSlugRouteRoute,
 } as any)
-const WorkspacesSlugSettingsRoute = WorkspacesSlugSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => WorkspacesSlugRouteRoute,
-} as any)
+const WorkspacesSlugSettingsRouteRoute =
+  WorkspacesSlugSettingsRouteRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => WorkspacesSlugRouteRoute,
+  } as any)
 const ConsoleAuthedWorkspacesWorkspaceIdRoute =
   ConsoleAuthedWorkspacesWorkspaceIdRouteImport.update({
     id: '/workspaces/$workspaceId',
@@ -225,6 +232,42 @@ const WorkspacesSlugSegmentsNewRoute =
     id: '/segments/new',
     path: '/segments/new',
     getParentRoute: () => WorkspacesSlugRouteRoute,
+  } as any)
+const WorkspacesSlugSettingsIndexRoute =
+  WorkspacesSlugSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => WorkspacesSlugSettingsRouteRoute,
+  } as any)
+const WorkspacesSlugSettingsDevelopersRoute =
+  WorkspacesSlugSettingsDevelopersRouteImport.update({
+    id: '/developers',
+    path: '/developers',
+    getParentRoute: () => WorkspacesSlugSettingsRouteRoute,
+  } as any)
+const WorkspacesSlugSettingsMcpRoute =
+  WorkspacesSlugSettingsMcpRouteImport.update({
+    id: '/mcp',
+    path: '/mcp',
+    getParentRoute: () => WorkspacesSlugSettingsRouteRoute,
+  } as any)
+const WorkspacesSlugSettingsSendingRoute =
+  WorkspacesSlugSettingsSendingRouteImport.update({
+    id: '/sending',
+    path: '/sending',
+    getParentRoute: () => WorkspacesSlugSettingsRouteRoute,
+  } as any)
+const WorkspacesSlugSettingsTeamRoute =
+  WorkspacesSlugSettingsTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => WorkspacesSlugSettingsRouteRoute,
+  } as any)
+const WorkspacesSlugSettingsTrackingRoute =
+  WorkspacesSlugSettingsTrackingRouteImport.update({
+    id: '/tracking',
+    path: '/tracking',
+    getParentRoute: () => WorkspacesSlugSettingsRouteRoute,
   } as any)
 const WorkspacesSlugTemplatesIndexRoute =
   WorkspacesSlugTemplatesIndexRouteImport.update({
@@ -307,8 +350,8 @@ export interface FileRoutesByFullPath {
   '/invitations/$token': typeof InvitationsTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/account/': typeof AccountIndexRoute
+  '/workspaces/$slug/settings': typeof WorkspacesSlugSettingsRouteRouteWithChildren
   '/workspaces/$slug/activity': typeof WorkspacesSlugActivityRoute
-  '/workspaces/$slug/settings': typeof WorkspacesSlugSettingsRoute
   '/console/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$slug/': typeof WorkspacesSlugIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
@@ -316,11 +359,17 @@ export interface FileRoutesByFullPath {
   '/workspaces/$slug/broadcasts/new': typeof WorkspacesSlugBroadcastsNewRoute
   '/workspaces/$slug/contacts/new': typeof WorkspacesSlugContactsNewRoute
   '/workspaces/$slug/segments/new': typeof WorkspacesSlugSegmentsNewRoute
+  '/workspaces/$slug/settings/developers': typeof WorkspacesSlugSettingsDevelopersRoute
+  '/workspaces/$slug/settings/mcp': typeof WorkspacesSlugSettingsMcpRoute
+  '/workspaces/$slug/settings/sending': typeof WorkspacesSlugSettingsSendingRoute
+  '/workspaces/$slug/settings/team': typeof WorkspacesSlugSettingsTeamRoute
+  '/workspaces/$slug/settings/tracking': typeof WorkspacesSlugSettingsTrackingRoute
   '/workspaces/$slug/templates/new': typeof WorkspacesSlugTemplatesNewRoute
   '/workspaces/$slug/automations/': typeof WorkspacesSlugAutomationsIndexRoute
   '/workspaces/$slug/broadcasts/': typeof WorkspacesSlugBroadcastsIndexRoute
   '/workspaces/$slug/contacts/': typeof WorkspacesSlugContactsIndexRoute
   '/workspaces/$slug/segments/': typeof WorkspacesSlugSegmentsIndexRoute
+  '/workspaces/$slug/settings/': typeof WorkspacesSlugSettingsIndexRoute
   '/workspaces/$slug/templates/': typeof WorkspacesSlugTemplatesIndexRoute
   '/workspaces/$slug/transactional-emails/': typeof WorkspacesSlugTransactionalEmailsIndexRoute
   '/workspaces/$slug/automations/$automationId/edit': typeof WorkspacesSlugAutomationsAutomationIdEditRoute
@@ -350,18 +399,23 @@ export interface FileRoutesByTo {
   '/oauth/consent': typeof OauthConsentRoute
   '/account': typeof AccountIndexRoute
   '/workspaces/$slug/activity': typeof WorkspacesSlugActivityRoute
-  '/workspaces/$slug/settings': typeof WorkspacesSlugSettingsRoute
   '/workspaces/$slug': typeof WorkspacesSlugIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
   '/workspaces/$slug/automations/new': typeof WorkspacesSlugAutomationsNewRoute
   '/workspaces/$slug/broadcasts/new': typeof WorkspacesSlugBroadcastsNewRoute
   '/workspaces/$slug/contacts/new': typeof WorkspacesSlugContactsNewRoute
   '/workspaces/$slug/segments/new': typeof WorkspacesSlugSegmentsNewRoute
+  '/workspaces/$slug/settings/developers': typeof WorkspacesSlugSettingsDevelopersRoute
+  '/workspaces/$slug/settings/mcp': typeof WorkspacesSlugSettingsMcpRoute
+  '/workspaces/$slug/settings/sending': typeof WorkspacesSlugSettingsSendingRoute
+  '/workspaces/$slug/settings/team': typeof WorkspacesSlugSettingsTeamRoute
+  '/workspaces/$slug/settings/tracking': typeof WorkspacesSlugSettingsTrackingRoute
   '/workspaces/$slug/templates/new': typeof WorkspacesSlugTemplatesNewRoute
   '/workspaces/$slug/automations': typeof WorkspacesSlugAutomationsIndexRoute
   '/workspaces/$slug/broadcasts': typeof WorkspacesSlugBroadcastsIndexRoute
   '/workspaces/$slug/contacts': typeof WorkspacesSlugContactsIndexRoute
   '/workspaces/$slug/segments': typeof WorkspacesSlugSegmentsIndexRoute
+  '/workspaces/$slug/settings': typeof WorkspacesSlugSettingsIndexRoute
   '/workspaces/$slug/templates': typeof WorkspacesSlugTemplatesIndexRoute
   '/workspaces/$slug/transactional-emails': typeof WorkspacesSlugTransactionalEmailsIndexRoute
   '/workspaces/$slug/automations/$automationId/edit': typeof WorkspacesSlugAutomationsAutomationIdEditRoute
@@ -394,8 +448,8 @@ export interface FileRoutesById {
   '/invitations/$token': typeof InvitationsTokenRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/account/': typeof AccountIndexRoute
+  '/workspaces/$slug/settings': typeof WorkspacesSlugSettingsRouteRouteWithChildren
   '/workspaces/$slug/activity': typeof WorkspacesSlugActivityRoute
-  '/workspaces/$slug/settings': typeof WorkspacesSlugSettingsRoute
   '/console/_authed/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$slug/': typeof WorkspacesSlugIndexRoute
   '/console/_authed/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
@@ -403,11 +457,17 @@ export interface FileRoutesById {
   '/workspaces/$slug/broadcasts/new': typeof WorkspacesSlugBroadcastsNewRoute
   '/workspaces/$slug/contacts/new': typeof WorkspacesSlugContactsNewRoute
   '/workspaces/$slug/segments/new': typeof WorkspacesSlugSegmentsNewRoute
+  '/workspaces/$slug/settings/developers': typeof WorkspacesSlugSettingsDevelopersRoute
+  '/workspaces/$slug/settings/mcp': typeof WorkspacesSlugSettingsMcpRoute
+  '/workspaces/$slug/settings/sending': typeof WorkspacesSlugSettingsSendingRoute
+  '/workspaces/$slug/settings/team': typeof WorkspacesSlugSettingsTeamRoute
+  '/workspaces/$slug/settings/tracking': typeof WorkspacesSlugSettingsTrackingRoute
   '/workspaces/$slug/templates/new': typeof WorkspacesSlugTemplatesNewRoute
   '/workspaces/$slug/automations/': typeof WorkspacesSlugAutomationsIndexRoute
   '/workspaces/$slug/broadcasts/': typeof WorkspacesSlugBroadcastsIndexRoute
   '/workspaces/$slug/contacts/': typeof WorkspacesSlugContactsIndexRoute
   '/workspaces/$slug/segments/': typeof WorkspacesSlugSegmentsIndexRoute
+  '/workspaces/$slug/settings/': typeof WorkspacesSlugSettingsIndexRoute
   '/workspaces/$slug/templates/': typeof WorkspacesSlugTemplatesIndexRoute
   '/workspaces/$slug/transactional-emails/': typeof WorkspacesSlugTransactionalEmailsIndexRoute
   '/workspaces/$slug/automations/$automationId/edit': typeof WorkspacesSlugAutomationsAutomationIdEditRoute
@@ -440,8 +500,8 @@ export interface FileRouteTypes {
     | '/invitations/$token'
     | '/oauth/consent'
     | '/account/'
-    | '/workspaces/$slug/activity'
     | '/workspaces/$slug/settings'
+    | '/workspaces/$slug/activity'
     | '/console/'
     | '/workspaces/$slug/'
     | '/console/workspaces/$workspaceId'
@@ -449,11 +509,17 @@ export interface FileRouteTypes {
     | '/workspaces/$slug/broadcasts/new'
     | '/workspaces/$slug/contacts/new'
     | '/workspaces/$slug/segments/new'
+    | '/workspaces/$slug/settings/developers'
+    | '/workspaces/$slug/settings/mcp'
+    | '/workspaces/$slug/settings/sending'
+    | '/workspaces/$slug/settings/team'
+    | '/workspaces/$slug/settings/tracking'
     | '/workspaces/$slug/templates/new'
     | '/workspaces/$slug/automations/'
     | '/workspaces/$slug/broadcasts/'
     | '/workspaces/$slug/contacts/'
     | '/workspaces/$slug/segments/'
+    | '/workspaces/$slug/settings/'
     | '/workspaces/$slug/templates/'
     | '/workspaces/$slug/transactional-emails/'
     | '/workspaces/$slug/automations/$automationId/edit'
@@ -483,18 +549,23 @@ export interface FileRouteTypes {
     | '/oauth/consent'
     | '/account'
     | '/workspaces/$slug/activity'
-    | '/workspaces/$slug/settings'
     | '/workspaces/$slug'
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$slug/automations/new'
     | '/workspaces/$slug/broadcasts/new'
     | '/workspaces/$slug/contacts/new'
     | '/workspaces/$slug/segments/new'
+    | '/workspaces/$slug/settings/developers'
+    | '/workspaces/$slug/settings/mcp'
+    | '/workspaces/$slug/settings/sending'
+    | '/workspaces/$slug/settings/team'
+    | '/workspaces/$slug/settings/tracking'
     | '/workspaces/$slug/templates/new'
     | '/workspaces/$slug/automations'
     | '/workspaces/$slug/broadcasts'
     | '/workspaces/$slug/contacts'
     | '/workspaces/$slug/segments'
+    | '/workspaces/$slug/settings'
     | '/workspaces/$slug/templates'
     | '/workspaces/$slug/transactional-emails'
     | '/workspaces/$slug/automations/$automationId/edit'
@@ -526,8 +597,8 @@ export interface FileRouteTypes {
     | '/invitations/$token'
     | '/oauth/consent'
     | '/account/'
-    | '/workspaces/$slug/activity'
     | '/workspaces/$slug/settings'
+    | '/workspaces/$slug/activity'
     | '/console/_authed/'
     | '/workspaces/$slug/'
     | '/console/_authed/workspaces/$workspaceId'
@@ -535,11 +606,17 @@ export interface FileRouteTypes {
     | '/workspaces/$slug/broadcasts/new'
     | '/workspaces/$slug/contacts/new'
     | '/workspaces/$slug/segments/new'
+    | '/workspaces/$slug/settings/developers'
+    | '/workspaces/$slug/settings/mcp'
+    | '/workspaces/$slug/settings/sending'
+    | '/workspaces/$slug/settings/team'
+    | '/workspaces/$slug/settings/tracking'
     | '/workspaces/$slug/templates/new'
     | '/workspaces/$slug/automations/'
     | '/workspaces/$slug/broadcasts/'
     | '/workspaces/$slug/contacts/'
     | '/workspaces/$slug/segments/'
+    | '/workspaces/$slug/settings/'
     | '/workspaces/$slug/templates/'
     | '/workspaces/$slug/transactional-emails/'
     | '/workspaces/$slug/automations/$automationId/edit'
@@ -736,7 +813,7 @@ declare module '@tanstack/react-router' {
       id: '/workspaces/$slug/settings'
       path: '/settings'
       fullPath: '/workspaces/$slug/settings'
-      preLoaderRoute: typeof WorkspacesSlugSettingsRouteImport
+      preLoaderRoute: typeof WorkspacesSlugSettingsRouteRouteImport
       parentRoute: typeof WorkspacesSlugRouteRoute
     }
     '/console/_authed/workspaces/$workspaceId': {
@@ -801,6 +878,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/workspaces/$slug/segments/new'
       preLoaderRoute: typeof WorkspacesSlugSegmentsNewRouteImport
       parentRoute: typeof WorkspacesSlugRouteRoute
+    }
+    '/workspaces/$slug/settings/': {
+      id: '/workspaces/$slug/settings/'
+      path: '/'
+      fullPath: '/workspaces/$slug/settings/'
+      preLoaderRoute: typeof WorkspacesSlugSettingsIndexRouteImport
+      parentRoute: typeof WorkspacesSlugSettingsRouteRoute
+    }
+    '/workspaces/$slug/settings/developers': {
+      id: '/workspaces/$slug/settings/developers'
+      path: '/developers'
+      fullPath: '/workspaces/$slug/settings/developers'
+      preLoaderRoute: typeof WorkspacesSlugSettingsDevelopersRouteImport
+      parentRoute: typeof WorkspacesSlugSettingsRouteRoute
+    }
+    '/workspaces/$slug/settings/mcp': {
+      id: '/workspaces/$slug/settings/mcp'
+      path: '/mcp'
+      fullPath: '/workspaces/$slug/settings/mcp'
+      preLoaderRoute: typeof WorkspacesSlugSettingsMcpRouteImport
+      parentRoute: typeof WorkspacesSlugSettingsRouteRoute
+    }
+    '/workspaces/$slug/settings/sending': {
+      id: '/workspaces/$slug/settings/sending'
+      path: '/sending'
+      fullPath: '/workspaces/$slug/settings/sending'
+      preLoaderRoute: typeof WorkspacesSlugSettingsSendingRouteImport
+      parentRoute: typeof WorkspacesSlugSettingsRouteRoute
+    }
+    '/workspaces/$slug/settings/team': {
+      id: '/workspaces/$slug/settings/team'
+      path: '/team'
+      fullPath: '/workspaces/$slug/settings/team'
+      preLoaderRoute: typeof WorkspacesSlugSettingsTeamRouteImport
+      parentRoute: typeof WorkspacesSlugSettingsRouteRoute
+    }
+    '/workspaces/$slug/settings/tracking': {
+      id: '/workspaces/$slug/settings/tracking'
+      path: '/tracking'
+      fullPath: '/workspaces/$slug/settings/tracking'
+      preLoaderRoute: typeof WorkspacesSlugSettingsTrackingRouteImport
+      parentRoute: typeof WorkspacesSlugSettingsRouteRoute
     }
     '/workspaces/$slug/templates/': {
       id: '/workspaces/$slug/templates/'
@@ -919,9 +1038,34 @@ const ConsoleRouteRouteWithChildren = ConsoleRouteRoute._addFileChildren(
   ConsoleRouteRouteChildren,
 )
 
+interface WorkspacesSlugSettingsRouteRouteChildren {
+  WorkspacesSlugSettingsDevelopersRoute: typeof WorkspacesSlugSettingsDevelopersRoute
+  WorkspacesSlugSettingsMcpRoute: typeof WorkspacesSlugSettingsMcpRoute
+  WorkspacesSlugSettingsSendingRoute: typeof WorkspacesSlugSettingsSendingRoute
+  WorkspacesSlugSettingsTeamRoute: typeof WorkspacesSlugSettingsTeamRoute
+  WorkspacesSlugSettingsTrackingRoute: typeof WorkspacesSlugSettingsTrackingRoute
+  WorkspacesSlugSettingsIndexRoute: typeof WorkspacesSlugSettingsIndexRoute
+}
+
+const WorkspacesSlugSettingsRouteRouteChildren: WorkspacesSlugSettingsRouteRouteChildren =
+  {
+    WorkspacesSlugSettingsDevelopersRoute:
+      WorkspacesSlugSettingsDevelopersRoute,
+    WorkspacesSlugSettingsMcpRoute: WorkspacesSlugSettingsMcpRoute,
+    WorkspacesSlugSettingsSendingRoute: WorkspacesSlugSettingsSendingRoute,
+    WorkspacesSlugSettingsTeamRoute: WorkspacesSlugSettingsTeamRoute,
+    WorkspacesSlugSettingsTrackingRoute: WorkspacesSlugSettingsTrackingRoute,
+    WorkspacesSlugSettingsIndexRoute: WorkspacesSlugSettingsIndexRoute,
+  }
+
+const WorkspacesSlugSettingsRouteRouteWithChildren =
+  WorkspacesSlugSettingsRouteRoute._addFileChildren(
+    WorkspacesSlugSettingsRouteRouteChildren,
+  )
+
 interface WorkspacesSlugRouteRouteChildren {
+  WorkspacesSlugSettingsRouteRoute: typeof WorkspacesSlugSettingsRouteRouteWithChildren
   WorkspacesSlugActivityRoute: typeof WorkspacesSlugActivityRoute
-  WorkspacesSlugSettingsRoute: typeof WorkspacesSlugSettingsRoute
   WorkspacesSlugIndexRoute: typeof WorkspacesSlugIndexRoute
   WorkspacesSlugAutomationsNewRoute: typeof WorkspacesSlugAutomationsNewRoute
   WorkspacesSlugBroadcastsNewRoute: typeof WorkspacesSlugBroadcastsNewRoute
@@ -944,8 +1088,9 @@ interface WorkspacesSlugRouteRouteChildren {
 }
 
 const WorkspacesSlugRouteRouteChildren: WorkspacesSlugRouteRouteChildren = {
+  WorkspacesSlugSettingsRouteRoute:
+    WorkspacesSlugSettingsRouteRouteWithChildren,
   WorkspacesSlugActivityRoute: WorkspacesSlugActivityRoute,
-  WorkspacesSlugSettingsRoute: WorkspacesSlugSettingsRoute,
   WorkspacesSlugIndexRoute: WorkspacesSlugIndexRoute,
   WorkspacesSlugAutomationsNewRoute: WorkspacesSlugAutomationsNewRoute,
   WorkspacesSlugBroadcastsNewRoute: WorkspacesSlugBroadcastsNewRoute,

@@ -387,6 +387,8 @@ func (s ProblemCode) Validate() error {
 		return nil
 	case "email_verification_required":
 		return nil
+	case "signup_closed":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

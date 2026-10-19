@@ -11,6 +11,7 @@ import { page } from 'vitest/browser'
 
 import { Route as loginRoute } from '../routes/login.tsx'
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
+import { DOCS_URL } from '../utils/docs.ts'
 import { DashboardShell } from './DashboardShell.tsx'
 
 const MOBILE_WIDTH = 500
@@ -60,6 +61,14 @@ test('renders the slots around the routed page', async () => {
   await expect.element(screen.getByText(HEADER_SLOT)).toBeInTheDocument()
   await expect.element(screen.getByText(BANNER_SLOT)).toBeInTheDocument()
   await expect.element(screen.getByText(FIRST_PAGE)).toBeInTheDocument()
+})
+
+test('the header links to the documentation', async () => {
+  const screen = await mountShell()
+
+  await expect
+    .element(screen.getByRole('banner').getByRole('link', { name: 'Docs' }))
+    .toHaveAttribute('href', DOCS_URL)
 })
 
 test('on a narrow viewport navigating closes the opened sidebar', async () => {

@@ -28,6 +28,7 @@
     "continue": "Continue",
     "delete": "Delete",
     "edit": "Edit",
+    "more": "More actions",
     "save": "Save",
     "view": "View"
   },
@@ -274,6 +275,7 @@
     "testSend": "Test send",
     "testSendButton": "Send test",
     "testSendEmailLabel": "Send a test to",
+    "testSendFrom": "Sent from {{from}}. Until a sending domain is verified this is the platform's own address, not the one your contacts will see.",
     "useTemplate": "Start from template",
     "useTemplateNone": "— none —"
   },
@@ -550,6 +552,7 @@
     "automations": "Automations",
     "broadcasts": "Broadcasts",
     "contacts": "Contacts",
+    "docs": "Docs",
     "overview": "Overview",
     "segments": "Segments",
     "settings": "Settings",
@@ -590,12 +593,15 @@
   },
   "oauthConsent": {
     "allow": "Allow access",
+    "clientHost": "Requested by the app at {{host}}",
     "deny": "Deny",
     "errorMessage": "We couldn't complete the authorization. Please try again.",
     "errorTitle": "Authorization failed",
     "forbidden": "Only workspace owners and admins can connect an application. Ask an owner or admin to approve it, or choose another workspace.",
     "intro": "{{client}} is asking to act on a workspace of yours through the sphericon API. It gets an API token limited to the permissions below, which you can revoke at any time in the workspace API keys.",
     "invalid": "This authorization request is invalid. Return to the app that sent you here and start again.",
+    "localhostDescription": "After you allow access, the token is sent to a program listening on this computer (localhost). Continue only if you started this connection yourself.",
+    "localhostTitle": "This app connects through localhost",
     "scopesTitle": "Permissions granted",
     "sendCheckbox": "Also allow sending ({{scopes}})",
     "sendDescription": "This app also asked to send email. That is off unless you allow it here.",
@@ -772,6 +778,7 @@
       "title": "Audit log",
       "to": "To"
     },
+    "backToWorkspace": "Back to workspace",
     "copied": "Copied",
     "copy": "Copy",
     "errorTitle": "Failed to update workspace",
@@ -862,6 +869,18 @@
       "title": "Sending providers"
     },
     "loadErrorTitle": "Failed to load workspace",
+    "mcp": {
+      "apiKeysLink": "API keys",
+      "approveNote": "Only an owner or admin can approve the connection.",
+      "description": "Add this address as a custom connector in Claude, or in any client that speaks MCP, so an agent can work in this workspace.",
+      "guideLink": "Other ways to connect",
+      "memberNote": "You are a member: ask an owner or admin to connect the agent.",
+      "stepAdd": "In Claude open Settings → Connectors → Add custom connector and paste the address.",
+      "stepApprove": "Approve the access on the sphericon screen that opens.",
+      "stepConnect": "Press Connect.",
+      "title": "Connect an AI agent (MCP)",
+      "tokenNote": "Approving creates an ordinary API token named “<client> (MCP)”. You can see it and revoke it under"
+    },
     "members": {
       "created": "Created",
       "emailLabel": "Email",
@@ -893,6 +912,14 @@
       "title": "Team members"
     },
     "nameLabel": "Workspace name",
+    "nav": {
+      "developers": "Developers",
+      "general": "General",
+      "mcp": "AI agents (MCP)",
+      "sending": "Sending",
+      "team": "Team and security",
+      "tracking": "Tracking"
+    },
     "postalAddressDescription": "Shown in the footer of every marketing email. US law (CAN-SPAM) requires a valid physical postal address.",
     "postalAddressLabel": "Postal address",
     "postalAddressPlaceholder": "Acme Inc, 123 Main St, Springfield, IL 62704, USA",
@@ -960,7 +987,6 @@
     },
     "testEventDescription": "Send a test event from your terminal, then watch it appear in the activity feed.",
     "testEventTitle": "Send a test event",
-    "title": "Settings",
     "tokens": {
       "create": "Create token",
       "created": "Created",
@@ -1026,6 +1052,41 @@
     },
     "webhooksTitle": "Webhooks"
   },
+  "setupChecklist": {
+    "checkError": "Could not check the domain",
+    "checkNow": "Check now",
+    "copied": "Copied",
+    "copy": "Copy",
+    "copyDkim": "Copy DKIM value",
+    "description": "Four steps to your first email. Each turns done by itself when the thing exists, in any order.",
+    "done": "Done",
+    "loadError": "Failed to load the setup checklist",
+    "recordHint": "Add this DNS record for {{domain}} at your DNS provider:",
+    "steps": {
+      "contact": {
+        "action": "Open Contacts",
+        "description": "Import, the API or the tracker: any one Contact completes this step.",
+        "title": "Add a Contact"
+      },
+      "integration": {
+        "action": "Add an Integration",
+        "description": "SMTP or an SES-compatible service that sends your email.",
+        "title": "Connect an Integration"
+      },
+      "sendingDomain": {
+        "action": "Open Sending domains",
+        "description": "Publish the DKIM record at your DNS provider; verification can take a while and blocks nothing else.",
+        "title": "Verify a Sending domain"
+      },
+      "sentEmail": {
+        "action": "Create a Broadcast",
+        "description": "Create a Broadcast. A test send does not count.",
+        "title": "Send your first email"
+      }
+    },
+    "title": "Set up sphericon",
+    "waitingForDns": "Waiting for DNS"
+  },
   "status": {
     "active": "Active",
     "all": "All",
@@ -1065,7 +1126,6 @@
       "suppressed": "Suppressed"
     },
     "statusLabel": "Status",
-    "subtitle": "Single-recipient emails sent through the API.",
     "title": "Transactional emails"
   },
   "unsubscribe": {

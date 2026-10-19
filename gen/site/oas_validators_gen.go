@@ -200,6 +200,8 @@ func (s ProblemCode) Validate() error {
 		return nil
 	case "email_verification_required":
 		return nil
+	case "signup_closed":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -706,6 +708,14 @@ func (s *SiteAuthLoginUnauthorized) Validate() error {
 }
 
 func (s *SiteAuthRegisterConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAuthRegisterForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4349,6 +4359,98 @@ func (s SiteSesConfigKind) Validate() error {
 	}
 }
 
+func (s *SiteSetupProgress) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Steps.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "steps",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteSetupStepStatus) Validate() error {
+	switch s {
+	case "todo":
+		return nil
+	case "pending":
+		return nil
+	case "done":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *SiteSetupSteps) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Integration.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "integration",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.SendingDomain.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "sendingDomain",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Contact.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "contact",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.SentEmail.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "sentEmail",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SiteSmtpConfig) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4871,6 +4973,29 @@ func (s *SiteTestSendBroadcastInput) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "email",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SiteTestSendBroadcastResult) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.From.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "from",
 			Error: err,
 		})
 	}

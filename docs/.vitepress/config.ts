@@ -31,6 +31,7 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/guide/introduction' },
             { text: 'Quickstart', link: '/guide/quickstart' },
+            { text: 'The sphericon app', link: '/guide/app' },
             { text: 'Tracking visitors and events', link: '/guide/tracking' },
             { text: 'Segments', link: '/guide/segments' },
             { text: 'Sending email', link: '/guide/sending' },

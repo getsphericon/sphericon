@@ -64,6 +64,10 @@ model SiteWorkspaceResource {
    * instance configured none, and then no billing text is shown. */
   billingUrl?: string | null;
 
+  /** The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its
+   * own host, otherwise the app origin. */
+  mcpUrl: string;
+
   /** The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed. */

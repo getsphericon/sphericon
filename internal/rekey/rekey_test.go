@@ -1,0 +1,150 @@
+package rekey_test
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/rekey"
+	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+)
+
+func total(counts []rekey.Count, pick func(rekey.Count) int) int {
+	var n int
+	for _, c := range counts {
+		n += pick(c)
+	}
+	return n
+}
+
+func cipherFor(t *testing.T, keyset string) *secrets.Cipher {
+	t.Helper()
+	c, err := secrets.NewCipher(keyset)
+	require.NoError(t, err)
+	return c
+}
+
+// The operator's rotation end to end: rotate the keyset, re-encrypt, see a second run do nothing,
+// retire the old key, and read every stored secret with what is left.
+func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+
+	rotatedKeyset, err := secrets.Rotate(cfg.EncryptionKey)
+	require.NoError(t, err)
+	rotated := cipherFor(t, rotatedKeyset)
+
+	// The fixtures were sealed under the old key; the rotated keyset still reads them.
+	integrations, err := env.DB.Integration.Query().All(ctx)
+	require.NoError(t, err)
+	require.NotEmpty(t, integrations)
+	for _, row := range integrations {
+		_, err := rotated.Decrypt(row.ConfigEncrypted)
+		require.NoError(t, err, "integration %d under the rotated keyset", row.ID)
+	}
+
+	counts, err := rekey.New(env.DB, rotated).Run(ctx)
+	require.NoError(t, err)
+	assert.Positive(t, total(counts, func(c rekey.Count) int { return c.Rewritten }))
+	assert.Zero(t, total(counts, func(c rekey.Count) int { return c.Raced }))
+	for _, c := range counts {
+		assert.Positive(t, c.Rewritten, "%s holds a fixture that was rewritten", c.Column)
+	}
+
+	again, err := rekey.New(env.DB, rotated).Run(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, total(again, func(c rekey.Count) int { return c.Rewritten }), "a second run is idempotent")
+	for i, c := range again {
+		assert.GreaterOrEqual(t, c.Current, counts[i].Rewritten, "%s: everything rewritten is current now", c.Column)
+	}
+
+	retiredKeyset, err := secrets.Retire(rotatedKeyset)
+	require.NoError(t, err)
+	retired := cipherFor(t, retiredKeyset)
+
+	integrations, err = env.DB.Integration.Query().All(ctx)
+	require.NoError(t, err)
+	for _, row := range integrations {
+		_, err := retired.Decrypt(row.ConfigEncrypted)
+		require.NoError(t, err, "integration %d under the retired keyset", row.ID)
+		if row.ParamsEncrypted != "" {
+			_, err := retired.Decrypt(row.ParamsEncrypted)
+			require.NoError(t, err, "integration %d params", row.ID)
+		}
+	}
+	webhooks, err := env.DB.WebhookEndpoint.Query().All(ctx)
+	require.NoError(t, err)
+	for _, row := range webhooks {
+		_, err := retired.Decrypt(row.SecretEncrypted)
+		require.NoError(t, err, "webhook endpoint %d", row.ID)
+	}
+	domains, err := env.DB.SendingDomain.Query().All(ctx)
+	require.NoError(t, err)
+	for _, row := range domains {
+		_, err := retired.Decrypt(row.DkimPrivateKeyEncrypted)
+		require.NoError(t, err, "sending domain %d", row.ID)
+	}
+	staff, err := env.DB.StaffMember.Query().All(ctx)
+	require.NoError(t, err)
+	for _, row := range staff {
+		if row.TotpSecretEncrypted != "" {
+			_, err := retired.Decrypt(row.TotpSecretEncrypted)
+			require.NoError(t, err, "staff member %d", row.ID)
+		}
+	}
+	users, err := env.DB.User.Query().All(ctx)
+	require.NoError(t, err)
+	for _, row := range users {
+		if row.SecondFactorSecretEncrypted != "" {
+			_, err := retired.Decrypt(row.SecondFactorSecretEncrypted)
+			require.NoError(t, err, "user %d", row.ID)
+		}
+	}
+	rows, err := env.DB.Automation.Query().All(ctx)
+	require.NoError(t, err)
+	var sealedFields int
+	for _, row := range rows {
+		steps, err := automations.Decode(row.Definition)
+		require.NoError(t, err)
+		for _, s := range steps {
+			if s.Type != automations.StepHTTP {
+				continue
+			}
+			fields := []string{s.URL, s.Secret}
+			for _, h := range s.Headers {
+				fields = append(fields, h.Value)
+			}
+			for _, f := range fields {
+				_, err := retired.Decrypt(f)
+				require.NoError(t, err, "automation %d HTTP step %s", row.ID, s.ID)
+				sealedFields++
+			}
+		}
+	}
+	assert.Positive(t, sealedFields, "the fixtures hold HTTP steps")
+
+	// The old keyset alone no longer reads the rewritten rows: the rotation took effect.
+	_, err = cipherFor(t, cfg.EncryptionKey).Decrypt(integrations[0].ConfigEncrypted)
+	assert.ErrorIs(t, err, secrets.ErrCiphertext)
+}
+
+// A value the keyset cannot read means a key is missing: the run stops and says where.
+func TestReencryptStopsOnAValueNoKeyReads(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	foreign, err := secrets.GenerateKeysetBase64()
+	require.NoError(t, err)
+	foreignKey := cipherFor(t, foreign)
+
+	counts, err := rekey.New(env.DB, foreignKey).Run(ctx)
+	require.ErrorIs(t, err, secrets.ErrCiphertext)
+	assert.ErrorContains(t, err, "integrations.config_encrypted")
+	assert.Empty(t, counts)
+}

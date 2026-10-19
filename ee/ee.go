@@ -55,7 +55,7 @@ type Edition struct {
 // checks the license itself, so a key added later needs no rewiring and an unlicensed
 // instance stores nothing. The Staff member configuration is validated only when the
 // `staff` feature is licensed: an unlicensed instance needs none of it.
-func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, siteSecret string, staffCfg staff.Config) (*Edition, error) {
+func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, siteSecrets []string, staffCfg staff.Config) (*Edition, error) {
 	auditLog := audit.NewLog(lic)
 	e := &Edition{
 		lic:          lic,
@@ -70,7 +70,7 @@ func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, si
 		e.now = time.Now
 	}
 	if lic.Has(licensekey.FeatureStaff) {
-		if err := staffCfg.Validate(siteSecret); err != nil {
+		if err := staffCfg.Validate(siteSecrets); err != nil {
 			return nil, err
 		}
 		e.staffSessions = staff.NewSessions(client, lic, staffCfg)

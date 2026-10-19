@@ -3924,6 +3924,7 @@ type ProblemCode string
 const (
 	ProblemCodeSecondFactorRequired      ProblemCode = "second_factor_required"
 	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
+	ProblemCodeSignupClosed              ProblemCode = "signup_closed"
 )
 
 // AllValues returns all ProblemCode values.
@@ -3931,6 +3932,7 @@ func (ProblemCode) AllValues() []ProblemCode {
 	return []ProblemCode{
 		ProblemCodeSecondFactorRequired,
 		ProblemCodeEmailVerificationRequired,
+		ProblemCodeSignupClosed,
 	}
 }
 
@@ -3940,6 +3942,8 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 	case ProblemCodeSecondFactorRequired:
 		return []byte(s), nil
 	case ProblemCodeEmailVerificationRequired:
+		return []byte(s), nil
+	case ProblemCodeSignupClosed:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -3954,6 +3958,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 		return nil
 	case ProblemCodeEmailVerificationRequired:
 		*s = ProblemCodeEmailVerificationRequired
+		return nil
+	case ProblemCodeSignupClosed:
+		*s = ProblemCodeSignupClosed
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -4101,6 +4108,7 @@ func (*ProblemDetails) siteInvitationsListRes()                {}
 func (*ProblemDetails) siteMembershipsListRes()                {}
 func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
 func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
+func (*ProblemDetails) siteSetupChecklistGetRes()              {}
 func (*ProblemDetails) siteTokensListRes()                     {}
 
 // Validation errors grouped by field.
@@ -4192,6 +4200,7 @@ func (*ProblemDetailsHeaders) siteAuthRegisterRes()                        {}
 func (*ProblemDetailsHeaders) siteAuthResendVerificationRes()              {}
 func (*ProblemDetailsHeaders) siteAuthSecondFactorRes()                    {}
 func (*ProblemDetailsHeaders) siteAuthVerifyEmailRes()                     {}
+func (*ProblemDetailsHeaders) siteBroadcastsTestSendRes()                  {}
 func (*ProblemDetailsHeaders) sitePublicConfirmationsPerformRes()          {}
 func (*ProblemDetailsHeaders) sitePublicInvitationsAcceptRes()             {}
 func (*ProblemDetailsHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
@@ -5296,6 +5305,10 @@ func (*SiteAuthRegisterAccepted) siteAuthRegisterRes() {}
 type SiteAuthRegisterConflict ProblemDetails
 
 func (*SiteAuthRegisterConflict) siteAuthRegisterRes() {}
+
+type SiteAuthRegisterForbidden ProblemDetails
+
+func (*SiteAuthRegisterForbidden) siteAuthRegisterRes() {}
 
 type SiteAuthRegisterUnprocessableEntity ProblemDetails
 
@@ -6748,11 +6761,6 @@ func (*SiteBroadcastsSendUnprocessableEntity) siteBroadcastsSendRes() {}
 type SiteBroadcastsTestSendBadRequest ProblemDetails
 
 func (*SiteBroadcastsTestSendBadRequest) siteBroadcastsTestSendRes() {}
-
-// SiteBroadcastsTestSendNoContent is response for SiteBroadcastsTestSend operation.
-type SiteBroadcastsTestSendNoContent struct{}
-
-func (*SiteBroadcastsTestSendNoContent) siteBroadcastsTestSendRes() {}
 
 type SiteBroadcastsTestSendNotFound ProblemDetails
 
@@ -10144,8 +10152,12 @@ func (*SiteMembershipsUpdateUnprocessableEntity) siteMembershipsUpdateRes() {}
 type SiteOAuthAuthorizationRequest struct {
 	// Self-declared client name (untrusted: show as text).
 	ClientName string `json:"clientName"`
+	// Host of the client's metadata document URL when its client_id is one; absent for a registered client.
+	ClientHost OptString `json:"clientHost"`
 	// The URL the user is sent back to.
 	RedirectUri string `json:"redirectUri"`
+	// The redirect URI is on a loopback host: any program on the user's machine can be listening there.
+	LocalRedirect bool `json:"localRedirect"`
 	// Scopes the client asked for that sphericon will grant by default.
 	Scopes []string `json:"scopes"`
 	// Requested send-class scopes: granted only when the user opts in explicitly.
@@ -10157,9 +10169,19 @@ func (s *SiteOAuthAuthorizationRequest) GetClientName() string {
 	return s.ClientName
 }
 
+// GetClientHost returns the value of ClientHost.
+func (s *SiteOAuthAuthorizationRequest) GetClientHost() OptString {
+	return s.ClientHost
+}
+
 // GetRedirectUri returns the value of RedirectUri.
 func (s *SiteOAuthAuthorizationRequest) GetRedirectUri() string {
 	return s.RedirectUri
+}
+
+// GetLocalRedirect returns the value of LocalRedirect.
+func (s *SiteOAuthAuthorizationRequest) GetLocalRedirect() bool {
+	return s.LocalRedirect
 }
 
 // GetScopes returns the value of Scopes.
@@ -10177,9 +10199,19 @@ func (s *SiteOAuthAuthorizationRequest) SetClientName(val string) {
 	s.ClientName = val
 }
 
+// SetClientHost sets the value of ClientHost.
+func (s *SiteOAuthAuthorizationRequest) SetClientHost(val OptString) {
+	s.ClientHost = val
+}
+
 // SetRedirectUri sets the value of RedirectUri.
 func (s *SiteOAuthAuthorizationRequest) SetRedirectUri(val string) {
 	s.RedirectUri = val
+}
+
+// SetLocalRedirect sets the value of LocalRedirect.
+func (s *SiteOAuthAuthorizationRequest) SetLocalRedirect(val bool) {
+	s.LocalRedirect = val
 }
 
 // SetScopes sets the value of Scopes.
@@ -12247,6 +12279,139 @@ func (s *SiteSesConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// The Workspace's Setup checklist: a point-in-time read model, never ticked by hand.
+// Ref: #/components/schemas/SiteSetupProgress
+type SiteSetupProgress struct {
+	Steps SiteSetupSteps `json:"steps"`
+	// Every step is done.
+	Complete bool `json:"complete"`
+}
+
+// GetSteps returns the value of Steps.
+func (s *SiteSetupProgress) GetSteps() SiteSetupSteps {
+	return s.Steps
+}
+
+// GetComplete returns the value of Complete.
+func (s *SiteSetupProgress) GetComplete() bool {
+	return s.Complete
+}
+
+// SetSteps sets the value of Steps.
+func (s *SiteSetupProgress) SetSteps(val SiteSetupSteps) {
+	s.Steps = val
+}
+
+// SetComplete sets the value of Complete.
+func (s *SiteSetupProgress) SetComplete(val bool) {
+	s.Complete = val
+}
+
+func (*SiteSetupProgress) siteSetupChecklistGetRes() {}
+
+// Where one Setup checklist step stands, read off the Workspace's own data.
+// Ref: #/components/schemas/SiteSetupStepStatus
+type SiteSetupStepStatus string
+
+const (
+	SiteSetupStepStatusTodo    SiteSetupStepStatus = "todo"
+	SiteSetupStepStatusPending SiteSetupStepStatus = "pending"
+	SiteSetupStepStatusDone    SiteSetupStepStatus = "done"
+)
+
+// AllValues returns all SiteSetupStepStatus values.
+func (SiteSetupStepStatus) AllValues() []SiteSetupStepStatus {
+	return []SiteSetupStepStatus{
+		SiteSetupStepStatusTodo,
+		SiteSetupStepStatusPending,
+		SiteSetupStepStatusDone,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteSetupStepStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteSetupStepStatusTodo:
+		return []byte(s), nil
+	case SiteSetupStepStatusPending:
+		return []byte(s), nil
+	case SiteSetupStepStatusDone:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteSetupStepStatus) UnmarshalText(data []byte) error {
+	switch SiteSetupStepStatus(data) {
+	case SiteSetupStepStatusTodo:
+		*s = SiteSetupStepStatusTodo
+		return nil
+	case SiteSetupStepStatusPending:
+		*s = SiteSetupStepStatusPending
+		return nil
+	case SiteSetupStepStatusDone:
+		*s = SiteSetupStepStatusDone
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The four Setup checklist steps, in the order the checklist shows them; none blocks another.
+// Ref: #/components/schemas/SiteSetupSteps
+type SiteSetupSteps struct {
+	// At least one Integration exists.
+	Integration SiteSetupStepStatus `json:"integration"`
+	// At least one Sending domain is verified; pending while one exists unverified.
+	SendingDomain SiteSetupStepStatus `json:"sendingDomain"`
+	// At least one Contact exists, from any source.
+	Contact SiteSetupStepStatus `json:"contact"`
+	// At least one Outbound message was sent, from any surface (a Test send is not one).
+	SentEmail SiteSetupStepStatus `json:"sentEmail"`
+}
+
+// GetIntegration returns the value of Integration.
+func (s *SiteSetupSteps) GetIntegration() SiteSetupStepStatus {
+	return s.Integration
+}
+
+// GetSendingDomain returns the value of SendingDomain.
+func (s *SiteSetupSteps) GetSendingDomain() SiteSetupStepStatus {
+	return s.SendingDomain
+}
+
+// GetContact returns the value of Contact.
+func (s *SiteSetupSteps) GetContact() SiteSetupStepStatus {
+	return s.Contact
+}
+
+// GetSentEmail returns the value of SentEmail.
+func (s *SiteSetupSteps) GetSentEmail() SiteSetupStepStatus {
+	return s.SentEmail
+}
+
+// SetIntegration sets the value of Integration.
+func (s *SiteSetupSteps) SetIntegration(val SiteSetupStepStatus) {
+	s.Integration = val
+}
+
+// SetSendingDomain sets the value of SendingDomain.
+func (s *SiteSetupSteps) SetSendingDomain(val SiteSetupStepStatus) {
+	s.SendingDomain = val
+}
+
+// SetContact sets the value of Contact.
+func (s *SiteSetupSteps) SetContact(val SiteSetupStepStatus) {
+	s.Contact = val
+}
+
+// SetSentEmail sets the value of SentEmail.
+func (s *SiteSetupSteps) SetSentEmail(val SiteSetupStepStatus) {
+	s.SentEmail = val
+}
+
 // SMTP config without the password.
 // Ref: #/components/schemas/SiteSmtpConfig
 type SiteSmtpConfig struct {
@@ -13092,6 +13257,26 @@ func (s *SiteTestSendBroadcastInput) GetEmail() EmailAddress {
 func (s *SiteTestSendBroadcastInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
+
+// What a test send did: the address the preview went out from.
+// Ref: #/components/schemas/SiteTestSendBroadcastResult
+type SiteTestSendBroadcastResult struct {
+	// The From address of the preview. A Workspace with a verified Sending domain gets its own domain; one
+	// without gets the System sender, which is not the address Contacts will see.
+	From EmailAddress `json:"from"`
+}
+
+// GetFrom returns the value of From.
+func (s *SiteTestSendBroadcastResult) GetFrom() EmailAddress {
+	return s.From
+}
+
+// SetFrom sets the value of From.
+func (s *SiteTestSendBroadcastResult) SetFrom(val EmailAddress) {
+	s.From = val
+}
+
+func (*SiteTestSendBroadcastResult) siteBroadcastsTestSendRes() {}
 
 // Request body for sending a sample event to a webhook endpoint.
 // Ref: #/components/schemas/SiteTestWebhookInput
@@ -14951,6 +15136,9 @@ type SiteWorkspaceResource struct {
 	// The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
 	// instance configured none, and then no billing text is shown.
 	BillingUrl OptNilString `json:"billingUrl"`
+	// The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its own
+	// host, otherwise the app origin.
+	McpUrl string `json:"mcpUrl"`
 	// The Staff holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
@@ -15017,6 +15205,11 @@ func (s *SiteWorkspaceResource) GetSupportEmail() OptNilString {
 // GetBillingUrl returns the value of BillingUrl.
 func (s *SiteWorkspaceResource) GetBillingUrl() OptNilString {
 	return s.BillingUrl
+}
+
+// GetMcpUrl returns the value of McpUrl.
+func (s *SiteWorkspaceResource) GetMcpUrl() string {
+	return s.McpUrl
 }
 
 // GetHolds returns the value of Holds.
@@ -15092,6 +15285,11 @@ func (s *SiteWorkspaceResource) SetSupportEmail(val OptNilString) {
 // SetBillingUrl sets the value of BillingUrl.
 func (s *SiteWorkspaceResource) SetBillingUrl(val OptNilString) {
 	s.BillingUrl = val
+}
+
+// SetMcpUrl sets the value of McpUrl.
+func (s *SiteWorkspaceResource) SetMcpUrl(val string) {
+	s.McpUrl = val
 }
 
 // SetHolds sets the value of Holds.

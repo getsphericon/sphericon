@@ -41,7 +41,7 @@ function Root() {
           cssVariablesResolver={editorCssVariablesResolver}
         >
           <ModalsProvider>
-            <Notifications position="top-right" />
+            <Notifications position="top-right" layout="stacked" />
             <RouterProvider router={router} />
           </ModalsProvider>
         </MantineProvider>

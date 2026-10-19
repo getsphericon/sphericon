@@ -1,6 +1,5 @@
 import { Stack } from '@mantine/core'
 import { IconArrowLeft, IconServer, IconShieldLock, IconUser } from '@tabler/icons-react'
-import { useMatchRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { useInstanceState } from '../hooks/useInstanceState.ts'
@@ -14,7 +13,6 @@ import { NavLinkLink } from './RouterLink.tsx'
 // a way back to the workspace dashboard plus account sections.
 export function AccountNavbar() {
   const { t } = useTranslation()
-  const matchRoute = useMatchRoute()
   const instance = useInstanceState()
 
   return (
@@ -23,25 +21,26 @@ export function AccountNavbar() {
         to={indexRoute.to}
         label={t(($) => $.account.backToDashboard)}
         leftSection={<IconArrowLeft size={18} />}
+        activeOptions={{ exact: true }}
       />
       <NavLinkLink
         to={profileRoute.to}
         label={t(($) => $.account.profile)}
         leftSection={<IconUser size={18} />}
-        active={Boolean(matchRoute({ to: profileRoute.to }))}
+        activeOptions={{ exact: true }}
       />
       <NavLinkLink
         to={securityRoute.to}
         label={t(($) => $.account.security)}
         leftSection={<IconShieldLock size={18} />}
-        active={Boolean(matchRoute({ to: securityRoute.to }))}
+        activeOptions={{ exact: true }}
       />
       {instance.data ? (
         <NavLinkLink
           to={instanceRoute.to}
           label={t(($) => $.account.instance)}
           leftSection={<IconServer size={18} />}
-          active={Boolean(matchRoute({ to: instanceRoute.to }))}
+          activeOptions={{ exact: true }}
         />
       ) : null}
     </Stack>

@@ -70,7 +70,7 @@ func (h *harness) requireHeld(t *testing.T, to string) {
 	t.Helper()
 	held, ok := h.sendOnAPI(t, to).(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok, "a send is refused with a 4xx")
-	assert.Equal(t, outbound.HoldDetail(outbound.HoldStaff), held.Detail.Value)
+	assert.Equal(t, outbound.Detail(outbound.HoldStaff), held.Detail.Value)
 }
 
 func TestAHoldFreezesSendingAndClearingItResumes(t *testing.T) {

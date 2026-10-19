@@ -17,7 +17,7 @@ import {
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import { Route as profileRoute } from '../routes/account/index.tsx'
 import { Route as loginRoute } from '../routes/login.tsx'
-import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$slug/settings/index.tsx'
 import { MenuItemLink } from './RouterLink.tsx'
 
 // UserMenu is the header account dropdown: profile, workspace settings, logout.

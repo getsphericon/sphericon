@@ -1,4 +1,4 @@
-import { Badge, Stack, Text, Title } from '@mantine/core'
+import { Badge, Stack, Title } from '@mantine/core'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
@@ -30,9 +30,6 @@ export function TransactionalEmailsListPage() {
   return (
     <Stack>
       <Title order={2}>{t(($) => $.transactionalEmails.title)}</Title>
-      <Text c="dimmed" size="sm">
-        {t(($) => $.transactionalEmails.subtitle)}
-      </Text>
 
       <PagedTable
         pageSize={20}

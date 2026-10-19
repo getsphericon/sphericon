@@ -90,6 +90,7 @@ const (
 	SiteSendingDomainsGetOperation                    OperationName = "SiteSendingDomainsGet"
 	SiteSendingDomainsListOperation                   OperationName = "SiteSendingDomainsList"
 	SiteSendingDomainsVerifyOperation                 OperationName = "SiteSendingDomainsVerify"
+	SiteSetupChecklistGetOperation                    OperationName = "SiteSetupChecklistGet"
 	SiteSuppressionsCreateOperation                   OperationName = "SiteSuppressionsCreate"
 	SiteSuppressionsDeleteOperation                   OperationName = "SiteSuppressionsDelete"
 	SiteSuppressionsListOperation                     OperationName = "SiteSuppressionsList"

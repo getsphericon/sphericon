@@ -1,4 +1,4 @@
-import { Button, Group, Stack } from '@mantine/core'
+import { Button, Group, Stack, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
@@ -27,7 +27,8 @@ export function SegmentsListPage() {
 
   return (
     <Stack>
-      <Group justify="flex-end">
+      <Group justify="space-between" align="center">
+        <Title order={2}>{t(($) => $.nav.segments)}</Title>
         <ButtonLink to={segmentsCreateRoute.to} params={{ slug }}>
           {t(($) => $.segments.addSegment)}
         </ButtonLink>

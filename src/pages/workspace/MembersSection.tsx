@@ -1,22 +1,29 @@
 import {
   EmptyState,
   Alert,
+  Badge,
   Button,
   Card,
   Code,
   CopyButton,
   Group,
   Loader,
+  Menu,
+  Modal,
   Select,
+  Stack,
+  Tabs,
   TextInput,
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteInvitationsCreateMutation,
   siteInvitationsDeleteMutation,
@@ -42,6 +49,11 @@ export function MembersSection({ slug }: { slug: string }) {
   const { t } = useTranslation()
   const confirmRemove = useDeleteConfirmation()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
+  const [inviteOpened, { open: openInvite, close }] = useDisclosure(false)
+  const closeInvite = () => {
+    close()
+    setInviteUrl(null)
+  }
   const role = useCurrentRole(slug)
   const me = useQuery(siteUserGetMeOptions())
   const canManageMembers = canManage(role)
@@ -113,9 +125,10 @@ export function MembersSection({ slug }: { slug: string }) {
 
   return (
     <Card withBorder>
-      <Title order={4} mb="sm">
-        {t(($) => $.settings.members.title)}
-      </Title>
+      <Group justify="space-between" mb="sm">
+        <Title order={4}>{t(($) => $.settings.members.title)}</Title>
+        <Button onClick={openInvite}>{t(($) => $.settings.members.invite)}</Button>
+      </Group>
 
       {membersQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.members.loadError)} mb="md">
@@ -125,152 +138,153 @@ export function MembersSection({ slug }: { slug: string }) {
 
       {membersQuery.isLoading ? <Loader /> : null}
 
-      <Title order={5} mb="xs">
-        {t(($) => $.settings.members.membersTitle)}
-      </Title>
-      <DataTable
-        minHeight={200}
-        withTableBorder
-        mb="lg"
-        records={membersQuery.data ?? []}
-        idAccessor="id"
-        columns={[
-          { accessor: 'name', title: t(($) => $.settings.members.nameHeader) },
-          { accessor: 'email', title: t(($) => $.settings.members.emailLabel) },
-          {
-            accessor: 'role',
-            title: t(($) => $.settings.members.roleLabel),
-            render: (record) => (
-              <Select
-                size="xs"
-                w={130}
-                allowDeselect={false}
-                data={MEMBER_ROLES}
-                value={record.role}
-                onChange={(value) => {
-                  if (value && value !== record.role) {
-                    roleMutation.mutate({
-                      path: { slug, id: record.id },
-                      body: { role: value },
-                    })
-                  }
-                }}
-              />
-            ),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            render: (record) => (
-              <Group gap="xs" wrap="nowrap" justify="flex-end">
-                {canManageMembers && record.userId !== me.data?.id ? (
-                  <Button
-                    size="compact-sm"
-                    color="orange"
-                    variant="light"
-                    onClick={() => onResetSecondFactor(record.id)}
-                  >
-                    {t(($) => $.settings.members.resetSecondFactor)}
-                  </Button>
-                ) : null}
-                <Button
-                  size="compact-sm"
-                  color="red"
-                  variant="light"
-                  onClick={() => onRemove(record.id)}
-                >
-                  {t(($) => $.settings.members.remove)}
-                </Button>
-              </Group>
-            ),
-          },
-        ]}
-        emptyState={<EmptyState title={t(($) => $.settings.members.membersEmpty)} />}
-      />
+      <Tabs defaultValue="members" keepMounted={false}>
+        <Tabs.List mb="md">
+          <Tabs.Tab value="members">{t(($) => $.settings.members.membersTitle)}</Tabs.Tab>
+          <Tabs.Tab
+            value="invitations"
+            rightSection={
+              invitesQuery.data?.length ? <Badge size="sm">{invitesQuery.data.length}</Badge> : null
+            }
+          >
+            {t(($) => $.settings.members.invitationsTitle)}
+          </Tabs.Tab>
+        </Tabs.List>
 
-      <Title order={5} mb="xs">
-        {t(($) => $.settings.members.invitationsTitle)}
-      </Title>
+        <Tabs.Panel value="members">
+          <DataTable
+            minHeight={200}
+            withTableBorder
+            records={membersQuery.data ?? []}
+            idAccessor="id"
+            columns={[
+              { accessor: 'name', title: t(($) => $.settings.members.nameHeader) },
+              { accessor: 'email', title: t(($) => $.settings.members.emailLabel) },
+              {
+                accessor: 'role',
+                title: t(($) => $.settings.members.roleLabel),
+                render: (record) => (
+                  <Select
+                    size="xs"
+                    w={130}
+                    allowDeselect={false}
+                    data={MEMBER_ROLES}
+                    value={record.role}
+                    onChange={(value) => {
+                      if (value && value !== record.role) {
+                        roleMutation.mutate({
+                          path: { slug, id: record.id },
+                          body: { role: value },
+                        })
+                      }
+                    }}
+                  />
+                ),
+              },
+              {
+                accessor: 'actions',
+                title: '',
+                render: (record) => (
+                  <Group justify="flex-end">
+                    <RowActionsMenu>
+                      {canManageMembers && record.userId !== me.data?.id ? (
+                        <Menu.Item color="orange" onClick={() => onResetSecondFactor(record.id)}>
+                          {t(($) => $.settings.members.resetSecondFactor)}
+                        </Menu.Item>
+                      ) : null}
+                      <Menu.Item color="red" onClick={() => onRemove(record.id)}>
+                        {t(($) => $.settings.members.remove)}
+                      </Menu.Item>
+                    </RowActionsMenu>
+                  </Group>
+                ),
+              },
+            ]}
+            emptyState={<EmptyState title={t(($) => $.settings.members.membersEmpty)} />}
+          />
+        </Tabs.Panel>
 
-      {inviteUrl ? (
-        <Alert
-          color="yellow"
-          title={t(($) => $.settings.members.inviteUrlNotice)}
-          mb="md"
-          withCloseButton
-          onClose={() => setInviteUrl(null)}
-        >
-          <Group align="center" gap="sm" wrap="nowrap">
-            <Code>{inviteUrl}</Code>
-            <CopyButton value={inviteUrl}>
-              {({ copied, copy }) => (
-                <Button size="compact-sm" variant="light" onClick={copy}>
-                  {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
-                </Button>
-              )}
-            </CopyButton>
-          </Group>
-        </Alert>
-      ) : null}
+        <Tabs.Panel value="invitations">
+          <DataTable
+            minHeight={200}
+            withTableBorder
+            records={invitesQuery.data ?? []}
+            idAccessor="id"
+            columns={[
+              { accessor: 'email', title: t(($) => $.settings.members.emailLabel) },
+              { accessor: 'role', title: t(($) => $.settings.members.roleLabel) },
+              {
+                accessor: 'expiresAt',
+                title: t(($) => $.settings.members.expires),
+                render: (record) => formatDate(record.expiresAt),
+              },
+              {
+                accessor: 'actions',
+                title: '',
+                render: (record) => (
+                  <Group justify="flex-end">
+                    <RowActionsMenu>
+                      <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
+                        {t(($) => $.settings.members.revoke)}
+                      </Menu.Item>
+                    </RowActionsMenu>
+                  </Group>
+                ),
+              },
+            ]}
+            emptyState={<EmptyState title={t(($) => $.settings.members.invitationsEmpty)} />}
+          />
+        </Tabs.Panel>
+      </Tabs>
 
-      <form
-        onSubmit={form.onSubmit((values) =>
-          inviteMutation.mutate({
-            path: { slug },
-            body: { email: values.email.trim(), role: values.role },
-          }),
-        )}
+      <Modal
+        opened={inviteOpened}
+        onClose={closeInvite}
+        title={t(($) => $.settings.members.invite)}
       >
-        <Group align="flex-end" gap="sm" mb="md">
-          <TextInput
-            label={t(($) => $.settings.members.emailLabel)}
-            type="email"
-            required
-            {...form.getInputProps('email')}
-          />
-          <Select
-            label={t(($) => $.settings.members.roleLabel)}
-            allowDeselect={false}
-            data={INVITABLE_ROLES}
-            w={140}
-            {...form.getInputProps('role')}
-          />
-          <Button type="submit" loading={inviteMutation.isPending}>
-            {t(($) => $.settings.members.invite)}
-          </Button>
-        </Group>
-      </form>
-
-      <DataTable
-        minHeight={200}
-        withTableBorder
-        records={invitesQuery.data ?? []}
-        idAccessor="id"
-        columns={[
-          { accessor: 'email', title: t(($) => $.settings.members.emailLabel) },
-          { accessor: 'role', title: t(($) => $.settings.members.roleLabel) },
-          {
-            accessor: 'expiresAt',
-            title: t(($) => $.settings.members.expires),
-            render: (record) => formatDate(record.expiresAt),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            render: (record) => (
-              <Button
-                size="compact-sm"
-                color="red"
-                variant="light"
-                onClick={() => onRevoke(record.id)}
-              >
-                {t(($) => $.settings.members.revoke)}
+        {inviteUrl ? (
+          <Alert color="yellow" title={t(($) => $.settings.members.inviteUrlNotice)}>
+            <Group align="center" gap="sm" wrap="nowrap">
+              <Code>{inviteUrl}</Code>
+              <CopyButton value={inviteUrl}>
+                {({ copied, copy }) => (
+                  <Button size="compact-sm" variant="light" onClick={copy}>
+                    {copied ? t(($) => $.settings.copied) : t(($) => $.settings.copy)}
+                  </Button>
+                )}
+              </CopyButton>
+            </Group>
+          </Alert>
+        ) : (
+          <form
+            onSubmit={form.onSubmit((values) =>
+              inviteMutation.mutate({
+                path: { slug },
+                body: { email: values.email.trim(), role: values.role },
+              }),
+            )}
+          >
+            <Stack>
+              <TextInput
+                label={t(($) => $.settings.members.emailLabel)}
+                type="email"
+                required
+                data-autofocus
+                {...form.getInputProps('email')}
+              />
+              <Select
+                label={t(($) => $.settings.members.roleLabel)}
+                allowDeselect={false}
+                data={INVITABLE_ROLES}
+                {...form.getInputProps('role')}
+              />
+              <Button type="submit" loading={inviteMutation.isPending}>
+                {t(($) => $.settings.members.invite)}
               </Button>
-            ),
-          },
-        ]}
-        emptyState={<EmptyState title={t(($) => $.settings.members.invitationsEmpty)} />}
-      />
+            </Stack>
+          </form>
+        )}
+      </Modal>
     </Card>
   )
 }

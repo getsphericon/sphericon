@@ -9,7 +9,7 @@ import { configDefaults, defineConfig } from 'vitest/config'
 
 const require = createRequire(import.meta.url)
 
-const SUPPORTED_LOCALES = new Set(['en', 'ru', 'es'])
+const SUPPORTED_LOCALES = new Set(['en'])
 
 // Dev-only: substitute the {{APP_LOCALE}} sentinels in index.html the same way
 // the Go backend does at serve time in prod (internal/server/spa.go). Applied

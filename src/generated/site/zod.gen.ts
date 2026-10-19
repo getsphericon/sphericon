@@ -43,7 +43,11 @@ export const zLintFinding = z.object({
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
-export const zProblemCode = z.enum(['second_factor_required', 'email_verification_required']);
+export const zProblemCode = z.enum([
+  'second_factor_required',
+  'email_verification_required',
+  'signup_closed'
+]);
 
 /**
  * RFC 7807 Problem Details
@@ -525,7 +529,9 @@ export const zSiteMembershipRole = z.enum([
  */
 export const zSiteOAuthAuthorizationRequest = z.object({
   clientName: z.string(),
+  clientHost: z.exactOptional(z.string()),
   redirectUri: z.string(),
+  localRedirect: z.boolean(),
   scopes: z.array(z.string()),
   sendScopes: z.array(z.string())
 });
@@ -759,6 +765,33 @@ export const zSiteSesConfigInput = z.object({
 });
 
 /**
+ * Where one Setup checklist step stands, read off the Workspace's own data
+ */
+export const zSiteSetupStepStatus = z.enum([
+  'todo',
+  'pending',
+  'done'
+]);
+
+/**
+ * The four Setup checklist steps, in the order the checklist shows them; none blocks another
+ */
+export const zSiteSetupSteps = z.object({
+  integration: zSiteSetupStepStatus,
+  sendingDomain: zSiteSetupStepStatus,
+  contact: zSiteSetupStepStatus,
+  sentEmail: zSiteSetupStepStatus
+});
+
+/**
+ * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
+ */
+export const zSiteSetupProgress = z.object({
+  steps: zSiteSetupSteps,
+  complete: z.boolean()
+});
+
+/**
  * SMTP config without the password
  */
 export const zSiteSmtpConfig = z.object({
@@ -841,6 +874,13 @@ export const zSiteSuppressionReason = z.enum([
  */
 export const zSiteTestSendBroadcastInput = z.object({
   email: zEmailAddress
+});
+
+/**
+ * What a test send did: the address the preview went out from
+ */
+export const zSiteTestSendBroadcastResult = z.object({
+  from: zEmailAddress
 });
 
 /**
@@ -1579,6 +1619,7 @@ export const zSiteWorkspaceResource = z.object({
   suspensionReason: z.exactOptional(z.string().nullable()),
   supportEmail: z.exactOptional(z.string().nullable()),
   billingUrl: z.exactOptional(z.string().nullable()),
+  mcpUrl: z.string(),
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
@@ -2401,9 +2442,9 @@ export const zSiteBroadcastsTestSendPath = z.object({
 });
 
 /**
- * There is no content to send for this request, but the headers may be useful.
+ * The request has succeeded.
  */
-export const zSiteBroadcastsTestSendResponse = z.void();
+export const zSiteBroadcastsTestSendResponse = zSiteTestSendBroadcastResult;
 
 export const zSiteContactsListPath = z.object({
   slug: z.string()
@@ -2787,6 +2828,15 @@ export const zSiteSendingDomainsVerifyPath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteSendingDomainsVerifyResponse = z.void();
+
+export const zSiteSetupChecklistGetPath = z.object({
+  slug: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteSetupChecklistGetResponse = zSiteSetupProgress;
 
 export const zSiteSuppressionsListPath = z.object({
   slug: z.string()

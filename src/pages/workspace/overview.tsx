@@ -2,7 +2,6 @@ import { AreaChart, DonutChart } from '@mantine/charts'
 import {
   Alert,
   EmptyState,
-  Group,
   Loader,
   SegmentedControl,
   SimpleGrid,
@@ -18,25 +17,57 @@ import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import {
   siteAnalyticsOverviewOptions,
+  siteSetupChecklistGetOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$slug/index.tsx'
 import { formatPercent } from '../../utils/percent.ts'
+import { SetupChecklist } from './SetupChecklist.tsx'
 
 const RANGES: SiteAnalyticsRange[] = ['7d', '30d', '90d']
 
-// OverviewPage is the workspace dashboard: KPI cards plus charts summarizing
-// contacts, email engagement, and automations over a selectable window. The
-// engagement cards and the trend chart share one range-scoped source, so they
-// reconcile; contact and automation counts are point-in-time snapshots.
+// OverviewPage is the workspace dashboard. Until the Workspace has sent its first email it shows
+// only the Setup checklist and requests no analytics; afterwards the checklist (until it is
+// finished) sits on top of the KPI cards and charts.
 export function OverviewPage() {
   const { t } = useTranslation()
   const { slug } = overviewRoute.useParams()
-  const [range, setRange] = useState<SiteAnalyticsRange>('30d')
 
   const workspacesQuery = useQuery(siteWorkspacesListOptions())
   const workspace = workspacesQuery.data?.find((w) => w.slug === slug)
+  const checklistQuery = useQuery(siteSetupChecklistGetOptions({ path: { slug } }))
+  const checklist = checklistQuery.data
+  const showChecklist = checklist !== undefined && !checklist.complete
+  // The checklist alone, no analytics, until the first email is sent.
+  const showAnalytics = checklist?.steps.sentEmail === 'done'
+
+  return (
+    <Stack>
+      <Title order={2}>{workspace?.name ?? t(($) => $.overview.title)}</Title>
+
+      {checklistQuery.isLoading && <Loader />}
+
+      {checklistQuery.isError && (
+        <ApiErrorAlert
+          error={checklistQuery.error}
+          title={t(($) => $.setupChecklist.loadError)}
+          fallback={t(($) => $.setupChecklist.loadError)}
+        />
+      )}
+
+      {showChecklist && <SetupChecklist slug={slug} checklist={checklist} />}
+
+      {showAnalytics && <AnalyticsOverview slug={slug} />}
+    </Stack>
+  )
+}
+
+// AnalyticsOverview is the range-scoped part of the dashboard; mounting it is what requests
+// the analytics, so the checklist-only Overview never does.
+function AnalyticsOverview({ slug }: { slug: string }) {
+  const { t } = useTranslation()
+  const [range, setRange] = useState<SiteAnalyticsRange>('30d')
 
   const analyticsQuery = useQuery(
     siteAnalyticsOverviewOptions({ path: { slug }, query: { range } }),
@@ -46,14 +77,11 @@ export function OverviewPage() {
 
   return (
     <Stack>
-      <Group justify="space-between" align="center">
-        <Title order={2}>{workspace?.name ?? t(($) => $.overview.title)}</Title>
-        <SegmentedControl
-          value={range}
-          onChange={(v) => setRange(v)}
-          data={RANGES.map((r) => ({ value: r, label: t(($) => $.analytics.range[r]) }))}
-        />
-      </Group>
+      <SegmentedControl
+        value={range}
+        onChange={(v) => setRange(v)}
+        data={RANGES.map((r) => ({ value: r, label: t(($) => $.analytics.range[r]) }))}
+      />
 
       {analyticsQuery.isLoading && <Loader />}
 

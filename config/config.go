@@ -97,6 +97,9 @@ type Config struct {
 	BootstrapToken string
 	CORSOrigins    []string
 	JWTSecret      string
+	// JWTSecretSecondary is the second JWT secret of a rotation (SPHERICON_JWT_SECRET_SECONDARY):
+	// accepted when verifying a session or a mailed link, never used to sign. Empty outside one.
+	JWTSecretSecondary string
 	// SessionTTL is the lifetime of a site session: both the token's exp and the
 	// cookie's Max-Age (SPHERICON_SESSION_TTL, default 24h, no refresh; ADR 0020).
 	SessionTTL time.Duration
@@ -203,6 +206,11 @@ type Config struct {
 	// inferred from the SMTP settings.
 	RequireEmailVerification bool
 
+	// SignupOpen lets anyone who reaches the Instance register. Only an explicit
+	// SPHERICON_SIGNUP_OPEN=false closes it (ADR 0042): a new User then comes only through an
+	// Invitation or `sphericon user create-owner`.
+	SignupOpen bool
+
 	// Logging: level is one of debug|info|warn|error; format is text|json.
 	// Dev defaults to a human-readable coloured text handler, prod to JSON.
 	LogLevel  string
@@ -267,13 +275,14 @@ type environment struct {
 	AppURL      string `env:"SPHERICON_APP_URL" envDefault:"http://localhost:3000"`
 	MCPURL      string `env:"SPHERICON_MCP_URL"`
 
-	CollectSiteKey string        `env:"SPHERICON_COLLECT_SITE_KEY"`
-	BootstrapToken string        `env:"SPHERICON_BOOTSTRAP_TOKEN"`
-	CORSOrigins    string        `env:"SPHERICON_CORS_ORIGINS"`
-	JWTSecret      string        `env:"SPHERICON_JWT_SECRET"`
-	SessionTTL     time.Duration `env:"SPHERICON_SESSION_TTL" envDefault:"24h"`
-	EncryptionKey  string        `env:"SPHERICON_ENCRYPTION_KEY"`
-	LicenseKey     string        `env:"SPHERICON_LICENSE_KEY"`
+	CollectSiteKey     string        `env:"SPHERICON_COLLECT_SITE_KEY"`
+	BootstrapToken     string        `env:"SPHERICON_BOOTSTRAP_TOKEN"`
+	CORSOrigins        string        `env:"SPHERICON_CORS_ORIGINS"`
+	JWTSecret          string        `env:"SPHERICON_JWT_SECRET"`
+	JWTSecretSecondary string        `env:"SPHERICON_JWT_SECRET_SECONDARY"`
+	SessionTTL         time.Duration `env:"SPHERICON_SESSION_TTL" envDefault:"24h"`
+	EncryptionKey      string        `env:"SPHERICON_ENCRYPTION_KEY"`
+	LicenseKey         string        `env:"SPHERICON_LICENSE_KEY"`
 
 	SMTPHost string `env:"SPHERICON_SMTP_HOST"`
 	SMTPPort int    `env:"SPHERICON_SMTP_PORT" envDefault:"1025"`
@@ -333,6 +342,7 @@ type environment struct {
 	DoNotTrack               string `env:"DO_NOT_TRACK"`
 	ReleaseCheck             bool   `env:"SPHERICON_RELEASE_CHECK" envDefault:"true"`
 	RequireEmailVerification string `env:"SPHERICON_REQUIRE_EMAIL_VERIFICATION"`
+	SignupOpen               string `env:"SPHERICON_SIGNUP_OPEN"`
 
 	LogLevel        string `env:"SPHERICON_LOG_LEVEL" envDefault:"info"`
 	LogFormat       string `env:"SPHERICON_LOG_FORMAT"`
@@ -352,9 +362,9 @@ type environment struct {
 	SESSecretAccessKey  string `env:"SPHERICON_SES_SECRET_ACCESS_KEY"`
 }
 
-// Load reads the configuration from the process environment layered over the .env
-// files (see envFiles): a variable the process sets wins over every file.
-func Load(envName string) (*Config, error) {
+// loadVars reads the variables of the process: the env files, then the environment over
+// them, then the `_FILE` siblings of the secrets.
+func loadVars(envName string) (map[string]string, error) {
 	_, file, _, _ := runtime.Caller(0)
 	rootDir := filepath.Join(filepath.Dir(file), "..")
 
@@ -368,6 +378,26 @@ func Load(envName string) (*Config, error) {
 		}
 	}
 	if err := readSecretFiles(vars); err != nil {
+		return nil, err
+	}
+	return vars, nil
+}
+
+// EncryptionKey is SPHERICON_ENCRYPTION_KEY as the process sees it (a `_FILE` sibling
+// included), without loading the rest of the config: the key commands need no database.
+func EncryptionKey(envName string) (string, error) {
+	vars, err := loadVars(envName)
+	if err != nil {
+		return "", err
+	}
+	return vars["SPHERICON_ENCRYPTION_KEY"], nil
+}
+
+// Load reads the configuration from the process environment layered over the .env
+// files (see envFiles): a variable the process sets wins over every file.
+func Load(envName string) (*Config, error) {
+	vars, err := loadVars(envName)
+	if err != nil {
 		return nil, err
 	}
 	seedDefaults(vars, envName)
@@ -394,22 +424,23 @@ func Load(envName string) (*Config, error) {
 	}
 
 	cfg := &Config{
-		DatabaseURL:    e.DatabaseURL,
-		Port:           e.Port,
-		CollectSiteKey: e.CollectSiteKey,
-		BootstrapToken: e.BootstrapToken,
-		CORSOrigins:    strings.FieldsFunc(e.CORSOrigins, func(r rune) bool { return r == ',' || unicode.IsSpace(r) }),
-		JWTSecret:      e.JWTSecret,
-		SessionTTL:     e.SessionTTL,
-		AppURL:         e.AppURL,
-		MCPURL:         e.MCPURL,
-		SMTPHost:       e.SMTPHost,
-		SMTPPort:       e.SMTPPort,
-		SMTPUser:       e.SMTPUser,
-		SMTPPass:       e.SMTPPass,
-		SMTPFrom:       e.SMTPFrom,
-		EncryptionKey:  e.EncryptionKey,
-		LicenseKey:     e.LicenseKey,
+		DatabaseURL:        e.DatabaseURL,
+		Port:               e.Port,
+		CollectSiteKey:     e.CollectSiteKey,
+		BootstrapToken:     e.BootstrapToken,
+		CORSOrigins:        strings.FieldsFunc(e.CORSOrigins, func(r rune) bool { return r == ',' || unicode.IsSpace(r) }),
+		JWTSecret:          e.JWTSecret,
+		JWTSecretSecondary: e.JWTSecretSecondary,
+		SessionTTL:         e.SessionTTL,
+		AppURL:             e.AppURL,
+		MCPURL:             e.MCPURL,
+		SMTPHost:           e.SMTPHost,
+		SMTPPort:           e.SMTPPort,
+		SMTPUser:           e.SMTPUser,
+		SMTPPass:           e.SMTPPass,
+		SMTPFrom:           e.SMTPFrom,
+		EncryptionKey:      e.EncryptionKey,
+		LicenseKey:         e.LicenseKey,
 
 		AccountLinkURL:        e.AccountLinkURL,
 		AccountLinkSigningKey: e.AccountLinkSigningKey,
@@ -467,6 +498,7 @@ func Load(envName string) (*Config, error) {
 		ReleaseCheck:            e.ReleaseCheck,
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
+		SignupOpen:               !strings.EqualFold(strings.TrimSpace(e.SignupOpen), "false"),
 		LogLevel:                 e.LogLevel,
 		LogFormat:                e.LogFormat,
 
@@ -534,6 +566,7 @@ func readEnvFiles(files []string) (map[string]string, error) {
 var secretVars = []string{
 	"DATABASE_URL",
 	"SPHERICON_JWT_SECRET",
+	"SPHERICON_JWT_SECRET_SECONDARY",
 	"SPHERICON_ENCRYPTION_KEY",
 	"SPHERICON_SMTP_PASS",
 	"SPHERICON_LICENSE_KEY",
@@ -598,11 +631,31 @@ func seedDefaults(vars map[string]string, envName string) {
 	}
 }
 
+// JWTVerifySecrets are the secrets a session or a mailed link is also accepted under besides
+// JWTSecret: the secondary key of a rotation, none outside one.
+func (c *Config) JWTVerifySecrets() []string {
+	if c.JWTSecretSecondary == "" {
+		return nil
+	}
+	return []string{c.JWTSecretSecondary}
+}
+
+// JWTSecrets is every JWT secret the instance accepts: JWTSecret first, then the secondary one.
+func (c *Config) JWTSecrets() []string {
+	return append([]string{c.JWTSecret}, c.JWTVerifySecrets()...)
+}
+
 // SecureCookies reports whether session cookies carry the Secure attribute: whenever the
 // instance is served over HTTPS (SPHERICON_APP_URL reflects the public scheme, even though a proxy
 // terminates TLS and the Go server listens on plain HTTP). Local http dev stays false,
 // where a Secure cookie would never be sent back.
 func (c *Config) SecureCookies() bool { return strings.HasPrefix(c.AppURL, "https://") }
+
+// SystemMailConfigured reports whether the Instance has outbound mail, that is, a System
+// sender: the SES provider, or SMTP with a host. Without it there is none (ADR 0041).
+func (c *Config) SystemMailConfigured() bool {
+	return c.SystemEmailProvider == "ses" || c.SMTPHost != ""
+}
 
 // validate enforces invariants that depend on the deployment environment.
 func (c *Config) validate(envName string) error {
@@ -611,6 +664,16 @@ func (c *Config) validate(envName string) error {
 	if !isDevEnv(envName) && !isE2E(envName) {
 		if err := ValidateJWTSecret(c.JWTSecret); err != nil {
 			return err
+		}
+	}
+	if c.JWTSecretSecondary != "" {
+		if c.JWTSecretSecondary == c.JWTSecret {
+			return fmt.Errorf("SPHERICON_JWT_SECRET_SECONDARY must differ from SPHERICON_JWT_SECRET")
+		}
+		if !isDevEnv(envName) && !isE2E(envName) {
+			if err := ValidateJWTSecret(c.JWTSecretSecondary); err != nil {
+				return fmt.Errorf("SPHERICON_JWT_SECRET_SECONDARY: %w", err)
+			}
 		}
 	}
 	if c.SessionTTL <= 0 {
@@ -836,6 +899,7 @@ func parseExplicitBool(v string) *bool {
 var secretEnvNames = []string{
 	"DATABASE_URL",
 	"SPHERICON_JWT_SECRET",
+	"SPHERICON_JWT_SECRET_SECONDARY",
 	"SPHERICON_STAFF_JWT_SECRET",
 	"SPHERICON_ENCRYPTION_KEY",
 	"SPHERICON_SMTP_PASS",
@@ -855,7 +919,7 @@ func SecretValues(cfg *Config) []string {
 		values = append(values, os.Getenv(name))
 	}
 	if cfg != nil {
-		values = append(values, cfg.DatabaseURL, cfg.JWTSecret, cfg.StaffJWTSecret, cfg.EncryptionKey, cfg.SMTPPass,
+		values = append(values, cfg.DatabaseURL, cfg.JWTSecret, cfg.JWTSecretSecondary, cfg.StaffJWTSecret, cfg.EncryptionKey, cfg.SMTPPass,
 			cfg.LicenseKey, cfg.SESAccessKeyID, cfg.SESSecretAccessKey, cfg.AccountLinkSigningKey, cfg.BootstrapToken)
 	}
 	for _, v := range slices.Clone(values) {

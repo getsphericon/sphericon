@@ -99,6 +99,10 @@ const (
 	BroadcastGlobexID = 900
 	// BroadcastGlobexName is from fixtures/broadcasts.
 	BroadcastGlobexName = "Globex only"
+	// BroadcastHooliID is from fixtures/broadcasts.
+	BroadcastHooliID = 910
+	// BroadcastHooliName is from fixtures/broadcasts.
+	BroadcastHooliName = "Hooli only"
 	// BroadcastInitechID is from fixtures/broadcasts.
 	BroadcastInitechID = 300
 	// BroadcastInitechName is from fixtures/broadcasts.
@@ -409,6 +413,8 @@ const (
 	HooliID = 5
 	// HooliName is from fixtures/workspaces.
 	HooliName = "Hooli"
+	// HooliSallyMembershipID is from fixtures/memberships.
+	HooliSallyMembershipID = 17
 	// HooliSlug is from fixtures/workspaces.
 	HooliSlug = "hooli"
 	// InitechAdminAdaEmail is from fixtures/users.
@@ -605,6 +611,14 @@ const (
 	OwnerJohnName = "John"
 	// OwnerJohnPassword is from fixtures/users.
 	OwnerJohnPassword = "password"
+	// OwnerSallyEmail is from fixtures/users.
+	OwnerSallyEmail = "sally@hooli.test"
+	// OwnerSallyID is from fixtures/users.
+	OwnerSallyID = 18
+	// OwnerSallyName is from fixtures/users.
+	OwnerSallyName = "Sally"
+	// OwnerSallyPassword is from fixtures/users.
+	OwnerSallyPassword = "sally-test-password"
 	// SecondFactorSamEmail is from fixtures/users.
 	SecondFactorSamEmail = "sam@globex.test"
 	// SecondFactorSamID is from fixtures/users.

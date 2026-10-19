@@ -142,7 +142,7 @@ func TestSiteBroadcastsTestSendDeliversTheMessageBuiltFromADocument(t *testing.T
 	res, err := c.SiteBroadcastsTestSend(context.Background(), &siteapi.SiteTestSendBroadcastInput{Email: "preview@example.com"},
 		siteapi.SiteBroadcastsTestSendParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.BroadcastAuthoredID)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteBroadcastsTestSendNoContent{}, res)
+	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)
 
 	msgs := env.CustomerMail.Messages()
 	require.Len(t, msgs, 1)

@@ -70,11 +70,11 @@ func (s cancelingSenders) EmailSender(context.Context, *ent.Scoped) (messaging.E
 	return s.sender, nil
 }
 
-func TestHoldDetailWordsEveryHold(t *testing.T) {
-	assert.Equal(t, "sending is suspended for this workspace", outbound.HoldDetail(outbound.HoldSuspended))
-	assert.Equal(t, "no default email provider configured", outbound.HoldDetail(outbound.HoldNoIntegration))
-	assert.Equal(t, "sender domain is not a verified sending domain", outbound.HoldDetail(outbound.HoldUnverifiedDomain))
-	assert.Equal(t, "sending is currently on hold for this workspace: custom_reason", outbound.HoldDetail("custom_reason"))
+func TestDetailWordsEveryHold(t *testing.T) {
+	assert.Equal(t, "sending is suspended for this workspace", outbound.Detail(outbound.HoldSuspended))
+	assert.Equal(t, "no default email provider configured", outbound.Detail(outbound.HoldNoIntegration))
+	assert.Equal(t, "sender domain is not a verified sending domain", outbound.Detail(outbound.HoldUnverifiedDomain))
+	assert.Equal(t, "sending is currently on hold for this workspace: custom_reason", outbound.Detail("custom_reason"))
 }
 
 func TestSendRejectsIncompleteRequests(t *testing.T) {
@@ -612,7 +612,7 @@ func TestSendBroadcastTestWordsEveryOutcome(t *testing.T) {
 
 	t.Run("sent", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("Launch {{ first_name }}", htmlBody), "me@example.com")
+		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("Launch {{ first_name }}", htmlBody), "me@example.com", nil).Detail
 		assert.Empty(t, got)
 
 		msgs := env.CustomerMail.Messages()
@@ -626,21 +626,21 @@ func TestSendBroadcastTestWordsEveryOutcome(t *testing.T) {
 	t.Run("held", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com")
-		assert.Equal(t, outbound.HoldDetail(outbound.HoldSuspended), got)
+		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil).Detail
+		assert.Equal(t, outbound.Detail(outbound.HoldSuspended), got)
 	})
 
 	t.Run("send error", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.CustomerMail.SetErr(errors.New("smtp unavailable"))
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com")
+		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil).Detail
 		assert.Contains(t, got, "send failed:")
 		assert.Contains(t, got, "smtp unavailable")
 	})
 
 	t.Run("content does not render", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("{% if %}broken", htmlBody), "me@example.com")
+		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("{% if %}broken", htmlBody), "me@example.com", nil).Detail
 		assert.NotEmpty(t, got)
 		assert.NotContains(t, got, "send failed")
 		assert.Empty(t, env.CustomerMail.Messages())

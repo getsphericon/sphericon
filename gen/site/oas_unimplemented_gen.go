@@ -114,7 +114,9 @@ func (UnimplementedHandler) SiteAuthLogout(ctx context.Context) (r *SiteAuthLogo
 // address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
 // `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
 // carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
-// session: the User signs in next), and a taken address answers 409.
+// session: the User signs in next), and a taken address answers 409. An Instance that closed sign-up
+// (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before anything is
+// read or created; accepting an Invitation still works.
 //
 // POST /auth/register
 func (UnimplementedHandler) SiteAuthRegister(ctx context.Context, req *SiteRegisterInput) (r SiteAuthRegisterRes, _ error) {
@@ -324,7 +326,9 @@ func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteB
 
 // SiteBroadcastsTestSend implements SiteBroadcasts_testSend operation.
 //
-// Send a one-off rendered preview to a single address.
+// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
+// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
+// address is refused with 422, the System sender's caps answer 429.
 //
 // POST /workspaces/{slug}/broadcasts/{id}/test-send
 func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (r SiteBroadcastsTestSendRes, _ error) {
@@ -818,6 +822,15 @@ func (UnimplementedHandler) SiteSendingDomainsList(ctx context.Context, params S
 //
 // POST /workspaces/{slug}/sending-domains/{id}/verify
 func (UnimplementedHandler) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (r SiteSendingDomainsVerifyRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteSetupChecklistGet implements SiteSetupChecklist_get operation.
+//
+// The Workspace's Setup checklist.
+//
+// GET /workspaces/{slug}/setup-checklist
+func (UnimplementedHandler) SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (r SiteSetupChecklistGetRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

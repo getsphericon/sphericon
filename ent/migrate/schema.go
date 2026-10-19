@@ -89,7 +89,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "email", Type: field.TypeString},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"login", "staff_login", "password_reset", "register", "email_change"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"login", "staff_login", "password_reset", "register", "email_change", "test_send_user", "test_send_workspace"}},
 		{Name: "failures", Type: field.TypeInt, Default: 0},
 		{Name: "last_attempt_at", Type: field.TypeTime},
 	}
@@ -717,6 +717,7 @@ var (
 		{Name: "client_id", Type: field.TypeString, Unique: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "redirect_uris", Type: field.TypeJSON},
+		{Name: "metadata_expires_at", Type: field.TypeTime, Nullable: true},
 	}
 	// OauthClientsTable holds the schema information for the "oauth_clients" table.
 	OauthClientsTable = &schema.Table{

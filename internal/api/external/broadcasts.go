@@ -235,7 +235,7 @@ func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.Test
 		return nil, err
 	}
 
-	if detail := h.outbound.SendBroadcastTest(ctx, auth.TokenScoped(ctx), b, string(req.Email)); detail != "" {
+	if detail := h.outbound.SendBroadcastTest(ctx, auth.TokenScoped(ctx), b, string(req.Email), nil).Detail; detail != "" {
 		res := externalapi.BroadcastsTestSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, detail))
 		return &res, nil
 	}

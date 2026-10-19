@@ -30,28 +30,26 @@ const sessionIssuer = "sphericon"
 // the token (SPHERICON_SESSION_TTL, no refresh). It is the one place a session is minted; the
 // login operation, and later the Second factor step, hand its cookie to the client.
 type Sessions struct {
-	tokens *gptoken.Service
-	ttl    time.Duration
-	secure bool
-	now    func() time.Time
+	// verifier signs with its first service (the primary secret) and verifies with all.
+	verifier verifier
+	ttl      time.Duration
+	secure   bool
+	now      func() time.Time
 }
 
 // NewSessions builds the issuer. secure sets the cookie's Secure attribute (the
 // instance is served over HTTPS); now is the clock of the token's expiry, nil
-// meaning time.Now.
-func NewSessions(jwtSecret string, ttl time.Duration, secure bool, now func() time.Time) *Sessions {
+// meaning time.Now. A session is signed with jwtSecret and verified against it and then
+// against each of verifyWith, the secondary key of a JWT secret rotation.
+func NewSessions(jwtSecret string, ttl time.Duration, secure bool, now func() time.Time, verifyWith ...string) *Sessions {
 	if now == nil {
 		now = time.Now
 	}
 	return &Sessions{
-		tokens: gptoken.NewService(gptoken.Opts{
-			SecretReader: gptoken.SecretFunc(func(string) (string, error) { return jwtSecret, nil }),
-			Issuer:       sessionIssuer,
-			DisableXSRF:  true,
-		}),
-		ttl:    ttl,
-		secure: secure,
-		now:    now,
+		verifier: newVerifier(jwtSecret, verifyWith),
+		ttl:      ttl,
+		secure:   secure,
+		now:      now,
 	}
 }
 
@@ -69,7 +67,7 @@ func (s *Sessions) Issue(u *ent.User) (*http.Cookie, error) {
 		User: &gptoken.User{Name: u.Email, ID: "user_" + strconv.FormatInt(u.ID, 10), Email: u.Email},
 	}
 	StampUser(&claims, u)
-	tk, err := s.tokens.Token(claims)
+	tk, err := s.verifier[0].Token(claims)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +83,7 @@ func (s *Sessions) Holder(raw string) (id, epoch int64, ok bool) {
 	if raw == "" {
 		return 0, 0, false
 	}
-	claims, err := s.tokens.Parse(raw)
+	claims, err := s.verifier.parse(raw)
 	if err != nil || claims.ExpiresAt == nil || !s.now().Before(claims.ExpiresAt.Time) {
 		return 0, 0, false
 	}
@@ -128,4 +126,34 @@ func sessionUser(claims gptoken.Claims) (id, epoch int64, ok bool) {
 		return 0, 0, false
 	}
 	return id, epoch, true
+}
+
+// verifier parses a session token against the primary secret and then each secondary one.
+type verifier []*gptoken.Service
+
+func newTokenService(secret string) *gptoken.Service {
+	return gptoken.NewService(gptoken.Opts{
+		SecretReader: gptoken.SecretFunc(func(string) (string, error) { return secret, nil }),
+		Issuer:       sessionIssuer,
+		DisableXSRF:  true,
+	})
+}
+
+func newVerifier(primary string, secondary []string) verifier {
+	v := verifier{newTokenService(primary)}
+	for _, secret := range secondary {
+		v = append(v, newTokenService(secret))
+	}
+	return v
+}
+
+func (v verifier) parse(raw string) (gptoken.Claims, error) {
+	var err error
+	for _, svc := range v {
+		var claims gptoken.Claims
+		if claims, err = svc.Parse(raw); err == nil {
+			return claims, nil
+		}
+	}
+	return gptoken.Claims{}, err
 }

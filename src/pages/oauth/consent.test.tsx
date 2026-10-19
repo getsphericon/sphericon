@@ -26,16 +26,22 @@ const workspace = {
   collectKey: 'omck_test_key',
   postalAddress: '',
   accountLinkAvailable: false,
+  mcpUrl: 'https://sphericon.test',
   holds: [],
   role: 'owner' as const,
   createdAt: '2026-01-01T00:00:00Z',
 }
 
-const describeHandler = (sendScopes: string[]) =>
+const describeHandler = (
+  sendScopes: string[],
+  extra: { clientHost?: string; localRedirect?: boolean } = {},
+) =>
   handleSiteOAuthDescribe({
     body: {
       clientName: 'Fixture Connector',
       redirectUri: request.redirectUri,
+      localRedirect: extra.localRedirect ?? false,
+      ...(extra.clientHost ? { clientHost: extra.clientHost } : {}),
       scopes: ['contacts:read'],
       sendScopes,
     },
@@ -62,6 +68,30 @@ test('shows the client and its permissions, with sending off by default', async 
     .toBeInTheDocument()
   await expect.element(screen.getByText('contacts:read', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByLabelText(/Also allow sending/)).not.toBeChecked()
+})
+
+test('names the host of a metadata-document client and warns about a localhost redirect', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    describeHandler([], { clientHost: 'claude.example', localRedirect: true }),
+  )
+  const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
+
+  await expect
+    .element(screen.getByText('Requested by the app at claude.example'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('This app connects through localhost')).toBeInTheDocument()
+})
+
+test('shows no host and no localhost warning for an ordinary registered client', async () => {
+  mockConsentApi(() => {})
+  const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
+
+  await expect
+    .element(screen.getByText('Connect Fixture Connector to sphericon'))
+    .toBeInTheDocument()
+  expect(screen.getByText(/Requested by the app at/).elements()).toHaveLength(0)
+  expect(screen.getByText('This app connects through localhost').elements()).toHaveLength(0)
 })
 
 test('approving without the send opt-in does not allow sending', async () => {

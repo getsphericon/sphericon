@@ -4,6 +4,7 @@ import (
 	"context"
 	stdsql "database/sql"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/authattempt"
+	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 
 // Kind is the action an attempt counter belongs to. Each kind has its own counter
@@ -24,6 +26,17 @@ const (
 	KindPasswordReset = authattempt.KindPasswordReset
 	KindRegister      = authattempt.KindRegister
 	KindEmailChange   = authattempt.KindEmailChange
+	// The caps on a Test send from the System sender (ADR 0041), keyed by a User or Workspace
+	// id rather than an address (see counterKey).
+	KindTestSendUser      = authattempt.KindTestSendUser
+	KindTestSendWorkspace = authattempt.KindTestSendWorkspace
+)
+
+// The fixed caps on a Test send from the System sender (ADR 0041): a way to cause mail from
+// the platform's own domain, so no environment variable raises them.
+const (
+	TestSendPerUserHour     = 5
+	TestSendPerWorkspaceDay = 20
 )
 
 // Rule is the throttle of one Kind (ADR 0025): after Threshold failures within
@@ -94,6 +107,9 @@ func NewAttempts(client *ent.Client, opts ...AttemptsOption) *Attempts {
 		KindPasswordReset: ResetRule(0),
 		KindRegister:      ResetRule(0),
 		KindEmailChange:   ResetRule(0),
+		// Not configurable: always on, with their own windows.
+		KindTestSendUser:      {Threshold: TestSendPerUserHour, Window: time.Hour},
+		KindTestSendWorkspace: {Threshold: TestSendPerWorkspaceDay, Window: 24 * time.Hour},
 	}}
 	for _, opt := range opts {
 		opt(a)
@@ -190,21 +206,33 @@ func (a *Attempts) Delay(ctx context.Context, kind Kind, email string) (time.Dur
 }
 
 // Take grants one slot of a budget Kind (password reset: at most Threshold slots per
-// Window) and reports whether it was granted. Check and count are one statement (an
-// upsert whose update is conditional), so concurrent requests for one address cannot
-// each see a free slot: exactly Threshold of them are granted. A refused request
-// changes nothing, so the window ends a Window after the last granted slot. A Kind
-// that is not throttled always grants; the Rule's Base and Cap are not involved.
+// Window) to an address and reports whether it was granted. See take.
 func (a *Attempts) Take(ctx context.Context, kind Kind, email string) (bool, error) {
+	refusal, err := a.take(ctx, kind, NormalizeEmail(email))
+	return refusal == ratelimit.Refusal{}, err
+}
+
+// counterKey is the counter key of a Kind that counts per User or per Workspace instead
+// of per address. It shares the column of an address, so the prefix keeps the two apart:
+// "user:7" is never a normalized email.
+func counterKey(owner string, id int64) string { return owner + ":" + strconv.FormatInt(id, 10) }
+
+// take grants one slot of a budget Kind to key, or returns the Refusal: how long until
+// the budget frees a slot (a Window after the last granted slot) and its size. Check and
+// count are one statement (an upsert whose update is conditional), so concurrent
+// requests for one key cannot each see a free slot: exactly Threshold of them are
+// granted. A refused request changes nothing. A Kind that is not throttled always
+// grants; the Rule's Base and Cap are not involved.
+func (a *Attempts) take(ctx context.Context, kind Kind, key string) (ratelimit.Refusal, error) {
 	rule, ok := a.rule(kind)
 	if !ok {
-		return true, nil
+		return ratelimit.Refusal{}, nil
 	}
 	now := a.now()
 	cutoff := now.Add(-rule.Window)
 	row := sql.Table(authattempt.Table)
 	_, err := a.ent.AuthAttempt.Create().
-		SetEmail(NormalizeEmail(email)).
+		SetEmail(key).
 		SetKind(kind).
 		SetFailures(1).
 		SetLastAttemptAt(now).
@@ -227,10 +255,46 @@ func (a *Attempts) Take(ctx context.Context, kind Kind, email string) (bool, err
 			}),
 		).
 		ID(ctx)
-	if errors.Is(err, stdsql.ErrNoRows) {
-		return false, nil
+	if err == nil {
+		return ratelimit.Refusal{}, nil
 	}
-	return err == nil, err
+	if !errors.Is(err, stdsql.ErrNoRows) {
+		return ratelimit.Refusal{}, err
+	}
+	// Refused: the one read that says when the window frees a slot.
+	current, err := a.ent.AuthAttempt.Query().
+		Where(authattempt.Email(key), authattempt.KindEQ(kind)).
+		Only(ctx)
+	if err != nil {
+		return ratelimit.Refusal{}, err
+	}
+	wait := max(current.LastAttemptAt.Add(rule.Window).Sub(now), time.Second)
+	return ratelimit.Refusal{Wait: wait, Limit: rule.Threshold}, nil
+}
+
+// refund gives back a slot take granted, for a request that a second budget then refused.
+func (a *Attempts) refund(ctx context.Context, kind Kind, key string) error {
+	return a.ent.AuthAttempt.Update().
+		Where(authattempt.Email(key), authattempt.KindEQ(kind), authattempt.FailuresGT(0)).
+		AddFailures(-1).
+		Exec(ctx)
+}
+
+// TakeTestSend grants one Test send from the System sender (ADR 0041): a slot of the
+// User's hourly budget and one of the Workspace's daily budget. It returns the zero
+// Refusal when both were granted, else the Refusal of the budget that was spent. A
+// request the Workspace budget refuses gives the User's slot back.
+func (a *Attempts) TakeTestSend(ctx context.Context, userID, workspaceID int64) (ratelimit.Refusal, error) {
+	userKey := counterKey("user", userID)
+	refusal, err := a.take(ctx, KindTestSendUser, userKey)
+	if err != nil || refusal != (ratelimit.Refusal{}) {
+		return refusal, err
+	}
+	refusal, err = a.take(ctx, KindTestSendWorkspace, counterKey("workspace", workspaceID))
+	if err != nil || refusal != (ratelimit.Refusal{}) {
+		err = errors.Join(err, a.refund(ctx, KindTestSendUser, userKey))
+	}
+	return refusal, err
 }
 
 // Purge deletes the rows whose last failure is past their Kind's window (a delay is

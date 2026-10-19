@@ -130,3 +130,30 @@ func TestUnsubscribeFooterPostalAddress(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, withAddr, "Acme &lt;Inc&gt;<br>123 Main St")
 }
+
+// A JWT secret rotation: a link mailed before it still verifies while the old secret is the
+// secondary one, and new links are signed with the primary.
+func TestDecodeAcceptsTheSecondarySecretButSignsWithThePrimary(t *testing.T) {
+	old := tracking.New("old-secret", "https://app.test")
+	mailed, err := old.Token(5)
+	require.NoError(t, err)
+	unsub, err := old.UnsubscribeURL(tracking.UnsubTarget{Source: "broadcasts", Destination: "a@b.test", WorkspaceID: 2})
+	require.NoError(t, err)
+
+	rotated := tracking.New("new-secret", "https://app.test", "old-secret")
+	rid, err := rotated.Decode(mailed)
+	require.NoError(t, err)
+	assert.EqualValues(t, 5, rid)
+	_, err = rotated.DecodeUnsub(strings.TrimPrefix(unsub, "https://app.test/e/u/"))
+	require.NoError(t, err)
+
+	fresh, err := rotated.Token(6)
+	require.NoError(t, err)
+	_, err = tracking.New("new-secret", "https://app.test").Decode(fresh)
+	require.NoError(t, err, "a new link verifies without the secondary secret")
+	_, err = old.Decode(fresh)
+	assert.Error(t, err)
+
+	_, err = tracking.New("new-secret", "https://app.test").Decode(mailed)
+	assert.Error(t, err, "once the secondary secret is removed, the old link no longer verifies")
+}

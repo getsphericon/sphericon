@@ -4419,6 +4419,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeSecondFactorRequired
 	case ProblemCodeEmailVerificationRequired:
 		*s = ProblemCodeEmailVerificationRequired
+	case ProblemCodeSignupClosed:
+		*s = ProblemCodeSignupClosed
 	default:
 		*s = ProblemCode(v)
 	}
@@ -7708,6 +7710,44 @@ func (s *SiteAuthRegisterConflict) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteAuthRegisterConflict) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteAuthRegisterForbidden as json.
+func (s *SiteAuthRegisterForbidden) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteAuthRegisterForbidden from json.
+func (s *SiteAuthRegisterForbidden) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAuthRegisterForbidden to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteAuthRegisterForbidden(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAuthRegisterForbidden) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAuthRegisterForbidden) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -21681,8 +21721,18 @@ func (s *SiteOAuthAuthorizationRequest) encodeFields(e *jx.Encoder) {
 		e.Str(s.ClientName)
 	}
 	{
+		if s.ClientHost.Set {
+			e.FieldStart("clientHost")
+			s.ClientHost.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("redirectUri")
 		e.Str(s.RedirectUri)
+	}
+	{
+		e.FieldStart("localRedirect")
+		e.Bool(s.LocalRedirect)
 	}
 	{
 		e.FieldStart("scopes")
@@ -21702,11 +21752,13 @@ func (s *SiteOAuthAuthorizationRequest) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteOAuthAuthorizationRequest = [4]string{
+var jsonFieldsNameOfSiteOAuthAuthorizationRequest = [6]string{
 	0: "clientName",
-	1: "redirectUri",
-	2: "scopes",
-	3: "sendScopes",
+	1: "clientHost",
+	2: "redirectUri",
+	3: "localRedirect",
+	4: "scopes",
+	5: "sendScopes",
 }
 
 // Decode decodes SiteOAuthAuthorizationRequest from json.
@@ -21730,8 +21782,18 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"clientName\"")
 			}
+		case "clientHost":
+			if err := func() error {
+				s.ClientHost.Reset()
+				if err := s.ClientHost.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clientHost\"")
+			}
 		case "redirectUri":
-			requiredBitSet[0] |= 1 << 1
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.RedirectUri = string(v)
@@ -21742,8 +21804,20 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"redirectUri\"")
 			}
+		case "localRedirect":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Bool()
+				s.LocalRedirect = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"localRedirect\"")
+			}
 		case "scopes":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				s.Scopes = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -21763,7 +21837,7 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"scopes\"")
 			}
 		case "sendScopes":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				s.SendScopes = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -21792,7 +21866,7 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00111101,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -28074,6 +28148,298 @@ func (s *SiteSesConfigKind) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *SiteSetupProgress) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteSetupProgress) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("steps")
+		s.Steps.Encode(e)
+	}
+	{
+		e.FieldStart("complete")
+		e.Bool(s.Complete)
+	}
+}
+
+var jsonFieldsNameOfSiteSetupProgress = [2]string{
+	0: "steps",
+	1: "complete",
+}
+
+// Decode decodes SiteSetupProgress from json.
+func (s *SiteSetupProgress) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSetupProgress to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "steps":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Steps.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"steps\"")
+			}
+		case "complete":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Bool()
+				s.Complete = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"complete\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteSetupProgress")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteSetupProgress) {
+					name = jsonFieldsNameOfSiteSetupProgress[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteSetupProgress) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSetupProgress) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteSetupStepStatus as json.
+func (s SiteSetupStepStatus) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteSetupStepStatus from json.
+func (s *SiteSetupStepStatus) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSetupStepStatus to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteSetupStepStatus(v) {
+	case SiteSetupStepStatusTodo:
+		*s = SiteSetupStepStatusTodo
+	case SiteSetupStepStatusPending:
+		*s = SiteSetupStepStatusPending
+	case SiteSetupStepStatusDone:
+		*s = SiteSetupStepStatusDone
+	default:
+		*s = SiteSetupStepStatus(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteSetupStepStatus) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSetupStepStatus) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteSetupSteps) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteSetupSteps) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("integration")
+		s.Integration.Encode(e)
+	}
+	{
+		e.FieldStart("sendingDomain")
+		s.SendingDomain.Encode(e)
+	}
+	{
+		e.FieldStart("contact")
+		s.Contact.Encode(e)
+	}
+	{
+		e.FieldStart("sentEmail")
+		s.SentEmail.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteSetupSteps = [4]string{
+	0: "integration",
+	1: "sendingDomain",
+	2: "contact",
+	3: "sentEmail",
+}
+
+// Decode decodes SiteSetupSteps from json.
+func (s *SiteSetupSteps) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSetupSteps to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "integration":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Integration.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integration\"")
+			}
+		case "sendingDomain":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.SendingDomain.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sendingDomain\"")
+			}
+		case "contact":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Contact.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"contact\"")
+			}
+		case "sentEmail":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.SentEmail.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sentEmail\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteSetupSteps")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteSetupSteps) {
+					name = jsonFieldsNameOfSiteSetupSteps[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteSetupSteps) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSetupSteps) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SiteSmtpConfig) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -30823,6 +31189,100 @@ func (s *SiteTestSendBroadcastInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteTestSendBroadcastInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteTestSendBroadcastResult) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteTestSendBroadcastResult) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("from")
+		s.From.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteTestSendBroadcastResult = [1]string{
+	0: "from",
+}
+
+// Decode decodes SiteTestSendBroadcastResult from json.
+func (s *SiteTestSendBroadcastResult) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteTestSendBroadcastResult to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "from":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.From.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"from\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteTestSendBroadcastResult")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteTestSendBroadcastResult) {
+					name = jsonFieldsNameOfSiteTestSendBroadcastResult[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteTestSendBroadcastResult) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteTestSendBroadcastResult) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -35656,6 +36116,10 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		e.FieldStart("mcpUrl")
+		e.Str(s.McpUrl)
+	}
+	{
 		e.FieldStart("holds")
 		e.ArrStart()
 		for _, elem := range s.Holds {
@@ -35685,7 +36149,7 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceResource = [15]string{
+var jsonFieldsNameOfSiteWorkspaceResource = [16]string{
 	0:  "id",
 	1:  "name",
 	2:  "slug",
@@ -35696,11 +36160,12 @@ var jsonFieldsNameOfSiteWorkspaceResource = [15]string{
 	7:  "suspensionReason",
 	8:  "supportEmail",
 	9:  "billingUrl",
-	10: "holds",
-	11: "secondFactorRequiredAt",
-	12: "secondFactorGraceEndsAt",
-	13: "accountLinkAvailable",
-	14: "createdAt",
+	10: "mcpUrl",
+	11: "holds",
+	12: "secondFactorRequiredAt",
+	13: "secondFactorGraceEndsAt",
+	14: "accountLinkAvailable",
+	15: "createdAt",
 }
 
 // Decode decodes SiteWorkspaceResource from json.
@@ -35820,8 +36285,20 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"billingUrl\"")
 			}
-		case "holds":
+		case "mcpUrl":
 			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.McpUrl = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"mcpUrl\"")
+			}
+		case "holds":
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				s.Holds = make([]SiteWorkspaceHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -35859,7 +36336,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"secondFactorGraceEndsAt\"")
 			}
 		case "accountLinkAvailable":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				v, err := d.Bool()
 				s.AccountLinkAvailable = bool(v)
@@ -35871,7 +36348,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accountLinkAvailable\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -35891,7 +36368,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00111111,
-		0b01100100,
+		0b11001100,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

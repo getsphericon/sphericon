@@ -14,6 +14,10 @@ enum ProblemCode {
   /** The User's email is not proven yet (ADR 0030): login is refused until the
    * link sent to the address is followed */
   emailVerificationRequired: "email_verification_required",
+
+  /** The Instance closed public sign-up (ADR 0042): a new User comes only through an
+   * Invitation or the Instance operator's `sphericon user create-owner` */
+  signupClosed: "signup_closed",
 }
 
 /** RFC 7807 Problem Details */

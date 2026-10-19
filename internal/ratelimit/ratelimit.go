@@ -36,7 +36,9 @@ import (
 // Policy names. They are the `policy` label of ratelimit_rejected_total, so they
 // must stay a small bounded set.
 const (
-	PolicyHuman      = "human"
+	PolicyHuman = "human"
+	// PolicyTestSend is the cap on Test sends from the System sender (ADR 0041).
+	PolicyTestSend   = "test-send"
 	PolicyAPIBurst   = "api-burst"
 	PolicyAPI        = "api"
 	PolicyFailedAuth = "failed-auth"
@@ -278,6 +280,13 @@ func (e *Exchange) AuthFailed(ctx context.Context) error {
 		return nil
 	}
 	return e.limiter.failedAuth.Reject(e.w, e.r, ipOf(ctx))
+}
+
+// Refusal is a request a budget turned away: how long until a slot frees and the size of
+// the budget that was spent. The zero Refusal means nothing was refused.
+type Refusal struct {
+	Wait  time.Duration
+	Limit int
 }
 
 // Delay refuses a request that must wait out a delay rather than a window budget

@@ -8,11 +8,14 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/samber/lo"
 )
 
@@ -280,9 +283,19 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Site
 		return nil, err
 	}
 
-	if detail := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email)); detail != "" {
-		v := siteapi.SiteBroadcastsTestSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, detail))
+	// The asking User: with no verified Sending domain the preview may go only to them
+	// (ADR 0041).
+	a := auth.GetSiteAuth(ctx)
+	if a == nil {
+		return nil, auth.ErrUnauthorized
+	}
+	report := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email), &outbound.Asker{UserID: a.UserID, Email: a.Email})
+	switch {
+	case report.Wait > 0:
+		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, report.Limit, report.Wait, h.now())
+	case report.Detail != "":
+		v := siteapi.SiteBroadcastsTestSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, report.Detail))
 		return &v, nil
 	}
-	return &siteapi.SiteBroadcastsTestSendNoContent{}, nil
+	return &siteapi.SiteTestSendBroadcastResult{From: siteapi.EmailAddress(report.From)}, nil
 }

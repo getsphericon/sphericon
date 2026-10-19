@@ -221,3 +221,41 @@ func collectWorkspaceID(ctx context.Context) int64 {
 	}
 	return 0
 }
+
+// A rotation: sessions signed with the old secret keep working while it is the secondary key, and
+// stop once it is removed.
+func TestSiteAuthAcceptsASessionSignedWithTheSecondarySecretOnlyWhileItIsConfigured(t *testing.T) {
+	env := testhelper.Setup(t)
+	cfg, err := config.Load("test")
+	require.NoError(t, err)
+	old := env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
+	const rotated = "the-new-secret-the-new-secret-0123"
+
+	during := auth.NewSiteSecurityHandler(rotated, env.DB, nil, cfg.JWTSecret)
+	_, err = during.Verify(context.Background(), old)
+	require.NoError(t, err)
+
+	after := auth.NewSiteSecurityHandler(rotated, env.DB, nil)
+	_, err = after.Verify(context.Background(), old)
+	require.ErrorIs(t, err, auth.ErrUnauthorized)
+
+	// New sessions are signed with the primary secret and verify without the secondary one.
+	cookie, err := auth.NewSessions(rotated, time.Hour, false, nil, cfg.JWTSecret).Issue(&ent.User{ID: fixtures.OwnerJohnID})
+	require.NoError(t, err)
+	_, err = after.Verify(context.Background(), cookie.Value)
+	require.NoError(t, err)
+}
+
+func TestSessionsHolderAcceptsTheSecondarySecret(t *testing.T) {
+	user := &ent.User{ID: 7, SessionEpoch: 3}
+	cookie, err := auth.NewSessions("old-secret-old-secret-old-secret-0", time.Hour, false, nil).Issue(user)
+	require.NoError(t, err)
+
+	id, epoch, ok := auth.NewSessions("new-secret-new-secret-new-secret-0", time.Hour, false, nil, "old-secret-old-secret-old-secret-0").Holder(cookie.Value)
+	require.True(t, ok)
+	assert.EqualValues(t, 7, id)
+	assert.EqualValues(t, 3, epoch)
+
+	_, _, ok = auth.NewSessions("new-secret-new-secret-new-secret-0", time.Hour, false, nil).Holder(cookie.Value)
+	assert.False(t, ok)
+}

@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
-	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/samber/lo"
 )
@@ -255,23 +254,19 @@ func GetSiteAuth(ctx context.Context) *SiteAuth {
 // 0020). The User is looked up by the id the token carries, and the token's epoch
 // must equal the User's session_epoch: a bump ends every earlier session.
 type SiteSecurityHandler struct {
-	tokens *gptoken.Service
-	ent    *ent.Client
-	now    func() time.Time
+	verifier verifier
+	ent      *ent.Client
+	now      func() time.Time
 }
 
 // NewSiteSecurityHandler builds the cookie handler. now is the clock the token's
-// expiry is checked against; nil means time.Now.
-func NewSiteSecurityHandler(jwtSecret string, client *ent.Client, now func() time.Time) *SiteSecurityHandler {
-	svc := gptoken.NewService(gptoken.Opts{
-		SecretReader: gptoken.SecretFunc(func(string) (string, error) { return jwtSecret, nil }),
-		Issuer:       "sphericon",
-		DisableXSRF:  true,
-	})
+// expiry is checked against; nil means time.Now. A token verifies against jwtSecret and then
+// against each of verifyWith, the secondary key of a JWT secret rotation.
+func NewSiteSecurityHandler(jwtSecret string, client *ent.Client, now func() time.Time, verifyWith ...string) *SiteSecurityHandler {
 	if now == nil {
 		now = time.Now
 	}
-	return &SiteSecurityHandler{tokens: svc, ent: client, now: now}
+	return &SiteSecurityHandler{verifier: newVerifier(jwtSecret, verifyWith), ent: client, now: now}
 }
 
 var _ siteapi.SecurityHandler = (*SiteSecurityHandler)(nil)
@@ -292,7 +287,7 @@ func (h *SiteSecurityHandler) HandleApiKeyAuth(ctx context.Context, op siteapi.O
 // Verify checks a raw session token (signature, expiry, User id and epoch) and
 // returns the User it belongs to, or ErrUnauthorized.
 func (h *SiteSecurityHandler) Verify(ctx context.Context, raw string) (*ent.User, error) {
-	claims, err := h.tokens.Parse(raw)
+	claims, err := h.verifier.parse(raw)
 	if err != nil {
 		return nil, ErrUnauthorized
 	}

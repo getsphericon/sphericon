@@ -112,7 +112,7 @@ func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransact
 		r := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, "the send rate limit is spent; retry shortly"))
 		return &r, nil
 	default: // outbound.Held: a reversible hold on the source, never a failed send
-		r := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, outbound.HoldDetail(res.Reason)))
+		r := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, outbound.Detail(res.Reason)))
 		return &r, nil
 	}
 }

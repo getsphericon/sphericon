@@ -90,3 +90,16 @@ func TestBroadcastWrittenInTheEditorIsDelivered(t *testing.T) {
 	assert.Contains(t, msg.HTML, env.BaseURL+"/e/o/", "the open pixel is added")
 	assert.Contains(t, msg.HTML, "unsubscribe</a>", "the unsubscribe footer is added")
 }
+
+func TestTestSendBeforeAnyDomainReachesTheOwnerFromTheSystemSender(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t) // no Integration, no Sending domain
+
+	from := w.RequestTestSend(Broadcast{Subject: "Preview me", Body: HTML("Early look at the product")})
+	msg := w.Inbox.Wait(Match{To: w.OwnerEmail})
+
+	assert.Equal(t, SystemSenderFrom, from, "the answer names the From it used")
+	assert.Equal(t, SystemSenderFrom, msg.From.Address)
+	assert.Equal(t, "[Test] Preview me", msg.Subject)
+	assert.Contains(t, msg.HTML, "Early look at the product")
+}

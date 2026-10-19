@@ -103,7 +103,9 @@ type Invoker interface {
 	// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
 	// `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
 	// carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
-	// session: the User signs in next), and a taken address answers 409.
+	// session: the User signs in next), and a taken address answers 409. An Instance that closed sign-up
+	// (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before anything is
+	// read or created; accepting an Invitation still works.
 	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error)
@@ -247,7 +249,9 @@ type Invoker interface {
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
 	// SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 	//
-	// Send a one-off rendered preview to a single address.
+	// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
+	// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
+	// address is refused with 422, the System sender's caps answer 429.
 	//
 	// POST /workspaces/{slug}/broadcasts/{id}/test-send
 	SiteBroadcastsTestSend(ctx context.Context, request *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
@@ -585,6 +589,12 @@ type Invoker interface {
 	//
 	// POST /workspaces/{slug}/sending-domains/{id}/verify
 	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (SiteSendingDomainsVerifyRes, error)
+	// SiteSetupChecklistGet invokes SiteSetupChecklist_get operation.
+	//
+	// The Workspace's Setup checklist.
+	//
+	// GET /workspaces/{slug}/setup-checklist
+	SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (SiteSetupChecklistGetRes, error)
 	// SiteSuppressionsCreate invokes SiteSuppressions_create operation.
 	//
 	// Manually suppress an address (reason = manual; idempotent per address).
@@ -2234,7 +2244,9 @@ func (c *Client) sendSiteAuthLogout(ctx context.Context) (res *SiteAuthLogoutNoC
 // address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
 // `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
 // carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
-// session: the User signs in next), and a taken address answers 409.
+// session: the User signs in next), and a taken address answers 409. An Instance that closed sign-up
+// (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before anything is
+// read or created; accepting an Invitation still works.
 //
 // POST /auth/register
 func (c *Client) SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error) {
@@ -5192,7 +5204,9 @@ func (c *Client) sendSiteBroadcastsSend(ctx context.Context, params SiteBroadcas
 
 // SiteBroadcastsTestSend invokes SiteBroadcasts_testSend operation.
 //
-// Send a one-off rendered preview to a single address.
+// Send a one-off rendered preview to a single address. While the Workspace has no verified Sending
+// domain it goes from the System sender and only to the asking User's own address (ADR 0041): another
+// address is refused with 422, the System sender's caps answer 429.
 //
 // POST /workspaces/{slug}/broadcasts/{id}/test-send
 func (c *Client) SiteBroadcastsTestSend(ctx context.Context, request *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error) {
@@ -12751,6 +12765,138 @@ func (c *Client) sendSiteSendingDomainsVerify(ctx context.Context, params SiteSe
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteSendingDomainsVerifyResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteSetupChecklistGet invokes SiteSetupChecklist_get operation.
+//
+// The Workspace's Setup checklist.
+//
+// GET /workspaces/{slug}/setup-checklist
+func (c *Client) SiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (SiteSetupChecklistGetRes, error) {
+	res, err := c.sendSiteSetupChecklistGet(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteSetupChecklistGet(ctx context.Context, params SiteSetupChecklistGetParams) (res SiteSetupChecklistGetRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteSetupChecklist_get"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{slug}/setup-checklist"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteSetupChecklistGetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "slug" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "slug",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Slug))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/setup-checklist"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteSetupChecklistGetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteSetupChecklistGetResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

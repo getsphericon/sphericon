@@ -144,6 +144,30 @@ needs:
 this Upgrade needs 1 archive(s) the source does not have (nothing was changed): sphericon_0.4.9_linux_amd64.tar.gz
 ```
 
+### Verify a release {#verify}
+
+`upgrade` checks the archive's sha256 against `checksums.txt`. Every release also carries a cosign
+signature of `checksums.txt` and of the image, made keyless by the release workflow
+(`getsphericon/sphericon`), so you can check who built them. Download `checksums.txt` and
+`checksums.txt.sigstore.json` from the release, then:
+
+```sh
+cosign verify-blob checksums.txt \
+  --bundle checksums.txt.sigstore.json \
+  --certificate-identity-regexp '^https://github\.com/getsphericon/sphericon/\.github/workflows/release-please\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+sha256sum --check --ignore-missing checksums.txt   # macOS: shasum -a 256 --check --ignore-missing
+
+cosign verify ghcr.io/getsphericon/sphericon:0.5.0 \
+  --certificate-identity-regexp '^https://github\.com/getsphericon/sphericon/\.github/workflows/release-please\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Each archive has an SPDX SBOM on the release (`sphericon_<version>_<os>_<arch>.tar.gz.sbom.json`),
+and the image carries its SBOM as an attestation (`docker buildx imagetools inspect
+ghcr.io/getsphericon/sphericon:0.5.0 --format '{{ json .SBOM }}'`). That attestation is a
+BuildKit one, not covered by the cosign signature.
+
 ## Helm {#helm}
 
 The chart is published as an OCI artifact at every release, with the chart version equal to the
@@ -181,8 +205,11 @@ docker run --rm \
   -e SPHERICON_JWT_SECRET="$SPHERICON_JWT_SECRET" \
   ghcr.io/getsphericon/sphericon:0.5.0 migrate
 
-# then recreate the container (or `docker compose up -d`) on the new tag
+# then recreate the container
 ```
+
+With the [Compose file](../self-hosting#docker-compose), set the new `SPHERICON_VERSION` in `.env`, then
+`docker compose pull` and `docker compose up -d`: its `migrate` service runs before the app is replaced.
 
 Use an explicit version tag in production, never `latest`, so a restart does not upgrade you by
 accident. With several replicas leave `SPHERICON_DB_AUTO_MIGRATE` off, so a heavy migration never

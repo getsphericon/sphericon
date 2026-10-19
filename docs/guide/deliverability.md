@@ -6,15 +6,18 @@ than an add-on. This page describes what happens for you and what you set up onc
 ## Sending domains
 
 You can only send from a domain you control and have verified. Add the domain in **Settings →
-Sending domains**; sphericon generates a DKIM keypair, you publish one TXT record at
+Sending**; sphericon generates a DKIM keypair, you publish one TXT record at
 `selector._domainkey`, and verification flips the domain on. From then on every message is
 signed by sphericon itself, whichever transport carries it. Sending from an unverified domain is
-rejected on all three surfaces: broadcasts, automations and transactional mail.
+rejected on all three surfaces: broadcasts, automations and transactional mail. The one exception is
+a broadcast's test send to your own address, which falls back to the platform's sender until a
+domain is verified ([Quickstart](/guide/quickstart#see-an-email-before-dns)). DNS can take time
+and nothing else in setup waits for it.
 
 ### Tracking domain
 
 By default the open pixel and click links in your mail point at your sphericon instance's own host.
-To put them on your own hostname, open **Settings → Sending domains**, expand the domain and add the
+To put them on your own hostname, open **Settings → Sending**, expand the domain and add the
 **Tracking domain (optional)** row next to the DKIM, SPF and DMARC records. The row appears only when
 your instance has an edge set up for it (`SPHERICON_TRACKING_CNAME_TARGET`, see
 [Self-hosting](../self-hosting#tracking-domains)); on Sphericon Cloud it is always there.
@@ -105,7 +108,7 @@ through its hook.
 :::
 
 Each Integration has its own hook URL (`hookUrl`, shown on every read of the integration). To connect
-a provider, open **Settings → Integrations**, choose **Inbound** on the Integration, copy the **Hook
+a provider, open **Settings → Developers**, choose **Inbound** on the Integration, copy the **Hook
 URL**, choose the **Preset**, fill its params as JSON and **Save**. A secret is stored encrypted and
 never shown again. **Regenerate URL** replaces the hook URL at once; paste the new one into the
 provider. Changing a secret keeps the old one valid until you choose **Retire old secrets**, so you

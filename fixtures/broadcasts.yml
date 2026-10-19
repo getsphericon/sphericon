@@ -196,6 +196,19 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 
+# Hooli (workspace 5): a draft, the only row besides its owner, for a Test send that must leave the
+# Setup checklist's last step todo.
+- id: 910 # fixture: BroadcastHooli
+  name: Hooli only
+  subject: Hooli only
+  from_name: Hooli
+  from_email: hello@hooli.test
+  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Hooli.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  status: draft
+  workspace_id: 5
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
 # Initech (workspace 3).
 - id: 300 # fixture: BroadcastInitech
   name: Initech newsletter

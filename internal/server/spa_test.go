@@ -13,15 +13,15 @@ func TestBuildIndexShellInjectsLocale(t *testing.T) {
 		)},
 	}
 
-	shell := buildIndexShell(fs, "ru", true)
+	shell := buildIndexShell(fs, "en", true)
 	got := string(shell)
 
 	if strings.Contains(got, localeSentinel) {
 		t.Fatalf("sentinel %q was not substituted: %s", localeSentinel, got)
 	}
-	// The value slots become "ru", but the window.__APP_LOCALE__ identifier must
+	// The value slots become "en", but the window.__APP_LOCALE__ identifier must
 	// survive intact (the sentinel is chosen not to collide with it).
-	if !strings.Contains(got, `lang="ru"`) || !strings.Contains(got, `window.__APP_LOCALE__ = 'ru'`) {
+	if !strings.Contains(got, `lang="en"`) || !strings.Contains(got, `window.__APP_LOCALE__ = 'en'`) {
 		t.Fatalf("locale not injected into both slots: %s", got)
 	}
 }

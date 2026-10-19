@@ -1,4 +1,4 @@
-import { ActionIcon, Group, Stack, Tooltip } from '@mantine/core'
+import { ActionIcon, Group, Stack, Title, Tooltip } from '@mantine/core'
 import { IconEye, IconPencil, IconTrash } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
@@ -29,7 +29,8 @@ export function ContactsListPage() {
 
   return (
     <Stack>
-      <Group justify="flex-end" align="flex-end" wrap="wrap">
+      <Group justify="space-between" align="center">
+        <Title order={2}>{t(($) => $.nav.contacts)}</Title>
         <ButtonLink to={contactsCreateRoute.to} params={{ slug }}>
           {t(($) => $.contacts.addContact)}
         </ButtonLink>

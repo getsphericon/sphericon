@@ -15,7 +15,11 @@ export const zEntityId = z.string().regex(/^[0-9]+$/);
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
-export const zProblemCode = z.enum(['second_factor_required', 'email_verification_required']);
+export const zProblemCode = z.enum([
+  'second_factor_required',
+  'email_verification_required',
+  'signup_closed'
+]);
 
 /**
  * RFC 7807 Problem Details

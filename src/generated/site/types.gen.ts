@@ -426,7 +426,11 @@ export type LintFinding = {
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
-export const ProblemCode = { SECOND_FACTOR_REQUIRED: 'second_factor_required', EMAIL_VERIFICATION_REQUIRED: 'email_verification_required' } as const;
+export const ProblemCode = {
+  SECOND_FACTOR_REQUIRED: 'second_factor_required',
+  EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
+  SIGNUP_CLOSED: 'signup_closed'
+} as const;
 
 /**
  * A machine-readable reason a client branches on, beyond the HTTP status
@@ -2131,9 +2135,17 @@ export type SiteOAuthAuthorizationRequest = {
    */
   clientName: string;
   /**
+   * Host of the client's metadata document URL when its client_id is one; absent for a registered client
+   */
+  clientHost?: string;
+  /**
    * The URL the user is sent back to
    */
   redirectUri: string;
+  /**
+   * The redirect URI is on a loopback host: any program on the user's machine can be listening there
+   */
+  localRedirect: boolean;
   /**
    * Scopes the client asked for that sphericon will grant by default
    */
@@ -2671,6 +2683,53 @@ export type SiteSesConfigInput = {
 };
 
 /**
+ * The Workspace's Setup checklist: a point-in-time read model, never ticked by hand
+ */
+export type SiteSetupProgress = {
+  steps: SiteSetupSteps;
+  /**
+   * Every step is done
+   */
+  complete: boolean;
+};
+
+/**
+ * Where one Setup checklist step stands, read off the Workspace's own data
+ */
+export const SiteSetupStepStatus = {
+  TODO: 'todo',
+  PENDING: 'pending',
+  DONE: 'done'
+} as const;
+
+/**
+ * Where one Setup checklist step stands, read off the Workspace's own data
+ */
+export type SiteSetupStepStatus = typeof SiteSetupStepStatus[keyof typeof SiteSetupStepStatus];
+
+/**
+ * The four Setup checklist steps, in the order the checklist shows them; none blocks another
+ */
+export type SiteSetupSteps = {
+  /**
+   * At least one Integration exists
+   */
+  integration: SiteSetupStepStatus;
+  /**
+   * At least one Sending domain is verified; pending while one exists unverified
+   */
+  sendingDomain: SiteSetupStepStatus;
+  /**
+   * At least one Contact exists, from any source
+   */
+  contact: SiteSetupStepStatus;
+  /**
+   * At least one Outbound message was sent, from any surface (a Test send is not one)
+   */
+  sentEmail: SiteSetupStepStatus;
+};
+
+/**
  * SMTP config without the password
  */
 export type SiteSmtpConfig = {
@@ -2777,6 +2836,17 @@ export type SiteTestSendBroadcastInput = {
    * Address to send the rendered preview to
    */
   email: EmailAddress;
+};
+
+/**
+ * What a test send did: the address the preview went out from
+ */
+export type SiteTestSendBroadcastResult = {
+  /**
+   * The From address of the preview. A Workspace with a verified Sending domain gets its own
+   * domain; one without gets the System sender, which is not the address Contacts will see.
+   */
+  from: EmailAddress;
 };
 
 /**
@@ -3346,6 +3416,11 @@ export type SiteWorkspaceResource = {
    */
   billingUrl?: string | null;
   /**
+   * The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its
+   * own host, otherwise the app origin.
+   */
+  mcpUrl: string;
+  /**
    * The Staff holds active now, oldest key first; empty while nothing holds sending.
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed.
@@ -3732,6 +3807,10 @@ export type SiteAuthRegisterData = {
 };
 
 export type SiteAuthRegisterErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 conflict response
    */
@@ -5626,15 +5705,19 @@ export type SiteBroadcastsTestSendErrors = {
    * RFC 7807 validation response
    */
   422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
 };
 
 export type SiteBroadcastsTestSendError = SiteBroadcastsTestSendErrors[keyof SiteBroadcastsTestSendErrors];
 
 export type SiteBroadcastsTestSendResponses = {
   /**
-   * There is no content to send for this request, but the headers may be useful.
+   * The request has succeeded.
    */
-  204: void;
+  200: SiteTestSendBroadcastResult;
 };
 
 export type SiteBroadcastsTestSendResponse = SiteBroadcastsTestSendResponses[keyof SiteBroadcastsTestSendResponses];
@@ -7224,6 +7307,33 @@ export type SiteSendingDomainsVerifyResponses = {
 };
 
 export type SiteSendingDomainsVerifyResponse = SiteSendingDomainsVerifyResponses[keyof SiteSendingDomainsVerifyResponses];
+
+export type SiteSetupChecklistGetData = {
+  body?: never;
+  path: {
+    slug: string;
+  };
+  query?: never;
+  url: '/workspaces/{slug}/setup-checklist';
+};
+
+export type SiteSetupChecklistGetErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteSetupChecklistGetError = SiteSetupChecklistGetErrors[keyof SiteSetupChecklistGetErrors];
+
+export type SiteSetupChecklistGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSetupProgress;
+};
+
+export type SiteSetupChecklistGetResponse = SiteSetupChecklistGetResponses[keyof SiteSetupChecklistGetResponses];
 
 export type SiteSuppressionsListData = {
   body?: never;

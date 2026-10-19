@@ -13,6 +13,7 @@ import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
 import { Route as securityRoute } from '../routes/account/security.tsx'
 import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
 import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
+import { Route as teamRoute } from '../routes/workspaces/$slug/settings/team.tsx'
 import { page } from '../test/payloads.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
@@ -34,6 +35,7 @@ const workspace = (over: Partial<SiteWorkspaceResource>): SiteWorkspaceResource 
   collectKey: 'ck',
   postalAddress: '',
   accountLinkAvailable: false,
+  mcpUrl: 'https://sphericon.test',
   holds: [],
   role: 'member',
   createdAt: '2026-01-01T00:00:00Z',
@@ -48,6 +50,21 @@ test('renders the workspace sidebar and no suspension banner for an active works
 
   await expect.element(screen.getByText('Overview', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Sending is suspended')).not.toBeInTheDocument()
+})
+
+test('the settings pages replace the workspace sidebar with the settings one', async () => {
+  worker.use(list([workspace({})]))
+  const { screen } = await renderWithRouter(
+    <WorkspaceLayout />,
+    routeMount(teamRoute, { slug: 'acme' }),
+  )
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Back to workspace', exact: true }))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Contacts', exact: true }))
+    .not.toBeInTheDocument()
 })
 
 test('a suspended workspace shows the banner with the reason', async () => {

@@ -77,3 +77,29 @@ test('shows the failure and keeps the form when the link is rejected', async () 
   await expect.element(screen.getByText('invalid or expired verification link')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Set password' })).toBeInTheDocument()
 })
+
+test('drops the used token from the address after verifying', async () => {
+  worker.use(handleSiteAuthVerifyEmail(() => HttpResponse.json({})))
+  const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
+
+  await fillAndSubmit(screen, 's3cret-pass')
+
+  await expect.element(screen.getByText('Email verified')).toBeInTheDocument()
+  expect(navigate).toHaveBeenCalledWith({
+    to: verifyEmailRoute.to,
+    search: { token: '' },
+    replace: true,
+  })
+})
+
+test('offers no form when the address carries no token', async () => {
+  const { screen } = await renderWithRouter(<VerifyEmailPage />, {
+    ...mount,
+    initialPath: `${mount.initialPath}?token=`,
+  })
+
+  await expect
+    .element(screen.getByText('This verification link is invalid or has expired.'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Set password' })).not.toBeInTheDocument()
+})

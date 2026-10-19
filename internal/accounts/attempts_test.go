@@ -204,3 +204,52 @@ func TestResetBudgetGrantsExactlyThresholdSlotsUnderConcurrency(t *testing.T) {
 	wg.Wait()
 	assert.EqualValues(t, 3, granted.Load())
 }
+
+func TestTestSendIsCappedPerWorkspacePerDayAcrossUsers(t *testing.T) {
+	a, c, _ := newAttempts(t)
+	ctx := t.Context()
+
+	// Five Users, four sends each: no User passes its hourly cap, the Workspace passes its daily one.
+	for i := range accounts.TestSendPerWorkspaceDay {
+		got, err := a.TakeTestSend(ctx, int64(i/4+1), fixtures.GlobexID)
+		require.NoError(t, err)
+		require.Zero(t, got, "send %d is within both caps", i+1)
+	}
+
+	got, err := a.TakeTestSend(ctx, 99, fixtures.GlobexID)
+	require.NoError(t, err)
+	assert.Equal(t, accounts.TestSendPerWorkspaceDay, got.Limit, "the 21st in a day is refused by the Workspace cap")
+	assert.Positive(t, got.Wait)
+
+	other, err := a.TakeTestSend(ctx, 99, fixtures.AcmeID)
+	require.NoError(t, err)
+	assert.Zero(t, other, "another Workspace has its own budget")
+
+	c.advance(24*time.Hour + time.Minute)
+	again, err := a.TakeTestSend(ctx, 98, fixtures.GlobexID)
+	require.NoError(t, err)
+	assert.Zero(t, again, "the window ends a day after the last granted send")
+}
+
+func TestTestSendRefusedByTheWorkspaceCapKeepsTheUsersSlot(t *testing.T) {
+	a, _, _ := newAttempts(t)
+	ctx := t.Context()
+	for i := range accounts.TestSendPerWorkspaceDay {
+		got, err := a.TakeTestSend(ctx, int64(i/4+1), fixtures.GlobexID)
+		require.NoError(t, err)
+		require.Zero(t, got)
+	}
+
+	// User 99 is turned away by Globex's cap more often than its own hourly cap allows.
+	for range 2 * accounts.TestSendPerUserHour {
+		got, err := a.TakeTestSend(ctx, 99, fixtures.GlobexID)
+		require.NoError(t, err)
+		require.Equal(t, accounts.TestSendPerWorkspaceDay, got.Limit)
+	}
+
+	for i := range accounts.TestSendPerUserHour {
+		got, err := a.TakeTestSend(ctx, 99, fixtures.AcmeID)
+		require.NoError(t, err)
+		require.Zero(t, got, "send %d: the refusals spent none of the User's slots", i+1)
+	}
+}

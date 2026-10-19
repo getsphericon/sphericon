@@ -25,12 +25,17 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 	case err != nil:
 		return nil, err
 	}
-	return &siteapi.SiteOAuthAuthorizationRequest{
-		ClientName:  req.ClientName,
-		RedirectUri: req.RedirectURI,
-		Scopes:      orEmpty(req.Scopes),
-		SendScopes:  orEmpty(req.SendScopes),
-	}, nil
+	out := &siteapi.SiteOAuthAuthorizationRequest{
+		ClientName:    req.ClientName,
+		RedirectUri:   req.RedirectURI,
+		LocalRedirect: req.LocalRedirect,
+		Scopes:        orEmpty(req.Scopes),
+		SendScopes:    orEmpty(req.SendScopes),
+	}
+	if req.ClientHost != "" {
+		out.ClientHost = siteapi.NewOptString(req.ClientHost)
+	}
+	return out, nil
 }
 
 // SiteOAuthDecide records the signed-in user's consent decision. The token the

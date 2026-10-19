@@ -1,4 +1,4 @@
-import { Badge, Button, Group, Stack } from '@mantine/core'
+import { Badge, Button, Group, Stack, Title } from '@mantine/core'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
@@ -47,7 +47,8 @@ export function BroadcastsListPage() {
 
   return (
     <Stack>
-      <Group justify="flex-end">
+      <Group justify="space-between" align="center">
+        <Title order={2}>{t(($) => $.nav.broadcasts)}</Title>
         <ButtonLink to={broadcastsCreateRoute.to} params={{ slug }}>
           {t(($) => $.broadcasts.addBroadcast)}
         </ButtonLink>

@@ -5,11 +5,10 @@ import "testing"
 func TestNormalize(t *testing.T) {
 	cases := map[string]string{
 		"en":      "en",
-		"ru":      "ru",
-		"es":      "es",
 		"":        "en",
 		"de":      "en",
 		"EN":      "en", // case-sensitive: only exact matches are supported
+		"ru":      "en",
 		"ru-RU":   "en",
 		"garbage": "en",
 	}
@@ -28,16 +27,6 @@ func TestConfigureAndTranslate(t *testing.T) {
 	Configure("en")
 	if got := T("errors.name_required", nil); got != "name is required" {
 		t.Errorf("en errors.name_required = %q", got)
-	}
-
-	Configure("ru")
-	if got := T("errors.name_required", nil); got != "укажите имя" {
-		t.Errorf("ru errors.name_required = %q", got)
-	}
-
-	Configure("es")
-	if got := T("errors.name_required", nil); got != "el nombre es obligatorio" {
-		t.Errorf("es errors.name_required = %q", got)
 	}
 
 	// Unknown locale falls back to English.

@@ -10,7 +10,7 @@ back up, how, how to rehearse a restore, and what the instance does once it is r
 | -------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | The PostgreSQL database    | Your database server            | Contacts, events, Outbound messages, automations, the job queue and the event outbox.                 |
 | `SPHERICON_ENCRYPTION_KEY` | Your secret store / environment | Decrypts the provider credentials stored in the database. Without it a restored database cannot send. |
-| `SPHERICON_JWT_SECRET`     | Your secret store / environment | Signs session tokens. Losing it signs every user out; it does not lose data.                          |
+| `SPHERICON_JWT_SECRET`     | Your secret store / environment | Signs session tokens and mailed links. Losing it signs every user out; it does not lose data.         |
 
 ### Secrets {#secrets}
 
@@ -21,6 +21,23 @@ dump that travels with its key defeats the encryption of the stored provider cre
 - A restored database paired with a **different** `SPHERICON_ENCRYPTION_KEY` cannot decrypt the stored
   SMTP or SES credentials. You would have to re-enter every provider credential.
 - A **different** `SPHERICON_JWT_SECRET` only invalidates existing sessions; users sign in again.
+  To avoid that, rotate it through `SPHERICON_JWT_SECRET_SECONDARY`
+  ([Security hardening](./security#rotating-the-jwt-secret)).
+
+### Rotating the encryption key {#rotating-the-encryption-key}
+
+A dump holds ciphertext under whichever keys were primary when the rows were last written. After
+`sphericon encryption-key reencrypt` the live database is under the primary key, but **a dump taken
+before it is still under the old key**, and restoring it needs that key.
+
+- Before you retire an old key (`sphericon encryption-key retire`), keep the keyset that still has
+  it in your secret store, next to the backups it can read, for as long as you keep those backups.
+- Take a fresh database backup after `reencrypt` reports nothing left to rewrite, and back up the
+  new keyset with it. Once the older backups have expired, so can the old keyset.
+- Never delete the previous keyset before the new one is backed up and a restore of a recent dump
+  has been rehearsed with it.
+
+The procedure itself is in [Security hardening](./security#rotating-the-encryption-key).
 
 ## Minimum: scheduled `pg_dump`
 

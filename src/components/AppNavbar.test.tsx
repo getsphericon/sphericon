@@ -6,7 +6,7 @@ import { Route as broadcastsRoute } from '../routes/workspaces/$slug/broadcasts/
 import { Route as contactsRoute } from '../routes/workspaces/$slug/contacts/index.tsx'
 import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
 import { Route as segmentsRoute } from '../routes/workspaces/$slug/segments/index.tsx'
-import { Route as settingsRoute } from '../routes/workspaces/$slug/settings.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$slug/settings/index.tsx'
 import { Route as templatesRoute } from '../routes/workspaces/$slug/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$slug/transactional-emails/index.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
@@ -31,4 +31,18 @@ test.each(SECTIONS)('%s links to its workspace-scoped route', async (label, targ
   await expect
     .element(screen.getByRole('link', { name: label, exact: true }))
     .toHaveAttribute('href', routeMount(target, { slug: 'acme' }).initialPath)
+})
+
+test('only the section being viewed is current, the overview not on a page under it', async () => {
+  const { screen } = await renderWithRouter(
+    <AppNavbar slug="acme" />,
+    routeMount(contactsRoute, { slug: 'acme' }),
+  )
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Contacts', exact: true }))
+    .toHaveAttribute('aria-current', 'page')
+  await expect
+    .element(screen.getByRole('link', { name: 'Overview', exact: true }))
+    .not.toHaveAttribute('aria-current')
 })

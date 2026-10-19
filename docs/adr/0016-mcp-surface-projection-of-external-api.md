@@ -51,7 +51,12 @@ modelled and stay out.
   serves the RFC 9728 / RFC 8414 metadata, public-client registration (PKCE S256 only), `/oauth/authorize`
   (hands off to the SPA consent route) and `/oauth/token`, which issues an **ordinary scoped API
   token** (no refresh token; it lives until revoked like any API token). Send-class scopes are
-  granted only when the user opts in on the consent screen. Phase 3: shipped
+  granted only when the user opts in on the consent screen. A `client_id` that is an https URL is a
+  Client ID Metadata Document (MCP spec 2025-11-25): any such client is trusted behind the consent
+  screen (no allowlist). The document is fetched through the SSRF-hardened client (the Instance's
+  outbound allowlist applies), must name its own URL as `client_id` and list every redirect URI, and
+  is cached on the `oauth_clients` row for its `Cache-Control` max-age (default 1 hour, at most 24).
+  The consent screen shows the client's host and warns about a localhost redirect. Phase 3: shipped
   playbooks served as MCP prompts.
 
 ## Implemented

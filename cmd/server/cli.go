@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/changelog"
@@ -20,6 +21,7 @@ type commandOps interface {
 	userOps
 	staffOps
 	serviceCredentialOps
+	rekeyOps
 }
 
 // deps is what the commands reach outside themselves for, so tests can swap it.
@@ -28,6 +30,9 @@ type deps struct {
 	// changelog is the text `upgrade-notes` reads: the one embedded in this binary.
 	changelog string
 	now       func() time.Time
+	// encryptionKey is the keyset the process is configured with (SPHERICON_ENCRYPTION_KEY or its
+	// file), for the key commands that need no database.
+	encryptionKey func() (string, error)
 	// doctor is what `doctor` reaches outside the process for.
 	doctor doctorSeams
 	// open boots the minimal command app (no listener, no event router, no workers) and
@@ -38,10 +43,11 @@ type deps struct {
 
 func newDeps(env string) deps {
 	return deps{
-		env:       env,
-		changelog: changelog.Embedded(),
-		now:       time.Now,
-		doctor:    newDoctorSeams(),
+		env:           env,
+		changelog:     changelog.Embedded(),
+		now:           time.Now,
+		encryptionKey: func() (string, error) { return config.EncryptionKey(env) },
+		doctor:        newDoctorSeams(),
 		open: func(ctx context.Context) (commandOps, func(), error) {
 			a, err := app.NewCommandApp(env)
 			if err != nil {
@@ -63,6 +69,7 @@ func newRoot(d deps) *cli.Command {
 		Commands: []*cli.Command{
 			versionCommand(),
 			genkeyCommand(),
+			encryptionKeyCommand(d),
 			migrateCommand(d.env),
 			doctorCommand(d),
 			upgradeCommand(),
@@ -81,11 +88,16 @@ func out(cmd *cli.Command) io.Writer { return cmd.Root().Writer }
 
 // withOps runs a staff member command against the booted command app, under a timeout.
 func (d deps) withOps(run func(ctx context.Context, cmd *cli.Command, ops commandOps) error) cli.ActionFunc {
+	return d.withOpsWithin(30*time.Second, run)
+}
+
+// withOpsWithin is withOps with its own timeout, for a command that walks a whole table.
+func (d deps) withOpsWithin(timeout time.Duration, run func(ctx context.Context, cmd *cli.Command, ops commandOps) error) cli.ActionFunc {
 	return func(ctx context.Context, cmd *cli.Command) error {
 		if cmd.Args().Present() {
 			return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
 		}
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 		ops, closeApp, err := d.open(ctx)
 		if err != nil {

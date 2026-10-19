@@ -126,7 +126,7 @@ func TestSuspendingFreezesSendsThroughOutboundAndNothingElse(t *testing.T) {
 
 	held, ok := h.sendOnAPI(t, "held@example.com").(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok, "a send is refused with a 4xx")
-	assert.Equal(t, outbound.HoldDetail(outbound.HoldSuspended), held.Detail.Value)
+	assert.Equal(t, outbound.Detail(outbound.HoldSuspended), held.Detail.Value)
 	assert.Empty(t, h.env.CustomerMail.Messages())
 
 	collected, err := h.env.CollectAcme(t).CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{})

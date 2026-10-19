@@ -3,15 +3,13 @@ import { initReactI18next } from 'react-i18next'
 import * as z from 'zod'
 
 import en from '../locales/en/translation.json' with { type: 'json' }
-import es from '../locales/es/translation.json' with { type: 'json' }
-import ru from '../locales/ru/translation.json' with { type: 'json' }
 
 // Locale is a property of the instance (a SaaS deployment runs per country),
 // fixed at startup — there is no in-app language switcher and no browser
 // detection. The backend substitutes window.__APP_LOCALE__ into index.html at
 // serve time (see internal/server/spa.go); Vite does the same in dev. We read it
 // synchronously here, so no extra request is needed at boot.
-export const SUPPORTED_LOCALES = ['en', 'ru', 'es'] as const
+export const SUPPORTED_LOCALES = ['en'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]
 
 function isLocale(value: unknown): value is Locale {
@@ -40,8 +38,6 @@ void i18n.use(initReactI18next).init({
   fallbackLng: 'en',
   resources: {
     en: { translation: en },
-    ru: { translation: ru },
-    es: { translation: es },
   },
   interpolation: {
     escapeValue: false,

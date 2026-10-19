@@ -210,6 +210,15 @@ model SiteTestSendBroadcastInput {
   email: EmailAddress;
 }
 
+/** What a test send did: the address the preview went out from */
+model SiteTestSendBroadcastResult {
+  /**
+   * The From address of the preview. A Workspace with a verified Sending domain gets its own
+   * domain; one without gets the System sender, which is not the address Contacts will see.
+   */
+  from: EmailAddress;
+}
+
 @tag("Site Broadcasts")
 interface SiteBroadcasts
   extends WorkspaceCrud<
@@ -238,15 +247,20 @@ interface SiteBroadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Send a one-off rendered preview to a single address */
+  /**
+   * Send a one-off rendered preview to a single address. While the Workspace has no verified
+   * Sending domain it goes from the System sender and only to the asking User's own address
+   * (ADR 0041): another address is refused with 422, the System sender's caps answer 429.
+   */
   @action("test-send")
   @autoRoute
   testSend(
     ...ResourceParameters<SiteBroadcastResource>,
     @body body: SiteTestSendBroadcastInput,
   ):
-    | NoContentResponse
+    | SiteTestSendBroadcastResult
     | BadRequestProblem
     | NotFoundProblem
-    | UnprocessableEntityProblem;
+    | UnprocessableEntityProblem
+    | TooManyRequestsProblem;
 }

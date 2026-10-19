@@ -109,12 +109,14 @@ type Config struct {
 
 // Validate refuses a configuration a Staff surface cannot run on. It is checked
 // only when the feature is licensed: an unlicensed instance needs none of it.
-func (c Config) Validate(siteSecret string) error {
+func (c Config) Validate(siteSecrets []string) error {
 	if len(c.Secret) < minSecretLength {
 		return fmt.Errorf("SPHERICON_STAFF_JWT_SECRET is required with the staff license and must be at least %d characters (e.g. `openssl rand -hex 32`)", minSecretLength)
 	}
-	if subtle.ConstantTimeCompare([]byte(c.Secret), []byte(siteSecret)) == 1 {
-		return errors.New("SPHERICON_STAFF_JWT_SECRET must differ from SPHERICON_JWT_SECRET: a StaffMember session must never verify as a User's")
+	for _, siteSecret := range siteSecrets {
+		if subtle.ConstantTimeCompare([]byte(c.Secret), []byte(siteSecret)) == 1 {
+			return errors.New("SPHERICON_STAFF_JWT_SECRET must differ from SPHERICON_JWT_SECRET and SPHERICON_JWT_SECRET_SECONDARY: a StaffMember session must never verify as a User's")
+		}
 	}
 	if c.SessionTTL <= 0 {
 		return errors.New("SPHERICON_STAFF_SESSION_TTL must be positive")
