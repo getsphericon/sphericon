@@ -17,8 +17,8 @@ local linters = new Mapping {
     }
     ["oxfmt"] {
         glob = List("**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json", "**/*.jsonc", "**/*.md", "**/*.yml", "**/*.yaml")
-        check = "pnpm exec oxfmt --check {{files}}"
-        fix = "pnpm exec oxfmt {{files}}"
+        check = "pnpm exec oxfmt --check --no-error-on-unmatched-pattern {{files}}"
+        fix = "pnpm exec oxfmt --no-error-on-unmatched-pattern {{files}}"
     }
     // Unused files/exports/dependencies; whole-project, check only (never --fix).
     ["knip"] {

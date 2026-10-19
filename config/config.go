@@ -365,6 +365,9 @@ func Load(envName string) (*Config, error) {
 			vars[k] = v
 		}
 	}
+	if err := readSecretFiles(vars); err != nil {
+		return nil, err
+	}
 	seedDefaults(vars, envName)
 
 	var e environment
@@ -522,6 +525,39 @@ func readEnvFiles(files []string) (map[string]string, error) {
 		maps.Copy(vars, parsed)
 	}
 	return vars, nil
+}
+
+// secretVars are the variables that also accept a `<NAME>_FILE` sibling, the path of a file
+// holding the value (Docker and Kubernetes mount secrets as files).
+var secretVars = []string{
+	"DATABASE_URL",
+	"SPHERICON_JWT_SECRET",
+	"SPHERICON_ENCRYPTION_KEY",
+	"SPHERICON_SMTP_PASS",
+	"SPHERICON_LICENSE_KEY",
+}
+
+// readSecretFiles fills each secret variable from its `_FILE` sibling, trimming the trailing
+// newline. A value set directly wins and its file is never read; an unreadable or empty
+// file is an error naming the `_FILE` variable.
+func readSecretFiles(vars map[string]string) error {
+	for _, name := range secretVars {
+		fileVar := name + "_FILE"
+		path := vars[fileVar]
+		if path == "" || vars[name] != "" {
+			continue
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("%s: %w", fileVar, err)
+		}
+		value := strings.TrimRight(string(raw), "\r\n")
+		if value == "" {
+			return fmt.Errorf("%s: %s is empty", fileVar, path)
+		}
+		vars[name] = value
+	}
+	return nil
 }
 
 // seedDefaults fills the variables whose default depends on the environment name,

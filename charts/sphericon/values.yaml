@@ -8,10 +8,19 @@ imagePullSecrets: []
 
 replicaCount: 2
 
-# REQUIRED. Name of an existing Secret with the keys DATABASE_URL, SPHERICON_JWT_SECRET and
+# Required unless secretFiles.secretName is set. Name of an existing Secret with the keys DATABASE_URL, SPHERICON_JWT_SECRET and
 # SPHERICON_ENCRYPTION_KEY. The chart never creates it: the migrate hook Job runs before regular
 # resources, so the Secret must already exist.
 existingSecret: ''
+
+# Alternative to existingSecret for Docker/Kubernetes-style secret files (docs/self-hosting.md,
+# "Secrets from files"). secretName is an existing Secret mounted at /run/secrets/sphericon; keys lists
+# the variables it holds (DATABASE_URL, SPHERICON_JWT_SECRET, SPHERICON_ENCRYPTION_KEY,
+# SPHERICON_SMTP_PASS, SPHERICON_LICENSE_KEY), each exported as <KEY>_FILE. Set existingSecret too for
+# any variable not listed in keys.
+secretFiles:
+  secretName: ''
+  keys: []
 
 # Public base URL of the instance (SPHERICON_APP_URL).
 appUrl: ''

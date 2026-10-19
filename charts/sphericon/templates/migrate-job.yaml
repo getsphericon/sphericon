@@ -29,7 +29,17 @@ spec:
           image: {{ include "sphericon.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args: ["migrate"]
+          {{- if include "sphericon.envSecret" . }}
           envFrom:
             {{- include "sphericon.envFrom" . | nindent 12 }}
+          {{- end }}
           env:
             {{- include "sphericon.env" . | nindent 12 }}
+          {{- if .Values.secretFiles.secretName }}
+          volumeMounts:
+            {{- include "sphericon.secretFileMount" . | nindent 12 }}
+          {{- end }}
+      {{- if .Values.secretFiles.secretName }}
+      volumes:
+        {{- include "sphericon.secretFileVolume" . | nindent 8 }}
+      {{- end }}
