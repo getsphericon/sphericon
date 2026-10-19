@@ -259,6 +259,7 @@ export function WebhooksSection({ slug }: { slug: string }) {
       {webhooksQuery.isLoading ? <Loader /> : null}
 
       <DataTable
+        minHeight={200}
         withTableBorder
         records={records}
         idAccessor="id"

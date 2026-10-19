@@ -129,6 +129,7 @@ export function MembersSection({ slug }: { slug: string }) {
         {t(($) => $.settings.members.membersTitle)}
       </Title>
       <DataTable
+        minHeight={200}
         withTableBorder
         mb="lg"
         records={membersQuery.data ?? []}
@@ -241,6 +242,7 @@ export function MembersSection({ slug }: { slug: string }) {
       </form>
 
       <DataTable
+        minHeight={200}
         withTableBorder
         records={invitesQuery.data ?? []}
         idAccessor="id"

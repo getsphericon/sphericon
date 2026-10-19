@@ -309,6 +309,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
       ))}
 
       <DataTable
+        minHeight={200}
         withTableBorder
         records={records}
         idAccessor="id"

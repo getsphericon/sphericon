@@ -266,6 +266,7 @@ export function SendingDomainsSection({ slug }: { slug: string }) {
       {domainsQuery.isLoading ? <Loader /> : null}
 
       <DataTable
+        minHeight={200}
         withTableBorder
         records={records}
         idAccessor="id"

@@ -164,6 +164,7 @@ export function ApiKeysSection({ slug }: { slug: string }) {
       {tokensQuery.isLoading ? <Loader /> : null}
 
       <DataTable
+        minHeight={200}
         withTableBorder
         records={records}
         idAccessor="id"

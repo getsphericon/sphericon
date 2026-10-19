@@ -74,6 +74,7 @@ export function ActivityPage() {
       {eventsQuery.isLoading ? <Loader /> : null}
 
       <DataTable
+        minHeight={200}
         withTableBorder
         records={records}
         idAccessor="id"

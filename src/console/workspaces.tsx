@@ -78,6 +78,7 @@ export function ConsoleWorkspacesPage() {
         />
       ) : null}
       <DataTable
+        minHeight={200}
         withTableBorder
         highlightOnHover
         fetching={workspacesQuery.isFetching}

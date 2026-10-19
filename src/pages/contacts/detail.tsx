@@ -232,6 +232,7 @@ export function ContactDetailPage() {
       ) : null}
 
       <DataTable
+        minHeight={200}
         withTableBorder
         records={eventRecords}
         idAccessor="id"

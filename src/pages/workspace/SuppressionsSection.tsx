@@ -118,6 +118,7 @@ export function SuppressionsSection({ slug }: { slug: string }) {
       {suppressionsQuery.isLoading ? <Loader /> : null}
 
       <DataTable
+        minHeight={200}
         withTableBorder
         records={records}
         idAccessor="id"
