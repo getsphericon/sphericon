@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
@@ -100,6 +101,8 @@ type Client struct {
 	OAuthClient *OAuthClientClient
 	// OAuthCode is the client for interacting with the OAuthCode builders.
 	OAuthCode *OAuthCodeClient
+	// OAuthRefreshToken is the client for interacting with the OAuthRefreshToken builders.
+	OAuthRefreshToken *OAuthRefreshTokenClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
 	// OutboxMessage is the client for interacting with the OutboxMessage builders.
@@ -168,6 +171,7 @@ func (c *Client) init() {
 	c.Membership = NewMembershipClient(c.config)
 	c.OAuthClient = NewOAuthClientClient(c.config)
 	c.OAuthCode = NewOAuthCodeClient(c.config)
+	c.OAuthRefreshToken = NewOAuthRefreshTokenClient(c.config)
 	c.OutboundMessage = NewOutboundMessageClient(c.config)
 	c.OutboxMessage = NewOutboxMessageClient(c.config)
 	c.OutboxOffset = NewOutboxOffsetClient(c.config)
@@ -298,6 +302,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Membership:         NewMembershipClient(cfg),
 		OAuthClient:        NewOAuthClientClient(cfg),
 		OAuthCode:          NewOAuthCodeClient(cfg),
+		OAuthRefreshToken:  NewOAuthRefreshTokenClient(cfg),
 		OutboundMessage:    NewOutboundMessageClient(cfg),
 		OutboxMessage:      NewOutboxMessageClient(cfg),
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
@@ -355,6 +360,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Membership:         NewMembershipClient(cfg),
 		OAuthClient:        NewOAuthClientClient(cfg),
 		OAuthCode:          NewOAuthCodeClient(cfg),
+		OAuthRefreshToken:  NewOAuthRefreshTokenClient(cfg),
 		OutboundMessage:    NewOutboundMessageClient(cfg),
 		OutboxMessage:      NewOutboxMessageClient(cfg),
 		OutboxOffset:       NewOutboxOffsetClient(cfg),
@@ -406,11 +412,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
-		c.Membership, c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage,
-		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.Visitor,
-		c.WebhookEndpoint, c.Workspace,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
+		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
+		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
+		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
+		c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -423,11 +429,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact, c.CustomField,
 		c.EmailTemplate, c.Event, c.Hold, c.InstanceState, c.Integration, c.Invitation,
-		c.Membership, c.OAuthClient, c.OAuthCode, c.OutboundMessage, c.OutboxMessage,
-		c.OutboxOffset, c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.StaffMember, c.Suppression, c.Tag,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.Visitor,
-		c.WebhookEndpoint, c.Workspace,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken,
+		c.OutboundMessage, c.OutboxMessage, c.OutboxOffset, c.RecoveryCode,
+		c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain, c.ServiceCredential,
+		c.StaffMember, c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe,
+		c.Usage, c.User, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -474,6 +480,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OAuthClient.mutate(ctx, m)
 	case *OAuthCodeMutation:
 		return c.OAuthCode.mutate(ctx, m)
+	case *OAuthRefreshTokenMutation:
+		return c.OAuthRefreshToken.mutate(ctx, m)
 	case *OutboundMessageMutation:
 		return c.OutboundMessage.mutate(ctx, m)
 	case *OutboxMessageMutation:
@@ -3318,6 +3326,22 @@ func (c *OAuthClientClient) QueryCodes(_m *OAuthClient) *OAuthCodeQuery {
 	return query
 }
 
+// QueryRefreshTokens queries the refresh_tokens edge of a OAuthClient.
+func (c *OAuthClientClient) QueryRefreshTokens(_m *OAuthClient) *OAuthRefreshTokenQuery {
+	query := (&OAuthRefreshTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthclient.Table, oauthclient.FieldID, id),
+			sqlgraph.To(oauthrefreshtoken.Table, oauthrefreshtoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, oauthclient.RefreshTokensTable, oauthclient.RefreshTokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OAuthClientClient) Hooks() []Hook {
 	return c.hooks.OAuthClient
@@ -3489,6 +3513,171 @@ func (c *OAuthCodeClient) mutate(ctx context.Context, m *OAuthCodeMutation) (Val
 		return (&OAuthCodeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown OAuthCode mutation op: %q", m.Op())
+	}
+}
+
+// OAuthRefreshTokenClient is a client for the OAuthRefreshToken schema.
+type OAuthRefreshTokenClient struct {
+	config
+}
+
+// NewOAuthRefreshTokenClient returns a client for the OAuthRefreshToken from the given config.
+func NewOAuthRefreshTokenClient(c config) *OAuthRefreshTokenClient {
+	return &OAuthRefreshTokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `oauthrefreshtoken.Hooks(f(g(h())))`.
+func (c *OAuthRefreshTokenClient) Use(hooks ...Hook) {
+	c.hooks.OAuthRefreshToken = append(c.hooks.OAuthRefreshToken, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `oauthrefreshtoken.Intercept(f(g(h())))`.
+func (c *OAuthRefreshTokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OAuthRefreshToken = append(c.inters.OAuthRefreshToken, interceptors...)
+}
+
+// Create returns a builder for creating a OAuthRefreshToken entity.
+func (c *OAuthRefreshTokenClient) Create() *OAuthRefreshTokenCreate {
+	mutation := newOAuthRefreshTokenMutation(c.config, OpCreate)
+	return &OAuthRefreshTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OAuthRefreshToken entities.
+func (c *OAuthRefreshTokenClient) CreateBulk(builders ...*OAuthRefreshTokenCreate) *OAuthRefreshTokenCreateBulk {
+	return &OAuthRefreshTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OAuthRefreshTokenClient) MapCreateBulk(slice any, setFunc func(*OAuthRefreshTokenCreate, int)) *OAuthRefreshTokenCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OAuthRefreshTokenCreateBulk{err: fmt.Errorf("calling to OAuthRefreshTokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OAuthRefreshTokenCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OAuthRefreshTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OAuthRefreshToken.
+func (c *OAuthRefreshTokenClient) Update() *OAuthRefreshTokenUpdate {
+	mutation := newOAuthRefreshTokenMutation(c.config, OpUpdate)
+	return &OAuthRefreshTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OAuthRefreshTokenClient) UpdateOne(_m *OAuthRefreshToken) *OAuthRefreshTokenUpdateOne {
+	mutation := newOAuthRefreshTokenMutation(c.config, OpUpdateOne, withOAuthRefreshToken(_m))
+	return &OAuthRefreshTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OAuthRefreshTokenClient) UpdateOneID(id int64) *OAuthRefreshTokenUpdateOne {
+	mutation := newOAuthRefreshTokenMutation(c.config, OpUpdateOne, withOAuthRefreshTokenID(id))
+	return &OAuthRefreshTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OAuthRefreshToken.
+func (c *OAuthRefreshTokenClient) Delete() *OAuthRefreshTokenDelete {
+	mutation := newOAuthRefreshTokenMutation(c.config, OpDelete)
+	return &OAuthRefreshTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OAuthRefreshTokenClient) DeleteOne(_m *OAuthRefreshToken) *OAuthRefreshTokenDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OAuthRefreshTokenClient) DeleteOneID(id int64) *OAuthRefreshTokenDeleteOne {
+	builder := c.Delete().Where(oauthrefreshtoken.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OAuthRefreshTokenDeleteOne{builder}
+}
+
+// Query returns a query builder for OAuthRefreshToken.
+func (c *OAuthRefreshTokenClient) Query() *OAuthRefreshTokenQuery {
+	return &OAuthRefreshTokenQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOAuthRefreshToken},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OAuthRefreshToken entity by its id.
+func (c *OAuthRefreshTokenClient) Get(ctx context.Context, id int64) (*OAuthRefreshToken, error) {
+	return c.Query().Where(oauthrefreshtoken.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OAuthRefreshTokenClient) GetX(ctx context.Context, id int64) *OAuthRefreshToken {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryClient queries the client edge of a OAuthRefreshToken.
+func (c *OAuthRefreshTokenClient) QueryClient(_m *OAuthRefreshToken) *OAuthClientQuery {
+	query := (&OAuthClientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthrefreshtoken.Table, oauthrefreshtoken.FieldID, id),
+			sqlgraph.To(oauthclient.Table, oauthclient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oauthrefreshtoken.ClientTable, oauthrefreshtoken.ClientColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAPIToken queries the api_token edge of a OAuthRefreshToken.
+func (c *OAuthRefreshTokenClient) QueryAPIToken(_m *OAuthRefreshToken) *ApiTokenQuery {
+	query := (&ApiTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthrefreshtoken.Table, oauthrefreshtoken.FieldID, id),
+			sqlgraph.To(apitoken.Table, apitoken.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, oauthrefreshtoken.APITokenTable, oauthrefreshtoken.APITokenColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OAuthRefreshTokenClient) Hooks() []Hook {
+	return c.hooks.OAuthRefreshToken
+}
+
+// Interceptors returns the client interceptors.
+func (c *OAuthRefreshTokenClient) Interceptors() []Interceptor {
+	return c.inters.OAuthRefreshToken
+}
+
+func (c *OAuthRefreshTokenClient) mutate(ctx context.Context, m *OAuthRefreshTokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OAuthRefreshTokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OAuthRefreshTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OAuthRefreshTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OAuthRefreshTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OAuthRefreshToken mutation op: %q", m.Op())
 	}
 }
 
@@ -6697,19 +6886,19 @@ type (
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
 		Hold, InstanceState, Integration, Invitation, Membership, OAuthClient,
-		OAuthCode, OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode,
-		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
-		StaffMember, Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User,
-		Visitor, WebhookEndpoint, Workspace []ent.Hook
+		OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage, OutboxOffset,
+		RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
+		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
+		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, Broadcast,
 		BroadcastRecipient, Confirmation, Contact, CustomField, EmailTemplate, Event,
 		Hold, InstanceState, Integration, Invitation, Membership, OAuthClient,
-		OAuthCode, OutboundMessage, OutboxMessage, OutboxOffset, RecoveryCode,
-		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
-		StaffMember, Suppression, Tag, TrackingHostChange, Unsubscribe, Usage, User,
-		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage, OutboxOffset,
+		RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
+		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
+		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

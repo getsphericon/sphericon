@@ -51,5 +51,7 @@ func (OAuthClient) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("codes", OAuthCode.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("refresh_tokens", OAuthRefreshToken.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

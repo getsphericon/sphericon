@@ -50,7 +50,8 @@ modelled and stay out.
   client registration, consent screen in the SPA) for claude.ai connectors: `internal/oauthserver`
   serves the RFC 9728 / RFC 8414 metadata, public-client registration (PKCE S256 only), `/oauth/authorize`
   (hands off to the SPA consent route) and `/oauth/token`, which issues an **ordinary scoped API
-  token** (no refresh token; it lives until revoked like any API token). Send-class scopes are
+  token** that expires after an hour, with a rotating single-use refresh token (30 days): a refresh rotates the secret of the same token row, and replaying a used
+  refresh token revokes it. Send-class scopes are
   granted only when the user opts in on the consent screen. A `client_id` that is an https URL is a
   Client ID Metadata Document (MCP spec 2025-11-25): any such client is trusted behind the consent
   screen (no allowlist). The document is fetched through the SSRF-hardened client (the Instance's
@@ -79,7 +80,8 @@ Decisions taken while building it, so the contract and code are not the only rec
 - **OAuth.** `/.well-known/oauth-protected-resource` (also under `/mcp`),
   `/.well-known/oauth-authorization-server`, `POST /oauth/register`, `GET /oauth/authorize`,
   `POST /oauth/token`; the consent screen is the SPA route `/oauth/consent`, backed by
-  `/site/oauth/authorization`. Public clients only, PKCE S256 required, no refresh token. A
+  `/site/oauth/authorization`. Public clients only, PKCE S256 required; the `authorization_code` and `refresh_token` grants (the refresh token
+  is single use and rotates on every use; reuse revokes the grant). A
   `resource` parameter (RFC 8707), when sent to authorize or token, must equal the `/mcp` resource
   URL, otherwise `invalid_target`; an absent one is accepted. The resource lives at
   `${SPHERICON_MCP_URL}/mcp` (`SPHERICON_MCP_URL`, default `SPHERICON_APP_URL`) so a deployment may give MCP its own host while
@@ -87,11 +89,12 @@ Decisions taken while building it, so the contract and code are not the only rec
   resource and the `SPHERICON_APP_URL` issuer, and the `WWW-Authenticate` challenge points at the metadata
   on the MCP host. The binary is host-agnostic and serves discovery on every host. Unknown scopes are dropped;
   `tokens:*` is never grantable, so a connector cannot mint credentials.
-- **Consent role.** Approving consent mints a non-expiring workspace token, so it takes the role
+- **Consent role.** Approving consent mints a workspace token (renewable by refresh), so it takes the role
   that may create one: owner or admin. Plain members are refused (403), and `/site` token creation
   and revocation follow the same rule.
 - **Tokens issued over OAuth** are ordinary API tokens named `<client> (MCP)`: listed and
-  revocable in workspace settings, no refresh, no expiry.
+  revocable in workspace settings (revoking one kills its refresh token too); hand-made API
+  tokens stay long-lived.
 
 ## Considered options
 

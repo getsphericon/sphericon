@@ -712,6 +712,37 @@ var (
 			},
 		},
 	}
+	// OauthRefreshTokensColumns holds the columns for the "oauth_refresh_tokens" table.
+	OauthRefreshTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "token_hash", Type: field.TypeString, Unique: true},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "used_at", Type: field.TypeTime, Nullable: true},
+		{Name: "client_id", Type: field.TypeInt64},
+		{Name: "api_token_id", Type: field.TypeInt64},
+	}
+	// OauthRefreshTokensTable holds the schema information for the "oauth_refresh_tokens" table.
+	OauthRefreshTokensTable = &schema.Table{
+		Name:       "oauth_refresh_tokens",
+		Columns:    OauthRefreshTokensColumns,
+		PrimaryKey: []*schema.Column{OauthRefreshTokensColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "oauth_refresh_tokens_oauth_clients_refresh_tokens",
+				Columns:    []*schema.Column{OauthRefreshTokensColumns[6]},
+				RefColumns: []*schema.Column{OauthClientsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "oauth_refresh_tokens_api_tokens_api_token",
+				Columns:    []*schema.Column{OauthRefreshTokensColumns[7]},
+				RefColumns: []*schema.Column{APITokensColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// OutboundMessagesColumns holds the columns for the "outbound_messages" table.
 	OutboundMessagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1301,6 +1332,7 @@ var (
 		MembershipsTable,
 		OauthClientsTable,
 		OauthCodesTable,
+		OauthRefreshTokensTable,
 		OutboundMessagesTable,
 		RecoveryCodesTable,
 		SchemaStateTable,
@@ -1400,6 +1432,11 @@ func init() {
 	OauthCodesTable.ForeignKeys[0].RefTable = OauthClientsTable
 	OauthCodesTable.Annotation = &entsql.Annotation{
 		Table: "oauth_codes",
+	}
+	OauthRefreshTokensTable.ForeignKeys[0].RefTable = OauthClientsTable
+	OauthRefreshTokensTable.ForeignKeys[1].RefTable = APITokensTable
+	OauthRefreshTokensTable.Annotation = &entsql.Annotation{
+		Table: "oauth_refresh_tokens",
 	}
 	OutboundMessagesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	OutboundMessagesTable.Annotation = &entsql.Annotation{

@@ -121,7 +121,7 @@ func (s *Service) Decide(ctx context.Context, d Decision) (string, error) {
 
 	code := rand.Text()
 	_, err = s.ent.OAuthCode.Create().
-		SetCodeHash(hashCode(code)).
+		SetCodeHash(hashSecret(code)).
 		SetClientID(client.ID).
 		SetWorkspaceID(d.WorkspaceID).
 		SetRedirectURI(d.RedirectURI).
@@ -186,7 +186,7 @@ func validPKCE(s string) bool {
 	return true
 }
 
-func hashCode(code string) string {
+func hashSecret(code string) string {
 	sum := sha256.Sum256([]byte(code))
 	return hex.EncodeToString(sum[:])
 }
