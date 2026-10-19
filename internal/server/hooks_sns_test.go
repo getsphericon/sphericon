@@ -1,6 +1,8 @@
 package server_test
 
 import (
+	"context"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -186,4 +188,63 @@ func TestSESHookCountsOutcomesAndDedupesRedelivery(t *testing.T) {
 	assert.Equal(t, 1, n)
 	scrape := metricstest.ScrapeMetrics(t)
 	assert.InDelta(t, 1, scrape.Value(t, "email_send_outcomes_total", map[string]string{"provider": "ses", "status": "complaint"}), 0)
+}
+
+// An SES Integration that names no Preset (made before Presets existed) reads its callbacks
+// with `ses`: the Preset is implied by the provider.
+func TestSESHookIsImpliedForAnSESIntegrationWithNoPreset(t *testing.T) {
+	env := setupHooks(t)
+
+	rec := postSNS(t, env, fixtures.IntegrationAcmeSesImpliedIngestKey, snsNotification(t, "permanent-bounce"))
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	got := outboxEvents(t, env, fixtures.ContactAliceEmail)
+	require.Len(t, got, 1)
+	assert.Equal(t, "ses", got[0].Provider)
+}
+
+// A certificate we cannot fetch is our failure, not an unauthentic request: 5xx, so SNS
+// retries, and nothing is published.
+func TestSESHookAnswers5xxWhenTheCertificateIsUnavailable(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithSNSCertificates(func(context.Context, string) (*x509.Certificate, error) {
+		return nil, errors.New("certificate host unreachable")
+	}))
+
+	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "permanent-bounce"))
+
+	assert.Equal(t, http.StatusBadGateway, rec.Code)
+	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
+}
+
+// A signing certificate on a host that is not Amazon's is the sender's fault: 4xx, and the
+// certificate is never fetched.
+func TestSESHookRefusesACertificateOnAnotherHost(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithSNSCertificates(func(context.Context, string) (*x509.Certificate, error) {
+		return nil, errors.New("must not be fetched")
+	}))
+	var notification map[string]string
+	require.NoError(t, json.Unmarshal([]byte(snsNotification(t, "permanent-bounce")), &notification))
+	notification["SigningCertURL"] = "https://evil.example.com/SimpleNotificationService.pem"
+	forged, err := json.Marshal(notification)
+	require.NoError(t, err)
+
+	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, string(forged))
+
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
+}
+
+// A callback authentic for one Preset is refused at an Integration of the other, both ways.
+func TestSESAndGenericIntegrationsRefuseEachOthersCallbacks(t *testing.T) {
+	env := setupHooks(t)
+	generic := fixtures.IntegrationAcmeGenericAIngestKey
+	ses := fixtures.IntegrationAcmeSesIngestKey
+
+	assert.Equal(t, http.StatusForbidden, postSNS(t, env, generic, snsNotification(t, "permanent-bounce")).Code)
+	assert.Equal(t, http.StatusForbidden, signedPost(t, env, ses, secretA, "msg_1", failureBody("evt_1", fixtures.ContactAliceEmail, true)).Code)
+	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
+
+	require.Equal(t, http.StatusOK, postSNS(t, env, ses, snsNotification(t, "permanent-bounce")).Code)
+	require.Equal(t, http.StatusOK, signedPost(t, env, generic, secretA, "msg_2", failureBody("evt_2", fixtures.ContactAliceEmail, true)).Code)
+	assert.Len(t, outboxEvents(t, env, fixtures.ContactAliceEmail), 2)
 }

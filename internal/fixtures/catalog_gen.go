@@ -477,6 +477,12 @@ const (
 	IntegrationAcmePostmarkName = "Postmark relay"
 	// IntegrationAcmeSesID is from fixtures/integrations.
 	IntegrationAcmeSesID = 2
+	// IntegrationAcmeSesImpliedID is from fixtures/integrations.
+	IntegrationAcmeSesImpliedID = 5
+	// IntegrationAcmeSesImpliedIngestKey is from fixtures/integrations.
+	IntegrationAcmeSesImpliedIngestKey = "omik_test_integrationacmesesimplied"
+	// IntegrationAcmeSesImpliedName is from fixtures/integrations.
+	IntegrationAcmeSesImpliedName = "Amazon SES (made before Presets, names none)"
 	// IntegrationAcmeSesIngestKey is from fixtures/integrations.
 	IntegrationAcmeSesIngestKey = "omik_test_integrationacmeses"
 	// IntegrationAcmeSesName is from fixtures/integrations.

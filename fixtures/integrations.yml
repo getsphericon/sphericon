@@ -28,6 +28,18 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 40}}'
+- id: 5 # fixture: IntegrationAcmeSesImplied
+  ingest_key: omik_test_integrationacmesesimplied
+  name: Amazon SES (made before Presets, names none)
+  channel: email
+  provider: ses
+  config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAIMPLIED\",\"from\":\"hello@codebasics.dev\"}" }}'
+  params_encrypted: '{{ encrypt "{\"topic_arn\":\"arn:aws:sns:eu-west-1:123456789012:acme-ses-events\"}" }}'
+  enabled: false
+  is_default: false
+  workspace_id: 1
+  created_at: '{{daysAgo 60}}'
+  updated_at: '{{daysAgo 60}}'
 
 # Globex (workspace 2).
 - id: 900 # fixture: IntegrationGlobex

@@ -91,7 +91,7 @@ Each kind names the `params` property that holds its secret.
 
 ### `transform`
 
-A pure function with a fixed output: no environment, no `input`, no modules. Each element it returns is
+A pure function with a fixed output: no environment, no `input`, no modules, and no `debug`, `stderr`, `now` or `input_filename` (a Preset that calls one is refused at load). Each element it returns is
 `{id, destination, kind, permanent, sending_domain?}`:
 
 - `id`: the provider's event id; with the destination it dedupes a redelivery.
