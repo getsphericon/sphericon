@@ -131,7 +131,7 @@ func (s *Service) fetchMetadata(ctx context.Context, clientID string) (*metadata
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return nil, 0, fmt.Errorf("%w: the client metadata document answered HTTP %d", ErrInvalidRequest, resp.StatusCode)
+		return nil, 0, fmt.Errorf("%w: the client metadata document could not be fetched", ErrInvalidRequest)
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxMetadataBytes+1))
 	if err != nil || len(body) > maxMetadataBytes {
