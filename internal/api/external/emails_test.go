@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const mjmlBody = `<mjml><mj-body><mj-section><mj-column><mj-text>Hi {{ name }}, your code is {{ code }}</mj-text></mj-column></mj-section></mj-body></mjml>`
+const htmlBody = `<p>Hi {{ name }}, your code is {{ code }}</p>`
 
 func seedTemplate(t *testing.T, db *ent.Client, workspaceID int64) *ent.EmailTemplate {
 	t.Helper()
@@ -25,7 +25,7 @@ func seedTemplate(t *testing.T, db *ent.Client, workspaceID int64) *ent.EmailTem
 		SetWorkspaceID(workspaceID).
 		SetName("Receipt").
 		SetSubject("Hello {{ name }}").
-		SetBody(mjmlBody).
+		SetBody(htmlBody).
 		Save(context.Background())
 	require.NoError(t, err)
 	return tmpl

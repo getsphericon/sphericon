@@ -21,7 +21,7 @@ func TestSiteAutomationsCRUDAndActivation(t *testing.T) {
 		Name:         "Welcome series",
 		TriggerEvent: "contact.created",
 		Steps: []siteapi.SiteAutomationStep{
-			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<mjml></mjml>")},
+			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p></p>")},
 			{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(3600)},
 		},
 	}, siteapi.SiteAutomationsCreateParams{Slug: slug})

@@ -33,7 +33,7 @@ model BroadcastResource {
   /** Sender email address (defaults to the integration's) */
   fromEmail?: EmailAddress | null;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags */
   body: string;
 
   /** Audience: the Segment this broadcast goes to; null means all active contacts */
@@ -69,7 +69,7 @@ model CreateBroadcastInput {
   /** Sender email address */
   fromEmail?: EmailAddress;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags */
   body?: string;
 }
 
@@ -87,7 +87,7 @@ model UpdateBroadcastInput {
   /** Sender email address */
   fromEmail?: EmailAddress;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags */
   body?: string;
 }
 

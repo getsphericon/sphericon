@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const emailStep = `{"type":"email","subject":"Hi {{ first_name }}","body":"<mjml><mj-body><mj-section><mj-column><mj-text>Hi {{ first_name }}</mj-text></mj-column></mj-section></mj-body></mjml>"}`
+const emailStep = `{"type":"email","subject":"Hi {{ first_name }}","body":"<p>Hi {{ first_name }}</p>"}`
 
 // drive runs RunStep until the run finishes (or a safety cap). tracker may be nil
 // (most tests don't assert on the unsubscribe footer).

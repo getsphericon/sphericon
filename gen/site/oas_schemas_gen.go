@@ -5035,7 +5035,7 @@ type SiteAutomationStep struct {
 	Type SiteAutomationStepType `json:"type"`
 	// Email subject (email steps).
 	Subject OptString `json:"subject"`
-	// Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
+	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
 	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
 	Body OptString `json:"body"`
 	// Delay before the next step, in seconds (wait steps).
@@ -5440,7 +5440,7 @@ type SiteBroadcastResource struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address (defaults to the integration's).
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// MJML body authored in the composer.
+	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
 	// Derived plain-text body.
 	BodyText string `json:"bodyText"`
@@ -6405,7 +6405,7 @@ type SiteCreateBroadcastInput struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body OptString `json:"body"`
 	// Target segment; null/omitted means all active contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
@@ -7376,7 +7376,7 @@ type SiteEmailTemplateResource struct {
 	Name string `json:"name"`
 	// Default subject line.
 	Subject string `json:"subject"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -12706,7 +12706,7 @@ type SiteUpdateBroadcastInput struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body OptString `json:"body"`
 	// Target segment; null means all active contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`

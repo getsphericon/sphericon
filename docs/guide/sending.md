@@ -5,8 +5,9 @@ sending domains and consent rules.
 
 ## Templates
 
-Templates are written in [MJML](https://mjml.io/), so responsive email works across clients, and
-are compiled when the message is sent. Subjects and bodies support [Liquid](https://shopify.github.io/liquid/)
+Templates carry email-ready HTML (tables and inline styles, so the message works across mail clients).
+A body that is not valid HTML, or a Liquid syntax error, is refused when it is saved and again when a
+send is planned. Subjects and bodies support [Liquid](https://shopify.github.io/liquid/)
 (conditionals and filters). Merge tags come from the contact: <code v-pre>{{ email }}</code>, <code v-pre>{{ first_name }}</code>,
 <code v-pre>{{ last_name }}</code> and any of its custom fields; transactional calls can add their own variables.
 Tracking (an open pixel, click rewriting and the unsubscribe footer) is layered on after
@@ -36,7 +37,7 @@ An automation starts when a contact does something and then runs an ordered list
 
 | Step         | What it does                                        |
 | ------------ | --------------------------------------------------- |
-| `email`      | Send a message with its own subject and MJML body.  |
+| `email`      | Send a message with its own subject and HTML body.  |
 | `wait`       | Pause for a number of seconds before the next step. |
 | `apply_tag`  | Add a tag to the enrolled contact.                  |
 | `remove_tag` | Remove a tag from the enrolled contact.             |

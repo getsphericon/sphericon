@@ -16,7 +16,7 @@ func TestRecordedEventTriggersAutomationEmail(t *testing.T) {
 	w.ActivateAutomation(Automation{
 		TriggerEvent: "e2e.signed_up",
 		Subject:      "Welcome from the automation",
-		Body:         MJML("Glad you signed up"),
+		Body:         HTML("Glad you signed up"),
 	})
 
 	// A non-matching event first, for a Contact the matching event never touches.
@@ -44,7 +44,7 @@ func TestAutomationHTTPStepCallsTheHookThenContinues(t *testing.T) {
 		Hook:         hook,
 		Body:         `{"email": "{{ email }}"}`,
 		Subject:      "After the hook",
-		EmailBody:    MJML("The hook was called"),
+		EmailBody:    HTML("The hook was called"),
 	})
 
 	w.RecordEvent(to, "e2e.hooked")

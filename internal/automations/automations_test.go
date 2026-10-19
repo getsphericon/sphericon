@@ -16,10 +16,10 @@ import (
 )
 
 func TestDecodeReadsTheStoredDefinition(t *testing.T) {
-	steps, err := automations.Decode(`[{"type":"email","subject":"Hi","body":"<mjml/>"},{"type":"wait","seconds":60},{"type":"apply_tag","tag":"vip"}]`)
+	steps, err := automations.Decode(`[{"type":"email","subject":"Hi","body":"<p></p>"},{"type":"wait","seconds":60},{"type":"apply_tag","tag":"vip"}]`)
 	require.NoError(t, err)
 	assert.Equal(t, []automations.Step{
-		{Type: automations.StepEmail, Subject: "Hi", Body: "<mjml/>"},
+		{Type: automations.StepEmail, Subject: "Hi", Body: "<p></p>"},
 		{Type: automations.StepWait, Seconds: 60},
 		{Type: automations.StepApplyTag, Tag: "vip"},
 	}, steps)

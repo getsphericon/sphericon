@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -161,8 +162,12 @@ type Fields struct {
 	ClearIntegration bool
 }
 
-// Create makes a draft Broadcast. Nothing here schedules or sends.
+// Create makes a draft Broadcast. Nothing here schedules or sends. A subject or body that
+// cannot render is emailrender.ErrInvalidContent.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broadcast, error) {
+	if err := emailrender.ValidateFields(f.Subject, f.Body); err != nil {
+		return nil, err
+	}
 	q := s.Broadcast().Create().
 		SetNillableFromName(f.FromName).
 		SetNillableFromEmail(f.FromEmail).
@@ -201,6 +206,9 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (
 // Update edits a draft. The UPDATE only matches a draft row, so a Broadcast that was
 // claimed for sending in the meantime is never edited.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) (*ent.Broadcast, error) {
+	if err := emailrender.ValidateFields(f.Subject, f.Body); err != nil {
+		return nil, err
+	}
 	u := s.Broadcast().Update().Where(draftOf(id)).
 		SetNillableName(f.Name).
 		SetNillableSubject(f.Subject).

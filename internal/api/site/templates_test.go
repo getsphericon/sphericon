@@ -3,6 +3,7 @@ package site_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -20,7 +21,7 @@ func TestSiteTemplatesCRUD(t *testing.T) {
 	created, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
 		Name:    "Welcome",
 		Subject: siteapi.NewOptString("Welcome {{ first_name }}"),
-		Body:    siteapi.NewOptString("<mjml><mj-body><mj-section><mj-column><mj-text>Hi</mj-text></mj-column></mj-section></mj-body></mjml>"),
+		Body:    siteapi.NewOptString("<p>Hi</p>"),
 	}, siteapi.SiteTemplatesCreateParams{Slug: slug})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteEmailTemplateResource)
@@ -50,8 +51,8 @@ func TestSiteTemplatesCRUD(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteTemplatesGetNotFound{}, gone)
 }
 
-// Test-send without a configured sending integration is rejected with 422.
-func TestSiteBroadcastsTestSendWithoutIntegration(t *testing.T) {
+// A test-send that is held (here: a suspended Workspace) is rejected with 422.
+func TestSiteBroadcastsTestSendHeldIs422(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
@@ -61,6 +62,7 @@ func TestSiteBroadcastsTestSendWithoutIntegration(t *testing.T) {
 	}, siteapi.SiteBroadcastsCreateParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)
 	b := created.(*siteapi.SiteBroadcastResource)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
 
 	out, err := c.SiteBroadcastsTestSend(ctx, &siteapi.SiteTestSendBroadcastInput{
 		Email: "qa@test.dev",

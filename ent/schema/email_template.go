@@ -35,7 +35,7 @@ func (EmailTemplate) Fields() []ent.Field {
 			NotEmpty(),
 		field.String("subject").
 			Default(""),
-		// Email body authored as MJML; compiled to email-safe HTML on send.
+		// Email-ready HTML with Liquid merge tags (ADR 0040).
 		field.String("body").
 			Default(""),
 	}

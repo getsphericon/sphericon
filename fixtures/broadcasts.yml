@@ -7,7 +7,7 @@
   subject: "A summer treat is coming \U0001F31E"
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: draft
   workspace_id: 1
   created_at: '{{daysAgo 10}}'
@@ -17,7 +17,7 @@
   subject: "The SQL course is live \U0001F680"
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: scheduled
   scheduled_at: '{{daysAhead 3}}'
   workspace_id: 1
@@ -28,7 +28,7 @@
   subject: Your weekly learning digest
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: sending
   workspace_id: 1
   created_at: '{{daysAgo 1}}'
@@ -38,7 +38,7 @@
   subject: Oops
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: failed
   failed_count: 3
   skipped_count: 2
@@ -52,7 +52,7 @@
   subject: Nobody home
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: draft
   segment_id: 103
   workspace_id: 1
@@ -65,7 +65,7 @@
   subject: Your pro perks
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: draft
   segment_id: 100
   workspace_id: 1
@@ -78,7 +78,7 @@
   subject: Python crash course is here
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 3}}'
   recipients_total: 10
@@ -94,7 +94,7 @@
   subject: Top 5 SQL mistakes to avoid
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 9}}'
   recipients_total: 10
@@ -110,7 +110,7 @@
   subject: Build your first API
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 16}}'
   recipients_total: 10
@@ -126,7 +126,7 @@
   subject: DevOps roadmap 2026
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 24}}'
   recipients_total: 10
@@ -142,7 +142,7 @@
   subject: Frontend layout masterclass
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 40}}'
   recipients_total: 10
@@ -158,7 +158,7 @@
   subject: Career switch stories
   from_name: CodeBasics
   from_email: hello@codebasics.dev
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Lorem ipsum learning content.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 70}}'
   recipients_total: 10
@@ -176,7 +176,7 @@
   subject: Globex only
   from_name: Globex
   from_email: hello@globex.test
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Globex.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Globex.</p>'
   status: draft
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
@@ -188,7 +188,7 @@
   subject: Initech news
   from_name: Initech
   from_email: hello@mail.initech.test
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>News.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>News.</p>'
   status: sent
   workspace_id: 3
   created_at: '2026-01-02 00:00:00'
@@ -202,7 +202,7 @@
   subject: Initech launch
   from_name: Initech
   from_email: hello@mail.initech.test
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Launch.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Launch.</p>'
   status: sending
   recipients_total: 2
   workspace_id: 3
@@ -213,7 +213,7 @@
   subject: Initech reminder
   from_name: Initech
   from_email: hello@mail.initech.test
-  body: '<mjml><mj-body><mj-section><mj-column><mj-text>Reminder.</mj-text></mj-column></mj-section></mj-body></mjml>'
+  body: '<p>Reminder.</p>'
   status: sending
   recipients_total: 1
   workspace_id: 3

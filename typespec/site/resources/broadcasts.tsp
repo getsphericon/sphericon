@@ -92,7 +92,7 @@ model SiteBroadcastResource {
   /** Sender email address (defaults to the integration's) */
   fromEmail?: EmailAddress | null;
 
-  /** MJML body authored in the composer */
+  /** HTML body with Liquid merge tags */
   body: string;
 
   /** Derived plain-text body */
@@ -147,7 +147,7 @@ model SiteCreateBroadcastInput {
   /** Sender email address */
   fromEmail?: EmailAddress | null;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags */
   body?: string;
 
   /** Target segment; null/omitted means all active contacts */
@@ -171,7 +171,7 @@ model SiteUpdateBroadcastInput {
   /** Sender email address */
   fromEmail?: EmailAddress | null;
 
-  /** MJML body */
+  /** HTML body with Liquid merge tags */
   body?: string;
 
   /** Target segment; null means all active contacts */

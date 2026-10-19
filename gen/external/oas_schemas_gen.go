@@ -955,7 +955,7 @@ type AutomationStep struct {
 	Type AutomationStepType `json:"type"`
 	// Email subject (email steps).
 	Subject OptString `json:"subject"`
-	// Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
+	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
 	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
 	Body OptString `json:"body"`
 	// Delay before the next step, in seconds (wait steps).
@@ -1509,7 +1509,7 @@ type BroadcastResource struct {
 	FromName OptNilString `json:"fromName"`
 	// Sender email address (defaults to the integration's).
 	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
 	// Audience: the Segment this broadcast goes to; null means all active contacts.
 	SegmentId OptNilEntityId `json:"segmentId"`
@@ -3505,7 +3505,7 @@ type CreateBroadcastInput struct {
 	FromName OptString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body OptString `json:"body"`
 }
 
@@ -3851,7 +3851,7 @@ type CreateTemplateInput struct {
 	Name string `json:"name"`
 	// Default subject line.
 	Subject OptString `json:"subject"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body OptString `json:"body"`
 }
 
@@ -10691,7 +10691,7 @@ type TemplateResource struct {
 	Name string `json:"name"`
 	// Default subject line.
 	Subject string `json:"subject"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body string `json:"body"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
@@ -11305,7 +11305,7 @@ type UpdateBroadcastInput struct {
 	FromName OptString `json:"fromName"`
 	// Sender email address.
 	FromEmail OptEmailAddress `json:"fromEmail"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body OptString `json:"body"`
 }
 
@@ -11639,7 +11639,7 @@ type UpdateTemplateInput struct {
 	Name OptString `json:"name"`
 	// Default subject line.
 	Subject OptString `json:"subject"`
-	// MJML body.
+	// HTML body with Liquid merge tags.
 	Body OptString `json:"body"`
 }
 

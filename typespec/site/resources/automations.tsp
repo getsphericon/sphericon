@@ -63,7 +63,7 @@ model SiteAutomationStep {
   /** Email subject (email steps) */
   subject?: string;
 
-  /** Email body as MJML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON) */
+  /** Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON) */
   body?: string;
 
   /** Delay before the next step, in seconds (wait steps) */

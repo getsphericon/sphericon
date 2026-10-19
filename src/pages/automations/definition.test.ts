@@ -5,7 +5,7 @@ import { graphToSteps, stepsToGraph } from './definition.ts'
 import type { AutomationStep } from './definition.ts'
 
 const STEPS: AutomationStep[] = [
-  { type: 'email', subject: 'Hello', body: '<mjml/>' },
+  { type: 'email', subject: 'Hello', body: '<p></p>' },
   { type: 'wait', seconds: 3600 },
   { type: 'apply_tag', tag: 'vip' },
   { type: 'remove_tag', tag: 'lead' },
@@ -30,7 +30,7 @@ test('stepsToGraph builds a top-to-bottom chain linked by edges', () => {
   expect(nodes.map((n) => n.id)).toEqual(['step-0', 'step-1', 'step-2', 'step-3'])
   expect(nodes.map((n) => n.position.y)).toEqual([0, 160, 320, 480])
   expect(nodes.map((n) => n.data.properties)).toEqual([
-    { subject: 'Hello', body: '<mjml/>' },
+    { subject: 'Hello', body: '<p></p>' },
     { seconds: 3600 },
     { tag: 'vip' },
     { tag: 'lead' },

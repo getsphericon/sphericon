@@ -15,7 +15,7 @@ func TestOneClickUnsubscribeStopsTheNextBroadcast(t *testing.T) {
 	w.ImportContacts(leaver, stayer)
 
 	first := "First " + uniq()
-	w.SendBroadcast(Broadcast{Subject: first, Body: MJML("First issue")})
+	w.SendBroadcast(Broadcast{Subject: first, Body: HTML("First issue")})
 	delivered := w.Inbox.Wait(Match{To: leaver, Subject: first})
 	w.Inbox.Wait(Match{To: stayer, Subject: first})
 
@@ -24,7 +24,7 @@ func TestOneClickUnsubscribeStopsTheNextBroadcast(t *testing.T) {
 	w.RequireUnsubscribed(leaver)
 
 	second := "Second " + uniq()
-	w.SendBroadcast(Broadcast{Subject: second, Body: MJML("Second issue")})
+	w.SendBroadcast(Broadcast{Subject: second, Body: HTML("Second issue")})
 	w.Inbox.Wait(Match{To: stayer, Subject: second}) // the send ran; now absence is meaningful
 	w.Inbox.RequireNone(Match{To: leaver, Subject: second})
 	assert.NotEmpty(t, delivered.Header("List-Unsubscribe"))

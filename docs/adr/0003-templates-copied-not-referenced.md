@@ -9,7 +9,7 @@ status: accepted
 > the deliberate opposite, one model per surface. This ADR's body already anticipated that
 > ("the reference model belongs to transactional templating").
 
-A Template is a reusable starting point for email **content** (subject + MJML body). When a
+A Template is a reusable starting point for email **content** (subject + HTML body). When a
 Broadcast or an Automation email step is authored, it takes a _copy_ of the template's
 content — there is no foreign key and no live reference back to the Template. Editing or
 deleting a Template therefore never changes any already-authored, in-flight, or sent message.
@@ -21,7 +21,7 @@ marketing sends each own their content. The reference/propagation model belongs 
 transactional templating (SendGrid/Postmark dynamic templates), not to marketing sends.
 
 Template, Broadcast, and each email Automation step all embody the same **Message content**
-value (subject + MJML body); the Template is just its saved, named, reusable instance. The
+value (subject + HTML body); the Template is just its saved, named, reusable instance. The
 three are linked by copy, never by reference.
 
 ## Considered options
@@ -38,5 +38,5 @@ three are linked by copy, never by reference.
 - The "copy" currently happens client-side (the composer prefills the body); the backend has
   no notion that a template was involved. If provenance is ever wanted, it must be added
   explicitly — it is not recorded today.
-- A clean rebuild should model `subject + MJML body` once as a Message-content value and reuse
+- A clean rebuild should model `subject + HTML body` once as a Message-content value and reuse
   it across Template, Broadcast, and Automation step, rather than three independent shapes.

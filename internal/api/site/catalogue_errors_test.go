@@ -200,7 +200,7 @@ func TestSiteTemplatesErrorBranches(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTemplatesCreateNotFound{}, r1)
 	r2, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
-		Name: "Fresh", Subject: siteapi.NewOptString("S"), Body: siteapi.NewOptString("<mjml></mjml>"),
+		Name: "Fresh", Subject: siteapi.NewOptString("S"), Body: siteapi.NewOptString("<p></p>"),
 	}, siteapi.SiteTemplatesCreateParams{Slug: acme})
 	require.NoError(t, err)
 	created, ok := r2.(*siteapi.SiteEmailTemplateResource)

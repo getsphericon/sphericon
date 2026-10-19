@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
-const linkMJML = `<mjml><mj-body><mj-section><mj-column><mj-text><a href="https://example.com/offer">Offer</a></mj-text></mj-column></mj-section></mj-body></mjml>`
+const linkHTML = `<p><a href="https://example.com/offer">Offer</a></p>`
 
 // sendFrom sends one tracked marketing message from a Sending domain and returns it as built.
 func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outbound.Module, key, domain string) messaging.EmailMessage {
@@ -27,7 +27,7 @@ func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outbound.Module, key, do
 		Destination: "reader@example.com",
 		Source:      eligibility.SourceBroadcasts,
 		Subject:     "News",
-		Body:        linkMJML,
+		Body:        linkHTML,
 		FromEmail:   "news@" + domain,
 		TrackID:     1,
 	})

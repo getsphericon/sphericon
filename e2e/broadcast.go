@@ -12,7 +12,7 @@ import (
 type Broadcast struct {
 	Name    string
 	Subject string
-	// Body is MJML (the product's one body format).
+	// Body is HTML (the product's one body format).
 	Body string
 }
 

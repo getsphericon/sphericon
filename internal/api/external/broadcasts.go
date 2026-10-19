@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -63,6 +64,10 @@ func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.Create
 		Name: &req.Name, Subject: convert.StringPtr(req.Subject), FromName: convert.StringPtr(req.FromName),
 		FromEmail: convert.StringPtr(req.FromEmail), Body: convert.StringPtr(req.Body),
 	})
+	if errors.Is(err, emailrender.ErrInvalidContent) {
+		res := externalapi.BroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
+		return &res, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +110,9 @@ func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.Update
 		return &res, nil
 	case errors.Is(err, broadcasts.ErrNotDraft):
 		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, detailNotDraft))
+		return &res, nil
+	case errors.Is(err, emailrender.ErrInvalidContent):
+		res := externalapi.BroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &res, nil
 	case err != nil:
 		return nil, err
