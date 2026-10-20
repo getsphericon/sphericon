@@ -137,7 +137,7 @@ carries the keys the Erasure matched on, when there were any: `contactId`, `visi
 number). The address and the phone themselves are never in the message.
 
 A Workspace that keeps a warehouse copy reads the same keys, one row per Erasure, from the
-Enterprise `GET /export/erasures` [Export stream](/guide/api): delete the rows that match any of
+Enterprise `GET /export/erasures` [Export stream](/export-streams): delete the rows that match any of
 them. Rows are kept for the instance's Event retention window, or for good when retention is off. Deliveries are retried, so a receiver may see duplicates; dedupe on the delivery id
 (the `webhook-id` header).
 

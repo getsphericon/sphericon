@@ -21,6 +21,9 @@ features:
   - title: API and MCP
     details: The external REST API with a full reference, and an MCP server so agents can work in a workspace.
     link: /api/
+  - title: Export streams
+    details: Keep a copy of a workspace's events, messages, contacts, erasures and audit entries in your warehouse, with a ClickHouse example (Enterprise).
+    link: /export-streams
   - title: Self-hosting and operations
     details: One binary or image plus PostgreSQL. Configuration, backups, upgrades, monitoring and a runbook.
     link: /operations/
