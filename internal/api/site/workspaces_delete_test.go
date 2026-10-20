@@ -6,10 +6,10 @@ import (
 	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +32,7 @@ func TestOwnerDeletesWorkspaceByTypingItsName(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.InitechPublicID), deleted.ID)
 	assert.WithinDuration(t, time.Now(), time.Time(deleted.DeletedAt), time.Minute)
-	assert.Equal(t, time.Time(deleted.DeletedAt).Add(accounts.DeletionWindow), time.Time(deleted.EraseAt),
+	assert.Equal(t, time.Time(deleted.DeletedAt).Add(workspacedeletion.DeletionWindow), time.Time(deleted.EraseAt),
 		"the data is erased 30 days after the deletion")
 
 	list, err := c.SiteWorkspacesList(ctx)
@@ -89,7 +89,7 @@ func TestDeletedWorkspaceIsHiddenFromEveryMemberAndListedForOwners(t *testing.T)
 		require.NoError(t, err)
 		require.Len(t, got, 1, email)
 		assert.Equal(t, "Initech", got[0].Name)
-		assert.Equal(t, time.Time(got[0].DeletedAt).Add(accounts.DeletionWindow), time.Time(got[0].EraseAt))
+		assert.Equal(t, time.Time(got[0].DeletedAt).Add(workspacedeletion.DeletionWindow), time.Time(got[0].EraseAt))
 	}
 	for _, email := range []string{fixtures.InitechAdminAdaEmail, fixtures.InitechMemberMaxEmail, fixtures.OwnerJohnEmail} {
 		got, err := env.SiteActor(t, email).SiteWorkspacesListDeleted(ctx)
@@ -154,10 +154,9 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 
 	// Past the window the Workspace is no longer restorable.
 	env.DB.Workspace.UpdateOneID(fixtures.InitechID).
-		SetDeletedAt(time.Now().Add(-accounts.DeletionWindow - time.Hour)).ExecX(ctx)
-	res, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+		SetDeletedAt(time.Now().Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(ctx)
+	_, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
+	require.ErrorContains(t, err, "409", "a Workspace past its window is a conflict")
 	deleted, err := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesListDeleted(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, deleted)

@@ -14,10 +14,10 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 var erasureNow = time.Date(2026, time.October, 19, 12, 0, 0, 0, time.UTC)
@@ -52,7 +52,7 @@ func TestErasureCoversEveryWorkspaceOwnedEntity(t *testing.T) {
 
 func TestErasureLeavesAWorkspaceInsideItsWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteWorkspace(t, env, fixtures.UmbrellaID, accounts.DeletionWindow-time.Hour)
+	deleteWorkspace(t, env, fixtures.UmbrellaID, workspacedeletion.DeletionWindow-time.Hour)
 	before := rowsOf(t, env, fixtures.UmbrellaID)
 
 	runErasure(t, env)
@@ -65,7 +65,7 @@ func TestErasureLeavesAWorkspaceInsideItsWindow(t *testing.T) {
 
 func TestErasureRemovesWhatAWorkspaceOwnedAndKeepsATombstone(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteWorkspace(t, env, fixtures.UmbrellaID, accounts.DeletionWindow+time.Hour)
+	deleteWorkspace(t, env, fixtures.UmbrellaID, workspacedeletion.DeletionWindow+time.Hour)
 	before := env.DB.Workspace.GetX(t.Context(), fixtures.UmbrellaID)
 	acme := rowsOf(t, env, fixtures.AcmeID)
 	require.NotZero(t, rowsOf(t, env, fixtures.UmbrellaID)["SendingDomain"])
@@ -87,7 +87,7 @@ func TestErasureRemovesWhatAWorkspaceOwnedAndKeepsATombstone(t *testing.T) {
 
 func TestErasureReleasesTheTrackingHostsAndAdvancesTheFeed(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteWorkspace(t, env, fixtures.UmbrellaID, accounts.DeletionWindow+time.Hour)
+	deleteWorkspace(t, env, fixtures.UmbrellaID, workspacedeletion.DeletionWindow+time.Hour)
 	_, cursor := feedTail(t, env, "")
 
 	runErasure(t, env)
@@ -115,7 +115,7 @@ func TestErasureReleasesTheTrackingHostsAndAdvancesTheFeed(t *testing.T) {
 // Events step has run. The erasure settles, so nothing is left behind the tombstone.
 func TestErasureRemovesRowsWrittenWhileItDeletes(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteWorkspace(t, env, fixtures.UmbrellaID, accounts.DeletionWindow+time.Hour)
+	deleteWorkspace(t, env, fixtures.UmbrellaID, workspacedeletion.DeletionWindow+time.Hour)
 	env.DB.Contact.Use(func(next ent.Mutator) ent.Mutator {
 		return hook.ContactFunc(func(ctx context.Context, m *ent.ContactMutation) (ent.Value, error) {
 			v, err := next.Mutate(ctx, m)
@@ -136,7 +136,7 @@ func TestErasureRemovesRowsWrittenWhileItDeletes(t *testing.T) {
 
 func TestASecondErasureRunChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteWorkspace(t, env, fixtures.UmbrellaID, accounts.DeletionWindow+time.Hour)
+	deleteWorkspace(t, env, fixtures.UmbrellaID, workspacedeletion.DeletionWindow+time.Hour)
 	runErasure(t, env)
 	_, cursor := feedTail(t, env, "")
 	hostLog := env.DB.TrackingHostChange.Query().CountX(t.Context())

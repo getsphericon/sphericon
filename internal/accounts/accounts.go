@@ -16,8 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"entgo.io/ent/dialect/sql"
-
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/invitation"
@@ -789,29 +787,13 @@ func WorkspaceIDByPublicID(ctx context.Context, client *ent.Client, publicID str
 	return id, nil
 }
 
-// DeletionWindow is how long a deleted Workspace stays restorable before its data is
-// erased (ADR 0043). A constant, not configuration.
-const DeletionWindow = 30 * 24 * time.Hour
-
-// ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
-var ErrNameMismatch = errors.New("accounts: the typed name does not match the workspace name")
-
 // Live is a Workspace that is not deleted (ADR 0043): every lookup that must not reach a
 // deleted Workspace (its Members' scope, the lists, the Instance-wide readers) uses it, so
 // "live" is stated once.
 func Live() predicate.Workspace { return workspace.DeletedAtIsNil() }
 
-// pendingDeletion is a Workspace in its deletion window at now: deleted, not yet erased,
-// and not past the window.
-func pendingDeletion(now time.Time) predicate.Workspace {
-	return workspace.And(
-		workspace.DeletedAtGT(now.Add(-DeletionWindow)),
-		workspace.ErasedAtIsNil(),
-	)
-}
-
-// workspaceAudit is the Audit entry of a Workspace lifecycle action (create, delete,
-// restore): the Workspace is its own target.
+// workspaceAudit is the Audit entry of creating a Workspace:
+// the Workspace is its own target.
 func workspaceAudit(ws *ent.Workspace, actor events.Actor, action string, diff map[string]any) *events.AuditEntry {
 	return &events.AuditEntry{
 		WorkspaceID: ws.ID,
@@ -822,80 +804,4 @@ func workspaceAudit(ws *ent.Workspace, actor events.Actor, action string, diff m
 		TargetName:  ws.Name,
 		Diff:        diff,
 	}
-}
-
-// deletedDiff is the audit diff of the Workspace's deleted state changing.
-func deletedDiff(from, to bool) map[string]any {
-	return map[string]any{"deleted": map[string]any{"from": from, "to": to}}
-}
-
-// EraseDate is when the data of a Workspace deleted at deletedAt is erased.
-func EraseDate(deletedAt time.Time) time.Time { return deletedAt.Add(DeletionWindow) }
-
-// DeleteWorkspace deletes the scoped Workspace (ADR 0043): it sets deleted_at, which the
-// send path reads as the pending-deletion Hold and the lookups read as "not found". The
-// typed name must equal the stored name (ErrNameMismatch otherwise). Deleting an already
-// deleted Workspace keeps its first deleted_at. The caller has checked the Owner role.
-// Recorded as `workspace.delete` in the same transaction.
-func (a *Accounts) DeleteWorkspace(ctx context.Context, s *ent.Scoped, actor events.Actor, typedName string, now time.Time) (*ent.Workspace, error) {
-	var deleted *ent.Workspace
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		ws, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		if typedName != ws.Name {
-			return ErrNameMismatch
-		}
-		if ws.DeletedAt != nil {
-			deleted = ws
-			return nil
-		}
-		if deleted, err = tx.Workspace.UpdateOneID(ws.ID).SetDeletedAt(now).Save(ctx); err != nil {
-			return err
-		}
-		return events.RecordAudit(ctx, pub, workspaceAudit(ws, actor, events.ActionWorkspaceDelete, deletedDiff(false, true)))
-	})
-	return deleted, err
-}
-
-// DeletedWorkspaces lists the Workspaces the User owns that are in their deletion window,
-// most recently deleted first, each with its Owner Membership and Workspace loaded.
-func (a *Accounts) DeletedWorkspaces(ctx context.Context, userID int64, now time.Time) ([]*ent.Membership, error) {
-	return a.ent.Membership.Query().
-		Where(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner),
-			membership.HasWorkspaceWith(pendingDeletion(now))).
-		WithWorkspace().
-		Order(membership.ByWorkspaceField(workspace.FieldDeletedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
-		All(ctx)
-}
-
-// RestoreWorkspace ends the deletion of the Workspace publicID for a User: it clears
-// deleted_at, which lifts only the pending-deletion Hold (a suspension or Staff hold stays).
-// A Workspace outside its window, or one the User has no Membership on, is an ent NotFound
-// error, for a Membership that is not an Owner too: a deleted Workspace is not exposed to
-// anyone but its Owners. Recorded as
-// `workspace.restore` in the same transaction. The returned Membership carries its User
-// and the restored Workspace.
-func (a *Accounts) RestoreWorkspace(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Membership, error) {
-	m, err := a.ent.Membership.Query().
-		Where(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner),
-			membership.HasWorkspaceWith(workspace.PublicID(publicID), pendingDeletion(now))).
-		WithUser().
-		Only(ctx)
-	if err != nil {
-		return nil, err
-	}
-	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		ws, err := tx.Workspace.UpdateOneID(m.WorkspaceID).ClearDeletedAt().Save(ctx)
-		if err != nil {
-			return err
-		}
-		m.Edges.Workspace = ws
-		return events.RecordAudit(ctx, pub, workspaceAudit(ws, actor, events.ActionWorkspaceRestore, deletedDiff(true, false)))
-	})
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
 }

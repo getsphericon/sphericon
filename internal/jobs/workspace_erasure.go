@@ -38,10 +38,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 // workspaceErasureInterval is how often the erasure job looks for Workspaces whose
@@ -343,18 +342,20 @@ var erasureSteps = []erasureStep{
 // the name, rotates the collect key and sets erased_at: the row stays as a tombstone
 // (ADR 0043). A Workspace that fails does not stop the others; the errors are joined.
 func EraseWorkspaces(ctx context.Context, client *ent.Client, bus *events.Bus, now time.Time, batch int) (int, error) {
-	ids, err := client.Workspace.Query().
-		Where(workspace.DeletedAtLTE(now.Add(-accounts.DeletionWindow)), workspace.ErasedAtIsNil()).
-		Order(workspace.ByID()).
-		IDs(ctx)
+	deletion := workspacedeletion.New(client, bus)
+	ids, err := deletion.Due(ctx, now)
 	if err != nil {
 		return 0, err
 	}
 	var errs []error
 	erased := 0
 	for _, id := range ids {
-		if err := eraseWorkspace(ctx, client, bus, id, now, batch); err != nil {
-			errs = append(errs, fmt.Errorf("erase workspace %d: %w", id, err))
+		if err := eraseWorkspace(ctx, deletion, bus, id, now, batch); err != nil {
+			// A restore that won the race moved the Workspace out of pending deletion: the
+			// stale move finishes without a retry (ADR 0046).
+			if !errors.Is(err, lifecycle.ErrInvalidTransition) {
+				errs = append(errs, fmt.Errorf("erase workspace %d: %w", id, err))
+			}
 			continue
 		}
 		erased++
@@ -367,7 +368,7 @@ func EraseWorkspaces(ctx context.Context, client *ent.Client, bus *events.Bus, n
 // removes what the one before it caused, so it settles in a few.
 const maxErasurePasses = 10
 
-func eraseWorkspace(ctx context.Context, client *ent.Client, bus *events.Bus, id int64, now time.Time, batch int) error {
+func eraseWorkspace(ctx context.Context, deletion *workspacedeletion.Module, bus *events.Bus, id int64, now time.Time, batch int) error {
 	// The raw client builds the scope after the row that names the Workspace is loaded; it
 	// has no actor, so the deletes below are not audited.
 	//
@@ -384,21 +385,11 @@ func eraseWorkspace(ctx context.Context, client *ent.Client, bus *events.Bus, id
 	if !settled {
 		return fmt.Errorf("rows are still being written after %d passes", maxErasurePasses)
 	}
-	key, err := credentials.GenerateCollectKey()
-	if err != nil {
-		return err
-	}
 	return bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		if _, err := tx.OAuthCode.Delete().Where(oauthcode.WorkspaceID(id)).Exec(ctx); err != nil {
 			return err
 		}
-		return tx.Workspace.UpdateOneID(id).
-			SetName("").
-			SetPostalAddress("").
-			SetCollectKey(key).
-			ClearRetentionDays().
-			SetErasedAt(now).
-			Exec(ctx)
+		return deletion.Erase(ctx, tx, id, now)
 	})
 }
 

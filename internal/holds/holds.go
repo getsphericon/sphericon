@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 // The Workspace-level reasons a send is Held. They describe the Workspace, not one send, so
@@ -66,7 +66,7 @@ func PendingDeletion(ws *ent.Workspace) []*ent.Hold {
 		Message:    Message(ReasonPendingDeletion),
 		SetBy:      "system",
 		CreatedAt:  *ws.DeletedAt,
-		ExpiresAt:  accounts.EraseDate(*ws.DeletedAt),
+		ExpiresAt:  workspacedeletion.EraseDate(*ws.DeletedAt),
 	}}
 }
 

@@ -67,6 +67,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samber/do/v2"
 	"go.opentelemetry.io/otel/metric"
@@ -1055,6 +1056,19 @@ func register(injector do.Injector, env string, o options) {
 		return accounts.New(client.Client, bus.Bus), nil
 	})
 
+	// The Workspace deletion cycle (ADR 0043), over the raw client.
+	do.Provide(injector, func(i do.Injector) (*workspacedeletion.Module, error) {
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		return workspacedeletion.New(client.Client, bus.Bus), nil
+	})
+
 	// The Instance state and who decides about it (ADR 0032), over the raw client.
 	do.Provide(injector, func(i do.Injector) (*instance.Module, error) {
 		cfg, err := do.Invoke[*config.Config](i)
@@ -1562,8 +1576,13 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	if err != nil {
 		return apisite.Deps{}, err
 	}
+	deletion, err := do.Invoke[*workspacedeletion.Module](i)
+	if err != nil {
+		return apisite.Deps{}, err
+	}
 	return apisite.Deps{
 		Instance:    inst,
+		Deletion:    deletion,
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto,

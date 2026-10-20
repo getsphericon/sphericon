@@ -64,6 +64,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/go-testfixtures/testfixtures/v3"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mokevnin/pgcleaner"
@@ -403,6 +404,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	lapsedAt, _ := edition.LicenseLapsedAt()
 	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
+		Deletion:    workspacedeletion.New(client, bus),
 		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Instance: inst,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,

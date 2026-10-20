@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 // SiteWorkspacesList returns the workspaces the authenticated user is a member of.
@@ -246,7 +247,7 @@ func deletedWorkspaceResource(w *ent.Workspace) siteapi.SiteDeletedWorkspaceReso
 		ID:        siteapi.WorkspaceId(w.PublicID),
 		Name:      w.Name,
 		DeletedAt: siteapi.Timestamp(*w.DeletedAt),
-		EraseAt:   siteapi.Timestamp(accounts.EraseDate(*w.DeletedAt)),
+		EraseAt:   siteapi.Timestamp(workspacedeletion.EraseDate(*w.DeletedAt)),
 	}
 }
 
@@ -256,7 +257,7 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 	if a == nil {
 		return []siteapi.SiteDeletedWorkspaceResource{}, nil
 	}
-	items, err := h.accounts.DeletedWorkspaces(ctx, a.UserID, h.now())
+	items, err := h.deletion.Deleted(ctx, a.UserID, h.now())
 	if err != nil {
 		return nil, err
 	}
@@ -279,8 +280,8 @@ func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDe
 		v := siteapi.SiteWorkspacesDeleteForbidden(problem(http.StatusForbidden, "only owners can delete the workspace"))
 		return &v, nil
 	}
-	w, err := h.accounts.DeleteWorkspace(ctx, s, h.actor(ctx), req.Name, h.now())
-	if errors.Is(err, accounts.ErrNameMismatch) {
+	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name, h.now())
+	if errors.Is(err, workspacedeletion.ErrNameMismatch) {
 		v := siteapi.SiteWorkspacesDeleteUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity,
 			i18n.T("errors.workspace_name_mismatch", nil),
@@ -302,7 +303,7 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 		v := workspaceNotFoundProblem()
 		return &v, nil
 	}
-	m, err := h.accounts.RestoreWorkspace(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
+	m, err := h.deletion.Restore(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
 	if ent.IsNotFound(err) {
 		v := workspaceNotFoundProblem()
 		return &v, nil

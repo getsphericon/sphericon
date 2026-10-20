@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/clientip"
 	dbpkg "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/paths"
@@ -261,6 +262,9 @@ func problemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 		code = http.StatusRequestEntityTooLarge
 	case errors.As(err, &oe):
 		code = oe.Code()
+	case errors.Is(err, lifecycle.ErrInvalidTransition):
+		// A move the entity's lifecycle refuses, or lost to a concurrent writer (ADR 0046).
+		code = http.StatusConflict
 	case errors.Is(err, ent.ErrNotInWorkspace):
 		code = http.StatusUnprocessableEntity
 	case errors.As(err, &invalid):

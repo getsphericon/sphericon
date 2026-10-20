@@ -298,7 +298,8 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
   codes, ADR 0020: they belong to the User, not a Workspace), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instance` (the Instance state row
   that no Workspace owns, and who decides about it: the Owners of the oldest Workspace, ADR 0032), `internal/suspension` (Workspace
-  suspension), `internal/events`
+  suspension), `internal/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the Workspaces whose window has passed and
+  the Owners' deleted ones, which have no scope yet, and writes the row the cycle moves), `internal/events`
   (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition, and the Instance-wide Tracking host
   index, ADR 0038: the host gate `trackingHostGate` / `verifiedTrackingHost` in `trackinghost.go`,
