@@ -12,8 +12,8 @@ import (
 // only those in one status (an empty status means all). ErrNotFound when the Workspace has
 // no such Automation.
 func (m *Module) Enrollments(ctx context.Context, s *ent.Scoped, automationID int64, status string, p pagination.Params) (pagination.Page[*ent.AutomationRun], error) {
-	if _, err := m.Get(ctx, s, automationID); err != nil {
-		return pagination.Page[*ent.AutomationRun]{}, err
+	if _, err := s.Automation().Get(ctx, automationID); err != nil {
+		return pagination.Page[*ent.AutomationRun]{}, notFound(err)
 	}
 	query := func() *ent.AutomationRunQuery {
 		q := s.AutomationRun().Query().Where(automationrun.AutomationID(automationID))

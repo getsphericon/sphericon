@@ -1,12 +1,10 @@
 # Workspace acme (id 1). Triggers deliberately avoid "contact.created" (used by the
 # jobs/automation tests' inline automations) so EvaluateTrigger never enrolls a test
-# contact into a fixture automation. definition is the linear JSON step list
-# ({"type":"email"|"wait", ...}); HTML bodies are kept attribute-free for clean JSON.
+# contact into a fixture automation. The steps live in automation_versions.yml (ADR 0049).
 - id: 100 # fixture: AutomationWelcomeSeries
   name: Welcome series
   status: active
   trigger_event: signup
-  definition: '[{"type":"email","subject":"Welcome to CodeBasics","body":"<p>Glad you are here.</p>"},{"type":"wait","seconds":86400},{"type":"email","subject":"Pick your first course","body":"<p>Here is how to begin.</p>"}]'
   workspace_id: 1
   created_at: '{{daysAgo 90}}'
   updated_at: '{{daysAgo 20}}'
@@ -14,7 +12,6 @@
   name: Course completion congrats
   status: active
   trigger_event: course_completed
-  definition: '[{"type":"email","subject":"You finished a course!","body":"<p>On to the next one.</p>"}]'
   workspace_id: 1
   created_at: '{{daysAgo 75}}'
   updated_at: '{{daysAgo 15}}'
@@ -22,7 +19,6 @@
   name: Win-back lapsed learners
   status: draft
   trigger_event: subscription_cancelled
-  definition: '[{"type":"wait","seconds":604800},{"type":"email","subject":"We miss you","body":"<p>Your courses are waiting.</p>"}]'
   workspace_id: 1
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
@@ -31,7 +27,6 @@
   name: Hold demo
   status: active
   trigger_event: hold_demo
-  definition: '[{"type":"email","subject":"Hello from the hold demo","body":"<p>Hello there.</p>"}]'
   workspace_id: 1
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 10}}'
@@ -40,7 +35,6 @@
   name: Tag on engagement
   status: active
   trigger_event: tag_demo
-  definition: '[{"type":"apply_tag","tag":"engaged"},{"type":"remove_tag","tag":"vip"}]'
   workspace_id: 1
   created_at: '{{daysAgo 5}}'
   updated_at: '{{daysAgo 5}}'
@@ -50,17 +44,24 @@
   name: Notify Slack on signup
   status: draft
   trigger_event: http_demo
-  definition: '[{"type":"http","id":"01J00000000000000000000001","url":"{{ encrypt "https://hooks.slack.com/services/T000/B000/XXXX" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"text\": \"New signup: {{ "{{ first_name }} {{ last_name }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]'
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
+# Steps edited while Enrollments stood on the first version (ADR 0049): version 1 keeps its
+# Enrollments, the later ones began on version 2. Draft, trigger unused elsewhere.
+- id: 106 # fixture: AutomationOnboardingDrip
+  name: Onboarding drip
+  status: draft
+  trigger_event: onboarding_drip
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 6}}'
 
 # Globex (workspace 2).
 - id: 900 # fixture: AutomationGlobex
   name: Globex automation
   status: draft
   trigger_event: globex_trigger
-  definition: '[]'
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -70,7 +71,6 @@
   name: Initech onboarding
   status: active
   trigger_event: initech_signup
-  definition: '[{"type":"wait","seconds":86400}]'
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -80,7 +80,6 @@
   name: Initech hook
   status: active
   trigger_event: initech_hook
-  definition: '[{"type":"http","id":"01J00000000000000000000002","url":"{{ encrypt "https://hooks.initech.test/services/T000/B000/XXXX" }}","headers":[],"body":"{\"email\": \"{{ "{{ email }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]'
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

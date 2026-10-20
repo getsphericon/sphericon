@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -166,6 +167,22 @@ func (s *Scoped) verifyAutomationRun(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("AutomationRun: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyAutomationVersion fails with ErrNotInWorkspace unless every id is a AutomationVersion of the Workspace.
+func (s *Scoped) verifyAutomationVersion(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.AutomationVersion.Query().Where(automationversion.IDIn(ids...), automationversion.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("AutomationVersion: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -2094,18 +2111,6 @@ func (x *AutomationScopedCreate) SetTriggerEvent(v string) *AutomationScopedCrea
 	return x
 }
 
-// SetDefinition sets the "definition" field.
-func (x *AutomationScopedCreate) SetDefinition(v string) *AutomationScopedCreate {
-	x.b.SetDefinition(v)
-	return x
-}
-
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (x *AutomationScopedCreate) SetNillableDefinition(v *string) *AutomationScopedCreate {
-	x.b.SetNillableDefinition(v)
-	return x
-}
-
 // AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
 func (x *AutomationScopedCreate) AddRunIDs(ids ...int64) *AutomationScopedCreate {
 	x.b.AddRunIDs(ids...)
@@ -2118,11 +2123,26 @@ func (x *AutomationScopedCreate) AddRuns(v ...*AutomationRun) *AutomationScopedC
 	return x
 }
 
+// AddVersionIDs adds the "versions" edge to the AutomationVersion entity by IDs.
+func (x *AutomationScopedCreate) AddVersionIDs(ids ...int64) *AutomationScopedCreate {
+	x.b.AddVersionIDs(ids...)
+	return x
+}
+
+// AddVersions adds the "versions" edges to the AutomationVersion entity.
+func (x *AutomationScopedCreate) AddVersions(v ...*AutomationVersion) *AutomationScopedCreate {
+	x.b.AddVersions(v...)
+	return x
+}
+
 func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
+	}
+	if err := x.s.verifyAutomationVersion(ctx, m.VersionsIDs()); err != nil {
+		return fmt.Errorf("versions: %w", err)
 	}
 	return nil
 }
@@ -2263,18 +2283,6 @@ func (u *AutomationScopedUpsert) SetTriggerEvent(v string) *AutomationScopedUpse
 // UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
 func (u *AutomationScopedUpsert) UpdateTriggerEvent() *AutomationScopedUpsert {
 	u.u.SetExcluded(automation.FieldTriggerEvent)
-	return u
-}
-
-// SetDefinition sets the "definition" field.
-func (u *AutomationScopedUpsert) SetDefinition(v string) *AutomationScopedUpsert {
-	u.u.Set(automation.FieldDefinition, v)
-	return u
-}
-
-// UpdateDefinition sets the "definition" field to the value that was provided on create.
-func (u *AutomationScopedUpsert) UpdateDefinition() *AutomationScopedUpsert {
-	u.u.SetExcluded(automation.FieldDefinition)
 	return u
 }
 
@@ -2487,18 +2495,6 @@ func (x *AutomationScopedUpdateOne) SetNillableTriggerEvent(v *string) *Automati
 	return x
 }
 
-// SetDefinition sets the "definition" field.
-func (x *AutomationScopedUpdateOne) SetDefinition(v string) *AutomationScopedUpdateOne {
-	x.b.SetDefinition(v)
-	return x
-}
-
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (x *AutomationScopedUpdateOne) SetNillableDefinition(v *string) *AutomationScopedUpdateOne {
-	x.b.SetNillableDefinition(v)
-	return x
-}
-
 // AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
 func (x *AutomationScopedUpdateOne) AddRunIDs(ids ...int64) *AutomationScopedUpdateOne {
 	x.b.AddRunIDs(ids...)
@@ -2529,11 +2525,44 @@ func (x *AutomationScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *AutomationS
 	return x
 }
 
+// AddVersionIDs adds the "versions" edge to the AutomationVersion entity by IDs.
+func (x *AutomationScopedUpdateOne) AddVersionIDs(ids ...int64) *AutomationScopedUpdateOne {
+	x.b.AddVersionIDs(ids...)
+	return x
+}
+
+// AddVersions adds the "versions" edges to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) AddVersions(v ...*AutomationVersion) *AutomationScopedUpdateOne {
+	x.b.AddVersions(v...)
+	return x
+}
+
+// ClearVersions clears the "versions" edges to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) ClearVersions() *AutomationScopedUpdateOne {
+	x.b.ClearVersions()
+	return x
+}
+
+// RemoveVersionIDs removes the "versions" edge to AutomationVersion entities by IDs.
+func (x *AutomationScopedUpdateOne) RemoveVersionIDs(ids ...int64) *AutomationScopedUpdateOne {
+	x.b.RemoveVersionIDs(ids...)
+	return x
+}
+
+// RemoveVersions removes "versions" edges to AutomationVersion entities.
+func (x *AutomationScopedUpdateOne) RemoveVersions(v ...*AutomationVersion) *AutomationScopedUpdateOne {
+	x.b.RemoveVersions(v...)
+	return x
+}
+
 func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
+	}
+	if err := x.s.verifyAutomationVersion(ctx, m.VersionsIDs()); err != nil {
+		return fmt.Errorf("versions: %w", err)
 	}
 	return nil
 }
@@ -2646,18 +2675,6 @@ func (x *AutomationScopedUpdate) SetNillableTriggerEvent(v *string) *AutomationS
 	return x
 }
 
-// SetDefinition sets the "definition" field.
-func (x *AutomationScopedUpdate) SetDefinition(v string) *AutomationScopedUpdate {
-	x.b.SetDefinition(v)
-	return x
-}
-
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (x *AutomationScopedUpdate) SetNillableDefinition(v *string) *AutomationScopedUpdate {
-	x.b.SetNillableDefinition(v)
-	return x
-}
-
 // AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
 func (x *AutomationScopedUpdate) AddRunIDs(ids ...int64) *AutomationScopedUpdate {
 	x.b.AddRunIDs(ids...)
@@ -2688,11 +2705,44 @@ func (x *AutomationScopedUpdate) RemoveRuns(v ...*AutomationRun) *AutomationScop
 	return x
 }
 
+// AddVersionIDs adds the "versions" edge to the AutomationVersion entity by IDs.
+func (x *AutomationScopedUpdate) AddVersionIDs(ids ...int64) *AutomationScopedUpdate {
+	x.b.AddVersionIDs(ids...)
+	return x
+}
+
+// AddVersions adds the "versions" edges to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) AddVersions(v ...*AutomationVersion) *AutomationScopedUpdate {
+	x.b.AddVersions(v...)
+	return x
+}
+
+// ClearVersions clears the "versions" edges to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) ClearVersions() *AutomationScopedUpdate {
+	x.b.ClearVersions()
+	return x
+}
+
+// RemoveVersionIDs removes the "versions" edge to AutomationVersion entities by IDs.
+func (x *AutomationScopedUpdate) RemoveVersionIDs(ids ...int64) *AutomationScopedUpdate {
+	x.b.RemoveVersionIDs(ids...)
+	return x
+}
+
+// RemoveVersions removes "versions" edges to AutomationVersion entities.
+func (x *AutomationScopedUpdate) RemoveVersions(v ...*AutomationVersion) *AutomationScopedUpdate {
+	x.b.RemoveVersions(v...)
+	return x
+}
+
 func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
+	}
+	if err := x.s.verifyAutomationVersion(ctx, m.VersionsIDs()); err != nil {
+		return fmt.Errorf("versions: %w", err)
 	}
 	return nil
 }
@@ -2858,6 +2908,12 @@ func (x *AutomationRunScopedCreate) SetContactID(v int64) *AutomationRunScopedCr
 	return x
 }
 
+// SetVersionID sets the "version_id" field.
+func (x *AutomationRunScopedCreate) SetVersionID(v int64) *AutomationRunScopedCreate {
+	x.b.SetVersionID(v)
+	return x
+}
+
 // SetStatus sets the "status" field.
 func (x *AutomationRunScopedCreate) SetStatus(v automationrun.Status) *AutomationRunScopedCreate {
 	x.b.SetStatus(v)
@@ -2936,11 +2992,20 @@ func (x *AutomationRunScopedCreate) SetAutomation(v *Automation) *AutomationRunS
 	return x
 }
 
+// SetVersion sets the "version" edge to the AutomationVersion entity.
+func (x *AutomationRunScopedCreate) SetVersion(v *AutomationVersion) *AutomationRunScopedCreate {
+	x.b.SetVersion(v)
+	return x
+}
+
 func (x *AutomationRunScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
 		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyAutomationVersion(ctx, m.VersionIDs()); err != nil {
+		return fmt.Errorf("version: %w", err)
 	}
 	if v, ok := m.ContactID(); ok {
 		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
@@ -3033,6 +3098,12 @@ func (u *AutomationRunScopedUpsert) UpdateAutomationID() *AutomationRunScopedUps
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *AutomationRunScopedUpsert) UpdateContactID() *AutomationRunScopedUpsert {
 	u.u.SetExcluded(automationrun.FieldContactID)
+	return u
+}
+
+// UpdateVersionID sets the "version_id" field to the value that was provided on create.
+func (u *AutomationRunScopedUpsert) UpdateVersionID() *AutomationRunScopedUpsert {
+	u.u.SetExcluded(automationrun.FieldVersionID)
 	return u
 }
 
@@ -3315,6 +3386,18 @@ func (x *AutomationRunScopedUpdateOne) AddContactID(v int64) *AutomationRunScope
 	return x
 }
 
+// SetVersionID sets the "version_id" field.
+func (x *AutomationRunScopedUpdateOne) SetVersionID(v int64) *AutomationRunScopedUpdateOne {
+	x.b.SetVersionID(v)
+	return x
+}
+
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (x *AutomationRunScopedUpdateOne) SetNillableVersionID(v *int64) *AutomationRunScopedUpdateOne {
+	x.b.SetNillableVersionID(v)
+	return x
+}
+
 // SetStatus sets the "status" field.
 func (x *AutomationRunScopedUpdateOne) SetStatus(v automationrun.Status) *AutomationRunScopedUpdateOne {
 	x.b.SetStatus(v)
@@ -3435,11 +3518,26 @@ func (x *AutomationRunScopedUpdateOne) ClearAutomation() *AutomationRunScopedUpd
 	return x
 }
 
+// SetVersion sets the "version" edge to the AutomationVersion entity.
+func (x *AutomationRunScopedUpdateOne) SetVersion(v *AutomationVersion) *AutomationRunScopedUpdateOne {
+	x.b.SetVersion(v)
+	return x
+}
+
+// ClearVersion clears the "version" edge to the AutomationVersion entity.
+func (x *AutomationRunScopedUpdateOne) ClearVersion() *AutomationRunScopedUpdateOne {
+	x.b.ClearVersion()
+	return x
+}
+
 func (x *AutomationRunScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
 		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyAutomationVersion(ctx, m.VersionIDs()); err != nil {
+		return fmt.Errorf("version: %w", err)
 	}
 	if v, ok := m.ContactID(); ok {
 		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
@@ -3532,6 +3630,18 @@ func (x *AutomationRunScopedUpdate) SetNillableContactID(v *int64) *AutomationRu
 // AddContactID adds value to the "contact_id" field.
 func (x *AutomationRunScopedUpdate) AddContactID(v int64) *AutomationRunScopedUpdate {
 	x.b.AddContactID(v)
+	return x
+}
+
+// SetVersionID sets the "version_id" field.
+func (x *AutomationRunScopedUpdate) SetVersionID(v int64) *AutomationRunScopedUpdate {
+	x.b.SetVersionID(v)
+	return x
+}
+
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (x *AutomationRunScopedUpdate) SetNillableVersionID(v *int64) *AutomationRunScopedUpdate {
+	x.b.SetNillableVersionID(v)
 	return x
 }
 
@@ -3655,11 +3765,26 @@ func (x *AutomationRunScopedUpdate) ClearAutomation() *AutomationRunScopedUpdate
 	return x
 }
 
+// SetVersion sets the "version" edge to the AutomationVersion entity.
+func (x *AutomationRunScopedUpdate) SetVersion(v *AutomationVersion) *AutomationRunScopedUpdate {
+	x.b.SetVersion(v)
+	return x
+}
+
+// ClearVersion clears the "version" edge to the AutomationVersion entity.
+func (x *AutomationRunScopedUpdate) ClearVersion() *AutomationRunScopedUpdate {
+	x.b.ClearVersion()
+	return x
+}
+
 func (x *AutomationRunScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
 		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyAutomationVersion(ctx, m.VersionIDs()); err != nil {
+		return fmt.Errorf("version: %w", err)
 	}
 	if v, ok := m.ContactID(); ok {
 		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
@@ -3683,6 +3808,764 @@ func (x *AutomationRunScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *AutomationRunScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// AutomationVersionScoped reaches AutomationVersion entities of one Workspace.
+type AutomationVersionScoped struct{ s *Scoped }
+
+// AutomationVersion returns the AutomationVersion entities of the Workspace.
+func (s *Scoped) AutomationVersion() *AutomationVersionScoped { return &AutomationVersionScoped{s: s} }
+
+// Query returns a AutomationVersion query already confined to the Workspace.
+func (t *AutomationVersionScoped) Query() *AutomationVersionQuery {
+	return t.s.c.AutomationVersion.Query().Where(automationversion.WorkspaceID(t.s.ws))
+}
+
+// Get returns the AutomationVersion with the id; a row of another Workspace is not found.
+func (t *AutomationVersionScoped) Get(ctx context.Context, id int64) (*AutomationVersion, error) {
+	return t.Query().Where(automationversion.ID(id)).Only(ctx)
+}
+
+// AutomationVersionScopedDeleteOne wraps AutomationVersionDeleteOne.
+type AutomationVersionScopedDeleteOne struct {
+	s *Scoped
+	b *AutomationVersionDeleteOne
+}
+
+// DeleteOneID deletes the AutomationVersion with the id; a row of another Workspace is not found.
+func (t *AutomationVersionScoped) DeleteOneID(id int64) *AutomationVersionScopedDeleteOne {
+	return &AutomationVersionScopedDeleteOne{s: t.s, b: t.s.c.AutomationVersion.DeleteOneID(id).Where(automationversion.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationVersionScopedDeleteOne) Where(ps ...predicate.AutomationVersion) *AutomationVersionScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *AutomationVersionScopedDeleteOne) Exec(ctx context.Context) error {
+	if x.s.auditing() {
+		return x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.AutomationVersion.Query().Where(x.b._d.mutation.predicates...).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b._d.auditRebind(ts.c)
+			if err := x.b.Exec(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeAutomationVersion("delete", before, nil))
+		})
+	}
+	return x.b.Exec(ctx)
+}
+
+// AutomationVersionScopedDelete wraps AutomationVersionDelete.
+type AutomationVersionScopedDelete struct {
+	s *Scoped
+	b *AutomationVersionDelete
+}
+
+// Delete deletes the AutomationVersion entities of the Workspace that match the predicates.
+func (t *AutomationVersionScoped) Delete() *AutomationVersionScopedDelete {
+	return &AutomationVersionScopedDelete{s: t.s, b: t.s.c.AutomationVersion.Delete().Where(automationversion.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationVersionScopedDelete) Where(ps ...predicate.AutomationVersion) *AutomationVersionScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *AutomationVersionScopedDelete) Exec(ctx context.Context) (int, error) {
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			rows, err := ts.c.AutomationVersion.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Exec(ctx); err != nil {
+				return err
+			}
+			for _, row := range rows {
+				if err := ts.record(ctx, auditChangeAutomationVersion("delete", row, nil)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// AutomationVersionScopedCreate wraps AutomationVersionCreate. It has no way to name a Workspace.
+type AutomationVersionScopedCreate struct {
+	s *Scoped
+	b *AutomationVersionCreate
+}
+
+// Create starts a AutomationVersion in the Workspace.
+func (t *AutomationVersionScoped) Create() *AutomationVersionScopedCreate {
+	return &AutomationVersionScopedCreate{s: t.s, b: t.s.c.AutomationVersion.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *AutomationVersionScopedCreate) SetCreatedAt(v time.Time) *AutomationVersionScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableCreatedAt(v *time.Time) *AutomationVersionScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationVersionScopedCreate) SetUpdatedAt(v time.Time) *AutomationVersionScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableUpdatedAt(v *time.Time) *AutomationVersionScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (x *AutomationVersionScopedCreate) SetAutomationID(v int64) *AutomationVersionScopedCreate {
+	x.b.SetAutomationID(v)
+	return x
+}
+
+// SetVersion sets the "version" field.
+func (x *AutomationVersionScopedCreate) SetVersion(v int) *AutomationVersionScopedCreate {
+	x.b.SetVersion(v)
+	return x
+}
+
+// SetSteps sets the "steps" field.
+func (x *AutomationVersionScopedCreate) SetSteps(v string) *AutomationVersionScopedCreate {
+	x.b.SetSteps(v)
+	return x
+}
+
+// SetNillableSteps sets the "steps" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableSteps(v *string) *AutomationVersionScopedCreate {
+	x.b.SetNillableSteps(v)
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *AutomationVersionScopedCreate) SetAutomation(v *Automation) *AutomationVersionScopedCreate {
+	x.b.SetAutomation(v)
+	return x
+}
+
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
+func (x *AutomationVersionScopedCreate) AddRunIDs(ids ...int64) *AutomationVersionScopedCreate {
+	x.b.AddRunIDs(ids...)
+	return x
+}
+
+// AddRuns adds the "runs" edges to the AutomationRun entity.
+func (x *AutomationVersionScopedCreate) AddRuns(v ...*AutomationRun) *AutomationVersionScopedCreate {
+	x.b.AddRuns(v...)
+	return x
+}
+
+func (x *AutomationVersionScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
+		return fmt.Errorf("runs: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the AutomationVersion.
+func (x *AutomationVersionScopedCreate) Save(ctx context.Context) (*AutomationVersion, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var created *AutomationVersion
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			x.b.auditRebind(ts.c)
+			var err error
+			if created, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeAutomationVersion("create", nil, created))
+		})
+		return created, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationVersionScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// AutomationVersionScopedCreateBulk creates several AutomationVersion entities of one Workspace at once.
+type AutomationVersionScopedCreateBulk struct {
+	s  *Scoped
+	xs []*AutomationVersionScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *AutomationVersionScoped) CreateBulk(xs ...*AutomationVersionScopedCreate) *AutomationVersionScopedCreateBulk {
+	return &AutomationVersionScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *AutomationVersionScopedCreateBulk) raw(ctx context.Context) (*AutomationVersionCreateBulk, error) {
+	builders := make([]*AutomationVersionCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("AutomationVersion: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.AutomationVersion.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the AutomationVersion entities.
+func (b *AutomationVersionScopedCreateBulk) Save(ctx context.Context) ([]*AutomationVersion, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if b.s.auditing() {
+		var created []*AutomationVersion
+		err := b.s.audited(ctx, func(ts *Scoped) error {
+			raw.auditRebind(ts.c)
+			var err error
+			if created, err = raw.Save(ctx); err != nil {
+				return err
+			}
+			for _, row := range created {
+				if err := ts.record(ctx, auditChangeAutomationVersion("create", nil, row)); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return created, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *AutomationVersionScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// AutomationVersionScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type AutomationVersionScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *AutomationVersionScopedUpsert) SetUpdatedAt(v time.Time) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateUpdatedAt() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldUpdatedAt)
+	return u
+}
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateAutomationID() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldAutomationID)
+	return u
+}
+
+// SetSteps sets the "steps" field.
+func (u *AutomationVersionScopedUpsert) SetSteps(v string) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldSteps, v)
+	return u
+}
+
+// UpdateSteps sets the "steps" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateSteps() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldSteps)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+func (t *AutomationVersionScoped) conflictOptions(columns []string) []sql.ConflictOption {
+	return []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(automationversion.FieldWorkspaceID, t.s.ws)),
+	}
+}
+
+// AutomationVersionScopedUpsertOne is the "upsert" of one AutomationVersion.
+type AutomationVersionScopedUpsertOne struct {
+	x *AutomationVersionScopedCreate
+	u *AutomationVersionUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *AutomationVersionScopedCreate) OnConflictColumns(columns ...string) *AutomationVersionScopedUpsertOne {
+	return &AutomationVersionScopedUpsertOne{x: x, u: x.b.OnConflict((&AutomationVersionScoped{s: x.s}).conflictOptions(columns)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationVersionScopedUpsertOne) UpdateNewValues() *AutomationVersionScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationVersionScopedUpsertOne) Ignore() *AutomationVersionScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationVersionScopedUpsertOne) DoNothing() *AutomationVersionScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationVersionScopedUpsertOne) Update(set func(*AutomationVersionScopedUpsert)) *AutomationVersionScopedUpsertOne {
+	u.u.Update(func(s *AutomationVersionUpsert) { set(&AutomationVersionScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *AutomationVersionScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	if u.x.s.auditing() {
+		_, err := u.audited(ctx)
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *AutomationVersionScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	if u.x.s.auditing() {
+		return u.audited(ctx)
+	}
+	return u.u.ID(ctx)
+}
+
+// audited runs a DO NOTHING upsert with its entry: an insert is a create, a conflict
+// (sql.ErrNoRows) writes nothing and records nothing.
+func (u *AutomationVersionScopedUpsertOne) audited(ctx context.Context) (int64, error) {
+	if !u.doNothing {
+		return 0, ErrAuditUpsert
+	}
+	var id int64
+	err := u.x.s.audited(ctx, func(ts *Scoped) error {
+		u.x.b.auditRebind(ts.c)
+		var err error
+		if id, err = u.u.ID(ctx); err != nil {
+			return err
+		}
+		row, err := ts.c.AutomationVersion.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		return ts.record(ctx, auditChangeAutomationVersion("create", nil, row))
+	})
+	return id, err
+}
+
+// AutomationVersionScopedUpsertBulk is the "upsert" of several AutomationVersion entities.
+type AutomationVersionScopedUpsertBulk struct {
+	b       *AutomationVersionScopedCreateBulk
+	t       *AutomationVersionScoped
+	columns []string
+	opts    []func(*AutomationVersionUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *AutomationVersionScopedCreateBulk) OnConflictColumns(columns ...string) *AutomationVersionScopedUpsertBulk {
+	return &AutomationVersionScopedUpsertBulk{b: b, t: &AutomationVersionScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationVersionScopedUpsertBulk) UpdateNewValues() *AutomationVersionScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *AutomationVersionUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationVersionScopedUpsertBulk) Ignore() *AutomationVersionScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *AutomationVersionUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationVersionScopedUpsertBulk) DoNothing() *AutomationVersionScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *AutomationVersionUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationVersionScopedUpsertBulk) Update(set func(*AutomationVersionScopedUpsert)) *AutomationVersionScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *AutomationVersionUpsertBulk) {
+		r.Update(func(s *AutomationVersionUpsert) { set(&AutomationVersionScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *AutomationVersionScopedUpsertBulk) Exec(ctx context.Context) error {
+	if u.b.s.auditing() {
+		return ErrAuditUpsert
+	}
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// AutomationVersionScopedUpdateOne wraps AutomationVersionUpdateOne. It has no way to move the row to another Workspace.
+type AutomationVersionScopedUpdateOne struct {
+	s *Scoped
+	b *AutomationVersionUpdateOne
+}
+
+// UpdateOneID updates the AutomationVersion with the id; a row of another Workspace is not found.
+func (t *AutomationVersionScoped) UpdateOneID(id int64) *AutomationVersionScopedUpdateOne {
+	return &AutomationVersionScopedUpdateOne{s: t.s, b: t.s.c.AutomationVersion.UpdateOneID(id).Where(automationversion.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationVersionScopedUpdateOne) Where(ps ...predicate.AutomationVersion) *AutomationVersionScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationVersionScopedUpdateOne) SetUpdatedAt(v time.Time) *AutomationVersionScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (x *AutomationVersionScopedUpdateOne) SetAutomationID(v int64) *AutomationVersionScopedUpdateOne {
+	x.b.SetAutomationID(v)
+	return x
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableAutomationID(v *int64) *AutomationVersionScopedUpdateOne {
+	x.b.SetNillableAutomationID(v)
+	return x
+}
+
+// SetSteps sets the "steps" field.
+func (x *AutomationVersionScopedUpdateOne) SetSteps(v string) *AutomationVersionScopedUpdateOne {
+	x.b.SetSteps(v)
+	return x
+}
+
+// SetNillableSteps sets the "steps" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableSteps(v *string) *AutomationVersionScopedUpdateOne {
+	x.b.SetNillableSteps(v)
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *AutomationVersionScopedUpdateOne) SetAutomation(v *Automation) *AutomationVersionScopedUpdateOne {
+	x.b.SetAutomation(v)
+	return x
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *AutomationVersionScopedUpdateOne) ClearAutomation() *AutomationVersionScopedUpdateOne {
+	x.b.ClearAutomation()
+	return x
+}
+
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
+func (x *AutomationVersionScopedUpdateOne) AddRunIDs(ids ...int64) *AutomationVersionScopedUpdateOne {
+	x.b.AddRunIDs(ids...)
+	return x
+}
+
+// AddRuns adds the "runs" edges to the AutomationRun entity.
+func (x *AutomationVersionScopedUpdateOne) AddRuns(v ...*AutomationRun) *AutomationVersionScopedUpdateOne {
+	x.b.AddRuns(v...)
+	return x
+}
+
+// ClearRuns clears the "runs" edges to the AutomationRun entity.
+func (x *AutomationVersionScopedUpdateOne) ClearRuns() *AutomationVersionScopedUpdateOne {
+	x.b.ClearRuns()
+	return x
+}
+
+// RemoveRunIDs removes the "runs" edge to AutomationRun entities by IDs.
+func (x *AutomationVersionScopedUpdateOne) RemoveRunIDs(ids ...int64) *AutomationVersionScopedUpdateOne {
+	x.b.RemoveRunIDs(ids...)
+	return x
+}
+
+// RemoveRuns removes "runs" edges to AutomationRun entities.
+func (x *AutomationVersionScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *AutomationVersionScopedUpdateOne {
+	x.b.RemoveRuns(v...)
+	return x
+}
+
+func (x *AutomationVersionScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
+		return fmt.Errorf("runs: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the AutomationVersion.
+func (x *AutomationVersionScopedUpdateOne) Save(ctx context.Context) (*AutomationVersion, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	if x.s.auditing() {
+		var updated *AutomationVersion
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			id, _ := x.b.Mutation().ID()
+			before, err := ts.c.AutomationVersion.Query().Where(x.b.mutation.predicates...).Where(automationversion.ID(id)).Only(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if updated, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			return ts.record(ctx, auditChangeAutomationVersion("update", before, updated))
+		})
+		return updated, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationVersionScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// AutomationVersionScopedUpdate wraps AutomationVersionUpdate: a conditional bulk update of one Workspace.
+type AutomationVersionScopedUpdate struct {
+	s *Scoped
+	b *AutomationVersionUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the AutomationVersion entities of the Workspace that match the predicates.
+func (t *AutomationVersionScoped) Update() *AutomationVersionScopedUpdate {
+	return &AutomationVersionScopedUpdate{s: t.s, b: t.s.c.AutomationVersion.Update().Where(automationversion.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationVersionScopedUpdate) Where(ps ...predicate.AutomationVersion) *AutomationVersionScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *AutomationVersionScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *AutomationVersionScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(automationversion.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationVersionScopedUpdate) SetUpdatedAt(v time.Time) *AutomationVersionScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (x *AutomationVersionScopedUpdate) SetAutomationID(v int64) *AutomationVersionScopedUpdate {
+	x.b.SetAutomationID(v)
+	return x
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableAutomationID(v *int64) *AutomationVersionScopedUpdate {
+	x.b.SetNillableAutomationID(v)
+	return x
+}
+
+// SetSteps sets the "steps" field.
+func (x *AutomationVersionScopedUpdate) SetSteps(v string) *AutomationVersionScopedUpdate {
+	x.b.SetSteps(v)
+	return x
+}
+
+// SetNillableSteps sets the "steps" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableSteps(v *string) *AutomationVersionScopedUpdate {
+	x.b.SetNillableSteps(v)
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *AutomationVersionScopedUpdate) SetAutomation(v *Automation) *AutomationVersionScopedUpdate {
+	x.b.SetAutomation(v)
+	return x
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *AutomationVersionScopedUpdate) ClearAutomation() *AutomationVersionScopedUpdate {
+	x.b.ClearAutomation()
+	return x
+}
+
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
+func (x *AutomationVersionScopedUpdate) AddRunIDs(ids ...int64) *AutomationVersionScopedUpdate {
+	x.b.AddRunIDs(ids...)
+	return x
+}
+
+// AddRuns adds the "runs" edges to the AutomationRun entity.
+func (x *AutomationVersionScopedUpdate) AddRuns(v ...*AutomationRun) *AutomationVersionScopedUpdate {
+	x.b.AddRuns(v...)
+	return x
+}
+
+// ClearRuns clears the "runs" edges to the AutomationRun entity.
+func (x *AutomationVersionScopedUpdate) ClearRuns() *AutomationVersionScopedUpdate {
+	x.b.ClearRuns()
+	return x
+}
+
+// RemoveRunIDs removes the "runs" edge to AutomationRun entities by IDs.
+func (x *AutomationVersionScopedUpdate) RemoveRunIDs(ids ...int64) *AutomationVersionScopedUpdate {
+	x.b.RemoveRunIDs(ids...)
+	return x
+}
+
+// RemoveRuns removes "runs" edges to AutomationRun entities.
+func (x *AutomationVersionScopedUpdate) RemoveRuns(v ...*AutomationRun) *AutomationVersionScopedUpdate {
+	x.b.RemoveRuns(v...)
+	return x
+}
+
+func (x *AutomationVersionScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
+		return fmt.Errorf("runs: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *AutomationVersionScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	if x.s.auditing() {
+		var n int
+		err := x.s.audited(ctx, func(ts *Scoped) error {
+			before, err := ts.c.AutomationVersion.Query().Where(x.b.mutation.predicates...).All(ctx)
+			if err != nil {
+				return err
+			}
+			x.b.auditRebind(ts.c)
+			if n, err = x.b.Save(ctx); err != nil {
+				return err
+			}
+			ids := make([]int64, len(before))
+			for i, row := range before {
+				ids[i] = row.ID
+			}
+			after, err := ts.c.AutomationVersion.Query().Where(automationversion.IDIn(ids...)).All(ctx)
+			if err != nil {
+				return err
+			}
+			byID := make(map[int64]*AutomationVersion, len(after))
+			for _, row := range after {
+				byID[row.ID] = row
+			}
+			for _, row := range before {
+				if now, ok := byID[row.ID]; ok {
+					if err := ts.record(ctx, auditChangeAutomationVersion("update", row, now)); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+		return n, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *AutomationVersionScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

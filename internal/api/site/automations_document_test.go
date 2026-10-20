@@ -48,7 +48,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	assert.Equal(t, emaildoc.EditorVersion(), res.Steps[0].EditorVersion.Value)
 	assert.False(t, res.Steps[2].Doc.Set, "a step with no document stays HTML-only")
 
-	stored, err := automations.Decode(env.DB.Automation.GetX(ctx, int64(res.ID)).Definition)
+	stored, err := automations.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello {{ first_name }}"}]}]}`, string(stored[0].Doc))
 	assert.Equal(t, res.Steps[0].Body.Value, stored[0].Body)
@@ -76,7 +76,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	require.Truef(t, ok, "got %T", cleared)
 	assert.False(t, clr.Steps[0].Doc.Set)
 	assert.False(t, clr.Steps[0].EditorVersion.Set)
-	stored, err = automations.Decode(env.DB.Automation.GetX(ctx, int64(res.ID)).Definition)
+	stored, err = automations.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
 	assert.Empty(t, stored[0].Doc)
 	assert.Empty(t, stored[0].EditorVersion)

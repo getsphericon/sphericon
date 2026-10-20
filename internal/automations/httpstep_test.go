@@ -24,7 +24,7 @@ func httpStep(url string) automations.Step {
 
 func TestDryRunEscapesAHostileContactNameAndKeepsTheStructure(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher)
+	m := automations.New(env.Cipher, env.Bus)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	_, err := acme.Contact().UpdateOneID(fixtures.ContactAliceID).
@@ -43,7 +43,7 @@ func TestDryRunEscapesAHostileContactNameAndKeepsTheStructure(t *testing.T) {
 
 func TestDryRunNamesTheErrorKindOfAnInvalidBody(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher)
+	m := automations.New(env.Cipher, env.Bus)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	res, err := m.DryRun(context.Background(), acme, fixtures.ContactAliceID, `{"n": {{ missing }}}`)
@@ -58,14 +58,14 @@ func TestDryRunNamesTheErrorKindOfAnInvalidBody(t *testing.T) {
 
 func TestDryRunOfAContactOfAnotherWorkspaceIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher)
+	m := automations.New(env.Cipher, env.Bus)
 	_, err := m.DryRun(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID, slackBody)
 	assert.ErrorIs(t, err, automations.ErrContactNotFound)
 }
 
 func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher)
+	m := automations.New(env.Cipher, env.Bus)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 
@@ -117,12 +117,12 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 
 func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher)
+	m := automations.New(env.Cipher, env.Bus)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	a, err := m.Get(context.Background(), acme, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
-	steps, err := automations.Decode(a.Definition)
+	steps, err := automations.CurrentSteps(a)
 	require.NoError(t, err)
 	opened, err := m.OpenHTTP(steps[0])
 	require.NoError(t, err)
@@ -136,7 +136,7 @@ func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 
 func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher)
+	m := automations.New(env.Cipher, env.Bus)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 
@@ -148,10 +148,10 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	})
 	require.NoError(t, err)
 	for _, secret := range []string{"SECRETPATH", "hunter2", "whsec_topsecret"} {
-		assert.NotContains(t, created.Definition, secret)
+		assert.NotContains(t, created.Edges.Versions[0].Steps, secret)
 	}
 
-	stored, err := automations.Decode(created.Definition)
+	stored, err := automations.CurrentSteps(created)
 	require.NoError(t, err)
 	require.NotEmpty(t, stored[1].ID, "a new HTTP step gets an id")
 
@@ -162,7 +162,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	}
 	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automations.Step{edit}})
 	require.NoError(t, err)
-	after, err := automations.Decode(updated.Definition)
+	after, err := automations.CurrentSteps(updated)
 	require.NoError(t, err)
 	assert.Equal(t, stored[1].URL, after[0].URL, "the stored ciphertext is copied, not re-sealed")
 	assert.Equal(t, stored[1].Secret, after[0].Secret)
@@ -182,7 +182,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	}
 	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automations.Step{replace}})
 	require.NoError(t, err)
-	after, err = automations.Decode(updated.Definition)
+	after, err = automations.CurrentSteps(updated)
 	require.NoError(t, err)
 	opened, err = m.OpenHTTP(after[0])
 	require.NoError(t, err)

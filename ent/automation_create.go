@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -84,20 +85,6 @@ func (_c *AutomationCreate) SetTriggerEvent(v string) *AutomationCreate {
 	return _c
 }
 
-// SetDefinition sets the "definition" field.
-func (_c *AutomationCreate) SetDefinition(v string) *AutomationCreate {
-	_c.mutation.SetDefinition(v)
-	return _c
-}
-
-// SetNillableDefinition sets the "definition" field if the given value is not nil.
-func (_c *AutomationCreate) SetNillableDefinition(v *string) *AutomationCreate {
-	if v != nil {
-		_c.SetDefinition(*v)
-	}
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *AutomationCreate) SetID(v int64) *AutomationCreate {
 	_c.mutation.SetID(v)
@@ -122,6 +109,21 @@ func (_c *AutomationCreate) AddRuns(v ...*AutomationRun) *AutomationCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddRunIDs(ids...)
+}
+
+// AddVersionIDs adds the "versions" edge to the AutomationVersion entity by IDs.
+func (_c *AutomationCreate) AddVersionIDs(ids ...int64) *AutomationCreate {
+	_c.mutation.AddVersionIDs(ids...)
+	return _c
+}
+
+// AddVersions adds the "versions" edges to the AutomationVersion entity.
+func (_c *AutomationCreate) AddVersions(v ...*AutomationVersion) *AutomationCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddVersionIDs(ids...)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -171,10 +173,6 @@ func (_c *AutomationCreate) defaults() {
 		v := automation.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
-	if _, ok := _c.mutation.Definition(); !ok {
-		v := automation.DefaultDefinition
-		_c.mutation.SetDefinition(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -211,9 +209,6 @@ func (_c *AutomationCreate) check() error {
 		if err := automation.TriggerEventValidator(v); err != nil {
 			return &ValidationError{Name: "trigger_event", err: fmt.Errorf(`ent: validator failed for field "Automation.trigger_event": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.Definition(); !ok {
-		return &ValidationError{Name: "definition", err: errors.New(`ent: missing required field "Automation.definition"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Automation.workspace"`)}
@@ -271,10 +266,6 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 		_spec.SetField(automation.FieldTriggerEvent, field.TypeString, value)
 		_node.TriggerEvent = value
 	}
-	if value, ok := _c.mutation.Definition(); ok {
-		_spec.SetField(automation.FieldDefinition, field.TypeString, value)
-		_node.Definition = value
-	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -301,6 +292,22 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.VersionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   automation.VersionsTable,
+			Columns: []string{automation.VersionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -417,18 +424,6 @@ func (u *AutomationUpsert) SetTriggerEvent(v string) *AutomationUpsert {
 // UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
 func (u *AutomationUpsert) UpdateTriggerEvent() *AutomationUpsert {
 	u.SetExcluded(automation.FieldTriggerEvent)
-	return u
-}
-
-// SetDefinition sets the "definition" field.
-func (u *AutomationUpsert) SetDefinition(v string) *AutomationUpsert {
-	u.Set(automation.FieldDefinition, v)
-	return u
-}
-
-// UpdateDefinition sets the "definition" field to the value that was provided on create.
-func (u *AutomationUpsert) UpdateDefinition() *AutomationUpsert {
-	u.SetExcluded(automation.FieldDefinition)
 	return u
 }
 
@@ -550,20 +545,6 @@ func (u *AutomationUpsertOne) SetTriggerEvent(v string) *AutomationUpsertOne {
 func (u *AutomationUpsertOne) UpdateTriggerEvent() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
 		s.UpdateTriggerEvent()
-	})
-}
-
-// SetDefinition sets the "definition" field.
-func (u *AutomationUpsertOne) SetDefinition(v string) *AutomationUpsertOne {
-	return u.Update(func(s *AutomationUpsert) {
-		s.SetDefinition(v)
-	})
-}
-
-// UpdateDefinition sets the "definition" field to the value that was provided on create.
-func (u *AutomationUpsertOne) UpdateDefinition() *AutomationUpsertOne {
-	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateDefinition()
 	})
 }
 
@@ -851,20 +832,6 @@ func (u *AutomationUpsertBulk) SetTriggerEvent(v string) *AutomationUpsertBulk {
 func (u *AutomationUpsertBulk) UpdateTriggerEvent() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
 		s.UpdateTriggerEvent()
-	})
-}
-
-// SetDefinition sets the "definition" field.
-func (u *AutomationUpsertBulk) SetDefinition(v string) *AutomationUpsertBulk {
-	return u.Update(func(s *AutomationUpsert) {
-		s.SetDefinition(v)
-	})
-}
-
-// UpdateDefinition sets the "definition" field to the value that was provided on create.
-func (u *AutomationUpsertBulk) UpdateDefinition() *AutomationUpsertBulk {
-	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateDefinition()
 	})
 }
 

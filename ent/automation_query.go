@@ -15,6 +15,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -28,6 +29,7 @@ type AutomationQuery struct {
 	predicates    []predicate.Automation
 	withWorkspace *WorkspaceQuery
 	withRuns      *AutomationRunQuery
+	withVersions  *AutomationVersionQuery
 	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -102,6 +104,28 @@ func (_q *AutomationQuery) QueryRuns() *AutomationRunQuery {
 			sqlgraph.From(automation.Table, automation.FieldID, selector),
 			sqlgraph.To(automationrun.Table, automationrun.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, automation.RunsTable, automation.RunsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryVersions chains the current query on the "versions" edge.
+func (_q *AutomationQuery) QueryVersions() *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automation.Table, automation.FieldID, selector),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, automation.VersionsTable, automation.VersionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -303,6 +327,7 @@ func (_q *AutomationQuery) Clone() *AutomationQuery {
 		predicates:    append([]predicate.Automation{}, _q.predicates...),
 		withWorkspace: _q.withWorkspace.Clone(),
 		withRuns:      _q.withRuns.Clone(),
+		withVersions:  _q.withVersions.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -329,6 +354,17 @@ func (_q *AutomationQuery) WithRuns(opts ...func(*AutomationRunQuery)) *Automati
 		opt(query)
 	}
 	_q.withRuns = query
+	return _q
+}
+
+// WithVersions tells the query-builder to eager-load the nodes that are connected to
+// the "versions" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AutomationQuery) WithVersions(opts ...func(*AutomationVersionQuery)) *AutomationQuery {
+	query := (&AutomationVersionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withVersions = query
 	return _q
 }
 
@@ -410,9 +446,10 @@ func (_q *AutomationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*A
 	var (
 		nodes       = []*Automation{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withWorkspace != nil,
 			_q.withRuns != nil,
+			_q.withVersions != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -446,6 +483,13 @@ func (_q *AutomationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*A
 		if err := _q.loadRuns(ctx, query, nodes,
 			func(n *Automation) { n.Edges.Runs = []*AutomationRun{} },
 			func(n *Automation, e *AutomationRun) { n.Edges.Runs = append(n.Edges.Runs, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withVersions; query != nil {
+		if err := _q.loadVersions(ctx, query, nodes,
+			func(n *Automation) { n.Edges.Versions = []*AutomationVersion{} },
+			func(n *Automation, e *AutomationVersion) { n.Edges.Versions = append(n.Edges.Versions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -496,6 +540,36 @@ func (_q *AutomationQuery) loadRuns(ctx context.Context, query *AutomationRunQue
 	}
 	query.Where(predicate.AutomationRun(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(automation.RunsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.AutomationID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "automation_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *AutomationQuery) loadVersions(ctx context.Context, query *AutomationVersionQuery, nodes []*Automation, init func(*Automation), assign func(*Automation, *AutomationVersion)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Automation)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(automationversion.FieldAutomationID)
+	}
+	query.Where(predicate.AutomationVersion(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(automation.VersionsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

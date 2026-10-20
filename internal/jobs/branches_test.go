@@ -31,11 +31,12 @@ func enroll(ctx context.Context, t *testing.T, env *testhelper.TestEnv, definiti
 	}
 	c, err := cc.Save(ctx)
 	require.NoError(t, err)
-	a, err := env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Branches").SetTriggerEvent("branch.test").SetStatus(automation.StatusActive).
-		SetDefinition(definition).Save(ctx)
+	a, err := testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Branches").SetTriggerEvent("branch.test").SetStatus(automation.StatusActive), definition)
 	require.NoError(t, err)
-	run, err := env.DB.AutomationRun.Create().SetAutomationID(a.ID).SetContactID(c.ID).SetWorkspaceID(fixtures.AcmeID).Save(ctx)
+	versionID, err := testhelper.LatestVersionID(ctx, env.DB, a.ID)
+	require.NoError(t, err)
+	run, err := env.DB.AutomationRun.Create().SetAutomationID(a.ID).SetVersionID(versionID).SetContactID(c.ID).SetWorkspaceID(fixtures.AcmeID).Save(ctx)
 	require.NoError(t, err)
 	return run.ID
 }
@@ -132,8 +133,8 @@ func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("trigger@test.dev").Save(ctx)
 	require.NoError(t, err)
 	mk := func(name, trigger string, status automation.Status) {
-		_, cerr := env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).SetName(name).
-			SetTriggerEvent(trigger).SetStatus(status).SetDefinition("[" + emailStep + "]").Save(ctx)
+		_, cerr := testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).SetName(name).
+			SetTriggerEvent(trigger).SetStatus(status), "["+emailStep+"]")
 		require.NoError(t, cerr)
 	}
 	mk("active match", "trigger.match", automation.StatusActive)

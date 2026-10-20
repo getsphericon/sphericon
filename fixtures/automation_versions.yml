@@ -1,0 +1,101 @@
+# The steps of each Automation (ADR 0049), one version per row. Id = the Automation's id for version 1.
+# The linear JSON step list ({"type":"email"|"wait", ...}); HTML bodies are kept attribute-free for
+# clean JSON. Onboarding drip (106) has two versions, with Enrollments on both.
+
+- id: 100 # fixture: AutomationWelcomeSeriesVersion
+  automation_id: 100
+  version: 1
+  steps: '[{"type":"email","subject":"Welcome to CodeBasics","body":"<p>Glad you are here.</p>"},{"type":"wait","seconds":86400},{"type":"email","subject":"Pick your first course","body":"<p>Here is how to begin.</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 90}}'
+  updated_at: '{{daysAgo 90}}'
+
+- id: 101
+  automation_id: 101
+  version: 1
+  steps: '[{"type":"email","subject":"You finished a course!","body":"<p>On to the next one.</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 75}}'
+  updated_at: '{{daysAgo 75}}'
+
+- id: 102 # fixture: AutomationWinBackVersion
+  automation_id: 102
+  version: 1
+  steps: '[{"type":"wait","seconds":604800},{"type":"email","subject":"We miss you","body":"<p>Your courses are waiting.</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+
+- id: 103 # fixture: AutomationHoldDemoVersion
+  automation_id: 103
+  version: 1
+  steps: '[{"type":"email","subject":"Hello from the hold demo","body":"<p>Hello there.</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 10}}'
+  updated_at: '{{daysAgo 10}}'
+
+- id: 104 # fixture: AutomationTagOnEngagementVersion
+  automation_id: 104
+  version: 1
+  steps: '[{"type":"apply_tag","tag":"engaged"},{"type":"remove_tag","tag":"vip"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 5}}'
+  updated_at: '{{daysAgo 5}}'
+
+- id: 105 # fixture: AutomationNotifySlackVersion
+  automation_id: 105
+  version: 1
+  steps: '[{"type":"http","id":"01J00000000000000000000001","url":"{{ encrypt "https://hooks.slack.com/services/T000/B000/XXXX" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"text\": \"New signup: {{ "{{ first_name }} {{ last_name }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
+- id: 106 # fixture: AutomationOnboardingDripVersion1
+  automation_id: 106
+  version: 1
+  steps: '[{"type":"email","subject":"Welcome aboard","body":"<p>Here is your first step.</p>"},{"type":"wait","seconds":3600},{"type":"email","subject":"Day one tips","body":"<p>Three things to try.</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+
+- id: 1060 # fixture: AutomationOnboardingDripVersion2
+  automation_id: 106
+  version: 2
+  steps: '[{"type":"email","subject":"Welcome aboard, again","body":"<p>A shorter start.</p>"},{"type":"email","subject":"Day one tips","body":"<p>Three things to try.</p>"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 6}}'
+  updated_at: '{{daysAgo 6}}'
+
+# The scoped-client tests copy the lowest-id row of another Workspace into Acme, where every
+# Automation already has a version 1: the lowest id here is version 2, so the copy is accepted.
+- id: 900
+  automation_id: 900
+  version: 2
+  steps: '[]'
+  workspace_id: 2
+  created_at: '2026-01-02 00:00:00'
+  updated_at: '2026-01-02 00:00:00'
+
+- id: 901
+  automation_id: 900
+  version: 1
+  steps: '[]'
+  workspace_id: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+- id: 300 # fixture: AutomationInitechVersion
+  automation_id: 300
+  version: 1
+  steps: '[{"type":"wait","seconds":86400}]'
+  workspace_id: 3
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+- id: 301 # fixture: AutomationInitechHTTPVersion
+  automation_id: 301
+  version: 1
+  steps: '[{"type":"http","id":"01J00000000000000000000002","url":"{{ encrypt "https://hooks.initech.test/services/T000/B000/XXXX" }}","headers":[],"body":"{\"email\": \"{{ "{{ email }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]'
+  workspace_id: 3
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

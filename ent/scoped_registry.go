@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -224,7 +225,6 @@ func ScopedEntities() []ScopedEntity {
 				b.SetName(src.Name)
 				b.SetStatus(src.Status)
 				b.SetTriggerEvent(src.TriggerEvent)
-				b.SetDefinition(src.Definition)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -236,6 +236,12 @@ func ScopedEntities() []ScopedEntity {
 					Name: "runs", Target: "AutomationRun",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Automation().UpdateOneID(id).AddRunIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "versions", Target: "AutomationVersion",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Automation().UpdateOneID(id).AddVersionIDs(target).Exec(ctx)
 					},
 				},
 			},
@@ -271,6 +277,7 @@ func ScopedEntities() []ScopedEntity {
 				b := s.AutomationRun().Create()
 				b.SetAutomationID(remap("Automation", src.AutomationID))
 				b.SetContactID(remap("Contact", src.ContactID))
+				b.SetVersionID(remap("AutomationVersion", src.VersionID))
 				b.SetStatus(src.Status)
 				b.SetCurrentStep(src.CurrentStep)
 				if src.ResumeAt != nil {
@@ -299,9 +306,68 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 				{
+					Name: "version", Target: "AutomationVersion",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.AutomationRun().UpdateOneID(id).SetVersionID(target).Exec(ctx)
+					},
+				},
+				{
 					Name: "contact_id", Target: "Contact",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.AutomationRun().UpdateOneID(id).SetContactID(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Name:    "AutomationVersion",
+			Audited: true,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.AutomationVersion.Query().Where(automationversion.WorkspaceID(ws)).Order(Asc(automationversion.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.AutomationVersion().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationVersion().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationVersion().Update().Where(automationversion.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationVersion().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationVersion().Delete().Where(automationversion.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.AutomationVersion.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.AutomationVersion().Create()
+				b.SetAutomationID(remap("Automation", src.AutomationID))
+				b.SetVersion(src.Version)
+				b.SetSteps(src.Steps)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "automation", Target: "Automation",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.AutomationVersion().UpdateOneID(id).SetAutomationID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "runs", Target: "AutomationRun",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.AutomationVersion().UpdateOneID(id).AddRunIDs(target).Exec(ctx)
 					},
 				},
 			},

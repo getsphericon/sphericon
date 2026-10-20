@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -67,6 +68,12 @@ func (_c *AutomationRunCreate) SetAutomationID(v int64) *AutomationRunCreate {
 // SetContactID sets the "contact_id" field.
 func (_c *AutomationRunCreate) SetContactID(v int64) *AutomationRunCreate {
 	_c.mutation.SetContactID(v)
+	return _c
+}
+
+// SetVersionID sets the "version_id" field.
+func (_c *AutomationRunCreate) SetVersionID(v int64) *AutomationRunCreate {
+	_c.mutation.SetVersionID(v)
 	return _c
 }
 
@@ -170,6 +177,11 @@ func (_c *AutomationRunCreate) SetAutomation(v *Automation) *AutomationRunCreate
 	return _c.SetAutomationID(v.ID)
 }
 
+// SetVersion sets the "version" edge to the AutomationVersion entity.
+func (_c *AutomationRunCreate) SetVersion(v *AutomationVersion) *AutomationRunCreate {
+	return _c.SetVersionID(v.ID)
+}
+
 // Mutation returns the AutomationRunMutation object of the builder.
 func (_c *AutomationRunCreate) Mutation() *AutomationRunMutation {
 	return _c.mutation
@@ -240,6 +252,9 @@ func (_c *AutomationRunCreate) check() error {
 	if _, ok := _c.mutation.ContactID(); !ok {
 		return &ValidationError{Name: "contact_id", err: errors.New(`ent: missing required field "AutomationRun.contact_id"`)}
 	}
+	if _, ok := _c.mutation.VersionID(); !ok {
+		return &ValidationError{Name: "version_id", err: errors.New(`ent: missing required field "AutomationRun.version_id"`)}
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "AutomationRun.status"`)}
 	}
@@ -266,6 +281,9 @@ func (_c *AutomationRunCreate) check() error {
 	}
 	if len(_c.mutation.AutomationIDs()) == 0 {
 		return &ValidationError{Name: "automation", err: errors.New(`ent: missing required edge "AutomationRun.automation"`)}
+	}
+	if len(_c.mutation.VersionIDs()) == 0 {
+		return &ValidationError{Name: "version", err: errors.New(`ent: missing required edge "AutomationRun.version"`)}
 	}
 	return nil
 }
@@ -368,6 +386,23 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.AutomationID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.VersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   automationrun.VersionTable,
+			Columns: []string{automationrun.VersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.VersionID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -473,6 +508,18 @@ func (u *AutomationRunUpsert) UpdateContactID() *AutomationRunUpsert {
 // AddContactID adds v to the "contact_id" field.
 func (u *AutomationRunUpsert) AddContactID(v int64) *AutomationRunUpsert {
 	u.Add(automationrun.FieldContactID, v)
+	return u
+}
+
+// SetVersionID sets the "version_id" field.
+func (u *AutomationRunUpsert) SetVersionID(v int64) *AutomationRunUpsert {
+	u.Set(automationrun.FieldVersionID, v)
+	return u
+}
+
+// UpdateVersionID sets the "version_id" field to the value that was provided on create.
+func (u *AutomationRunUpsert) UpdateVersionID() *AutomationRunUpsert {
+	u.SetExcluded(automationrun.FieldVersionID)
 	return u
 }
 
@@ -695,6 +742,20 @@ func (u *AutomationRunUpsertOne) AddContactID(v int64) *AutomationRunUpsertOne {
 func (u *AutomationRunUpsertOne) UpdateContactID() *AutomationRunUpsertOne {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.UpdateContactID()
+	})
+}
+
+// SetVersionID sets the "version_id" field.
+func (u *AutomationRunUpsertOne) SetVersionID(v int64) *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetVersionID(v)
+	})
+}
+
+// UpdateVersionID sets the "version_id" field to the value that was provided on create.
+func (u *AutomationRunUpsertOne) UpdateVersionID() *AutomationRunUpsertOne {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateVersionID()
 	})
 }
 
@@ -1101,6 +1162,20 @@ func (u *AutomationRunUpsertBulk) AddContactID(v int64) *AutomationRunUpsertBulk
 func (u *AutomationRunUpsertBulk) UpdateContactID() *AutomationRunUpsertBulk {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.UpdateContactID()
+	})
+}
+
+// SetVersionID sets the "version_id" field.
+func (u *AutomationRunUpsertBulk) SetVersionID(v int64) *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.SetVersionID(v)
+	})
+}
+
+// UpdateVersionID sets the "version_id" field to the value that was provided on create.
+func (u *AutomationRunUpsertBulk) UpdateVersionID() *AutomationRunUpsertBulk {
+	return u.Update(func(s *AutomationRunUpsert) {
+		s.UpdateVersionID()
 	})
 }
 

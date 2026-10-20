@@ -25,6 +25,8 @@ const (
 	FieldAutomationID = "automation_id"
 	// FieldContactID holds the string denoting the contact_id field in the database.
 	FieldContactID = "contact_id"
+	// FieldVersionID holds the string denoting the version_id field in the database.
+	FieldVersionID = "version_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldCurrentStep holds the string denoting the current_step field in the database.
@@ -41,6 +43,8 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeAutomation holds the string denoting the automation edge name in mutations.
 	EdgeAutomation = "automation"
+	// EdgeVersion holds the string denoting the version edge name in mutations.
+	EdgeVersion = "version"
 	// Table holds the table name of the automationrun in the database.
 	Table = "automation_runs"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -57,6 +61,13 @@ const (
 	AutomationInverseTable = "automations"
 	// AutomationColumn is the table column denoting the automation relation/edge.
 	AutomationColumn = "automation_id"
+	// VersionTable is the table that holds the version relation/edge.
+	VersionTable = "automation_runs"
+	// VersionInverseTable is the table name for the AutomationVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "automationversion" package.
+	VersionInverseTable = "automation_versions"
+	// VersionColumn is the table column denoting the version relation/edge.
+	VersionColumn = "version_id"
 )
 
 // Columns holds all SQL columns for automationrun fields.
@@ -67,6 +78,7 @@ var Columns = []string{
 	FieldWorkspaceID,
 	FieldAutomationID,
 	FieldContactID,
+	FieldVersionID,
 	FieldStatus,
 	FieldCurrentStep,
 	FieldResumeAt,
@@ -185,6 +197,11 @@ func ByContactID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContactID, opts...).ToFunc()
 }
 
+// ByVersionID orders the results by the version_id field.
+func ByVersionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersionID, opts...).ToFunc()
+}
+
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
@@ -228,6 +245,13 @@ func ByAutomationField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newAutomationStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByVersionField orders the results by version field.
+func ByVersionField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newVersionStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -240,5 +264,12 @@ func newAutomationStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AutomationInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, AutomationTable, AutomationColumn),
+	)
+}
+func newVersionStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(VersionInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, VersionTable, VersionColumn),
 	)
 }

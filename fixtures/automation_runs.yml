@@ -4,6 +4,7 @@
 - {
     id: 1000, # fixture: AutomationRunWelcomeCompleted
     automation_id: 100,
+    version_id: 100,
     contact_id: 100,
     workspace_id: 1,
     status: completed,
@@ -14,6 +15,7 @@
 - {
     id: 1001,
     automation_id: 100,
+    version_id: 100,
     contact_id: 101,
     workspace_id: 1,
     status: completed,
@@ -24,6 +26,7 @@
 - {
     id: 1002,
     automation_id: 100,
+    version_id: 100,
     contact_id: 102,
     workspace_id: 1,
     status: completed,
@@ -34,6 +37,7 @@
 - {
     id: 1003,
     automation_id: 100,
+    version_id: 100,
     contact_id: 103,
     workspace_id: 1,
     status: completed,
@@ -44,6 +48,7 @@
 - {
     id: 1004,
     automation_id: 100,
+    version_id: 100,
     contact_id: 105,
     workspace_id: 1,
     status: completed,
@@ -54,6 +59,7 @@
 - {
     id: 1005,
     automation_id: 100,
+    version_id: 100,
     contact_id: 104,
     workspace_id: 1,
     status: active,
@@ -65,6 +71,7 @@
 - {
     id: 1006,
     automation_id: 100,
+    version_id: 100,
     contact_id: 106,
     workspace_id: 1,
     status: active,
@@ -76,6 +83,7 @@
 - {
     id: 1007,
     automation_id: 100,
+    version_id: 100,
     contact_id: 108,
     workspace_id: 1,
     status: exited,
@@ -86,6 +94,7 @@
 - {
     id: 1008,
     automation_id: 100,
+    version_id: 100,
     contact_id: 109,
     workspace_id: 1,
     status: failed,
@@ -97,6 +106,7 @@
 - {
     id: 1009,
     automation_id: 101,
+    version_id: 101,
     contact_id: 110,
     workspace_id: 1,
     status: completed,
@@ -107,6 +117,7 @@
 - {
     id: 1010,
     automation_id: 101,
+    version_id: 101,
     contact_id: 111,
     workspace_id: 1,
     status: completed,
@@ -117,6 +128,7 @@
 - {
     id: 1011,
     automation_id: 101,
+    version_id: 101,
     contact_id: 112,
     workspace_id: 1,
     status: completed,
@@ -127,6 +139,7 @@
 - {
     id: 1012,
     automation_id: 101,
+    version_id: 101,
     contact_id: 115,
     workspace_id: 1,
     status: completed,
@@ -137,6 +150,7 @@
 - {
     id: 1013,
     automation_id: 101,
+    version_id: 101,
     contact_id: 113,
     workspace_id: 1,
     status: exited,
@@ -147,6 +161,7 @@
 - {
     id: 1014,
     automation_id: 101,
+    version_id: 101,
     contact_id: 114,
     workspace_id: 1,
     status: active,
@@ -155,10 +170,48 @@
     created_at: '{{daysAgo 1}}',
     updated_at: '{{hoursAgo 3}}',
   }
+# Onboarding drip (106): two Enrollments began on version 1 (one done, one still waiting on it); one
+# began after the steps were edited and ran on version 2.
+- {
+    id: 1200, # fixture: AutomationRunOnboardingOnVersion1
+    automation_id: 106,
+    version_id: 106,
+    contact_id: 128,
+    workspace_id: 1,
+    status: completed,
+    current_step: 3,
+    created_at: '{{daysAgo 30}}',
+    updated_at: '{{daysAgo 30}}',
+  }
+- {
+    id: 1201,
+    automation_id: 106,
+    version_id: 106,
+    contact_id: 129,
+    workspace_id: 1,
+    status: active,
+    current_step: 1,
+    resume_at: '{{daysAhead 1}}',
+    created_at: '{{daysAgo 20}}',
+    updated_at: '{{daysAgo 20}}',
+  }
+- {
+    id: 1202, # fixture: AutomationRunOnboardingOnVersion2
+    automation_id: 106,
+    version_id: 1060,
+    contact_id: 130,
+    workspace_id: 1,
+    status: completed,
+    current_step: 2,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+
 # Tag on engagement (104): contact 1 (has "vip" and "newsletter") enrolled, not yet stepped.
 - {
     id: 1100,
     automation_id: 104,
+    version_id: 104,
     contact_id: 1,
     workspace_id: 1,
     status: active,
@@ -172,6 +225,7 @@
 - {
     id: 1101, # fixture: AutomationRunHTTPFailed
     automation_id: 105,
+    version_id: 105,
     contact_id: 107,
     workspace_id: 1,
     status: failed,
@@ -187,6 +241,7 @@
 - {
     id: 900,
     automation_id: 900,
+    version_id: 900,
     contact_id: 900,
     workspace_id: 2,
     status: active,
@@ -199,6 +254,7 @@
 - {
     id: 3000, # fixture: AutomationRunErasable
     automation_id: 300,
+    version_id: 300,
     contact_id: 300,
     workspace_id: 3,
     status: active,
@@ -213,6 +269,7 @@
 - {
     id: 3001, # fixture: AutomationRunErasableHTTPFailed
     automation_id: 301,
+    version_id: 301,
     contact_id: 300,
     workspace_id: 3,
     status: failed,
@@ -226,6 +283,7 @@
 - {
     id: 3002, # fixture: AutomationRunBystanderHTTPFailed
     automation_id: 301,
+    version_id: 301,
     contact_id: 301,
     workspace_id: 3,
     status: failed,

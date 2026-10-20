@@ -27,12 +27,12 @@ const (
 	FieldStatus = "status"
 	// FieldTriggerEvent holds the string denoting the trigger_event field in the database.
 	FieldTriggerEvent = "trigger_event"
-	// FieldDefinition holds the string denoting the definition field in the database.
-	FieldDefinition = "definition"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeRuns holds the string denoting the runs edge name in mutations.
 	EdgeRuns = "runs"
+	// EdgeVersions holds the string denoting the versions edge name in mutations.
+	EdgeVersions = "versions"
 	// Table holds the table name of the automation in the database.
 	Table = "automations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -49,6 +49,13 @@ const (
 	RunsInverseTable = "automation_runs"
 	// RunsColumn is the table column denoting the runs relation/edge.
 	RunsColumn = "automation_id"
+	// VersionsTable is the table that holds the versions relation/edge.
+	VersionsTable = "automation_versions"
+	// VersionsInverseTable is the table name for the AutomationVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "automationversion" package.
+	VersionsInverseTable = "automation_versions"
+	// VersionsColumn is the table column denoting the versions relation/edge.
+	VersionsColumn = "automation_id"
 )
 
 // Columns holds all SQL columns for automation fields.
@@ -60,7 +67,6 @@ var Columns = []string{
 	FieldName,
 	FieldStatus,
 	FieldTriggerEvent,
-	FieldDefinition,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -84,8 +90,6 @@ var (
 	NameValidator func(string) error
 	// TriggerEventValidator is a validator for the "trigger_event" field. It is called by the builders before save.
 	TriggerEventValidator func(string) error
-	// DefaultDefinition holds the default value on creation for the "definition" field.
-	DefaultDefinition string
 )
 
 // Status defines the type for the "status" enum field.
@@ -152,11 +156,6 @@ func ByTriggerEvent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTriggerEvent, opts...).ToFunc()
 }
 
-// ByDefinition orders the results by the definition field.
-func ByDefinition(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDefinition, opts...).ToFunc()
-}
-
 // ByWorkspaceField orders the results by workspace field.
 func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -177,6 +176,20 @@ func ByRuns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRunsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByVersionsCount orders the results by versions count.
+func ByVersionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newVersionsStep(), opts...)
+	}
+}
+
+// ByVersions orders the results by versions terms.
+func ByVersions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newVersionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -189,5 +202,12 @@ func newRunsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RunsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
+	)
+}
+func newVersionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(VersionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, VersionsTable, VersionsColumn),
 	)
 }

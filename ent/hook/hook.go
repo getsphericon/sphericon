@@ -69,6 +69,18 @@ func (f AutomationRunFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationRunMutation", m)
 }
 
+// The AutomationVersionFunc type is an adapter to allow the use of ordinary
+// function as AutomationVersion mutator.
+type AutomationVersionFunc func(context.Context, *ent.AutomationVersionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AutomationVersionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AutomationVersionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationVersionMutation", m)
+}
+
 // The BrandKitFunc type is an adapter to allow the use of ordinary
 // function as BrandKit mutator.
 type BrandKitFunc func(context.Context, *ent.BrandKitMutation) (ent.Value, error)

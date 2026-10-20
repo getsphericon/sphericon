@@ -54,11 +54,9 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	require.Truef(t, ok, "got %T", updated)
 	assert.True(t, upd.Steps[0].HasSecret.Or(false))
 
-	stored, err := env.DB.Scoped(fixtures.AcmeID).Automation().Get(ctx, int64(res.ID))
+	steps, err := automations.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
-	steps, err := automations.Decode(stored.Definition)
-	require.NoError(t, err)
-	opened, err := automations.New(env.Cipher).OpenHTTP(steps[0])
+	opened, err := automations.New(env.Cipher, env.Bus).OpenHTTP(steps[0])
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.slack.com/services/T0/SECRETPATH", opened.URL)
 	assert.Equal(t, "Bearer hunter2", opened.Headers["Authorization"])
@@ -80,9 +78,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 // sealedValues returns the ciphertext of the first step's URL, secret and header values.
 func sealedValues(t *testing.T, env *testhelper.TestEnv, id int64) []string {
 	t.Helper()
-	stored, err := env.DB.Scoped(fixtures.AcmeID).Automation().Get(context.Background(), id)
-	require.NoError(t, err)
-	steps, err := automations.Decode(stored.Definition)
+	steps, err := automations.Decode(testhelper.LatestSteps(context.Background(), t, env.DB, id))
 	require.NoError(t, err)
 	out := []string{steps[0].URL, steps[0].Secret}
 	for _, h := range steps[0].Headers {

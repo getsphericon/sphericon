@@ -17,10 +17,10 @@ import (
 	"github.com/samber/lo"
 )
 
-// automationSteps decodes the stored definition into the typed steps DTO. A
-// malformed or empty definition yields no steps rather than an error.
-func automationSteps(def string) []externalapi.AutomationStep {
-	stored, err := automations.Decode(def)
+// automationSteps decodes the steps of the Automation's latest version into the typed steps
+// DTO. Malformed or missing steps yield no steps rather than an error.
+func automationSteps(a *ent.Automation) []externalapi.AutomationStep {
+	stored, err := automations.CurrentSteps(a)
 	if err != nil {
 		return nil
 	}
@@ -104,7 +104,7 @@ type Converter interface {
 	EmailTemplateToResource(source *ent.EmailTemplate) externalapi.TemplateResource
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource
 	TagToResource(source *ent.Tag) externalapi.TagResource
-	// goverter:map Definition Steps | automationSteps
+	// goverter:map . Steps | automationSteps
 	AutomationToResource(source *ent.Automation) externalapi.AutomationResource
 
 	// The Data export members (ADR 0021): the contract's typed projection of the

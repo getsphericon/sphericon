@@ -34,6 +34,10 @@ func (AutomationRun) Fields() []ent.Field {
 		field.Int64("automation_id"),
 		field.Int64("contact_id").
 			Annotations(ScopedRef{Entity: "Contact"}),
+		// The Automation version the Enrollment began on (ADR 0049): current_step indexes
+		// its steps, and the worker reads them from it, so an edit never moves the step an
+		// Enrollment stands on.
+		field.Int64("version_id"),
 		// exited: the enrollment left early (e.g. an unsubscribe or suppression
 		// mid-run) — distinct from completing the sequence.
 		field.Enum("status").
@@ -68,6 +72,11 @@ func (AutomationRun) Edges() []ent.Edge {
 			Field("automation_id").
 			Required().
 			Unique(),
+		edge.From("version", AutomationVersion.Type).
+			Ref("runs").
+			Field("version_id").
+			Required().
+			Unique(),
 	}
 }
 
@@ -77,5 +86,7 @@ func (AutomationRun) Indexes() []ent.Index {
 			Unique().
 			StorageKey("automation_runs_automation_id_contact_id"),
 		index.Fields("workspace_id"),
+		// "Does an Enrollment stand on this version" decides rewrite or supersede.
+		index.Fields("version_id"),
 	}
 }

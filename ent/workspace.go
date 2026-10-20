@@ -97,6 +97,8 @@ type WorkspaceEdges struct {
 	BrandKits []*BrandKit `json:"brand_kits,omitempty"`
 	// Automations holds the value of the automations edge.
 	Automations []*Automation `json:"automations,omitempty"`
+	// AutomationVersions holds the value of the automation_versions edge.
+	AutomationVersions []*AutomationVersion `json:"automation_versions,omitempty"`
 	// AutomationRuns holds the value of the automation_runs edge.
 	AutomationRuns []*AutomationRun `json:"automation_runs,omitempty"`
 	// WebhookEndpoints holds the value of the webhook_endpoints edge.
@@ -121,7 +123,7 @@ type WorkspaceEdges struct {
 	Usages []*Usage `json:"usages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [27]bool
+	loadedTypes [28]bool
 }
 
 // ContactsOrErr returns the Contacts value or an error if the edge
@@ -268,10 +270,19 @@ func (e WorkspaceEdges) AutomationsOrErr() ([]*Automation, error) {
 	return nil, &NotLoadedError{edge: "automations"}
 }
 
+// AutomationVersionsOrErr returns the AutomationVersions value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) AutomationVersionsOrErr() ([]*AutomationVersion, error) {
+	if e.loadedTypes[16] {
+		return e.AutomationVersions, nil
+	}
+	return nil, &NotLoadedError{edge: "automation_versions"}
+}
+
 // AutomationRunsOrErr returns the AutomationRuns value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationRunsOrErr() ([]*AutomationRun, error) {
-	if e.loadedTypes[16] {
+	if e.loadedTypes[17] {
 		return e.AutomationRuns, nil
 	}
 	return nil, &NotLoadedError{edge: "automation_runs"}
@@ -280,7 +291,7 @@ func (e WorkspaceEdges) AutomationRunsOrErr() ([]*AutomationRun, error) {
 // WebhookEndpointsOrErr returns the WebhookEndpoints value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) WebhookEndpointsOrErr() ([]*WebhookEndpoint, error) {
-	if e.loadedTypes[17] {
+	if e.loadedTypes[18] {
 		return e.WebhookEndpoints, nil
 	}
 	return nil, &NotLoadedError{edge: "webhook_endpoints"}
@@ -289,7 +300,7 @@ func (e WorkspaceEdges) WebhookEndpointsOrErr() ([]*WebhookEndpoint, error) {
 // SuppressionsOrErr returns the Suppressions value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) SuppressionsOrErr() ([]*Suppression, error) {
-	if e.loadedTypes[18] {
+	if e.loadedTypes[19] {
 		return e.Suppressions, nil
 	}
 	return nil, &NotLoadedError{edge: "suppressions"}
@@ -298,7 +309,7 @@ func (e WorkspaceEdges) SuppressionsOrErr() ([]*Suppression, error) {
 // UnsubscribesOrErr returns the Unsubscribes value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UnsubscribesOrErr() ([]*Unsubscribe, error) {
-	if e.loadedTypes[19] {
+	if e.loadedTypes[20] {
 		return e.Unsubscribes, nil
 	}
 	return nil, &NotLoadedError{edge: "unsubscribes"}
@@ -307,7 +318,7 @@ func (e WorkspaceEdges) UnsubscribesOrErr() ([]*Unsubscribe, error) {
 // ConfirmationsOrErr returns the Confirmations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ConfirmationsOrErr() ([]*Confirmation, error) {
-	if e.loadedTypes[20] {
+	if e.loadedTypes[21] {
 		return e.Confirmations, nil
 	}
 	return nil, &NotLoadedError{edge: "confirmations"}
@@ -316,7 +327,7 @@ func (e WorkspaceEdges) ConfirmationsOrErr() ([]*Confirmation, error) {
 // OutboundMessagesOrErr returns the OutboundMessages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
-	if e.loadedTypes[21] {
+	if e.loadedTypes[22] {
 		return e.OutboundMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "outbound_messages"}
@@ -325,7 +336,7 @@ func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
 // MembershipsOrErr returns the Memberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
-	if e.loadedTypes[22] {
+	if e.loadedTypes[23] {
 		return e.Memberships, nil
 	}
 	return nil, &NotLoadedError{edge: "memberships"}
@@ -334,7 +345,7 @@ func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
 // InvitationsOrErr returns the Invitations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
-	if e.loadedTypes[23] {
+	if e.loadedTypes[24] {
 		return e.Invitations, nil
 	}
 	return nil, &NotLoadedError{edge: "invitations"}
@@ -343,7 +354,7 @@ func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
 // AuditEntriesOrErr returns the AuditEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
-	if e.loadedTypes[24] {
+	if e.loadedTypes[25] {
 		return e.AuditEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "audit_entries"}
@@ -352,7 +363,7 @@ func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
 // ErasuresOrErr returns the Erasures value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
-	if e.loadedTypes[25] {
+	if e.loadedTypes[26] {
 		return e.Erasures, nil
 	}
 	return nil, &NotLoadedError{edge: "erasures"}
@@ -361,7 +372,7 @@ func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
 // UsagesOrErr returns the Usages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
-	if e.loadedTypes[26] {
+	if e.loadedTypes[27] {
 		return e.Usages, nil
 	}
 	return nil, &NotLoadedError{edge: "usages"}
@@ -623,6 +634,11 @@ func (_m *Workspace) QueryBrandKits() *BrandKitQuery {
 // QueryAutomations queries the "automations" edge of the Workspace entity.
 func (_m *Workspace) QueryAutomations() *AutomationQuery {
 	return NewWorkspaceClient(_m.config).QueryAutomations(_m)
+}
+
+// QueryAutomationVersions queries the "automation_versions" edge of the Workspace entity.
+func (_m *Workspace) QueryAutomationVersions() *AutomationVersionQuery {
+	return NewWorkspaceClient(_m.config).QueryAutomationVersions(_m)
 }
 
 // QueryAutomationRuns queries the "automation_runs" edge of the Workspace entity.

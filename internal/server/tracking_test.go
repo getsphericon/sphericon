@@ -283,12 +283,13 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 	}
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
-	a, err := env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
-		SetDefinition("[]").Save(ctx)
+	a, err := testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), "[]")
+	require.NoError(t, err)
+	versionID, err := testhelper.LatestVersionID(ctx, env.DB, a.ID)
 	require.NoError(t, err)
 	run, err := env.DB.AutomationRun.Create().
-		SetWorkspaceID(fixtures.AcmeID).SetAutomationID(a.ID).SetContactID(c.ID).
+		SetWorkspaceID(fixtures.AcmeID).SetAutomationID(a.ID).SetVersionID(versionID).SetContactID(c.ID).
 		SetStatus(automationrun.StatusActive).Save(ctx)
 	require.NoError(t, err)
 

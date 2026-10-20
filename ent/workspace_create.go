@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -549,6 +550,21 @@ func (_c *WorkspaceCreate) AddAutomations(v ...*Automation) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddAutomationIDs(ids...)
+}
+
+// AddAutomationVersionIDs adds the "automation_versions" edge to the AutomationVersion entity by IDs.
+func (_c *WorkspaceCreate) AddAutomationVersionIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddAutomationVersionIDs(ids...)
+	return _c
+}
+
+// AddAutomationVersions adds the "automation_versions" edges to the AutomationVersion entity.
+func (_c *WorkspaceCreate) AddAutomationVersions(v ...*AutomationVersion) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAutomationVersionIDs(ids...)
 }
 
 // AddAutomationRunIDs adds the "automation_runs" edge to the AutomationRun entity by IDs.
@@ -1185,6 +1201,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AutomationVersionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationVersionsTable,
+			Columns: []string{workspace.AutomationVersionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

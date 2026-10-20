@@ -22,9 +22,8 @@ func TestAutomationApplyTagIsAuditedUnderSystem(t *testing.T) {
 
 	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("sys@test.dev").Save(ctx)
 	require.NoError(t, err)
-	_, err = env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Tagger").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
-		SetDefinition(`[{"type":"apply_tag","tag":"system-made"}]`).Save(ctx)
+	_, err = testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Tagger").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), `[{"type":"apply_tag","tag":"system-made"}]`)
 	require.NoError(t, err)
 	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), c.ID, "contact.created")
 	require.NoError(t, err)

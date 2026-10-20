@@ -80,6 +80,11 @@ func ContactID(v int64) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldContactID, v))
 }
 
+// VersionID applies equality check predicate on the "version_id" field. It's identical to VersionIDEQ.
+func VersionID(v int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldVersionID, v))
+}
+
 // CurrentStep applies equality check predicate on the "current_step" field. It's identical to CurrentStepEQ.
 func CurrentStep(v int) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStep, v))
@@ -258,6 +263,26 @@ func ContactIDLT(v int64) predicate.AutomationRun {
 // ContactIDLTE applies the LTE predicate on the "contact_id" field.
 func ContactIDLTE(v int64) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldLTE(FieldContactID, v))
+}
+
+// VersionIDEQ applies the EQ predicate on the "version_id" field.
+func VersionIDEQ(v int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldVersionID, v))
+}
+
+// VersionIDNEQ applies the NEQ predicate on the "version_id" field.
+func VersionIDNEQ(v int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldVersionID, v))
+}
+
+// VersionIDIn applies the In predicate on the "version_id" field.
+func VersionIDIn(vs ...int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldVersionID, vs...))
+}
+
+// VersionIDNotIn applies the NotIn predicate on the "version_id" field.
+func VersionIDNotIn(vs ...int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldVersionID, vs...))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.
@@ -563,6 +588,29 @@ func HasAutomation() predicate.AutomationRun {
 func HasAutomationWith(preds ...predicate.Automation) predicate.AutomationRun {
 	return predicate.AutomationRun(func(s *sql.Selector) {
 		step := newAutomationStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasVersion applies the HasEdge predicate on the "version" edge.
+func HasVersion() predicate.AutomationRun {
+	return predicate.AutomationRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, VersionTable, VersionColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasVersionWith applies the HasEdge predicate on the "version" edge with a given conditions (other predicates).
+func HasVersionWith(preds ...predicate.AutomationVersion) predicate.AutomationRun {
+	return predicate.AutomationRun(func(s *sql.Selector) {
+		step := newVersionStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -30,8 +30,6 @@ type Automation struct {
 	Status automation.Status `json:"status,omitempty"`
 	// TriggerEvent holds the value of the "trigger_event" field.
 	TriggerEvent string `json:"trigger_event,omitempty"`
-	// Definition holds the value of the "definition" field.
-	Definition string `json:"definition,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationQuery when eager-loading is set.
 	Edges        AutomationEdges `json:"edges"`
@@ -44,9 +42,11 @@ type AutomationEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Runs holds the value of the runs edge.
 	Runs []*AutomationRun `json:"runs,omitempty"`
+	// Versions holds the value of the versions edge.
+	Versions []*AutomationVersion `json:"versions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -69,6 +69,15 @@ func (e AutomationEdges) RunsOrErr() ([]*AutomationRun, error) {
 	return nil, &NotLoadedError{edge: "runs"}
 }
 
+// VersionsOrErr returns the Versions value or an error if the edge
+// was not loaded in eager-loading.
+func (e AutomationEdges) VersionsOrErr() ([]*AutomationVersion, error) {
+	if e.loadedTypes[2] {
+		return e.Versions, nil
+	}
+	return nil, &NotLoadedError{edge: "versions"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Automation) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -76,7 +85,7 @@ func (*Automation) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case automation.FieldID, automation.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case automation.FieldName, automation.FieldStatus, automation.FieldTriggerEvent, automation.FieldDefinition:
+		case automation.FieldName, automation.FieldStatus, automation.FieldTriggerEvent:
 			values[i] = new(sql.NullString)
 		case automation.FieldCreatedAt, automation.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -137,12 +146,6 @@ func (_m *Automation) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.TriggerEvent = value.String
 			}
-		case automation.FieldDefinition:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field definition", values[i])
-			} else if value.Valid {
-				_m.Definition = value.String
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -164,6 +167,11 @@ func (_m *Automation) QueryWorkspace() *WorkspaceQuery {
 // QueryRuns queries the "runs" edge of the Automation entity.
 func (_m *Automation) QueryRuns() *AutomationRunQuery {
 	return NewAutomationClient(_m.config).QueryRuns(_m)
+}
+
+// QueryVersions queries the "versions" edge of the Automation entity.
+func (_m *Automation) QueryVersions() *AutomationVersionQuery {
+	return NewAutomationClient(_m.config).QueryVersions(_m)
 }
 
 // Update returns a builder for updating this Automation.
@@ -206,9 +214,6 @@ func (_m *Automation) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("trigger_event=")
 	builder.WriteString(_m.TriggerEvent)
-	builder.WriteString(", ")
-	builder.WriteString("definition=")
-	builder.WriteString(_m.Definition)
 	builder.WriteByte(')')
 	return builder.String()
 }

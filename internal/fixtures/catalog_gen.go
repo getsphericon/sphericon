@@ -53,18 +53,34 @@ const (
 	AutomationHoldDemoID = 103
 	// AutomationHoldDemoName is from fixtures/automations.
 	AutomationHoldDemoName = "Hold demo"
+	// AutomationHoldDemoVersionID is from fixtures/automation_versions.
+	AutomationHoldDemoVersionID = 103
 	// AutomationInitechHTTPID is from fixtures/automations.
 	AutomationInitechHTTPID = 301
 	// AutomationInitechHTTPName is from fixtures/automations.
 	AutomationInitechHTTPName = "Initech hook"
+	// AutomationInitechHTTPVersionID is from fixtures/automation_versions.
+	AutomationInitechHTTPVersionID = 301
 	// AutomationInitechID is from fixtures/automations.
 	AutomationInitechID = 300
 	// AutomationInitechName is from fixtures/automations.
 	AutomationInitechName = "Initech onboarding"
+	// AutomationInitechVersionID is from fixtures/automation_versions.
+	AutomationInitechVersionID = 300
 	// AutomationNotifySlackID is from fixtures/automations.
 	AutomationNotifySlackID = 105
 	// AutomationNotifySlackName is from fixtures/automations.
 	AutomationNotifySlackName = "Notify Slack on signup"
+	// AutomationNotifySlackVersionID is from fixtures/automation_versions.
+	AutomationNotifySlackVersionID = 105
+	// AutomationOnboardingDripID is from fixtures/automations.
+	AutomationOnboardingDripID = 106
+	// AutomationOnboardingDripName is from fixtures/automations.
+	AutomationOnboardingDripName = "Onboarding drip"
+	// AutomationOnboardingDripVersion1ID is from fixtures/automation_versions.
+	AutomationOnboardingDripVersion1ID = 106
+	// AutomationOnboardingDripVersion2ID is from fixtures/automation_versions.
+	AutomationOnboardingDripVersion2ID = 1060
 	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunBystanderHTTPFailedID = 3002
 	// AutomationRunErasableHTTPFailedID is from fixtures/automation_runs.
@@ -73,20 +89,30 @@ const (
 	AutomationRunErasableID = 3000
 	// AutomationRunHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunHTTPFailedID = 1101
+	// AutomationRunOnboardingOnVersion1ID is from fixtures/automation_runs.
+	AutomationRunOnboardingOnVersion1ID = 1200
+	// AutomationRunOnboardingOnVersion2ID is from fixtures/automation_runs.
+	AutomationRunOnboardingOnVersion2ID = 1202
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.
 	AutomationRunWelcomeCompletedID = 1000
 	// AutomationTagOnEngagementID is from fixtures/automations.
 	AutomationTagOnEngagementID = 104
 	// AutomationTagOnEngagementName is from fixtures/automations.
 	AutomationTagOnEngagementName = "Tag on engagement"
+	// AutomationTagOnEngagementVersionID is from fixtures/automation_versions.
+	AutomationTagOnEngagementVersionID = 104
 	// AutomationWelcomeSeriesID is from fixtures/automations.
 	AutomationWelcomeSeriesID = 100
 	// AutomationWelcomeSeriesName is from fixtures/automations.
 	AutomationWelcomeSeriesName = "Welcome series"
+	// AutomationWelcomeSeriesVersionID is from fixtures/automation_versions.
+	AutomationWelcomeSeriesVersionID = 100
 	// AutomationWinBackID is from fixtures/automations.
 	AutomationWinBackID = 102
 	// AutomationWinBackName is from fixtures/automations.
 	AutomationWinBackName = "Win-back lapsed learners"
+	// AutomationWinBackVersionID is from fixtures/automation_versions.
+	AutomationWinBackVersionID = 102
 	// BrandKitAcmeID is from fixtures/brand_kits.
 	BrandKitAcmeID = 1
 	// BrandKitGlobexID is from fixtures/brand_kits.

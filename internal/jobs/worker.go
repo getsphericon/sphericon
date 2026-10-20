@@ -84,7 +84,7 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 	river.AddWorker(workers, &RunStepWorker{ent: entClient, mod: mod, fence: FenceOn(entClient)})
 	river.AddWorker(workers, &RunHTTPStepWorker{
 		ent:    entClient,
-		mod:    automations.New(cipher),
+		mod:    automations.New(cipher, bus),
 		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
 		now:    time.Now,
 		fence:  FenceOn(entClient),
@@ -116,6 +116,7 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 	river.AddWorker(workers, &PruneOutboxWorker{ent: entClient, floor: retention.OutboxFloor})
 	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{ent: entClient, retention: retention.UnverifiedUsers})
+	river.AddWorker(workers, &BackfillAutomationVersionsWorker{ent: entClient})
 	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
 
 	var extraPeriodic []*river.PeriodicJob
@@ -223,6 +224,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 				river.PeriodicInterval(workspaceErasureInterval),
 				func() (river.JobArgs, *river.InsertOpts) {
 					return EraseWorkspacesArgs{}, nil
+				},
+				&river.PeriodicJobOpts{RunOnStart: true},
+			),
+			// Move the steps of Automations made before versions into their version 1 (ADR 0049).
+			river.NewPeriodicJob(
+				river.PeriodicInterval(backfillVersionsInterval),
+				func() (river.JobArgs, *river.InsertOpts) {
+					return BackfillAutomationVersionsArgs{}, nil
 				},
 				&river.PeriodicJobOpts{RunOnStart: true},
 			),

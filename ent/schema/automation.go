@@ -11,8 +11,8 @@ import (
 
 // Automation is a workspace-scoped, event-triggered workflow. A contact is
 // enrolled when an Event whose action equals trigger_event is recorded for them;
-// the run then walks the linear list of steps in definition (JSON). Branch/goal
-// nodes and a visual builder come later.
+// the run then walks the linear list of steps of the Automation version it began on.
+// Branch/goal nodes and a visual builder come later.
 type Automation struct {
 	ent.Schema
 }
@@ -42,13 +42,6 @@ func (Automation) Fields() []ent.Field {
 		// "email.opened", a custom collect event).
 		field.String("trigger_event").
 			NotEmpty(),
-		// JSON array of steps: [{"type":"email","subject":..,"body":<html>},
-		// {"type":"wait","seconds":N}].
-		// Sensitive: HTTP steps carry sealed URL, header values and secret (ADR 0039),
-		// so the Audit entry only says the definition changed.
-		field.String("definition").
-			Default("[]").
-			Annotations(Sensitive{}),
 	}
 }
 
@@ -56,6 +49,10 @@ func (Automation) Edges() []ent.Edge {
 	return []ent.Edge{
 		// Deleting an Automation deletes its Enrollments with it.
 		edge.To("runs", AutomationRun.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// The steps live in the versions (ADR 0049); the latest one is the Automation's
+		// current steps. Purging an Automation purges its versions with it.
+		edge.To("versions", AutomationVersion.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

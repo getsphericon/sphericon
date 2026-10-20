@@ -59,3 +59,24 @@ func ColumnsOf(t *testing.T, sqlDB *sql.DB, table string, columns ...string) int
 	}
 	return n
 }
+
+// InsertLegacyAutomations adds a Workspace, two Contacts, and two Automations that keep their steps
+// in the definition column: 1, with one Enrollment, and 2, with two. It is the state a database
+// from before Automation versions is in, in a database migrated up to the migration that adds the
+// versions table, so it writes the column the ent client no longer has and gives the Enrollments
+// no version, and talks SQL like InsertLegacyWorkspaces.
+func InsertLegacyAutomations(t *testing.T, sqlDB *sql.DB) {
+	t.Helper()
+	for _, q := range []string{
+		`INSERT INTO workspaces (id, name, public_id, collect_key, created_at, updated_at) VALUES (1, 'w', 'aaaaaaaa', 'k', now(), now())`,
+		`INSERT INTO contacts (id, workspace_id, created_at, updated_at) VALUES (1, 1, now(), now()), (2, 1, now(), now())`,
+		`INSERT INTO automations (id, name, status, trigger_event, definition, workspace_id, created_at, updated_at)
+		   VALUES (1, 'one', 'active', 'a', '[{"type":"wait","seconds":1}]', 1, now(), now()),
+		          (2, 'two', 'draft', 'b', '[{"type":"wait","seconds":2}]', 1, now(), now())`,
+		`INSERT INTO automation_runs (id, automation_id, contact_id, workspace_id, created_at, updated_at)
+		   VALUES (1, 1, 1, 1, now(), now()), (2, 2, 1, 1, now(), now()), (3, 2, 2, 1, now(), now())`,
+	} {
+		_, err := sqlDB.ExecContext(t.Context(), q)
+		require.NoError(t, err, q)
+	}
+}

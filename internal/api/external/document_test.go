@@ -244,7 +244,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AutomationsUpdateUnprocessableEntity{}, invalid)
-	stored, err := automations.Decode(env.DB.Automation.GetX(ctx, int64(res.ID)).Definition)
+	stored, err := automations.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
 	assert.Contains(t, stored[0].Body, "Second")
 }

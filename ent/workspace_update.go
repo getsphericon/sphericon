@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -626,6 +627,21 @@ func (_u *WorkspaceUpdate) AddAutomations(v ...*Automation) *WorkspaceUpdate {
 	return _u.AddAutomationIDs(ids...)
 }
 
+// AddAutomationVersionIDs adds the "automation_versions" edge to the AutomationVersion entity by IDs.
+func (_u *WorkspaceUpdate) AddAutomationVersionIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddAutomationVersionIDs(ids...)
+	return _u
+}
+
+// AddAutomationVersions adds the "automation_versions" edges to the AutomationVersion entity.
+func (_u *WorkspaceUpdate) AddAutomationVersions(v ...*AutomationVersion) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationVersionIDs(ids...)
+}
+
 // AddAutomationRunIDs adds the "automation_runs" edge to the AutomationRun entity by IDs.
 func (_u *WorkspaceUpdate) AddAutomationRunIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddAutomationRunIDs(ids...)
@@ -1130,6 +1146,27 @@ func (_u *WorkspaceUpdate) RemoveAutomations(v ...*Automation) *WorkspaceUpdate 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationIDs(ids...)
+}
+
+// ClearAutomationVersions clears all "automation_versions" edges to the AutomationVersion entity.
+func (_u *WorkspaceUpdate) ClearAutomationVersions() *WorkspaceUpdate {
+	_u.mutation.ClearAutomationVersions()
+	return _u
+}
+
+// RemoveAutomationVersionIDs removes the "automation_versions" edge to AutomationVersion entities by IDs.
+func (_u *WorkspaceUpdate) RemoveAutomationVersionIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveAutomationVersionIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationVersions removes "automation_versions" edges to AutomationVersion entities.
+func (_u *WorkspaceUpdate) RemoveAutomationVersions(v ...*AutomationVersion) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationVersionIDs(ids...)
 }
 
 // ClearAutomationRuns clears all "automation_runs" edges to the AutomationRun entity.
@@ -2253,6 +2290,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.AutomationVersionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationVersionsTable,
+			Columns: []string{workspace.AutomationVersionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationVersionsIDs(); len(nodes) > 0 && !_u.mutation.AutomationVersionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationVersionsTable,
+			Columns: []string{workspace.AutomationVersionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationVersionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationVersionsTable,
+			Columns: []string{workspace.AutomationVersionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.AutomationRunsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -3340,6 +3422,21 @@ func (_u *WorkspaceUpdateOne) AddAutomations(v ...*Automation) *WorkspaceUpdateO
 	return _u.AddAutomationIDs(ids...)
 }
 
+// AddAutomationVersionIDs adds the "automation_versions" edge to the AutomationVersion entity by IDs.
+func (_u *WorkspaceUpdateOne) AddAutomationVersionIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddAutomationVersionIDs(ids...)
+	return _u
+}
+
+// AddAutomationVersions adds the "automation_versions" edges to the AutomationVersion entity.
+func (_u *WorkspaceUpdateOne) AddAutomationVersions(v ...*AutomationVersion) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationVersionIDs(ids...)
+}
+
 // AddAutomationRunIDs adds the "automation_runs" edge to the AutomationRun entity by IDs.
 func (_u *WorkspaceUpdateOne) AddAutomationRunIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddAutomationRunIDs(ids...)
@@ -3844,6 +3941,27 @@ func (_u *WorkspaceUpdateOne) RemoveAutomations(v ...*Automation) *WorkspaceUpda
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationIDs(ids...)
+}
+
+// ClearAutomationVersions clears all "automation_versions" edges to the AutomationVersion entity.
+func (_u *WorkspaceUpdateOne) ClearAutomationVersions() *WorkspaceUpdateOne {
+	_u.mutation.ClearAutomationVersions()
+	return _u
+}
+
+// RemoveAutomationVersionIDs removes the "automation_versions" edge to AutomationVersion entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveAutomationVersionIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveAutomationVersionIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationVersions removes "automation_versions" edges to AutomationVersion entities.
+func (_u *WorkspaceUpdateOne) RemoveAutomationVersions(v ...*AutomationVersion) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationVersionIDs(ids...)
 }
 
 // ClearAutomationRuns clears all "automation_runs" edges to the AutomationRun entity.
@@ -4990,6 +5108,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationVersionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationVersionsTable,
+			Columns: []string{workspace.AutomationVersionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationVersionsIDs(); len(nodes) > 0 && !_u.mutation.AutomationVersionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationVersionsTable,
+			Columns: []string{workspace.AutomationVersionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationVersionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationVersionsTable,
+			Columns: []string{workspace.AutomationVersionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

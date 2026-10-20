@@ -1233,7 +1233,11 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		return automations.New(cipher), nil
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		return automations.New(cipher, bus.Bus), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*eventlog.Module, error) {

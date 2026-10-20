@@ -72,16 +72,16 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStep
 		return nil // the Enrollment moved on without this job
 	}
 
-	a, err := s.Automation().Get(ctx, run.AutomationID)
+	version, err := s.AutomationVersion().Get(ctx, run.VersionID)
 	if err != nil {
 		return err
 	}
-	steps, err := automations.Decode(a.Definition)
+	steps, err := automations.Decode(version.Steps)
 	if err != nil {
 		return w.fail(ctx, run, automations.Failure{Kind: automationrun.FailureKindInvalidBody}, river.JobCancel(err))
 	}
 	if run.CurrentStep >= len(steps) || steps[run.CurrentStep].Type != automations.StepHTTP {
-		return nil // the Automation was edited since the job was queued
+		return nil // the Enrollment moved on since the job was queued
 	}
 	step := steps[run.CurrentStep]
 

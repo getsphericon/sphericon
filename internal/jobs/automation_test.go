@@ -48,10 +48,8 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 		SetEmail("auto@test.dev").SetFirstName("Ada").Save(ctx)
 	require.NoError(t, err)
 
-	_, err = env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
-		SetDefinition("[" + emailStep + `,{"type":"wait","seconds":3600},` + emailStep + "]").
-		Save(ctx)
+	_, err = testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), "["+emailStep+`,{"type":"wait","seconds":3600},`+emailStep+"]")
 	require.NoError(t, err)
 
 	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), c.ID, "contact.created")
@@ -91,9 +89,8 @@ func TestAutomationExitsOnUnsubscribe(t *testing.T) {
 		SetEmail("optout@test.dev").SetFirstName("Opt").Save(ctx)
 	require.NoError(t, err)
 
-	a, err := env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
-		SetDefinition("[" + emailStep + "]").Save(ctx)
+	a, err := testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), "["+emailStep+"]")
 	require.NoError(t, err)
 
 	// Opt the destination out of THIS automation's sending source.
@@ -132,9 +129,8 @@ func TestAutomationExitsOnSuppression(t *testing.T) {
 		SetReason(suppression.ReasonBounce).Save(ctx)
 	require.NoError(t, err)
 
-	a, err := env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
-		SetDefinition("[" + emailStep + "]").Save(ctx)
+	a, err := testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), "["+emailStep+"]")
 	require.NoError(t, err)
 	_ = a
 
@@ -166,9 +162,8 @@ func TestAutomationUnaffectedByBroadcastUnsubscribe(t *testing.T) {
 		SetContactID(c.ID).Save(ctx)
 	require.NoError(t, err)
 
-	_, err = env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
-		SetDefinition("[" + emailStep + "]").Save(ctx)
+	_, err = testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), "["+emailStep+"]")
 	require.NoError(t, err)
 
 	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), c.ID, "contact.created")
@@ -191,9 +186,8 @@ func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).
 		SetEmail("foot@test.dev").SetFirstName("Foo").Save(ctx)
 	require.NoError(t, err)
-	_, err = env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
-		SetDefinition("[" + emailStep + "]").Save(ctx)
+	_, err = testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Welcome").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), "["+emailStep+"]")
 	require.NoError(t, err)
 
 	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), c.ID, "contact.created")
@@ -218,8 +212,8 @@ func TestAutomationInactiveDoesNotEnroll(t *testing.T) {
 
 	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("x@test.dev").Save(ctx)
 	require.NoError(t, err)
-	_, err = env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Draft").SetTriggerEvent("contact.created").Save(ctx) // status defaults to draft
+	_, err = testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Draft").SetTriggerEvent("contact.created"), "[]") // status defaults to draft
 	require.NoError(t, err)
 
 	runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), c.ID, "contact.created")
@@ -233,9 +227,8 @@ func TestAutomationWaitDefersNextStep(t *testing.T) {
 
 	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("w@test.dev").Save(ctx)
 	require.NoError(t, err)
-	a, err := env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Delayed").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
-		SetDefinition(`[{"type":"wait","seconds":3600},` + emailStep + `]`).Save(ctx)
+	a, err := testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Delayed").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), `[{"type":"wait","seconds":3600},`+emailStep+`]`)
 	require.NoError(t, err)
 	_ = a
 
@@ -291,9 +284,8 @@ func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *test
 	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).
 		SetEmail("late@test.dev").SetFirstName("Late").Save(ctx)
 	require.NoError(t, err)
-	a, err := env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Broken template").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
-		SetDefinition(`[{"type":"email","subject":"{% if x %}open","body":"<p>Hi</p>"}]`).Save(ctx)
+	a, err := testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Broken template").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive), `[{"type":"email","subject":"{% if x %}open","body":"<p>Hi</p>"}]`)
 	require.NoError(t, err)
 	runIDs, err := jobs.EvaluateTrigger(ctx, s, c.ID, "contact.created")
 	require.NoError(t, err)
@@ -375,4 +367,52 @@ func TestWaitStepOnAnExitedRunDoesNotSetResumeAt(t *testing.T) {
 	assert.Equal(t, automationrun.StatusExited, run.Status)
 	assert.Nil(t, run.ResumeAt)
 	assert.Equal(t, 1, run.CurrentStep)
+}
+
+// An Enrollment finishes on the steps it began with, however the Automation is edited after
+// (ADR 0049): the next Enrollment begins on the new steps.
+func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	mod := automations.New(env.Cipher, env.Bus)
+
+	before, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("before@test.dev").SetFirstName("Bea").Save(ctx)
+	require.NoError(t, err)
+	after, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("after@test.dev").SetFirstName("Abe").Save(ctx)
+	require.NoError(t, err)
+	a, err := testhelper.AutomationWithSteps(ctx, env.DB, env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Edited live").SetTriggerEvent("edit.live").SetStatus(automation.StatusActive),
+		`[{"type":"wait","seconds":60},{"type":"email","subject":"Old steps","body":"<p>old</p>"}]`)
+	require.NoError(t, err)
+
+	early, err := jobs.EvaluateTrigger(ctx, acme, before.ID, "edit.live")
+	require.NoError(t, err)
+	require.Len(t, early, 1)
+	// The first step (the wait) runs; the Enrollment now stands on the email step.
+	fs := &fakeSender{}
+	_, err = jobs.RunStep(ctx, env.DB, noFence, newMod(env, resolvingTo(fs)), early[0])
+	require.NoError(t, err)
+
+	// The owner edits the steps: a wait is inserted ahead and the email is reworded. Were the
+	// Enrollment to read the live steps, its index 1 would now be the new wait.
+	_, err = mod.Update(ctx, acme, a.ID, automations.UpdateInput{Steps: &[]automations.Step{
+		{Type: automations.StepWait, Seconds: 1},
+		{Type: automations.StepWait, Seconds: 2},
+		{Type: automations.StepEmail, Subject: "New steps", Body: "<p>new</p>"},
+	}})
+	require.NoError(t, err)
+
+	late, err := jobs.EvaluateTrigger(ctx, acme, after.ID, "edit.live")
+	require.NoError(t, err)
+	require.Len(t, late, 1)
+
+	drive(t, env, resolvingTo(fs), early[0])
+	drive(t, env, resolvingTo(fs), late[0])
+
+	require.Len(t, fs.sent, 2)
+	assert.Equal(t, "Old steps", fs.sent[0].Subject, "the Enrollment begun before the edit finished on its own version")
+	assert.Equal(t, "New steps", fs.sent[1].Subject, "the Enrollment begun after the edit used the new steps")
+	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, early[0]).Status)
+	assert.NotEqual(t, env.DB.AutomationRun.GetX(ctx, early[0]).VersionID, env.DB.AutomationRun.GetX(ctx, late[0]).VersionID)
 }

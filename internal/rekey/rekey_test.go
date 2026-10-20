@@ -10,7 +10,9 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/rekey"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -38,6 +40,16 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := config.Load("test")
 	require.NoError(t, err)
+
+	// An Enrollment stands on the first version of the Slack Automation (fixture), so editing its
+	// steps leaves that version as it was and adds a second: both hold sealed secrets.
+	_, err = automations.New(env.Cipher, env.Bus).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &[]automations.Step{
+		{Type: automations.StepHTTP, ID: "01J00000000000000000000001", URL: "https://hooks.example.test/v2", Body: `{"v":2}`, Secret: "whsec_second_version"},
+	}})
+	require.NoError(t, err)
+	slackVersions, err := env.DB.AutomationVersion.Query().Where(automationversion.AutomationID(fixtures.AutomationNotifySlackID)).Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 2, slackVersions)
 
 	rotatedKeyset, err := secrets.Rotate(cfg.EncryptionKey)
 	require.NoError(t, err)
@@ -108,11 +120,11 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 		_, err := retired.Decrypt(row.SecondFactorSecretEncrypted)
 		require.NoError(t, err, "user %d", row.ID)
 	}
-	rows, err := env.DB.Automation.Query().All(ctx)
+	rows, err := env.DB.AutomationVersion.Query().All(ctx)
 	require.NoError(t, err)
 	var sealedFields int
 	for _, row := range rows {
-		steps, err := automations.Decode(row.Definition)
+		steps, err := automations.Decode(row.Steps)
 		require.NoError(t, err)
 		httpSteps := lo.Filter(steps, func(s automations.Step, _ int) bool { return s.Type == automations.StepHTTP })
 		for _, s := range httpSteps {
@@ -128,6 +140,8 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 		}
 	}
 	assert.Positive(t, sealedFields, "the fixtures hold HTTP steps")
+	slackVersions = lo.CountBy(rows, func(row *ent.AutomationVersion) bool { return row.AutomationID == fixtures.AutomationNotifySlackID })
+	assert.Equal(t, 2, slackVersions, "an older version is read along with the latest")
 
 	// The old keyset alone no longer reads the rewritten rows: the rotation took effect.
 	_, err = cipherFor(t, cfg.EncryptionKey).Decrypt(integrations[0].ConfigEncrypted)

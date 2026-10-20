@@ -379,7 +379,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	confirmations := &Confirmations{}
 	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
-	automationsModule := automations.New(cipher)
+	automationsModule := automations.New(cipher, bus)
 	broadcastsModule := broadcasts.New(inline)
 	acc := accounts.New(client, bus)
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{

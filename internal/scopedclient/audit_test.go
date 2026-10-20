@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -229,18 +230,6 @@ func makeRoomForPlanted(t *testing.T, env *testhelper.TestEnv, e ent.ScopedEntit
 	}
 }
 
-// idsAfterPlanting reloads a singleton entity's ids: the planted row is the only one now.
-func idsAfterPlanting(t *testing.T, env *testhelper.TestEnv, e ent.ScopedEntity, ids []int64) []int64 {
-	t.Helper()
-	if !singletonEntities[e.Name] {
-		return ids
-	}
-	reloaded, err := e.IDs(t.Context(), env.DB, acme)
-	require.NoError(t, err)
-	require.NotEmpty(t, reloaded, e.Name)
-	return reloaded
-}
-
 // Every entity that opts in emits on create, update and delete (so a new annotated entity
 // cannot silently miss a wrapper). The registry is generated from the schema.
 func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
@@ -275,9 +264,12 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 		}
 		_, err = e.Replant(ctx, s, foreign[0], remap)
 		require.NoError(t, err, e.Name)
-		ids = idsAfterPlanting(t, env, e, ids)
-		require.NoError(t, e.Touch(ctx, s, ids[0]), e.Name)
-		require.NoError(t, e.Delete(ctx, s, ids[0]), e.Name)
+		// The planted row has the newest id; a fixture row may have rows that stand on it.
+		ids, err = e.IDs(ctx, env.DB, acme)
+		require.NoError(t, err)
+		planted := slices.Max(ids)
+		require.NoError(t, e.Touch(ctx, s, planted), e.Name)
+		require.NoError(t, e.Delete(ctx, s, planted), e.Name)
 
 		got := auditEntries(t, env)[before:]
 		require.Len(t, got, 3, e.Name)

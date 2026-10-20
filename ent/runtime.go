@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -160,10 +161,6 @@ func init() {
 	automationDescTriggerEvent := automationFields[3].Descriptor()
 	// automation.TriggerEventValidator is a validator for the "trigger_event" field. It is called by the builders before save.
 	automation.TriggerEventValidator = automationDescTriggerEvent.Validators[0].(func(string) error)
-	// automationDescDefinition is the schema descriptor for definition field.
-	automationDescDefinition := automationFields[4].Descriptor()
-	// automation.DefaultDefinition holds the default value on creation for the definition field.
-	automation.DefaultDefinition = automationDescDefinition.Default.(string)
 	automationrunMixin := schema.AutomationRun{}.Mixin()
 	automationrunMixinFields0 := automationrunMixin[0].Fields()
 	_ = automationrunMixinFields0
@@ -180,11 +177,34 @@ func init() {
 	// automationrun.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	automationrun.UpdateDefaultUpdatedAt = automationrunDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// automationrunDescCurrentStep is the schema descriptor for current_step field.
-	automationrunDescCurrentStep := automationrunFields[4].Descriptor()
+	automationrunDescCurrentStep := automationrunFields[5].Descriptor()
 	// automationrun.DefaultCurrentStep holds the default value on creation for the current_step field.
 	automationrun.DefaultCurrentStep = automationrunDescCurrentStep.Default.(int)
 	// automationrun.CurrentStepValidator is a validator for the "current_step" field. It is called by the builders before save.
 	automationrun.CurrentStepValidator = automationrunDescCurrentStep.Validators[0].(func(int) error)
+	automationversionMixin := schema.AutomationVersion{}.Mixin()
+	automationversionMixinFields0 := automationversionMixin[0].Fields()
+	_ = automationversionMixinFields0
+	automationversionFields := schema.AutomationVersion{}.Fields()
+	_ = automationversionFields
+	// automationversionDescCreatedAt is the schema descriptor for created_at field.
+	automationversionDescCreatedAt := automationversionMixinFields0[0].Descriptor()
+	// automationversion.DefaultCreatedAt holds the default value on creation for the created_at field.
+	automationversion.DefaultCreatedAt = automationversionDescCreatedAt.Default.(func() time.Time)
+	// automationversionDescUpdatedAt is the schema descriptor for updated_at field.
+	automationversionDescUpdatedAt := automationversionMixinFields0[1].Descriptor()
+	// automationversion.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	automationversion.DefaultUpdatedAt = automationversionDescUpdatedAt.Default.(func() time.Time)
+	// automationversion.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	automationversion.UpdateDefaultUpdatedAt = automationversionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// automationversionDescVersion is the schema descriptor for version field.
+	automationversionDescVersion := automationversionFields[2].Descriptor()
+	// automationversion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
+	automationversion.VersionValidator = automationversionDescVersion.Validators[0].(func(int) error)
+	// automationversionDescSteps is the schema descriptor for steps field.
+	automationversionDescSteps := automationversionFields[3].Descriptor()
+	// automationversion.DefaultSteps holds the default value on creation for the steps field.
+	automationversion.DefaultSteps = automationversionDescSteps.Default.(string)
 	brandkitMixin := schema.BrandKit{}.Mixin()
 	brandkitMixinFields0 := brandkitMixin[0].Fields()
 	_ = brandkitMixinFields0

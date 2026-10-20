@@ -584,9 +584,8 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 
 	c, err := e.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("wk@test.dev").SetFirstName("Wk").Save(ctx)
 	require.NoError(t, err)
-	_, err = e.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetName("Flow").SetTriggerEvent("worker.test").SetStatus(automation.StatusActive).
-		SetDefinition("[" + emailStep + `,{"type":"wait","seconds":3600},` + emailStep + "]").Save(ctx)
+	_, err = testhelper.AutomationWithSteps(ctx, e.DB, e.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Flow").SetTriggerEvent("worker.test").SetStatus(automation.StatusActive), "["+emailStep+`,{"type":"wait","seconds":3600},`+emailStep+"]")
 	require.NoError(t, err)
 
 	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB).Work(ctx, job(jobs.EvaluateTriggerArgs{

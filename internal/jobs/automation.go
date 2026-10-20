@@ -163,9 +163,15 @@ func RunStep(ctx context.Context, client *ent.Client, fence Fencer, mod *outboun
 	if err != nil {
 		return StepResult{}, err
 	}
-	steps, err := automations.Decode(a.Definition)
+	// The steps are the ones of the version the Enrollment began on, whatever the Automation
+	// holds now (ADR 0049).
+	version, err := scoped.AutomationVersion().Get(ctx, run.VersionID)
 	if err != nil {
-		return failRun(ctx, scoped, run.ID, fmt.Errorf("automation %d definition: %w", a.ID, err))
+		return StepResult{}, fmt.Errorf("load version %d of run %d: %w", run.VersionID, run.ID, err)
+	}
+	steps, err := automations.Decode(version.Steps)
+	if err != nil {
+		return failRun(ctx, scoped, run.ID, fmt.Errorf("automation %d version %d steps: %w", a.ID, version.Version, err))
 	}
 
 	if run.CurrentStep >= len(steps) {

@@ -80,11 +80,6 @@ func TriggerEvent(v string) predicate.Automation {
 	return predicate.Automation(sql.FieldEQ(FieldTriggerEvent, v))
 }
 
-// Definition applies equality check predicate on the "definition" field. It's identical to DefinitionEQ.
-func Definition(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldDefinition, v))
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Automation {
 	return predicate.Automation(sql.FieldEQ(FieldCreatedAt, v))
@@ -335,71 +330,6 @@ func TriggerEventContainsFold(v string) predicate.Automation {
 	return predicate.Automation(sql.FieldContainsFold(FieldTriggerEvent, v))
 }
 
-// DefinitionEQ applies the EQ predicate on the "definition" field.
-func DefinitionEQ(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldDefinition, v))
-}
-
-// DefinitionNEQ applies the NEQ predicate on the "definition" field.
-func DefinitionNEQ(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldNEQ(FieldDefinition, v))
-}
-
-// DefinitionIn applies the In predicate on the "definition" field.
-func DefinitionIn(vs ...string) predicate.Automation {
-	return predicate.Automation(sql.FieldIn(FieldDefinition, vs...))
-}
-
-// DefinitionNotIn applies the NotIn predicate on the "definition" field.
-func DefinitionNotIn(vs ...string) predicate.Automation {
-	return predicate.Automation(sql.FieldNotIn(FieldDefinition, vs...))
-}
-
-// DefinitionGT applies the GT predicate on the "definition" field.
-func DefinitionGT(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldGT(FieldDefinition, v))
-}
-
-// DefinitionGTE applies the GTE predicate on the "definition" field.
-func DefinitionGTE(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldGTE(FieldDefinition, v))
-}
-
-// DefinitionLT applies the LT predicate on the "definition" field.
-func DefinitionLT(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldLT(FieldDefinition, v))
-}
-
-// DefinitionLTE applies the LTE predicate on the "definition" field.
-func DefinitionLTE(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldLTE(FieldDefinition, v))
-}
-
-// DefinitionContains applies the Contains predicate on the "definition" field.
-func DefinitionContains(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldContains(FieldDefinition, v))
-}
-
-// DefinitionHasPrefix applies the HasPrefix predicate on the "definition" field.
-func DefinitionHasPrefix(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldHasPrefix(FieldDefinition, v))
-}
-
-// DefinitionHasSuffix applies the HasSuffix predicate on the "definition" field.
-func DefinitionHasSuffix(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldHasSuffix(FieldDefinition, v))
-}
-
-// DefinitionEqualFold applies the EqualFold predicate on the "definition" field.
-func DefinitionEqualFold(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldEqualFold(FieldDefinition, v))
-}
-
-// DefinitionContainsFold applies the ContainsFold predicate on the "definition" field.
-func DefinitionContainsFold(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldContainsFold(FieldDefinition, v))
-}
-
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
@@ -438,6 +368,29 @@ func HasRuns() predicate.Automation {
 func HasRunsWith(preds ...predicate.AutomationRun) predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
 		step := newRunsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasVersions applies the HasEdge predicate on the "versions" edge.
+func HasVersions() predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, VersionsTable, VersionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasVersionsWith applies the HasEdge predicate on the "versions" edge with a given conditions (other predicates).
+func HasVersionsWith(preds ...predicate.AutomationVersion) predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := newVersionsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

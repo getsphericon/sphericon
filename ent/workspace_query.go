@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -67,6 +68,7 @@ type WorkspaceQuery struct {
 	withEmailTemplates      *EmailTemplateQuery
 	withBrandKits           *BrandKitQuery
 	withAutomations         *AutomationQuery
+	withAutomationVersions  *AutomationVersionQuery
 	withAutomationRuns      *AutomationRunQuery
 	withWebhookEndpoints    *WebhookEndpointQuery
 	withSuppressions        *SuppressionQuery
@@ -460,6 +462,28 @@ func (_q *WorkspaceQuery) QueryAutomations() *AutomationQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(automation.Table, automation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationsTable, workspace.AutomationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAutomationVersions chains the current query on the "automation_versions" edge.
+func (_q *WorkspaceQuery) QueryAutomationVersions() *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationVersionsTable, workspace.AutomationVersionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -917,6 +941,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withEmailTemplates:      _q.withEmailTemplates.Clone(),
 		withBrandKits:           _q.withBrandKits.Clone(),
 		withAutomations:         _q.withAutomations.Clone(),
+		withAutomationVersions:  _q.withAutomationVersions.Clone(),
 		withAutomationRuns:      _q.withAutomationRuns.Clone(),
 		withWebhookEndpoints:    _q.withWebhookEndpoints.Clone(),
 		withSuppressions:        _q.withSuppressions.Clone(),
@@ -1108,6 +1133,17 @@ func (_q *WorkspaceQuery) WithAutomations(opts ...func(*AutomationQuery)) *Works
 		opt(query)
 	}
 	_q.withAutomations = query
+	return _q
+}
+
+// WithAutomationVersions tells the query-builder to eager-load the nodes that are connected to
+// the "automation_versions" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithAutomationVersions(opts ...func(*AutomationVersionQuery)) *WorkspaceQuery {
+	query := (&AutomationVersionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAutomationVersions = query
 	return _q
 }
 
@@ -1310,7 +1346,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [27]bool{
+		loadedTypes = [28]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1327,6 +1363,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withEmailTemplates != nil,
 			_q.withBrandKits != nil,
 			_q.withAutomations != nil,
+			_q.withAutomationVersions != nil,
 			_q.withAutomationRuns != nil,
 			_q.withWebhookEndpoints != nil,
 			_q.withSuppressions != nil,
@@ -1472,6 +1509,15 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadAutomations(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.Automations = []*Automation{} },
 			func(n *Workspace, e *Automation) { n.Edges.Automations = append(n.Edges.Automations, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAutomationVersions; query != nil {
+		if err := _q.loadAutomationVersions(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.AutomationVersions = []*AutomationVersion{} },
+			func(n *Workspace, e *AutomationVersion) {
+				n.Edges.AutomationVersions = append(n.Edges.AutomationVersions, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -2020,6 +2066,36 @@ func (_q *WorkspaceQuery) loadAutomations(ctx context.Context, query *Automation
 	}
 	query.Where(predicate.Automation(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.AutomationsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadAutomationVersions(ctx context.Context, query *AutomationVersionQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *AutomationVersion)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(automationversion.FieldWorkspaceID)
+	}
+	query.Where(predicate.AutomationVersion(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.AutomationVersionsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

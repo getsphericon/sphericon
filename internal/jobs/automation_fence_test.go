@@ -188,12 +188,16 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		Type: automations.StepHTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
 		Headers: []automations.Header{{Name: "Authorization"}},
 	}}
-	_, err = automations.New(cipher).Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
+	busDB, err := sql.Open("pgx", e.url)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = busDB.Close() })
+	mod := automations.New(cipher, events.New(busDB))
+	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
 	runID, enrolled, err := automations.Enroll(ctx, e.scoped, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
-	w := jobs.NewRunHTTPStepWorker(e.client, e.fence, automations.New(cipher), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
+	w := jobs.NewRunHTTPStepWorker(e.client, e.fence, mod, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
 
 	workDone := make(chan error, 1)
 	go func() {

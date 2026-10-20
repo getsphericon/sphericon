@@ -24,6 +24,8 @@ type Tx struct {
 	Automation *AutomationClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
+	// AutomationVersion is the client for interacting with the AutomationVersion builders.
+	AutomationVersion *AutomationVersionClient
 	// BrandKit is the client for interacting with the BrandKit builders.
 	BrandKit *BrandKitClient
 	// Broadcast is the client for interacting with the Broadcast builders.
@@ -236,6 +238,7 @@ func (tx *Tx) init() {
 	tx.AuthAttempt = NewAuthAttemptClient(tx.config)
 	tx.Automation = NewAutomationClient(tx.config)
 	tx.AutomationRun = NewAutomationRunClient(tx.config)
+	tx.AutomationVersion = NewAutomationVersionClient(tx.config)
 	tx.BrandKit = NewBrandKitClient(tx.config)
 	tx.Broadcast = NewBroadcastClient(tx.config)
 	tx.BroadcastRecipient = NewBroadcastRecipientClient(tx.config)

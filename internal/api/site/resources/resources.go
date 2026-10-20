@@ -85,7 +85,7 @@ type Converter interface {
 
 	// The stored definition string (the executor's JSON format) is decoded into
 	// the typed steps DTO at this boundary.
-	// goverter:map Definition Steps | automationSteps
+	// goverter:map . Steps | automationSteps
 	AutomationToResource(source *ent.Automation) siteapi.SiteAutomationResource
 	SuppressionToResource(source *ent.Suppression) siteapi.SiteSuppressionResource
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
@@ -315,10 +315,10 @@ func eventProperties(m map[string]any) siteapi.OptNilSiteEventResourceProperties
 	return siteapi.NewOptNilSiteEventResourceProperties(props)
 }
 
-// automationSteps decodes the stored definition string into the typed steps DTO.
-// A malformed/empty definition yields no steps rather than an error.
-func automationSteps(def string) []siteapi.SiteAutomationStep {
-	stored, err := automations.Decode(def)
+// automationSteps decodes the steps of the Automation's latest version into the typed steps
+// DTO. Malformed or missing steps yield no steps rather than an error.
+func automationSteps(a *ent.Automation) []siteapi.SiteAutomationStep {
+	stored, err := automations.CurrentSteps(a)
 	if err != nil {
 		return nil
 	}

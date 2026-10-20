@@ -1,7 +1,7 @@
-// Package automations is the one place an Automation's definition is stored,
+// Package automations is the one place an Automation's steps are stored,
 // validated and its lifecycle changed (ADR 0016). /site and /api handlers stay thin
 // adapters over it; the step executor (internal/jobs) decodes the same Step format,
-// so the storage JSON has a single definition.
+// so the storage JSON has a single definition. The steps live in versions (ADR 0049).
 package automations
 
 import (
@@ -11,9 +11,14 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
@@ -60,6 +65,10 @@ var (
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
 	// without a tag name, or an email step whose content cannot render.
 	ErrInvalidStep = errors.New("automations: invalid step")
+
+	// ErrNoVersion: the Automation has no version yet. Only an Automation made before versions
+	// existed can be in that state, until the backfill job (internal/jobs) has run.
+	ErrNoVersion = errors.New("automations: automation has no version yet")
 
 	errBodyAndDoc = errors.New("automations: a step writes a body or a doc, not both")
 )
@@ -153,11 +162,15 @@ func validate(steps []Step) error {
 }
 
 // Module is the automations module.
-type Module struct{ cipher *secrets.Cipher }
+type Module struct {
+	cipher *secrets.Cipher
+	bus    *events.Bus
+}
 
 // New builds the automations module. It holds no client: every call takes the
-// Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets.
-func New(cipher *secrets.Cipher) *Module { return &Module{cipher: cipher} }
+// Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets; the bus
+// opens the transaction that saves an Automation together with its steps.
+func New(cipher *secrets.Cipher, bus *events.Bus) *Module { return &Module{cipher: cipher, bus: bus} }
 
 // CreateInput is the data for a new Automation. It is always created as a draft:
 // activating is a separate, deliberate operation.
@@ -174,22 +187,42 @@ type UpdateInput struct {
 	Steps        *[]Step
 }
 
+// latest narrows the versions an Automation query loads to the newest one of each Automation:
+// the Automation's current steps (CurrentSteps reads them).
+func latest(q *ent.AutomationVersionQuery) {
+	q.Where(func(s *sql.Selector) {
+		newest := sql.Table(automationversion.Table).As("newest")
+		s.Where(sql.EQ(s.C(automationversion.FieldVersion),
+			sql.Select(sql.Max(newest.C(automationversion.FieldVersion))).From(newest).
+				Where(sql.ColumnsEQ(newest.C(automationversion.FieldAutomationID), s.C(automationversion.FieldAutomationID)))))
+	})
+}
+
+// CurrentSteps decodes the steps of the Automation's latest version, which the Automations this
+// module returns carry. An Automation that was loaded some other way has none.
+func CurrentSteps(a *ent.Automation) ([]Step, error) {
+	if len(a.Edges.Versions) == 0 {
+		return nil, nil
+	}
+	return Decode(a.Edges.Versions[0].Steps)
+}
+
 // List returns one page of the Workspace's Automations, newest first.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Automation], error) {
 	return pagination.List(ctx, p,
 		func(ctx context.Context) (int, error) { return s.Automation().Query().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Automation, error) {
-			return s.Automation().Query().Order(ent.Desc(automation.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return s.Automation().Query().WithVersions(latest).Order(ent.Desc(automation.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
 }
 
 // Get returns one Automation of the Workspace.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
-	a, err := s.Automation().Get(ctx, id)
+	a, err := s.Automation().Query().Where(automation.ID(id)).WithVersions(latest).Only(ctx)
 	return a, notFound(err)
 }
 
-// Create stores a new draft Automation.
+// Create stores a new draft Automation with its first version.
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.Automation, error) {
 	built, err := build(ctx, in.Steps)
 	if err != nil {
@@ -199,61 +232,112 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if err := validate(in.Steps); err != nil {
 		return nil, err
 	}
-	q := s.Automation().Create().
-		SetName(in.Name).
-		SetTriggerEvent(in.TriggerEvent).
-		SetStatus(automation.StatusDraft)
+	def := "[]"
 	if in.Steps != nil {
 		sealed, err := m.sealSteps(in.Steps, nil)
 		if err != nil {
 			return nil, err
 		}
-		def, err := Encode(sealed)
-		if err != nil {
+		if def, err = Encode(sealed); err != nil {
 			return nil, err
 		}
-		q = q.SetDefinition(def)
 	}
-	return q.Save(ctx)
+	var id int64
+	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		a, err := ts.Automation().Create().
+			SetName(in.Name).
+			SetTriggerEvent(in.TriggerEvent).
+			SetStatus(automation.StatusDraft).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+		id = a.ID
+		_, err = ts.AutomationVersion().Create().SetAutomationID(a.ID).SetVersion(1).SetSteps(def).Save(ctx)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return m.Get(ctx, s, id)
 }
 
 // Update changes the Automation's name, trigger or steps. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
-	q := s.Automation().UpdateOneID(id).
-		SetNillableName(in.Name).
-		SetNillableTriggerEvent(in.TriggerEvent)
+	var steps []Step
 	if in.Steps != nil {
 		built, err := build(ctx, *in.Steps)
 		if err != nil {
 			return nil, err
 		}
-		in.Steps = &built
-		if err := validate(*in.Steps); err != nil {
+		if err := validate(built); err != nil {
 			return nil, err
 		}
-		cur, err := s.Automation().Get(ctx, id)
-		if err != nil {
-			return nil, notFound(err)
-		}
-		stored, err := Decode(cur.Definition)
-		if err != nil {
-			return nil, err
-		}
-		sealed, err := m.sealSteps(*in.Steps, stored)
-		if err != nil {
-			return nil, err
-		}
-		def, err := Encode(sealed)
-		if err != nil {
-			return nil, err
-		}
-		q = q.SetDefinition(def)
+		steps = built
 	}
-	a, err := q.Save(ctx)
-	return a, notFound(err)
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		if _, err := ts.Automation().UpdateOneID(id).
+			SetNillableName(in.Name).
+			SetNillableTriggerEvent(in.TriggerEvent).
+			Save(ctx); err != nil {
+			return err
+		}
+		if in.Steps == nil {
+			return nil
+		}
+		return m.saveSteps(ctx, ts, id, steps)
+	})
+	if err != nil {
+		return nil, notFound(err)
+	}
+	return m.Get(ctx, s, id)
 }
 
-// Delete removes the Automation.
+// saveSteps stores steps as the Automation's current ones (ADR 0049). The latest version is
+// rewritten in place when no Enrollment stands on it, so a draft edited many times stays one
+// version; otherwise the steps become a new version and the Enrollments keep the one they began
+// on. Saving steps identical to the latest version's stores nothing.
+func (m *Module) saveSteps(ctx context.Context, s *ent.Scoped, automationID int64, steps []Step) error {
+	cur, err := s.AutomationVersion().Query().
+		Where(automationversion.AutomationID(automationID)).
+		Order(ent.Desc(automationversion.FieldVersion)).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		return ErrNoVersion
+	}
+	if err != nil {
+		return err
+	}
+	stored, err := Decode(cur.Steps)
+	if err != nil {
+		return err
+	}
+	sealed, err := m.sealSteps(steps, stored)
+	if err != nil {
+		return err
+	}
+	def, err := Encode(sealed)
+	if err != nil {
+		return err
+	}
+	if def == cur.Steps {
+		return nil
+	}
+	standing, err := s.AutomationRun().Query().Where(automationrun.VersionID(cur.ID)).Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if !standing {
+		return s.AutomationVersion().UpdateOneID(cur.ID).SetSteps(def).Exec(ctx)
+	}
+	return s.AutomationVersion().Create().
+		SetAutomationID(automationID).
+		SetVersion(cur.Version + 1).
+		SetSteps(def).
+		Exec(ctx)
+}
+
+// Delete removes the Automation, its versions and its Enrollments.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	err := s.Automation().DeleteOneID(id).Exec(ctx)
 	return notFound(err)
@@ -270,10 +354,10 @@ func (m *Module) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 }
 
 func (m *Module) setStatus(ctx context.Context, s *ent.Scoped, id int64, status automation.Status) (*ent.Automation, error) {
-	a, err := s.Automation().UpdateOneID(id).
-		SetStatus(status).
-		Save(ctx)
-	return a, notFound(err)
+	if err := s.Automation().UpdateOneID(id).SetStatus(status).Exec(ctx); err != nil {
+		return nil, notFound(err)
+	}
+	return m.Get(ctx, s, id)
 }
 
 func notFound(err error) error {

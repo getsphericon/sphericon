@@ -321,7 +321,8 @@ _Avoid_: Hook, rule, entry condition
 
 **Enrollment**:
 One Contact's membership-and-progress in one Automation — enrolled at most once ever
-(re-enrollment is deliberately out of scope). Holds the current step and a terminal state:
+(re-enrollment is deliberately out of scope). Stands on one **Automation version** (the one latest when
+it began) and holds the current step in it, and a terminal state:
 `completed`, `failed`, or **`exited`** (left early). An unsubscribe from the Automation has two
 effects from one action — it records the durable opt-out (scope `automation:<id>`) _and_ moves
 the active Enrollment to `exited`; suppression and hard bounces likewise exit the Enrollment.

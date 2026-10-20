@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/staffmember"
@@ -191,24 +191,25 @@ func (m *Module) sweeps() []sweep {
 			},
 		},
 		{
-			column: "automations.definition",
+			// Every version, not only the latest: an Enrollment still stands on an old one.
+			column: "automation_versions.steps",
 			page: func(ctx context.Context, after int64, n int) ([]row, error) {
-				rs, err := c.Automation.Query().Where(automation.IDGT(after)).Order(ent.Asc(automation.FieldID)).Limit(n).All(ctx)
-				return rows(rs, func(e *ent.Automation) row { return row{e.ID, e.Definition} }), err
+				rs, err := c.AutomationVersion.Query().Where(automationversion.IDGT(after)).Order(ent.Asc(automationversion.FieldID)).Limit(n).All(ctx)
+				return rows(rs, func(e *ent.AutomationVersion) row { return row{e.ID, e.Steps} }), err
 			},
 			rewrite: func(ctx context.Context, id int64, prev, next string) (bool, error) {
-				n, err := c.Automation.Update().Where(automation.ID(id), automation.Definition(prev)).SetDefinition(next).Save(ctx)
+				n, err := c.AutomationVersion.Update().Where(automationversion.ID(id), automationversion.Steps(prev)).SetSteps(next).Save(ctx)
 				return n > 0, err
 			},
-			seal: m.sealDefinition,
+			seal: m.sealSteps,
 		},
 	}
 }
 
-// sealDefinition rewraps the sealed fields of an Automation's HTTP steps: the URL, the header
+// sealSteps rewraps the sealed fields of an Automation version's HTTP steps: the URL, the header
 // values and the signing secret, each sealed on its own (ADR 0039).
-func (m *Module) sealDefinition(definition string) (string, bool, error) {
-	steps, err := automations.Decode(definition)
+func (m *Module) sealSteps(stored string) (string, bool, error) {
+	steps, err := automations.Decode(stored)
 	if err != nil {
 		return "", false, err
 	}
@@ -239,7 +240,7 @@ func (m *Module) sealDefinition(definition string) (string, bool, error) {
 		}
 	}
 	if !changed {
-		return definition, false, nil
+		return stored, false, nil
 	}
 	next, err := automations.Encode(steps)
 	return next, true, err

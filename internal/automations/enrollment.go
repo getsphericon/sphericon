@@ -6,6 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 )
 
@@ -28,8 +29,25 @@ func Enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (
 	if err != nil || exists {
 		return 0, false, err
 	}
+	// The Enrollment begins on the Automation's latest version and stays on it (ADR 0049).
+	versionID, err := s.AutomationVersion().Query().
+		Where(automationversion.AutomationID(automationID)).
+		Order(ent.Desc(automationversion.FieldVersion)).
+		FirstID(ctx)
+	if ent.IsNotFound(err) {
+		// Another Workspace's Automation has no version in this one: the reference check
+		// the Create below would make says so, so keep that answer.
+		if _, getErr := s.Automation().Get(ctx, automationID); ent.IsNotFound(getErr) {
+			return 0, false, ent.ErrNotInWorkspace
+		}
+		return 0, false, ErrNoVersion
+	}
+	if err != nil {
+		return 0, false, err
+	}
 	run, err := s.AutomationRun().Create().
 		SetAutomationID(automationID).
+		SetVersionID(versionID).
 		SetContactID(contactID).
 		Save(ctx)
 	if ent.IsConstraintError(err) {

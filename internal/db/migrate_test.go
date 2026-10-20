@@ -16,6 +16,7 @@ import (
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
@@ -171,4 +172,75 @@ func TestMigrateRefusesToDropARecipientOutcomeThatHasNoOutboundMessage(t *testin
 
 	columns := testhelper.ColumnsOf(t, sqlDB, "broadcast_recipients", "status", "error", "sent_at", "outbound_message_id")
 	assert.Zero(t, columns, "the recipient's own outcome is gone")
+}
+
+// Dropping automations.definition refuses an Instance whose Automations have not all been given a
+// version yet (the river job backfill_automation_versions): the steps would be lost (ADR 0049).
+func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {
+	sqlDB := openEmpty(t)
+	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020191942" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, legacy)
+	require.NoError(t, err)
+	testhelper.InsertLegacyAutomations(t, sqlDB)
+	all := migrationsWhere(t, func(string) bool { return true })
+	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020191944" })
+	_, err = db.MigrateFS(t.Context(), sqlDB, beforeDrop)
+	require.NoError(t, err)
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.ErrorContains(t, err, "automations.definition cannot be dropped")
+	assert.Equal(t, 1, testhelper.ColumnsOf(t, sqlDB, "automations", "definition"), "the column is still there")
+}
+
+// The backfill job gives every Automation made before versions its version 1, holding the steps it
+// had, and points its Enrollments at it; only then does the migration drop the column.
+func TestBackfillGivesEveryAutomationVersionOneAndMovesItsEnrollments(t *testing.T) {
+	sqlDB := openEmpty(t)
+	legacy := migrationsWhere(t, func(name string) bool { return name < "20261020191942" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, legacy)
+	require.NoError(t, err)
+	testhelper.InsertLegacyAutomations(t, sqlDB)
+	all := migrationsWhere(t, func(string) bool { return true })
+	beforeDrop := migrationsWhere(t, func(name string) bool { return name < "20261020191944" })
+	_, err = db.MigrateFS(t.Context(), sqlDB, beforeDrop)
+	require.NoError(t, err)
+	client := db.NewEntClient(sqlDB)
+	t.Cleanup(func() { _ = client.Close() })
+
+	// A batch of one makes the job loop, and a second run finds nothing left.
+	made, pointed, err := jobs.BackfillAutomationVersions(t.Context(), client, 1)
+	require.NoError(t, err)
+	assert.Equal(t, 2, made)
+	assert.Equal(t, 3, pointed)
+	made, pointed, err = jobs.BackfillAutomationVersions(t.Context(), client, 1)
+	require.NoError(t, err)
+	assert.Zero(t, made+pointed)
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err, "the guard lets the drop through once the data has moved")
+	assert.Zero(t, testhelper.ColumnsOf(t, sqlDB, "automations", "definition"))
+
+	versions, err := client.AutomationVersion.Query().All(t.Context())
+	require.NoError(t, err)
+	steps := map[int64]string{}
+	for _, v := range versions {
+		assert.Equal(t, 1, v.Version)
+		steps[v.AutomationID] = v.Steps
+	}
+	assert.Equal(t, map[int64]string{1: `[{"type":"wait","seconds":1}]`, 2: `[{"type":"wait","seconds":2}]`}, steps)
+	runs, err := client.AutomationRun.Query().All(t.Context())
+	require.NoError(t, err)
+	require.Len(t, runs, 3)
+	versionOf := map[int64]int64{}
+	for _, v := range versions {
+		versionOf[v.AutomationID] = v.ID
+	}
+	for _, r := range runs {
+		assert.Equal(t, versionOf[r.AutomationID], r.VersionID, "run %d", r.ID)
+	}
+
+	// After the drop the job still plans (the column is read as JSON) and finds nothing to do.
+	made, pointed, err = jobs.BackfillAutomationVersions(t.Context(), client, 1)
+	require.NoError(t, err)
+	assert.Zero(t, made+pointed)
 }
