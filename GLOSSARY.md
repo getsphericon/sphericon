@@ -85,7 +85,10 @@ Unsubscribe and Suppression rows for its Destinations. It leaves a PII-free `con
 Event, stored without any Contact reference (its webhook delivery carries the customer's own
 subject_id so downstream copies can be erased). A person who later reappears (Identify, import) is a new Contact and
 is not blocked; surviving opt-outs still apply to them. The Workspace is the controller and sphericon
-the processor, so Erasure is a Workspace action, never a data-subject self-service form.
+the processor, so Erasure is a Workspace action, never a data-subject self-service form. A request
+names a person by address, so the Workspace's owners and admins can also start it from an address
+(a **Privacy request**), even when no Contact holds that address any more: then only the delivery
+records of the address are anonymized.
 _Avoid_: Anonymization (that is only what happens to the delivery rows), forget, purge (purge is
 bulk retention policy, a separate concern)
 
@@ -443,6 +446,14 @@ session of its own. Failed logins are rate limited, and a lost TOTP is reset onl
 `sphericon staff reset-totp` (re-enrolment at next login), never through the web. Customers see its actions only as "sphericon staff". A SaaS/platform
 concept, absent from a plain self-hosted install.
 _Avoid_: Operator (the former name), Admin (that is a workspace Role), superuser, staff user, root
+
+**Workspace deletion**:
+An Owner's removal of a Workspace, confirmed by typing its name. It is **soft**: for 30 days the
+Workspace is hidden from every Member's list and frozen like a suspension (nothing is sent), and
+the Owner can restore it; after that a background job erases its data, its Memberships go and
+its tracking hosts are released. Users are never deleted with it. Any Workspace can be deleted,
+the last one included: a User with no Workspace is taken to create one.
+_Avoid_: archive, close
 
 **Workspace suspension**:
 A reversible Workspace state that **freezes all outbound sending** — every one of the three
