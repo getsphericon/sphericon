@@ -5,10 +5,12 @@ import (
 	"errors"
 	"net/http"
 
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // Consent only narrows through /api (ADR 0016): these two operations add a
@@ -23,8 +25,8 @@ func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.Crea
 	}
 	s := auth.TokenScoped(ctx)
 
-	created, err := consent.Suppress(ctx, s, string(req.Destination))
-	if errors.Is(err, consent.ErrDestinationEmpty) {
+	created, err := suppression.Add(ctx, s, suppression.Entry{Destination: string(req.Destination), Reason: entsuppression.ReasonManual})
+	if errors.Is(err, suppression.ErrDestinationEmpty) {
 		res := externalapi.SuppressionsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "destination must not be empty"))
 		return &res, nil
 	}

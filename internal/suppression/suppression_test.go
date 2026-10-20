@@ -99,3 +99,29 @@ func TestNormalizeDestinationIsIdempotentAndFoldsCase(t *testing.T) {
 	})
 	assert.Equal(t, "a@x.com", suppression.NormalizeDestination(" A@X.com "))
 }
+
+func TestForBounceSuppressesOnlyAPermanentBounce(t *testing.T) {
+	hard, ok := suppression.ForBounce("permanent")
+	assert.True(t, ok)
+	assert.Equal(t, entsuppression.ReasonBounce, hard)
+
+	_, soft := suppression.ForBounce("transient")
+	assert.False(t, soft)
+	_, unknown := suppression.ForBounce("")
+	assert.False(t, unknown)
+}
+
+func TestDetachContactKeepsTheSuppressionRefusingTheAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	s := env.DB.Scoped(fixtures.InitechID)
+
+	require.NoError(t, suppression.DetachContact(ctx, s, int64(fixtures.ContactErasableID)))
+
+	row, err := s.Suppression().Get(ctx, fixtures.SuppressionErasableID)
+	require.NoError(t, err)
+	assert.Nil(t, row.ContactID)
+	verdict, err := eligibility.Check(ctx, s, eligibility.ChannelEmail, row.Destination, eligibility.SourceBroadcasts)
+	require.NoError(t, err)
+	assert.False(t, verdict.Eligible)
+}

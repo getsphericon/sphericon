@@ -13,10 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // idChunk bounds how many ids go into one IN (...) list, well below the driver's
@@ -133,8 +133,7 @@ func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 	if _, err := s.Unsubscribe().Update().Where(unsubscribe.ContactID(t.ContactID)).ClearContactID().Save(ctx); err != nil {
 		return err
 	}
-	_, err := s.Suppression().Update().Where(suppression.ContactID(t.ContactID)).ClearContactID().Save(ctx)
-	return err
+	return suppression.DetachContact(ctx, s, t.ContactID)
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep

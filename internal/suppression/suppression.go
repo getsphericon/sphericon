@@ -30,6 +30,18 @@ func NormalizeDestination(dest string) string {
 	return strings.ToLower(strings.TrimSpace(dest))
 }
 
+// BounceKindPermanent is the kind of a hard bounce, the only one that suppresses.
+const BounceKindPermanent = "permanent"
+
+// ForBounce is the rule that decides a bounce is permanent: only a hard bounce
+// suppresses, with the bounce reason; a soft bounce (a full mailbox) never does.
+func ForBounce(kind string) (suppression.Reason, bool) {
+	if kind == BounceKindPermanent {
+		return suppression.ReasonBounce, true
+	}
+	return "", false
+}
+
 // Entry is one Suppression to add. ContactID is the Contact the destination belongs
 // to, when known (display only); zero means none.
 type Entry struct {
@@ -82,5 +94,12 @@ func Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 	if ent.IsNotFound(err) {
 		return ErrNotFound
 	}
+	return err
+}
+
+// DetachContact clears the Contact reference of every Suppression naming it, for the
+// Contact's Erasure: the rows are keyed by destination and keep refusing the address.
+func DetachContact(ctx context.Context, s *ent.Scoped, contactID int64) error {
+	_, err := s.Suppression().Update().Where(suppression.ContactID(contactID)).ClearContactID().Save(ctx)
 	return err
 }

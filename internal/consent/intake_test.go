@@ -8,48 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
-
-func TestSuppressNormalizesAndKeepsTheExistingReason(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	s := env.DB.Scoped(fixtures.AcmeID)
-
-	got, err := consent.Suppress(ctx, s, "  Alice@Example.COM ")
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.ContactAliceEmail, got.Destination)
-	assert.Equal(t, suppression.ReasonManual, got.Reason)
-
-	bounced, err := consent.Suppress(ctx, s, fixtures.SuppressionGhostBounceDestination)
-	require.NoError(t, err)
-	assert.Equal(t, suppression.ReasonBounce, bounced.Reason, "an existing entry is returned unchanged")
-	assert.Equal(t, int64(fixtures.SuppressionGhostBounceID), int64(bounced.ID))
-}
-
-func TestSuppressRefusesABlankDestination(t *testing.T) {
-	env := testhelper.Setup(t)
-	_, err := consent.Suppress(context.Background(), env.DB.Scoped(fixtures.AcmeID), "   ")
-	assert.ErrorIs(t, err, consent.ErrDestinationEmpty)
-}
-
-func TestSuppressIsWorkspaceScoped(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	got, err := consent.Suppress(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceEmail)
-	require.NoError(t, err)
-	assert.Equal(t, int64(fixtures.GlobexID), got.WorkspaceID)
-
-	acme, err := env.DB.Scoped(fixtures.AcmeID).Suppression().Query().
-		Where(suppression.DestinationEQ(fixtures.ContactAliceEmail)).Exist(ctx)
-	require.NoError(t, err)
-	assert.False(t, acme, "another Workspace's Suppression does not leak")
-}
 
 func TestUnsubscribeValidatesTheSourceAndIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)

@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/getsphericon/sphericon/internal/suppression"
 	"slices"
 	"strings"
 	"time"
@@ -90,9 +91,9 @@ func CheckAction(action string) error {
 }
 
 // Bounce kinds carried by EmailDeliveryFailure. Only a permanent (hard) bounce
-// suppresses an address; a transient (soft) bounce is temporary.
+// suppresses an address (the suppression module's rule); a transient (soft) bounce is temporary.
 const (
-	BounceKindPermanent = "permanent"
+	BounceKindPermanent = suppression.BounceKindPermanent
 	BounceKindTransient = "transient"
 )
 

@@ -7,7 +7,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
-	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -27,16 +26,6 @@ var (
 	// ErrUnknownAutomation: the automation:<id> source names no Automation of this Workspace.
 	ErrUnknownAutomation = errors.New("consent: unknown automation in sendingSource")
 )
-
-// Suppress adds a manual Suppression for an email destination. It is idempotent per
-// (channel, destination): an existing entry, with its reason, is returned unchanged.
-func Suppress(ctx context.Context, s *ent.Scoped, destination string) (*ent.Suppression, error) {
-	got, err := suppression.Add(ctx, s, suppression.Entry{Destination: destination, Reason: entsuppression.ReasonManual})
-	if errors.Is(err, suppression.ErrDestinationEmpty) {
-		return nil, ErrDestinationEmpty
-	}
-	return got, err
-}
 
 // Unsubscribe records an opt-out of destination from a sending source, with the
 // same effects as the unsubscribe link (RecordUnsubscribe): the row, the

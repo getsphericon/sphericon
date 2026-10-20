@@ -134,21 +134,17 @@ func (c Consumer) Handler() message.NoPublishHandlerFunc {
 	}
 }
 
-// suppressionReason maps a projected event to the suppression reason it implies,
-// or false for events that don't suppress (opens, clicks, transient bounces,
-// unsubscribes). It takes the whole projection because a bounce only suppresses
-// when permanent, which lives in the projected properties. Unsubscribe is NOT a
-// suppression: it writes a per-source Unsubscribe row instead (ADR 0001).
+// suppressionReason maps a projected event to the suppression reason it implies, or
+// false for events that don't suppress. A complaint always does; whether a bounce does
+// is the suppression module's rule. Unsubscribe is NOT a suppression: it writes a
+// per-source Unsubscribe row instead (ADR 0001).
 func suppressionReason(p Projection) (entsuppression.Reason, bool) {
 	switch p.Action {
 	case NameEmailComplained:
 		return entsuppression.ReasonComplaint, true
 	case NameEmailBounced:
-		// Only hard (permanent) bounces suppress; transient bounces are temporary.
-		if kind, _ := p.Properties["bounceKind"].(string); kind == BounceKindPermanent {
-			return entsuppression.ReasonBounce, true
-		}
-		return "", false
+		kind, _ := p.Properties["bounceKind"].(string)
+		return suppression.ForBounce(kind)
 	default:
 		return "", false
 	}
@@ -181,24 +177,14 @@ func Suppress(ctx context.Context, client *ent.Client, env Envelope) error {
 	if !ok {
 		return nil
 	}
-	dest := suppression.NormalizeDestination(p.Email)
-	if dest == "" {
+	if suppression.NormalizeDestination(p.Email) == "" {
 		return nil
 	}
 	// The Workspace comes from the event envelope: a consumer has no membership or
 	// api token, so this is a scope source outside the site/external/job list.
-	create := client.Scoped(env.WorkspaceID).Suppression().Create().
-		SetChannel(entsuppression.ChannelEmail).
-		SetDestination(dest).
-		SetReason(reason)
-	if p.ContactID != 0 {
-		create.SetContactID(p.ContactID)
-	}
-	if err := create.
-		OnConflictColumns(entsuppression.FieldWorkspaceID, entsuppression.FieldChannel, entsuppression.FieldDestination).
-		Ignore().
-		Exec(ctx); err != nil {
-		return fmt.Errorf("suppress %q: %w", dest, err)
+	s := client.Scoped(env.WorkspaceID)
+	if _, err := suppression.Add(ctx, s, suppression.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID}); err != nil {
+		return fmt.Errorf("suppress %q: %w", p.Email, err)
 	}
 	return nil
 }
