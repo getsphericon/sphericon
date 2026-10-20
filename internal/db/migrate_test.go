@@ -192,6 +192,16 @@ func TestMigrateRefusesToDropTheDefinitionBeforeTheBackfill(t *testing.T) {
 	assert.Equal(t, 1, testhelper.ColumnsOf(t, sqlDB, "automations", "definition"), "the column is still there")
 }
 
+// An Instance with no Enrollment to move ends with the column the ent schema declares: NOT NULL.
+func TestMigrateMakesTheEnrollmentVersionRequiredWhenNothingNeedsBackfilling(t *testing.T) {
+	sqlDB := openEmpty(t)
+	all := migrationsWhere(t, func(string) bool { return true })
+	_, err := db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+	nullable := testhelper.ColumnIsNullable(t, sqlDB, "automation_runs", "version_id")
+	assert.False(t, nullable)
+}
+
 // The backfill job gives every Automation made before versions its version 1, holding the steps it
 // had, and points its Enrollments at it; only then does the migration drop the column.
 func TestBackfillGivesEveryAutomationVersionOneAndMovesItsEnrollments(t *testing.T) {

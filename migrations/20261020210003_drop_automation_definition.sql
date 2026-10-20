@@ -18,6 +18,24 @@ BEGIN
 END
 $$;
 -- +goose StatementEnd
+-- The guard above proved every Enrollment has a version, so the constraints the first migration left
+-- NOT VALID can be finished here (the backfill job does the same when it runs first): validate, make
+-- the column NOT NULL (no scan, the validated check proves it) and drop the check, so the database
+-- has the shape of the ent schema also when the job never had a row to move.
+-- +goose StatementBegin
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'automation_runs_automation_versions_runs' AND NOT convalidated) THEN
+    ALTER TABLE "automation_runs" VALIDATE CONSTRAINT "automation_runs_automation_versions_runs";
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'automation_runs_version_id_required') THEN
+    ALTER TABLE "automation_runs" VALIDATE CONSTRAINT "automation_runs_version_id_required";
+    ALTER TABLE "automation_runs" ALTER COLUMN "version_id" SET NOT NULL;
+    ALTER TABLE "automation_runs" DROP CONSTRAINT "automation_runs_version_id_required";
+  END IF;
+END
+$$;
+-- +goose StatementEnd
 -- modify "automations" table
 ALTER TABLE "automations" DROP COLUMN "definition";
 
