@@ -98,14 +98,16 @@ type Invoker interface {
 	SiteAuthLogout(ctx context.Context) (*SiteAuthLogoutNoContent, error)
 	// SiteAuthRegister invokes SiteAuth_register operation.
 	//
-	// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
-	// with the link to the set-password screen is on its way (202), and 202 is the answer for every
-	// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
-	// `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
-	// carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
-	// session: the User signs in next), and a taken address answers 409. An Instance that closed sign-up
-	// (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before anything is
-	// read or created; accepting an Invitation still works.
+	// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+	// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+	// a taken address gets a notice by mail instead. The answer always sets the registration cookie
+	// (httpOnly, SameSite=Strict, scoped to the verification path), which binds the link to this browser,
+	// so the header does not say whether the address is taken either. The password is required (422
+	// otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice
+	// and no link: the request creates a Verified User with its first Workspace at once (202, no session
+	// and no cookie: the User signs in next), and a taken address answers 409. An Instance that closed
+	// sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before
+	// anything is read or created; accepting an Invitation still works.
 	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error)
@@ -135,13 +137,15 @@ type Invoker interface {
 	// SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 	//
 	// Complete a registration from the verification link (the token is the credential): stamps the
-	// Verified email, sets the password, ends every earlier session, creates the User's first Workspace,
-	// sends the welcome email and starts the session (the cookie is issued after the epoch bump, as login
-	// does, ADR 0020). A link is single use and scoped to the address it was sent to. Rate limited like
-	// registration.
+	// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
+	// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
+	// When the request carries the registration cookie the link was minted for, the password from
+	// registration stays; otherwise the request must carry a password, which replaces it, and without one
+	// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing). A
+	// link is single use and scoped to the address it was sent to. Rate limited like registration.
 	//
 	// POST /auth/verify-email
-	SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput) (SiteAuthVerifyEmailRes, error)
+	SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error)
 	// SiteAutomationsActivate invokes SiteAutomations_activate operation.
 	//
 	// Activate an automation (starts enrolling contacts).
@@ -2240,14 +2244,16 @@ func (c *Client) sendSiteAuthLogout(ctx context.Context) (res *SiteAuthLogoutNoC
 
 // SiteAuthRegister invokes SiteAuth_register operation.
 //
-// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
-// with the link to the set-password screen is on its way (202), and 202 is the answer for every
-// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
-// `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
-// carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
-// session: the User signs in next), and a taken address answers 409. An Instance that closed sign-up
-// (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before anything is
-// read or created; accepting an Invitation still works.
+// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+// a taken address gets a notice by mail instead. The answer always sets the registration cookie
+// (httpOnly, SameSite=Strict, scoped to the verification path), which binds the link to this browser,
+// so the header does not say whether the address is taken either. The password is required (422
+// otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice
+// and no link: the request creates a Verified User with its first Workspace at once (202, no session
+// and no cookie: the User signs in next), and a taken address answers 409. An Instance that closed
+// sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before
+// anything is read or created; accepting an Invitation still works.
 //
 // POST /auth/register
 func (c *Client) SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error) {
@@ -2585,18 +2591,20 @@ func (c *Client) sendSiteAuthSecondFactor(ctx context.Context, request *SiteLogi
 // SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 //
 // Complete a registration from the verification link (the token is the credential): stamps the
-// Verified email, sets the password, ends every earlier session, creates the User's first Workspace,
-// sends the welcome email and starts the session (the cookie is issued after the epoch bump, as login
-// does, ADR 0020). A link is single use and scoped to the address it was sent to. Rate limited like
-// registration.
+// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
+// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
+// When the request carries the registration cookie the link was minted for, the password from
+// registration stays; otherwise the request must carry a password, which replaces it, and without one
+// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing). A
+// link is single use and scoped to the address it was sent to. Rate limited like registration.
 //
 // POST /auth/verify-email
-func (c *Client) SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput) (SiteAuthVerifyEmailRes, error) {
-	res, err := c.sendSiteAuthVerifyEmail(ctx, request)
+func (c *Client) SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error) {
+	res, err := c.sendSiteAuthVerifyEmail(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput) (res SiteAuthVerifyEmailRes, err error) {
+func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (res SiteAuthVerifyEmailRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_verifyEmail"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2644,6 +2652,25 @@ func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerif
 	}
 	if err := encodeSiteAuthVerifyEmailRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "EncodeCookieParams"
+	cookie := uri.NewCookieEncoder(r)
+	{
+		// Encode "REG" parameter.
+		cfg := uri.CookieParameterEncodingConfig{
+			Name:    "REG",
+			Explode: false,
+		}
+
+		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.REG.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode cookie")
+		}
 	}
 
 	stage = "SendRequest"

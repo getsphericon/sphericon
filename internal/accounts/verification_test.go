@@ -18,7 +18,7 @@ import (
 func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := accounts.New(env.DB, env.Bus)
-	u, err := acc.Register(t.Context(), "Grace", "grace@example.com")
+	u, err := acc.Register(t.Context(), "Grace", "grace@example.com", "registered-hash")
 	require.NoError(t, err)
 
 	_, err = acc.VerifyEmail(t.Context(), u.ID, "hash-one", "Grace")

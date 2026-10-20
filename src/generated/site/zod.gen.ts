@@ -588,9 +588,9 @@ export const zSiteRecoveryCodesInput = z.object({
 });
 
 /**
- * Register with a name and an email: no password is taken before the address is
- * proven (ADR 0030). Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a
- * password here.
+ * Register with a name, an email and a password. The User stays Unverified until the
+ * address is proven (ADR 0030); the password is trusted only when the verification link
+ * is opened in the browser that registered.
  */
 export const zSiteRegisterInput = z.object({
   name: z.string(),
@@ -1003,11 +1003,11 @@ export const zSiteUpdateWorkspaceInput = z.object({
 });
 
 /**
- * Prove an email address with the token sent to it and set the password
+ * Prove an email address with the token sent to it
  */
 export const zSiteVerifyEmailInput = z.object({
   token: z.string(),
-  password: z.string()
+  password: z.exactOptional(z.string())
 });
 
 /**

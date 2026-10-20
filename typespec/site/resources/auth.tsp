@@ -2,16 +2,15 @@ using TypeSpec.Http;
 
 namespace Sphericon;
 
-/** Register with a name and an email: no password is taken before the address is
- * proven (ADR 0030). Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a
- * password here. */
+/** Register with a name, an email and a password. The User stays Unverified until the
+ * address is proven (ADR 0030); the password is trusted only when the verification link
+ * is opened in the browser that registered. */
 model SiteRegisterInput {
   name: string;
   email: EmailAddress;
 
-  /** Required when the install does not require email verification, where it makes
-   * the account usable at once. Otherwise ignored and never stored: the password is
-   * set by the verification link. */
+  /** Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated
+   * registration of the address replaces it. */
   password?: string;
 }
 
@@ -62,10 +61,13 @@ model SiteResetPasswordInput {
   password: string;
 }
 
-/** Prove an email address with the token sent to it and set the password */
+/** Prove an email address with the token sent to it */
 model SiteVerifyEmailInput {
   token: string;
-  password: string;
+
+  /** Needed only when the link is not opened in the Registration browser: it replaces
+   * the password given at registration. Ignored in the Registration browser. */
+  password?: string;
 }
 
 /** Confirm a requested email change using the token sent to the new address */
@@ -76,21 +78,28 @@ model SiteConfirmEmailChangeInput {
 @route("/auth")
 @tag("Site Auth")
 namespace SiteAuth {
-  /** Create an Unverified User (ADR 0030): no password, no session, no Workspace.
-   * A verification email with the link to the set-password screen is on its way
-   * (202), and 202 is the answer for every address, taken or not (ADR 0031): the
-   * owner of a taken address gets a notice by mail instead. With
-   * `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the
-   * request must carry a password (422 otherwise), creates a Verified User with its
-   * first Workspace at once (202, no session: the User signs in next), and a taken
-   * address answers 409. An Instance that closed sign-up
+  /** Create an Unverified User (ADR 0030): no session, no Workspace. A verification
+   * email with the link is on its way (202), and 202 is the answer for every address,
+   * taken or not (ADR 0031): the owner of a taken address gets a notice by mail
+   * instead. The answer always sets the registration cookie (httpOnly, SameSite=Strict,
+   * scoped to the verification path), which binds the link to this browser, so the
+   * header does not say whether the address is taken either. The password is required
+   * (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no
+   * mail to carry that notice and no link: the request creates a Verified User with its
+   * first Workspace at once (202, no session and no cookie: the User signs in next), and
+   * a taken address answers 409. An Instance that closed sign-up
    * (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed`
    * before anything is read or created; accepting an Invitation still works. */
   @useAuth(NoAuth)
   @post
   @route("/register")
   op register(@body body: SiteRegisterInput):
-    | AcceptedResponse
+    | {
+        @statusCode statusCode: 202;
+
+        /** The registration cookie, absent when the install does not require verification */
+        @header("Set-Cookie") setCookie?: string;
+      }
     | ForbiddenProblem
     | ConflictProblem
     | UnprocessableEntityProblem
@@ -172,15 +181,23 @@ namespace SiteAuth {
     | BadRequestProblem;
 
   /** Complete a registration from the verification link (the token is the
-   * credential): stamps the Verified email, sets the password, ends every earlier
-   * session, creates the User's first Workspace, sends the welcome email and starts
-   * the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
-   * A link is single use and scoped to the address it was sent to. Rate limited like
-   * registration. */
+   * credential): stamps the Verified email, ends every earlier session, creates the
+   * User's first Workspace, sends the welcome email and starts the session (the cookie
+   * is issued after the epoch bump, as login does, ADR 0020). When the request carries
+   * the registration cookie the link was minted for, the password from registration
+   * stays; otherwise the request must carry a password, which replaces it, and without
+   * one the answer is 428 and nothing changes, the link stays valid (a mail scanner
+   * consumes nothing). A link is single use and scoped to the address it was sent to.
+   * Rate limited like registration. */
   @useAuth(NoAuth)
   @post
   @route("/verify-email")
-  op verifyEmail(@body body: SiteVerifyEmailInput):
+  op verifyEmail(
+    /** The registration cookie of the browser that registered, if any */
+    @cookie("REG") registration?: string,
+
+    @body body: SiteVerifyEmailInput,
+  ):
     | {
         @statusCode statusCode: 200;
 
@@ -188,6 +205,7 @@ namespace SiteAuth {
         @header("Set-Cookie") setCookie: string;
       }
     | BadRequestProblem
+    | PreconditionRequiredProblem
     | TooManyRequestsProblem;
 
   /** Send the verification link again to an Unverified User. Answers 202 the same

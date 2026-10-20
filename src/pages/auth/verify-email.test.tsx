@@ -29,7 +29,7 @@ async function fillAndSubmit(
   await screen.getByRole('button', { name: 'Set password' }).click()
 }
 
-test('sends the token with the chosen password and enters the first workspace', async () => {
+test('sends the token alone first and enters the first workspace when it is accepted', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthVerifyEmail(async ({ request }) => {
@@ -39,19 +39,37 @@ test('sends the token with the chosen password and enters the first workspace', 
   )
   const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
 
+  await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to }))
+  expect(bodies).toEqual([{ token: 'tok-v' }])
+  await expect.element(screen.getByRole('button', { name: 'Set password' })).not.toBeInTheDocument()
+})
+
+test('asks for a password when the link is not in the registration browser and resends with it', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAuthVerifyEmail(async ({ request }) => {
+      const body = await request.json()
+      bodies.push(body)
+      if ((body as { password?: string }).password === undefined) {
+        return problem(428, { detail: 'set a password' })
+      }
+      return HttpResponse.json({})
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
+
   await fillAndSubmit(screen, 's3cret-pass')
 
   await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to }))
-  expect(bodies).toEqual([{ token: 'tok-v', password: 's3cret-pass' }])
-  await expect.element(screen.getByText('Email verified')).not.toBeInTheDocument()
+  expect(bodies).toEqual([{ token: 'tok-v' }, { token: 'tok-v', password: 's3cret-pass' }])
 })
 
-test('does not send anything when the confirmation differs', async () => {
+test('does not send a password when the confirmation differs', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthVerifyEmail(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({})
+      return problem(428, { detail: 'set a password' })
     }),
   )
   const { screen } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
@@ -59,7 +77,7 @@ test('does not send anything when the confirmation differs', async () => {
   await fillAndSubmit(screen, 'something-else')
 
   await expect.element(screen.getByText('Passwords do not match')).toBeInTheDocument()
-  expect(bodies).toEqual([])
+  expect(bodies).toEqual([{ token: 'tok-v' }])
 })
 
 test('shows the invalid-link message with a sign-in link when the link is rejected', async () => {
@@ -69,8 +87,6 @@ test('shows the invalid-link message with a sign-in link when the link is reject
     ),
   )
   const { screen } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
-
-  await fillAndSubmit(screen, 's3cret-pass')
 
   await expect
     .element(screen.getByText('This verification link is invalid or has expired.'))

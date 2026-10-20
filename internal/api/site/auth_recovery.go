@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -89,37 +90,45 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 }
 
 // SiteAuthVerifyEmail completes a registration from its link (ADR 0030): the token
-// proves the address, so it stamps the Verified email, sets the password, ends every
-// earlier session, creates the User's first Workspace and sends the welcome email.
-// It starts the session through the login issuer. The token is single use (bound
-// to the password hash it was minted over) and scoped to the address it was sent to:
-// an old link never verifies a changed address.
-func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput) (siteapi.SiteAuthVerifyEmailRes, error) {
-	if req.Password == "" {
-		v := problem(http.StatusBadRequest, i18n.T("errors.password_required", nil))
-		return &v, nil
-	}
+// proves the address, so it stamps the Verified email, ends every earlier session,
+// creates the User's first Workspace and sends the welcome email, then starts the
+// session through the login issuer. The password stored at registration stays only when
+// the request carries the registration cookie the token was minted for; any other
+// browser must send a password, which replaces it, and without one nothing changes and
+// the token stays valid (a mail scanner consumes nothing). The token is single use
+// (the Verified check) and scoped to the address it was sent to: an old link never
+// verifies a changed address.
+func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput, params siteapi.SiteAuthVerifyEmailParams) (siteapi.SiteAuthVerifyEmailRes, error) {
 	uid, extra, err := h.tokens.Parse(req.Token, authtoken.PurposeEmailVerify, h.passwordHashBinding(ctx))
 	if err != nil {
-		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_invalid", nil))
+		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_invalid", nil)))
 		return &v, nil
 	}
 	u, err := h.accounts.User(ctx, uid)
 	if err != nil || u.EmailVerifiedAt != nil {
-		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil))
+		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil)))
 		return &v, nil
 	}
 	if extra["email"] != u.Email {
-		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_stale", nil))
+		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_stale", nil)))
 		return &v, nil
 	}
-	hash, err := credentials.HashPassword(req.Password)
-	if err != nil {
-		return nil, err
+	// An empty hash keeps the password stored at registration.
+	var hash string
+	if !auth.SameRegistrationBrowser(extra["rb"], params.REG.Or("")) {
+		password := req.Password.Or("")
+		if password == "" {
+			v := siteapi.SiteAuthVerifyEmailPreconditionRequired(problem(http.StatusPreconditionRequired, i18n.T("errors.verify_password_needed", nil)))
+			return &v, nil
+		}
+		hash, err = credentials.HashPassword(password)
+		if err != nil {
+			return nil, err
+		}
 	}
 	verified, err := h.accounts.VerifyEmail(ctx, uid, hash, u.Name)
 	if errors.Is(err, accounts.ErrAlreadyVerified) {
-		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil))
+		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil)))
 		return &v, nil
 	}
 	if err != nil {

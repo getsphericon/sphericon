@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent"
 	entmembership "github.com/getsphericon/sphericon/ent/membership"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -17,25 +18,51 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// register drives the public registration and returns the token carried by the
-// verification email it sent.
-func register(t *testing.T, env *testhelper.TestEnv, name, email string) string {
+const formPassword = "form-password-1"
+
+// registerIn drives the registration from one browser (a client with a cookie jar, see
+// testhelper.SiteBrowser) and returns the token carried by the verification email it sent.
+func registerIn(t *testing.T, env *testhelper.TestEnv, browser *siteapi.Client, name, email, password string) string {
 	t.Helper()
-	res, err := env.SiteAnonymous(t).SiteAuthRegister(t.Context(),
-		&siteapi.SiteRegisterInput{Name: name, Email: siteapi.EmailAddress(email)})
+	res, err := browser.SiteAuthRegister(t.Context(), &siteapi.SiteRegisterInput{
+		Name: name, Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(password),
+	})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, res)
 	_, body := lastSystemEmail(t, env)
 	return tokenFromEmail(t, body)
 }
 
-// verify follows the verification link: it proves the address and sets the password.
-func verify(t *testing.T, env *testhelper.TestEnv, token, password string) siteapi.SiteAuthVerifyEmailRes {
+// register registers from a browser that is not kept: the cookie it is given is lost, so
+// the link opened by verify (another browser) asks for a password.
+func register(t *testing.T, env *testhelper.TestEnv, name, email string) string {
 	t.Helper()
-	res, err := env.SiteAnonymous(t).SiteAuthVerifyEmail(t.Context(),
-		&siteapi.SiteVerifyEmailInput{Token: token, Password: password})
+	return registerIn(t, env, env.SiteAnonymous(t), name, email, formPassword)
+}
+
+// verifyIn follows the verification link in one browser; an empty password sends none.
+func verifyIn(t *testing.T, browser *siteapi.Client, token, password string) siteapi.SiteAuthVerifyEmailRes {
+	t.Helper()
+	input := &siteapi.SiteVerifyEmailInput{Token: token}
+	if password != "" {
+		input.Password = siteapi.NewOptString(password)
+	}
+	res, err := browser.SiteAuthVerifyEmail(t.Context(), input, siteapi.SiteAuthVerifyEmailParams{})
 	require.NoError(t, err)
 	return res
+}
+
+// verify follows the verification link in a browser that never registered, sending a password.
+func verify(t *testing.T, env *testhelper.TestEnv, token, password string) siteapi.SiteAuthVerifyEmailRes {
+	t.Helper()
+	return verifyIn(t, env.SiteAnonymous(t), token, password)
+}
+
+func userByEmail(t *testing.T, env *testhelper.TestEnv, email string) *ent.User {
+	t.Helper()
+	u, err := env.DB.User.Query().Where(entuser.Email(email)).Only(t.Context())
+	require.NoError(t, err)
+	return u
 }
 
 // registerAndVerify takes a new person through the whole sign-up.
@@ -56,7 +83,8 @@ func TestRegisteringCreatesAnUnverifiedUserWithNothingElse(t *testing.T) {
 
 	u, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Only(t.Context())
 	require.NoError(t, err)
-	assert.Empty(t, u.PasswordHash, "no password exists before the address is proven")
+	assert.NotEmpty(t, u.PasswordHash, "the registration password waits, hashed, on the Unverified User")
+	assert.NotContains(t, u.PasswordHash, formPassword)
 	assert.Nil(t, u.EmailVerifiedAt)
 	memberships, err := env.DB.Membership.Query().Where(entmembership.UserID(u.ID)).Count(t.Context())
 	require.NoError(t, err)
@@ -155,7 +183,7 @@ func TestTheVerifyLinkWorksOnce(t *testing.T) {
 	token := register(t, env, "Grace Hopper", "grace@example.com")
 	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, token, "grace-password-1"))
 
-	assert.IsType(t, &siteapi.ProblemDetails{}, verify(t, env, token, "attacker-password-1"), "a replayed link sets nothing")
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verify(t, env, token, "attacker-password-1"), "a replayed link sets nothing")
 
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "grace@example.com", "attacker-password-1"))
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", "grace-password-1"))
@@ -163,10 +191,9 @@ func TestTheVerifyLinkWorksOnce(t *testing.T) {
 
 func TestTheVerifyLinkRefusesBadInput(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := register(t, env, "Grace Hopper", "grace@example.com")
+	register(t, env, "Grace Hopper", "grace@example.com")
 
-	assert.IsType(t, &siteapi.ProblemDetails{}, verify(t, env, token, ""), "a password is required")
-	assert.IsType(t, &siteapi.ProblemDetails{}, verify(t, env, "garbage", "grace-password-1"))
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verify(t, env, "garbage", "grace-password-1"))
 	assert.Equal(t, http.StatusForbidden, loginStatus(t, env, "grace@example.com", "grace-password-1"),
 		"a refused link leaves the User unverified")
 }
@@ -178,12 +205,12 @@ func TestAnOldLinkNeverVerifiesAChangedAddress(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, env.DB.User.UpdateOneID(u.ID).SetEmail("grace@elsewhere.example").Exec(t.Context()))
 
-	assert.IsType(t, &siteapi.ProblemDetails{}, verify(t, env, token, "grace-password-1"))
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verify(t, env, token, "grace-password-1"))
 
 	after, err := env.DB.User.Get(t.Context(), u.ID)
 	require.NoError(t, err)
 	assert.Nil(t, after.EmailVerifiedAt)
-	assert.Empty(t, after.PasswordHash)
+	assert.Equal(t, u.PasswordHash, after.PasswordHash)
 }
 
 func TestVerifyingIsRecordedInTheNewWorkspacesAuditLog(t *testing.T) {
@@ -261,18 +288,6 @@ func TestWithTheGateOffLoginHasNoVerificationCheck(t *testing.T) {
 	require.NoError(t, env.DB.User.UpdateOneID(fixtures.OwnerJohnID).ClearEmailVerifiedAt().Exec(t.Context()))
 
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
-}
-
-func TestWithTheGateOnAPasswordInTheRegistrationIsNeverStored(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	require.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, registerWithPassword(t, env, "Grace Hopper", "grace@example.com", "attacker-chosen-1"))
-
-	u, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Only(t.Context())
-	require.NoError(t, err)
-	assert.Empty(t, u.PasswordHash)
-	assert.Nil(t, u.EmailVerifiedAt)
-	assert.Equal(t, http.StatusForbidden, loginStatus(t, env, "grace@example.com", "attacker-chosen-1"))
 }
 
 // An Unverified User who lost the verification mail can recover through a password
@@ -373,7 +388,7 @@ func TestSettingThePasswordEndsEveryEarlierVerifyLinkAfterAResend(t *testing.T) 
 	fresh := tokenFromEmail(t, body)
 
 	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, fresh, "grace-password-1"))
-	assert.IsType(t, &siteapi.ProblemDetails{}, verify(t, env, first, "attacker-password-1"))
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verify(t, env, first, "attacker-password-1"))
 }
 
 // Story 18: setting the password through the verify link bumps the session epoch,
@@ -417,7 +432,7 @@ func TestPasswordResetEndsEveryEarlierSession(t *testing.T) {
 func registerQuiet(t *testing.T, env *testhelper.TestEnv, name, email string) siteapi.SiteAuthRegisterRes {
 	t.Helper()
 	res, err := env.SiteAnonymous(t).SiteAuthRegister(t.Context(),
-		&siteapi.SiteRegisterInput{Name: name, Email: siteapi.EmailAddress(email)})
+		&siteapi.SiteRegisterInput{Name: name, Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(formPassword)})
 	require.NoError(t, err)
 	return res
 }
@@ -454,7 +469,7 @@ func TestRegisteringAVerifiedAddressMailsTheOwnerATokenlessNoticeAndChangesNothi
 
 func TestRegisteringAnUnverifiedAddressAgainMailsAFreshLinkAndKeepsTheName(t *testing.T) {
 	env := testhelper.Setup(t)
-	first := register(t, env, "Grace Hopper", "grace@example.com")
+	register(t, env, "Grace Hopper", "grace@example.com")
 
 	registerQuiet(t, env, "Mallory", "grace@example.com")
 
@@ -462,11 +477,8 @@ func TestRegisteringAnUnverifiedAddressAgainMailsAFreshLinkAndKeepsTheName(t *te
 	require.Len(t, msgs, 2)
 	assert.Equal(t, "grace@example.com", msgs[1].To)
 	assert.Contains(t, msgs[1].Subject, "Verify")
-	u, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Only(t.Context())
-	require.NoError(t, err)
+	u := userByEmail(t, env, "grace@example.com")
 	assert.Equal(t, "Grace Hopper", u.Name)
-	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verify(t, env, first, "grace-password-1"),
-		"the earlier link still works: the token is bound to the unset password")
 }
 
 func TestRegisteringStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
@@ -478,4 +490,189 @@ func TestRegisteringStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
 	}
 
 	assert.Len(t, env.SystemMail.Messages(), limit, "the owner is not mail-bombed")
+}
+
+func sessionOf(t *testing.T, res siteapi.SiteAuthVerifyEmailRes) *http.Cookie {
+	t.Helper()
+	ok, isOK := res.(*siteapi.SiteAuthVerifyEmailOK)
+	require.Truef(t, isOK, "got %T", res)
+	cookie, err := http.ParseSetCookie(ok.SetCookie)
+	require.NoError(t, err)
+	return cookie
+}
+
+func landsInFirstWorkspace(t *testing.T, env *testhelper.TestEnv, session *http.Cookie, slug string) {
+	t.Helper()
+	spaces, err := env.SiteWithToken(t, session.Value).SiteWorkspacesList(t.Context())
+	require.NoError(t, err)
+	require.Len(t, spaces, 1)
+	assert.Equal(t, slug, spaces[0].Slug)
+}
+
+func TestRegisteringNeedsAPassword(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res, err := env.SiteAnonymous(t).SiteAuthRegister(t.Context(),
+		&siteapi.SiteRegisterInput{Name: "Grace Hopper", Email: "grace@example.com"})
+	require.NoError(t, err)
+
+	problem, ok := res.(*siteapi.SiteAuthRegisterUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Contains(t, problem.Errors.Value, "password")
+	exists, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Exist(t.Context())
+	require.NoError(t, err)
+	assert.False(t, exists)
+}
+
+func TestRegistrationSetsAScopedStrictHttpOnlyCookieForTheLifeOfTheLink(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res, err := env.SiteAnonymous(t).SiteAuthRegister(t.Context(), &siteapi.SiteRegisterInput{
+		Name: "Grace Hopper", Email: "grace@example.com", Password: siteapi.NewOptString(formPassword),
+	})
+	require.NoError(t, err)
+
+	accepted, ok := res.(*siteapi.SiteAuthRegisterAccepted)
+	require.Truef(t, ok, "got %T", res)
+	cookie, err := http.ParseSetCookie(accepted.SetCookie.Value)
+	require.NoError(t, err)
+	assert.NotEmpty(t, cookie.Value)
+	assert.True(t, cookie.HttpOnly)
+	assert.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
+	assert.Equal(t, "/site/auth/verify-email", cookie.Path)
+	assert.Equal(t, 24*60*60, cookie.MaxAge)
+}
+
+func TestTheLinkOpenedInTheRegistrationBrowserKeepsThePasswordAndSignsIn(t *testing.T) {
+	env := testhelper.Setup(t)
+	browser := env.SiteBrowser(t)
+	token := registerIn(t, env, browser, "Grace Hopper", "grace@example.com", formPassword)
+
+	res := verifyIn(t, browser, token, "")
+
+	session := sessionOf(t, res)
+	landsInFirstWorkspace(t, env, session, "grace-hopper")
+	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", formPassword))
+}
+
+func TestTheLinkInAnotherBrowserWithoutAPasswordNeedsOneAndChangesNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	token := registerIn(t, env, env.SiteBrowser(t), "Grace Hopper", "grace@example.com", formPassword)
+	before := userByEmail(t, env, "grace@example.com")
+	mails := len(env.SystemMail.Messages())
+
+	res := verifyIn(t, env.SiteBrowser(t), token, "")
+
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailPreconditionRequired{}, res)
+	after := userByEmail(t, env, "grace@example.com")
+	assert.Nil(t, after.EmailVerifiedAt)
+	assert.Equal(t, before.PasswordHash, after.PasswordHash)
+	assert.Equal(t, before.SessionEpoch, after.SessionEpoch)
+	assert.Len(t, env.SystemMail.Messages(), mails, "no welcome yet")
+	memberships, err := env.DB.Membership.Query().Where(entmembership.UserID(after.ID)).Count(t.Context())
+	require.NoError(t, err)
+	assert.Zero(t, memberships)
+
+	again := verifyIn(t, env.SiteBrowser(t), token, "grace-password-2")
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, again, "the scanner-style request consumed nothing")
+}
+
+func TestTheLinkInAnotherBrowserWithAPasswordMakesThatPasswordLiveAndDiscardsTheFormOne(t *testing.T) {
+	env := testhelper.Setup(t)
+	token := registerIn(t, env, env.SiteBrowser(t), "Grace Hopper", "grace@example.com", formPassword)
+
+	res := verifyIn(t, env.SiteBrowser(t), token, "grace-password-2")
+
+	session := sessionOf(t, res)
+	landsInFirstWorkspace(t, env, session, "grace-hopper")
+	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", "grace-password-2"))
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "grace@example.com", formPassword))
+}
+
+// Pre-hijacking: the attacker registers the victim's address with a password they know;
+// the victim follows the mail in their own browser and sets their own.
+func TestAnAttackersPasswordNeverGoesLiveWhenTheVictimFollowsTheLink(t *testing.T) {
+	env := testhelper.Setup(t)
+	attacker := env.SiteBrowser(t)
+	token := registerIn(t, env, attacker, "Victim", "victim@example.com", "attacker-password-1")
+	victim := env.SiteBrowser(t)
+
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailPreconditionRequired{}, verifyIn(t, victim, token, ""))
+	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verifyIn(t, victim, token, "victim-password-1"))
+
+	assert.Equal(t, http.StatusOK, loginStatus(t, env, "victim@example.com", "victim-password-1"))
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "victim@example.com", "attacker-password-1"))
+}
+
+func TestRegisteringTheSameUnverifiedAddressTwiceLeavesOnlyTheLatestMailAndPassword(t *testing.T) {
+	env := testhelper.Setup(t)
+	browser := env.SiteBrowser(t)
+	first := registerIn(t, env, browser, "Grace Hopper", "grace@example.com", "first-password-1")
+	latest := registerIn(t, env, browser, "Grace Hopper", "grace@example.com", "latest-password-1")
+
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verifyIn(t, browser, first, ""), "the earlier mail is dead")
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verifyIn(t, browser, first, "attacker-password-1"))
+	require.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verifyIn(t, browser, latest, ""))
+
+	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", "latest-password-1"))
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "grace@example.com", "first-password-1"))
+}
+
+// ADR 0031: a Verified address answers the same as a new one, cookie included, and its
+// password is not stored.
+func TestRegisteringAVerifiedAddressSetsTheSameCookieAndStoresNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	before, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
+	require.NoError(t, err)
+	cookieOf := func(email string) *http.Cookie {
+		res, err := env.SiteAnonymous(t).SiteAuthRegister(t.Context(), &siteapi.SiteRegisterInput{
+			Name: "Mallory", Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString("mallory-password-1"),
+		})
+		require.NoError(t, err)
+		accepted, ok := res.(*siteapi.SiteAuthRegisterAccepted)
+		require.Truef(t, ok, "got %T", res)
+		cookie, err := http.ParseSetCookie(accepted.SetCookie.Value)
+		require.NoError(t, err)
+		return cookie
+	}
+
+	fresh := cookieOf("new@example.com")
+	taken := cookieOf(fixtures.OwnerJohnEmail)
+
+	assert.Equal(t, fresh.Name, taken.Name)
+	assert.Equal(t, fresh.Path, taken.Path)
+	assert.Equal(t, fresh.MaxAge, taken.MaxAge)
+	assert.Equal(t, fresh.SameSite, taken.SameSite)
+	assert.Equal(t, fresh.HttpOnly, taken.HttpOnly)
+	assert.Equal(t, fresh.Secure, taken.Secure)
+	assert.NotEmpty(t, taken.Value)
+	after, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
+	require.NoError(t, err)
+	assert.Equal(t, before.PasswordHash, after.PasswordHash)
+	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, fixtures.OwnerJohnEmail, "mallory-password-1"))
+}
+
+func TestResendAsksForAPasswordEvenInTheRegistrationBrowser(t *testing.T) {
+	env := testhelper.Setup(t)
+	browser := env.SiteBrowser(t)
+	registerIn(t, env, browser, "Grace Hopper", "grace@example.com", formPassword)
+	res, err := browser.SiteAuthResendVerification(t.Context(), &siteapi.SiteResendVerificationInput{Email: "grace@example.com"})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteAuthResendVerificationAccepted{}, res)
+	_, body := lastSystemEmail(t, env)
+	resent := tokenFromEmail(t, body)
+
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailPreconditionRequired{}, verifyIn(t, browser, resent, ""))
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verifyIn(t, browser, resent, "grace-password-2"))
+}
+
+func TestABrowsersCookieDoesNotVouchForAnotherRegistrationsLink(t *testing.T) {
+	env := testhelper.Setup(t)
+	browser := env.SiteBrowser(t)
+	token := registerIn(t, env, browser, "Grace Hopper", "grace@example.com", formPassword)
+
+	// The link of a registration made in another browser still needs a password.
+	other := register(t, env, "Alan Turing", "alan@example.com")
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailPreconditionRequired{}, verifyIn(t, browser, other, ""))
+	assert.IsType(t, &siteapi.SiteAuthVerifyEmailOK{}, verifyIn(t, browser, token, ""))
 }

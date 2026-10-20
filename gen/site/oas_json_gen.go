@@ -7807,6 +7807,82 @@ func (s *SiteAuthRegisterUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteAuthVerifyEmailBadRequest as json.
+func (s *SiteAuthVerifyEmailBadRequest) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteAuthVerifyEmailBadRequest from json.
+func (s *SiteAuthVerifyEmailBadRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAuthVerifyEmailBadRequest to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteAuthVerifyEmailBadRequest(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAuthVerifyEmailBadRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAuthVerifyEmailBadRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SiteAuthVerifyEmailPreconditionRequired as json.
+func (s *SiteAuthVerifyEmailPreconditionRequired) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes SiteAuthVerifyEmailPreconditionRequired from json.
+func (s *SiteAuthVerifyEmailPreconditionRequired) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteAuthVerifyEmailPreconditionRequired to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = SiteAuthVerifyEmailPreconditionRequired(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteAuthVerifyEmailPreconditionRequired) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteAuthVerifyEmailPreconditionRequired) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteAutomationHttpErrorKind as json.
 func (s SiteAutomationHttpErrorKind) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -34383,8 +34459,10 @@ func (s *SiteVerifyEmailInput) encodeFields(e *jx.Encoder) {
 		e.Str(s.Token)
 	}
 	{
-		e.FieldStart("password")
-		e.Str(s.Password)
+		if s.Password.Set {
+			e.FieldStart("password")
+			s.Password.Encode(e)
+		}
 	}
 }
 
@@ -34415,11 +34493,9 @@ func (s *SiteVerifyEmailInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"token\"")
 			}
 		case "password":
-			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				v, err := d.Str()
-				s.Password = string(v)
-				if err != nil {
+				s.Password.Reset()
+				if err := s.Password.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -34436,7 +34512,7 @@ func (s *SiteVerifyEmailInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
