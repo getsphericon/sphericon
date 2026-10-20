@@ -574,7 +574,6 @@ export default interface Resources {
       "broadcastSent": "Broadcast is sending",
       "broadcastUpdated": "Broadcast updated",
       "contactCreated": "Contact created",
-      "contactDeleted": "Contact deleted",
       "contactErased": "Contact erased",
       "contactUpdated": "Contact updated",
       "errorMessage": "Something went wrong. Please try again.",

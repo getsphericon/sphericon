@@ -1,7 +1,7 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleSiteContactsDelete, handleSiteContactsList } from '../../generated/site/msw.gen.ts'
+import { handleSiteContactsList } from '../../generated/site/msw.gen.ts'
 import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -57,31 +57,15 @@ test('Add contact links to the create page', async () => {
     .toHaveAttribute('href', '/workspaces/test/contacts/new')
 })
 
-test('deleting a contact asks for confirmation, deletes it and refreshes the list', async () => {
-  const deleted: string[] = []
-  let listFetches = 0
-  worker.use(
-    handleSiteContactsList(() => {
-      listFetches++
-      return HttpResponse.json({ items: deleted.length > 0 ? [BOB] : [ALICE, BOB], totalItems: 2 })
-    }),
-    handleSiteContactsDelete(({ params }) => {
-      deleted.push(params.id)
-      return new HttpResponse(null, { status: 204 })
-    }),
-  )
+test('offers view and edit per contact, and no delete', async () => {
+  worker.use(handleSiteContactsList({ body: page([ALICE], 1) }))
 
   const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
 
-  await screen.getByRole('button', { name: 'Delete' }).first().click()
-  expect(deleted).toEqual([])
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
-
-  await expect.poll(() => deleted).toEqual(['1'])
-  await expect.element(screen.getByText('Contact deleted')).toBeInTheDocument()
-  await expect.poll(() => listFetches).toBe(2)
-  await expect.element(screen.getByText('alice@example.com')).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('link', { name: 'View' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('link', { name: 'Edit' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
 })
 
 test('changing the page requests page 2 of the contacts', async () => {
@@ -98,18 +82,4 @@ test('changing the page requests page 2 of the contacts', async () => {
   await screen.getByRole('button', { name: '2', exact: true }).click()
 
   await expect.poll(() => pages).toEqual(['1', '2'])
-})
-
-test('a failed delete shows the error toast and keeps the contact', async () => {
-  worker.use(
-    handleSiteContactsList({ body: page([ALICE], 1) }),
-    handleSiteContactsDelete(() => problem(500)),
-  )
-
-  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
-  await screen.getByRole('button', { name: 'Delete' }).first().click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
-
-  await expect.element(screen.getByText('Failed to delete', { exact: false })).toBeInTheDocument()
-  await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
 })
