@@ -48,6 +48,7 @@ const (
 	EventActionsListOperation          OperationName = "EventActionsList"
 	EventsBatchSubmitOperation         OperationName = "EventsBatchSubmit"
 	EventsCreateOperation              OperationName = "EventsCreate"
+	ExportAuditOperation               OperationName = "ExportAudit"
 	ExportContactsOperation            OperationName = "ExportContacts"
 	ExportEventsOperation              OperationName = "ExportEvents"
 	ExportMessagesOperation            OperationName = "ExportMessages"

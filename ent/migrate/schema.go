@@ -81,6 +81,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{AuditEntriesColumns[16], AuditEntriesColumns[0]},
 			},
+			{
+				Name:    "auditentry_workspace_id_updated_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{AuditEntriesColumns[16], AuditEntriesColumns[2], AuditEntriesColumns[0]},
+			},
 		},
 	}
 	// AuthAttemptsColumns holds the columns for the "auth_attempts" table.
