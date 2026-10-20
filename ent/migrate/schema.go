@@ -526,6 +526,11 @@ var (
 				Columns: []*schema.Column{EventsColumns[12], EventsColumns[4]},
 			},
 			{
+				Name:    "event_workspace_id_updated_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{EventsColumns[12], EventsColumns[2], EventsColumns[0]},
+			},
+			{
 				Name:    "events_created_at_analytical_idx",
 				Unique:  false,
 				Columns: []*schema.Column{EventsColumns[1]},

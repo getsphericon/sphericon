@@ -199,6 +199,15 @@ func TestMCPDoesNotExposeTheAuditLog(t *testing.T) {
 	assert.ElementsMatch(t, authoringTools, toolNames(got))
 }
 
+// An Export stream is a bulk feed, not an agent capability (ADR 0016, ADR 0044): even a token
+// that carries export:read gets no tool for it.
+func TestMCPDoesNotExposeTheExportStreams(t *testing.T) {
+	env := testhelper.Setup(t)
+	got := listedTools(t, env.MCPClient(t, env.ScopedBearer(t, "export:read")))
+	assert.NotContains(t, toolNames(got), "export_events")
+	assert.ElementsMatch(t, authoringTools, toolNames(got))
+}
+
 func TestMCPToolCallReturnsTheAPIResult(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read", "contacts:write", "contacts:erase"))
