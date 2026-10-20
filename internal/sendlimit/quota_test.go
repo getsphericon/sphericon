@@ -120,3 +120,38 @@ func TestRefreshQuotaIgnoresProvidersThatCannotReportOne(t *testing.T) {
 	assert.Nil(t, row.ProviderQuotaCheckedAt)
 	assert.Zero(t, ses.QuotaCalls())
 }
+
+func TestRefreshQuotaClearsAProviderValueTheProviderStoppedReporting(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	ses := &testhelper.FakeSES{}
+	cipher, catalog := envCipher(t), ses.Catalog()
+	ses.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
+	require.NoError(t, sendlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+
+	ses.SetQuota(messaging.Quota{PerSecond: new(14)})
+	require.NoError(t, sendlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	withoutDay := reload(t, s, fixtures.IntegrationAcmeSesID)
+
+	ses.SetQuota(messaging.Quota{PerDay: new(50000)})
+	require.NoError(t, sendlimit.RefreshQuota(t.Context(), s, cipher, catalog, reload(t, s, fixtures.IntegrationAcmeSesID)))
+	withoutSecond := reload(t, s, fixtures.IntegrationAcmeSesID)
+
+	assert.Nil(t, withoutDay.ProviderMaxPerDay, "a daily ceiling the provider no longer reports is lifted, not kept")
+	assert.Equal(t, new(14), withoutDay.ProviderMaxPerSecond)
+	assert.Nil(t, withoutSecond.ProviderMaxPerSecond, "so is a per-second one")
+	assert.Equal(t, new(50000), withoutSecond.ProviderMaxPerDay)
+}
+
+func TestRefreshQuotaReturnsAnErrorWhenTheStoredConfigCannotBeRead(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	ses := &testhelper.FakeSES{}
+	integ := reload(t, s, fixtures.IntegrationAcmeSesID)
+	integ.ConfigEncrypted = "not a ciphertext"
+
+	err := sendlimit.RefreshQuota(t.Context(), s, envCipher(t), ses.Catalog(), integ)
+
+	require.ErrorContains(t, err, "decrypt integration")
+	assert.Zero(t, ses.QuotaCalls(), "no lookup is made with a config that could not be read")
+}

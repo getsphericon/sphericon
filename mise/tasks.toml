@@ -211,6 +211,13 @@ depends = ["db:up"]
 env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 run = "mise/scripts/heavy.sh go test -race -shuffle=on -p 2 ./..."
 
+["test:mutation"]
+description = "Mutation testing of the packages whose logic decides what is sent (go-mutesting, three workers); pass other packages after `--`. A surviving mutant is a change the tests do not notice: nightly, not per pull request"
+depends = ["db:up"]
+env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
+usage = 'arg "[packages]" var=#true default="./internal/eligibility/... ./internal/sendlimit/..." help="packages to mutate"'
+run = 'eval "set -- $usage_packages"; go tool go-mutesting --workers 3 --quiet --no-diffs --min-msi 80 "$@"'
+
 ["test:fuzz"]
 description = "Go native fuzzing of the parsers that take outside input (FUZZTIME per target, default 30s); a crash lands in the package's testdata/fuzz as a regression"
 env = { FUZZTIME = "30s" }
