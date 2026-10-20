@@ -2,6 +2,7 @@ package scopedclient_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -64,6 +65,14 @@ func replantInAcme(ctx context.Context, t *testing.T, c *ent.Client, entities []
 	}
 }
 
+// clearSingleton removes a singleton entity's own row, so the re-created foreign copy can take its place.
+func clearSingleton(t *testing.T, ctx context.Context, scoped *ent.Scoped, e ent.ScopedEntity, own []int64) {
+	t.Helper()
+	if singletonEntities[e.Name] {
+		require.NoError(t, e.Delete(ctx, scoped, own[0]))
+	}
+}
+
 // TestScopedClientIsolation runs over the GENERATED list of workspace-mixin entities,
 // so a new entity is covered by adding the workspace mixin to its schema.
 func TestScopedClientIsolation(t *testing.T) {
@@ -123,9 +132,7 @@ func TestScopedClientIsolation(t *testing.T) {
 			t.Run("create sets the workspace and refuses foreign references", func(t *testing.T) {
 				// The foreign fixture row is re-created without its workspace_id:
 				// the new row lands in Acme only because the scoped create set it.
-				if singletonEntities[e.Name] {
-					require.NoError(t, e.Delete(ctx, scoped, own[0]))
-				}
+				clearSingleton(t, ctx, scoped, e, own)
 				ws, err := replantInAcme(ctx, t, env.DB, entities, e, foreign[0])
 				require.NoError(t, err)
 				assert.Equal(t, acme, ws)
@@ -135,9 +142,8 @@ func TestScopedClientIsolation(t *testing.T) {
 					referenced = true
 					return id // keeps pointing at the Globex row
 				})
-				if referenced {
-					assert.ErrorIs(t, err, ent.ErrNotInWorkspace)
-				}
+				refused := !referenced || errors.Is(err, ent.ErrNotInWorkspace)
+				assert.True(t, refused, "a reference to a foreign row is refused: %v", err)
 			})
 		})
 	}

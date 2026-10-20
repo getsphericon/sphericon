@@ -6,41 +6,29 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/foxcpp/go-mockdns"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 )
 
 func TestGenerateKeypairRoundTrip(t *testing.T) {
 	privPEM, pubTXT, err := GenerateKeypair()
-	if err != nil {
-		t.Fatalf("GenerateKeypair: %v", err)
-	}
-	if !strings.HasPrefix(pubTXT, "v=DKIM1; k=rsa; p=") {
-		t.Fatalf("unexpected TXT value: %q", pubTXT)
-	}
-	if !strings.Contains(string(privPEM), "PRIVATE KEY") {
-		t.Fatalf("private PEM missing key block: %q", privPEM)
-	}
+	require.NoErrorf(t, err, "GenerateKeypair: %v", err)
+	require.Truef(t, strings.HasPrefix(pubTXT, "v=DKIM1; k=rsa; p="), "unexpected TXT value: %q", pubTXT)
+	require.Containsf(t, string(privPEM), "PRIVATE KEY", "private PEM missing key block: %q", privPEM)
 
 	// The public key re-derived from the stored private PEM must match the TXT
 	// value handed to the user — this is exactly what verification compares.
 	derived, err := PublicKeyFromPrivatePEM(privPEM)
-	if err != nil {
-		t.Fatalf("PublicKeyFromPrivatePEM: %v", err)
-	}
-	if derived != pubTXT {
-		t.Fatalf("derived public key mismatch:\n got %q\nwant %q", derived, pubTXT)
-	}
+	require.NoErrorf(t, err, "PublicKeyFromPrivatePEM: %v", err)
+	require.Equalf(t, pubTXT, derived, "derived public key mismatch:\n got %q\nwant %q", derived, pubTXT)
 }
 
 func TestDKIMRecordHost(t *testing.T) {
 	host, value := DKIMRecord("sphericon", "mail.acme.com", "v=DKIM1; k=rsa; p=abc")
-	if host != "sphericon._domainkey.mail.acme.com" {
-		t.Fatalf("host = %q", host)
-	}
-	if value != "v=DKIM1; k=rsa; p=abc" {
-		t.Fatalf("value = %q", value)
-	}
+	require.Equalf(t, "sphericon._domainkey.mail.acme.com", host, "host = %q", host)
+	require.Equalf(t, "v=DKIM1; k=rsa; p=abc", value, "value = %q", value)
 }
 
 const dkimZone = "sphericon._domainkey.mail.acme.com."
@@ -106,18 +94,9 @@ func TestVerifyDKIM(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			lookup := dnstest.Resolver(t, tt.zones).LookupTXT
 			got, err := VerifyDKIM(context.Background(), lookup, "sphericon", "mail.acme.com", tt.expect)
-			if tt.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("VerifyDKIM: %v", err)
-			}
-			if got != tt.want {
-				t.Fatalf("got %v, want %v", got, tt.want)
-			}
+			wantErr := map[bool]require.ErrorAssertionFunc{true: require.Error, false: require.NoError}
+			wantErr[tt.wantErr](t, err, "VerifyDKIM")
+			require.Equalf(t, tt.want, got, "got %v, want %v", got, tt.want)
 		})
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -122,12 +123,11 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 	require.NoError(t, err)
 	page, ok := list.(*siteapi.SiteAuditEntryList)
 	require.Truef(t, ok, "got %T", list)
-	var seen int
-	for _, item := range page.Items {
-		if strings.HasPrefix(item.Action, "sending_domain.") {
-			seen++
-			assert.Equal(t, siteapi.SiteAuditActorKindAPIToken, item.Actor.Kind)
-		}
+	domainEntries := lo.Filter(page.Items, func(item siteapi.SiteAuditEntryResource, _ int) bool {
+		return strings.HasPrefix(item.Action, "sending_domain.")
+	})
+	for _, item := range domainEntries {
+		assert.Equal(t, siteapi.SiteAuditActorKindAPIToken, item.Actor.Kind)
 	}
-	assert.Equal(t, 3, seen)
+	assert.Len(t, domainEntries, 3)
 }

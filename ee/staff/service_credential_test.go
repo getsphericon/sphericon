@@ -2,6 +2,8 @@ package staff_test
 
 import (
 	"encoding/json"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/samber/lo"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -250,15 +252,13 @@ func TestTheListShowsEachCredentialsStateAndWhenItWasLastUsed(t *testing.T) {
 
 	listed, err := h.env.StaffMembers.ServiceCredentials(t.Context(), fixtures.ServiceCredentialPrimaryName)
 	require.NoError(t, err)
-	byID := map[int64]time.Time{}
 	for _, c := range listed {
 		assert.Equal(t, fixtures.ServiceCredentialPrimaryName, c.Name)
-		if c.LastUsedAt != nil {
-			byID[c.ID] = *c.LastUsedAt
-		}
 	}
-	require.Len(t, byID, 1, "only the credential that was used")
-	assert.WithinDuration(t, h.clock.now(), byID[fixtures.ServiceCredentialPrimaryID], time.Millisecond, "at the clock's time")
+	used := lo.Filter(listed, func(c *ent.ServiceCredential, _ int) bool { return c.LastUsedAt != nil })
+	require.Len(t, used, 1, "only the credential that was used")
+	assert.EqualValues(t, fixtures.ServiceCredentialPrimaryID, used[0].ID)
+	assert.WithinDuration(t, h.clock.now(), *used[0].LastUsedAt, time.Millisecond, "at the clock's time")
 
 	all, err := h.env.StaffMembers.ServiceCredentials(t.Context(), "")
 	require.NoError(t, err)
@@ -352,13 +352,8 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 
 	console, _ := h.staffSession(t)
 	page := h.auditPage(t, console, fixtures.AcmePublicID, staffapi.StaffWorkspaceAuditListParams{})
-	var shown *staffapi.StaffAuditEntryResource
-	for _, e := range page.Items {
-		if e.Target.Name.Value == "attributed-tag" {
-			shown = &e
-		}
-	}
-	require.NotNil(t, shown, "the StaffMember console lists the entry")
+	shown, listed := lo.Find(page.Items, func(e staffapi.StaffAuditEntryResource) bool { return e.Target.Name.Value == "attributed-tag" })
+	require.True(t, listed, "the StaffMember console lists the entry")
 	assert.Equal(t, staffapi.StaffAuditActorKindService, shown.Actor.Kind)
 	assert.Equal(t, fixtures.ServiceCredentialPrimaryName, shown.Actor.Name.Value)
 
@@ -366,10 +361,8 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 	require.NoError(t, err)
 	customerPage, ok := res.(*siteapi.SiteAuditEntryList)
 	require.Truef(t, ok, "got %T", res)
-	for _, e := range customerPage.Items {
-		if e.Target.Name.Value != "attributed-tag" {
-			continue
-		}
+	attributed := lo.Filter(customerPage.Items, func(e siteapi.SiteAuditEntryResource, _ int) bool { return e.Target.Name.Value == "attributed-tag" })
+	for _, e := range attributed {
 		assert.Equal(t, siteapi.SiteAuditActorKindStaff, e.Actor.Kind)
 		assert.Equal(t, events.StaffLabel, e.Actor.Name.Value)
 		assert.False(t, e.Actor.ID.IsSet() && e.Actor.ID.Value != "")

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -107,17 +108,12 @@ func TestSiteBrandKitSaveIsAudited(t *testing.T) {
 	changed.TextColor = "#000000"
 	saveBrandKit(t, c, fixtures.VandelayPublicID, changed)
 
-	var actions []string
-	var update *events.AuditEntry
-	for _, e := range env.OutboxEvents(t, events.NameAuditEntry) {
-		entry := e.(*events.AuditEntry)
-		if entry.Action == "brand_kit.update" {
-			update = entry
-		}
-		actions = append(actions, entry.Action)
-	}
+	entries := lo.Map(env.OutboxEvents(t, events.NameAuditEntry), func(e events.DomainEvent, _ int) *events.AuditEntry { return e.(*events.AuditEntry) })
+	actions := lo.Map(entries, func(entry *events.AuditEntry, _ int) string { return entry.Action })
+	updates := lo.Filter(entries, func(entry *events.AuditEntry, _ int) bool { return entry.Action == "brand_kit.update" })
 	assert.Contains(t, actions, "brand_kit.create")
-	require.NotNil(t, update)
+	require.NotEmpty(t, updates)
+	update := updates[len(updates)-1]
 	assert.Equal(t, map[string]any{"text_color": map[string]any{"from": "#102030", "to": "#000000"}}, update.Diff)
 }
 

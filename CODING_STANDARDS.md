@@ -37,6 +37,14 @@ The rules a change is reviewed against. How the repo is built, run and generated
   other test rides the transaction `pgcleaner` hands out, which rolls back. A `t.Cleanup` that
   deletes rows, a purge or a reset at the top of a test means a test is committing outside its
   transaction: fix that test.
+- **A test body does not branch.** No `if`, `switch` or `select` in a `Test…` function or its subtest
+  closures (`ast-grep/rules/no-branching-in-go-tests.yml`, run by `mise run check:ast`): a branch
+  chooses what to check, so a wrong run can take the path that checks nothing. State the expectation
+  with `assert`/`require` on a value read beforehand; keep a table's rows as data (split a table
+  whose rows need different assertions into two tests, give a row its expected value rather than a
+  flag that picks one); filter and find with `lo.Filter`/`lo.Find`; wait on a channel with
+  `testhelper.Receive`. Logic that has to branch (a simulated clock, a pager, a conditional skip by
+  build tag) goes into a helper function or a file with a build constraint, named for what it does.
 - **No `time.Sleep`, anywhere.** A sleep is a guess about how long something takes: it makes a test
   slow where it guesses high and flaky where it guesses low, and in code it hides a missing signal.
   Wait on the condition (a channel, `assert.Eventually`, a returned handle), and write the logic so

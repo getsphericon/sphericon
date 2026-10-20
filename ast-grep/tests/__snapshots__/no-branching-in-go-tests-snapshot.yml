@@ -1,0 +1,48 @@
+id: no-branching-in-go-tests
+snapshots:
+  "func TestBranches(t *testing.T) {\n\tif x {\n\t\tt.Fatal(\"no\")\n\t}\n}\n":
+    labels:
+      - source: "if x {\n\t\tt.Fatal(\"no\")\n\t}"
+        style: primary
+        start: 35
+        end: 60
+      - source: TestBranches
+        style: secondary
+        start: 5
+        end: 17
+      - source: "func TestBranches(t *testing.T) {\n\tif x {\n\t\tt.Fatal(\"no\")\n\t}\n}"
+        style: secondary
+        start: 0
+        end: 62
+  "func TestSubtestBranches(t *testing.T) {\n\tt.Run(\"a\", func(t *testing.T) {\n\t\tif x {\n\t\t\tt.Fatal(\"no\")\n\t\t}\n\t})\n}\n":
+    labels:
+      - source: "if x {\n\t\t\tt.Fatal(\"no\")\n\t\t}"
+        style: primary
+        start: 76
+        end: 103
+      - source: t *testing.T
+        style: secondary
+        start: 58
+        end: 70
+      - source: (t *testing.T)
+        style: secondary
+        start: 57
+        end: 71
+      - source: "func(t *testing.T) {\n\t\tif x {\n\t\t\tt.Fatal(\"no\")\n\t\t}\n\t}"
+        style: secondary
+        start: 53
+        end: 106
+  "func TestSwitches(t *testing.T) {\n\tswitch x {\n\tcase 1:\n\t}\n}\n":
+    labels:
+      - source: "switch x {\n\tcase 1:\n\t}"
+        style: primary
+        start: 35
+        end: 57
+      - source: TestSwitches
+        style: secondary
+        start: 5
+        end: 17
+      - source: "func TestSwitches(t *testing.T) {\n\tswitch x {\n\tcase 1:\n\t}\n}"
+        style: secondary
+        start: 0
+        end: 59

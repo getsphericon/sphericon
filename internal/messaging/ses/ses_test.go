@@ -15,6 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // sesAPI is an httptest stand-in for the SES v2 REST API; the provider's
@@ -186,11 +187,7 @@ func TestDescriptorValidate(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			err := d.Validate([]byte(tc.cfg))
-			if tc.wantErr == "" {
-				assert.NoError(t, err)
-				return
-			}
-			assert.ErrorContains(t, err, tc.wantErr)
+			testhelper.ErrorContainsOrNone(t, err, tc.wantErr)
 		})
 	}
 }

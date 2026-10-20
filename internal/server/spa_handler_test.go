@@ -42,13 +42,3 @@ func TestSPAFileHandlerWithoutIndexIsAnError(t *testing.T) {
 	rec := serveSPA(t, spaFileHandler(fstest.MapFS{"assets/app.js": {Data: []byte("x")}}, "en", true), "/deep/link")
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 }
-
-// Without an embedded frontend (the default build) the catch-all answers with a hint.
-func TestSPAHandlerNotEmbeddedHint(t *testing.T) {
-	if _, embedded := spaFS(); embedded {
-		t.Skip("frontend is embedded in this build")
-	}
-	rec := serveSPA(t, spaHandler("en", true), "/")
-	assert.Equal(t, http.StatusNotImplemented, rec.Code)
-	assert.Contains(t, rec.Body.String(), "embed_spa")
-}

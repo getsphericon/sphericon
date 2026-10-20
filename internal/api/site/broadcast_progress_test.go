@@ -37,12 +37,9 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 
 	eta := time.Now().Add(90 * time.Minute).Truncate(time.Microsecond)
 	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).SetRecipientsTotal(3).SetLastScheduledAt(eta).Exec(ctx))
+	statuses := []broadcastrecipient.Status{broadcastrecipient.StatusSent, broadcastrecipient.StatusPending, broadcastrecipient.StatusPending}
 	for i, contactID := range []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID} {
-		status := broadcastrecipient.StatusPending
-		if i == 0 {
-			status = broadcastrecipient.StatusSent
-		}
-		_, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(contactID).SetStatus(status).Save(ctx)
+		_, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(contactID).SetStatus(statuses[i]).Save(ctx)
 		require.NoError(t, err)
 	}
 

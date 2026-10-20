@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -20,11 +22,8 @@ func TestListPagesTheWorkspaceSegmentsAscendingByID(t *testing.T) {
 	all, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(all.Items), 2)
-	for i, sg := range all.Items {
-		if i > 0 {
-			assert.Less(t, all.Items[i-1].ID, sg.ID)
-		}
-	}
+	ids := lo.Map(all.Items, func(sg *ent.Segment, _ int) int64 { return sg.ID })
+	assert.IsIncreasing(t, ids)
 
 	second, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 2, PageSize: 1})
 	require.NoError(t, err)

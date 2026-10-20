@@ -151,9 +151,7 @@ func TestSiteBroadcastsTestSendDeliversPreview(t *testing.T) {
 	res, err := c.SiteBroadcastsTestSend(ctx, &siteapi.SiteTestSendBroadcastInput{Email: "preview@example.com"},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
-	if !assert.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res) {
-		return
-	}
+	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)
 	msgs := env.CustomerMail.Messages()
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "preview@example.com", msgs[0].To)

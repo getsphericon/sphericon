@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -38,16 +39,14 @@ func TestTheStoredAuditRowsKeepTheStaffIdWhileTheCustomerSeesStaff(t *testing.T)
 	require.NoError(t, err)
 	page, ok := res.(*siteapi.SiteAuditEntryList)
 	require.Truef(t, ok, "got %T", res)
-	seen := 0
-	for _, e := range page.Items {
-		if e.Action != events.ActionWorkspaceSuspend && e.Action != events.ActionWorkspaceUnsuspend {
-			continue
-		}
-		seen++
+	suspensions := lo.Filter(page.Items, func(e siteapi.SiteAuditEntryResource, _ int) bool {
+		return e.Action == events.ActionWorkspaceSuspend || e.Action == events.ActionWorkspaceUnsuspend
+	})
+	for _, e := range suspensions {
 		assert.Equal(t, "Sphericon staff", e.Actor.Name.Value, e.Action)
 		assert.False(t, e.Actor.ID.IsSet() && e.Actor.ID.Value != "", e.Action)
 	}
-	assert.Equal(t, 2, seen)
+	assert.Len(t, suspensions, 2)
 }
 
 // suspendAs suspends Acme through the core mechanism as a non-Staff member actor, which the

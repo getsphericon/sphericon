@@ -62,6 +62,9 @@ type rig struct {
 // newRig builds a Module and Sender that would send: a production-like config (not dev) over
 // the receiver, a release version and the notice acknowledged at the clock's time. edit
 // changes the config, version is the running version.
+// noPrep is the preparation of a case that needs none.
+func noPrep(*testing.T, *rig) {}
+
 func newRig(t *testing.T, version string, edit func(*config.Config), opts ...instance.SenderOption) *rig {
 	t.Helper()
 	env := testhelper.Setup(t)
@@ -175,17 +178,17 @@ func TestSenderStaysSilent(t *testing.T) {
 		edit    func(*config.Config)
 		prep    func(*testing.T, *rig)
 	}{
-		"environment off":                   {"1.4.2", func(c *config.Config) { c.Telemetry = &no }, nil},
-		"do not track":                      {"1.4.2", func(c *config.Config) { c.DoNotTrack = true }, nil},
-		"do not track beats environment on": {"1.4.2", func(c *config.Config) { c.Telemetry = &yes; c.DoNotTrack = true }, nil},
+		"environment off":                   {"1.4.2", func(c *config.Config) { c.Telemetry = &no }, noPrep},
+		"do not track":                      {"1.4.2", func(c *config.Config) { c.DoNotTrack = true }, noPrep},
+		"do not track beats environment on": {"1.4.2", func(c *config.Config) { c.Telemetry = &yes; c.DoNotTrack = true }, noPrep},
 		"switched off in the app": {"1.4.2", nil, func(t *testing.T, r *rig) {
 			t.Helper()
 			_, err := r.mod.SetTelemetry(t.Context(), false)
 			require.NoError(t, err)
 		}},
-		"development environment": {"1.4.2", func(c *config.Config) { c.IsDev = true }, nil},
-		"dev build":               {"dev", nil, nil},
-		"prerelease build":        {"1.5.0-rc.1", nil, nil},
+		"development environment": {"1.4.2", func(c *config.Config) { c.IsDev = true }, noPrep},
+		"dev build":               {"dev", nil, noPrep},
+		"prerelease build":        {"1.5.0-rc.1", nil, noPrep},
 		"notice not acknowledged": {"1.4.2", nil, func(t *testing.T, r *rig) {
 			t.Helper()
 			require.NoError(t, r.db.InstanceState.UpdateOneID(1).ClearNoticeAcknowledgedAt().Exec(t.Context()))
@@ -194,9 +197,7 @@ func TestSenderStaysSilent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			r := newRig(t, c.version, c.edit)
 			r.firstSend(t)
-			if c.prep != nil {
-				c.prep(t, r)
-			}
+			c.prep(t, r)
 
 			require.NoError(t, r.sender.Run(t.Context()))
 

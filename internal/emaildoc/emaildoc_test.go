@@ -42,6 +42,14 @@ func readDoc(t *testing.T, name string) []byte {
 	return b
 }
 
+// acceptGolden rewrites a golden file when the test runs with -update.
+func acceptGolden(t *testing.T, path, html string) {
+	t.Helper()
+	if *update {
+		require.NoError(t, os.WriteFile(path, []byte(html), 0o644))
+	}
+}
+
 func TestRenderMatchesGolden(t *testing.T) {
 	files, err := filepath.Glob(filepath.Join("testdata", "docs", "*.json"))
 	require.NoError(t, err)
@@ -54,9 +62,7 @@ func TestRenderMatchesGolden(t *testing.T) {
 			require.NoError(t, err)
 
 			golden := filepath.Join("testdata", "golden", name+".html")
-			if *update {
-				require.NoError(t, os.WriteFile(golden, []byte(got.HTML), 0o644))
-			}
+			acceptGolden(t, golden, got.HTML)
 			want, err := os.ReadFile(golden)
 			require.NoError(t, err)
 			require.Equal(t, string(want), got.HTML,

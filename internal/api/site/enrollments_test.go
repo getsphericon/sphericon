@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -25,19 +26,15 @@ func TestSiteEnrollmentsShowWhyAnEnrollmentFailed(t *testing.T) {
 	require.NoError(t, err)
 	listed, ok := list.(*siteapi.SiteEnrollmentsListOK)
 	require.Truef(t, ok, "got %T", list)
-	var found bool
-	for _, e := range listed.Items {
-		if e.ID != siteapi.EntityId(fixtures.AutomationRunHTTPFailedID) {
-			continue
-		}
-		found = true
-		f, ok := e.Failure.Get()
-		require.True(t, ok)
-		assert.Equal(t, siteapi.SiteEnrollmentFailureKindHTTPStatus, f.Kind)
-		assert.EqualValues(t, 503, f.Status.Or(0))
-		assert.Equal(t, "upstream unavailable, try again later", f.Excerpt.Or(""))
-	}
-	assert.True(t, found)
+	failedRun, found := lo.Find(listed.Items, func(e siteapi.SiteEnrollmentResource) bool {
+		return e.ID == siteapi.EntityId(fixtures.AutomationRunHTTPFailedID)
+	})
+	require.True(t, found)
+	f, ok := failedRun.Failure.Get()
+	require.True(t, ok)
+	assert.Equal(t, siteapi.SiteEnrollmentFailureKindHTTPStatus, f.Kind)
+	assert.EqualValues(t, 503, f.Status.Or(0))
+	assert.Equal(t, "upstream unavailable, try again later", f.Excerpt.Or(""))
 
 	got, err := c.SiteEnrollmentsGet(ctx, siteapi.SiteEnrollmentsGetParams{
 		WorkspaceId:  fixtures.AcmePublicID,

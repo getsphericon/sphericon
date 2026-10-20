@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -152,16 +153,21 @@ func TestExternalContractHasNoWideningConsentOperation(t *testing.T) {
 	}
 	require.NoError(t, json.Unmarshal(raw, &spec))
 
-	consentPaths := 0
+	type route struct{ method, path, id string }
+	var routes []route
 	for path, methods := range spec.Paths {
 		for method, op := range methods {
-			id := strings.ToLower(op.OperationID + " " + path)
-			assert.NotContains(t, id, "resubscribe", "%s %s", method, path)
-			if strings.Contains(path, "suppression") || strings.Contains(path, "unsubscribe") {
-				consentPaths++
-				assert.Equalf(t, "post", method, "%s %s: consent routes only narrow (create)", method, path)
-			}
+			routes = append(routes, route{method: method, path: path, id: strings.ToLower(op.OperationID + " " + path)})
 		}
 	}
-	assert.Equal(t, 2, consentPaths, "exactly add-suppression and unsubscribe")
+	for _, r := range routes {
+		assert.NotContains(t, r.id, "resubscribe", "%s %s", r.method, r.path)
+	}
+	consent := lo.Filter(routes, func(r route, _ int) bool {
+		return strings.Contains(r.path, "suppression") || strings.Contains(r.path, "unsubscribe")
+	})
+	for _, r := range consent {
+		assert.Equalf(t, "post", r.method, "%s %s: consent routes only narrow (create)", r.method, r.path)
+	}
+	assert.Len(t, consent, 2, "exactly add-suppression and unsubscribe")
 }

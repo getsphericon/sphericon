@@ -1,0 +1,42 @@
+id: no-branching-in-go-tests
+valid:
+  - |
+    func TestAsserts(t *testing.T) {
+    	require.NoError(t, err)
+    }
+  - |
+    func helper(t *testing.T) {
+    	if x {
+    		t.Fatal("a helper may branch")
+    	}
+    }
+  - |
+    func TestUsesAHandler(t *testing.T) {
+    	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    		if x {
+    			w.WriteHeader(204)
+    		}
+    	})
+    	_ = h
+    }
+invalid:
+  - |
+    func TestBranches(t *testing.T) {
+    	if x {
+    		t.Fatal("no")
+    	}
+    }
+  - |
+    func TestSubtestBranches(t *testing.T) {
+    	t.Run("a", func(t *testing.T) {
+    		if x {
+    			t.Fatal("no")
+    		}
+    	})
+    }
+  - |
+    func TestSwitches(t *testing.T) {
+    	switch x {
+    	case 1:
+    	}
+    }

@@ -52,13 +52,7 @@ func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
 			ctx := context.Background()
 			f := sendingWithPending(t, env, 3)
 			upd := env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID)
-			if c.manual != nil {
-				upd.SetMaxPerSecond(*c.manual)
-			}
-			if c.prov != nil {
-				upd.SetProviderMaxPerSecond(*c.prov)
-			}
-			upd.ExecX(ctx)
+			upd.SetNillableMaxPerSecond(c.manual).SetNillableProviderMaxPerSecond(c.prov).ExecX(ctx)
 			b := env.DB.Broadcast.GetX(ctx, f.id)
 
 			now := time.Now()

@@ -1,6 +1,8 @@
 package staff_test
 
 import (
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/samber/lo"
 	"testing"
 	"time"
 
@@ -54,17 +56,11 @@ func TestTheActionURLReachesTheConsoleAndTheOwnerAndRenewingWithoutItRemovesIt(t
 
 	list, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
-	var checked bool
-	for _, w := range list {
-		if w.ID != fixtures.AcmePublicID {
-			continue
-		}
-		checked = true
-		require.Len(t, w.Holds, 2)
-		assert.Equal(t, resolveURL, w.Holds[0].ActionUrl.Value)
-		assert.False(t, w.Holds[1].ActionUrl.Set)
-	}
-	assert.True(t, checked)
+	acme, found := lo.Find(list, func(w siteapi.SiteWorkspaceResource) bool { return w.ID == fixtures.AcmePublicID })
+	require.True(t, found)
+	require.Len(t, acme.Holds, 2)
+	assert.Equal(t, resolveURL, acme.Holds[0].ActionUrl.Value)
+	assert.False(t, acme.Holds[1].ActionUrl.Set)
 
 	h.setHold(t, "a-with-link", time.Hour)
 	assert.False(t, h.acmeHolds(t, c)[0].ActionUrl.Set, "setting the hold again without a URL removes the stored one")

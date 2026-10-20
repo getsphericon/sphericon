@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/internal/exportstream"
@@ -69,12 +72,10 @@ func FuzzParseCursor(f *testing.F) {
 	f.Add("MTox")
 	f.Fuzz(func(t *testing.T, token string) {
 		c, err := exportstream.ParseCursor(token)
-		if err != nil && !errors.Is(err, exportstream.ErrBadCursor) {
-			t.Fatalf("%q: unexpected error %v", token, err)
-		}
-		if err != nil && !c.IsZero() {
-			t.Fatalf("%q: a position and an error together", token)
-		}
+		refusedCleanly := err == nil || errors.Is(err, exportstream.ErrBadCursor)
+		require.Truef(t, refusedCleanly, "%q: unexpected error %v", token, err)
+		noPositionWithAnError := err == nil || c.IsZero()
+		require.Truef(t, noPositionWithAnError, "%q: a position and an error together", token)
 	})
 }
 
@@ -82,17 +83,15 @@ func FuzzParseCursor(f *testing.F) {
 func TestValidateRowRefusesADriftedRow(t *testing.T) {
 	const ok = `{"id":"1","action":"a","properties":{},"contact_id":null,"visitor_id":null,"subject_id":"",` +
 		`"email":null,"phone":null,"occurred_at":null,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}`
-	if err := exportstream.ValidateRow(exportstream.EventsSchema, []byte(ok)); err != nil {
-		t.Fatalf("a conforming row is refused: %v", err)
-	}
+	err := exportstream.ValidateRow(exportstream.EventsSchema, []byte(ok))
+	require.NoErrorf(t, err, "a conforming row is refused: %v", err)
 	drifted := map[string]string{
 		"an undeclared key":   `{"extra":1,` + ok[1:],
 		"a missing key":       `{"id":"1"}`,
 		"a wrongly typed key": `{"id":"1","action":7,` + ok[len(`{"id":"1","action":"a",`):],
 	}
 	for name, row := range drifted {
-		if err := exportstream.ValidateRow(exportstream.EventsSchema, []byte(row)); err == nil {
-			t.Errorf("%s passes", name)
-		}
+		err := exportstream.ValidateRow(exportstream.EventsSchema, []byte(row))
+		assert.Errorf(t, err, "%s passes", name)
 	}
 }
