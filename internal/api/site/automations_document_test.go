@@ -28,7 +28,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name: "Authored", TriggerEvent: "authored.signup",
@@ -37,7 +37,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 			{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)},
 			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Plain"), Body: siteapi.NewOptString("<p>HTML only</p>")},
 		},
-	}, siteapi.SiteAutomationsCreateParams{Slug: slug})
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", created)
@@ -58,7 +58,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	// Saving another document rebuilds that step's body.
 	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
 		Steps: []siteapi.SiteAutomationStep{docStep("Hi", paragraphDoc("Second"))},
-	}, siteapi.SiteAutomationsUpdateParams{Slug: slug, ID: res.ID})
+	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", updated)
@@ -70,7 +70,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 		Steps: []siteapi.SiteAutomationStep{{
 			Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p>Plain now</p>"),
 		}},
-	}, siteapi.SiteAutomationsUpdateParams{Slug: slug, ID: res.ID})
+	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	clr, ok := cleared.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", cleared)
@@ -86,7 +86,7 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	bad := map[string]jx.Raw{"type": jx.Raw(`"doc"`), "content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`)}
 	res, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
@@ -95,7 +95,7 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 			docStep("Fine", paragraphDoc("Fine")),
 			docStep("Broken", bad),
 		},
-	}, siteapi.SiteAutomationsCreateParams{Slug: slug})
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refused, ok := res.(*siteapi.SiteAutomationsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
@@ -106,14 +106,14 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	both.Body = siteapi.NewOptString("<p>x</p>")
 	res, err = c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name: "Both", TriggerEvent: "both.signup", Steps: []siteapi.SiteAutomationStep{both},
-	}, siteapi.SiteAutomationsCreateParams{Slug: slug})
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteAutomationsCreateUnprocessableEntity), res)
 
 	n, err := env.DB.Automation.Query().Count(ctx)
 	require.NoError(t, err)
 	listed := n
-	_, err = c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "Probe", TriggerEvent: "probe.signup"}, siteapi.SiteAutomationsCreateParams{Slug: slug})
+	_, err = c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "Probe", TriggerEvent: "probe.signup"}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.Equal(t, listed+1, env.DB.Automation.Query().CountX(ctx), "the refused saves stored nothing")
 }

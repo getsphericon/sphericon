@@ -38101,7 +38101,7 @@ type WorkspaceMutation struct {
 	created_at                  *time.Time
 	updated_at                  *time.Time
 	name                        *string
-	slug                        *string
+	public_id                   *string
 	collect_key                 *string
 	require_confirmed_opt_in    *bool
 	postal_address              *string
@@ -38110,6 +38110,8 @@ type WorkspaceMutation struct {
 	second_factor_required_at   *time.Time
 	feed_position               *int64
 	addfeed_position            *int64
+	deleted_at                  *time.Time
+	erased_at                   *time.Time
 	suspended_at                *time.Time
 	suspended_by_kind           *workspace.SuspendedByKind
 	suspended_by_id             *string
@@ -38417,40 +38419,40 @@ func (m *WorkspaceMutation) ResetName() {
 	m.name = nil
 }
 
-// SetSlug sets the "slug" field.
-func (m *WorkspaceMutation) SetSlug(s string) {
-	m.slug = &s
+// SetPublicID sets the "public_id" field.
+func (m *WorkspaceMutation) SetPublicID(s string) {
+	m.public_id = &s
 }
 
-// Slug returns the value of the "slug" field in the mutation.
-func (m *WorkspaceMutation) Slug() (r string, exists bool) {
-	v := m.slug
+// PublicID returns the value of the "public_id" field in the mutation.
+func (m *WorkspaceMutation) PublicID() (r string, exists bool) {
+	v := m.public_id
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldSlug returns the old "slug" field's value of the Workspace entity.
+// OldPublicID returns the old "public_id" field's value of the Workspace entity.
 // If the Workspace object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WorkspaceMutation) OldSlug(ctx context.Context) (v string, err error) {
+func (m *WorkspaceMutation) OldPublicID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSlug is only allowed on UpdateOne operations")
+		return v, errors.New("OldPublicID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSlug requires an ID field in the mutation")
+		return v, errors.New("OldPublicID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSlug: %w", err)
+		return v, fmt.Errorf("querying old value for OldPublicID: %w", err)
 	}
-	return oldValue.Slug, nil
+	return oldValue.PublicID, nil
 }
 
-// ResetSlug resets all changes to the "slug" field.
-func (m *WorkspaceMutation) ResetSlug() {
-	m.slug = nil
+// ResetPublicID resets all changes to the "public_id" field.
+func (m *WorkspaceMutation) ResetPublicID() {
+	m.public_id = nil
 }
 
 // SetCollectKey sets the "collect_key" field.
@@ -38747,6 +38749,104 @@ func (m *WorkspaceMutation) AddedFeedPosition() (r int64, exists bool) {
 func (m *WorkspaceMutation) ResetFeedPosition() {
 	m.feed_position = nil
 	m.addfeed_position = nil
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *WorkspaceMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *WorkspaceMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *WorkspaceMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[workspace.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *WorkspaceMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *WorkspaceMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, workspace.FieldDeletedAt)
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (m *WorkspaceMutation) SetErasedAt(t time.Time) {
+	m.erased_at = &t
+}
+
+// ErasedAt returns the value of the "erased_at" field in the mutation.
+func (m *WorkspaceMutation) ErasedAt() (r time.Time, exists bool) {
+	v := m.erased_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErasedAt returns the old "erased_at" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldErasedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErasedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErasedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErasedAt: %w", err)
+	}
+	return oldValue.ErasedAt, nil
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (m *WorkspaceMutation) ClearErasedAt() {
+	m.erased_at = nil
+	m.clearedFields[workspace.FieldErasedAt] = struct{}{}
+}
+
+// ErasedAtCleared returns if the "erased_at" field was cleared in this mutation.
+func (m *WorkspaceMutation) ErasedAtCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldErasedAt]
+	return ok
+}
+
+// ResetErasedAt resets all changes to the "erased_at" field.
+func (m *WorkspaceMutation) ResetErasedAt() {
+	m.erased_at = nil
+	delete(m.clearedFields, workspace.FieldErasedAt)
 }
 
 // SetSuspendedAt sets the "suspended_at" field.
@@ -40620,7 +40720,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 20)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -40630,8 +40730,8 @@ func (m *WorkspaceMutation) Fields() []string {
 	if m.name != nil {
 		fields = append(fields, workspace.FieldName)
 	}
-	if m.slug != nil {
-		fields = append(fields, workspace.FieldSlug)
+	if m.public_id != nil {
+		fields = append(fields, workspace.FieldPublicID)
 	}
 	if m.collect_key != nil {
 		fields = append(fields, workspace.FieldCollectKey)
@@ -40650,6 +40750,12 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.feed_position != nil {
 		fields = append(fields, workspace.FieldFeedPosition)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, workspace.FieldDeletedAt)
+	}
+	if m.erased_at != nil {
+		fields = append(fields, workspace.FieldErasedAt)
 	}
 	if m.suspended_at != nil {
 		fields = append(fields, workspace.FieldSuspendedAt)
@@ -40689,8 +40795,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case workspace.FieldName:
 		return m.Name()
-	case workspace.FieldSlug:
-		return m.Slug()
+	case workspace.FieldPublicID:
+		return m.PublicID()
 	case workspace.FieldCollectKey:
 		return m.CollectKey()
 	case workspace.FieldRequireConfirmedOptIn:
@@ -40703,6 +40809,10 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.SecondFactorRequiredAt()
 	case workspace.FieldFeedPosition:
 		return m.FeedPosition()
+	case workspace.FieldDeletedAt:
+		return m.DeletedAt()
+	case workspace.FieldErasedAt:
+		return m.ErasedAt()
 	case workspace.FieldSuspendedAt:
 		return m.SuspendedAt()
 	case workspace.FieldSuspendedByKind:
@@ -40734,8 +40844,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldUpdatedAt(ctx)
 	case workspace.FieldName:
 		return m.OldName(ctx)
-	case workspace.FieldSlug:
-		return m.OldSlug(ctx)
+	case workspace.FieldPublicID:
+		return m.OldPublicID(ctx)
 	case workspace.FieldCollectKey:
 		return m.OldCollectKey(ctx)
 	case workspace.FieldRequireConfirmedOptIn:
@@ -40748,6 +40858,10 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSecondFactorRequiredAt(ctx)
 	case workspace.FieldFeedPosition:
 		return m.OldFeedPosition(ctx)
+	case workspace.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case workspace.FieldErasedAt:
+		return m.OldErasedAt(ctx)
 	case workspace.FieldSuspendedAt:
 		return m.OldSuspendedAt(ctx)
 	case workspace.FieldSuspendedByKind:
@@ -40794,12 +40908,12 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
-	case workspace.FieldSlug:
+	case workspace.FieldPublicID:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetSlug(v)
+		m.SetPublicID(v)
 		return nil
 	case workspace.FieldCollectKey:
 		v, ok := value.(string)
@@ -40842,6 +40956,20 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFeedPosition(v)
+		return nil
+	case workspace.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case workspace.FieldErasedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErasedAt(v)
 		return nil
 	case workspace.FieldSuspendedAt:
 		v, ok := value.(time.Time)
@@ -40965,6 +41093,12 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	if m.FieldCleared(workspace.FieldSecondFactorRequiredAt) {
 		fields = append(fields, workspace.FieldSecondFactorRequiredAt)
 	}
+	if m.FieldCleared(workspace.FieldDeletedAt) {
+		fields = append(fields, workspace.FieldDeletedAt)
+	}
+	if m.FieldCleared(workspace.FieldErasedAt) {
+		fields = append(fields, workspace.FieldErasedAt)
+	}
 	if m.FieldCleared(workspace.FieldSuspendedAt) {
 		fields = append(fields, workspace.FieldSuspendedAt)
 	}
@@ -41009,6 +41143,12 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 	case workspace.FieldSecondFactorRequiredAt:
 		m.ClearSecondFactorRequiredAt()
 		return nil
+	case workspace.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case workspace.FieldErasedAt:
+		m.ClearErasedAt()
+		return nil
 	case workspace.FieldSuspendedAt:
 		m.ClearSuspendedAt()
 		return nil
@@ -41047,8 +41187,8 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 	case workspace.FieldName:
 		m.ResetName()
 		return nil
-	case workspace.FieldSlug:
-		m.ResetSlug()
+	case workspace.FieldPublicID:
+		m.ResetPublicID()
 		return nil
 	case workspace.FieldCollectKey:
 		m.ResetCollectKey()
@@ -41067,6 +41207,12 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldFeedPosition:
 		m.ResetFeedPosition()
+		return nil
+	case workspace.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case workspace.FieldErasedAt:
+		m.ResetErasedAt()
 		return nil
 	case workspace.FieldSuspendedAt:
 		m.ResetSuspendedAt()

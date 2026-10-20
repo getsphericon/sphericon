@@ -134,7 +134,7 @@ func TestSiteInstanceEveryOwnerOfTheOldestWorkspaceMayDecideAndATransferFollowsT
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	_, err := john.SiteMembershipsUpdate(t.Context(), &siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleOwner},
-		siteapi.SiteMembershipsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.AcmeMemberMembershipID)})
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeMemberMembershipID)})
 	require.NoError(t, err)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 	res, err := mary.SiteInstanceSetTelemetry(t.Context(), &siteapi.SiteInstanceTelemetryInput{Enabled: false})
@@ -144,7 +144,7 @@ func TestSiteInstanceEveryOwnerOfTheOldestWorkspaceMayDecideAndATransferFollowsT
 
 	// Mary takes over: the other Owner demotes John and he loses the Instance.
 	_, err = mary.SiteMembershipsUpdate(t.Context(), &siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
-		siteapi.SiteMembershipsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.AcmeOwnerMembershipID)})
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
 	require.NoError(t, err)
 	requireInstanceForbidden(t, john)
 	instanceState(t, mary)

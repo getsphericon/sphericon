@@ -83,9 +83,9 @@ func (_c *WorkspaceCreate) SetName(v string) *WorkspaceCreate {
 	return _c
 }
 
-// SetSlug sets the "slug" field.
-func (_c *WorkspaceCreate) SetSlug(v string) *WorkspaceCreate {
-	_c.mutation.SetSlug(v)
+// SetPublicID sets the "public_id" field.
+func (_c *WorkspaceCreate) SetPublicID(v string) *WorkspaceCreate {
+	_c.mutation.SetPublicID(v)
 	return _c
 }
 
@@ -161,6 +161,34 @@ func (_c *WorkspaceCreate) SetFeedPosition(v int64) *WorkspaceCreate {
 func (_c *WorkspaceCreate) SetNillableFeedPosition(v *int64) *WorkspaceCreate {
 	if v != nil {
 		_c.SetFeedPosition(*v)
+	}
+	return _c
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_c *WorkspaceCreate) SetDeletedAt(v time.Time) *WorkspaceCreate {
+	_c.mutation.SetDeletedAt(v)
+	return _c
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableDeletedAt(v *time.Time) *WorkspaceCreate {
+	if v != nil {
+		_c.SetDeletedAt(*v)
+	}
+	return _c
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (_c *WorkspaceCreate) SetErasedAt(v time.Time) *WorkspaceCreate {
+	_c.mutation.SetErasedAt(v)
+	return _c
+}
+
+// SetNillableErasedAt sets the "erased_at" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableErasedAt(v *time.Time) *WorkspaceCreate {
+	if v != nil {
+		_c.SetErasedAt(*v)
 	}
 	return _c
 }
@@ -760,17 +788,12 @@ func (_c *WorkspaceCreate) check() error {
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Workspace.name"`)}
 	}
-	if v, ok := _c.mutation.Name(); ok {
-		if err := workspace.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Workspace.name": %w`, err)}
-		}
+	if _, ok := _c.mutation.PublicID(); !ok {
+		return &ValidationError{Name: "public_id", err: errors.New(`ent: missing required field "Workspace.public_id"`)}
 	}
-	if _, ok := _c.mutation.Slug(); !ok {
-		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "Workspace.slug"`)}
-	}
-	if v, ok := _c.mutation.Slug(); ok {
-		if err := workspace.SlugValidator(v); err != nil {
-			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Workspace.slug": %w`, err)}
+	if v, ok := _c.mutation.PublicID(); ok {
+		if err := workspace.PublicIDValidator(v); err != nil {
+			return &ValidationError{Name: "public_id", err: fmt.Errorf(`ent: validator failed for field "Workspace.public_id": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.CollectKey(); !ok {
@@ -845,9 +868,9 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := _c.mutation.Slug(); ok {
-		_spec.SetField(workspace.FieldSlug, field.TypeString, value)
-		_node.Slug = value
+	if value, ok := _c.mutation.PublicID(); ok {
+		_spec.SetField(workspace.FieldPublicID, field.TypeString, value)
+		_node.PublicID = value
 	}
 	if value, ok := _c.mutation.CollectKey(); ok {
 		_spec.SetField(workspace.FieldCollectKey, field.TypeString, value)
@@ -872,6 +895,14 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.FeedPosition(); ok {
 		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
 		_node.FeedPosition = value
+	}
+	if value, ok := _c.mutation.DeletedAt(); ok {
+		_spec.SetField(workspace.FieldDeletedAt, field.TypeTime, value)
+		_node.DeletedAt = &value
+	}
+	if value, ok := _c.mutation.ErasedAt(); ok {
+		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
+		_node.ErasedAt = &value
 	}
 	if value, ok := _c.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
@@ -1413,18 +1444,6 @@ func (u *WorkspaceUpsert) UpdateName() *WorkspaceUpsert {
 	return u
 }
 
-// SetSlug sets the "slug" field.
-func (u *WorkspaceUpsert) SetSlug(v string) *WorkspaceUpsert {
-	u.Set(workspace.FieldSlug, v)
-	return u
-}
-
-// UpdateSlug sets the "slug" field to the value that was provided on create.
-func (u *WorkspaceUpsert) UpdateSlug() *WorkspaceUpsert {
-	u.SetExcluded(workspace.FieldSlug)
-	return u
-}
-
 // SetCollectKey sets the "collect_key" field.
 func (u *WorkspaceUpsert) SetCollectKey(v string) *WorkspaceUpsert {
 	u.Set(workspace.FieldCollectKey, v)
@@ -1524,6 +1543,42 @@ func (u *WorkspaceUpsert) UpdateFeedPosition() *WorkspaceUpsert {
 // AddFeedPosition adds v to the "feed_position" field.
 func (u *WorkspaceUpsert) AddFeedPosition(v int64) *WorkspaceUpsert {
 	u.Add(workspace.FieldFeedPosition, v)
+	return u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *WorkspaceUpsert) SetDeletedAt(v time.Time) *WorkspaceUpsert {
+	u.Set(workspace.FieldDeletedAt, v)
+	return u
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateDeletedAt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldDeletedAt)
+	return u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *WorkspaceUpsert) ClearDeletedAt() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldDeletedAt)
+	return u
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (u *WorkspaceUpsert) SetErasedAt(v time.Time) *WorkspaceUpsert {
+	u.Set(workspace.FieldErasedAt, v)
+	return u
+}
+
+// UpdateErasedAt sets the "erased_at" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateErasedAt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldErasedAt)
+	return u
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (u *WorkspaceUpsert) ClearErasedAt() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldErasedAt)
 	return u
 }
 
@@ -1685,6 +1740,9 @@ func (u *WorkspaceUpsertOne) UpdateNewValues() *WorkspaceUpsertOne {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(workspace.FieldCreatedAt)
 		}
+		if _, exists := u.create.mutation.PublicID(); exists {
+			s.SetIgnore(workspace.FieldPublicID)
+		}
 	}))
 	return u
 }
@@ -1741,20 +1799,6 @@ func (u *WorkspaceUpsertOne) SetName(v string) *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) UpdateName() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetSlug sets the "slug" field.
-func (u *WorkspaceUpsertOne) SetSlug(v string) *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSlug(v)
-	})
-}
-
-// UpdateSlug sets the "slug" field to the value that was provided on create.
-func (u *WorkspaceUpsertOne) UpdateSlug() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSlug()
 	})
 }
 
@@ -1874,6 +1918,48 @@ func (u *WorkspaceUpsertOne) AddFeedPosition(v int64) *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) UpdateFeedPosition() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateFeedPosition()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *WorkspaceUpsertOne) SetDeletedAt(v time.Time) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateDeletedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *WorkspaceUpsertOne) ClearDeletedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearDeletedAt()
+	})
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (u *WorkspaceUpsertOne) SetErasedAt(v time.Time) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetErasedAt(v)
+	})
+}
+
+// UpdateErasedAt sets the "erased_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateErasedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateErasedAt()
+	})
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (u *WorkspaceUpsertOne) ClearErasedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearErasedAt()
 	})
 }
 
@@ -2223,6 +2309,9 @@ func (u *WorkspaceUpsertBulk) UpdateNewValues() *WorkspaceUpsertBulk {
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(workspace.FieldCreatedAt)
 			}
+			if _, exists := b.mutation.PublicID(); exists {
+				s.SetIgnore(workspace.FieldPublicID)
+			}
 		}
 	}))
 	return u
@@ -2280,20 +2369,6 @@ func (u *WorkspaceUpsertBulk) SetName(v string) *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) UpdateName() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetSlug sets the "slug" field.
-func (u *WorkspaceUpsertBulk) SetSlug(v string) *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSlug(v)
-	})
-}
-
-// UpdateSlug sets the "slug" field to the value that was provided on create.
-func (u *WorkspaceUpsertBulk) UpdateSlug() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSlug()
 	})
 }
 
@@ -2413,6 +2488,48 @@ func (u *WorkspaceUpsertBulk) AddFeedPosition(v int64) *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) UpdateFeedPosition() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateFeedPosition()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *WorkspaceUpsertBulk) SetDeletedAt(v time.Time) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateDeletedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *WorkspaceUpsertBulk) ClearDeletedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearDeletedAt()
+	})
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (u *WorkspaceUpsertBulk) SetErasedAt(v time.Time) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetErasedAt(v)
+	})
+}
+
+// UpdateErasedAt sets the "erased_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateErasedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateErasedAt()
+	})
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (u *WorkspaceUpsertBulk) ClearErasedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearErasedAt()
 	})
 }
 

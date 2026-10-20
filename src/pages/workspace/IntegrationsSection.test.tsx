@@ -18,7 +18,7 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { IntegrationsSection } from './IntegrationsSection.tsx'
 
-const SLUG = 'test'
+const WORKSPACE_ID = 'TestWs01'
 
 const smtp: SiteIntegrationResource = {
   id: '1',
@@ -87,7 +87,7 @@ beforeEach(() => {
 
 test('lists connected providers', async () => {
   worker.use(list([smtp]))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
 })
@@ -95,7 +95,7 @@ test('lists connected providers', async () => {
 test('connects an SMTP provider', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -129,7 +129,7 @@ test('connects an SMTP provider', async () => {
 test('connects an Amazon SES provider', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -173,7 +173,7 @@ test('deletes a provider after confirmation', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Delete' }).click()
@@ -184,7 +184,7 @@ test('deletes a provider after confirmation', async () => {
 
 test('shows an error alert when providers fail to load', async () => {
   worker.use(handleSiteIntegrationsList(() => problem(500, { detail: 'boom' })))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Failed to load providers').first()).toBeInTheDocument()
 })
@@ -194,7 +194,7 @@ test('reports a create failure', async () => {
     list([]),
     handleSiteIntegrationsCreate(() => problem(422, { detail: 'bad host' })),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -226,7 +226,7 @@ const update = (bodies: unknown[]) =>
 
 test('warns when an Integration has no send limit', async () => {
   worker.use(list([smtp]))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Primary SMTP has no send limit')).toBeInTheDocument()
   await expect.element(screen.getByText('Per second: Unlimited')).toBeInTheDocument()
@@ -239,7 +239,7 @@ test('warns when the provider send quota could not be read', async () => {
     sendLimit: { ...limited.sendLimit, warnings: ['providerQuotaUnavailable'] },
   }
   worker.use(list([ses]))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await expect
     .element(screen.getByText("Amazon SES: the provider's send quota could not be read"))
@@ -251,7 +251,7 @@ test('warns when the provider send quota could not be read', async () => {
 
 test('shows no quota warning when the provider quota is known', async () => {
   worker.use(list([limited]))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Per second: 14')).toBeInTheDocument()
   await expect
@@ -261,7 +261,7 @@ test('shows no quota warning when the provider quota is known', async () => {
 
 test('shows the effective limit, its source and the 24-hour usage', async () => {
   worker.use(list([limited]))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Per second: 14')).toBeInTheDocument()
   await expect.element(screen.getByText('Per 24 h: 50 000')).toBeInTheDocument()
@@ -275,7 +275,7 @@ test('shows the effective limit, its source and the 24-hour usage', async () => 
 test('connects a provider with send limits', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -294,7 +294,7 @@ test('connects a provider with send limits', async () => {
 test('edits only the limits of an existing provider, and a blank clears one', async () => {
   const bodies: unknown[] = []
   worker.use(list([limited]), update(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Limits' }).click()
@@ -309,7 +309,7 @@ test('edits only the limits of an existing provider, and a blank clears one', as
 
 test('a member can read the providers but not change them', async () => {
   worker.use(list([smtp]), ...signedInAs('member'))
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
   await expect
@@ -344,7 +344,7 @@ test('shows the hook URL and chooses a Preset with its params', async () => {
       return HttpResponse.json(withPreset)
     }),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Inbound' }).click()
@@ -367,7 +367,7 @@ test('retires the old secrets of a rotating Preset', async () => {
       return HttpResponse.json({ ...withPreset, secretsRetiring: [] })
     }),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Inbound' }).click()
@@ -386,7 +386,7 @@ test('regenerates the hook URL after a confirmation', async () => {
       return HttpResponse.json({ ...smtp, hookUrl: 'https://app.test/hooks/omik_two' })
     }),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Inbound' }).click()

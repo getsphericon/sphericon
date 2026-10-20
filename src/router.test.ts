@@ -9,7 +9,8 @@ import { Route as consoleLoginRoute } from './routes/console/login.tsx'
 import { Route as indexRoute } from './routes/index.tsx'
 import { Route as loginRoute } from './routes/login.tsx'
 import { Route as oauthConsentRoute } from './routes/oauth/consent.tsx'
-import { Route as workspaceRoute } from './routes/workspaces/$slug/route.tsx'
+import { Route as workspaceRoute } from './routes/workspaces/$workspaceId/route.tsx'
+import { Route as newWorkspaceRoute } from './routes/workspaces/new.tsx'
 import { problem } from './test/problem.ts'
 import { worker } from './test/worker.ts'
 
@@ -17,10 +18,10 @@ import { worker } from './test/worker.ts'
 const newRouter = () =>
   createAppRouter(new QueryClient({ defaultOptions: { queries: { retry: false } } }))
 
-const workspace = (slug: string) => ({
-  id: slug,
-  name: slug,
-  slug,
+const workspace = (workspaceId: string) => ({
+  id: workspaceId,
+  name: workspaceId,
+  workspaceId,
   collectKey: 'omck',
   postalAddress: '',
   accountLinkAvailable: false,
@@ -31,30 +32,32 @@ const workspace = (slug: string) => ({
 })
 
 // The guards only ever call the workspaces list, so one stub per scenario is enough.
-function serveWorkspaces(slugs: string[] | 'unauthorized') {
+function serveWorkspaces(ids: string[] | 'unauthorized') {
   worker.use(
-    slugs === 'unauthorized'
+    ids === 'unauthorized'
       ? handleSiteWorkspacesList(() => problem(401, { detail: 'unauthorized' }))
-      : handleSiteWorkspacesList({ body: slugs.map((slug) => workspace(slug)) }),
+      : handleSiteWorkspacesList({ body: ids.map((workspaceId) => workspace(workspaceId)) }),
   )
 }
 
 test('the index route sends a signed-in user to their first workspace', async () => {
   const router = newRouter()
-  serveWorkspaces(['acme', 'other'])
+  serveWorkspaces(['AcmeWs01', 'OtherWs3'])
 
   await router.navigate({ to: indexRoute.to })
 
-  expect(router.state.location.pathname).toBe(workspaceRoute.fullPath.replace('$slug', 'acme'))
+  expect(router.state.location.pathname).toBe(
+    workspaceRoute.fullPath.replace('$workspaceId', 'AcmeWs01'),
+  )
 })
 
-test('the index route sends a user without workspaces to login', async () => {
+test('the index route sends a user without workspaces to the create screen', async () => {
   const router = newRouter()
   serveWorkspaces([])
 
   await router.navigate({ to: indexRoute.to })
 
-  expect(router.state.location.pathname).toBe(loginRoute.to)
+  expect(router.state.location.pathname).toBe(newWorkspaceRoute.to)
 })
 
 test('the index route sends an unauthorized user to login', async () => {
@@ -66,22 +69,24 @@ test('the index route sends an unauthorized user to login', async () => {
   expect(router.state.location.pathname).toBe(loginRoute.to)
 })
 
-test('an unknown workspace slug falls back to the first workspace', async () => {
+test('an unknown workspace workspaceId falls back to the first workspace', async () => {
   const router = newRouter()
-  serveWorkspaces(['acme'])
+  serveWorkspaces(['AcmeWs01'])
 
-  await router.navigate({ to: workspaceRoute.to, params: { slug: 'nope' } })
+  await router.navigate({ to: workspaceRoute.to, params: { workspaceId: 'nope' } })
 
-  expect(router.state.location.pathname).toBe(workspaceRoute.fullPath.replace('$slug', 'acme'))
+  expect(router.state.location.pathname).toBe(
+    workspaceRoute.fullPath.replace('$workspaceId', 'AcmeWs01'),
+  )
 })
 
-test('an unknown workspace slug with no workspaces goes to login', async () => {
+test('an unknown workspace workspaceId with no workspaces goes to the create screen', async () => {
   const router = newRouter()
   serveWorkspaces([])
 
-  await router.navigate({ to: workspaceRoute.to, params: { slug: 'nope' } })
+  await router.navigate({ to: workspaceRoute.to, params: { workspaceId: 'nope' } })
 
-  expect(router.state.location.pathname).toBe(loginRoute.to)
+  expect(router.state.location.pathname).toBe(newWorkspaceRoute.to)
 })
 
 test('the console sends a visitor without a staff member session to the console login', async () => {

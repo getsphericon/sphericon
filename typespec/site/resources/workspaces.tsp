@@ -27,15 +27,13 @@ model SiteWorkspaceHold {
 @resource("workspaces")
 @segment("workspaces")
 model SiteWorkspaceResource {
-  /** Unique identifier */
-  id: EntityId;
+  /** The Workspace id: its short opaque public address and the route key for nested
+   * workspace resources (ADR 0043) */
+  @key("workspaceId")
+  id: WorkspaceId;
 
   /** Display name */
   name: string;
-
-  /** URL-safe unique slug; the route key for nested workspace resources */
-  @key("slug")
-  slug: string;
 
   /** Per-workspace collect write-key (x-collect-key) for the tracking snippet */
   collectKey: string;
@@ -103,8 +101,7 @@ model SiteAccountLinkResource {
   expiresAt: Timestamp;
 }
 
-/** Update a workspace. The slug is immutable (it is the route key and globally
- * unique); the display name and the CAN-SPAM postal address can change. */
+/** Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change. */
 model SiteUpdateWorkspaceInput {
   /** New display name */
   name: string;
@@ -112,6 +109,34 @@ model SiteUpdateWorkspaceInput {
   /** Physical postal address for the marketing email footer (CAN-SPAM). Omit to
    * leave it unchanged; send an empty string to clear it. */
   postalAddress?: string;
+}
+
+/** Create a Workspace (ADR 0043) */
+model SiteCreateWorkspaceInput {
+  /** Display name: free text, not unique */
+  name: string;
+}
+
+/** Delete a Workspace (ADR 0043): the typed name must equal the stored name. */
+model SiteDeleteWorkspaceInput {
+  /** The Workspace's name, typed to confirm the deletion */
+  name: string;
+}
+
+/** A Workspace in its deletion window, as an Owner of it sees it (ADR 0043): frozen and
+ * hidden, restorable until its data is erased. */
+model SiteDeletedWorkspaceResource {
+  /** The Workspace id */
+  id: WorkspaceId;
+
+  /** Display name */
+  name: string;
+
+  /** When the Workspace was deleted */
+  deletedAt: Timestamp;
+
+  /** When its data will be erased: 30 days after it was deleted */
+  eraseAt: Timestamp;
 }
 
 /** Switch the Two-factor requirement on or off */
@@ -130,11 +155,62 @@ namespace SiteWorkspaces {
     @body body: SiteWorkspaceResource[];
   };
 
-  /** Rename a workspace owned by the authenticated user */
-  @put
-  @route("/{slug}")
-  op update(@path slug: string, @body body: SiteUpdateWorkspaceInput):
+  /** Create a Workspace; the authenticated User becomes its Owner. Names are free text
+   * and need not be unique. An Unverified User is refused with 403 and code
+   * `email_verification_required`. The creation is recorded as an Audit entry. */
+  @post
+  op create(@body body: SiteCreateWorkspaceInput):
+    | {
+        @statusCode statusCode: 201;
+        @body body: SiteWorkspaceResource;
+      }
+    | ForbiddenProblem
+    | UnprocessableEntityProblem;
+
+  /** List the Workspaces in their deletion window that the authenticated User owns, with
+   * the date their data will be erased. */
+  @get
+  @route("/deleted")
+  op listDeleted(): {
+    @statusCode statusCode: 200;
+    @body body: SiteDeletedWorkspaceResource[];
+  };
+
+  /** Delete a Workspace (Owner only). The typed name must equal the Workspace's name,
+   * else 422. The Workspace is frozen at once and hidden: it answers 404 on its paths
+   * and leaves every Member's list; an Owner restores it within 30 days. Recorded as an
+   * Audit entry. */
+  @post
+  @route("/{workspaceId}/delete")
+  op delete(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteDeleteWorkspaceInput,
+  ):
+    | SiteDeletedWorkspaceResource
+    | ForbiddenProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Restore a Workspace in its deletion window (Owner only). It removes only the
+   * pending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted
+   * Workspace is not exposed to anyone but its Owners, so a caller who is not an Owner
+   * gets 404 as for an unknown one. Recorded as an Audit entry. */
+  @post
+  @route("/{workspaceId}/restore")
+  op restore(@path workspaceId: WorkspaceId):
     | SiteWorkspaceResource
+    | NotFoundProblem;
+
+  /** Rename a workspace or change its postal address (Owner and Admin only). The id
+   * never changes. */
+  @put
+  @route("/{workspaceId}")
+  op update(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteUpdateWorkspaceInput,
+  ):
+    | SiteWorkspaceResource
+    | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
@@ -142,17 +218,17 @@ namespace SiteWorkspaces {
    * it on while it is already on keeps the original start, so no one's grace
    * restarts. A change is recorded as an Audit entry. */
   @put
-  @route("/{slug}/second-factor-requirement")
+  @route("/{workspaceId}/second-factor-requirement")
   op setSecondFactorRequirement(
-    @path slug: string,
+    @path workspaceId: WorkspaceId,
     @body body: SiteSecondFactorRequirementInput,
   ): SiteWorkspaceResource | ForbiddenProblem | NotFoundProblem;
 
   /** Mint an Account link token (Owner only). Answers 404 when the installation has no
    * Account link configured. */
   @post
-  @route("/{slug}/account-link")
-  op accountLink(@path slug: string):
+  @route("/{workspaceId}/account-link")
+  op accountLink(@path workspaceId: WorkspaceId):
     | SiteAccountLinkResource
     | ForbiddenProblem
     | NotFoundProblem;

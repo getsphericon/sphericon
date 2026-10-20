@@ -29,16 +29,16 @@ func brandKitInput() *siteapi.SiteSaveBrandKitInput {
 	}
 }
 
-func saveBrandKit(t *testing.T, c *siteapi.Client, slug string, in *siteapi.SiteSaveBrandKitInput) siteapi.SiteBrandKitSaveRes {
+func saveBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, in *siteapi.SiteSaveBrandKitInput) siteapi.SiteBrandKitSaveRes {
 	t.Helper()
-	res, err := c.SiteBrandKitSave(context.Background(), in, siteapi.SiteBrandKitSaveParams{Slug: slug})
+	res, err := c.SiteBrandKitSave(context.Background(), in, siteapi.SiteBrandKitSaveParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res
 }
 
-func getBrandKit(t *testing.T, c *siteapi.Client, slug string) *siteapi.SiteBrandKitResource {
+func getBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.SiteBrandKitResource {
 	t.Helper()
-	res, err := c.SiteBrandKitGet(context.Background(), siteapi.SiteBrandKitGetParams{Slug: slug})
+	res, err := c.SiteBrandKitGet(context.Background(), siteapi.SiteBrandKitGetParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	kit, ok := res.(*siteapi.SiteBrandKitResource)
 	require.Truef(t, ok, "got %T", res)
@@ -49,19 +49,19 @@ func TestSiteBrandKitIsTheDefaultsUntilItsFirstSave(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 
-	kit := getBrandKit(t, c, fixtures.VandelaySlug)
+	kit := getBrandKit(t, c, fixtures.VandelayPublicID)
 	assert.False(t, kit.Saved)
 	assert.NotEmpty(t, kit.AccentColor)
 	assert.NotEqual(t, "#cc0000", kit.AccentColor, "another Workspace's Brand kit is never shown")
 	assert.False(t, kit.UpdatedAt.Set && !kit.UpdatedAt.Null)
 
-	saved, ok := saveBrandKit(t, c, fixtures.VandelaySlug, brandKitInput()).(*siteapi.SiteBrandKitResource)
+	saved, ok := saveBrandKit(t, c, fixtures.VandelayPublicID, brandKitInput()).(*siteapi.SiteBrandKitResource)
 	require.True(t, ok)
 	assert.True(t, saved.Saved)
 	assert.Equal(t, "#ff5500", saved.AccentColor, "colors are stored in lower case")
 	assert.Equal(t, int32(12), saved.ButtonRadius)
 
-	again := getBrandKit(t, c, fixtures.VandelaySlug)
+	again := getBrandKit(t, c, fixtures.VandelayPublicID)
 	assert.Equal(t, *saved, *again)
 }
 
@@ -72,7 +72,7 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 	s := env.DB.Scoped(fixtures.VandelayID)
 	before := s.EmailTemplate().Query().CountX(ctx)
 
-	saveBrandKit(t, c, fixtures.VandelaySlug, brandKitInput())
+	saveBrandKit(t, c, fixtures.VandelayPublicID, brandKitInput())
 
 	all := s.EmailTemplate().Query().AllX(ctx)
 	require.Len(t, all, before+4)
@@ -90,10 +90,10 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 
 	changed := brandKitInput()
 	changed.AccentColor = "#00aa00"
-	saveBrandKit(t, c, fixtures.VandelaySlug, changed)
+	saveBrandKit(t, c, fixtures.VandelayPublicID, changed)
 
 	assert.Equal(t, before+4, s.EmailTemplate().Query().CountX(ctx), "a later save makes no Template")
-	assert.Equal(t, "#00aa00", getBrandKit(t, c, fixtures.VandelaySlug).AccentColor)
+	assert.Equal(t, "#00aa00", getBrandKit(t, c, fixtures.VandelayPublicID).AccentColor)
 	for _, tpl := range s.EmailTemplate().Query().AllX(ctx)[before:] {
 		assert.NotContains(t, tpl.Body, "#00aa00", "the starters keep the brand they were made in")
 	}
@@ -103,10 +103,10 @@ func TestSiteBrandKitSaveIsAudited(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 
-	saveBrandKit(t, c, fixtures.VandelaySlug, brandKitInput())
+	saveBrandKit(t, c, fixtures.VandelayPublicID, brandKitInput())
 	changed := brandKitInput()
 	changed.TextColor = "#000000"
-	saveBrandKit(t, c, fixtures.VandelaySlug, changed)
+	saveBrandKit(t, c, fixtures.VandelayPublicID, changed)
 
 	entries := lo.Map(env.OutboxEvents(t, events.NameAuditEntry), func(e events.DomainEvent, _ int) *events.AuditEntry { return e.(*events.AuditEntry) })
 	actions := lo.Map(entries, func(entry *events.AuditEntry, _ int) string { return entry.Action })
@@ -124,7 +124,7 @@ func TestSiteBrandKitRecreateMakesNewStartersInTheSavedBrandAndTouchesNothing(t 
 	s := env.DB.Scoped(fixtures.InitechID)
 	before := s.EmailTemplate().Query().AllX(ctx)
 
-	res, err := c.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{Slug: fixtures.InitechSlug})
+	res, err := c.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{WorkspaceId: fixtures.InitechPublicID})
 	require.NoError(t, err)
 	made, ok := res.(*siteapi.SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON)
 	require.Truef(t, ok, "got %T", res)
@@ -136,7 +136,7 @@ func TestSiteBrandKitRecreateMakesNewStartersInTheSavedBrandAndTouchesNothing(t 
 	assert.Len(t, s.EmailTemplate().Query().AllX(ctx), len(before)+4)
 
 	// Recreating again adds another set and still rewrites nothing.
-	_, err = c.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{Slug: fixtures.InitechSlug})
+	_, err = c.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{WorkspaceId: fixtures.InitechPublicID})
 	require.NoError(t, err)
 	assert.Len(t, s.EmailTemplate().Query().AllX(ctx), len(before)+8)
 }
@@ -145,7 +145,7 @@ func TestSiteBrandKitRecreateNeedsASavedBrandKit(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 
-	res, err := c.SiteBrandKitRecreateStarterTemplates(context.Background(), siteapi.SiteBrandKitRecreateStarterTemplatesParams{Slug: fixtures.VandelaySlug})
+	res, err := c.SiteBrandKitRecreateStarterTemplates(context.Background(), siteapi.SiteBrandKitRecreateStarterTemplatesParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBrandKitRecreateStarterTemplatesUnprocessableEntity{}, res)
 }
@@ -156,7 +156,7 @@ func TestSiteBrandKitEditChangesNoMessageAlreadyWritten(t *testing.T) {
 	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
-	_, err := c.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{Slug: fixtures.InitechSlug})
+	_, err := c.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{WorkspaceId: fixtures.InitechPublicID})
 	require.NoError(t, err)
 
 	type snapshot struct {
@@ -184,7 +184,7 @@ func TestSiteBrandKitEditChangesNoMessageAlreadyWritten(t *testing.T) {
 	changed := brandKitInput()
 	changed.LogoUrl = ""
 	changed.FooterText = ""
-	saveBrandKit(t, c, fixtures.InitechSlug, changed)
+	saveBrandKit(t, c, fixtures.InitechPublicID, changed)
 
 	assert.Equal(t, before, take())
 }
@@ -194,38 +194,38 @@ func TestSiteBrandKitIsReadByEveryMemberAndWrittenByOwnersOnly(t *testing.T) {
 	ctx := context.Background()
 
 	member := env.SiteActor(t, fixtures.InitechMemberMaxEmail)
-	kit := getBrandKit(t, member, fixtures.InitechSlug)
+	kit := getBrandKit(t, member, fixtures.InitechPublicID)
 	assert.True(t, kit.Saved)
 	assert.Equal(t, "#0a7d5a", kit.AccentColor)
-	assert.IsType(t, &siteapi.SiteBrandKitSaveForbidden{}, saveBrandKit(t, member, fixtures.InitechSlug, brandKitInput()))
-	res, err := member.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{Slug: fixtures.InitechSlug})
+	assert.IsType(t, &siteapi.SiteBrandKitSaveForbidden{}, saveBrandKit(t, member, fixtures.InitechPublicID, brandKitInput()))
+	res, err := member.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{WorkspaceId: fixtures.InitechPublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBrandKitRecreateStarterTemplatesForbidden{}, res)
-	assert.Equal(t, "#0a7d5a", getBrandKit(t, member, fixtures.InitechSlug).AccentColor, "a refused save changes nothing")
+	assert.Equal(t, "#0a7d5a", getBrandKit(t, member, fixtures.InitechPublicID).AccentColor, "a refused save changes nothing")
 
 	admin := env.SiteActor(t, fixtures.InitechAdminAdaEmail)
-	assert.Equal(t, "#0a7d5a", getBrandKit(t, admin, fixtures.InitechSlug).AccentColor, "an admin reads it too")
-	assert.IsType(t, &siteapi.SiteBrandKitSaveForbidden{}, saveBrandKit(t, admin, fixtures.InitechSlug, brandKitInput()))
-	res, err = admin.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{Slug: fixtures.InitechSlug})
+	assert.Equal(t, "#0a7d5a", getBrandKit(t, admin, fixtures.InitechPublicID).AccentColor, "an admin reads it too")
+	assert.IsType(t, &siteapi.SiteBrandKitSaveForbidden{}, saveBrandKit(t, admin, fixtures.InitechPublicID, brandKitInput()))
+	res, err = admin.SiteBrandKitRecreateStarterTemplates(ctx, siteapi.SiteBrandKitRecreateStarterTemplatesParams{WorkspaceId: fixtures.InitechPublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBrandKitRecreateStarterTemplatesForbidden{}, res)
-	assert.Equal(t, "#0a7d5a", getBrandKit(t, admin, fixtures.InitechSlug).AccentColor, "a refused save changes nothing")
+	assert.Equal(t, "#0a7d5a", getBrandKit(t, admin, fixtures.InitechPublicID).AccentColor, "a refused save changes nothing")
 
 	owner := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	assert.IsType(t, &siteapi.SiteBrandKitResource{}, saveBrandKit(t, owner, fixtures.InitechSlug, brandKitInput()))
+	assert.IsType(t, &siteapi.SiteBrandKitResource{}, saveBrandKit(t, owner, fixtures.InitechPublicID, brandKitInput()))
 }
 
 func TestSiteBrandKitIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	outsider := env.SiteActor(t, fixtures.OutsiderOscarEmail)
-	res, err := outsider.SiteBrandKitGet(context.Background(), siteapi.SiteBrandKitGetParams{Slug: fixtures.VandelaySlug})
+	res, err := outsider.SiteBrandKitGet(context.Background(), siteapi.SiteBrandKitGetParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.ProblemDetails{}, res)
-	assert.IsType(t, &siteapi.SiteBrandKitSaveNotFound{}, saveBrandKit(t, outsider, fixtures.VandelaySlug, brandKitInput()))
+	assert.IsType(t, &siteapi.SiteBrandKitSaveNotFound{}, saveBrandKit(t, outsider, fixtures.VandelayPublicID, brandKitInput()))
 
 	owner := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
-	saveBrandKit(t, owner, fixtures.VandelaySlug, brandKitInput())
+	saveBrandKit(t, owner, fixtures.VandelayPublicID, brandKitInput())
 	globex := env.DB.BrandKit.GetX(context.Background(), fixtures.BrandKitGlobexID)
 	assert.Equal(t, "#cc0000", globex.AccentColor, "saving Acme's kit leaves Globex's alone")
 }
@@ -250,8 +250,8 @@ func TestSiteBrandKitRefusesAValueThatCannotBeWrittenIntoAMessage(t *testing.T) 
 		t.Run(name, func(t *testing.T) {
 			in := brandKitInput()
 			mutate(in)
-			assert.IsType(t, &siteapi.SiteBrandKitSaveUnprocessableEntity{}, saveBrandKit(t, c, fixtures.VandelaySlug, in))
-			assert.False(t, getBrandKit(t, c, fixtures.VandelaySlug).Saved, "a refused save stores nothing")
+			assert.IsType(t, &siteapi.SiteBrandKitSaveUnprocessableEntity{}, saveBrandKit(t, c, fixtures.VandelayPublicID, in))
+			assert.False(t, getBrandKit(t, c, fixtures.VandelayPublicID).Saved, "a refused save stores nothing")
 		})
 	}
 }
@@ -265,7 +265,7 @@ func TestSiteBrandKitFooterIsWrittenAsTextNotMarkup(t *testing.T) {
 
 	in := brandKitInput()
 	in.FooterText = `<img src=x onerror=alert(1)> & co`
-	saveBrandKit(t, c, fixtures.VandelaySlug, in)
+	saveBrandKit(t, c, fixtures.VandelayPublicID, in)
 
 	for _, tpl := range s.EmailTemplate().Query().AllX(ctx)[before:] {
 		assert.NotContains(t, tpl.Body, "<img src=x", tpl.Name)

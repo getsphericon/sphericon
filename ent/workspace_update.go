@@ -76,20 +76,6 @@ func (_u *WorkspaceUpdate) SetNillableName(v *string) *WorkspaceUpdate {
 	return _u
 }
 
-// SetSlug sets the "slug" field.
-func (_u *WorkspaceUpdate) SetSlug(v string) *WorkspaceUpdate {
-	_u.mutation.SetSlug(v)
-	return _u
-}
-
-// SetNillableSlug sets the "slug" field if the given value is not nil.
-func (_u *WorkspaceUpdate) SetNillableSlug(v *string) *WorkspaceUpdate {
-	if v != nil {
-		_u.SetSlug(*v)
-	}
-	return _u
-}
-
 // SetCollectKey sets the "collect_key" field.
 func (_u *WorkspaceUpdate) SetCollectKey(v string) *WorkspaceUpdate {
 	_u.mutation.SetCollectKey(v)
@@ -203,6 +189,46 @@ func (_u *WorkspaceUpdate) SetNillableFeedPosition(v *int64) *WorkspaceUpdate {
 // AddFeedPosition adds value to the "feed_position" field.
 func (_u *WorkspaceUpdate) AddFeedPosition(v int64) *WorkspaceUpdate {
 	_u.mutation.AddFeedPosition(v)
+	return _u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *WorkspaceUpdate) SetDeletedAt(v time.Time) *WorkspaceUpdate {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableDeletedAt(v *time.Time) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *WorkspaceUpdate) ClearDeletedAt() *WorkspaceUpdate {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (_u *WorkspaceUpdate) SetErasedAt(v time.Time) *WorkspaceUpdate {
+	_u.mutation.SetErasedAt(v)
+	return _u
+}
+
+// SetNillableErasedAt sets the "erased_at" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableErasedAt(v *time.Time) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetErasedAt(*v)
+	}
+	return _u
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (_u *WorkspaceUpdate) ClearErasedAt() *WorkspaceUpdate {
+	_u.mutation.ClearErasedAt()
 	return _u
 }
 
@@ -1375,16 +1401,6 @@ func (_u *WorkspaceUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *WorkspaceUpdate) check() error {
-	if v, ok := _u.mutation.Name(); ok {
-		if err := workspace.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Workspace.name": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Slug(); ok {
-		if err := workspace.SlugValidator(v); err != nil {
-			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Workspace.slug": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.CollectKey(); ok {
 		if err := workspace.CollectKeyValidator(v); err != nil {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}
@@ -1427,9 +1443,6 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Slug(); ok {
-		_spec.SetField(workspace.FieldSlug, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.CollectKey(); ok {
 		_spec.SetField(workspace.FieldCollectKey, field.TypeString, value)
 	}
@@ -1462,6 +1475,18 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedFeedPosition(); ok {
 		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(workspace.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(workspace.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ErasedAt(); ok {
+		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ErasedAtCleared() {
+		_spec.ClearField(workspace.FieldErasedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
@@ -2765,20 +2790,6 @@ func (_u *WorkspaceUpdateOne) SetNillableName(v *string) *WorkspaceUpdateOne {
 	return _u
 }
 
-// SetSlug sets the "slug" field.
-func (_u *WorkspaceUpdateOne) SetSlug(v string) *WorkspaceUpdateOne {
-	_u.mutation.SetSlug(v)
-	return _u
-}
-
-// SetNillableSlug sets the "slug" field if the given value is not nil.
-func (_u *WorkspaceUpdateOne) SetNillableSlug(v *string) *WorkspaceUpdateOne {
-	if v != nil {
-		_u.SetSlug(*v)
-	}
-	return _u
-}
-
 // SetCollectKey sets the "collect_key" field.
 func (_u *WorkspaceUpdateOne) SetCollectKey(v string) *WorkspaceUpdateOne {
 	_u.mutation.SetCollectKey(v)
@@ -2892,6 +2903,46 @@ func (_u *WorkspaceUpdateOne) SetNillableFeedPosition(v *int64) *WorkspaceUpdate
 // AddFeedPosition adds value to the "feed_position" field.
 func (_u *WorkspaceUpdateOne) AddFeedPosition(v int64) *WorkspaceUpdateOne {
 	_u.mutation.AddFeedPosition(v)
+	return _u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *WorkspaceUpdateOne) SetDeletedAt(v time.Time) *WorkspaceUpdateOne {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableDeletedAt(v *time.Time) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *WorkspaceUpdateOne) ClearDeletedAt() *WorkspaceUpdateOne {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (_u *WorkspaceUpdateOne) SetErasedAt(v time.Time) *WorkspaceUpdateOne {
+	_u.mutation.SetErasedAt(v)
+	return _u
+}
+
+// SetNillableErasedAt sets the "erased_at" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableErasedAt(v *time.Time) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetErasedAt(*v)
+	}
+	return _u
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (_u *WorkspaceUpdateOne) ClearErasedAt() *WorkspaceUpdateOne {
+	_u.mutation.ClearErasedAt()
 	return _u
 }
 
@@ -4077,16 +4128,6 @@ func (_u *WorkspaceUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *WorkspaceUpdateOne) check() error {
-	if v, ok := _u.mutation.Name(); ok {
-		if err := workspace.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Workspace.name": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.Slug(); ok {
-		if err := workspace.SlugValidator(v); err != nil {
-			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Workspace.slug": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.CollectKey(); ok {
 		if err := workspace.CollectKeyValidator(v); err != nil {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}
@@ -4146,9 +4187,6 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(workspace.FieldName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Slug(); ok {
-		_spec.SetField(workspace.FieldSlug, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.CollectKey(); ok {
 		_spec.SetField(workspace.FieldCollectKey, field.TypeString, value)
 	}
@@ -4181,6 +4219,18 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if value, ok := _u.mutation.AddedFeedPosition(); ok {
 		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(workspace.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(workspace.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ErasedAt(); ok {
+		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ErasedAtCleared() {
+		_spec.ClearField(workspace.FieldErasedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)

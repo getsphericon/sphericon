@@ -38,7 +38,7 @@ export function SecondFactorRequirementSection({
           disabled={!canChange || mutation.isPending}
           onChange={(event) =>
             mutation.mutate({
-              path: { slug: workspace.slug },
+              path: { workspaceId: workspace.id },
               body: { required: event.currentTarget.checked },
             })
           }

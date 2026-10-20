@@ -21,7 +21,7 @@ func TestSiteContactsCustomFieldsRoundTrip(t *testing.T) {
 	created, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{
 		Email:        siteapi.NewOptNilEmailAddress("cf@example.com"),
 		CustomFields: siteapi.NewOptNilSiteCreateContactInputCustomFields(siteapi.SiteCreateContactInputCustomFields{"plan": []byte(`"gold"`)}),
-	}, siteapi.SiteContactsCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteContactResource)
 	require.Truef(t, ok, "got %T", created)
@@ -29,7 +29,7 @@ func TestSiteContactsCustomFieldsRoundTrip(t *testing.T) {
 
 	updated, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{
 		CustomFields: siteapi.NewOptNilSiteUpdateContactInputCustomFields(siteapi.SiteUpdateContactInputCustomFields{"plan": []byte(`"platinum"`)}),
-	}, siteapi.SiteContactsUpdateParams{Slug: fixtures.AcmeSlug, ID: res.ID})
+	}, siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteContactResource)
 	require.Truef(t, ok, "got %T", updated)
@@ -41,12 +41,12 @@ func TestSiteEventsListFiltersByContact(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	all, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{Slug: fixtures.AcmeSlug, PageSize: siteapi.NewOptInt32(100)})
+	all, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID, PageSize: siteapi.NewOptInt32(100)})
 	require.NoError(t, err)
 	allPage := all.(*siteapi.SiteEventsListOK)
 
 	res, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{
-		Slug: fixtures.AcmeSlug, ContactId: siteapi.NewOptEntityId(idStr(fixtures.ContactAliceID)),
+		WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.NewOptEntityId(idStr(fixtures.ContactAliceID)),
 	})
 	require.NoError(t, err)
 	page, ok := res.(*siteapi.SiteEventsListOK)

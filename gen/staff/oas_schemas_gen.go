@@ -2296,12 +2296,15 @@ func (*StaffWorkspaceAuditListUnauthorized) staffWorkspaceAuditListRes() {}
 // A Workspace with its deliverability and active holds, as the detail page shows it.
 // Ref: #/components/schemas/StaffWorkspaceDetailResource
 type StaffWorkspaceDetailResource struct {
-	// Unique identifier.
-	ID   EntityId `json:"id"`
-	Slug string   `json:"slug"`
-	Name string   `json:"name"`
+	// The Workspace id: its short opaque public address (ADR 0043).
+	ID   WorkspaceId `json:"id"`
+	Name string      `json:"name"`
 	// When the Workspace was created.
 	CreatedAt Timestamp `json:"createdAt"`
+	// When the Workspace was deleted; present from deletion until a restore (ADR 0043).
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the Workspace's data was erased; the row stays as a tombstone.
+	ErasedAt OptNilTimestamp `json:"erasedAt"`
 	// Present only while sending is suspended.
 	Suspension OptNilStaffSuspension `json:"suspension"`
 	// Exempt from the abuse detector (set by a Staff member).
@@ -2315,13 +2318,8 @@ type StaffWorkspaceDetailResource struct {
 }
 
 // GetID returns the value of ID.
-func (s *StaffWorkspaceDetailResource) GetID() EntityId {
+func (s *StaffWorkspaceDetailResource) GetID() WorkspaceId {
 	return s.ID
-}
-
-// GetSlug returns the value of Slug.
-func (s *StaffWorkspaceDetailResource) GetSlug() string {
-	return s.Slug
 }
 
 // GetName returns the value of Name.
@@ -2332,6 +2330,16 @@ func (s *StaffWorkspaceDetailResource) GetName() string {
 // GetCreatedAt returns the value of CreatedAt.
 func (s *StaffWorkspaceDetailResource) GetCreatedAt() Timestamp {
 	return s.CreatedAt
+}
+
+// GetDeletedAt returns the value of DeletedAt.
+func (s *StaffWorkspaceDetailResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
+}
+
+// GetErasedAt returns the value of ErasedAt.
+func (s *StaffWorkspaceDetailResource) GetErasedAt() OptNilTimestamp {
+	return s.ErasedAt
 }
 
 // GetSuspension returns the value of Suspension.
@@ -2365,13 +2373,8 @@ func (s *StaffWorkspaceDetailResource) GetAbuse() StaffAbuse {
 }
 
 // SetID sets the value of ID.
-func (s *StaffWorkspaceDetailResource) SetID(val EntityId) {
+func (s *StaffWorkspaceDetailResource) SetID(val WorkspaceId) {
 	s.ID = val
-}
-
-// SetSlug sets the value of Slug.
-func (s *StaffWorkspaceDetailResource) SetSlug(val string) {
-	s.Slug = val
 }
 
 // SetName sets the value of Name.
@@ -2382,6 +2385,16 @@ func (s *StaffWorkspaceDetailResource) SetName(val string) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *StaffWorkspaceDetailResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
+}
+
+// SetDeletedAt sets the value of DeletedAt.
+func (s *StaffWorkspaceDetailResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
+}
+
+// SetErasedAt sets the value of ErasedAt.
+func (s *StaffWorkspaceDetailResource) SetErasedAt(val OptNilTimestamp) {
+	s.ErasedAt = val
 }
 
 // SetSuspension sets the value of Suspension.
@@ -2420,12 +2433,15 @@ func (*StaffWorkspaceDetailResource) staffWorkspacesGetRes() {}
 // 0026).
 // Ref: #/components/schemas/StaffWorkspaceResource
 type StaffWorkspaceResource struct {
-	// Unique identifier.
-	ID   EntityId `json:"id"`
-	Slug string   `json:"slug"`
-	Name string   `json:"name"`
+	// The Workspace id: its short opaque public address (ADR 0043).
+	ID   WorkspaceId `json:"id"`
+	Name string      `json:"name"`
 	// When the Workspace was created.
 	CreatedAt Timestamp `json:"createdAt"`
+	// When the Workspace was deleted; present from deletion until a restore (ADR 0043).
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the Workspace's data was erased; the row stays as a tombstone.
+	ErasedAt OptNilTimestamp `json:"erasedAt"`
 	// Present only while sending is suspended.
 	Suspension OptNilStaffSuspension `json:"suspension"`
 	// Exempt from the abuse detector (set by a Staff member).
@@ -2435,13 +2451,8 @@ type StaffWorkspaceResource struct {
 }
 
 // GetID returns the value of ID.
-func (s *StaffWorkspaceResource) GetID() EntityId {
+func (s *StaffWorkspaceResource) GetID() WorkspaceId {
 	return s.ID
-}
-
-// GetSlug returns the value of Slug.
-func (s *StaffWorkspaceResource) GetSlug() string {
-	return s.Slug
 }
 
 // GetName returns the value of Name.
@@ -2452,6 +2463,16 @@ func (s *StaffWorkspaceResource) GetName() string {
 // GetCreatedAt returns the value of CreatedAt.
 func (s *StaffWorkspaceResource) GetCreatedAt() Timestamp {
 	return s.CreatedAt
+}
+
+// GetDeletedAt returns the value of DeletedAt.
+func (s *StaffWorkspaceResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
+}
+
+// GetErasedAt returns the value of ErasedAt.
+func (s *StaffWorkspaceResource) GetErasedAt() OptNilTimestamp {
+	return s.ErasedAt
 }
 
 // GetSuspension returns the value of Suspension.
@@ -2470,13 +2491,8 @@ func (s *StaffWorkspaceResource) GetWarned() bool {
 }
 
 // SetID sets the value of ID.
-func (s *StaffWorkspaceResource) SetID(val EntityId) {
+func (s *StaffWorkspaceResource) SetID(val WorkspaceId) {
 	s.ID = val
-}
-
-// SetSlug sets the value of Slug.
-func (s *StaffWorkspaceResource) SetSlug(val string) {
-	s.Slug = val
 }
 
 // SetName sets the value of Name.
@@ -2487,6 +2503,16 @@ func (s *StaffWorkspaceResource) SetName(val string) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *StaffWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
+}
+
+// SetDeletedAt sets the value of DeletedAt.
+func (s *StaffWorkspaceResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
+}
+
+// SetErasedAt sets the value of ErasedAt.
+func (s *StaffWorkspaceResource) SetErasedAt(val OptNilTimestamp) {
+	s.ErasedAt = val
 }
 
 // SetSuspension sets the value of Suspension.
@@ -2511,6 +2537,7 @@ type StaffWorkspaceReview string
 const (
 	StaffWorkspaceReviewWarned       StaffWorkspaceReview = "warned"
 	StaffWorkspaceReviewSystemFrozen StaffWorkspaceReview = "systemFrozen"
+	StaffWorkspaceReviewDeleted      StaffWorkspaceReview = "deleted"
 )
 
 // AllValues returns all StaffWorkspaceReview values.
@@ -2518,6 +2545,7 @@ func (StaffWorkspaceReview) AllValues() []StaffWorkspaceReview {
 	return []StaffWorkspaceReview{
 		StaffWorkspaceReviewWarned,
 		StaffWorkspaceReviewSystemFrozen,
+		StaffWorkspaceReviewDeleted,
 	}
 }
 
@@ -2527,6 +2555,8 @@ func (s StaffWorkspaceReview) MarshalText() ([]byte, error) {
 	case StaffWorkspaceReviewWarned:
 		return []byte(s), nil
 	case StaffWorkspaceReviewSystemFrozen:
+		return []byte(s), nil
+	case StaffWorkspaceReviewDeleted:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -2541,6 +2571,9 @@ func (s *StaffWorkspaceReview) UnmarshalText(data []byte) error {
 		return nil
 	case StaffWorkspaceReviewSystemFrozen:
 		*s = StaffWorkspaceReviewSystemFrozen
+		return nil
+	case StaffWorkspaceReviewDeleted:
+		*s = StaffWorkspaceReviewDeleted
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -2658,3 +2691,5 @@ type StaffWorkspacesUnsuspendUnauthorized ProblemDetails
 func (*StaffWorkspacesUnsuspendUnauthorized) staffWorkspacesUnsuspendRes() {}
 
 type Timestamp time.Time
+
+type WorkspaceId string

@@ -251,7 +251,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `client.Scoped(<int64>)`. Tests use `env.DB.Scoped(fixtures.AcmeID)`.
 - **`*ent.Scoped` is built only in a closed list of places:**
   1. site: `accounts.Accounts.Scope`, behind `Handlers.scopedFor` / `scopedWithRoleFor`
-     (`internal/api/site/handlers.go`), from the user's Membership on `/w/{slug}`;
+     (`internal/api/site/handlers.go`), from the user's Membership on `/w/{id}`;
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
      in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
@@ -283,7 +283,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      `Module.TrackingHostFeed` (ADR 0038) reads the Instance-wide tracking host change log, which
      holds hosts and states, no Workspace data, so it scopes over nothing.
 - **The raw `*ent.Client` is allowed only in:** `internal/accounts` (User, Membership,
-  Workspace incl. slug resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
+  Workspace incl. Workspace id resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery

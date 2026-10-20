@@ -16,14 +16,21 @@ model ServiceWorkspaceOwner {
 
 /** A Workspace with all of its owners, as the feed reports it */
 model ServiceWorkspaceResource {
-  /** Unique identifier */
-  id: EntityId;
+  /** The Workspace id: its short opaque public address (ADR 0043) */
+  id: WorkspaceId;
 
-  slug: string;
   name: string;
 
   /** When the Workspace was created */
   createdAt: Timestamp;
+
+  /** When the Workspace was deleted; absent while it is live or after a restore. Its
+   * 30-day window runs from here. */
+  deletedAt?: Timestamp | null;
+
+  /** When the erasure job removed the Workspace's data; absent until then. An erased
+   * Workspace stays in the feed as a tombstone: its name is blank and it has no owners. */
+  erasedAt?: Timestamp | null;
 
   /** Every owner of the Workspace as of this entry */
   owners: ServiceWorkspaceOwner[];

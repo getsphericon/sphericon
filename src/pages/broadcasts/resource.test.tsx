@@ -15,25 +15,25 @@ import {
   handleSiteSegmentsList,
   handleSiteTemplatesList,
 } from '../../generated/site/msw.gen.ts'
-import { Route as broadcastsEditRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/edit.tsx'
-import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$slug/broadcasts/new.tsx'
+import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
+import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { BroadcastCreatePage, BroadcastEditPage } from './resource.tsx'
 
-const CREATE_ROUTE = routeMount(broadcastsCreateRoute, { slug: 'test' })
+const CREATE_ROUTE = routeMount(broadcastsCreateRoute, { workspaceId: 'TestWs01' })
 
-const EDIT_ROUTE = routeMount(broadcastsEditRoute, { slug: 'test', broadcastId: '7' })
+const EDIT_ROUTE = routeMount(broadcastsEditRoute, { workspaceId: 'TestWs01', broadcastId: '7' })
 
 function ListProbe() {
-  useQuery(siteBroadcastsListOptions({ path: { slug: 'test' } }))
+  useQuery(siteBroadcastsListOptions({ path: { workspaceId: 'TestWs01' } }))
   return null
 }
 
 function DetailProbe() {
-  useQuery(siteBroadcastsGetOptions({ path: { slug: 'test', id: '7' } }))
+  useQuery(siteBroadcastsGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
   return null
 }
 
@@ -103,7 +103,7 @@ test('creating a broadcast sends only the filled keys, refreshes the list and op
   await expect.poll(() => fetches.list).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { slug: 'test', broadcastId: '42' },
+    params: { workspaceId: 'TestWs01', broadcastId: '42' },
   })
 })
 

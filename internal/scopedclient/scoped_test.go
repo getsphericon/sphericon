@@ -283,7 +283,7 @@ func TestScopedWorkspaceIsTheOwnRow(t *testing.T) {
 	ws, err := env.DB.Scoped(fixtures.GlobexID).Workspace(t.Context())
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.GlobexID, ws.ID)
-	assert.Equal(t, fixtures.GlobexSlug, ws.Slug)
+	assert.Equal(t, fixtures.GlobexPublicID, ws.PublicID)
 }
 
 // Modify hands a modifier assignment-only access: it can compute a column, but an

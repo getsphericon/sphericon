@@ -22,7 +22,7 @@ func TestSiteWebhookRegenerateSecretReturnsTheNewSecretAndIsAudited(t *testing.T
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	params := siteapi.SiteWebhooksRegenerateSecretParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.WebhookCodebasicsID)}
+	params := siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 
 	res, err := owner.SiteWebhooksRegenerateSecret(ctx, params)
 	require.NoError(t, err)
@@ -30,15 +30,15 @@ func TestSiteWebhookRegenerateSecretReturnsTheNewSecretAndIsAudited(t *testing.T
 	require.Truef(t, ok, "got %T", res)
 	assert.NotEqual(t, "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", hook.Secret)
 
-	got, err := owner.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.WebhookCodebasicsID)})
+	got, err := owner.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
 	assert.Equal(t, hook.Secret, got.(*siteapi.SiteWebhookEndpointResource).Secret)
 
-	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, "webhook_endpoint.update")
+	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, "webhook_endpoint.update")
 	require.Len(t, entries, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, entries[0].Actor.Kind)
 
-	other, err := owner.SiteWebhooksRegenerateSecret(ctx, siteapi.SiteWebhooksRegenerateSecretParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.WebhookGlobexID)})
+	other, err := owner.SiteWebhooksRegenerateSecret(ctx, siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookGlobexID)})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksRegenerateSecretNotFound), other)
 }
@@ -55,7 +55,7 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 	_, err = env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.URL).Save(ctx)
 	require.NoError(t, err)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	params := siteapi.SiteWebhooksTestParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.WebhookCodebasicsID)}
+	params := siteapi.SiteWebhooksTestParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 
 	res, err := owner.SiteWebhooksTest(ctx, &siteapi.SiteTestWebhookInput{EventType: "email.opened"}, params)
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 	assert.True(t, row.Enabled, "a 410 on a test does not disable the endpoint")
 	assert.Nil(t, row.ConsecutiveFailures)
 
-	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionWebhookEndpointTest)
+	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWebhookEndpointTest)
 	require.Len(t, entries, 1)
 	assert.Equal(t, "webhook_endpoint", entries[0].Target.Type)
 

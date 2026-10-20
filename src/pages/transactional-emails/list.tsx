@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { siteTransactionalEmailsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteTransactionalEmailStatus } from '../../generated/site/types.gen.ts'
-import { Route as transactionalEmailsRoute } from '../../routes/workspaces/$slug/transactional-emails/index.tsx'
+import { Route as transactionalEmailsRoute } from '../../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { formatDateTime } from '../../utils/datetime.ts'
 
 const STATUS_COLORS: Record<SiteTransactionalEmailStatus, string> = {
@@ -25,7 +25,7 @@ function StatusBadge({ t, status }: { t: TFunction; status: SiteTransactionalEma
 
 export function TransactionalEmailsListPage() {
   const { t } = useTranslation()
-  const { slug } = transactionalEmailsRoute.useParams()
+  const { workspaceId } = transactionalEmailsRoute.useParams()
 
   return (
     <Stack>
@@ -33,7 +33,7 @@ export function TransactionalEmailsListPage() {
 
       <PagedTable
         pageSize={20}
-        options={(query) => siteTransactionalEmailsListOptions({ path: { slug }, query })}
+        options={(query) => siteTransactionalEmailsListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.transactionalEmailsLoadErrorTitle)}
         noRecordsText={t(($) => $.transactionalEmails.noRecords)}
         columns={[

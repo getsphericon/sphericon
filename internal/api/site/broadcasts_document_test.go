@@ -19,13 +19,13 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
 		Name:    "Authored",
 		Subject: siteapi.NewOptString("Hi {{ first_name }}"),
 		Doc:     siteapi.NewOptSiteCreateBroadcastInputDoc(paragraphDoc("Hello {{ first_name }}")),
-	}, siteapi.SiteBroadcastsCreateParams{Slug: slug})
+	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", created)
@@ -42,7 +42,7 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	// Saving another document rebuilds the body.
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
 		Doc: siteapi.NewOptSiteUpdateBroadcastInputDoc(paragraphDoc("Second")),
-	}, siteapi.SiteBroadcastsUpdateParams{Slug: slug, ID: res.ID})
+	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", updated)
@@ -51,13 +51,13 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 
 	// A name-only write leaves the document alone.
 	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{Name: siteapi.NewOptString("Renamed")},
-		siteapi.SiteBroadcastsUpdateParams{Slug: slug, ID: res.ID})
+		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.NotEmpty(t, env.DB.Broadcast.GetX(ctx, int64(res.ID)).Doc)
 
 	// A body-only write clears the document and its editor version.
 	cleared, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{Body: siteapi.NewOptString("<p>Plain</p>")},
-		siteapi.SiteBroadcastsUpdateParams{Slug: slug, ID: res.ID})
+		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	clr, ok := cleared.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", cleared)
@@ -72,7 +72,7 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	before := env.DB.Broadcast.Query().CountX(ctx)
 	draft := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
@@ -82,7 +82,7 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	}
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
 		Name: "Bad", Doc: siteapi.NewOptSiteCreateBroadcastInputDoc(badLevel),
-	}, siteapi.SiteBroadcastsCreateParams{Slug: slug})
+	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refused, ok := created.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", created)
@@ -92,7 +92,7 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
 		Name: siteapi.NewOptString("Renamed"),
 		Doc:  siteapi.NewOptSiteUpdateBroadcastInputDoc(map[string]jx.Raw{"type": jx.Raw(`"nope"`)}),
-	}, siteapi.SiteBroadcastsUpdateParams{Slug: slug, ID: idStr(fixtures.BroadcastDraftID)})
+	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, updated)
 	after := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
@@ -108,14 +108,14 @@ func TestSiteBroadcastsRefuseABodyAndADocumentTogether(t *testing.T) {
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
 		Name: "Both", Body: siteapi.NewOptString("<p>x</p>"),
 		Doc: siteapi.NewOptSiteCreateBroadcastInputDoc(paragraphDoc("x")),
-	}, siteapi.SiteBroadcastsCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, created)
 
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
 		Body: siteapi.NewOptString("<p>x</p>"),
 		Doc:  siteapi.NewOptSiteUpdateBroadcastInputDoc(paragraphDoc("x")),
-	}, siteapi.SiteBroadcastsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.BroadcastDraftID)})
+	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, updated)
 }
@@ -125,7 +125,7 @@ func TestSiteBroadcastsWithoutADocumentStayHTMLOnly(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.BroadcastDraftID)})
+	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	res, ok := got.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", got)
@@ -140,7 +140,7 @@ func TestSiteBroadcastsTestSendDeliversTheMessageBuiltFromADocument(t *testing.T
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	res, err := c.SiteBroadcastsTestSend(context.Background(), &siteapi.SiteTestSendBroadcastInput{Email: "preview@example.com"},
-		siteapi.SiteBroadcastsTestSendParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.BroadcastAuthoredID)})
+		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastAuthoredID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)
 

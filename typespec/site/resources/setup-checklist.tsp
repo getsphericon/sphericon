@@ -37,10 +37,10 @@ model SiteSetupProgress {
   complete: boolean;
 }
 
-@route("/workspaces/{slug}/setup-checklist")
+@route("/workspaces/{workspaceId}/setup-checklist")
 @tag("Site Setup Checklist")
 namespace SiteSetupChecklist {
   /** The Workspace's Setup checklist */
   @get
-  op get(@path slug: string): SiteSetupProgress | NotFoundProblem;
+  op get(@path workspaceId: WorkspaceId): SiteSetupProgress | NotFoundProblem;
 }

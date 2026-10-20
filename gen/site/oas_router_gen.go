@@ -62,6 +62,9 @@ var (
 	rn74AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn128AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
 	rn2AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
@@ -101,6 +104,9 @@ var (
 	rn104AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn129AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
 	rn62AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -113,7 +119,7 @@ var (
 	rn71AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn129AllowedHeaders = map[string]string{
+	rn132AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn90AllowedHeaders = map[string]string{
@@ -1060,11 +1066,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					switch r.Method {
 					case "GET":
 						s.handleSiteWorkspacesListRequest([0]string{}, elemIsEscaped, w, r)
+					case "POST":
+						s.handleSiteWorkspacesCreateRequest([0]string{}, elemIsEscaped, w, r)
 					default:
 						s.notAllowed(w, r, notAllowedParams{
-							allowedMethods: "GET",
-							allowedHeaders: nil,
-							acceptPost:     "",
+							allowedMethods: "GET,POST",
+							allowedHeaders: rn128AllowedHeaders,
+							acceptPost:     "application/json",
 							acceptPatch:    "",
 						})
 					}
@@ -1080,7 +1088,38 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 
-					// Param: "slug"
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'd': // Prefix: "deleted"
+						origElem := elem
+						if l := len("deleted"); len(elem) >= l && elem[0:l] == "deleted" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleSiteWorkspacesListDeletedRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+						elem = origElem
+					}
+					// Param: "workspaceId"
 					// Match until "/"
 					idx := strings.IndexByte(elem, '/')
 					if idx < 0 {
@@ -2111,6 +2150,33 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 							}
 
+						case 'd': // Prefix: "delete"
+
+							if l := len("delete"); len(elem) >= l && elem[0:l] == "delete" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "POST":
+									s.handleSiteWorkspacesDeleteRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: rn129AllowedHeaders,
+										acceptPost:     "application/json",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
 						case 'e': // Prefix: "events"
 
 							if l := len("events"); len(elem) >= l && elem[0:l] == "events" {
@@ -2456,6 +2522,33 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 							}
 
+						case 'r': // Prefix: "restore"
+
+							if l := len("restore"); len(elem) >= l && elem[0:l] == "restore" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "POST":
+									s.handleSiteWorkspacesRestoreRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
 						case 's': // Prefix: "s"
 
 							if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
@@ -2498,7 +2591,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										default:
 											s.notAllowed(w, r, notAllowedParams{
 												allowedMethods: "PUT",
-												allowedHeaders: rn129AllowedHeaders,
+												allowedHeaders: rn132AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -4165,6 +4258,15 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						r.args = args
 						r.count = 0
 						return r, true
+					case "POST":
+						r.name = SiteWorkspacesCreateOperation
+						r.summary = ""
+						r.operationID = "SiteWorkspaces_create"
+						r.operationGroup = ""
+						r.pathPattern = "/workspaces"
+						r.args = args
+						r.count = 0
+						return r, true
 					default:
 						return
 					}
@@ -4178,7 +4280,38 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						break
 					}
 
-					// Param: "slug"
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'd': // Prefix: "deleted"
+						origElem := elem
+						if l := len("deleted"); len(elem) >= l && elem[0:l] == "deleted" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = SiteWorkspacesListDeletedOperation
+								r.summary = ""
+								r.operationID = "SiteWorkspaces_listDeleted"
+								r.operationGroup = ""
+								r.pathPattern = "/workspaces/deleted"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+						elem = origElem
+					}
+					// Param: "workspaceId"
 					// Match until "/"
 					idx := strings.IndexByte(elem, '/')
 					if idx < 0 {
@@ -4194,7 +4327,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							r.summary = ""
 							r.operationID = "SiteWorkspaces_update"
 							r.operationGroup = ""
-							r.pathPattern = "/workspaces/{slug}"
+							r.pathPattern = "/workspaces/{workspaceId}"
 							r.args = args
 							r.count = 1
 							return r, true
@@ -4243,7 +4376,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteWorkspaces_accountLink"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/account-link"
+										r.pathPattern = "/workspaces/{workspaceId}/account-link"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -4268,7 +4401,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteAnalytics_overview"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/analytics/overview"
+										r.pathPattern = "/workspaces/{workspaceId}/analytics/overview"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -4304,7 +4437,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteAudit_list"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/audit-entries"
+											r.pathPattern = "/workspaces/{workspaceId}/audit-entries"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -4341,7 +4474,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteAudit_export"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/audit-entries/export"
+													r.pathPattern = "/workspaces/{workspaceId}/audit-entries/export"
 													r.args = args
 													r.count = 1
 													return r, true
@@ -4366,7 +4499,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteAudit_getRetention"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/audit-entries/retention"
+													r.pathPattern = "/workspaces/{workspaceId}/audit-entries/retention"
 													r.args = args
 													r.count = 1
 													return r, true
@@ -4375,7 +4508,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteAudit_setRetention"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/audit-entries/retention"
+													r.pathPattern = "/workspaces/{workspaceId}/audit-entries/retention"
 													r.args = args
 													r.count = 1
 													return r, true
@@ -4403,7 +4536,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteAutomations_list"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/automations"
+											r.pathPattern = "/workspaces/{workspaceId}/automations"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -4412,7 +4545,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteAutomations_create"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/automations"
+											r.pathPattern = "/workspaces/{workspaceId}/automations"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -4449,7 +4582,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteAutomations_dryRunHttpStep"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/automations/dry-run-http-step"
+													r.pathPattern = "/workspaces/{workspaceId}/automations/dry-run-http-step"
 													r.args = args
 													r.count = 1
 													return r, true
@@ -4476,7 +4609,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteAutomations_delete"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/automations/{id}"
+												r.pathPattern = "/workspaces/{workspaceId}/automations/{id}"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -4485,7 +4618,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteAutomations_get"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/automations/{id}"
+												r.pathPattern = "/workspaces/{workspaceId}/automations/{id}"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -4494,7 +4627,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteAutomations_update"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/automations/{id}"
+												r.pathPattern = "/workspaces/{workspaceId}/automations/{id}"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -4531,7 +4664,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 														r.summary = ""
 														r.operationID = "SiteAutomations_activate"
 														r.operationGroup = ""
-														r.pathPattern = "/workspaces/{slug}/automations/{id}/activate"
+														r.pathPattern = "/workspaces/{workspaceId}/automations/{id}/activate"
 														r.args = args
 														r.count = 2
 														return r, true
@@ -4556,7 +4689,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 														r.summary = ""
 														r.operationID = "SiteAutomations_deactivate"
 														r.operationGroup = ""
-														r.pathPattern = "/workspaces/{slug}/automations/{id}/deactivate"
+														r.pathPattern = "/workspaces/{workspaceId}/automations/{id}/deactivate"
 														r.args = args
 														r.count = 2
 														return r, true
@@ -4580,7 +4713,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 														r.summary = ""
 														r.operationID = "SiteEnrollments_list"
 														r.operationGroup = ""
-														r.pathPattern = "/workspaces/{slug}/automations/{automationId}/enrollments"
+														r.pathPattern = "/workspaces/{workspaceId}/automations/{automationId}/enrollments"
 														r.args = args
 														r.count = 2
 														return r, true
@@ -4614,7 +4747,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 															r.summary = ""
 															r.operationID = "SiteEnrollments_get"
 															r.operationGroup = ""
-															r.pathPattern = "/workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}"
+															r.pathPattern = "/workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}"
 															r.args = args
 															r.count = 3
 															return r, true
@@ -4662,7 +4795,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteBrandKit_get"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/brand-kit"
+										r.pathPattern = "/workspaces/{workspaceId}/brand-kit"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -4671,7 +4804,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteBrandKit_save"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/brand-kit"
+										r.pathPattern = "/workspaces/{workspaceId}/brand-kit"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -4696,7 +4829,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteBrandKit_recreateStarterTemplates"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/brand-kit/starter-templates"
+											r.pathPattern = "/workspaces/{workspaceId}/brand-kit/starter-templates"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -4722,7 +4855,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteBroadcasts_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/broadcasts"
+										r.pathPattern = "/workspaces/{workspaceId}/broadcasts"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -4731,7 +4864,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteBroadcasts_create"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/broadcasts"
+										r.pathPattern = "/workspaces/{workspaceId}/broadcasts"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -4764,7 +4897,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteBroadcasts_delete"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/broadcasts/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/broadcasts/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -4773,7 +4906,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteBroadcasts_get"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/broadcasts/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/broadcasts/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -4782,7 +4915,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteBroadcasts_update"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/broadcasts/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/broadcasts/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -4831,7 +4964,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 														r.summary = ""
 														r.operationID = "SiteBroadcasts_schedule"
 														r.operationGroup = ""
-														r.pathPattern = "/workspaces/{slug}/broadcasts/{id}/schedule"
+														r.pathPattern = "/workspaces/{workspaceId}/broadcasts/{id}/schedule"
 														r.args = args
 														r.count = 2
 														return r, true
@@ -4856,7 +4989,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 														r.summary = ""
 														r.operationID = "SiteBroadcasts_send"
 														r.operationGroup = ""
-														r.pathPattern = "/workspaces/{slug}/broadcasts/{id}/send"
+														r.pathPattern = "/workspaces/{workspaceId}/broadcasts/{id}/send"
 														r.args = args
 														r.count = 2
 														return r, true
@@ -4883,7 +5016,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteBroadcasts_testSend"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/broadcasts/{id}/test-send"
+													r.pathPattern = "/workspaces/{workspaceId}/broadcasts/{id}/test-send"
 													r.args = args
 													r.count = 2
 													return r, true
@@ -4927,7 +5060,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteContacts_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/contacts"
+										r.pathPattern = "/workspaces/{workspaceId}/contacts"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -4936,7 +5069,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteContacts_create"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/contacts"
+										r.pathPattern = "/workspaces/{workspaceId}/contacts"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -4985,7 +5118,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteContacts_erase"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/contacts/erase"
+													r.pathPattern = "/workspaces/{workspaceId}/contacts/erase"
 													r.args = args
 													r.count = 1
 													return r, true
@@ -5010,7 +5143,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteContacts_export"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/contacts/export"
+													r.pathPattern = "/workspaces/{workspaceId}/contacts/export"
 													r.args = args
 													r.count = 1
 													return r, true
@@ -5038,7 +5171,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteContacts_lookup"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/contacts/lookup"
+												r.pathPattern = "/workspaces/{workspaceId}/contacts/lookup"
 												r.args = args
 												r.count = 1
 												return r, true
@@ -5065,7 +5198,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteContacts_delete"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/contacts/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/contacts/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -5074,7 +5207,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteContacts_get"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/contacts/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/contacts/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -5083,7 +5216,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteContacts_update"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/contacts/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/contacts/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -5107,7 +5240,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteTags_listForContact"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/contacts/{contactId}/tags"
+												r.pathPattern = "/workspaces/{workspaceId}/contacts/{contactId}/tags"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -5116,7 +5249,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteTags_apply"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/contacts/{contactId}/tags"
+												r.pathPattern = "/workspaces/{workspaceId}/contacts/{contactId}/tags"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -5150,7 +5283,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteTags_remove"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/contacts/{contactId}/tags/{name}"
+													r.pathPattern = "/workspaces/{workspaceId}/contacts/{contactId}/tags/{name}"
 													r.args = args
 													r.count = 3
 													return r, true
@@ -5181,7 +5314,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteCustomFields_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/custom-fields"
+										r.pathPattern = "/workspaces/{workspaceId}/custom-fields"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5190,6 +5323,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									}
 								}
 
+							}
+
+						case 'd': // Prefix: "delete"
+
+							if l := len("delete"); len(elem) >= l && elem[0:l] == "delete" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "POST":
+									r.name = SiteWorkspacesDeleteOperation
+									r.summary = ""
+									r.operationID = "SiteWorkspaces_delete"
+									r.operationGroup = ""
+									r.pathPattern = "/workspaces/{workspaceId}/delete"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
 							}
 
 						case 'e': // Prefix: "events"
@@ -5207,7 +5365,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									r.summary = ""
 									r.operationID = "SiteEvents_list"
 									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{slug}/events"
+									r.pathPattern = "/workspaces/{workspaceId}/events"
 									r.args = args
 									r.count = 1
 									return r, true
@@ -5232,7 +5390,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteEvents_actions"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/events/actions"
+										r.pathPattern = "/workspaces/{workspaceId}/events/actions"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5270,7 +5428,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteIntegrations_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/integrations"
+										r.pathPattern = "/workspaces/{workspaceId}/integrations"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5279,7 +5437,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteIntegrations_create"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/integrations"
+										r.pathPattern = "/workspaces/{workspaceId}/integrations"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5312,7 +5470,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteIntegrations_delete"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/integrations/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/integrations/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -5321,7 +5479,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteIntegrations_get"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/integrations/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/integrations/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -5330,7 +5488,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteIntegrations_update"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/integrations/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/integrations/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -5355,7 +5513,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteIntegrations_regenerateKey"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/integrations/{id}/regenerate-key"
+												r.pathPattern = "/workspaces/{workspaceId}/integrations/{id}/regenerate-key"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -5383,7 +5541,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteInvitations_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/invitations"
+										r.pathPattern = "/workspaces/{workspaceId}/invitations"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5392,7 +5550,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteInvitations_create"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/invitations"
+										r.pathPattern = "/workspaces/{workspaceId}/invitations"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5426,7 +5584,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteInvitations_delete"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/invitations/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/invitations/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -5454,7 +5612,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									r.summary = ""
 									r.operationID = "SiteMemberships_list"
 									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{slug}/memberships"
+									r.pathPattern = "/workspaces/{workspaceId}/memberships"
 									r.args = args
 									r.count = 1
 									return r, true
@@ -5487,7 +5645,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteMemberships_delete"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/memberships/{id}"
+										r.pathPattern = "/workspaces/{workspaceId}/memberships/{id}"
 										r.args = args
 										r.count = 2
 										return r, true
@@ -5496,7 +5654,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteMemberships_update"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/memberships/{id}"
+										r.pathPattern = "/workspaces/{workspaceId}/memberships/{id}"
 										r.args = args
 										r.count = 2
 										return r, true
@@ -5521,7 +5679,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteMemberships_resetSecondFactor"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/memberships/{id}/reset-second-factor"
+											r.pathPattern = "/workspaces/{workspaceId}/memberships/{id}/reset-second-factor"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -5532,6 +5690,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 								}
 
+							}
+
+						case 'r': // Prefix: "restore"
+
+							if l := len("restore"); len(elem) >= l && elem[0:l] == "restore" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "POST":
+									r.name = SiteWorkspacesRestoreOperation
+									r.summary = ""
+									r.operationID = "SiteWorkspaces_restore"
+									r.operationGroup = ""
+									r.pathPattern = "/workspaces/{workspaceId}/restore"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
 							}
 
 						case 's': // Prefix: "s"
@@ -5574,7 +5757,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteWorkspaces_setSecondFactorRequirement"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/second-factor-requirement"
+											r.pathPattern = "/workspaces/{workspaceId}/second-factor-requirement"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -5598,7 +5781,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteSegments_list"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/segments"
+											r.pathPattern = "/workspaces/{workspaceId}/segments"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -5607,7 +5790,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteSegments_create"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/segments"
+											r.pathPattern = "/workspaces/{workspaceId}/segments"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -5644,7 +5827,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteSegments_preview"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/segments/preview"
+													r.pathPattern = "/workspaces/{workspaceId}/segments/preview"
 													r.args = args
 													r.count = 1
 													return r, true
@@ -5672,7 +5855,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteSegments_delete"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/segments/{id}"
+												r.pathPattern = "/workspaces/{workspaceId}/segments/{id}"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -5681,7 +5864,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteSegments_get"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/segments/{id}"
+												r.pathPattern = "/workspaces/{workspaceId}/segments/{id}"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -5690,7 +5873,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteSegments_update"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/segments/{id}"
+												r.pathPattern = "/workspaces/{workspaceId}/segments/{id}"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -5716,7 +5899,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteSendingDomains_list"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/sending-domains"
+											r.pathPattern = "/workspaces/{workspaceId}/sending-domains"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -5725,7 +5908,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteSendingDomains_create"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/sending-domains"
+											r.pathPattern = "/workspaces/{workspaceId}/sending-domains"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -5758,7 +5941,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteSendingDomains_delete"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/sending-domains/{id}"
+												r.pathPattern = "/workspaces/{workspaceId}/sending-domains/{id}"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -5767,7 +5950,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteSendingDomains_get"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/sending-domains/{id}"
+												r.pathPattern = "/workspaces/{workspaceId}/sending-domains/{id}"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -5792,7 +5975,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 													r.summary = ""
 													r.operationID = "SiteSendingDomains_verify"
 													r.operationGroup = ""
-													r.pathPattern = "/workspaces/{slug}/sending-domains/{id}/verify"
+													r.pathPattern = "/workspaces/{workspaceId}/sending-domains/{id}/verify"
 													r.args = args
 													r.count = 2
 													return r, true
@@ -5821,7 +6004,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteSetupChecklist_get"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/setup-checklist"
+											r.pathPattern = "/workspaces/{workspaceId}/setup-checklist"
 											r.args = args
 											r.count = 1
 											return r, true
@@ -5847,7 +6030,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteSuppressions_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/suppressions"
+										r.pathPattern = "/workspaces/{workspaceId}/suppressions"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5856,7 +6039,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteSuppressions_create"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/suppressions"
+										r.pathPattern = "/workspaces/{workspaceId}/suppressions"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5890,7 +6073,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteSuppressions_delete"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/suppressions/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/suppressions/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -5931,7 +6114,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteTags_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/tags"
+										r.pathPattern = "/workspaces/{workspaceId}/tags"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5955,7 +6138,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteTemplates_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/templates"
+										r.pathPattern = "/workspaces/{workspaceId}/templates"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5964,7 +6147,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteTemplates_create"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/templates"
+										r.pathPattern = "/workspaces/{workspaceId}/templates"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -5998,7 +6181,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteTemplates_delete"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/templates/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/templates/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -6007,7 +6190,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteTemplates_get"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/templates/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/templates/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -6016,7 +6199,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteTemplates_update"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/templates/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/templates/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -6042,7 +6225,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteTokens_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/tokens"
+										r.pathPattern = "/workspaces/{workspaceId}/tokens"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -6051,7 +6234,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteTokens_create"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/tokens"
+										r.pathPattern = "/workspaces/{workspaceId}/tokens"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -6085,7 +6268,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 											r.summary = ""
 											r.operationID = "SiteTokens_delete"
 											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{slug}/tokens/{id}"
+											r.pathPattern = "/workspaces/{workspaceId}/tokens/{id}"
 											r.args = args
 											r.count = 2
 											return r, true
@@ -6112,7 +6295,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteTransactionalEmails_list"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/transactional-emails"
+										r.pathPattern = "/workspaces/{workspaceId}/transactional-emails"
 										r.args = args
 										r.count = 1
 										return r, true
@@ -6138,7 +6321,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									r.summary = ""
 									r.operationID = "SiteWebhooks_list"
 									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{slug}/webhooks"
+									r.pathPattern = "/workspaces/{workspaceId}/webhooks"
 									r.args = args
 									r.count = 1
 									return r, true
@@ -6147,7 +6330,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									r.summary = ""
 									r.operationID = "SiteWebhooks_create"
 									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{slug}/webhooks"
+									r.pathPattern = "/workspaces/{workspaceId}/webhooks"
 									r.args = args
 									r.count = 1
 									return r, true
@@ -6180,7 +6363,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteWebhooks_delete"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/webhooks/{id}"
+										r.pathPattern = "/workspaces/{workspaceId}/webhooks/{id}"
 										r.args = args
 										r.count = 2
 										return r, true
@@ -6189,7 +6372,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteWebhooks_get"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/webhooks/{id}"
+										r.pathPattern = "/workspaces/{workspaceId}/webhooks/{id}"
 										r.args = args
 										r.count = 2
 										return r, true
@@ -6198,7 +6381,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 										r.summary = ""
 										r.operationID = "SiteWebhooks_update"
 										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{slug}/webhooks/{id}"
+										r.pathPattern = "/workspaces/{workspaceId}/webhooks/{id}"
 										r.args = args
 										r.count = 2
 										return r, true
@@ -6235,7 +6418,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteWebhooks_regenerateSecret"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/webhooks/{id}/regenerate-secret"
+												r.pathPattern = "/workspaces/{workspaceId}/webhooks/{id}/regenerate-secret"
 												r.args = args
 												r.count = 2
 												return r, true
@@ -6260,7 +6443,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 												r.summary = ""
 												r.operationID = "SiteWebhooks_test"
 												r.operationGroup = ""
-												r.pathPattern = "/workspaces/{slug}/webhooks/{id}/test"
+												r.pathPattern = "/workspaces/{workspaceId}/webhooks/{id}/test"
 												r.args = args
 												r.count = 2
 												return r, true

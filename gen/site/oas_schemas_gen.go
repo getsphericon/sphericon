@@ -4233,6 +4233,7 @@ func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
 func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
 func (*ProblemDetails) siteSetupChecklistGetRes()              {}
 func (*ProblemDetails) siteTokensListRes()                     {}
+func (*ProblemDetails) siteWorkspacesRestoreRes()              {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -8048,6 +8049,23 @@ func (s *SiteCreateWebhookEndpointInput) SetEnabled(val OptBool) {
 	s.Enabled = val
 }
 
+// Create a Workspace (ADR 0043).
+// Ref: #/components/schemas/SiteCreateWorkspaceInput
+type SiteCreateWorkspaceInput struct {
+	// Display name: free text, not unique.
+	Name string `json:"name"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteCreateWorkspaceInput) GetName() string {
+	return s.Name
+}
+
+// SetName sets the value of Name.
+func (s *SiteCreateWorkspaceInput) SetName(val string) {
+	s.Name = val
+}
+
 // Custom field definition — a typed, named Contact attribute (ADR 0006). Auto-created on first sight
 // from Identify; the catalogue feeds the segment builder.
 // Ref: #/components/schemas/SiteCustomFieldResource
@@ -8256,6 +8274,79 @@ func (s *SiteCustomFieldsListOK) SetTotalPages(val int32) {
 }
 
 func (*SiteCustomFieldsListOK) siteCustomFieldsListRes() {}
+
+// Delete a Workspace (ADR 0043): the typed name must equal the stored name.
+// Ref: #/components/schemas/SiteDeleteWorkspaceInput
+type SiteDeleteWorkspaceInput struct {
+	// The Workspace's name, typed to confirm the deletion.
+	Name string `json:"name"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteDeleteWorkspaceInput) GetName() string {
+	return s.Name
+}
+
+// SetName sets the value of Name.
+func (s *SiteDeleteWorkspaceInput) SetName(val string) {
+	s.Name = val
+}
+
+// A Workspace in its deletion window, as an Owner of it sees it (ADR 0043): frozen and hidden,
+// restorable until its data is erased.
+// Ref: #/components/schemas/SiteDeletedWorkspaceResource
+type SiteDeletedWorkspaceResource struct {
+	// The Workspace id.
+	ID WorkspaceId `json:"id"`
+	// Display name.
+	Name string `json:"name"`
+	// When the Workspace was deleted.
+	DeletedAt Timestamp `json:"deletedAt"`
+	// When its data will be erased: 30 days after it was deleted.
+	EraseAt Timestamp `json:"eraseAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteDeletedWorkspaceResource) GetID() WorkspaceId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SiteDeletedWorkspaceResource) GetName() string {
+	return s.Name
+}
+
+// GetDeletedAt returns the value of DeletedAt.
+func (s *SiteDeletedWorkspaceResource) GetDeletedAt() Timestamp {
+	return s.DeletedAt
+}
+
+// GetEraseAt returns the value of EraseAt.
+func (s *SiteDeletedWorkspaceResource) GetEraseAt() Timestamp {
+	return s.EraseAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteDeletedWorkspaceResource) SetID(val WorkspaceId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SiteDeletedWorkspaceResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetDeletedAt sets the value of DeletedAt.
+func (s *SiteDeletedWorkspaceResource) SetDeletedAt(val Timestamp) {
+	s.DeletedAt = val
+}
+
+// SetEraseAt sets the value of EraseAt.
+func (s *SiteDeletedWorkspaceResource) SetEraseAt(val Timestamp) {
+	s.EraseAt = val
+}
+
+func (*SiteDeletedWorkspaceResource) siteWorkspacesDeleteRes() {}
 
 // A DNS record the user publishes to authenticate a sending domain.
 // Ref: #/components/schemas/SiteDnsRecord
@@ -10500,8 +10591,8 @@ type SiteOAuthDecisionInput struct {
 	CodeChallenge string `json:"codeChallenge"`
 	// Space-delimited scopes from the authorization request.
 	Scope OptString `json:"scope"`
-	// Workspace slug the token will belong to.
-	WorkspaceSlug string `json:"workspaceSlug"`
+	// Id of the Workspace the token will belong to.
+	WorkspaceId WorkspaceId `json:"workspaceId"`
 	// True to approve, false to deny.
 	Approve bool `json:"approve"`
 	// Opt in to the requested send-class scopes (default: not granted).
@@ -10533,9 +10624,9 @@ func (s *SiteOAuthDecisionInput) GetScope() OptString {
 	return s.Scope
 }
 
-// GetWorkspaceSlug returns the value of WorkspaceSlug.
-func (s *SiteOAuthDecisionInput) GetWorkspaceSlug() string {
-	return s.WorkspaceSlug
+// GetWorkspaceId returns the value of WorkspaceId.
+func (s *SiteOAuthDecisionInput) GetWorkspaceId() WorkspaceId {
+	return s.WorkspaceId
 }
 
 // GetApprove returns the value of Approve.
@@ -10573,9 +10664,9 @@ func (s *SiteOAuthDecisionInput) SetScope(val OptString) {
 	s.Scope = val
 }
 
-// SetWorkspaceSlug sets the value of WorkspaceSlug.
-func (s *SiteOAuthDecisionInput) SetWorkspaceSlug(val string) {
-	s.WorkspaceSlug = val
+// SetWorkspaceId sets the value of WorkspaceId.
+func (s *SiteOAuthDecisionInput) SetWorkspaceId(val WorkspaceId) {
+	s.WorkspaceId = val
 }
 
 // SetApprove sets the value of Approve.
@@ -14634,8 +14725,8 @@ func (s *SiteUpdateWebhookEndpointInput) SetEnabled(val OptBool) {
 	s.Enabled = val
 }
 
-// Update a workspace. The slug is immutable (it is the route key and globally unique); the display
-// name and the CAN-SPAM postal address can change.
+// Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM
+// postal address can change.
 // Ref: #/components/schemas/SiteUpdateWorkspaceInput
 type SiteUpdateWorkspaceInput struct {
 	// New display name.
@@ -15363,12 +15454,11 @@ func (s *SiteWorkspaceHold) SetActionUrl(val OptNilString) {
 // Workspace the current user belongs to.
 // Ref: #/components/schemas/SiteWorkspaceResource
 type SiteWorkspaceResource struct {
-	// Unique identifier.
-	ID EntityId `json:"id"`
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	ID WorkspaceId `json:"id"`
 	// Display name.
 	Name string `json:"name"`
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string `json:"slug"`
 	// Per-workspace collect write-key (x-collect-key) for the tracking snippet.
 	CollectKey string `json:"collectKey"`
 	// Physical postal address printed in the marketing email footer (CAN-SPAM 15 U.S.C. §7704(a)(5)).
@@ -15408,18 +15498,13 @@ type SiteWorkspaceResource struct {
 }
 
 // GetID returns the value of ID.
-func (s *SiteWorkspaceResource) GetID() EntityId {
+func (s *SiteWorkspaceResource) GetID() WorkspaceId {
 	return s.ID
 }
 
 // GetName returns the value of Name.
 func (s *SiteWorkspaceResource) GetName() string {
 	return s.Name
-}
-
-// GetSlug returns the value of Slug.
-func (s *SiteWorkspaceResource) GetSlug() string {
-	return s.Slug
 }
 
 // GetCollectKey returns the value of CollectKey.
@@ -15483,18 +15568,13 @@ func (s *SiteWorkspaceResource) GetCreatedAt() Timestamp {
 }
 
 // SetID sets the value of ID.
-func (s *SiteWorkspaceResource) SetID(val EntityId) {
+func (s *SiteWorkspaceResource) SetID(val WorkspaceId) {
 	s.ID = val
 }
 
 // SetName sets the value of Name.
 func (s *SiteWorkspaceResource) SetName(val string) {
 	s.Name = val
-}
-
-// SetSlug sets the value of Slug.
-func (s *SiteWorkspaceResource) SetSlug(val string) {
-	s.Slug = val
 }
 
 // SetCollectKey sets the value of CollectKey.
@@ -15557,6 +15637,8 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                     {}
+func (*SiteWorkspaceResource) siteWorkspacesRestoreRes()                    {}
 func (*SiteWorkspaceResource) siteWorkspacesSetSecondFactorRequirementRes() {}
 func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                     {}
 
@@ -15568,6 +15650,26 @@ type SiteWorkspacesAccountLinkNotFound ProblemDetails
 
 func (*SiteWorkspacesAccountLinkNotFound) siteWorkspacesAccountLinkRes() {}
 
+type SiteWorkspacesCreateForbidden ProblemDetails
+
+func (*SiteWorkspacesCreateForbidden) siteWorkspacesCreateRes() {}
+
+type SiteWorkspacesCreateUnprocessableEntity ProblemDetails
+
+func (*SiteWorkspacesCreateUnprocessableEntity) siteWorkspacesCreateRes() {}
+
+type SiteWorkspacesDeleteForbidden ProblemDetails
+
+func (*SiteWorkspacesDeleteForbidden) siteWorkspacesDeleteRes() {}
+
+type SiteWorkspacesDeleteNotFound ProblemDetails
+
+func (*SiteWorkspacesDeleteNotFound) siteWorkspacesDeleteRes() {}
+
+type SiteWorkspacesDeleteUnprocessableEntity ProblemDetails
+
+func (*SiteWorkspacesDeleteUnprocessableEntity) siteWorkspacesDeleteRes() {}
+
 type SiteWorkspacesSetSecondFactorRequirementForbidden ProblemDetails
 
 func (*SiteWorkspacesSetSecondFactorRequirementForbidden) siteWorkspacesSetSecondFactorRequirementRes() {
@@ -15577,6 +15679,10 @@ type SiteWorkspacesSetSecondFactorRequirementNotFound ProblemDetails
 
 func (*SiteWorkspacesSetSecondFactorRequirementNotFound) siteWorkspacesSetSecondFactorRequirementRes() {
 }
+
+type SiteWorkspacesUpdateForbidden ProblemDetails
+
+func (*SiteWorkspacesUpdateForbidden) siteWorkspacesUpdateRes() {}
 
 type SiteWorkspacesUpdateNotFound ProblemDetails
 
@@ -15589,3 +15695,5 @@ func (*SiteWorkspacesUpdateUnprocessableEntity) siteWorkspacesUpdateRes() {}
 type TimeZoneName string
 
 type Timestamp time.Time
+
+type WorkspaceId string

@@ -2,6 +2,9 @@ package db_test
 
 import (
 	"database/sql"
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
+	"io/fs"
 	"sync"
 	"testing"
 	"testing/fstest"
@@ -10,8 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	sphericon "github.com/getsphericon/sphericon"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
 func openEmpty(t *testing.T) *sql.DB {
@@ -80,4 +86,66 @@ func TestMigrateFSAppliesAMigrationUnderAContextWithNoDeadline(t *testing.T) {
 	st, err := db.StatusFS(t.Context(), sqlDB, files)
 	require.NoError(t, err)
 	assert.Empty(t, st.Pending)
+}
+
+// An Instance upgraded from before the Workspace id gets one for every Workspace it already had,
+// and the column ends required and unique (ADR 0043).
+func TestMigrateGivesExistingWorkspacesAnIdAndEndsRequired(t *testing.T) {
+	sqlDB := openEmpty(t)
+	before := migrationsWhere(t, func(name string) bool { return name < "20261020030001" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.InsertLegacyWorkspaces(t, sqlDB, "one", "two", "three")
+
+	_, err = db.Migrate(t.Context(), sqlDB)
+	require.NoError(t, err)
+
+	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
+	t.Cleanup(func() { _ = client.Close() })
+	workspaces, err := client.Workspace.Query().All(t.Context())
+	require.NoError(t, err)
+	require.Len(t, workspaces, 3)
+	seen := map[string]bool{}
+	for _, ws := range workspaces {
+		assert.Regexp(t, workspaceid.Pattern, ws.PublicID)
+		seen[ws.PublicID] = true
+	}
+	assert.Len(t, seen, 3, "every id is its own")
+
+	// The ids are unique now: a fourth Workspace cannot take one of them.
+	err = client.Workspace.Create().SetName("y").SetCollectKey("y").SetPublicID(workspaces[0].PublicID).Exec(t.Context())
+	assert.True(t, db.IsUniqueViolation(err))
+}
+
+// Dropping the slug refuses an Instance whose Workspaces have not all got their id yet: it would
+// leave them with no address (ADR 0033 guard).
+func TestMigrateRefusesToDropTheSlugBeforeEveryWorkspaceHasAnId(t *testing.T) {
+	sqlDB := openEmpty(t)
+	// Skip the id backfill and the migration that requires the id.
+	skipping := migrationsWhere(t, func(name string) bool { return name < "20261020030002" || name >= "20261020030004" })
+	before := migrationsWhere(t, func(name string) bool { return name < "20261020030002" })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.InsertLegacyWorkspaces(t, sqlDB, "one")
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, skipping)
+	require.ErrorContains(t, err, "workspaces.slug cannot be dropped")
+}
+
+// migrationsWhere is the embedded migrations whose file name satisfies keep.
+func migrationsWhere(t *testing.T, keep func(name string) bool) fstest.MapFS {
+	t.Helper()
+	all, err := fs.Sub(sphericon.MigrationsFS, "migrations")
+	require.NoError(t, err)
+	entries, err := fs.ReadDir(all, ".")
+	require.NoError(t, err)
+	out := fstest.MapFS{}
+	for _, e := range entries {
+		if keep(e.Name()) {
+			data, err := fs.ReadFile(all, e.Name())
+			require.NoError(t, err)
+			out[e.Name()] = &fstest.MapFile{Data: data}
+		}
+	}
+	return out
 }

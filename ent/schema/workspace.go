@@ -28,11 +28,16 @@ func (Workspace) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		field.String("name").
-			NotEmpty(),
-		field.String("slug").
-			NotEmpty().
-			Unique(),
+		// Free text, never empty while the Workspace lives (the handlers refuse an empty name);
+		// the erasure job blanks it on the tombstone (ADR 0043), so the schema allows it.
+		field.String("name"),
+		// The Workspace id (ADR 0043): 8 random base62 characters, the Workspace's one public
+		// address. Assigned at creation, never changed, unique; internal/workspaceid makes it.
+		field.String("public_id").
+			MinLen(8).
+			MaxLen(8).
+			Unique().
+			Immutable(),
 		field.String("collect_key").
 			NotEmpty().
 			Unique().
@@ -79,6 +84,15 @@ func (Workspace) Fields() []ent.Field {
 		// only by internal/workspacefeed.
 		field.Int64("feed_position").
 			Default(0),
+		// Workspace deletion (ADR 0043): deleted_at starts the 30-day window, in which the
+		// Workspace is frozen, hidden and restorable; erased_at is set when the erasure job
+		// has removed its data and left the row as a tombstone. Both NULL for a live Workspace.
+		field.Time("deleted_at").
+			Optional().
+			Nillable(),
+		field.Time("erased_at").
+			Optional().
+			Nillable(),
 		field.Time("suspended_at").
 			Optional().
 			Nillable(),

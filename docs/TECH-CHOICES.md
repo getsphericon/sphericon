@@ -12,11 +12,10 @@ TanStack Router/Query, react-querybuilder + @react-querybuilder/mantine, @mantin
 
 ## Quick wins — replace current hand-rolled utilities
 
-| Hand-rolled today                             | Adopt                       | Status (2026-06-28)        | Note                                                                                                                                                                                                                          |
-| --------------------------------------------- | --------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CORS middleware (`internal/server/server.go`) | **rs/cors**                 | ✅ 2026-06, v1.11.1, 2.9k★ | drop-in `func(http.Handler)`, no router lock-in                                                                                                                                                                               |
-| requestID / recoverer / timeout middleware    | **go-chi/chi/middleware**   | ✅ 2026-06, v5.3.0, 22k★   | usable without adopting the chi router                                                                                                                                                                                        |
-| `Slugify` (`internal/accounts/slug.go`)       | **gosimple/slug** _or keep_ | 🟡 2024-12, v1.15.0, 1.3k★ | freshest slug lib that exists (all alts dead since 2017-2022); adds Unicode transliteration (matters for non-ASCII workspace names). Quiet but domain-stable. If the quiet bothers, the ~10-line hand-rolled version is fine. |
+| Hand-rolled today                             | Adopt                     | Status (2026-06-28)        | Note                                            |
+| --------------------------------------------- | ------------------------- | -------------------------- | ----------------------------------------------- |
+| CORS middleware (`internal/server/server.go`) | **rs/cors**               | ✅ 2026-06, v1.11.1, 2.9k★ | drop-in `func(http.Handler)`, no router lock-in |
+| requestID / recoverer / timeout middleware    | **go-chi/chi/middleware** | ✅ 2026-06, v5.3.0, 22k★   | usable without adopting the chi router          |
 
 Keep hand-rolled (no worthwhile library): pagination math, RFC 7807 `problem+json` renderer
 (every candidate lib is abandoned / sub-50★), ogen Opt→pointer converters, the messaging

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -20,12 +21,12 @@ func TestSiteWorkspacesUpdateRenames(t *testing.T) {
 
 	res, err := c.SiteWorkspacesUpdate(ctx,
 		&siteapi.SiteUpdateWorkspaceInput{Name: "Acme Inc"},
-		siteapi.SiteWorkspacesUpdateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	updated, ok := res.(*siteapi.SiteWorkspaceResource)
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, "Acme Inc", updated.Name)
-	assert.Equal(t, fixtures.AcmeSlug, updated.Slug, "slug is immutable")
+	assert.Equal(t, siteapi.WorkspaceId(fixtures.AcmePublicID), updated.ID, "the Workspace id is immutable")
 
 	// The change is reflected in the list.
 	list, err := c.SiteWorkspacesList(ctx)
@@ -40,7 +41,7 @@ func TestSiteWorkspacesUpdateNotOwned(t *testing.T) {
 
 	res, err := c.SiteWorkspacesUpdate(context.Background(),
 		&siteapi.SiteUpdateWorkspaceInput{Name: "Hijacked"},
-		siteapi.SiteWorkspacesUpdateParams{Slug: "does-not-exist"})
+		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteWorkspacesUpdateNotFound{}, res)
 }
@@ -51,7 +52,7 @@ func TestSiteWorkspacesUpdateRejectsBlankName(t *testing.T) {
 
 	res, err := c.SiteWorkspacesUpdate(context.Background(),
 		&siteapi.SiteUpdateWorkspaceInput{Name: "   "},
-		siteapi.SiteWorkspacesUpdateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteWorkspacesUpdateUnprocessableEntity{}, res)
 }
@@ -94,7 +95,7 @@ func TestSiteWorkspacesListExposesActiveStaffHolds(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, email := range []string{fixtures.OwnerJohnEmail, fixtures.MemberMaryEmail} {
-		acme := workspaceOf(t, env.SiteActor(t, email), fixtures.AcmeSlug)
+		acme := workspaceOf(t, env.SiteActor(t, email), fixtures.AcmePublicID)
 		require.Len(t, acme.Holds, 1, "the lapsed fixture hold is not listed")
 		assert.Equal(t, "k1", acme.Holds[0].Key)
 		assert.Equal(t, "review", acme.Holds[0].ReasonCode)
@@ -108,13 +109,13 @@ func TestSiteWorkspacesListExposesActiveStaffHolds(t *testing.T) {
 func TestSiteWorkspacesListShowsNoHoldsForAnUnaffectedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	assert.Empty(t, workspaceOf(t, c, fixtures.AcmeSlug).Holds, "only a lapsed hold exists")
+	assert.Empty(t, workspaceOf(t, c, fixtures.AcmePublicID).Holds, "only a lapsed hold exists")
 
 	_, err := env.DB.Scoped(fixtures.GlobexID).Hold().Create().
 		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").
 		SetExpiresAt(time.Now().Add(time.Hour)).Save(context.Background())
 	require.NoError(t, err)
-	assert.Empty(t, workspaceOf(t, c, fixtures.AcmeSlug).Holds, "another Workspace's hold does not leak")
+	assert.Empty(t, workspaceOf(t, c, fixtures.AcmePublicID).Holds, "another Workspace's hold does not leak")
 }
 
 // Holds are honoured only with the `staff` license, on the send path and in what a
@@ -125,5 +126,93 @@ func TestSiteWorkspacesListShowsNoHoldsWithoutTheStaffLicense(t *testing.T) {
 		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").
 		SetExpiresAt(time.Now().Add(time.Hour)).Save(context.Background())
 	require.NoError(t, err)
-	assert.Empty(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug).Holds)
+	assert.Empty(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).Holds)
+}
+
+func TestSiteWorkspacesListCarriesTheWorkspaceId(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	list, err := c.SiteWorkspacesList(context.Background())
+	require.NoError(t, err)
+
+	require.Len(t, list, 1)
+	assert.Equal(t, siteapi.WorkspaceId(fixtures.AcmePublicID), list[0].ID)
+}
+
+func TestSiteWorkspacesCreateMakesTheCallerOwner(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	res, err := c.SiteWorkspacesCreate(ctx, &siteapi.SiteCreateWorkspaceInput{Name: "  Second Brand  "})
+	require.NoError(t, err)
+	created, ok := res.(*siteapi.SiteWorkspaceResource)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, "Second Brand", created.Name)
+	assert.Equal(t, siteapi.SiteMembershipRoleOwner, created.Role)
+	assert.NotEmpty(t, created.ID)
+	assert.NotEqual(t, siteapi.WorkspaceId(fixtures.AcmePublicID), created.ID)
+
+	list, err := c.SiteWorkspacesList(ctx)
+	require.NoError(t, err)
+	assert.Len(t, list, 2)
+
+	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, created.ID, events.ActionWorkspaceCreate)
+	require.Len(t, entries, 1, "creation is an Audit entry of the new Workspace")
+	name, _ := entries[0].Target.Name.Get()
+	assert.Equal(t, "Second Brand", name)
+}
+
+func TestSiteWorkspacesCreateAllowsTwoWorkspacesWithOneName(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	var ids []siteapi.WorkspaceId
+	for range 2 {
+		res, err := c.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "Acme"})
+		require.NoError(t, err)
+		created, ok := res.(*siteapi.SiteWorkspaceResource)
+		require.Truef(t, ok, "got %T", res)
+		ids = append(ids, created.ID)
+	}
+	assert.NotEqual(t, ids[0], ids[1])
+}
+
+func TestSiteWorkspacesCreateRefusesAnUnverifiedUser(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.FreshUnverifiedUserEmail)
+
+	res, err := c.SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: "Sneaky"})
+	require.NoError(t, err)
+	refused, ok := res.(*siteapi.SiteWorkspacesCreateForbidden)
+	require.Truef(t, ok, "got %T", res)
+	code, _ := refused.Code.Get()
+	assert.Equal(t, siteapi.ProblemCodeEmailVerificationRequired, code)
+}
+
+func TestSiteWorkspacesCreateRejectsBlankName(t *testing.T) {
+	env := testhelper.Setup(t)
+	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesCreate(t.Context(), &siteapi.SiteCreateWorkspaceInput{Name: " "})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteWorkspacesCreateUnprocessableEntity{}, res)
+}
+
+func TestSiteWorkspacesUpdateIsForOwnerAndAdminOnly(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	params := siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.InitechPublicID}
+
+	for _, email := range []string{fixtures.InitechOwnerOlgaEmail, fixtures.InitechAdminAdaEmail} {
+		res, err := env.SiteActor(t, email).SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Initech " + email}, params)
+		require.NoError(t, err)
+		renamed, ok := res.(*siteapi.SiteWorkspaceResource)
+		require.Truef(t, ok, "%s: got %T", email, res)
+		assert.Equal(t, siteapi.WorkspaceId(fixtures.InitechPublicID), renamed.ID)
+	}
+
+	res, err := env.SiteActor(t, fixtures.InitechMemberMaxEmail).SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Mine now"}, params)
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteWorkspacesUpdateForbidden{}, res)
+	assert.Equal(t, "Initech "+fixtures.InitechAdminAdaEmail, workspaceOf(t, env.SiteActor(t, fixtures.InitechMemberMaxEmail), fixtures.InitechPublicID).Name)
 }

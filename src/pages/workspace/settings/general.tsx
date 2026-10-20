@@ -8,8 +8,9 @@ import {
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
-import { Route as generalRoute } from '../../../routes/workspaces/$slug/settings/index.tsx'
+import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { BrandKitSection } from '../BrandKitSection.tsx'
+import { DeleteWorkspaceSection } from './DeleteWorkspaceSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
 // GeneralSection is split out so the rename form seeds its initial value from the
@@ -19,6 +20,9 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const form = useForm<{ name: string; postalAddress: string }>({
     initialValues: { name: workspace.name, postalAddress: workspace.postalAddress },
   })
+
+  // Renaming is for Owner and Admin (ADR 0043); a Member sees the values read-only.
+  const canEdit = workspace.role !== 'member'
 
   const updateMutation = useResourceMutation({
     mutation: siteWorkspacesUpdateMutation(),
@@ -32,7 +36,7 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
       <form
         onSubmit={form.onSubmit((values) =>
           updateMutation.mutate({
-            path: { slug: workspace.slug },
+            path: { workspaceId: workspace.id },
             body: { name: values.name.trim(), postalAddress: values.postalAddress.trim() },
           }),
         )}
@@ -41,6 +45,7 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
           <TextInput
             label={t(($) => $.settings.nameLabel)}
             required
+            disabled={!canEdit}
             {...form.getInputProps('name')}
           />
           <Textarea
@@ -49,13 +54,16 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
             placeholder={t(($) => $.settings.postalAddressPlaceholder)}
             autosize
             minRows={2}
+            disabled={!canEdit}
             {...form.getInputProps('postalAddress')}
           />
-          <Group justify="flex-end">
-            <Button type="submit" loading={updateMutation.isPending}>
-              {t(($) => $.actions.save)}
-            </Button>
-          </Group>
+          {canEdit ? (
+            <Group justify="flex-end">
+              <Button type="submit" loading={updateMutation.isPending}>
+                {t(($) => $.actions.save)}
+              </Button>
+            </Group>
+          ) : null}
         </Stack>
       </form>
     </Box>
@@ -64,14 +72,15 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 
 export function GeneralPage() {
   const { t } = useTranslation()
-  const { slug } = generalRoute.useParams()
+  const { workspaceId } = generalRoute.useParams()
 
   return (
-    <SettingsFrame slug={slug} title={t(($) => $.settings.nav.general)}>
+    <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.general)}>
       {(workspace) => (
         <Stack>
           <GeneralSection workspace={workspace} />
           <BrandKitSection workspace={workspace} />
+          <DeleteWorkspaceSection workspace={workspace} />
         </Stack>
       )}
     </SettingsFrame>

@@ -15,7 +15,7 @@ import (
 )
 
 func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteAutomationsListParams) (siteapi.SiteAutomationsListRes, error) {
-	ws, err := h.scopedFor(ctx, params.Slug)
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteAutomationsListNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -39,7 +39,7 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 }
 
 func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, params siteapi.SiteAutomationsCreateParams) (siteapi.SiteAutomationsCreateRes, error) {
-	ws, err := h.scopedFor(ctx, params.Slug)
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteAutomationsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -65,7 +65,7 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 }
 
 func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAutomationsGetParams) (siteapi.SiteAutomationsGetRes, error) {
-	ws, err := h.scopedFor(ctx, params.Slug)
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteAutomationsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -88,7 +88,7 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 }
 
 func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteUpdateAutomationInput, params siteapi.SiteAutomationsUpdateParams) (siteapi.SiteAutomationsUpdateRes, error) {
-	ws, err := h.scopedFor(ctx, params.Slug)
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteAutomationsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -123,7 +123,7 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 }
 
 func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.SiteAutomationsDeleteParams) (siteapi.SiteAutomationsDeleteRes, error) {
-	ws, err := h.scopedFor(ctx, params.Slug)
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteAutomationsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -145,7 +145,7 @@ func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.Sit
 }
 
 func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.SiteAutomationsActivateParams) (siteapi.SiteAutomationsActivateRes, error) {
-	a, err := h.setAutomationActive(ctx, params.Slug, params.ID, true)
+	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, true)
 	if errors.Is(err, automations.ErrNotFound) || ent.IsNotFound(err) {
 		v := siteapi.SiteAutomationsActivateNotFound(problem(http.StatusNotFound, "automation not found"))
 		return &v, nil
@@ -159,7 +159,7 @@ func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.S
 }
 
 func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi.SiteAutomationsDeactivateParams) (siteapi.SiteAutomationsDeactivateRes, error) {
-	a, err := h.setAutomationActive(ctx, params.Slug, params.ID, false)
+	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, false)
 	if errors.Is(err, automations.ErrNotFound) || ent.IsNotFound(err) {
 		v := siteapi.SiteAutomationsDeactivateNotFound(problem(http.StatusNotFound, "automation not found"))
 		return &v, nil
@@ -172,8 +172,8 @@ func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi
 	return &res, nil
 }
 
-func (h *Handlers) setAutomationActive(ctx context.Context, slug string, id siteapi.EntityId, active bool) (*ent.Automation, error) {
-	ws, err := h.scopedFor(ctx, slug)
+func (h *Handlers) setAutomationActive(ctx context.Context, workspaceID siteapi.WorkspaceId, id siteapi.EntityId, active bool) (*ent.Automation, error) {
+	ws, err := h.scopedFor(ctx, workspaceID)
 	if err != nil {
 		return nil, err
 	}

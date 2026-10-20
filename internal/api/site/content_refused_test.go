@@ -16,11 +16,11 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	tpl, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
 		Name: "Broken", Body: siteapi.NewOptString("<p>{% if %}</p>"),
-	}, siteapi.SiteTemplatesCreateParams{Slug: slug})
+	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refused, ok := tpl.(*siteapi.SiteTemplatesCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", tpl)
@@ -28,7 +28,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 
 	bc, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
 		Name: "Broken", Body: siteapi.NewOptString("<div><span>hi</div>"),
-	}, siteapi.SiteBroadcastsCreateParams{Slug: slug})
+	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refusedBroadcast, ok := bc.(*siteapi.SiteBroadcastsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", bc)
@@ -36,7 +36,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 
 	upd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
 		Subject: siteapi.NewOptString("{% if %}"),
-	}, siteapi.SiteBroadcastsUpdateParams{Slug: slug, ID: fixtures.BroadcastDraftID})
+	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, upd)
 
@@ -45,7 +45,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 		Steps: []siteapi.SiteAutomationStep{
 			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p>hi</p></div>")},
 		},
-	}, siteapi.SiteAutomationsCreateParams{Slug: slug})
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refusedAutomation, ok := auto.(*siteapi.SiteAutomationsCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", auto)

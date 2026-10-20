@@ -70,9 +70,9 @@ func Name(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldName, v))
 }
 
-// Slug applies equality check predicate on the "slug" field. It's identical to SlugEQ.
-func Slug(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldSlug, v))
+// PublicID applies equality check predicate on the "public_id" field. It's identical to PublicIDEQ.
+func PublicID(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldPublicID, v))
 }
 
 // CollectKey applies equality check predicate on the "collect_key" field. It's identical to CollectKeyEQ.
@@ -103,6 +103,16 @@ func SecondFactorRequiredAt(v time.Time) predicate.Workspace {
 // FeedPosition applies equality check predicate on the "feed_position" field. It's identical to FeedPositionEQ.
 func FeedPosition(v int64) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldFeedPosition, v))
+}
+
+// DeletedAt applies equality check predicate on the "deleted_at" field. It's identical to DeletedAtEQ.
+func DeletedAt(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldDeletedAt, v))
+}
+
+// ErasedAt applies equality check predicate on the "erased_at" field. It's identical to ErasedAtEQ.
+func ErasedAt(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldErasedAt, v))
 }
 
 // SuspendedAt applies equality check predicate on the "suspended_at" field. It's identical to SuspendedAtEQ.
@@ -285,69 +295,69 @@ func NameContainsFold(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldContainsFold(FieldName, v))
 }
 
-// SlugEQ applies the EQ predicate on the "slug" field.
-func SlugEQ(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldSlug, v))
+// PublicIDEQ applies the EQ predicate on the "public_id" field.
+func PublicIDEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldPublicID, v))
 }
 
-// SlugNEQ applies the NEQ predicate on the "slug" field.
-func SlugNEQ(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNEQ(FieldSlug, v))
+// PublicIDNEQ applies the NEQ predicate on the "public_id" field.
+func PublicIDNEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldPublicID, v))
 }
 
-// SlugIn applies the In predicate on the "slug" field.
-func SlugIn(vs ...string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldIn(FieldSlug, vs...))
+// PublicIDIn applies the In predicate on the "public_id" field.
+func PublicIDIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldPublicID, vs...))
 }
 
-// SlugNotIn applies the NotIn predicate on the "slug" field.
-func SlugNotIn(vs ...string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotIn(FieldSlug, vs...))
+// PublicIDNotIn applies the NotIn predicate on the "public_id" field.
+func PublicIDNotIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldPublicID, vs...))
 }
 
-// SlugGT applies the GT predicate on the "slug" field.
-func SlugGT(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGT(FieldSlug, v))
+// PublicIDGT applies the GT predicate on the "public_id" field.
+func PublicIDGT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldPublicID, v))
 }
 
-// SlugGTE applies the GTE predicate on the "slug" field.
-func SlugGTE(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGTE(FieldSlug, v))
+// PublicIDGTE applies the GTE predicate on the "public_id" field.
+func PublicIDGTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldPublicID, v))
 }
 
-// SlugLT applies the LT predicate on the "slug" field.
-func SlugLT(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLT(FieldSlug, v))
+// PublicIDLT applies the LT predicate on the "public_id" field.
+func PublicIDLT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldPublicID, v))
 }
 
-// SlugLTE applies the LTE predicate on the "slug" field.
-func SlugLTE(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLTE(FieldSlug, v))
+// PublicIDLTE applies the LTE predicate on the "public_id" field.
+func PublicIDLTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldPublicID, v))
 }
 
-// SlugContains applies the Contains predicate on the "slug" field.
-func SlugContains(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldContains(FieldSlug, v))
+// PublicIDContains applies the Contains predicate on the "public_id" field.
+func PublicIDContains(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContains(FieldPublicID, v))
 }
 
-// SlugHasPrefix applies the HasPrefix predicate on the "slug" field.
-func SlugHasPrefix(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldHasPrefix(FieldSlug, v))
+// PublicIDHasPrefix applies the HasPrefix predicate on the "public_id" field.
+func PublicIDHasPrefix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasPrefix(FieldPublicID, v))
 }
 
-// SlugHasSuffix applies the HasSuffix predicate on the "slug" field.
-func SlugHasSuffix(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldHasSuffix(FieldSlug, v))
+// PublicIDHasSuffix applies the HasSuffix predicate on the "public_id" field.
+func PublicIDHasSuffix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasSuffix(FieldPublicID, v))
 }
 
-// SlugEqualFold applies the EqualFold predicate on the "slug" field.
-func SlugEqualFold(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEqualFold(FieldSlug, v))
+// PublicIDEqualFold applies the EqualFold predicate on the "public_id" field.
+func PublicIDEqualFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEqualFold(FieldPublicID, v))
 }
 
-// SlugContainsFold applies the ContainsFold predicate on the "slug" field.
-func SlugContainsFold(v string) predicate.Workspace {
-	return predicate.Workspace(sql.FieldContainsFold(FieldSlug, v))
+// PublicIDContainsFold applies the ContainsFold predicate on the "public_id" field.
+func PublicIDContainsFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContainsFold(FieldPublicID, v))
 }
 
 // CollectKeyEQ applies the EQ predicate on the "collect_key" field.
@@ -638,6 +648,106 @@ func FeedPositionLT(v int64) predicate.Workspace {
 // FeedPositionLTE applies the LTE predicate on the "feed_position" field.
 func FeedPositionLTE(v int64) predicate.Workspace {
 	return predicate.Workspace(sql.FieldLTE(FieldFeedPosition, v))
+}
+
+// DeletedAtEQ applies the EQ predicate on the "deleted_at" field.
+func DeletedAtEQ(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldDeletedAt, v))
+}
+
+// DeletedAtNEQ applies the NEQ predicate on the "deleted_at" field.
+func DeletedAtNEQ(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldDeletedAt, v))
+}
+
+// DeletedAtIn applies the In predicate on the "deleted_at" field.
+func DeletedAtIn(vs ...time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldDeletedAt, vs...))
+}
+
+// DeletedAtNotIn applies the NotIn predicate on the "deleted_at" field.
+func DeletedAtNotIn(vs ...time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldDeletedAt, vs...))
+}
+
+// DeletedAtGT applies the GT predicate on the "deleted_at" field.
+func DeletedAtGT(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldDeletedAt, v))
+}
+
+// DeletedAtGTE applies the GTE predicate on the "deleted_at" field.
+func DeletedAtGTE(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldDeletedAt, v))
+}
+
+// DeletedAtLT applies the LT predicate on the "deleted_at" field.
+func DeletedAtLT(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldDeletedAt, v))
+}
+
+// DeletedAtLTE applies the LTE predicate on the "deleted_at" field.
+func DeletedAtLTE(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldDeletedAt, v))
+}
+
+// DeletedAtIsNil applies the IsNil predicate on the "deleted_at" field.
+func DeletedAtIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldDeletedAt))
+}
+
+// DeletedAtNotNil applies the NotNil predicate on the "deleted_at" field.
+func DeletedAtNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldDeletedAt))
+}
+
+// ErasedAtEQ applies the EQ predicate on the "erased_at" field.
+func ErasedAtEQ(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldErasedAt, v))
+}
+
+// ErasedAtNEQ applies the NEQ predicate on the "erased_at" field.
+func ErasedAtNEQ(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldErasedAt, v))
+}
+
+// ErasedAtIn applies the In predicate on the "erased_at" field.
+func ErasedAtIn(vs ...time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldErasedAt, vs...))
+}
+
+// ErasedAtNotIn applies the NotIn predicate on the "erased_at" field.
+func ErasedAtNotIn(vs ...time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldErasedAt, vs...))
+}
+
+// ErasedAtGT applies the GT predicate on the "erased_at" field.
+func ErasedAtGT(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldErasedAt, v))
+}
+
+// ErasedAtGTE applies the GTE predicate on the "erased_at" field.
+func ErasedAtGTE(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldErasedAt, v))
+}
+
+// ErasedAtLT applies the LT predicate on the "erased_at" field.
+func ErasedAtLT(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldErasedAt, v))
+}
+
+// ErasedAtLTE applies the LTE predicate on the "erased_at" field.
+func ErasedAtLTE(v time.Time) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldErasedAt, v))
+}
+
+// ErasedAtIsNil applies the IsNil predicate on the "erased_at" field.
+func ErasedAtIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldErasedAt))
+}
+
+// ErasedAtNotNil applies the NotNil predicate on the "erased_at" field.
+func ErasedAtNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldErasedAt))
 }
 
 // SuspendedAtEQ applies the EQ predicate on the "suspended_at" field.

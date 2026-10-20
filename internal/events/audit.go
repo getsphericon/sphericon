@@ -59,7 +59,10 @@ const (
 	ActionUserSecondFactorReset       = "user.second_factor_reset"
 	ActionUserRecoveryCodesRegenerate = "user.recovery_codes_regenerate"
 	ActionUserRecoveryCodeUse         = "user.recovery_code_use"
+	ActionWorkspaceCreate             = "workspace.create"
 	ActionWorkspaceUpdate             = "workspace.update"
+	ActionWorkspaceDelete             = "workspace.delete"
+	ActionWorkspaceRestore            = "workspace.restore"
 	ActionWorkspaceSuspend            = "workspace.suspend"
 	ActionWorkspaceUnsuspend          = "workspace.unsuspend"
 	ActionWorkspaceAbuseExempt        = "workspace.abuse_exempt"
@@ -85,7 +88,10 @@ var ExplicitAuditActions = []string{
 	ActionUserSecondFactorReset,
 	ActionUserRecoveryCodesRegenerate,
 	ActionUserRecoveryCodeUse,
+	ActionWorkspaceCreate,
 	ActionWorkspaceUpdate,
+	ActionWorkspaceDelete,
+	ActionWorkspaceRestore,
 	ActionWorkspaceSuspend,
 	ActionWorkspaceUnsuspend,
 	ActionWorkspaceAbuseExempt,

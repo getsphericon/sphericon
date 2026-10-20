@@ -15,8 +15,8 @@ import (
 // scope, the owner-or-admin gate and a valid email address. A non-nil refusal is the
 // problem to answer with, its Status naming the response (404, 403 or 400); the
 // operations have distinct generated response types, so each converts it itself.
-func (h *Handlers) privacyScope(ctx context.Context, slug, email string) (*ent.Scoped, *siteapi.ProblemDetails, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, slug)
+func (h *Handlers) privacyScope(ctx context.Context, workspaceID siteapi.WorkspaceId, email string) (*ent.Scoped, *siteapi.ProblemDetails, error) {
+	scoped, role, err := h.scopedWithRoleFor(ctx, workspaceID)
 	if ent.IsNotFound(err) {
 		p := problem(http.StatusNotFound, "workspace not found")
 		return nil, &p, nil

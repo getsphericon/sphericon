@@ -57,7 +57,7 @@ func TestAnExpiredLicenseKeyBootsAsTheCoreAndTheOwnerSeesWhen(t *testing.T) {
 	state := instanceState(t, john)
 	require.True(t, state.LicenseExpiredAt.Set)
 	assert.True(t, time.Time(state.LicenseExpiredAt.Value).Equal(l.expiredOn))
-	_, listed := auditList(t, john, fixtures.AcmeSlug).(*siteapi.SiteAuditEntryList)
+	_, listed := auditList(t, john, fixtures.AcmePublicID).(*siteapi.SiteAuditEntryList)
 	assert.False(t, listed, "the Audit log is dark without its feature")
 	report, err := env.Instance.Report(t.Context())
 	require.NoError(t, err)
@@ -86,7 +86,7 @@ func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	rows := acme.AuditEntry().Query().CountX(t.Context())
 	require.Positive(t, rows, "the fixtures carry an Audit entry")
-	_, listed := auditList(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug).(*siteapi.SiteAuditEntryList)
+	_, listed := auditList(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).(*siteapi.SiteAuditEntryList)
 	require.False(t, listed, "dark while the key is lapsed")
 
 	// Renewal: the same database read under the renewed key, as after a restart.

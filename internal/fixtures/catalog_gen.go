@@ -23,10 +23,10 @@ const (
 	AcmeOldErasureID = 1
 	// AcmeOwnerMembershipID is from fixtures/memberships.
 	AcmeOwnerMembershipID = 1
+	// AcmePublicID is from fixtures/workspaces.
+	AcmePublicID = "AcmeWs01"
 	// AcmeRecentErasureID is from fixtures/erasures.
 	AcmeRecentErasureID = 2
-	// AcmeSlug is from fixtures/workspaces.
-	AcmeSlug = "acme"
 	// AcmeUsageSnapshotID is from fixtures/usages.
 	AcmeUsageSnapshotID = 1
 	// AdminAliceEmail is from fixtures/users.
@@ -417,10 +417,10 @@ const (
 	GlobexName = "Globex"
 	// GlobexOwnerMembershipID is from fixtures/memberships.
 	GlobexOwnerMembershipID = 2
+	// GlobexPublicID is from fixtures/workspaces.
+	GlobexPublicID = "GlobxWs2"
 	// GlobexSamMembershipID is from fixtures/memberships.
 	GlobexSamMembershipID = 9
-	// GlobexSlug is from fixtures/workspaces.
-	GlobexSlug = "globex"
 	// GlobexUsageSnapshotID is from fixtures/usages.
 	GlobexUsageSnapshotID = 2
 	// HoldAcmeLapsedID is from fixtures/holds.
@@ -437,10 +437,10 @@ const (
 	HooliID = 5
 	// HooliName is from fixtures/workspaces.
 	HooliName = "Hooli"
+	// HooliPublicID is from fixtures/workspaces.
+	HooliPublicID = "HooliWs5"
 	// HooliSallyMembershipID is from fixtures/memberships.
 	HooliSallyMembershipID = 17
-	// HooliSlug is from fixtures/workspaces.
-	HooliSlug = "hooli"
 	// InitechAdminAdaEmail is from fixtures/users.
 	InitechAdminAdaEmail = "ada@initech.test"
 	// InitechAdminAdaID is from fixtures/users.
@@ -495,10 +495,10 @@ const (
 	InitechOwnerOlgaName = "Olga"
 	// InitechOwnerOlgaPassword is from fixtures/users.
 	InitechOwnerOlgaPassword = "olga-test-password"
+	// InitechPublicID is from fixtures/workspaces.
+	InitechPublicID = "InitcWs3"
 	// InitechRitaMembershipID is from fixtures/memberships.
 	InitechRitaMembershipID = 13
-	// InitechSlug is from fixtures/workspaces.
-	InitechSlug = "initech"
 	// IntegrationAcmeDefaultID is from fixtures/integrations.
 	IntegrationAcmeDefaultID = 1
 	// IntegrationAcmeDefaultIngestKey is from fixtures/integrations.
@@ -577,8 +577,8 @@ const (
 	KramericaOwnerNewmanName = "Newman"
 	// KramericaOwnerNewmanPassword is from fixtures/users.
 	KramericaOwnerNewmanPassword = "newman-test-password"
-	// KramericaSlug is from fixtures/workspaces.
-	KramericaSlug = "kramerica"
+	// KramericaPublicID is from fixtures/workspaces.
+	KramericaPublicID = "KramrWs8"
 	// MemberMaryEmail is from fixtures/users.
 	MemberMaryEmail = "mary@acme.test"
 	// MemberMaryID is from fixtures/users.
@@ -779,8 +779,8 @@ const (
 	SoylentID = 6
 	// SoylentName is from fixtures/workspaces.
 	SoylentName = "Soylent"
-	// SoylentSlug is from fixtures/workspaces.
-	SoylentSlug = "soylent"
+	// SoylentPublicID is from fixtures/workspaces.
+	SoylentPublicID = "SoylnWs6"
 	// StaffAlsoCustomerEmail is from fixtures/staff_members.
 	StaffAlsoCustomerEmail = "info@getsphericon.com"
 	// StaffAlsoCustomerID is from fixtures/staff_members.
@@ -885,12 +885,12 @@ const (
 	UmbrellaOwnerRitaName = "Rita"
 	// UmbrellaOwnerRitaPassword is from fixtures/users.
 	UmbrellaOwnerRitaPassword = "rita-test-password"
+	// UmbrellaPublicID is from fixtures/workspaces.
+	UmbrellaPublicID = "UmbrlWs4"
 	// UmbrellaRitaMembershipID is from fixtures/memberships.
 	UmbrellaRitaMembershipID = 10
 	// UmbrellaSamMembershipID is from fixtures/memberships.
 	UmbrellaSamMembershipID = 12
-	// UmbrellaSlug is from fixtures/workspaces.
-	UmbrellaSlug = "umbrella"
 	// UnsubscribeErasableDestination is from fixtures/unsubscribes.
 	UnsubscribeErasableDestination = "erin@initech.test"
 	// UnsubscribeErasableID is from fixtures/unsubscribes.
@@ -925,8 +925,8 @@ const (
 	VandelayOwnerCosmoName = "Cosmo"
 	// VandelayOwnerCosmoPassword is from fixtures/users.
 	VandelayOwnerCosmoPassword = "cosmo-test-password"
-	// VandelaySlug is from fixtures/workspaces.
-	VandelaySlug = "vandelay"
+	// VandelayPublicID is from fixtures/workspaces.
+	VandelayPublicID = "VandlWs7"
 	// VisitorAnonymousID is from fixtures/visitors.
 	VisitorAnonymousID = 301
 	// VisitorErasableID is from fixtures/visitors.
@@ -939,8 +939,8 @@ const (
 	WayneID = 9
 	// WayneName is from fixtures/workspaces.
 	WayneName = "Wayne"
-	// WayneSlug is from fixtures/workspaces.
-	WayneSlug = "wayne"
+	// WaynePublicID is from fixtures/workspaces.
+	WaynePublicID = "WayneWs9"
 	// WebhookCodebasicsDisabledID is from fixtures/webhook_endpoints.
 	WebhookCodebasicsDisabledID = 101
 	// WebhookCodebasicsDisabledURL is from fixtures/webhook_endpoints.

@@ -14,7 +14,7 @@ import { worker } from '../../test/worker.ts'
 import type { AuditFilter } from './auditFilter.ts'
 import { AuditLogSection, ChangeHistoryLink } from './AuditLogSection.tsx'
 
-const SLUG = 'test'
+const WORKSPACE_ID = 'TestWs01'
 
 function entry(over: Partial<SiteAuditEntryResource> = {}): SiteAuditEntryResource {
   return {
@@ -36,7 +36,7 @@ beforeEach(() => {
 test('lists who changed what, with the change', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await expect.element(screen.getByText('Audit log')).toBeInTheDocument()
@@ -48,7 +48,7 @@ test('lists who changed what, with the change', async () => {
 test('expands an entry to its before/after diff', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await expect.element(screen.getByText('admin', { exact: true })).not.toBeInTheDocument()
@@ -61,7 +61,7 @@ test('expands an entry to its before/after diff', async () => {
 test('shows a sensitive field as changed only', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry({ diff: { secret: 'changed' } })] } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await screen.getByRole('button', { name: 'Show changes' }).click()
@@ -84,7 +84,7 @@ test('sends the applied filter to the list and to the export', async () => {
   )
   const { screen } = await renderWithRouter(
     <AuditLogSection
-      slug={SLUG}
+      workspaceId={WORKSPACE_ID}
       filter={{ targetType: 'integration', targetId: '5', ip: '10.0.0.1' }}
       onFilterChange={() => {}}
     />,
@@ -107,7 +107,7 @@ test('applying the form hands the new filter up, and reset clears it', async () 
   worker.use(handleSiteAuditList({ body: { items: [entry()] } }))
   const onFilterChange = vi.fn<(filter: AuditFilter) => void>()
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={onFilterChange} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={onFilterChange} />,
   )
 
   await screen.getByLabelText('Request id').fill(' req-1 ')
@@ -125,7 +125,11 @@ test('applying the form hands the new filter up, and reset clears it', async () 
 test('says so when the filter matches nothing', async () => {
   worker.use(handleSiteAuditList({ body: { items: [] } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} filter={{ ip: '1.2.3.4' }} onFilterChange={() => {}} />,
+    <AuditLogSection
+      workspaceId={WORKSPACE_ID}
+      filter={{ ip: '1.2.3.4' }}
+      onFilterChange={() => {}}
+    />,
   )
 
   await expect.element(screen.getByText('No entries match the filters')).toBeInTheDocument()
@@ -134,7 +138,7 @@ test('says so when the filter matches nothing', async () => {
 test('the change history link opens the log filtered to the object', async () => {
   worker.use(handleSiteAuditList({ body: { items: [] } }))
   const { screen } = await renderWithRouter(
-    <ChangeHistoryLink slug={SLUG} targetType="integration" targetId="5" />,
+    <ChangeHistoryLink workspaceId={WORKSPACE_ID} targetType="integration" targetId="5" />,
   )
 
   const link = screen.getByRole('link', { name: 'Change history' })
@@ -147,7 +151,7 @@ test('the change history link opens the log filtered to the object', async () =>
 test('the change history link is not offered without the log', async () => {
   worker.use(handleSiteAuditList(() => problem(402, { detail: 'no' })))
   const { screen } = await renderWithRouter(
-    <ChangeHistoryLink slug={SLUG} targetType="integration" targetId="5" />,
+    <ChangeHistoryLink workspaceId={WORKSPACE_ID} targetType="integration" targetId="5" />,
   )
 
   await expect.element(screen.getByRole('link', { name: 'Change history' })).not.toBeInTheDocument()
@@ -156,7 +160,7 @@ test('the change history link is not offered without the log', async () => {
 test('shows the empty state', async () => {
   worker.use(handleSiteAuditList({ body: { items: [] } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await expect.element(screen.getByText('No audited changes yet')).toBeInTheDocument()
@@ -165,7 +169,7 @@ test('shows the empty state', async () => {
 test('offers the next page while a cursor is returned', async () => {
   worker.use(handleSiteAuditList({ body: { items: [entry()], nextCursor: '2' } }))
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await expect.element(screen.getByRole('button', { name: 'Load more' })).toBeInTheDocument()
@@ -174,7 +178,7 @@ test('offers the next page while a cursor is returned', async () => {
 test.each([402, 403])('renders nothing when the API answers %i', async (status) => {
   worker.use(handleSiteAuditList(() => problem(status, { detail: 'refused' })))
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await expect.element(screen.getByText('Audit log')).not.toBeInTheDocument()
@@ -192,7 +196,7 @@ test('exports the log as CSV through the generated client', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await screen.getByRole('button', { name: 'Export CSV' }).click()
@@ -210,7 +214,7 @@ test('shows the retention window and saves a new one', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   const input = screen.getByLabelText('Keep the log for (days)')
@@ -231,7 +235,7 @@ test('an empty retention window keeps the log forever', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await screen.getByLabelText('Keep the log for (days)').fill('')
@@ -246,7 +250,7 @@ test('a failed retention save is reported', async () => {
     handleSiteAuditSetRetention(() => problem(422, { detail: 'bad window' })),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await screen.getByLabelText('Keep the log for (days)').fill('5')
@@ -264,7 +268,7 @@ test('the retention control is not offered without its license', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await expect.element(screen.getByText('Audit log')).toBeInTheDocument()
@@ -289,7 +293,7 @@ test('a hold change is attributed to Sphericon staff', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await expect.element(screen.getByRole('cell', { name: 'Sphericon staff' })).toBeInTheDocument()
@@ -317,7 +321,7 @@ test('an entry without a diff or a name falls back gracefully', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
+    <AuditLogSection workspaceId={WORKSPACE_ID} onFilterChange={() => {}} />,
   )
 
   await expect.element(screen.getByText('API token #7')).toBeInTheDocument()

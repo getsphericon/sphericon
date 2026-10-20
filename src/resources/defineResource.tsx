@@ -10,7 +10,7 @@ import type * as z from 'zod'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
-import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
+import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import type { FormValues, ResourceFormSchema, ResourceValues } from './resourceFormSchema.ts'
 
@@ -70,22 +70,22 @@ export interface ResourceDescription<
   // The resource's field-rendering form.
   Form: ComponentType<ResourceFormProps<TPayload>>
   // The generated react-query pieces, passed as generated. The module calls them with
-  // { path: { slug } } (list, create) or { path: { slug, id } } (get, update).
+  // { path: { workspaceId } } (list, create) or { path: { workspaceId, id } } (get, update).
   getOptions: (options: {
-    path: { slug: string; id: string }
+    path: { workspaceId: string; id: string }
   }) => UseQueryOptions<TResource, TError, TResource, TGetKey>
   createMutation: () => UseMutationOptions<
     TCreated,
     TError,
-    { path: { slug: string }; body: TPayload }
+    { path: { workspaceId: string }; body: TPayload }
   >
   updateMutation: () => UseMutationOptions<
     TResource,
     TError,
-    { path: { slug: string; id: string }; body: TPayload }
+    { path: { workspaceId: string; id: string }; body: TPayload }
   >
-  listQueryKey: (options: { path: { slug: string } }) => QueryKey
-  getQueryKey: (options: { path: { slug: string; id: string } }) => QueryKey
+  listQueryKey: (options: { path: { workspaceId: string } }) => QueryKey
+  getQueryKey: (options: { path: { workspaceId: string; id: string } }) => QueryKey
   // The edit route and the name of its param that holds the resource id, e.g. 'contactId'.
   editRoute: { useParams: () => Record<TIdParam, string> }
   idParam: TIdParam
@@ -94,7 +94,7 @@ export interface ResourceDescription<
   // Where to go after creating: the edit route, expressed with route references.
   editTarget: (
     created: TCreated,
-    params: { slug: string },
+    params: { workspaceId: string },
   ) => { to: string; params: Record<string, string> }
 }
 
@@ -114,17 +114,17 @@ export function defineResource<
   function CreatePage() {
     const { t } = useTranslation()
     const navigate = useNavigate()
-    const { slug } = workspaceRoute.useParams()
+    const { workspaceId } = workspaceRoute.useParams()
     const texts = resource.texts(t)
 
     const form = useResourceForm(resource.schema.blank, resource.schema.create)
 
     const mutation = useResourceMutation({
       mutation: resource.createMutation(),
-      invalidate: [resource.listQueryKey({ path: { slug } })],
+      invalidate: [resource.listQueryKey({ path: { workspaceId } })],
       successMessage: texts.created,
       errorTitle: texts.saveErrorTitle,
-      onDone: (created) => navigate(resource.editTarget(created, { slug })),
+      onDone: (created) => navigate(resource.editTarget(created, { workspaceId })),
     })
 
     return (
@@ -133,7 +133,7 @@ export function defineResource<
         <resource.Form
           form={form}
           isPending={mutation.isPending}
-          onSubmit={(body) => mutation.mutate({ path: { slug }, body })}
+          onSubmit={(body) => mutation.mutate({ path: { workspaceId }, body })}
         />
       </Stack>
     )
@@ -145,11 +145,11 @@ export function defineResource<
   // not remount the form and clobber unsaved edits. After a successful save the form is reset
   // to the saved resource instead, so it is clean and shows the server's normalized values.
   function EditForm({
-    slug,
+    workspaceId,
     id,
     loaded,
     children,
-  }: ResourceEditPageProps<TResource> & { slug: string; id: string; loaded: TResource }) {
+  }: ResourceEditPageProps<TResource> & { workspaceId: string; id: string; loaded: TResource }) {
     const { t } = useTranslation()
     const texts = resource.texts(t)
 
@@ -158,8 +158,8 @@ export function defineResource<
     const mutation = useResourceMutation({
       mutation: resource.updateMutation(),
       invalidate: [
-        resource.listQueryKey({ path: { slug } }),
-        resource.getQueryKey({ path: { slug, id } }),
+        resource.listQueryKey({ path: { workspaceId } }),
+        resource.getQueryKey({ path: { workspaceId, id } }),
       ],
       successMessage: texts.updated,
       errorTitle: texts.saveErrorTitle,
@@ -176,7 +176,7 @@ export function defineResource<
         <resource.Form
           form={form}
           isPending={mutation.isPending}
-          onSubmit={(body) => mutation.mutate({ path: { slug, id }, body })}
+          onSubmit={(body) => mutation.mutate({ path: { workspaceId, id }, body })}
         />
         {children?.(loaded)}
       </Stack>
@@ -185,11 +185,11 @@ export function defineResource<
 
   function EditPage({ children }: ResourceEditPageProps<TResource>) {
     const { t } = useTranslation()
-    const { slug } = workspaceRoute.useParams()
+    const { workspaceId } = workspaceRoute.useParams()
     const id = resource.editRoute.useParams()[resource.idParam]
     const texts = resource.texts(t)
 
-    const query = useQuery(resource.getOptions({ path: { slug, id } }))
+    const query = useQuery(resource.getOptions({ path: { workspaceId, id } }))
 
     if (query.isLoading) {
       return <Loader />
@@ -205,7 +205,13 @@ export function defineResource<
     }
 
     return (
-      <EditForm key={id} slug={slug} id={id} loaded={query.data} {...(children && { children })} />
+      <EditForm
+        key={id}
+        workspaceId={workspaceId}
+        id={id}
+        loaded={query.data}
+        {...(children && { children })}
+      />
     )
   }
 

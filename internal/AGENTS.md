@@ -30,7 +30,7 @@ created inline when no fixture expresses them.
 
 Anchor fixture rows have **named constants** in `internal/fixtures/catalog_gen.go`
 (generated; never hand-edit). Reference `fixtures.AcmeID`, `fixtures.ContactAliceEmail`,
-`fixtures.AcmeCollectKey`, … instead of bare id/slug/email/key literals, so renaming or
+`fixtures.AcmeCollectKey`, … instead of bare id/email/key literals, so renaming or
 removing an annotated row is a compile error and renumbering is absorbed by regeneration.
 
 To add a name, put a line comment on the row's first line in `fixtures/*.yml` and run

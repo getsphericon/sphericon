@@ -6,7 +6,7 @@ import {
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
 } from '../../generated/site/msw.gen.ts'
-import { Route as automationsEditRoute } from '../../routes/workspaces/$slug/automations/$automationId/edit.tsx'
+import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -22,7 +22,7 @@ vi.mock(import('./definition.ts'), async (importOriginal) => {
   }
 })
 
-const EDIT_ROUTE = routeMount(automationsEditRoute, { slug: 'test', automationId: '5' })
+const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
 const NOW = '2026-01-01T00:00:00Z'
 const STORED = {
   id: '5',

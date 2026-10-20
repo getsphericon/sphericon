@@ -13,18 +13,18 @@ import (
 )
 
 // The Acme owner fixture user owns the Acme workspace. Broadcasts live under
-// /w/{slug}/broadcasts and start life as drafts.
+// /w/{workspaceID}/broadcasts and start life as drafts.
 func TestSiteBroadcastsCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
 		Name:    "Spring sale",
 		Subject: siteapi.NewOptString("Big news"),
 		Body:    siteapi.NewOptString("<p>Hi {{ first_name }}</p>"),
-	}, siteapi.SiteBroadcastsCreateParams{Slug: slug})
+	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", created)
@@ -34,7 +34,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	assert.Equal(t, int32(0), res.Stats.RecipientsTotal)
 
 	// Fetch the created broadcast back by id (selection by key).
-	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{Slug: slug, ID: res.ID})
+	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	gotRes, ok := got.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", got)
@@ -43,7 +43,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	// Update renames a draft.
 	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
 		Name: siteapi.NewOptString("Spring sale (v2)"),
-	}, siteapi.SiteBroadcastsUpdateParams{Slug: slug, ID: res.ID})
+	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	updRes, ok := updated.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", updated)
@@ -53,7 +53,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	when := time.Now().Add(24 * time.Hour)
 	sched, err := c.SiteBroadcastsSchedule(ctx, &siteapi.SiteScheduleBroadcastInput{
 		ScheduledAt: siteapi.Timestamp(when),
-	}, siteapi.SiteBroadcastsScheduleParams{Slug: slug, ID: res.ID})
+	}, siteapi.SiteBroadcastsScheduleParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	schedRes, ok := sched.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", sched)
@@ -61,41 +61,41 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	assert.True(t, schedRes.ScheduledAt.Set)
 
 	// Send moves it into the sending state.
-	sent, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{Slug: slug, ID: res.ID})
+	sent, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	sentRes, ok := sent.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", sent)
 	assert.Equal(t, siteapi.SiteBroadcastStatusSending, sentRes.Status)
 
 	// Sending an already-sending broadcast is rejected with 422.
-	again, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{Slug: slug, ID: res.ID})
+	again, err := c.SiteBroadcastsSend(ctx, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsSendUnprocessableEntity{}, again)
 
 	// Editing a non-draft broadcast is rejected with 422.
 	badUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
 		Name: siteapi.NewOptString("nope"),
-	}, siteapi.SiteBroadcastsUpdateParams{Slug: slug, ID: res.ID})
+	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, badUpd)
 
 	// Delete removes it; a fetch by id then resolves to 404.
-	del, err := c.SiteBroadcastsDelete(ctx, siteapi.SiteBroadcastsDeleteParams{Slug: slug, ID: res.ID})
+	del, err := c.SiteBroadcastsDelete(ctx, siteapi.SiteBroadcastsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsDeleteNoContent{}, del)
 
-	gone, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{Slug: slug, ID: res.ID})
+	gone, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsGetNotFound{}, gone)
 }
 
-// Broadcasts are scoped to the workspace: a slug the user does not own is a 404.
+// Broadcasts are scoped to the workspace: a workspaceID the user does not own is a 404.
 func TestSiteBroadcastsRequireOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	out, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{Slug: "does-not-exist"})
+	out, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsListNotFound{}, out)
 }
@@ -107,7 +107,7 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	params := siteapi.SiteBroadcastsUpdateParams{Slug: fixtures.AcmeSlug, ID: 100}
+	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 100}
 
 	// Absent keys keep values: set the segment, the sender stays.
 	res, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
@@ -148,18 +148,18 @@ func TestSiteBroadcastsCreateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := siteapi.SiteBroadcastsCreateParams{Slug: fixtures.AcmeSlug}
+	workspaceID := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 	before := env.DB.Broadcast.Query().CountX(ctx)
 
 	got, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
 		Name: "forged", SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentGlobexID)),
-	}, slug)
+	}, workspaceID)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
 
 	got, err = c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
 		Name: "forged", IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)),
-	}, slug)
+	}, workspaceID)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
 
@@ -170,7 +170,7 @@ func TestSiteBroadcastsUpdateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	params := siteapi.SiteBroadcastsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.BroadcastDraftID)}
+	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
 	got, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{

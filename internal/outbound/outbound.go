@@ -93,6 +93,7 @@ const SkipContactErased = "contact_erased"
 // Reasons an Outbound send is Held.
 const (
 	HoldSuspended        = "workspace_suspended"
+	HoldPendingDeletion  = "workspace_pending_deletion"
 	HoldStaff            = "staff_hold"
 	HoldNoIntegration    = "no_integration"
 	HoldUnverifiedDomain = "unverified_domain"
@@ -114,6 +115,8 @@ func Detail(reason string) string {
 	switch reason {
 	case HoldSuspended:
 		return "sending is suspended for this workspace"
+	case HoldPendingDeletion:
+		return "this workspace is deleted and pending erasure"
 	case HoldStaff:
 		return "sending is on hold for this workspace"
 	case HoldNoIntegration:
@@ -459,6 +462,12 @@ func (m *Module) workspace(ctx context.Context, s *ent.Scoped) (*ent.Workspace, 
 // frozen is the Workspace freeze check: "" when the Workspace may send, else the Hold*
 // reason. Every send, a Test send from the System sender included, passes it.
 func (m *Module) frozen(ctx context.Context, s *ent.Scoped, ws *ent.Workspace) (string, error) {
+	// Workspace deletion (ADR 0043) is its own Hold source, not the suspension: restoring
+	// clears it and leaves a suspension in place. Checked first, so a suspended and deleted
+	// Workspace reports the deletion.
+	if ws.DeletedAt != nil {
+		return HoldPendingDeletion, nil
+	}
 	if ws.SuspendedAt != nil {
 		return HoldSuspended, nil
 	}

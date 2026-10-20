@@ -277,7 +277,7 @@ func TestEnrollRegenerateAndDisableAreAuditedWithoutSecrets(t *testing.T) {
 		events.ActionUserRecoveryCodeUse,
 		events.ActionUserSecondFactorDisable,
 	} {
-		got := entriesNamed(t, s.env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, action)
+		got := entriesNamed(t, s.env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, action)
 		require.Lenf(t, got, 1, action)
 		assert.Equal(t, "John", got[0].Actor.Name.Value)
 		assert.Equal(t, "user", got[0].Target.Type)

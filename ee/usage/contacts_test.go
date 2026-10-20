@@ -163,3 +163,18 @@ func TestContactsPeakOfABulkImportIsTheNumberReachedEvenWhenSomeAreDeleted(t *te
 
 	assert.Equal(t, base+imported, figureOf(t, env, feb, usage.Contacts).Value)
 }
+
+func TestContactsPeakIsNotKeptForAWorkspaceInItsDeletionWindow(t *testing.T) {
+	now := time.Date(2027, time.March, 10, 12, 0, 0, 0, time.UTC)
+	env, _, _ := contactsEnv(t, now)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	before, err := s.Usage().Query().Count(t.Context())
+	require.NoError(t, err)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(now).ExecX(t.Context())
+
+	addContact(t, env, "late@acme.test")
+
+	after, err := s.Usage().Query().Count(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, before, after)
+}

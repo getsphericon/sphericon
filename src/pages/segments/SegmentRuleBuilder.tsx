@@ -51,7 +51,7 @@ const contactFields: Field[] = [
 ]
 
 interface SegmentRuleBuilderProps {
-  slug: string
+  workspaceId: string
   value: SiteSegmentRuleGroup
   onChange: (group: SiteSegmentRuleGroup) => void
 }
@@ -59,17 +59,17 @@ interface SegmentRuleBuilderProps {
 // SegmentRuleBuilder is the visual rule editor (react-querybuilder + the official
 // Mantine compat package — no hand-rolled condition rows, no custom CSS). It edits the
 // API's typed rule group and offers a live preview of how many active contacts match.
-export function SegmentRuleBuilder({ slug, value, onChange }: SegmentRuleBuilderProps) {
+export function SegmentRuleBuilder({ workspaceId, value, onChange }: SegmentRuleBuilderProps) {
   const { t } = useTranslation()
   const query = useMemo(() => toQuery(value), [value])
   const preview = useMutation(siteSegmentsPreviewMutation())
 
   // The workspace's distinct event actions become behavioral fields
   // ("event:<action>") that compile to an EXISTS against the events log.
-  const actionsQuery = useQuery(siteEventsActionsOptions({ path: { slug } }))
+  const actionsQuery = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
   // The typed Custom field catalogue (ADR 0006) becomes targetable fields
   // ("custom:<key>") alongside the core fields — one governed attribute list.
-  const customFieldsQuery = useQuery(siteCustomFieldsListOptions({ path: { slug } }))
+  const customFieldsQuery = useQuery(siteCustomFieldsListOptions({ path: { workspaceId } }))
   const fields = useMemo<Field[]>(() => {
     const customFields = (customFieldsQuery.data?.items ?? []).map<Field>((f) => ({
       name: `custom:${f.key}`,
@@ -103,7 +103,7 @@ export function SegmentRuleBuilder({ slug, value, onChange }: SegmentRuleBuilder
           variant="light"
           size="compact-sm"
           loading={preview.isPending}
-          onClick={() => preview.mutate({ path: { slug }, body: { definition: value } })}
+          onClick={() => preview.mutate({ path: { workspaceId }, body: { definition: value } })}
         >
           {t(($) => $.segments.previewButton)}
         </Button>

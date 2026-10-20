@@ -364,6 +364,17 @@ func (s *ServiceTrackingHostChange) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if err := s.WorkspaceId.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "workspaceId",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if err := s.State.Validate(); err != nil {
 			return err
 		}
@@ -615,6 +626,17 @@ func (s *ServiceWorkspaceResource) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if err := s.ID.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "id",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if s.Owners == nil {
 			return errors.New("nil is invalid value")
 		}
@@ -716,12 +738,43 @@ func (s UsageMetric) Validate() error {
 	}
 }
 
+func (s WorkspaceId) Validate() error {
+	alias := (string)(s)
+	if err := (validate.String{
+		MinLength:     0,
+		MinLengthSet:  false,
+		MaxLength:     0,
+		MaxLengthSet:  false,
+		Email:         false,
+		Hostname:      false,
+		Regex:         regexMap["^[0-9A-Za-z]{8}$"],
+		MinNumeric:    0,
+		MinNumericSet: false,
+		MaxNumeric:    0,
+		MaxNumericSet: false,
+	}).Validate(string(alias)); err != nil {
+		return errors.Wrap(err, "string")
+	}
+	return nil
+}
+
 func (s *WorkspaceUsageResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}
 
 	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.WorkspaceId.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "workspaceId",
+			Error: err,
+		})
+	}
 	if err := func() error {
 		if s.Figures == nil {
 			return errors.New("nil is invalid value")

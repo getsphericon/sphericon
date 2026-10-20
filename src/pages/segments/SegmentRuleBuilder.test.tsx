@@ -38,7 +38,7 @@ test('sends the current rule to the audience preview', async () => {
     rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
   }
   const { screen } = await renderWithRouter(
-    <SegmentRuleBuilder slug="test" value={value} onChange={() => {}} />,
+    <SegmentRuleBuilder workspaceId="TestWs01" value={value} onChange={() => {}} />,
   )
 
   await screen.getByRole('button', { name: 'Preview audience' }).click()
@@ -52,7 +52,7 @@ test('adding a rule emits the typed rule group', async () => {
   serve()
   const onChange = vi.fn<(group: SiteSegmentRuleGroup) => void>()
   const { screen } = await renderWithRouter(
-    <SegmentRuleBuilder slug="test" value={emptyGroup} onChange={onChange} />,
+    <SegmentRuleBuilder workspaceId="TestWs01" value={emptyGroup} onChange={onChange} />,
   )
 
   await screen.getByRole('button', { name: /Rule/ }).first().click()

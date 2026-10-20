@@ -8,7 +8,7 @@ import {
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
 import type { SiteContactHoldings } from '../../../generated/site/types.gen.ts'
-import { Route as privacyRoute } from '../../../routes/workspaces/$slug/settings/privacy.tsx'
+import { Route as privacyRoute } from '../../../routes/workspaces/$workspaceId/settings/privacy.tsx'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
@@ -23,12 +23,11 @@ vi.mock('file-saver', () => ({
   },
 }))
 
-const PRIVACY_ROUTE = routeMount(privacyRoute, { slug: 'test' })
+const PRIVACY_ROUTE = routeMount(privacyRoute, { workspaceId: 'TestWs01' })
 
 const workspace = {
-  id: '1',
+  id: 'TestWs01',
   name: 'Acme',
-  slug: 'test',
   collectKey: 'omck_test_key',
   postalAddress: '',
   accountLinkAvailable: false,

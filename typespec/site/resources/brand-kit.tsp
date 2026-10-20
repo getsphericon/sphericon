@@ -77,19 +77,21 @@ model SiteSaveBrandKitInput {
   footerText: string;
 }
 
-@route("/workspaces/{slug}/brand-kit")
+@route("/workspaces/{workspaceId}/brand-kit")
 @tag("Site Brand Kit")
 namespace SiteBrandKit {
   /** Read the Brand kit. Every member may read it. */
   @get
-  op get(@path slug: string): SiteBrandKitResource | NotFoundProblem;
+  op get(@path workspaceId: WorkspaceId):
+    | SiteBrandKitResource
+    | NotFoundProblem;
 
   /** Save the Brand kit (owner only). The first save also creates the starter
    * Templates (a welcome, a receipt, a digest and a one-button message) in its brand; a later
    * save creates none and changes no message already written. A change is recorded as an Audit
    * entry. */
   @put
-  op save(@path slug: string, @body body: SiteSaveBrandKitInput):
+  op save(@path workspaceId: WorkspaceId, @body body: SiteSaveBrandKitInput):
     | SiteBrandKitResource
     | ForbiddenProblem
     | NotFoundProblem
@@ -100,7 +102,7 @@ namespace SiteBrandKit {
    * until the Brand kit has been saved. */
   @post
   @route("/starter-templates")
-  op recreateStarterTemplates(@path slug: string):
+  op recreateStarterTemplates(@path workspaceId: WorkspaceId):
     | {
         @statusCode statusCode: 201;
         @body body: SiteEmailTemplateResource[];

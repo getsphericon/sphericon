@@ -19,7 +19,7 @@ import (
 // the job inline, a real queue a moment later).
 func reread(t *testing.T, c *siteapi.Client, id siteapi.EntityId) siteapi.SiteSendLimitStatus {
 	t.Helper()
-	got, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{Slug: fixtures.AcmeSlug, ID: id})
+	got, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 	res, ok := got.(*siteapi.SiteIntegrationResource)
 	require.Truef(t, ok, "got %T", got)
@@ -39,7 +39,7 @@ func TestSiteIntegrationsSaveDiscoversTheSESQuota(t *testing.T) {
 		Params: sesTopicParams,
 		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 		MaxPerDay: siteapi.NewOptNilSiteMaxPerDay(1000),
-	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	status := reread(t, c, created.(*siteapi.SiteIntegrationResource).ID)
 
@@ -62,7 +62,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
-	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteIntegrationResource)
 	require.Truef(t, ok, "the save succeeds although the lookup failed, got %T", created)
@@ -73,7 +73,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	assert.True(t, status.PerSecond.Limit.Null)
 
 	// A manual value takes over as the only ceiling, and the warning stays.
-	upd := siteapi.SiteIntegrationsUpdateParams{Slug: fixtures.AcmeSlug, ID: res.ID}
+	upd := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID}
 	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
 		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(5),
 	}, upd)
@@ -113,7 +113,7 @@ func TestSiteIntegrationsSMTPSaveDoesNotLookUpAQuota(t *testing.T) {
 
 	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.SiteCreateIntegrationInput{
 		Name: "SMTP", Config: smtpInput("smtp.example.com", "pw"),
-	}, siteapi.SiteIntegrationsCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.Equal(t, []siteapi.SiteSendLimitWarning{siteapi.SiteSendLimitWarningUnlimited},
 		created.(*siteapi.SiteIntegrationResource).SendLimit.Warnings)

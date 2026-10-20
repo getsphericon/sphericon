@@ -56,7 +56,7 @@ type HoldChange struct {
 //
 // The service endpoints scope over the one Workspace the call names, after its row is
 // loaded (AGENTS.md, Workspace scoping, list item 7).
-func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string, in HoldInput) (HoldChange, error) {
+func (m *Module) SetHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID string, key string, in HoldInput) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
 		return HoldChange{}, err
 	}
@@ -126,7 +126,7 @@ func equalStrings(a, b *string) bool {
 
 // ClearHold removes the hold under key. Clearing a missing hold succeeds. It is recorded
 // in the Audit log under the credential's name. ent.IsNotFound for an unknown Workspace.
-func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64, key string) (HoldChange, error) {
+func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID string, key string) (HoldChange, error) {
 	if err := m.licensed(); err != nil {
 		return HoldChange{}, err
 	}
@@ -150,7 +150,7 @@ func (m *Module) ClearHold(ctx context.Context, bus *events.Bus, cred *ent.Servi
 
 // ActiveHolds lists the holds of a Workspace that are active now, by key. ent.IsNotFound
 // for an unknown Workspace.
-func (m *Module) ActiveHolds(ctx context.Context, workspaceID int64) ([]*ent.Hold, error) {
+func (m *Module) ActiveHolds(ctx context.Context, workspaceID string) ([]*ent.Hold, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (m *Module) ActiveHolds(ctx context.Context, workspaceID int64) ([]*ent.Hol
 }
 
 // holdScope loads the Workspace row and scopes over it, acting as the credential.
-func (m *Module) holdScope(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID int64) (*ent.Scoped, error) {
+func (m *Module) holdScope(ctx context.Context, bus *events.Bus, cred *ent.ServiceCredential, workspaceID string) (*ent.Scoped, error) {
 	s, err := m.scopeOver(ctx, workspaceID)
 	if err != nil {
 		return nil, err
@@ -172,7 +172,7 @@ func (m *Module) holdScope(ctx context.Context, bus *events.Bus, cred *ent.Servi
 
 // ServiceHoldsList lists a Workspace's active holds.
 func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceapi.ServiceHoldsListParams) (serviceapi.ServiceHoldsListRes, error) {
-	id := int64(params.WorkspaceId)
+	id := string(params.WorkspaceId)
 	rows, err := h.module.ActiveHolds(ctx, id)
 	if ent.IsNotFound(err) {
 		p := serviceapi.ServiceHoldsListNotFound(workspaceNotFoundProblem())
@@ -190,7 +190,7 @@ func (h *ServiceHandlers) ServiceHoldsList(ctx context.Context, params serviceap
 
 // ServiceHoldsSet sets or renews a hold.
 func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.HoldInput, params serviceapi.ServiceHoldsSetParams) (serviceapi.ServiceHoldsSetRes, error) {
-	id := int64(params.WorkspaceId)
+	id := string(params.WorkspaceId)
 	change, err := h.module.SetHold(ctx, h.bus, CurrentService(ctx), id, params.Key, HoldInput{
 		ReasonCode: req.ReasonCode, Message: req.Message, ActionURL: optNilString(req.ActionUrl), ExpiresAt: time.Time(req.ExpiresAt),
 	})
@@ -214,7 +214,7 @@ func (h *ServiceHandlers) ServiceHoldsSet(ctx context.Context, req *serviceapi.H
 
 // ServiceHoldsClear clears a hold; a missing one is cleared already.
 func (h *ServiceHandlers) ServiceHoldsClear(ctx context.Context, params serviceapi.ServiceHoldsClearParams) (serviceapi.ServiceHoldsClearRes, error) {
-	id := int64(params.WorkspaceId)
+	id := string(params.WorkspaceId)
 	change, err := h.module.ClearHold(ctx, h.bus, CurrentService(ctx), id, params.Key)
 	if ent.IsNotFound(err) {
 		p := serviceapi.ServiceHoldsClearNotFound(workspaceNotFoundProblem())

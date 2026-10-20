@@ -1,7 +1,7 @@
 // Package workspacefeed keeps the change position behind the service feed of
 // Workspaces (ADR 0009). A Workspace takes the next position whenever it is created,
-// an owner is added, removed or transferred, or an owner's email or verification
-// changes. The service endpoint reads Workspaces in the order of that position
+// an owner is added, removed or transferred, an owner's email or verification
+// changes, or it is deleted, restored or erased (ADR 0043). The service endpoint reads Workspaces in the order of that position
 // (ee/staff), so what a caller saved as its cursor always names a place in the
 // order of changes.
 //
@@ -53,7 +53,7 @@ func Guard(next ent.Mutator) ent.Mutator {
 func changesFeed(m ent.Mutation) bool {
 	switch mu := m.(type) {
 	case *entclient.WorkspaceMutation:
-		return mu.Op().Is(ent.OpCreate)
+		return mu.Op().Is(ent.OpCreate) || changesDeletion(mu)
 	case *entclient.MembershipMutation:
 		if mu.Op().Is(ent.OpCreate) {
 			role, ok := mu.Role()
@@ -75,12 +75,34 @@ func changesFeed(m ent.Mutation) bool {
 	return false
 }
 
+// changesDeletion reports whether m is an update that sets or clears deleted_at or
+// erased_at: the deletion state the feed reports (ADR 0043).
+func changesDeletion(m *entclient.WorkspaceMutation) bool {
+	if !m.Op().Is(ent.OpUpdate | ent.OpUpdateOne) {
+		return false
+	}
+	_, deleted := m.DeletedAt()
+	_, erased := m.ErasedAt()
+	return deleted || erased || m.DeletedAtCleared() || m.ErasedAtCleared()
+}
+
 // Hook is the ent hook to install on a client bound to a transaction (Client.Use). It
 // is a no-op for every mutation that cannot change what the feed reports.
 func Hook(next ent.Mutator) ent.Mutator {
 	return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
 		switch mu := m.(type) {
 		case *entclient.WorkspaceMutation:
+			if changesDeletion(mu) {
+				ids, err := mu.IDs(ctx)
+				if err != nil {
+					return nil, err
+				}
+				v, err := next.Mutate(ctx, m)
+				if err != nil || len(ids) == 0 {
+					return v, err
+				}
+				return v, touch(ctx, mu.Client(), ids...)
+			}
 			if !mu.Op().Is(ent.OpCreate) {
 				return next.Mutate(ctx, m)
 			}

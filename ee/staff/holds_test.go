@@ -13,11 +13,12 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-var acme = serviceapi.EntityId(fixtures.AcmeID)
+var acme = serviceapi.WorkspaceId(fixtures.AcmePublicID)
 
 func (h *harness) holdClient(t *testing.T) *serviceapi.Client {
 	t.Helper()
@@ -163,19 +164,39 @@ func TestTheMaximumExpiryIsConfigurable(t *testing.T) {
 	assert.IsType(t, &serviceapi.HoldSetResult{}, h.setHold(t, "k", time.Hour))
 }
 
+// Workspace deletion (ADR 0043) is a Hold source of its own: the holds readers report it
+// beside the Staff holds while the Workspace is deleted, and restoring lifts it alone.
+func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
+	h := newHarness(t)
+	h.setHoldResult(t, "k1", time.Hour)
+	deletedAt := h.clock.now().Add(-time.Hour).UTC().Truncate(time.Second)
+	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(deletedAt).ExecX(t.Context())
+
+	items := h.listHolds(t)
+	require.Len(t, items, 2)
+	assert.Equal(t, holds.KeyPendingDeletion, items[0].Key)
+	assert.Equal(t, outbound.HoldPendingDeletion, items[0].ReasonCode)
+	assert.Equal(t, "k1", items[1].Key)
+
+	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDeletedAt().ExecX(t.Context())
+	items = h.listHolds(t)
+	require.Len(t, items, 1)
+	assert.Equal(t, "k1", items[0].Key)
+}
+
 func TestHoldsOfAnUnknownWorkspaceAreNotFound(t *testing.T) {
 	h := newHarness(t)
 	c := h.holdClient(t)
 
-	list, err := c.ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: 999999})
+	list, err := c.ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: "NoSuchId"})
 	require.NoError(t, err)
 	assert.IsType(t, &serviceapi.ServiceHoldsListNotFound{}, list)
 	set, err := c.ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
 		ReasonCode: "r", Message: "m", ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(time.Hour)),
-	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: 999999, Key: "k"})
+	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: "NoSuchId", Key: "k"})
 	require.NoError(t, err)
 	assert.IsType(t, &serviceapi.ServiceHoldsSetNotFound{}, set)
-	clear, err := c.ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: 999999, Key: "k"})
+	clear, err := c.ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: "NoSuchId", Key: "k"})
 	require.NoError(t, err)
 	assert.IsType(t, &serviceapi.ServiceHoldsClearNotFound{}, clear)
 }

@@ -2,7 +2,7 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { handleSiteTemplatesDelete, handleSiteTemplatesList } from '../../generated/site/msw.gen.ts'
-import { Route as templatesRoute } from '../../routes/workspaces/$slug/templates/index.tsx'
+import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -10,8 +10,8 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { TemplatesListPage } from './list.tsx'
 
-const SLUG = { slug: 'test' }
-const LIST_ROUTE = routeMount(templatesRoute, SLUG)
+const WORKSPACE_ID = { workspaceId: 'TestWs01' }
+const LIST_ROUTE = routeMount(templatesRoute, WORKSPACE_ID)
 
 const WELCOME = { id: '1', name: 'Welcome', subject: 'Hello there', body: '', ...TIMESTAMPS }
 const RECEIPT = { id: '2', name: 'Receipt', subject: 'Your receipt', body: '', ...TIMESTAMPS }
@@ -50,7 +50,7 @@ test('New template links to the create page', async () => {
 
   await expect
     .element(screen.getByRole('link', { name: 'New template' }))
-    .toHaveAttribute('href', '/workspaces/test/templates/new')
+    .toHaveAttribute('href', '/workspaces/TestWs01/templates/new')
 })
 
 test('Edit links to the template edit page', async () => {
@@ -61,7 +61,7 @@ test('Edit links to the template edit page', async () => {
 
   await expect
     .element(screen.getByRole('link', { name: 'Edit' }))
-    .toHaveAttribute('href', '/workspaces/test/templates/1/edit')
+    .toHaveAttribute('href', '/workspaces/TestWs01/templates/1/edit')
 })
 
 test('deleting a template asks for confirmation, deletes it and refreshes the list', async () => {

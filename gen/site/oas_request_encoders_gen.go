@@ -626,6 +626,34 @@ func encodeSiteWebhooksUpdateRequest(
 	return nil
 }
 
+func encodeSiteWorkspacesCreateRequest(
+	req *SiteCreateWorkspaceInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteWorkspacesDeleteRequest(
+	req *SiteDeleteWorkspaceInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeSiteWorkspacesSetSecondFactorRequirementRequest(
 	req *SiteSecondFactorRequirementInput,
 	r *http.Request,

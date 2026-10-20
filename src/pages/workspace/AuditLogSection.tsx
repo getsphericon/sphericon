@@ -34,7 +34,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { Route as teamRoute } from '../../routes/workspaces/$slug/settings/team.tsx'
+import { Route as teamRoute } from '../../routes/workspaces/$workspaceId/settings/team.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 import { formatDateTime } from '../../utils/datetime.ts'
 import { auditQuery } from './auditFilter.ts'
@@ -166,12 +166,12 @@ function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
 // AuditPage renders one page of the log and, while more exist, a button that mounts the
 // next page beneath it, so the list grows without holding every page in one state.
 function AuditPage({
-  slug,
+  workspaceId,
   filter,
   cursor,
   first,
 }: {
-  slug: string
+  workspaceId: string
   filter: AuditFilter
   cursor?: string
   first: boolean
@@ -180,7 +180,7 @@ function AuditPage({
   const [showNext, setShowNext] = useState(false)
   const query = useQuery(
     siteAuditListOptions({
-      path: { slug },
+      path: { workspaceId },
       query: { ...auditQuery(filter), limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) },
     }),
   )
@@ -241,7 +241,7 @@ function AuditPage({
         </Button>
       ) : null}
       {next && showNext ? (
-        <AuditPage slug={slug} filter={filter} cursor={next} first={false} />
+        <AuditPage workspaceId={workspaceId} filter={filter} cursor={next} first={false} />
       ) : null}
     </>
   )
@@ -259,17 +259,17 @@ function saveCsv(csv: string, filename: string) {
 
 // ExportButton exports the log narrowed by the filter currently applied, so the file
 // matches what the page shows.
-function ExportButton({ slug, filter }: { slug: string; filter: AuditFilter }) {
+function ExportButton({ workspaceId, filter }: { workspaceId: string; filter: AuditFilter }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const exportCsv = useMutation({
     mutationFn: () =>
       queryClient.query({
-        ...siteAuditExportOptions({ path: { slug }, query: auditQuery(filter) }),
+        ...siteAuditExportOptions({ path: { workspaceId }, query: auditQuery(filter) }),
         staleTime: 0,
         gcTime: 0,
       }),
-    onSuccess: (csv) => saveCsv(csv, `audit-log-${slug}.csv`),
+    onSuccess: (csv) => saveCsv(csv, `audit-log-${workspaceId}.csv`),
     onError: () =>
       notifications.show({
         color: 'red',
@@ -292,12 +292,12 @@ function ExportButton({ slug, filter }: { slug: string; filter: AuditFilter }) {
 
 // RetentionForm sets how many days the log is kept; an empty value keeps it forever. The
 // change is recorded as an Audit entry by the API.
-function RetentionForm({ slug, days }: { slug: string; days: number | null }) {
+function RetentionForm({ workspaceId, days }: { workspaceId: string; days: number | null }) {
   const { t } = useTranslation()
   const [value, setValue] = useState<string | number>(days ?? '')
   const mutation = useResourceMutation({
     mutation: siteAuditSetRetentionMutation(),
-    invalidate: [siteAuditGetRetentionQueryKey({ path: { slug } })],
+    invalidate: [siteAuditGetRetentionQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.settings.auditLog.retentionSaved),
     errorTitle: t(($) => $.settings.auditLog.retentionError),
   })
@@ -319,7 +319,7 @@ function RetentionForm({ slug, days }: { slug: string; days: number | null }) {
         loading={mutation.isPending}
         onClick={() =>
           mutation.mutate({
-            path: { slug },
+            path: { workspaceId },
             body: { retentionDays: typeof value === 'number' ? value : null },
           })
         }
@@ -332,15 +332,15 @@ function RetentionForm({ slug, days }: { slug: string; days: number | null }) {
 
 // RetentionControl is the Enterprise advanced-retention window for the log. It renders
 // nothing where the setting is not offered (a plain member, or no license).
-function RetentionControl({ slug }: { slug: string }) {
-  const query = useQuery(siteAuditGetRetentionOptions({ path: { slug } }))
+function RetentionControl({ workspaceId }: { workspaceId: string }) {
+  const query = useQuery(siteAuditGetRetentionOptions({ path: { workspaceId } }))
   if (!query.isSuccess) {
     return null
   }
   return (
     <RetentionForm
       key={String(query.data.retentionDays)}
-      slug={slug}
+      workspaceId={workspaceId}
       days={query.data.retentionDays}
     />
   )
@@ -472,16 +472,16 @@ function auditFilterKind(value: string | null) {
 // Webhook endpoint). It renders nothing where the log is not offered (a plain member, or
 // no Enterprise license), so it never points at a section that is not there.
 export function ChangeHistoryLink({
-  slug,
+  workspaceId,
   targetType,
   targetId,
 }: {
-  slug: string
+  workspaceId: string
   targetType: string
   targetId: string
 }) {
   const { t } = useTranslation()
-  const probe = useQuery(siteAuditListOptions({ path: { slug }, query: { limit: 1 } }))
+  const probe = useQuery(siteAuditListOptions({ path: { workspaceId }, query: { limit: 1 } }))
   if (!probe.isSuccess) {
     return null
   }
@@ -491,7 +491,7 @@ export function ChangeHistoryLink({
       size="compact-sm"
       variant="subtle"
       to={teamRoute.to}
-      params={{ slug }}
+      params={{ workspaceId }}
       search={{ targetType, targetId }}
     >
       {t(($) => $.settings.auditLog.changeHistory)}
@@ -506,16 +506,16 @@ const NO_FILTER: AuditFilter = {}
 // when, newest first, narrowed by `filter`. It renders nothing for a plain member or
 // without a license.
 export function AuditLogSection({
-  slug,
+  workspaceId,
   filter = NO_FILTER,
   onFilterChange,
 }: {
-  slug: string
+  workspaceId: string
   filter?: AuditFilter
   onFilterChange: (filter: AuditFilter) => void
 }) {
   const { t } = useTranslation()
-  const probe = useQuery(siteAuditListOptions({ path: { slug }, query: { limit: 1 } }))
+  const probe = useQuery(siteAuditListOptions({ path: { workspaceId }, query: { limit: 1 } }))
   if (isHidden(probe.error)) {
     return null
   }
@@ -526,11 +526,11 @@ export function AuditLogSection({
       <Stack>
         <Group justify="space-between">
           <Title order={4}>{t(($) => $.settings.auditLog.title)}</Title>
-          <ExportButton slug={slug} filter={filter} />
+          <ExportButton workspaceId={workspaceId} filter={filter} />
         </Group>
-        <RetentionControl slug={slug} />
+        <RetentionControl workspaceId={workspaceId} />
         <FilterForm key={filterKey} filter={filter} onChange={onFilterChange} />
-        <AuditPage key={filterKey} slug={slug} filter={filter} first />
+        <AuditPage key={filterKey} workspaceId={workspaceId} filter={filter} first />
       </Stack>
     </Box>
   )

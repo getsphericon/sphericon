@@ -20,7 +20,7 @@ func TestSiteTagCreateIsAuditedUnderTheUser(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	res, err := c.SiteTagsApply(context.Background(), &siteapi.SiteApplyTagInput{Name: "audited-tag"},
-		siteapi.SiteTagsApplyParams{Slug: fixtures.AcmeSlug, ContactId: idStr(fixtures.ContactBobID)})
+		siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTagResource{}, res)
 
@@ -34,7 +34,7 @@ func TestSiteTagCreateIsAuditedUnderTheUser(t *testing.T) {
 
 	// Applying it again is idempotent and records nothing more.
 	_, err = c.SiteTagsApply(context.Background(), &siteapi.SiteApplyTagInput{Name: "audited-tag"},
-		siteapi.SiteTagsApplyParams{Slug: fixtures.AcmeSlug, ContactId: idStr(fixtures.ContactBobID)})
+		siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
 	assert.Len(t, env.OutboxEvents(t, events.NameAuditEntry), 1)
 }

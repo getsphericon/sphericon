@@ -20,9 +20,8 @@ const request = {
 }
 
 const workspace = {
-  id: '1',
+  id: 'AcmeWs01',
   name: 'Acme',
-  slug: 'acme',
   collectKey: 'omck_test_key',
   postalAddress: '',
   accountLinkAvailable: false,
@@ -106,7 +105,7 @@ test('approving without the send opt-in does not allow sending', async () => {
   await expect.poll(() => decisions).toHaveLength(1)
   expect(decisions[0]).toMatchObject({
     clientId: 'fixture-client',
-    workspaceSlug: 'acme',
+    workspaceId: 'AcmeWs01',
     approve: true,
     allowSend: false,
     state: 'xyz',

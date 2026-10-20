@@ -14,9 +14,9 @@ import { worker } from '../../test/worker.ts'
 import { BrandKitSection } from './BrandKitSection.tsx'
 
 const workspace = (role: SiteWorkspaceResource['role']): SiteWorkspaceResource => ({
-  id: '1',
+  id: 'AcmeWs01',
   name: 'Acme',
-  slug: 'acme',
+
   collectKey: 'ck',
   postalAddress: '',
   accountLinkAvailable: false,

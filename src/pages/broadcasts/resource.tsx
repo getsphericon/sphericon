@@ -10,7 +10,7 @@ import {
 import { zSiteCreateBroadcastInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
-import { Route as broadcastsEditRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/edit.tsx'
+import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { docCodec } from '../../utils/messageDoc.ts'
 import { BroadcastForm } from './BroadcastForm.tsx'
 import { DeliveryBlock } from './DeliveryBlock.tsx'
@@ -48,9 +48,9 @@ const broadcastResource = defineResource({
     loadErrorTitle: t(($) => $.alerts.broadcastLoadErrorTitle),
     saveErrorTitle: t(($) => $.alerts.broadcastSaveErrorTitle),
   }),
-  editTarget: (created, { slug }) => ({
+  editTarget: (created, { workspaceId }) => ({
     to: broadcastsEditRoute.to,
-    params: { slug, broadcastId: created.id },
+    params: { workspaceId, broadcastId: created.id },
   }),
 })
 

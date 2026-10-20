@@ -141,7 +141,7 @@ workspace. Do not expose it before one of these:
    ```
 
    It creates a verified user and its first workspace and prints a one-time password; sign in with
-   it and change it in your profile. The name becomes the workspace name. With sign-up closed, every
+   it and change it in your profile. The workspace is named "Personal". With sign-up closed, every
    later user comes from an owner's invitation, and accepting an invitation keeps working.
 
 2. **Leave sign-up open** and register the first owner yourself before the host is reachable by
@@ -382,6 +382,19 @@ recreate for the image. None of them stops a running Instance; see
 [Upgrading](./operations/upgrading) for each, the offline path and the refusals. Pin a version tag
 rather than `latest` in production. Migrations only move forward, so to roll back restore the
 backup taken before the upgrade.
+
+### Upgrading to the Workspace id release
+
+Workspace slugs are gone (ADR 0043): every Workspace has an 8-character id, such as `k3Fz9aQ1`, and
+it is the only address. The migration refuses to run until every Workspace has one, so upgrade
+through the release that backfills the ids first if you skipped it. After the upgrade:
+
+- Bookmarks and links that carry a slug stop working: a Workspace is now at `/workspaces/{id}/...`.
+  The id never changes, not even when the Workspace is renamed.
+- `sphericon workspace suspend <id> <reason...>` and `sphericon workspace unsuspend <id>` take the
+  Workspace id, not the slug.
+- A deleted Workspace stays restorable by its Owners for 30 days, then its data is erased and only a
+  tombstone row remains.
 
 ## Kubernetes details
 

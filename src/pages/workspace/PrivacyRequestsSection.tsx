@@ -35,11 +35,11 @@ function holdsNothing(held: SiteContactHoldings): boolean {
 // EraseAction is offered while canErase holds. A not-found answer means someone erased
 // it meanwhile: say so and refresh the lookup.
 function EraseAction({
-  slug,
+  workspaceId,
   email,
   held,
 }: {
-  slug: string
+  workspaceId: string
   email: string
   held: SiteContactHoldings
 }) {
@@ -49,7 +49,7 @@ function EraseAction({
   const apiErrorMessage = useApiErrorMessage()
   const refreshLookup = () =>
     queryClient.invalidateQueries({
-      queryKey: siteContactsLookupQueryKey({ path: { slug }, query: { email } }),
+      queryKey: siteContactsLookupQueryKey({ path: { workspaceId }, query: { email } }),
     })
   const erase = useMutation({
     ...siteContactsEraseMutation(),
@@ -90,7 +90,7 @@ function EraseAction({
           title: t(($) => $.settings.privacy.eraseConfirmTitle, { email }),
           description: t(($) => $.settings.privacy.eraseConfirmDescription),
           confirmLabel: t(($) => $.contacts.erase),
-          onConfirm: () => erase.mutate({ path: { slug }, query: { email } }),
+          onConfirm: () => erase.mutate({ path: { workspaceId }, query: { email } }),
         })
       }
     >
@@ -103,16 +103,16 @@ function EraseAction({
 // Erase and Export build on this result: Erase reads the same lookup (canErase) to decide
 // whether it is offered.
 function LookupResult({
-  slug,
+  workspaceId,
   email,
   held,
 }: {
-  slug: string
+  workspaceId: string
   email: string
   held: SiteContactHoldings
 }) {
   const { t } = useTranslation()
-  const exportMutation = useContactExport(slug)
+  const exportMutation = useContactExport(workspaceId)
 
   if (holdsNothing(held)) {
     return <Text>{t(($) => $.settings.privacy.nothingHeld)}</Text>
@@ -138,7 +138,7 @@ function LookupResult({
         >
           {t(($) => $.contacts.export)}
         </Button>
-        <EraseAction slug={slug} email={email} held={held} />
+        <EraseAction workspaceId={workspaceId} email={email} held={held} />
       </Group>
     </Stack>
   )
@@ -147,12 +147,12 @@ function LookupResult({
 // PrivacyRequestsSection answers the first step of a Privacy request: type the address
 // the person wrote from and see what the Workspace holds for it. The caller shows it to
 // owners and admins only.
-export function PrivacyRequestsSection({ slug }: { slug: string }) {
+export function PrivacyRequestsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState('')
   const [email, setEmail] = useState('')
   const lookup = useQuery({
-    ...siteContactsLookupOptions({ path: { slug }, query: { email } }),
+    ...siteContactsLookupOptions({ path: { workspaceId }, query: { email } }),
     enabled: email !== '',
     retry: false,
   })
@@ -188,7 +188,9 @@ export function PrivacyRequestsSection({ slug }: { slug: string }) {
               : t(($) => $.settings.privacy.lookupError)}
           </Alert>
         ) : null}
-        {lookup.data ? <LookupResult slug={slug} email={email} held={lookup.data} /> : null}
+        {lookup.data ? (
+          <LookupResult workspaceId={workspaceId} email={email} held={lookup.data} />
+        ) : null}
       </Stack>
     </Box>
   )

@@ -17,20 +17,21 @@ import {
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import { Route as profileRoute } from '../routes/account/index.tsx'
 import { Route as loginRoute } from '../routes/login.tsx'
-import { Route as settingsRoute } from '../routes/workspaces/$slug/settings/index.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { DeletedWorkspacesMenuSection } from './DeletedWorkspacesMenuSection.tsx'
 import { MenuItemLink } from './RouterLink.tsx'
 
 // UserMenu is the header account dropdown: profile, workspace settings, logout.
-// `slug` is the active workspace (absent in the account layout); the workspace
+// `workspaceId` is the active workspace (absent in the account layout); the workspace
 // settings item only renders when one is set. Logout calls the site logout
 // operation, which clears the session cookie; we then drop cached queries and
 // route to login.
 export function UserMenu({
-  slug,
+  workspaceId,
   label,
   accountLink = false,
 }: {
-  slug?: string
+  workspaceId?: string
   label?: string
   accountLink?: boolean
 }) {
@@ -85,23 +86,24 @@ export function UserMenu({
         <MenuItemLink to={profileRoute.to} leftSection={<IconUser size={16} />}>
           {t(($) => $.userMenu.profile)}
         </MenuItemLink>
-        {slug ? (
+        {workspaceId ? (
           <MenuItemLink
             to={settingsRoute.to}
-            params={{ slug }}
+            params={{ workspaceId }}
             leftSection={<IconSettings size={16} />}
           >
             {t(($) => $.userMenu.workspaceSettings)}
           </MenuItemLink>
         ) : null}
-        {slug && accountLink ? (
+        {workspaceId && accountLink ? (
           <Menu.Item
             leftSection={<IconExternalLink size={16} />}
-            onClick={() => accountLinkMutation.mutate({ path: { slug } })}
+            onClick={() => accountLinkMutation.mutate({ path: { workspaceId } })}
           >
             {t(($) => $.userMenu.account)}
           </Menu.Item>
         ) : null}
+        <DeletedWorkspacesMenuSection />
         <Menu.Divider />
         <Menu.Item
           color="red"

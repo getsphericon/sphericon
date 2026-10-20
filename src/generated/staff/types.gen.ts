@@ -558,15 +558,22 @@ export type StaffSuspensionChange = {
  */
 export type StaffWorkspaceDetailResource = {
   /**
-   * Unique identifier
+   * The Workspace id: its short opaque public address (ADR 0043)
    */
-  id: EntityId;
-  slug: string;
+  id: WorkspaceId;
   name: string;
   /**
    * When the Workspace was created
    */
   createdAt: Timestamp;
+  /**
+   * When the Workspace was deleted; present from deletion until a restore (ADR 0043)
+   */
+  deletedAt?: Timestamp | null;
+  /**
+   * When the Workspace's data was erased; the row stays as a tombstone
+   */
+  erasedAt?: Timestamp | null;
   /**
    * Present only while sending is suspended
    */
@@ -593,15 +600,22 @@ export type StaffWorkspaceDetailResource = {
  */
 export type StaffWorkspaceResource = {
   /**
-   * Unique identifier
+   * The Workspace id: its short opaque public address (ADR 0043)
    */
-  id: EntityId;
-  slug: string;
+  id: WorkspaceId;
   name: string;
   /**
    * When the Workspace was created
    */
   createdAt: Timestamp;
+  /**
+   * When the Workspace was deleted; present from deletion until a restore (ADR 0043)
+   */
+  deletedAt?: Timestamp | null;
+  /**
+   * When the Workspace's data was erased; the row stays as a tombstone
+   */
+  erasedAt?: Timestamp | null;
   /**
    * Present only while sending is suspended
    */
@@ -619,7 +633,11 @@ export type StaffWorkspaceResource = {
 /**
  * Which Workspaces the list surfaces for review
  */
-export const StaffWorkspaceReview = { WARNED: 'warned', SYSTEM_FROZEN: 'systemFrozen' } as const;
+export const StaffWorkspaceReview = {
+  WARNED: 'warned',
+  SYSTEM_FROZEN: 'systemFrozen',
+  DELETED: 'deleted'
+} as const;
 
 /**
  * Which Workspaces the list surfaces for review
@@ -629,6 +647,12 @@ export type StaffWorkspaceReview = typeof StaffWorkspaceReview[keyof typeof Staf
 export type TimeZoneName = string;
 
 export type Timestamp = string;
+
+/**
+ * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
+ * Workspace's one public address.
+ */
+export type WorkspaceId = string;
 
 /**
  * Page number (1-based)
@@ -646,9 +670,10 @@ export type PageQueryPageSize = number;
 export type StaffWorkspaceSearchReview = StaffWorkspaceReview;
 
 /**
- * Only Workspaces whose slug contains this text (case-insensitive)
+ * Only Workspaces whose id or name contains this text; the name matches case-insensitively,
+ * the id exactly
  */
-export type StaffWorkspaceSearchSlug = string;
+export type StaffWorkspaceSearchSearch = string;
 
 export type StaffAuthLoginData = {
   body: StaffLoginInput;
@@ -767,9 +792,10 @@ export type StaffWorkspacesListData = {
      */
     review?: StaffWorkspaceReview;
     /**
-     * Only Workspaces whose slug contains this text (case-insensitive)
+     * Only Workspaces whose id or name contains this text; the name matches case-insensitively,
+     * the id exactly
      */
-    slug?: string;
+    search?: string;
     /**
      * Page number (1-based)
      */
@@ -824,7 +850,7 @@ export type StaffWorkspacesListResponse = StaffWorkspacesListResponses[keyof Sta
 export type StaffWorkspacesGetData = {
   body?: never;
   path: {
-    workspaceId: EntityId;
+    workspaceId: WorkspaceId;
   };
   query?: never;
   url: '/workspaces/{workspaceId}';
@@ -855,7 +881,7 @@ export type StaffWorkspacesGetResponse = StaffWorkspacesGetResponses[keyof Staff
 export type StaffWorkspaceAuditListData = {
   body?: never;
   path: {
-    workspaceId: EntityId;
+    workspaceId: WorkspaceId;
   };
   query?: {
     /**
@@ -899,7 +925,7 @@ export type StaffWorkspaceAuditListResponse = StaffWorkspaceAuditListResponses[k
 export type StaffWorkspacesExemptData = {
   body?: never;
   path: {
-    workspaceId: EntityId;
+    workspaceId: WorkspaceId;
   };
   query?: never;
   url: '/workspaces/{workspaceId}/exempt';
@@ -930,7 +956,7 @@ export type StaffWorkspacesExemptResponse = StaffWorkspacesExemptResponses[keyof
 export type StaffWorkspacesSuspendData = {
   body: StaffSuspendInput;
   path: {
-    workspaceId: EntityId;
+    workspaceId: WorkspaceId;
   };
   query?: never;
   url: '/workspaces/{workspaceId}/suspend';
@@ -965,7 +991,7 @@ export type StaffWorkspacesSuspendResponse = StaffWorkspacesSuspendResponses[key
 export type StaffWorkspacesUnexemptData = {
   body?: never;
   path: {
-    workspaceId: EntityId;
+    workspaceId: WorkspaceId;
   };
   query?: never;
   url: '/workspaces/{workspaceId}/unexempt';
@@ -996,7 +1022,7 @@ export type StaffWorkspacesUnexemptResponse = StaffWorkspacesUnexemptResponses[k
 export type StaffWorkspacesUnsuspendData = {
   body?: never;
   path: {
-    workspaceId: EntityId;
+    workspaceId: WorkspaceId;
   };
   query?: never;
   url: '/workspaces/{workspaceId}/unsuspend';

@@ -13,6 +13,7 @@ import (
 	entmembership "github.com/getsphericon/sphericon/ent/membership"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -154,8 +155,8 @@ func TestTheVerifyLinkSetsThePasswordCreatesTheWorkspaceAndAllowsLogin(t *testin
 	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "grace-hopper", spaces[0].Slug)
-	assert.Equal(t, "Grace Hopper", spaces[0].Name)
+	assert.Regexp(t, "^[0-9A-Za-z]{8}$", spaces[0].ID)
+	assert.Equal(t, "Personal", spaces[0].Name)
 }
 
 // The link starts the session: the cookie it sets works on an authenticated /site call
@@ -175,7 +176,7 @@ func TestTheVerifyLinkStartsASessionIntoTheFirstWorkspace(t *testing.T) {
 	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "grace-hopper", spaces[0].Slug)
+	assert.Equal(t, accounts.FirstWorkspaceName, spaces[0].Name)
 }
 
 func TestTheVerifyLinkWorksOnce(t *testing.T) {
@@ -217,7 +218,7 @@ func TestVerifyingIsRecordedInTheNewWorkspacesAuditLog(t *testing.T) {
 	env := testhelper.Setup(t)
 	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1")
 
-	got := entriesNamed(t, env, "grace@example.com", "grace-hopper", events.ActionUserEmailVerify)
+	got := entriesNamed(t, env, "grace@example.com", firstWorkspaceID(t, env, "grace@example.com"), events.ActionUserEmailVerify)
 
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
@@ -261,9 +262,10 @@ func TestWithTheGateOffRegisteringCreatesAVerifiedUserWithAWorkspaceAndSignInWor
 	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "grace-hopper", spaces[0].Slug)
+	assert.Regexp(t, "^[0-9A-Za-z]{8}$", spaces[0].ID)
+	assert.Equal(t, "Personal", spaces[0].Name)
 
-	got := entriesNamed(t, env, "grace@example.com", "grace-hopper", events.ActionUserEmailVerify)
+	got := entriesNamed(t, env, "grace@example.com", firstWorkspaceID(t, env, "grace@example.com"), events.ActionUserEmailVerify)
 	assert.Len(t, got, 1)
 }
 
@@ -316,7 +318,8 @@ func TestPasswordResetProvesTheAddressOfAnUnverifiedUser(t *testing.T) {
 	spaces, err := env.SiteWithToken(t, sessionCookie(rec.Result()).Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "grace-hopper", spaces[0].Slug)
+	assert.Regexp(t, "^[0-9A-Za-z]{8}$", spaces[0].ID)
+	assert.Equal(t, "Personal", spaces[0].Name)
 }
 
 // The reset of a Verified User is only a password change: no second Workspace, no welcome.
@@ -492,6 +495,32 @@ func TestRegisteringStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
 	assert.Len(t, env.SystemMail.Messages(), limit, "the owner is not mail-bombed")
 }
 
+func TestVerifyingAnEmailCreatesAWorkspaceNamedPersonalOwnedByTheUser(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "password123")
+	registerAndVerify(t, env, "Ada Lovelace", "ada@example.com", "password123")
+
+	for _, email := range []string{"grace@example.com", "ada@example.com"} {
+		u, err := env.DB.User.Query().Where(entuser.Email(email)).Only(t.Context())
+		require.NoError(t, err)
+		ms, err := env.DB.Membership.Query().Where(entmembership.UserID(u.ID)).WithWorkspace().All(t.Context())
+		require.NoError(t, err)
+		require.Len(t, ms, 1)
+		assert.Equal(t, entmembership.RoleOwner, ms[0].Role)
+		assert.Equal(t, "Personal", ms[0].Edges.Workspace.Name)
+	}
+}
+
+// firstWorkspaceID is the id of the one Workspace the User has, as their own list shows it.
+func firstWorkspaceID(t *testing.T, env *testhelper.TestEnv, email string) siteapi.WorkspaceId {
+	t.Helper()
+	spaces, err := env.SiteActor(t, email).SiteWorkspacesList(t.Context())
+	require.NoError(t, err)
+	require.Len(t, spaces, 1)
+	return spaces[0].ID
+}
+
 func sessionOf(t *testing.T, res siteapi.SiteAuthVerifyEmailRes) *http.Cookie {
 	t.Helper()
 	ok, isOK := res.(*siteapi.SiteAuthVerifyEmailOK)
@@ -501,12 +530,12 @@ func sessionOf(t *testing.T, res siteapi.SiteAuthVerifyEmailRes) *http.Cookie {
 	return cookie
 }
 
-func landsInFirstWorkspace(t *testing.T, env *testhelper.TestEnv, session *http.Cookie, slug string) {
+func landsInFirstWorkspace(t *testing.T, env *testhelper.TestEnv, session *http.Cookie) {
 	t.Helper()
 	spaces, err := env.SiteWithToken(t, session.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, slug, spaces[0].Slug)
+	assert.Equal(t, accounts.FirstWorkspaceName, spaces[0].Name)
 }
 
 func TestRegisteringNeedsAPassword(t *testing.T) {
@@ -551,7 +580,7 @@ func TestTheLinkOpenedInTheRegistrationBrowserKeepsThePasswordAndSignsIn(t *test
 	res := verifyIn(t, browser, token, "")
 
 	session := sessionOf(t, res)
-	landsInFirstWorkspace(t, env, session, "grace-hopper")
+	landsInFirstWorkspace(t, env, session)
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", formPassword))
 }
 
@@ -584,7 +613,7 @@ func TestTheLinkInAnotherBrowserWithAPasswordMakesThatPasswordLiveAndDiscardsThe
 	res := verifyIn(t, env.SiteBrowser(t), token, "grace-password-2")
 
 	session := sessionOf(t, res)
-	landsInFirstWorkspace(t, env, session, "grace-hopper")
+	landsInFirstWorkspace(t, env, session)
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", "grace-password-2"))
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, "grace@example.com", formPassword))
 }
@@ -671,7 +700,7 @@ func TestResendFromTheRegistrationBrowserGivesALinkThatKeepsThePasswordAndSignsI
 
 	session := sessionOf(t, verifyIn(t, browser, resent, ""))
 
-	landsInFirstWorkspace(t, env, session, "grace-hopper")
+	landsInFirstWorkspace(t, env, session)
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, "grace@example.com", formPassword))
 }
 

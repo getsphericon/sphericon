@@ -13,7 +13,7 @@ import (
 
 // SiteEventsList returns the workspace's events, most recent first.
 func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEventsListParams) (siteapi.SiteEventsListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := problem(http.StatusNotFound, "workspace not found")
 		return &v, nil
@@ -46,7 +46,7 @@ func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEvents
 // SiteEventsActions returns the distinct event actions in the workspace, sorted —
 // used to populate the segment builder's event-condition picker.
 func (h *Handlers) SiteEventsActions(ctx context.Context, params siteapi.SiteEventsActionsParams) (siteapi.SiteEventsActionsRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := problem(http.StatusNotFound, "workspace not found")
 		return &v, nil

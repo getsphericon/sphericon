@@ -2,7 +2,7 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { handleSiteContactsList } from '../../generated/site/msw.gen.ts'
-import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
+import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -10,7 +10,7 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { ContactsListPage } from './list.tsx'
 
-const LIST_ROUTE = routeMount(contactsRoute, { slug: 'test' })
+const LIST_ROUTE = routeMount(contactsRoute, { workspaceId: 'TestWs01' })
 
 const ALICE = {
   id: '1',
@@ -54,7 +54,7 @@ test('Add contact links to the create page', async () => {
 
   await expect
     .element(screen.getByRole('link', { name: 'Add contact' }))
-    .toHaveAttribute('href', '/workspaces/test/contacts/new')
+    .toHaveAttribute('href', '/workspaces/TestWs01/contacts/new')
 })
 
 test('offers view and edit per contact, and no delete', async () => {

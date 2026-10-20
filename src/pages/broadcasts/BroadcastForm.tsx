@@ -12,8 +12,8 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteCreateBroadcastInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
-import { Route as broadcastsRoute } from '../../routes/workspaces/$slug/broadcasts/index.tsx'
-import { Route as workspaceRoute } from '../../routes/workspaces/$slug/route.tsx'
+import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
+import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { docCodec } from '../../utils/messageDoc.ts'
 
 export function BroadcastForm({
@@ -22,10 +22,10 @@ export function BroadcastForm({
   onSubmit,
 }: ResourceFormProps<SiteCreateBroadcastInput>) {
   const { t } = useTranslation()
-  const { slug } = workspaceRoute.useParams()
+  const { workspaceId } = workspaceRoute.useParams()
 
   const segmentsQuery = useQuery(
-    siteSegmentsListOptions({ path: { slug }, query: { pageSize: 100 } }),
+    siteSegmentsListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
   )
   const segmentOptions = [
     { value: '', label: t(($) => $.broadcasts.audienceAll) },
@@ -33,7 +33,7 @@ export function BroadcastForm({
   ]
 
   const templatesQuery = useQuery(
-    siteTemplatesListOptions({ path: { slug }, query: { pageSize: 100 } }),
+    siteTemplatesListOptions({ path: { workspaceId }, query: { pageSize: 100 } }),
   )
   const templates = templatesQuery.data?.items ?? []
 
@@ -135,7 +135,7 @@ export function BroadcastForm({
         />
 
         <Group justify="flex-end">
-          <ButtonLink variant="default" to={broadcastsRoute.to} params={{ slug }}>
+          <ButtonLink variant="default" to={broadcastsRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.cancel)}
           </ButtonLink>
           <Button type="submit" loading={isPending}>

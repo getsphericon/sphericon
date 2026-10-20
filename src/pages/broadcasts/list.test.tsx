@@ -5,14 +5,14 @@ import {
   handleSiteBroadcastsDelete,
   handleSiteBroadcastsList,
 } from '../../generated/site/msw.gen.ts'
-import { Route as broadcastsRoute } from '../../routes/workspaces/$slug/broadcasts/index.tsx'
+import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { BroadcastsListPage } from './list.tsx'
 
-const LIST_ROUTE = routeMount(broadcastsRoute, { slug: 'test' })
+const LIST_ROUTE = routeMount(broadcastsRoute, { workspaceId: 'TestWs01' })
 
 const STATS = { recipientsTotal: 120, openedCount: 45 }
 const DRAFT = {
@@ -67,7 +67,7 @@ test('New broadcast links to the create page', async () => {
 
   await expect
     .element(screen.getByRole('link', { name: 'New broadcast' }))
-    .toHaveAttribute('href', '/workspaces/test/broadcasts/new')
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/new')
 })
 
 test('Report and Edit link with the broadcast id; Edit is only enabled for drafts', async () => {
@@ -83,10 +83,10 @@ test('Report and Edit link with the broadcast id; Edit is only enabled for draft
     .toHaveAttribute('data-disabled')
   await expect
     .element(screen.getByRole('link', { name: 'Report' }).first())
-    .toHaveAttribute('href', '/workspaces/test/broadcasts/1/report')
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/1/report')
   await expect
     .element(screen.getByRole('link', { name: 'Edit' }).first())
-    .toHaveAttribute('href', '/workspaces/test/broadcasts/1/edit')
+    .toHaveAttribute('href', '/workspaces/TestWs01/broadcasts/1/edit')
 })
 
 test('deleting a broadcast asks for confirmation, deletes it and refreshes the list', async () => {

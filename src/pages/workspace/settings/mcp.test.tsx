@@ -1,18 +1,18 @@
 import { expect, test } from 'vitest'
 
 import { handleSiteWorkspacesList } from '../../../generated/site/msw.gen.ts'
-import { Route as mcpRoute } from '../../../routes/workspaces/$slug/settings/mcp.tsx'
+import { Route as mcpRoute } from '../../../routes/workspaces/$workspaceId/settings/mcp.tsx'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
 import { McpPage } from './mcp.tsx'
 
-const MCP_ROUTE = routeMount(mcpRoute, { slug: 'test' })
+const MCP_ROUTE = routeMount(mcpRoute, { workspaceId: 'TestWs01' })
 
 const workspace = {
-  id: '1',
+  id: 'TestWs01',
   name: 'Acme',
-  slug: 'test',
+
   collectKey: 'omck_test_key',
   postalAddress: '',
   accountLinkAvailable: false,

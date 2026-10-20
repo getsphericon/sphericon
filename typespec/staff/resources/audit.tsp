@@ -79,7 +79,7 @@ namespace StaffWorkspaceAudit {
   /** One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing is then recorded. */
   @get
   op list(
-    @path workspaceId: EntityId,
+    @path workspaceId: WorkspaceId,
 
     /** Cursor from a previous page */
     @query cursor?: string,

@@ -9,17 +9,17 @@ import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts
 // SettingsFrame is the chrome every settings page shares: its title, then the loaded
 // workspace handed to `children` (or the load error / spinner while it is not there).
 export function SettingsFrame({
-  slug,
+  workspaceId,
   title,
   children,
 }: {
-  slug: string
+  workspaceId: string
   title: string
   children: (workspace: SiteWorkspaceResource) => ReactNode
 }) {
   const { t } = useTranslation()
   const workspacesQuery = useQuery(siteWorkspacesListOptions())
-  const workspace = workspacesQuery.data?.find((w) => w.slug === slug)
+  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
 
   return (
     <Stack>

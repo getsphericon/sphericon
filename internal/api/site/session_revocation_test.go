@@ -162,7 +162,7 @@ func TestSignOutEverywhereEndsEverySessionIncludingTheActingOne(t *testing.T) {
 	assert.Empty(t, cleared.Value)
 	assert.Negative(t, cleared.MaxAge)
 
-	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserSignOutEverywhere)
+	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserSignOutEverywhere)
 	require.Len(t, got, 1)
 	assert.Equal(t, "John", got[0].Actor.Name.Value)
 	assert.Equal(t, "user", got[0].Target.Type)

@@ -16,12 +16,12 @@ func TestSiteActorFixtureUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteContactsList(ctx, siteapi.SiteContactsListParams{Slug: fixtures.AcmeSlug})
+	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsListOK{}, res)
 
 	// A user with no membership cannot see the Workspace.
-	res, err = env.SiteActor(t, fixtures.OutsiderOscarEmail).SiteContactsList(ctx, siteapi.SiteContactsListParams{Slug: fixtures.AcmeSlug})
+	res, err = env.SiteActor(t, fixtures.OutsiderOscarEmail).SiteContactsList(ctx, siteapi.SiteContactsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsListNotFound{}, res)
 }
@@ -29,7 +29,7 @@ func TestSiteActorFixtureUser(t *testing.T) {
 func TestSiteAnonymousIsRejected(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.SiteAnonymous(t).SiteContactsList(t.Context(), siteapi.SiteContactsListParams{Slug: fixtures.AcmeSlug})
+	_, err := env.SiteAnonymous(t).SiteContactsList(t.Context(), siteapi.SiteContactsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 

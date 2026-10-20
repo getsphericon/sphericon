@@ -17,7 +17,7 @@ import (
 // SiteAuditList shows the Workspace's Audit log, newest first. Owner and admin only;
 // an instance without an Enterprise license answers 402 (ADR 0014, ADR 0022).
 func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditListParams) (siteapi.SiteAuditListRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteAuditListNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -69,7 +69,7 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 // the list: owner and admin only, 402 without an Enterprise license. It takes the
 // same filter as SiteAuditList, so an export matches what the page shows.
 func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAuditExportParams) (siteapi.SiteAuditExportRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteAuditExportNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -112,7 +112,7 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 		_ = pw.CloseWithError(h.audit.ExportCSV(ctx, s, filter, pw))
 	}()
 	return &siteapi.SiteAuditExportOKHeaders{
-		ContentDisposition: `attachment; filename="audit-log-` + params.Slug + `.csv"`,
+		ContentDisposition: `attachment; filename="audit-log-` + string(params.WorkspaceId) + `.csv"`,
 		Response:           siteapi.SiteAuditExportOK{Data: pr},
 	}, nil
 }
@@ -177,7 +177,7 @@ func (h *Handlers) recordAuditExport(ctx context.Context, s *ent.Scoped, f event
 // SiteAuditGetRetention reads the Audit log retention window. Owner and admin only;
 // 402 without the Enterprise retention license.
 func (h *Handlers) SiteAuditGetRetention(ctx context.Context, params siteapi.SiteAuditGetRetentionParams) (siteapi.SiteAuditGetRetentionRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteAuditGetRetentionNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -203,7 +203,7 @@ func (h *Handlers) SiteAuditGetRetention(ctx context.Context, params siteapi.Sit
 // SiteAuditSetRetention sets or clears the Audit log retention window and records the
 // change as a `workspace.update` Audit entry. Owner and admin only.
 func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteAuditRetention, params siteapi.SiteAuditSetRetentionParams) (siteapi.SiteAuditSetRetentionRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteAuditSetRetentionNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

@@ -11,10 +11,10 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
-import { Route as broadcastsEditRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/edit.tsx'
-import { Route as broadcastsReportRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/report.tsx'
-import { Route as broadcastsRoute } from '../../routes/workspaces/$slug/broadcasts/index.tsx'
-import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$slug/broadcasts/new.tsx'
+import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
+import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
+import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
+import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { BroadcastHoldBadge } from './BroadcastHold.tsx'
 
 const STATUS_COLORS: Record<SiteBroadcastStatus, string> = {
@@ -35,12 +35,12 @@ function StatusBadge({ t, status }: { t: TFunction; status: SiteBroadcastStatus 
 
 export function BroadcastsListPage() {
   const { t } = useTranslation()
-  const { slug } = broadcastsRoute.useParams()
+  const { workspaceId } = broadcastsRoute.useParams()
 
   const deleteBroadcast = useDeleteResource({
     mutation: siteBroadcastsDeleteMutation(),
-    slug,
-    listQueryKey: siteBroadcastsListQueryKey({ path: { slug } }),
+    workspaceId,
+    listQueryKey: siteBroadcastsListQueryKey({ path: { workspaceId } }),
     successMessage: t(($) => $.notifications.broadcastDeleted),
     errorTitle: t(($) => $.alerts.broadcastDeleteErrorTitle),
   })
@@ -49,13 +49,13 @@ export function BroadcastsListPage() {
     <Stack>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.broadcasts)}</Title>
-        <ButtonLink to={broadcastsCreateRoute.to} params={{ slug }}>
+        <ButtonLink to={broadcastsCreateRoute.to} params={{ workspaceId }}>
           {t(($) => $.broadcasts.addBroadcast)}
         </ButtonLink>
       </Group>
 
       <PagedTable
-        options={(query) => siteBroadcastsListOptions({ path: { slug }, query })}
+        options={(query) => siteBroadcastsListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.broadcastLoadErrorTitle)}
         noRecordsText={t(($) => $.broadcasts.noRecords)}
         emptyState={t(($) => $.broadcasts.emptyState)}
@@ -90,7 +90,7 @@ export function BroadcastsListPage() {
                   size="compact-sm"
                   variant="light"
                   to={broadcastsReportRoute.to}
-                  params={{ slug, broadcastId: record.id }}
+                  params={{ workspaceId, broadcastId: record.id }}
                 >
                   {t(($) => $.broadcasts.report)}
                 </ButtonLink>
@@ -98,7 +98,7 @@ export function BroadcastsListPage() {
                   size="compact-sm"
                   disabled={record.status !== 'draft'}
                   to={broadcastsEditRoute.to}
-                  params={{ slug, broadcastId: record.id }}
+                  params={{ workspaceId, broadcastId: record.id }}
                 >
                   {t(($) => $.actions.edit)}
                 </ButtonLink>

@@ -108,13 +108,13 @@ model SiteAuditRetention {
   retentionDays: int32 | null;
 }
 
-@route("/workspaces/{slug}/audit-entries")
+@route("/workspaces/{workspaceId}/audit-entries")
 @tag("Site Audit")
 namespace SiteAudit {
   /** List the workspace's Audit log, newest first (Enterprise; owner and admin only) */
   @get
   op list(
-    @path slug: string,
+    @path workspaceId: WorkspaceId,
     ...SiteAuditFilter,
 
     /** Cursor from a previous page */
@@ -132,7 +132,7 @@ namespace SiteAudit {
   /** Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise; owner and admin only) */
   @get
   @route("/export")
-  op export(@path slug: string, ...SiteAuditFilter):
+  op export(@path workspaceId: WorkspaceId, ...SiteAuditFilter):
     | {
         @header contentType: "text/csv";
         @header contentDisposition: string;
@@ -145,7 +145,7 @@ namespace SiteAudit {
   /** Read the Audit log retention window (Enterprise; owner and admin only) */
   @get
   @route("/retention")
-  op getRetention(@path slug: string):
+  op getRetention(@path workspaceId: WorkspaceId):
     | SiteAuditRetention
     | PaymentRequiredProblem
     | ForbiddenProblem
@@ -154,7 +154,10 @@ namespace SiteAudit {
   /** Set or clear the Audit log retention window; recorded as an Audit entry (Enterprise; owner and admin only) */
   @put
   @route("/retention")
-  op setRetention(@path slug: string, @body body: SiteAuditRetention):
+  op setRetention(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteAuditRetention,
+  ):
     | SiteAuditRetention
     | PaymentRequiredProblem
     | ForbiddenProblem

@@ -8,12 +8,12 @@ import (
 	"io"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent/apitoken"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/exportstream"
@@ -327,13 +327,9 @@ func TestEveryExportStreamOfADeletedWorkspaceDoesNotAuthenticate(t *testing.T) {
 		t.Run(stream.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := context.Background()
-			// No fixture Workspace can be deleted (each has dependents), so this incidental one is made inline.
-			gone := env.DB.Workspace.Create().SetName("Gone").SetSlug("gone").SetCollectKey("omck_test_gone").SaveX(ctx)
-			c := exportClient(t, env, gone.ID)
+			c := exportClient(t, env, stream.workspaceID)
 			readExportStream(t, c, stream, "", 0)
-			// Deleting a Workspace removes its tokens first (the foreign key has no cascade).
-			env.DB.ApiToken.Delete().Where(apitoken.WorkspaceID(gone.ID)).ExecX(ctx)
-			require.NoError(t, env.DB.Workspace.DeleteOneID(gone.ID).Exec(ctx))
+			env.DB.Workspace.UpdateOneID(stream.workspaceID).SetDeletedAt(time.Now()).ExecX(ctx)
 
 			res, body, _ := stream.call(ctx, c, exportParams{})
 

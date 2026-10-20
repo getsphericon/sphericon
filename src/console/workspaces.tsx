@@ -14,10 +14,10 @@ import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/worksp
 import { formatDateTime } from '../utils/datetime.ts'
 
 const PAGE_SIZE = 25
-const REVIEWS: StaffWorkspaceReview[] = ['warned', 'systemFrozen']
+const REVIEWS: StaffWorkspaceReview[] = ['warned', 'systemFrozen', 'deleted']
 
 // The Workspace list: every tenant's metadata (never its Contacts, content or
-// Events), searchable by slug, a row opens the Workspace.
+// Events), searchable by id or name, a row opens the Workspace.
 export function ConsoleWorkspacesPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -32,7 +32,7 @@ export function ConsoleWorkspacesPage() {
       query: {
         page,
         pageSize: PAGE_SIZE,
-        ...(debounced ? { slug: debounced } : {}),
+        ...(debounced ? { search: debounced } : {}),
         ...(review ? { review } : {}),
       },
     }),
@@ -85,7 +85,7 @@ export function ConsoleWorkspacesPage() {
         records={workspacesQuery.data?.items ?? []}
         idAccessor="id"
         columns={[
-          { accessor: 'slug', title: t(($) => $.console.workspaces.slug) },
+          { accessor: 'id', title: t(($) => $.console.workspaces.id) },
           { accessor: 'name', title: t(($) => $.console.workspaces.name) },
           {
             accessor: 'createdAt',

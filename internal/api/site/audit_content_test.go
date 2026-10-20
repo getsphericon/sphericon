@@ -25,18 +25,18 @@ func TestSiteContentChangesAreAudited(t *testing.T) {
 
 	created, err := c.SiteTemplatesCreate(ctx,
 		&siteapi.SiteCreateEmailTemplateInput{Name: "Audited template", Subject: siteapi.NewOptString("Hi")},
-		siteapi.SiteTemplatesCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	tmplID := created.(*siteapi.SiteEmailTemplateResource).ID
 
 	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.SiteUpdateEmailTemplateInput{Subject: siteapi.NewOptString("Hello")},
-		siteapi.SiteTemplatesUpdateParams{Slug: fixtures.AcmeSlug, ID: tmplID})
+		siteapi.SiteTemplatesUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})
 	require.NoError(t, err)
-	_, err = c.SiteTemplatesDelete(ctx, siteapi.SiteTemplatesDeleteParams{Slug: fixtures.AcmeSlug, ID: tmplID})
+	_, err = c.SiteTemplatesDelete(ctx, siteapi.SiteTemplatesDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})
 	require.NoError(t, err)
 
 	_, err = c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "Audited segment", Definition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)},
-		siteapi.SiteSegmentsCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
 	byAction := map[string]*events.AuditEntry{}
@@ -64,16 +64,16 @@ func TestSiteContactChangesCarryNamesOnly(t *testing.T) {
 	created, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{
 		Email:     siteapi.NewOptNilEmailAddress(email),
 		FirstName: siteapi.NewOptNilString(first),
-	}, siteapi.SiteContactsCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	id := created.(*siteapi.SiteContactResource).ID
 
 	_, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{
 		LastName:     siteapi.NewOptNilString("Lastleak"),
 		CustomFields: siteapi.NewOptNilSiteUpdateContactInputCustomFields(siteapi.SiteUpdateContactInputCustomFields{"plan": jx.Raw(`"` + secret + `"`)}),
-	}, siteapi.SiteContactsUpdateParams{Slug: fixtures.AcmeSlug, ID: id})
+	}, siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
-	_, err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{Slug: fixtures.AcmeSlug, ID: id})
+	_, err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 
 	contactEntries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {

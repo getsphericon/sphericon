@@ -14,9 +14,9 @@ import { SecondFactorRequirementSection } from './SecondFactorRequirementSection
 const NOW = '2026-01-01T00:00:00Z'
 
 const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceResource => ({
-  id: '1',
+  id: 'AcmeWs01',
   name: 'Acme',
-  slug: 'acme',
+
   collectKey: 'ck',
   postalAddress: '',
   accountLinkAvailable: false,

@@ -3,6 +3,7 @@ package collect_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -28,6 +29,21 @@ func TestCollectKeyAuth(t *testing.T) {
 	res, err = env.CollectWithKey(t, "wrong-key").CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
 	require.NoError(t, err)
 	assert.IsType(t, &collectapi.CollectEventsCreateUnauthorized{}, res)
+}
+
+func TestCollectKeyOfADeletedWorkspaceIsRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(time.Now()).ExecX(ctx)
+
+	res, err := env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
+	require.NoError(t, err)
+	assert.IsType(t, &collectapi.CollectEventsCreateUnauthorized{}, res)
+
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDeletedAt().ExecX(ctx)
+	res, err = env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
+	require.NoError(t, err)
+	assert.NotEqual(t, &collectapi.CollectEventsCreateUnauthorized{}, res, "restored, the key works again")
 }
 
 func TestCollectIdentifyAndEvents(t *testing.T) {

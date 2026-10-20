@@ -5,8 +5,8 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { SiteAnalyticsOverviewData, SiteAnalyticsOverviewErrors, SiteAnalyticsOverviewResponses, SiteAuditExportData, SiteAuditExportErrors, SiteAuditExportResponses, SiteAuditGetRetentionData, SiteAuditGetRetentionErrors, SiteAuditGetRetentionResponses, SiteAuditListData, SiteAuditListErrors, SiteAuditListResponses, SiteAuditSetRetentionData, SiteAuditSetRetentionErrors, SiteAuditSetRetentionResponses, SiteAuthConfirmEmailChangeData, SiteAuthConfirmEmailChangeErrors, SiteAuthConfirmEmailChangeResponses, SiteAuthForgotPasswordData, SiteAuthForgotPasswordErrors, SiteAuthForgotPasswordResponses, SiteAuthLoginData, SiteAuthLoginErrors, SiteAuthLoginResponses, SiteAuthLogoutData, SiteAuthLogoutResponses, SiteAuthRegisterData, SiteAuthRegisterErrors, SiteAuthRegisterResponses, SiteAuthResendVerificationData, SiteAuthResendVerificationErrors, SiteAuthResendVerificationResponses, SiteAuthResetPasswordData, SiteAuthResetPasswordErrors, SiteAuthResetPasswordResponses, SiteAuthSecondFactorData, SiteAuthSecondFactorErrors, SiteAuthSecondFactorResponses, SiteAuthVerifyEmailData, SiteAuthVerifyEmailErrors, SiteAuthVerifyEmailResponses, SiteAutomationsActivateData, SiteAutomationsActivateErrors, SiteAutomationsActivateResponses, SiteAutomationsCreateData, SiteAutomationsCreateErrors, SiteAutomationsCreateResponses, SiteAutomationsDeactivateData, SiteAutomationsDeactivateErrors, SiteAutomationsDeactivateResponses, SiteAutomationsDeleteData, SiteAutomationsDeleteErrors, SiteAutomationsDeleteResponses, SiteAutomationsDryRunHttpStepData, SiteAutomationsDryRunHttpStepErrors, SiteAutomationsDryRunHttpStepResponses, SiteAutomationsGetData, SiteAutomationsGetErrors, SiteAutomationsGetResponses, SiteAutomationsListData, SiteAutomationsListErrors, SiteAutomationsListResponses, SiteAutomationsUpdateData, SiteAutomationsUpdateErrors, SiteAutomationsUpdateResponses, SiteBrandKitGetData, SiteBrandKitGetErrors, SiteBrandKitGetResponses, SiteBrandKitRecreateStarterTemplatesData, SiteBrandKitRecreateStarterTemplatesErrors, SiteBrandKitRecreateStarterTemplatesResponses, SiteBrandKitSaveData, SiteBrandKitSaveErrors, SiteBrandKitSaveResponses, SiteBroadcastsCreateData, SiteBroadcastsCreateErrors, SiteBroadcastsCreateResponses, SiteBroadcastsDeleteData, SiteBroadcastsDeleteErrors, SiteBroadcastsDeleteResponses, SiteBroadcastsGetData, SiteBroadcastsGetErrors, SiteBroadcastsGetResponses, SiteBroadcastsListData, SiteBroadcastsListErrors, SiteBroadcastsListResponses, SiteBroadcastsScheduleData, SiteBroadcastsScheduleErrors, SiteBroadcastsScheduleResponses, SiteBroadcastsSendData, SiteBroadcastsSendErrors, SiteBroadcastsSendResponses, SiteBroadcastsTestSendData, SiteBroadcastsTestSendErrors, SiteBroadcastsTestSendResponses, SiteBroadcastsUpdateData, SiteBroadcastsUpdateErrors, SiteBroadcastsUpdateResponses, SiteContactsCreateData, SiteContactsCreateErrors, SiteContactsCreateResponses, SiteContactsDeleteData, SiteContactsDeleteErrors, SiteContactsDeleteResponses, SiteContactsEraseData, SiteContactsEraseErrors, SiteContactsEraseResponses, SiteContactsExportData, SiteContactsExportErrors, SiteContactsExportResponses, SiteContactsGetData, SiteContactsGetErrors, SiteContactsGetResponses, SiteContactsListData, SiteContactsListErrors, SiteContactsListResponses, SiteContactsLookupData, SiteContactsLookupErrors, SiteContactsLookupResponses, SiteContactsUpdateData, SiteContactsUpdateErrors, SiteContactsUpdateResponses, SiteCustomFieldsListData, SiteCustomFieldsListErrors, SiteCustomFieldsListResponses, SiteEnrollmentsGetData, SiteEnrollmentsGetErrors, SiteEnrollmentsGetResponses, SiteEnrollmentsListData, SiteEnrollmentsListErrors, SiteEnrollmentsListResponses, SiteEventsActionsData, SiteEventsActionsErrors, SiteEventsActionsResponses, SiteEventsListData, SiteEventsListErrors, SiteEventsListResponses, SiteInstanceAcknowledgeNoticeData, SiteInstanceAcknowledgeNoticeErrors, SiteInstanceAcknowledgeNoticeResponses, SiteInstanceGetStateData, SiteInstanceGetStateErrors, SiteInstanceGetStateResponses, SiteInstancePreviewTelemetryReportData, SiteInstancePreviewTelemetryReportErrors, SiteInstancePreviewTelemetryReportResponses, SiteInstanceSetTelemetryData, SiteInstanceSetTelemetryErrors, SiteInstanceSetTelemetryResponses, SiteIntegrationsCreateData, SiteIntegrationsCreateErrors, SiteIntegrationsCreateResponses, SiteIntegrationsDeleteData, SiteIntegrationsDeleteErrors, SiteIntegrationsDeleteResponses, SiteIntegrationsGetData, SiteIntegrationsGetErrors, SiteIntegrationsGetResponses, SiteIntegrationsListData, SiteIntegrationsListErrors, SiteIntegrationsListResponses, SiteIntegrationsRegenerateKeyData, SiteIntegrationsRegenerateKeyErrors, SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsUpdateData, SiteIntegrationsUpdateErrors, SiteIntegrationsUpdateResponses, SiteInvitationsCreateData, SiteInvitationsCreateErrors, SiteInvitationsCreateResponses, SiteInvitationsDeleteData, SiteInvitationsDeleteErrors, SiteInvitationsDeleteResponses, SiteInvitationsListData, SiteInvitationsListErrors, SiteInvitationsListResponses, SiteMembershipsDeleteData, SiteMembershipsDeleteErrors, SiteMembershipsDeleteResponses, SiteMembershipsListData, SiteMembershipsListErrors, SiteMembershipsListResponses, SiteMembershipsResetSecondFactorData, SiteMembershipsResetSecondFactorErrors, SiteMembershipsResetSecondFactorResponses, SiteMembershipsUpdateData, SiteMembershipsUpdateErrors, SiteMembershipsUpdateResponses, SiteOAuthDecideData, SiteOAuthDecideErrors, SiteOAuthDecideResponses, SiteOAuthDescribeData, SiteOAuthDescribeErrors, SiteOAuthDescribeResponses, SitePresetsListData, SitePresetsListResponses, SitePublicConfirmationsPerformData, SitePublicConfirmationsPerformErrors, SitePublicConfirmationsPerformResponses, SitePublicInvitationsAcceptData, SitePublicInvitationsAcceptErrors, SitePublicInvitationsAcceptResponses, SitePublicInvitationsLookupData, SitePublicInvitationsLookupErrors, SitePublicInvitationsLookupResponses, SitePublicUnsubscribesPerformData, SitePublicUnsubscribesPerformErrors, SitePublicUnsubscribesPerformResponses, SiteSecondFactorConfirmEnrollmentData, SiteSecondFactorConfirmEnrollmentErrors, SiteSecondFactorConfirmEnrollmentResponses, SiteSecondFactorDisableData, SiteSecondFactorDisableErrors, SiteSecondFactorDisableResponses, SiteSecondFactorGetStatusData, SiteSecondFactorGetStatusResponses, SiteSecondFactorRegenerateRecoveryCodesData, SiteSecondFactorRegenerateRecoveryCodesErrors, SiteSecondFactorRegenerateRecoveryCodesResponses, SiteSecondFactorStartEnrollmentData, SiteSecondFactorStartEnrollmentErrors, SiteSecondFactorStartEnrollmentResponses, SiteSegmentsCreateData, SiteSegmentsCreateErrors, SiteSegmentsCreateResponses, SiteSegmentsDeleteData, SiteSegmentsDeleteErrors, SiteSegmentsDeleteResponses, SiteSegmentsGetData, SiteSegmentsGetErrors, SiteSegmentsGetResponses, SiteSegmentsListData, SiteSegmentsListErrors, SiteSegmentsListResponses, SiteSegmentsPreviewData, SiteSegmentsPreviewErrors, SiteSegmentsPreviewResponses, SiteSegmentsUpdateData, SiteSegmentsUpdateErrors, SiteSegmentsUpdateResponses, SiteSendingDomainsCreateData, SiteSendingDomainsCreateErrors, SiteSendingDomainsCreateResponses, SiteSendingDomainsDeleteData, SiteSendingDomainsDeleteErrors, SiteSendingDomainsDeleteResponses, SiteSendingDomainsGetData, SiteSendingDomainsGetErrors, SiteSendingDomainsGetResponses, SiteSendingDomainsListData, SiteSendingDomainsListErrors, SiteSendingDomainsListResponses, SiteSendingDomainsVerifyData, SiteSendingDomainsVerifyErrors, SiteSendingDomainsVerifyResponses, SiteSetupChecklistGetData, SiteSetupChecklistGetErrors, SiteSetupChecklistGetResponses, SiteSuppressionsCreateData, SiteSuppressionsCreateErrors, SiteSuppressionsCreateResponses, SiteSuppressionsDeleteData, SiteSuppressionsDeleteErrors, SiteSuppressionsDeleteResponses, SiteSuppressionsListData, SiteSuppressionsListErrors, SiteSuppressionsListResponses, SiteTagsApplyData, SiteTagsApplyErrors, SiteTagsApplyResponses, SiteTagsListData, SiteTagsListErrors, SiteTagsListForContactData, SiteTagsListForContactErrors, SiteTagsListForContactResponses, SiteTagsListResponses, SiteTagsRemoveData, SiteTagsRemoveErrors, SiteTagsRemoveResponses, SiteTemplatesCreateData, SiteTemplatesCreateErrors, SiteTemplatesCreateResponses, SiteTemplatesDeleteData, SiteTemplatesDeleteErrors, SiteTemplatesDeleteResponses, SiteTemplatesGetData, SiteTemplatesGetErrors, SiteTemplatesGetResponses, SiteTemplatesListData, SiteTemplatesListErrors, SiteTemplatesListResponses, SiteTemplatesUpdateData, SiteTemplatesUpdateErrors, SiteTemplatesUpdateResponses, SiteTokensCreateData, SiteTokensCreateErrors, SiteTokensCreateResponses, SiteTokensDeleteData, SiteTokensDeleteErrors, SiteTokensDeleteResponses, SiteTokensListData, SiteTokensListErrors, SiteTokensListResponses, SiteTransactionalEmailsListData, SiteTransactionalEmailsListErrors, SiteTransactionalEmailsListResponses, SiteUserEmailChangeData, SiteUserEmailChangeErrors, SiteUserEmailChangeResponses, SiteUserGetMeData, SiteUserGetMeResponses, SiteUserSignOutEverywhereData, SiteUserSignOutEverywhereResponses, SiteUserUpdateMeData, SiteUserUpdateMeErrors, SiteUserUpdateMeResponses, SiteWebhooksCreateData, SiteWebhooksCreateErrors, SiteWebhooksCreateResponses, SiteWebhooksDeleteData, SiteWebhooksDeleteErrors, SiteWebhooksDeleteResponses, SiteWebhooksGetData, SiteWebhooksGetErrors, SiteWebhooksGetResponses, SiteWebhooksListData, SiteWebhooksListErrors, SiteWebhooksListResponses, SiteWebhooksRegenerateSecretData, SiteWebhooksRegenerateSecretErrors, SiteWebhooksRegenerateSecretResponses, SiteWebhooksTestData, SiteWebhooksTestErrors, SiteWebhooksTestResponses, SiteWebhooksUpdateData, SiteWebhooksUpdateErrors, SiteWebhooksUpdateResponses, SiteWorkspacesAccountLinkData, SiteWorkspacesAccountLinkErrors, SiteWorkspacesAccountLinkResponses, SiteWorkspacesListData, SiteWorkspacesListResponses, SiteWorkspacesSetSecondFactorRequirementData, SiteWorkspacesSetSecondFactorRequirementErrors, SiteWorkspacesSetSecondFactorRequirementResponses, SiteWorkspacesUpdateData, SiteWorkspacesUpdateErrors, SiteWorkspacesUpdateResponses } from './types.gen.ts';
-import { zSiteAnalyticsOverviewPath, zSiteAnalyticsOverviewQuery, zSiteAuditExportPath, zSiteAuditExportQuery, zSiteAuditGetRetentionPath, zSiteAuditListPath, zSiteAuditListQuery, zSiteAuditSetRetentionBody, zSiteAuditSetRetentionPath, zSiteAuthConfirmEmailChangeBody, zSiteAuthForgotPasswordBody, zSiteAuthLoginBody, zSiteAuthRegisterBody, zSiteAuthResendVerificationBody, zSiteAuthResetPasswordBody, zSiteAuthSecondFactorBody, zSiteAuthVerifyEmailBody, zSiteAutomationsActivatePath, zSiteAutomationsCreateBody, zSiteAutomationsCreatePath, zSiteAutomationsDeactivatePath, zSiteAutomationsDeletePath, zSiteAutomationsDryRunHttpStepBody, zSiteAutomationsDryRunHttpStepPath, zSiteAutomationsGetPath, zSiteAutomationsListPath, zSiteAutomationsListQuery, zSiteAutomationsUpdateBody, zSiteAutomationsUpdatePath, zSiteBrandKitGetPath, zSiteBrandKitRecreateStarterTemplatesPath, zSiteBrandKitSaveBody, zSiteBrandKitSavePath, zSiteBroadcastsCreateBody, zSiteBroadcastsCreatePath, zSiteBroadcastsDeletePath, zSiteBroadcastsGetPath, zSiteBroadcastsListPath, zSiteBroadcastsListQuery, zSiteBroadcastsScheduleBody, zSiteBroadcastsSchedulePath, zSiteBroadcastsSendPath, zSiteBroadcastsTestSendBody, zSiteBroadcastsTestSendPath, zSiteBroadcastsUpdateBody, zSiteBroadcastsUpdatePath, zSiteContactsCreateBody, zSiteContactsCreatePath, zSiteContactsDeletePath, zSiteContactsErasePath, zSiteContactsEraseQuery, zSiteContactsExportPath, zSiteContactsExportQuery, zSiteContactsGetPath, zSiteContactsListPath, zSiteContactsListQuery, zSiteContactsLookupPath, zSiteContactsLookupQuery, zSiteContactsUpdateBody, zSiteContactsUpdatePath, zSiteCustomFieldsListPath, zSiteEnrollmentsGetPath, zSiteEnrollmentsListPath, zSiteEnrollmentsListQuery, zSiteEventsActionsPath, zSiteEventsListPath, zSiteEventsListQuery, zSiteInstanceSetTelemetryBody, zSiteIntegrationsCreateBody, zSiteIntegrationsCreatePath, zSiteIntegrationsDeletePath, zSiteIntegrationsGetPath, zSiteIntegrationsListPath, zSiteIntegrationsRegenerateKeyPath, zSiteIntegrationsUpdateBody, zSiteIntegrationsUpdatePath, zSiteInvitationsCreateBody, zSiteInvitationsCreatePath, zSiteInvitationsDeletePath, zSiteInvitationsListPath, zSiteMembershipsDeletePath, zSiteMembershipsListPath, zSiteMembershipsResetSecondFactorPath, zSiteMembershipsUpdateBody, zSiteMembershipsUpdatePath, zSiteOAuthDecideBody, zSiteOAuthDescribeQuery, zSitePublicConfirmationsPerformPath, zSitePublicInvitationsAcceptBody, zSitePublicInvitationsAcceptPath, zSitePublicInvitationsLookupPath, zSitePublicUnsubscribesPerformPath, zSiteSecondFactorConfirmEnrollmentBody, zSiteSecondFactorDisableBody, zSiteSecondFactorRegenerateRecoveryCodesBody, zSiteSecondFactorStartEnrollmentBody, zSiteSegmentsCreateBody, zSiteSegmentsCreatePath, zSiteSegmentsDeletePath, zSiteSegmentsGetPath, zSiteSegmentsListPath, zSiteSegmentsListQuery, zSiteSegmentsPreviewBody, zSiteSegmentsPreviewPath, zSiteSegmentsUpdateBody, zSiteSegmentsUpdatePath, zSiteSendingDomainsCreateBody, zSiteSendingDomainsCreatePath, zSiteSendingDomainsDeletePath, zSiteSendingDomainsGetPath, zSiteSendingDomainsListPath, zSiteSendingDomainsListQuery, zSiteSendingDomainsVerifyPath, zSiteSetupChecklistGetPath, zSiteSuppressionsCreateBody, zSiteSuppressionsCreatePath, zSiteSuppressionsDeletePath, zSiteSuppressionsListPath, zSiteSuppressionsListQuery, zSiteTagsApplyBody, zSiteTagsApplyPath, zSiteTagsListForContactPath, zSiteTagsListForContactQuery, zSiteTagsListPath, zSiteTagsListQuery, zSiteTagsRemovePath, zSiteTemplatesCreateBody, zSiteTemplatesCreatePath, zSiteTemplatesDeletePath, zSiteTemplatesGetPath, zSiteTemplatesListPath, zSiteTemplatesListQuery, zSiteTemplatesUpdateBody, zSiteTemplatesUpdatePath, zSiteTokensCreateBody, zSiteTokensCreatePath, zSiteTokensDeletePath, zSiteTokensListPath, zSiteTransactionalEmailsListPath, zSiteTransactionalEmailsListQuery, zSiteUserEmailChangeBody, zSiteUserUpdateMeBody, zSiteWebhooksCreateBody, zSiteWebhooksCreatePath, zSiteWebhooksDeletePath, zSiteWebhooksGetPath, zSiteWebhooksListPath, zSiteWebhooksListQuery, zSiteWebhooksRegenerateSecretPath, zSiteWebhooksTestBody, zSiteWebhooksTestPath, zSiteWebhooksUpdateBody, zSiteWebhooksUpdatePath, zSiteWorkspacesAccountLinkPath, zSiteWorkspacesSetSecondFactorRequirementBody, zSiteWorkspacesSetSecondFactorRequirementPath, zSiteWorkspacesUpdateBody, zSiteWorkspacesUpdatePath } from './zod.gen.ts';
+import type { SiteAnalyticsOverviewData, SiteAnalyticsOverviewErrors, SiteAnalyticsOverviewResponses, SiteAuditExportData, SiteAuditExportErrors, SiteAuditExportResponses, SiteAuditGetRetentionData, SiteAuditGetRetentionErrors, SiteAuditGetRetentionResponses, SiteAuditListData, SiteAuditListErrors, SiteAuditListResponses, SiteAuditSetRetentionData, SiteAuditSetRetentionErrors, SiteAuditSetRetentionResponses, SiteAuthConfirmEmailChangeData, SiteAuthConfirmEmailChangeErrors, SiteAuthConfirmEmailChangeResponses, SiteAuthForgotPasswordData, SiteAuthForgotPasswordErrors, SiteAuthForgotPasswordResponses, SiteAuthLoginData, SiteAuthLoginErrors, SiteAuthLoginResponses, SiteAuthLogoutData, SiteAuthLogoutResponses, SiteAuthRegisterData, SiteAuthRegisterErrors, SiteAuthRegisterResponses, SiteAuthResendVerificationData, SiteAuthResendVerificationErrors, SiteAuthResendVerificationResponses, SiteAuthResetPasswordData, SiteAuthResetPasswordErrors, SiteAuthResetPasswordResponses, SiteAuthSecondFactorData, SiteAuthSecondFactorErrors, SiteAuthSecondFactorResponses, SiteAuthVerifyEmailData, SiteAuthVerifyEmailErrors, SiteAuthVerifyEmailResponses, SiteAutomationsActivateData, SiteAutomationsActivateErrors, SiteAutomationsActivateResponses, SiteAutomationsCreateData, SiteAutomationsCreateErrors, SiteAutomationsCreateResponses, SiteAutomationsDeactivateData, SiteAutomationsDeactivateErrors, SiteAutomationsDeactivateResponses, SiteAutomationsDeleteData, SiteAutomationsDeleteErrors, SiteAutomationsDeleteResponses, SiteAutomationsDryRunHttpStepData, SiteAutomationsDryRunHttpStepErrors, SiteAutomationsDryRunHttpStepResponses, SiteAutomationsGetData, SiteAutomationsGetErrors, SiteAutomationsGetResponses, SiteAutomationsListData, SiteAutomationsListErrors, SiteAutomationsListResponses, SiteAutomationsUpdateData, SiteAutomationsUpdateErrors, SiteAutomationsUpdateResponses, SiteBrandKitGetData, SiteBrandKitGetErrors, SiteBrandKitGetResponses, SiteBrandKitRecreateStarterTemplatesData, SiteBrandKitRecreateStarterTemplatesErrors, SiteBrandKitRecreateStarterTemplatesResponses, SiteBrandKitSaveData, SiteBrandKitSaveErrors, SiteBrandKitSaveResponses, SiteBroadcastsCreateData, SiteBroadcastsCreateErrors, SiteBroadcastsCreateResponses, SiteBroadcastsDeleteData, SiteBroadcastsDeleteErrors, SiteBroadcastsDeleteResponses, SiteBroadcastsGetData, SiteBroadcastsGetErrors, SiteBroadcastsGetResponses, SiteBroadcastsListData, SiteBroadcastsListErrors, SiteBroadcastsListResponses, SiteBroadcastsScheduleData, SiteBroadcastsScheduleErrors, SiteBroadcastsScheduleResponses, SiteBroadcastsSendData, SiteBroadcastsSendErrors, SiteBroadcastsSendResponses, SiteBroadcastsTestSendData, SiteBroadcastsTestSendErrors, SiteBroadcastsTestSendResponses, SiteBroadcastsUpdateData, SiteBroadcastsUpdateErrors, SiteBroadcastsUpdateResponses, SiteContactsCreateData, SiteContactsCreateErrors, SiteContactsCreateResponses, SiteContactsDeleteData, SiteContactsDeleteErrors, SiteContactsDeleteResponses, SiteContactsEraseData, SiteContactsEraseErrors, SiteContactsEraseResponses, SiteContactsExportData, SiteContactsExportErrors, SiteContactsExportResponses, SiteContactsGetData, SiteContactsGetErrors, SiteContactsGetResponses, SiteContactsListData, SiteContactsListErrors, SiteContactsListResponses, SiteContactsLookupData, SiteContactsLookupErrors, SiteContactsLookupResponses, SiteContactsUpdateData, SiteContactsUpdateErrors, SiteContactsUpdateResponses, SiteCustomFieldsListData, SiteCustomFieldsListErrors, SiteCustomFieldsListResponses, SiteEnrollmentsGetData, SiteEnrollmentsGetErrors, SiteEnrollmentsGetResponses, SiteEnrollmentsListData, SiteEnrollmentsListErrors, SiteEnrollmentsListResponses, SiteEventsActionsData, SiteEventsActionsErrors, SiteEventsActionsResponses, SiteEventsListData, SiteEventsListErrors, SiteEventsListResponses, SiteInstanceAcknowledgeNoticeData, SiteInstanceAcknowledgeNoticeErrors, SiteInstanceAcknowledgeNoticeResponses, SiteInstanceGetStateData, SiteInstanceGetStateErrors, SiteInstanceGetStateResponses, SiteInstancePreviewTelemetryReportData, SiteInstancePreviewTelemetryReportErrors, SiteInstancePreviewTelemetryReportResponses, SiteInstanceSetTelemetryData, SiteInstanceSetTelemetryErrors, SiteInstanceSetTelemetryResponses, SiteIntegrationsCreateData, SiteIntegrationsCreateErrors, SiteIntegrationsCreateResponses, SiteIntegrationsDeleteData, SiteIntegrationsDeleteErrors, SiteIntegrationsDeleteResponses, SiteIntegrationsGetData, SiteIntegrationsGetErrors, SiteIntegrationsGetResponses, SiteIntegrationsListData, SiteIntegrationsListErrors, SiteIntegrationsListResponses, SiteIntegrationsRegenerateKeyData, SiteIntegrationsRegenerateKeyErrors, SiteIntegrationsRegenerateKeyResponses, SiteIntegrationsUpdateData, SiteIntegrationsUpdateErrors, SiteIntegrationsUpdateResponses, SiteInvitationsCreateData, SiteInvitationsCreateErrors, SiteInvitationsCreateResponses, SiteInvitationsDeleteData, SiteInvitationsDeleteErrors, SiteInvitationsDeleteResponses, SiteInvitationsListData, SiteInvitationsListErrors, SiteInvitationsListResponses, SiteMembershipsDeleteData, SiteMembershipsDeleteErrors, SiteMembershipsDeleteResponses, SiteMembershipsListData, SiteMembershipsListErrors, SiteMembershipsListResponses, SiteMembershipsResetSecondFactorData, SiteMembershipsResetSecondFactorErrors, SiteMembershipsResetSecondFactorResponses, SiteMembershipsUpdateData, SiteMembershipsUpdateErrors, SiteMembershipsUpdateResponses, SiteOAuthDecideData, SiteOAuthDecideErrors, SiteOAuthDecideResponses, SiteOAuthDescribeData, SiteOAuthDescribeErrors, SiteOAuthDescribeResponses, SitePresetsListData, SitePresetsListResponses, SitePublicConfirmationsPerformData, SitePublicConfirmationsPerformErrors, SitePublicConfirmationsPerformResponses, SitePublicInvitationsAcceptData, SitePublicInvitationsAcceptErrors, SitePublicInvitationsAcceptResponses, SitePublicInvitationsLookupData, SitePublicInvitationsLookupErrors, SitePublicInvitationsLookupResponses, SitePublicUnsubscribesPerformData, SitePublicUnsubscribesPerformErrors, SitePublicUnsubscribesPerformResponses, SiteSecondFactorConfirmEnrollmentData, SiteSecondFactorConfirmEnrollmentErrors, SiteSecondFactorConfirmEnrollmentResponses, SiteSecondFactorDisableData, SiteSecondFactorDisableErrors, SiteSecondFactorDisableResponses, SiteSecondFactorGetStatusData, SiteSecondFactorGetStatusResponses, SiteSecondFactorRegenerateRecoveryCodesData, SiteSecondFactorRegenerateRecoveryCodesErrors, SiteSecondFactorRegenerateRecoveryCodesResponses, SiteSecondFactorStartEnrollmentData, SiteSecondFactorStartEnrollmentErrors, SiteSecondFactorStartEnrollmentResponses, SiteSegmentsCreateData, SiteSegmentsCreateErrors, SiteSegmentsCreateResponses, SiteSegmentsDeleteData, SiteSegmentsDeleteErrors, SiteSegmentsDeleteResponses, SiteSegmentsGetData, SiteSegmentsGetErrors, SiteSegmentsGetResponses, SiteSegmentsListData, SiteSegmentsListErrors, SiteSegmentsListResponses, SiteSegmentsPreviewData, SiteSegmentsPreviewErrors, SiteSegmentsPreviewResponses, SiteSegmentsUpdateData, SiteSegmentsUpdateErrors, SiteSegmentsUpdateResponses, SiteSendingDomainsCreateData, SiteSendingDomainsCreateErrors, SiteSendingDomainsCreateResponses, SiteSendingDomainsDeleteData, SiteSendingDomainsDeleteErrors, SiteSendingDomainsDeleteResponses, SiteSendingDomainsGetData, SiteSendingDomainsGetErrors, SiteSendingDomainsGetResponses, SiteSendingDomainsListData, SiteSendingDomainsListErrors, SiteSendingDomainsListResponses, SiteSendingDomainsVerifyData, SiteSendingDomainsVerifyErrors, SiteSendingDomainsVerifyResponses, SiteSetupChecklistGetData, SiteSetupChecklistGetErrors, SiteSetupChecklistGetResponses, SiteSuppressionsCreateData, SiteSuppressionsCreateErrors, SiteSuppressionsCreateResponses, SiteSuppressionsDeleteData, SiteSuppressionsDeleteErrors, SiteSuppressionsDeleteResponses, SiteSuppressionsListData, SiteSuppressionsListErrors, SiteSuppressionsListResponses, SiteTagsApplyData, SiteTagsApplyErrors, SiteTagsApplyResponses, SiteTagsListData, SiteTagsListErrors, SiteTagsListForContactData, SiteTagsListForContactErrors, SiteTagsListForContactResponses, SiteTagsListResponses, SiteTagsRemoveData, SiteTagsRemoveErrors, SiteTagsRemoveResponses, SiteTemplatesCreateData, SiteTemplatesCreateErrors, SiteTemplatesCreateResponses, SiteTemplatesDeleteData, SiteTemplatesDeleteErrors, SiteTemplatesDeleteResponses, SiteTemplatesGetData, SiteTemplatesGetErrors, SiteTemplatesGetResponses, SiteTemplatesListData, SiteTemplatesListErrors, SiteTemplatesListResponses, SiteTemplatesUpdateData, SiteTemplatesUpdateErrors, SiteTemplatesUpdateResponses, SiteTokensCreateData, SiteTokensCreateErrors, SiteTokensCreateResponses, SiteTokensDeleteData, SiteTokensDeleteErrors, SiteTokensDeleteResponses, SiteTokensListData, SiteTokensListErrors, SiteTokensListResponses, SiteTransactionalEmailsListData, SiteTransactionalEmailsListErrors, SiteTransactionalEmailsListResponses, SiteUserEmailChangeData, SiteUserEmailChangeErrors, SiteUserEmailChangeResponses, SiteUserGetMeData, SiteUserGetMeResponses, SiteUserSignOutEverywhereData, SiteUserSignOutEverywhereResponses, SiteUserUpdateMeData, SiteUserUpdateMeErrors, SiteUserUpdateMeResponses, SiteWebhooksCreateData, SiteWebhooksCreateErrors, SiteWebhooksCreateResponses, SiteWebhooksDeleteData, SiteWebhooksDeleteErrors, SiteWebhooksDeleteResponses, SiteWebhooksGetData, SiteWebhooksGetErrors, SiteWebhooksGetResponses, SiteWebhooksListData, SiteWebhooksListErrors, SiteWebhooksListResponses, SiteWebhooksRegenerateSecretData, SiteWebhooksRegenerateSecretErrors, SiteWebhooksRegenerateSecretResponses, SiteWebhooksTestData, SiteWebhooksTestErrors, SiteWebhooksTestResponses, SiteWebhooksUpdateData, SiteWebhooksUpdateErrors, SiteWebhooksUpdateResponses, SiteWorkspacesAccountLinkData, SiteWorkspacesAccountLinkErrors, SiteWorkspacesAccountLinkResponses, SiteWorkspacesCreateData, SiteWorkspacesCreateErrors, SiteWorkspacesCreateResponses, SiteWorkspacesDeleteData, SiteWorkspacesDeleteErrors, SiteWorkspacesDeleteResponses, SiteWorkspacesListData, SiteWorkspacesListDeletedData, SiteWorkspacesListDeletedResponses, SiteWorkspacesListResponses, SiteWorkspacesRestoreData, SiteWorkspacesRestoreErrors, SiteWorkspacesRestoreResponses, SiteWorkspacesSetSecondFactorRequirementData, SiteWorkspacesSetSecondFactorRequirementErrors, SiteWorkspacesSetSecondFactorRequirementResponses, SiteWorkspacesUpdateData, SiteWorkspacesUpdateErrors, SiteWorkspacesUpdateResponses } from './types.gen.ts';
+import { zSiteAnalyticsOverviewPath, zSiteAnalyticsOverviewQuery, zSiteAuditExportPath, zSiteAuditExportQuery, zSiteAuditGetRetentionPath, zSiteAuditListPath, zSiteAuditListQuery, zSiteAuditSetRetentionBody, zSiteAuditSetRetentionPath, zSiteAuthConfirmEmailChangeBody, zSiteAuthForgotPasswordBody, zSiteAuthLoginBody, zSiteAuthRegisterBody, zSiteAuthResendVerificationBody, zSiteAuthResetPasswordBody, zSiteAuthSecondFactorBody, zSiteAuthVerifyEmailBody, zSiteAutomationsActivatePath, zSiteAutomationsCreateBody, zSiteAutomationsCreatePath, zSiteAutomationsDeactivatePath, zSiteAutomationsDeletePath, zSiteAutomationsDryRunHttpStepBody, zSiteAutomationsDryRunHttpStepPath, zSiteAutomationsGetPath, zSiteAutomationsListPath, zSiteAutomationsListQuery, zSiteAutomationsUpdateBody, zSiteAutomationsUpdatePath, zSiteBrandKitGetPath, zSiteBrandKitRecreateStarterTemplatesPath, zSiteBrandKitSaveBody, zSiteBrandKitSavePath, zSiteBroadcastsCreateBody, zSiteBroadcastsCreatePath, zSiteBroadcastsDeletePath, zSiteBroadcastsGetPath, zSiteBroadcastsListPath, zSiteBroadcastsListQuery, zSiteBroadcastsScheduleBody, zSiteBroadcastsSchedulePath, zSiteBroadcastsSendPath, zSiteBroadcastsTestSendBody, zSiteBroadcastsTestSendPath, zSiteBroadcastsUpdateBody, zSiteBroadcastsUpdatePath, zSiteContactsCreateBody, zSiteContactsCreatePath, zSiteContactsDeletePath, zSiteContactsErasePath, zSiteContactsEraseQuery, zSiteContactsExportPath, zSiteContactsExportQuery, zSiteContactsGetPath, zSiteContactsListPath, zSiteContactsListQuery, zSiteContactsLookupPath, zSiteContactsLookupQuery, zSiteContactsUpdateBody, zSiteContactsUpdatePath, zSiteCustomFieldsListPath, zSiteEnrollmentsGetPath, zSiteEnrollmentsListPath, zSiteEnrollmentsListQuery, zSiteEventsActionsPath, zSiteEventsListPath, zSiteEventsListQuery, zSiteInstanceSetTelemetryBody, zSiteIntegrationsCreateBody, zSiteIntegrationsCreatePath, zSiteIntegrationsDeletePath, zSiteIntegrationsGetPath, zSiteIntegrationsListPath, zSiteIntegrationsRegenerateKeyPath, zSiteIntegrationsUpdateBody, zSiteIntegrationsUpdatePath, zSiteInvitationsCreateBody, zSiteInvitationsCreatePath, zSiteInvitationsDeletePath, zSiteInvitationsListPath, zSiteMembershipsDeletePath, zSiteMembershipsListPath, zSiteMembershipsResetSecondFactorPath, zSiteMembershipsUpdateBody, zSiteMembershipsUpdatePath, zSiteOAuthDecideBody, zSiteOAuthDescribeQuery, zSitePublicConfirmationsPerformPath, zSitePublicInvitationsAcceptBody, zSitePublicInvitationsAcceptPath, zSitePublicInvitationsLookupPath, zSitePublicUnsubscribesPerformPath, zSiteSecondFactorConfirmEnrollmentBody, zSiteSecondFactorDisableBody, zSiteSecondFactorRegenerateRecoveryCodesBody, zSiteSecondFactorStartEnrollmentBody, zSiteSegmentsCreateBody, zSiteSegmentsCreatePath, zSiteSegmentsDeletePath, zSiteSegmentsGetPath, zSiteSegmentsListPath, zSiteSegmentsListQuery, zSiteSegmentsPreviewBody, zSiteSegmentsPreviewPath, zSiteSegmentsUpdateBody, zSiteSegmentsUpdatePath, zSiteSendingDomainsCreateBody, zSiteSendingDomainsCreatePath, zSiteSendingDomainsDeletePath, zSiteSendingDomainsGetPath, zSiteSendingDomainsListPath, zSiteSendingDomainsListQuery, zSiteSendingDomainsVerifyPath, zSiteSetupChecklistGetPath, zSiteSuppressionsCreateBody, zSiteSuppressionsCreatePath, zSiteSuppressionsDeletePath, zSiteSuppressionsListPath, zSiteSuppressionsListQuery, zSiteTagsApplyBody, zSiteTagsApplyPath, zSiteTagsListForContactPath, zSiteTagsListForContactQuery, zSiteTagsListPath, zSiteTagsListQuery, zSiteTagsRemovePath, zSiteTemplatesCreateBody, zSiteTemplatesCreatePath, zSiteTemplatesDeletePath, zSiteTemplatesGetPath, zSiteTemplatesListPath, zSiteTemplatesListQuery, zSiteTemplatesUpdateBody, zSiteTemplatesUpdatePath, zSiteTokensCreateBody, zSiteTokensCreatePath, zSiteTokensDeletePath, zSiteTokensListPath, zSiteTransactionalEmailsListPath, zSiteTransactionalEmailsListQuery, zSiteUserEmailChangeBody, zSiteUserUpdateMeBody, zSiteWebhooksCreateBody, zSiteWebhooksCreatePath, zSiteWebhooksDeletePath, zSiteWebhooksGetPath, zSiteWebhooksListPath, zSiteWebhooksListQuery, zSiteWebhooksRegenerateSecretPath, zSiteWebhooksTestBody, zSiteWebhooksTestPath, zSiteWebhooksUpdateBody, zSiteWebhooksUpdatePath, zSiteWorkspacesAccountLinkPath, zSiteWorkspacesCreateBody, zSiteWorkspacesDeleteBody, zSiteWorkspacesDeletePath, zSiteWorkspacesRestorePath, zSiteWorkspacesSetSecondFactorRequirementBody, zSiteWorkspacesSetSecondFactorRequirementPath, zSiteWorkspacesUpdateBody, zSiteWorkspacesUpdatePath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -638,7 +638,51 @@ export const siteWorkspacesList = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Rename a workspace owned by the authenticated user
+ * Create a Workspace; the authenticated User becomes its Owner. Names are free text
+ * and need not be unique. An Unverified User is refused with 403 and code
+ * `email_verification_required`. The creation is recorded as an Audit entry.
+ */
+export const siteWorkspacesCreate = <ThrowOnError extends boolean = false>(options: Options<SiteWorkspacesCreateData, ThrowOnError>): RequestResult<SiteWorkspacesCreateResponses, SiteWorkspacesCreateErrors, ThrowOnError> => (options.client ?? client).post<SiteWorkspacesCreateResponses, SiteWorkspacesCreateErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: zSiteWorkspacesCreateBody,
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'JWT',
+      type: 'apiKey'
+    }],
+  url: '/workspaces',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * List the Workspaces in their deletion window that the authenticated User owns, with
+ * the date their data will be erased.
+ */
+export const siteWorkspacesListDeleted = <ThrowOnError extends boolean = false>(options?: Options<SiteWorkspacesListDeletedData, ThrowOnError>): RequestResult<SiteWorkspacesListDeletedResponses, unknown, ThrowOnError> => (options?.client ?? client).get<SiteWorkspacesListDeletedResponses, unknown, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'JWT',
+      type: 'apiKey'
+    }],
+  url: '/workspaces/deleted',
+  ...options
+});
+
+/**
+ * Rename a workspace or change its postal address (Owner and Admin only). The id
+ * never changes.
  */
 export const siteWorkspacesUpdate = <ThrowOnError extends boolean = false>(options: Options<SiteWorkspacesUpdateData, ThrowOnError>): RequestResult<SiteWorkspacesUpdateResponses, SiteWorkspacesUpdateErrors, ThrowOnError> => (options.client ?? client).put<SiteWorkspacesUpdateResponses, SiteWorkspacesUpdateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
@@ -651,7 +695,7 @@ export const siteWorkspacesUpdate = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}',
+  url: '/workspaces/{workspaceId}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -674,7 +718,7 @@ export const siteWorkspacesAccountLink = <ThrowOnError extends boolean = false>(
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/account-link',
+  url: '/workspaces/{workspaceId}/account-link',
   ...options
 });
 
@@ -692,7 +736,7 @@ export const siteAnalyticsOverview = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/analytics/overview',
+  url: '/workspaces/{workspaceId}/analytics/overview',
   ...options
 });
 
@@ -710,7 +754,7 @@ export const siteAuditList = <ThrowOnError extends boolean = false>(options: Opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/audit-entries',
+  url: '/workspaces/{workspaceId}/audit-entries',
   ...options
 });
 
@@ -728,7 +772,7 @@ export const siteAuditExport = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/audit-entries/export',
+  url: '/workspaces/{workspaceId}/audit-entries/export',
   ...options
 });
 
@@ -746,7 +790,7 @@ export const siteAuditGetRetention = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/audit-entries/retention',
+  url: '/workspaces/{workspaceId}/audit-entries/retention',
   ...options
 });
 
@@ -764,7 +808,7 @@ export const siteAuditSetRetention = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/audit-entries/retention',
+  url: '/workspaces/{workspaceId}/audit-entries/retention',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -786,7 +830,7 @@ export const siteAutomationsList = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations',
+  url: '/workspaces/{workspaceId}/automations',
   ...options
 });
 
@@ -804,7 +848,7 @@ export const siteAutomationsCreate = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations',
+  url: '/workspaces/{workspaceId}/automations',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -826,7 +870,7 @@ export const siteAutomationsDryRunHttpStep = <ThrowOnError extends boolean = fal
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/dry-run-http-step',
+  url: '/workspaces/{workspaceId}/automations/dry-run-http-step',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -848,7 +892,7 @@ export const siteEnrollmentsList = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{automationId}/enrollments',
+  url: '/workspaces/{workspaceId}/automations/{automationId}/enrollments',
   ...options
 });
 
@@ -866,7 +910,7 @@ export const siteEnrollmentsGet = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}',
+  url: '/workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}',
   ...options
 });
 
@@ -884,7 +928,7 @@ export const siteAutomationsDelete = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}',
+  url: '/workspaces/{workspaceId}/automations/{id}',
   ...options
 });
 
@@ -902,7 +946,7 @@ export const siteAutomationsGet = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}',
+  url: '/workspaces/{workspaceId}/automations/{id}',
   ...options
 });
 
@@ -920,7 +964,7 @@ export const siteAutomationsUpdate = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}',
+  url: '/workspaces/{workspaceId}/automations/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -942,7 +986,7 @@ export const siteAutomationsActivate = <ThrowOnError extends boolean = false>(op
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}/activate',
+  url: '/workspaces/{workspaceId}/automations/{id}/activate',
   ...options
 });
 
@@ -960,7 +1004,7 @@ export const siteAutomationsDeactivate = <ThrowOnError extends boolean = false>(
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}/deactivate',
+  url: '/workspaces/{workspaceId}/automations/{id}/deactivate',
   ...options
 });
 
@@ -978,7 +1022,7 @@ export const siteBrandKitGet = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/brand-kit',
+  url: '/workspaces/{workspaceId}/brand-kit',
   ...options
 });
 
@@ -999,7 +1043,7 @@ export const siteBrandKitSave = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/brand-kit',
+  url: '/workspaces/{workspaceId}/brand-kit',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1023,7 +1067,7 @@ export const siteBrandKitRecreateStarterTemplates = <ThrowOnError extends boolea
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/brand-kit/starter-templates',
+  url: '/workspaces/{workspaceId}/brand-kit/starter-templates',
   ...options
 });
 
@@ -1041,7 +1085,7 @@ export const siteBroadcastsList = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts',
+  url: '/workspaces/{workspaceId}/broadcasts',
   ...options
 });
 
@@ -1059,7 +1103,7 @@ export const siteBroadcastsCreate = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts',
+  url: '/workspaces/{workspaceId}/broadcasts',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1081,7 +1125,7 @@ export const siteBroadcastsDelete = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}',
   ...options
 });
 
@@ -1099,7 +1143,7 @@ export const siteBroadcastsGet = <ThrowOnError extends boolean = false>(options:
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}',
   ...options
 });
 
@@ -1117,7 +1161,7 @@ export const siteBroadcastsUpdate = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1139,7 +1183,7 @@ export const siteBroadcastsSchedule = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}/schedule',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}/schedule',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1161,7 +1205,7 @@ export const siteBroadcastsSend = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}/send',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}/send',
   ...options
 });
 
@@ -1181,7 +1225,7 @@ export const siteBroadcastsTestSend = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}/test-send',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}/test-send',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1203,7 +1247,7 @@ export const siteContactsList = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts',
+  url: '/workspaces/{workspaceId}/contacts',
   ...options
 });
 
@@ -1221,7 +1265,7 @@ export const siteContactsCreate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts',
+  url: '/workspaces/{workspaceId}/contacts',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1247,7 +1291,7 @@ export const siteContactsErase = <ThrowOnError extends boolean = false>(options:
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/erase',
+  url: '/workspaces/{workspaceId}/contacts/erase',
   ...options
 });
 
@@ -1267,7 +1311,7 @@ export const siteContactsExport = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/export',
+  url: '/workspaces/{workspaceId}/contacts/export',
   ...options
 });
 
@@ -1287,7 +1331,7 @@ export const siteContactsLookup = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/lookup',
+  url: '/workspaces/{workspaceId}/contacts/lookup',
   ...options
 });
 
@@ -1305,7 +1349,7 @@ export const siteTagsListForContact = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{contactId}/tags',
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/tags',
   ...options
 });
 
@@ -1323,7 +1367,7 @@ export const siteTagsApply = <ThrowOnError extends boolean = false>(options: Opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{contactId}/tags',
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/tags',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1345,7 +1389,7 @@ export const siteTagsRemove = <ThrowOnError extends boolean = false>(options: Op
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{contactId}/tags/{name}',
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/tags/{name}',
   ...options
 });
 
@@ -1363,7 +1407,7 @@ export const siteContactsDelete = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{id}',
+  url: '/workspaces/{workspaceId}/contacts/{id}',
   ...options
 });
 
@@ -1381,7 +1425,7 @@ export const siteContactsGet = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{id}',
+  url: '/workspaces/{workspaceId}/contacts/{id}',
   ...options
 });
 
@@ -1399,7 +1443,7 @@ export const siteContactsUpdate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{id}',
+  url: '/workspaces/{workspaceId}/contacts/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1421,8 +1465,33 @@ export const siteCustomFieldsList = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/custom-fields',
+  url: '/workspaces/{workspaceId}/custom-fields',
   ...options
+});
+
+/**
+ * Delete a Workspace (Owner only). The typed name must equal the Workspace's name,
+ * else 422. The Workspace is frozen at once and hidden: it answers 404 on its paths
+ * and leaves every Member's list; an Owner restores it within 30 days. Recorded as an
+ * Audit entry.
+ */
+export const siteWorkspacesDelete = <ThrowOnError extends boolean = false>(options: Options<SiteWorkspacesDeleteData, ThrowOnError>): RequestResult<SiteWorkspacesDeleteResponses, SiteWorkspacesDeleteErrors, ThrowOnError> => (options.client ?? client).post<SiteWorkspacesDeleteResponses, SiteWorkspacesDeleteErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: zSiteWorkspacesDeleteBody,
+    path: zSiteWorkspacesDeletePath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'JWT',
+      type: 'apiKey'
+    }],
+  url: '/workspaces/{workspaceId}/delete',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**
@@ -1439,7 +1508,7 @@ export const siteEventsList = <ThrowOnError extends boolean = false>(options: Op
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/events',
+  url: '/workspaces/{workspaceId}/events',
   ...options
 });
 
@@ -1457,7 +1526,7 @@ export const siteEventsActions = <ThrowOnError extends boolean = false>(options:
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/events/actions',
+  url: '/workspaces/{workspaceId}/events/actions',
   ...options
 });
 
@@ -1475,7 +1544,7 @@ export const siteIntegrationsList = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations',
+  url: '/workspaces/{workspaceId}/integrations',
   ...options
 });
 
@@ -1493,7 +1562,7 @@ export const siteIntegrationsCreate = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations',
+  url: '/workspaces/{workspaceId}/integrations',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1515,7 +1584,7 @@ export const siteIntegrationsDelete = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations/{id}',
+  url: '/workspaces/{workspaceId}/integrations/{id}',
   ...options
 });
 
@@ -1533,7 +1602,7 @@ export const siteIntegrationsGet = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations/{id}',
+  url: '/workspaces/{workspaceId}/integrations/{id}',
   ...options
 });
 
@@ -1551,7 +1620,7 @@ export const siteIntegrationsUpdate = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations/{id}',
+  url: '/workspaces/{workspaceId}/integrations/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1573,7 +1642,7 @@ export const siteIntegrationsRegenerateKey = <ThrowOnError extends boolean = fal
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations/{id}/regenerate-key',
+  url: '/workspaces/{workspaceId}/integrations/{id}/regenerate-key',
   ...options
 });
 
@@ -1591,7 +1660,7 @@ export const siteInvitationsList = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/invitations',
+  url: '/workspaces/{workspaceId}/invitations',
   ...options
 });
 
@@ -1609,7 +1678,7 @@ export const siteInvitationsCreate = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/invitations',
+  url: '/workspaces/{workspaceId}/invitations',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1631,7 +1700,7 @@ export const siteInvitationsDelete = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/invitations/{id}',
+  url: '/workspaces/{workspaceId}/invitations/{id}',
   ...options
 });
 
@@ -1649,7 +1718,7 @@ export const siteMembershipsList = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/memberships',
+  url: '/workspaces/{workspaceId}/memberships',
   ...options
 });
 
@@ -1667,7 +1736,7 @@ export const siteMembershipsDelete = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/memberships/{id}',
+  url: '/workspaces/{workspaceId}/memberships/{id}',
   ...options
 });
 
@@ -1685,7 +1754,7 @@ export const siteMembershipsUpdate = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/memberships/{id}',
+  url: '/workspaces/{workspaceId}/memberships/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1710,7 +1779,28 @@ export const siteMembershipsResetSecondFactor = <ThrowOnError extends boolean = 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/memberships/{id}/reset-second-factor',
+  url: '/workspaces/{workspaceId}/memberships/{id}/reset-second-factor',
+  ...options
+});
+
+/**
+ * Restore a Workspace in its deletion window (Owner only). It removes only the
+ * pending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted
+ * Workspace is not exposed to anyone but its Owners, so a caller who is not an Owner
+ * gets 404 as for an unknown one. Recorded as an Audit entry.
+ */
+export const siteWorkspacesRestore = <ThrowOnError extends boolean = false>(options: Options<SiteWorkspacesRestoreData, ThrowOnError>): RequestResult<SiteWorkspacesRestoreResponses, SiteWorkspacesRestoreErrors, ThrowOnError> => (options.client ?? client).post<SiteWorkspacesRestoreResponses, SiteWorkspacesRestoreErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: zSiteWorkspacesRestorePath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'JWT',
+      type: 'apiKey'
+    }],
+  url: '/workspaces/{workspaceId}/restore',
   ...options
 });
 
@@ -1730,7 +1820,7 @@ export const siteWorkspacesSetSecondFactorRequirement = <ThrowOnError extends bo
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/second-factor-requirement',
+  url: '/workspaces/{workspaceId}/second-factor-requirement',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1752,7 +1842,7 @@ export const siteSegmentsList = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments',
+  url: '/workspaces/{workspaceId}/segments',
   ...options
 });
 
@@ -1770,7 +1860,7 @@ export const siteSegmentsCreate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments',
+  url: '/workspaces/{workspaceId}/segments',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1792,7 +1882,7 @@ export const siteSegmentsPreview = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments/preview',
+  url: '/workspaces/{workspaceId}/segments/preview',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1814,7 +1904,7 @@ export const siteSegmentsDelete = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments/{id}',
+  url: '/workspaces/{workspaceId}/segments/{id}',
   ...options
 });
 
@@ -1832,7 +1922,7 @@ export const siteSegmentsGet = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments/{id}',
+  url: '/workspaces/{workspaceId}/segments/{id}',
   ...options
 });
 
@@ -1850,7 +1940,7 @@ export const siteSegmentsUpdate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments/{id}',
+  url: '/workspaces/{workspaceId}/segments/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1872,7 +1962,7 @@ export const siteSendingDomainsList = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains',
+  url: '/workspaces/{workspaceId}/sending-domains',
   ...options
 });
 
@@ -1890,7 +1980,7 @@ export const siteSendingDomainsCreate = <ThrowOnError extends boolean = false>(o
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains',
+  url: '/workspaces/{workspaceId}/sending-domains',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1912,7 +2002,7 @@ export const siteSendingDomainsDelete = <ThrowOnError extends boolean = false>(o
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains/{id}',
+  url: '/workspaces/{workspaceId}/sending-domains/{id}',
   ...options
 });
 
@@ -1930,7 +2020,7 @@ export const siteSendingDomainsGet = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains/{id}',
+  url: '/workspaces/{workspaceId}/sending-domains/{id}',
   ...options
 });
 
@@ -1948,7 +2038,7 @@ export const siteSendingDomainsVerify = <ThrowOnError extends boolean = false>(o
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains/{id}/verify',
+  url: '/workspaces/{workspaceId}/sending-domains/{id}/verify',
   ...options
 });
 
@@ -1966,7 +2056,7 @@ export const siteSetupChecklistGet = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/setup-checklist',
+  url: '/workspaces/{workspaceId}/setup-checklist',
   ...options
 });
 
@@ -1984,7 +2074,7 @@ export const siteSuppressionsList = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/suppressions',
+  url: '/workspaces/{workspaceId}/suppressions',
   ...options
 });
 
@@ -2002,7 +2092,7 @@ export const siteSuppressionsCreate = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/suppressions',
+  url: '/workspaces/{workspaceId}/suppressions',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2024,7 +2114,7 @@ export const siteSuppressionsDelete = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/suppressions/{id}',
+  url: '/workspaces/{workspaceId}/suppressions/{id}',
   ...options
 });
 
@@ -2042,7 +2132,7 @@ export const siteTagsList = <ThrowOnError extends boolean = false>(options: Opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/tags',
+  url: '/workspaces/{workspaceId}/tags',
   ...options
 });
 
@@ -2060,7 +2150,7 @@ export const siteTemplatesList = <ThrowOnError extends boolean = false>(options:
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates',
+  url: '/workspaces/{workspaceId}/templates',
   ...options
 });
 
@@ -2078,7 +2168,7 @@ export const siteTemplatesCreate = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates',
+  url: '/workspaces/{workspaceId}/templates',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2100,7 +2190,7 @@ export const siteTemplatesDelete = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates/{id}',
+  url: '/workspaces/{workspaceId}/templates/{id}',
   ...options
 });
 
@@ -2118,7 +2208,7 @@ export const siteTemplatesGet = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates/{id}',
+  url: '/workspaces/{workspaceId}/templates/{id}',
   ...options
 });
 
@@ -2136,7 +2226,7 @@ export const siteTemplatesUpdate = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates/{id}',
+  url: '/workspaces/{workspaceId}/templates/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2158,7 +2248,7 @@ export const siteTokensList = <ThrowOnError extends boolean = false>(options: Op
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/tokens',
+  url: '/workspaces/{workspaceId}/tokens',
   ...options
 });
 
@@ -2176,7 +2266,7 @@ export const siteTokensCreate = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/tokens',
+  url: '/workspaces/{workspaceId}/tokens',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2198,7 +2288,7 @@ export const siteTokensDelete = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/tokens/{id}',
+  url: '/workspaces/{workspaceId}/tokens/{id}',
   ...options
 });
 
@@ -2216,7 +2306,7 @@ export const siteTransactionalEmailsList = <ThrowOnError extends boolean = false
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/transactional-emails',
+  url: '/workspaces/{workspaceId}/transactional-emails',
   ...options
 });
 
@@ -2234,7 +2324,7 @@ export const siteWebhooksList = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks',
+  url: '/workspaces/{workspaceId}/webhooks',
   ...options
 });
 
@@ -2252,7 +2342,7 @@ export const siteWebhooksCreate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks',
+  url: '/workspaces/{workspaceId}/webhooks',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2274,7 +2364,7 @@ export const siteWebhooksDelete = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}',
+  url: '/workspaces/{workspaceId}/webhooks/{id}',
   ...options
 });
 
@@ -2292,7 +2382,7 @@ export const siteWebhooksGet = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}',
+  url: '/workspaces/{workspaceId}/webhooks/{id}',
   ...options
 });
 
@@ -2310,7 +2400,7 @@ export const siteWebhooksUpdate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}',
+  url: '/workspaces/{workspaceId}/webhooks/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2332,7 +2422,7 @@ export const siteWebhooksRegenerateSecret = <ThrowOnError extends boolean = fals
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}/regenerate-secret',
+  url: '/workspaces/{workspaceId}/webhooks/{id}/regenerate-secret',
   ...options
 });
 
@@ -2350,7 +2440,7 @@ export const siteWebhooksTest = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}/test',
+  url: '/workspaces/{workspaceId}/webhooks/{id}/test',
   ...options,
   headers: {
     'Content-Type': 'application/json',

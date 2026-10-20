@@ -23,28 +23,28 @@ func TestAccessAndConfigEntitiesAreAuditedWithoutSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	domain, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "audited.example.com"},
-		siteapi.SiteSendingDomainsCreateParams{Slug: slug})
+		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteSendingDomainResource{}, domain)
 
 	integration, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
 		Name:   "Audited SMTP",
 		Config: smtpInput("smtp.example.com", "integration-pass-9"),
-	}, siteapi.SiteIntegrationsCreateParams{Slug: slug})
+	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteIntegrationResource{}, integration)
 
 	hook, err := c.SiteWebhooksCreate(ctx, &siteapi.SiteCreateWebhookEndpointInput{URL: "https://user:pw-9@example.com/audited?token=url-secret-7#frag"},
-		siteapi.SiteWebhooksCreateParams{Slug: slug})
+		siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	hookResp, ok := hook.(*siteapi.SiteWebhookEndpointResource)
 	require.True(t, ok)
 
 	token, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: "audited", Scopes: []string{"contacts:read"}},
-		siteapi.SiteTokensCreateParams{Slug: slug})
+		siteapi.SiteTokensCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	tokenResp, tok := token.(*siteapi.SiteCreateTokenResponse)
 	require.True(t, tok)
@@ -86,7 +86,7 @@ func TestWorkspaceSettingsChangeIsAudited(t *testing.T) {
 
 	_, err := c.SiteWorkspacesUpdate(context.Background(),
 		&siteapi.SiteUpdateWorkspaceInput{Name: "Acme Renamed", PostalAddress: siteapi.NewOptString("1 Main St")},
-		siteapi.SiteWorkspacesUpdateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
 	got := env.OutboxEvents(t, events.NameAuditEntry)
@@ -107,12 +107,12 @@ func TestApiTokenRevocationIsAudited(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{Name: "to-revoke", Scopes: []string{"contacts:read"}},
-		siteapi.SiteTokensCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	resp, ok := created.(*siteapi.SiteCreateTokenResponse)
 	require.True(t, ok)
 
-	del, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{Slug: fixtures.AcmeSlug, ID: resp.Resource.ID})
+	del, err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: resp.Resource.ID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTokensDeleteNoContent{}, del)
 

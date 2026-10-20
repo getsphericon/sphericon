@@ -19,6 +19,6 @@ credentials).
 ## Consequences
 
 Metric labels must be bounded technical dimensions (handler, route template, status class,
-outcome). Tenant or personal identifiers (workspace id or slug, contact, email, recipient id) are
+outcome). Tenant or personal identifiers (workspace id, contact, email, recipient id) are
 forbidden as labels: they leak across tenants and explode cardinality. Per-tenant analytics come
 from Events in Postgres (ADR 0011), not from `/metrics`.

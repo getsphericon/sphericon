@@ -1153,7 +1153,7 @@ type ServiceTrackingHostChange struct {
 	// The host, `track.<Sending domain>`.
 	Host string `json:"host"`
 	// The Workspace that held the host at this change.
-	WorkspaceId EntityId `json:"workspaceId"`
+	WorkspaceId WorkspaceId `json:"workspaceId"`
 	// What the host became; `removed` is the explicit report that it left the verified states. Entries of
 	// one host arrive in the order they happened, so the last one read is its current state.
 	State ServiceTrackingHostState `json:"state"`
@@ -1167,7 +1167,7 @@ func (s *ServiceTrackingHostChange) GetHost() string {
 }
 
 // GetWorkspaceId returns the value of WorkspaceId.
-func (s *ServiceTrackingHostChange) GetWorkspaceId() EntityId {
+func (s *ServiceTrackingHostChange) GetWorkspaceId() WorkspaceId {
 	return s.WorkspaceId
 }
 
@@ -1187,7 +1187,7 @@ func (s *ServiceTrackingHostChange) SetHost(val string) {
 }
 
 // SetWorkspaceId sets the value of WorkspaceId.
-func (s *ServiceTrackingHostChange) SetWorkspaceId(val EntityId) {
+func (s *ServiceTrackingHostChange) SetWorkspaceId(val WorkspaceId) {
 	s.WorkspaceId = val
 }
 
@@ -1485,24 +1485,24 @@ func (s *ServiceWorkspaceOwner) SetEmailVerifiedAt(val OptNilTimestamp) {
 // A Workspace with all of its owners, as the feed reports it.
 // Ref: #/components/schemas/ServiceWorkspaceResource
 type ServiceWorkspaceResource struct {
-	// Unique identifier.
-	ID   EntityId `json:"id"`
-	Slug string   `json:"slug"`
-	Name string   `json:"name"`
+	// The Workspace id: its short opaque public address (ADR 0043).
+	ID   WorkspaceId `json:"id"`
+	Name string      `json:"name"`
 	// When the Workspace was created.
 	CreatedAt Timestamp `json:"createdAt"`
+	// When the Workspace was deleted; absent while it is live or after a restore. Its 30-day window runs
+	// from here.
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the erasure job removed the Workspace's data; absent until then. An erased Workspace stays in
+	// the feed as a tombstone: its name is blank and it has no owners.
+	ErasedAt OptNilTimestamp `json:"erasedAt"`
 	// Every owner of the Workspace as of this entry.
 	Owners []ServiceWorkspaceOwner `json:"owners"`
 }
 
 // GetID returns the value of ID.
-func (s *ServiceWorkspaceResource) GetID() EntityId {
+func (s *ServiceWorkspaceResource) GetID() WorkspaceId {
 	return s.ID
-}
-
-// GetSlug returns the value of Slug.
-func (s *ServiceWorkspaceResource) GetSlug() string {
-	return s.Slug
 }
 
 // GetName returns the value of Name.
@@ -1515,19 +1515,24 @@ func (s *ServiceWorkspaceResource) GetCreatedAt() Timestamp {
 	return s.CreatedAt
 }
 
+// GetDeletedAt returns the value of DeletedAt.
+func (s *ServiceWorkspaceResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
+}
+
+// GetErasedAt returns the value of ErasedAt.
+func (s *ServiceWorkspaceResource) GetErasedAt() OptNilTimestamp {
+	return s.ErasedAt
+}
+
 // GetOwners returns the value of Owners.
 func (s *ServiceWorkspaceResource) GetOwners() []ServiceWorkspaceOwner {
 	return s.Owners
 }
 
 // SetID sets the value of ID.
-func (s *ServiceWorkspaceResource) SetID(val EntityId) {
+func (s *ServiceWorkspaceResource) SetID(val WorkspaceId) {
 	s.ID = val
-}
-
-// SetSlug sets the value of Slug.
-func (s *ServiceWorkspaceResource) SetSlug(val string) {
-	s.Slug = val
 }
 
 // SetName sets the value of Name.
@@ -1538,6 +1543,16 @@ func (s *ServiceWorkspaceResource) SetName(val string) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *ServiceWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
+}
+
+// SetDeletedAt sets the value of DeletedAt.
+func (s *ServiceWorkspaceResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
+}
+
+// SetErasedAt sets the value of ErasedAt.
+func (s *ServiceWorkspaceResource) SetErasedAt(val OptNilTimestamp) {
+	s.ErasedAt = val
 }
 
 // SetOwners sets the value of Owners.
@@ -1666,11 +1681,13 @@ func (s *UsageMetric) UnmarshalText(data []byte) error {
 	}
 }
 
+type WorkspaceId string
+
 // The figures of one Workspace for one Usage period.
 // Ref: #/components/schemas/WorkspaceUsageResource
 type WorkspaceUsageResource struct {
 	// The Workspace.
-	WorkspaceId EntityId `json:"workspaceId"`
+	WorkspaceId WorkspaceId `json:"workspaceId"`
 	// The Usage period: the calendar month in UTC, as YYYY-MM.
 	Period string `json:"period"`
 	// One figure per metric.
@@ -1678,7 +1695,7 @@ type WorkspaceUsageResource struct {
 }
 
 // GetWorkspaceId returns the value of WorkspaceId.
-func (s *WorkspaceUsageResource) GetWorkspaceId() EntityId {
+func (s *WorkspaceUsageResource) GetWorkspaceId() WorkspaceId {
 	return s.WorkspaceId
 }
 
@@ -1693,7 +1710,7 @@ func (s *WorkspaceUsageResource) GetFigures() []UsageFigure {
 }
 
 // SetWorkspaceId sets the value of WorkspaceId.
-func (s *WorkspaceUsageResource) SetWorkspaceId(val EntityId) {
+func (s *WorkspaceUsageResource) SetWorkspaceId(val WorkspaceId) {
 	s.WorkspaceId = val
 }
 

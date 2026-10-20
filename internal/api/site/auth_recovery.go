@@ -128,7 +128,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 		}
 		hash = &replacement
 	}
-	verified, err := h.accounts.VerifyEmail(ctx, uid, hash, u.Name)
+	verified, err := h.accounts.VerifyEmail(ctx, uid, hash)
 	if errors.Is(err, accounts.ErrAlreadyVerified) {
 		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil)))
 		return &v, nil

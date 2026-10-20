@@ -305,9 +305,8 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWorkspaceResource {
 	var siteapiSiteWorkspaceResource site.SiteWorkspaceResource
 	if source != nil {
-		siteapiSiteWorkspaceResource.ID = site.EntityId((*source).ID)
+		siteapiSiteWorkspaceResource.ID = site.WorkspaceId((*source).PublicID)
 		siteapiSiteWorkspaceResource.Name = (*source).Name
-		siteapiSiteWorkspaceResource.Slug = (*source).Slug
 		siteapiSiteWorkspaceResource.CollectKey = (*source).CollectKey
 		siteapiSiteWorkspaceResource.PostalAddress = (*source).PostalAddress
 		siteapiSiteWorkspaceResource.SuspendedAt = optNilTimestamp((*source).SuspendedAt)

@@ -80,7 +80,7 @@ type Invoker interface {
 	StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (StaffWorkspacesGetRes, error)
 	// StaffWorkspacesList invokes StaffWorkspaces_list operation.
 	//
-	// List all Workspaces, newest first, optionally narrowed by a slug search.
+	// List all Workspaces, newest first, optionally narrowed by an id or name search.
 	//
 	// GET /workspaces
 	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error)
@@ -601,8 +601,8 @@ func (c *Client) sendStaffWorkspaceAuditList(ctx context.Context, params StaffWo
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -776,8 +776,8 @@ func (c *Client) sendStaffWorkspacesExempt(ctx context.Context, params StaffWork
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -911,8 +911,8 @@ func (c *Client) sendStaffWorkspacesGet(ctx context.Context, params StaffWorkspa
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -990,7 +990,7 @@ func (c *Client) sendStaffWorkspacesGet(ctx context.Context, params StaffWorkspa
 
 // StaffWorkspacesList invokes StaffWorkspaces_list operation.
 //
-// List all Workspaces, newest first, optionally narrowed by a slug search.
+// List all Workspaces, newest first, optionally narrowed by an id or name search.
 //
 // GET /workspaces
 func (c *Client) StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error) {
@@ -1059,15 +1059,15 @@ func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorksp
 		}
 	}
 	{
-		// Encode "slug" parameter.
+		// Encode "search" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "slug",
+			Name:    "search",
 			Style:   uri.QueryStyleForm,
 			Explode: false,
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.Slug.Get(); ok {
+			if val, ok := params.Search.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -1231,8 +1231,8 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1369,8 +1369,8 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1505,8 +1505,8 @@ func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffW
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {

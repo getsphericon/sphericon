@@ -167,8 +167,8 @@ func TestRevokingTheConnectorInSettingsKillsItsRefreshToken(t *testing.T) {
 	row := connector(t, env)
 
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteTokensDelete(t.Context(), siteapi.SiteTokensDeleteParams{
-		Slug: fixtures.AcmeSlug,
-		ID:   siteapi.EntityId(row.ID),
+		WorkspaceId: fixtures.AcmePublicID,
+		ID:          siteapi.EntityId(row.ID),
 	})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTokensDeleteNoContent{}, res)

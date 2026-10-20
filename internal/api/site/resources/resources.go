@@ -64,6 +64,8 @@ type Converter interface {
 	// goverter:ignore SupportEmail
 	// The MCP origin is instance configuration, attached by the handler.
 	// goverter:ignore McpUrl
+	// The numeric key stays internal: the contract's id is the Workspace id.
+	// goverter:map PublicID ID
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 

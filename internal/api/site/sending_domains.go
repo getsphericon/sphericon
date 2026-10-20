@@ -46,7 +46,7 @@ func dnsRecord(r sendingdomains.Record) siteapi.SiteDnsRecord {
 }
 
 func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.SiteSendingDomainsListParams) (siteapi.SiteSendingDomainsListRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsListNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -72,7 +72,7 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 }
 
 func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.SiteCreateSendingDomainInput, params siteapi.SiteSendingDomainsCreateParams) (siteapi.SiteSendingDomainsCreateRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -100,7 +100,7 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Si
 }
 
 func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.SiteSendingDomainsGetParams) (siteapi.SiteSendingDomainsGetRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -123,7 +123,7 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 }
 
 func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.SiteSendingDomainsDeleteParams) (siteapi.SiteSendingDomainsDeleteRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -145,7 +145,7 @@ func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.
 }
 
 func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.SiteSendingDomainsVerifyParams) (siteapi.SiteSendingDomainsVerifyRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsVerifyNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

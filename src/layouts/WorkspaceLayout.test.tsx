@@ -11,9 +11,10 @@ import {
 } from '../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
 import { Route as securityRoute } from '../routes/account/security.tsx'
-import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
-import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
-import { Route as teamRoute } from '../routes/workspaces/$slug/settings/team.tsx'
+import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
+import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
+import { Route as newWorkspaceRoute } from '../routes/workspaces/new.tsx'
 import { page } from '../test/payloads.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
@@ -21,7 +22,7 @@ import { routeMount } from '../test/routeMount.ts'
 import { worker } from '../test/worker.ts'
 import { WorkspaceLayout } from './WorkspaceLayout.tsx'
 
-const MOUNT = routeMount(workspaceRoute, { slug: 'acme' })
+const MOUNT = routeMount(workspaceRoute, { workspaceId: 'AcmeWs01' })
 
 // Most users may not manage the Instance: its state is refused to them.
 beforeEach(() => {
@@ -29,9 +30,9 @@ beforeEach(() => {
 })
 
 const workspace = (over: Partial<SiteWorkspaceResource>): SiteWorkspaceResource => ({
-  id: '1',
+  id: 'AcmeWs01',
   name: 'Acme',
-  slug: 'acme',
+
   collectKey: 'ck',
   postalAddress: '',
   accountLinkAvailable: false,
@@ -52,11 +53,20 @@ test('renders the workspace sidebar and no suspension banner for an active works
   await expect.element(screen.getByText('Sending is suspended')).not.toBeInTheDocument()
 })
 
+test('the switcher links to the create screen', async () => {
+  worker.use(list([workspace({})]))
+  const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Create workspace' }))
+    .toHaveAttribute('href', newWorkspaceRoute.to)
+})
+
 test('the settings pages replace the workspace sidebar with the settings one', async () => {
   worker.use(list([workspace({})]))
   const { screen } = await renderWithRouter(
     <WorkspaceLayout />,
-    routeMount(teamRoute, { slug: 'acme' }),
+    routeMount(teamRoute, { workspaceId: 'AcmeWs01' }),
   )
 
   await expect
@@ -191,18 +201,21 @@ test('an unaffected workspace shows no hold banner', async () => {
 })
 
 test('the switcher navigates to the chosen workspace overview', async () => {
-  worker.use(list([workspace({}), workspace({ id: '2', name: 'Beta', slug: 'beta' })]))
+  worker.use(list([workspace({}), workspace({ name: 'Beta', id: 'BetaWs02' })]))
   const { screen, navigate } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
   await screen.getByRole('combobox').click()
   await screen.getByRole('option', { name: 'Beta' }).click()
 
-  expect(navigate).toHaveBeenCalledWith({ to: overviewRoute.to, params: { slug: 'beta' } })
+  expect(navigate).toHaveBeenCalledWith({
+    to: overviewRoute.to,
+    params: { workspaceId: 'BetaWs02' },
+  })
 })
 
 // TagsProbe stands in for a workspace page whose query the server refuses.
 function TagsProbe() {
-  useQuery({ ...siteTagsListOptions({ path: { slug: 'acme' } }), retry: false })
+  useQuery({ ...siteTagsListOptions({ path: { workspaceId: 'AcmeWs01' } }), retry: false })
   return null
 }
 

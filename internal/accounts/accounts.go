@@ -1,6 +1,6 @@
 // Package accounts is the raw-client home for what the scoped client cannot
 // express (ADR 0017): actors whose Workspace is not known up front. It owns the
-// User (identity, credentials), the Membership lookup that turns a /w/{slug} into
+// User (identity, credentials), the Membership lookup that turns a /w/{id} into
 // a Workspace scope, the Workspace itself (it is the tenant, not a tenant-owned
 // entity, so the scoped client has no wrapper for it), and the pending-Invitation
 // lookup by token (the token is the only handle). The site handlers use it
@@ -16,38 +16,56 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
 // Accounts reads and writes Users, Workspaces and Memberships over the raw client.
 type Accounts struct {
-	ent *ent.Client
-	bus *events.Bus
+	ent         *ent.Client
+	bus         *events.Bus
+	newPublicID func() string
+}
+
+// Option tunes Accounts.
+type Option func(*Accounts)
+
+// WithWorkspaceIDs replaces the generator of Workspace ids (workspaceid.New by default). A test
+// uses it to force a collision and watch creation retry.
+func WithWorkspaceIDs(generate func() string) Option {
+	return func(a *Accounts) { a.newPublicID = generate }
 }
 
 // New builds Accounts over the ent client; the bus opens the transactions that
 // span several writes.
-func New(client *ent.Client, bus *events.Bus) *Accounts {
-	return &Accounts{ent: client, bus: bus}
+func New(client *ent.Client, bus *events.Bus, opts ...Option) *Accounts {
+	a := &Accounts{ent: client, bus: bus, newPublicID: workspaceid.New}
+	for _, opt := range opts {
+		opt(a)
+	}
+	return a
 }
 
-// Scope resolves the Workspace addressed by a /w/{slug} path segment for a User and
+// Scope resolves the Workspace addressed by a /w/{id} path segment for a User and
 // returns its scoped client with the User's Membership (its User and Workspace
 // loaded, for the Role and the Two-factor requirement). It is the site's construction
 // point of the scoped client: access is "does this User have a Membership on this
-// Workspace?". An ent NotFound error means the slug does not exist or the User is
+// Workspace?". An ent NotFound error means the Workspace id does not exist or the User is
 // not a member.
-func (a *Accounts) Scope(ctx context.Context, userID int64, slug string) (*ent.Scoped, *ent.Membership, error) {
+func (a *Accounts) Scope(ctx context.Context, userID int64, publicID string) (*ent.Scoped, *ent.Membership, error) {
 	m, err := a.ent.Membership.Query().
-		Where(membership.UserID(userID), membership.HasWorkspaceWith(workspace.Slug(slug))).
+		Where(membership.UserID(userID), membership.HasWorkspaceWith(workspace.PublicID(publicID), Live())).
 		WithUser().
 		WithWorkspace().
 		Only(ctx)
@@ -71,7 +89,7 @@ func (a *Accounts) ScopeOf(m *ent.Membership) *ent.Scoped {
 // BootstrapScope is the scoped client of the oldest Workspace, for the bootstrap
 // token (no caller token exists yet to say which Workspace is meant).
 func (a *Accounts) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
-	id, err := a.ent.Workspace.Query().Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
+	id, err := a.ent.Workspace.Query().Where(Live()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +101,7 @@ func (a *Accounts) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
 // oldest Workspace first.
 func (a *Accounts) MembershipsOf(ctx context.Context, userID int64) ([]*ent.Membership, error) {
 	return a.ent.Membership.Query().
-		Where(membership.UserID(userID)).
+		Where(membership.UserID(userID), membership.HasWorkspaceWith(Live())).
 		WithUser().
 		WithWorkspace(func(q *ent.WorkspaceQuery) { q.WithHolds(func(h *ent.HoldQuery) { h.Order(enthold.ByKey()) }) }).
 		Order(ent.Asc(membership.FieldWorkspaceID)).
@@ -213,52 +231,50 @@ func ptrEqual(a, b *int) bool {
 	return *a == *b
 }
 
-// CreateWorkspace creates a User's initial Workspace with a unique slug derived from
-// name (falling back to "workspace"). Slugs are globally unique, so on collision a
-// numeric suffix is appended. The Workspace and the creator's owner Membership are
-// created atomically: a Workspace is reached through Memberships, so one without its
-// owner row would be inaccessible.
+// ErrEmailNotVerified refuses creating a Workspace for a User whose email is not proven
+// (ADR 0030): sign-up verification must not be bypassed by creating Workspaces first.
+var ErrEmailNotVerified = errors.New("accounts: the email is not verified")
+
+// CreateWorkspace creates a Workspace named name for a Verified User, who becomes its
+// Owner (ADR 0043). Names are free text and need not be unique. The Workspace, the Owner
+// Membership and the `workspace.create` Audit entry are written atomically: a Workspace is
+// reached through Memberships, so one without its owner row would be inaccessible. An
+// Unverified User gets ErrEmailNotVerified.
 func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name string) (*ent.Workspace, error) {
 	for {
 		var ws *ent.Workspace
-		err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-			var err error
-			ws, err = createWorkspaceIn(ctx, tx, userID, name)
-			return err
+		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+			u, err := tx.User.Get(ctx, userID)
+			if err != nil {
+				return err
+			}
+			if u.EmailVerifiedAt == nil {
+				return ErrEmailNotVerified
+			}
+			if ws, err = createWorkspaceIn(ctx, tx, userID, name, a.newPublicID()); err != nil {
+				return err
+			}
+			actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
+			return events.RecordAudit(ctx, pub, workspaceAudit(ws, actor, events.ActionWorkspaceCreate, nil))
 		})
 		if db.IsUniqueViolation(err) {
-			continue // lost a race on the slug; the next attempt sees it taken
+			continue // drew a taken id; the next attempt retries
 		}
 		return ws, err
 	}
 }
 
-// createWorkspaceIn creates the Workspace and its owner Membership on tx, under the
-// first free slug derived from name. A unique violation (a lost race on the slug)
-// aborts tx, so the caller retries the whole transaction.
-func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name string) (*ent.Workspace, error) {
-	base := Slugify(name)
-	if base == "" {
-		base = "workspace"
-	}
-	slug := base
-	for i := 2; ; i++ {
-		exists, err := tx.Workspace.Query().Where(workspace.Slug(slug)).Exist(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			break
-		}
-		slug = fmt.Sprintf("%s-%d", base, i)
-	}
+// createWorkspaceIn creates the Workspace and its owner Membership on tx, with the
+// Workspace id it is given. A unique violation (an id already taken) aborts tx, so the caller retries the whole
+// transaction with a fresh id.
+func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name, publicID string) (*ent.Workspace, error) {
 	collectKey, err := credentials.GenerateCollectKey()
 	if err != nil {
 		return nil, err
 	}
 	ws, err := tx.Workspace.Create().
 		SetName(name).
-		SetSlug(slug).
+		SetPublicID(publicID).
 		SetCollectKey(collectKey).
 		Save(ctx)
 	if err != nil {
@@ -344,25 +360,28 @@ func markVerified(ctx context.Context, tx *ent.Client, id int64, name string, pa
 	return tx.User.Get(ctx, id)
 }
 
+// FirstWorkspaceName is the fixed name of the Workspace made for a User at verification.
+const FirstWorkspaceName = "Personal"
+
 // VerifyEmail completes a registration from its link (ADR 0030), in one transaction:
 // it stamps the Verified email, sets the password hash to *passwordHash (nil keeps the one
 // stored at registration), bumps the session epoch (ending every session issued before, as
-// a password change does) and creates the
-// User's first Workspace named workspaceName with the User as owner. It records
-// `user.email_verify` in that Workspace's Audit log and returns the User.
+// a password change does) and creates the User's first Workspace, named FirstWorkspaceName,
+// with the User as owner. It records `user.email_verify` in that Workspace's Audit log and
+// returns the User.
 // ErrAlreadyVerified when the User is no longer Unverified (a used link).
-func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *string, workspaceName string) (*ent.User, error) {
-	return a.verified(ctx, workspaceName, func(tx *ent.Client) (*ent.User, error) {
+func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *string) (*ent.User, error) {
+	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
 		return markVerified(ctx, tx, id, "", passwordHash)
 	})
 }
 
 // RegisterVerified is registration on an install that does not require email
 // verification (ADR 0030): in one transaction it creates a User that is Verified at
-// once with its password, and the first Workspace, exactly as VerifyEmail does. The
+// once with its password, and the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The
 // unique index on the email refuses a taken address (see db.IsUniqueViolation).
 func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	return a.verified(ctx, name, func(tx *ent.Client) (*ent.User, error) {
+	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
 		return tx.User.Create().
 			SetName(name).
 			SetEmail(email).
@@ -374,7 +393,7 @@ func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHa
 
 // CreateOwner is the Instance operator's way to make a first Owner on an Instance that
 // closed sign-up (ADR 0042): a Verified User with a generated password and its first
-// Workspace, named after the User, exactly as RegisterVerified makes them. The password
+// Workspace, named FirstWorkspaceName, exactly as RegisterVerified makes them. The password
 // is returned once; the unique index on the email refuses a taken address (see
 // db.IsUniqueViolation).
 func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (password string, err error) {
@@ -392,7 +411,7 @@ func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (passwor
 // verified is what makes a User Verified, shared by VerifyEmail and RegisterVerified:
 // write stores the User's verified state, then the User's first Workspace is created
 // and `user.email_verify` recorded in its Audit log, all in one transaction.
-func (a *Accounts) verified(ctx context.Context, workspaceName string, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, error) {
+func (a *Accounts) verified(ctx context.Context, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, error) {
 	for {
 		var verified *ent.User
 		written := false
@@ -402,14 +421,14 @@ func (a *Accounts) verified(ctx context.Context, workspaceName string, write fun
 				return err
 			}
 			written = true
-			if _, err := createWorkspaceIn(ctx, tx, u.ID, workspaceName); err != nil {
+			if _, err := createWorkspaceIn(ctx, tx, u.ID, FirstWorkspaceName, a.newPublicID()); err != nil {
 				return err
 			}
 			verified = u
 			return RecordUserAction(ctx, tx, pub, u, events.ActionUserEmailVerify, nil)
 		})
 		if written && db.IsUniqueViolation(err) {
-			continue // lost a race on the slug; the next attempt sees it taken
+			continue // drew a taken id; the next attempt retries
 		}
 		return verified, err
 	}
@@ -456,7 +475,7 @@ func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash str
 		return nil, false, err
 	}
 	if u.EmailVerifiedAt == nil {
-		u, err = a.VerifyEmail(ctx, id, &passwordHash, u.Name)
+		u, err = a.VerifyEmail(ctx, id, &passwordHash)
 		if err == nil {
 			return u, true, nil
 		}
@@ -738,4 +757,125 @@ func (a *Accounts) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor ev
 		})
 	})
 	return found, err
+}
+
+// WorkspaceIDByPublicID resolves a Workspace id (ADR 0043) to the internal key; command-line
+// tooling addresses Workspaces by their id.
+func WorkspaceIDByPublicID(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
+	id, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).OnlyID(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("workspace %q: %w", publicID, err)
+	}
+	return id, nil
+}
+
+// DeletionWindow is how long a deleted Workspace stays restorable before its data is
+// erased (ADR 0043). A constant, not configuration.
+const DeletionWindow = 30 * 24 * time.Hour
+
+// ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
+var ErrNameMismatch = errors.New("accounts: the typed name does not match the workspace name")
+
+// Live is a Workspace that is not deleted (ADR 0043): every lookup that must not reach a
+// deleted Workspace (its Members' scope, the lists, the Instance-wide readers) uses it, so
+// "live" is stated once.
+func Live() predicate.Workspace { return workspace.DeletedAtIsNil() }
+
+// pendingDeletion is a Workspace in its deletion window at now: deleted, not yet erased,
+// and not past the window.
+func pendingDeletion(now time.Time) predicate.Workspace {
+	return workspace.And(
+		workspace.DeletedAtGT(now.Add(-DeletionWindow)),
+		workspace.ErasedAtIsNil(),
+	)
+}
+
+// workspaceAudit is the Audit entry of a Workspace lifecycle action (create, delete,
+// restore): the Workspace is its own target.
+func workspaceAudit(ws *ent.Workspace, actor events.Actor, action string, diff map[string]any) *events.AuditEntry {
+	return &events.AuditEntry{
+		WorkspaceID: ws.ID,
+		Actor:       actor,
+		Action:      action,
+		TargetType:  workspace.Label,
+		TargetID:    strconv.FormatInt(ws.ID, 10),
+		TargetName:  ws.Name,
+		Diff:        diff,
+	}
+}
+
+// deletedDiff is the audit diff of the Workspace's deleted state changing.
+func deletedDiff(from, to bool) map[string]any {
+	return map[string]any{"deleted": map[string]any{"from": from, "to": to}}
+}
+
+// EraseDate is when the data of a Workspace deleted at deletedAt is erased.
+func EraseDate(deletedAt time.Time) time.Time { return deletedAt.Add(DeletionWindow) }
+
+// DeleteWorkspace deletes the scoped Workspace (ADR 0043): it sets deleted_at, which the
+// send path reads as the pending-deletion Hold and the lookups read as "not found". The
+// typed name must equal the stored name (ErrNameMismatch otherwise). Deleting an already
+// deleted Workspace keeps its first deleted_at. The caller has checked the Owner role.
+// Recorded as `workspace.delete` in the same transaction.
+func (a *Accounts) DeleteWorkspace(ctx context.Context, s *ent.Scoped, actor events.Actor, typedName string, now time.Time) (*ent.Workspace, error) {
+	var deleted *ent.Workspace
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		ws, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		if err != nil {
+			return err
+		}
+		if typedName != ws.Name {
+			return ErrNameMismatch
+		}
+		if ws.DeletedAt != nil {
+			deleted = ws
+			return nil
+		}
+		if deleted, err = tx.Workspace.UpdateOneID(ws.ID).SetDeletedAt(now).Save(ctx); err != nil {
+			return err
+		}
+		return events.RecordAudit(ctx, pub, workspaceAudit(ws, actor, events.ActionWorkspaceDelete, deletedDiff(false, true)))
+	})
+	return deleted, err
+}
+
+// DeletedWorkspaces lists the Workspaces the User owns that are in their deletion window,
+// most recently deleted first, each with its Owner Membership and Workspace loaded.
+func (a *Accounts) DeletedWorkspaces(ctx context.Context, userID int64, now time.Time) ([]*ent.Membership, error) {
+	return a.ent.Membership.Query().
+		Where(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner),
+			membership.HasWorkspaceWith(pendingDeletion(now))).
+		WithWorkspace().
+		Order(membership.ByWorkspaceField(workspace.FieldDeletedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
+		All(ctx)
+}
+
+// RestoreWorkspace ends the deletion of the Workspace publicID for a User: it clears
+// deleted_at, which lifts only the pending-deletion Hold (a suspension or Staff hold stays).
+// A Workspace outside its window, or one the User has no Membership on, is an ent NotFound
+// error, for a Membership that is not an Owner too: a deleted Workspace is not exposed to
+// anyone but its Owners. Recorded as
+// `workspace.restore` in the same transaction. The returned Membership carries its User
+// and the restored Workspace.
+func (a *Accounts) RestoreWorkspace(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Membership, error) {
+	m, err := a.ent.Membership.Query().
+		Where(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner),
+			membership.HasWorkspaceWith(workspace.PublicID(publicID), pendingDeletion(now))).
+		WithUser().
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		ws, err := tx.Workspace.UpdateOneID(m.WorkspaceID).ClearDeletedAt().Save(ctx)
+		if err != nil {
+			return err
+		}
+		m.Edges.Workspace = ws
+		return events.RecordAudit(ctx, pub, workspaceAudit(ws, actor, events.ActionWorkspaceRestore, deletedDiff(true, false)))
+	})
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }

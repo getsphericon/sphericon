@@ -23,7 +23,7 @@ The rules a change is reviewed against. How the repo is built, run and generated
 - **A test asserts what an operation left behind** (rows, outbox events, enqueued jobs, the response),
   never what was called, how often or with which arguments: no call-verification tests. Do not assert
   how many rows a table holds (a new fixture breaks that) or a raw id: count the rows you start from
-  and assert business facts (slug, order, label). A test that depends on today's date does not read
+  and assert business facts (name, order, label). A test that depends on today's date does not read
   the wall clock; it injects the clock.
 - **No direct SQL in tests.** Tests read and write through ent (`env.DB`) or river's own API. The
   domain-event outbox is modelled in ent too (`OutboxMessage`, `OutboxOffset`: watermill owns the

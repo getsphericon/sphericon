@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -28,32 +29,29 @@ func signer(t *testing.T) *authtoken.Signer {
 	return authtoken.New(cfg.JWTSecret)
 }
 
-// Verifying the first address creates a default workspace whose slug is derived from
-// the name: a taken slug gets a numeric suffix and an unsluggable name falls back to
-// "workspace".
-func TestSiteAuthVerifyDerivesUniqueWorkspaceSlug(t *testing.T) {
+// Verifying an address creates a Workspace named "Personal" for each User: the name is not
+// unique, so two Users both get "Personal", each under an id of its own.
+func TestSiteAuthVerifyNamesEveryFirstWorkspacePersonal(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	slugOf := func(name, email string) (string, membership.Role) {
-		registerAndVerify(t, env, name, email, "password123")
+	wsOf := func(email string) (*ent.Workspace, membership.Role) {
+		registerAndVerify(t, env, "Someone", email, "password123")
 		u, err := env.DB.User.Query().Where(entuser.Email(email)).Only(t.Context())
 		require.NoError(t, err)
 		ws, err := env.DB.Workspace.Query().Where(workspace.HasMembershipsWith(membership.UserID(u.ID))).Only(t.Context())
 		require.NoError(t, err)
 		m, err := env.DB.Membership.Query().Where(membership.UserID(u.ID), membership.WorkspaceID(ws.ID)).Only(t.Context())
 		require.NoError(t, err)
-		return ws.Slug, m.Role
+		return ws, m.Role
 	}
 
-	slug, role := slugOf("Acme", "acme2@example.com") // "acme" is a fixture workspace
-	assert.Equal(t, "acme-2", slug)
+	first, role := wsOf("one@example.com")
+	assert.Equal(t, "Personal", first.Name)
 	assert.Equal(t, membership.RoleOwner, role)
 
-	slug, _ = slugOf("!!!", "bare@example.com")
-	assert.Equal(t, "workspace", slug)
-
-	slug, _ = slugOf("!!!", "bare2@example.com")
-	assert.Equal(t, "workspace-2", slug)
+	second, _ := wsOf("two@example.com")
+	assert.Equal(t, "Personal", second.Name)
+	assert.NotEqual(t, first.PublicID, second.PublicID)
 }
 
 func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {

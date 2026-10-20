@@ -72,8 +72,8 @@ func TestExportErasuresAnnouncesAnErasureByAddressAlone(t *testing.T) {
 	env := testhelper.Setup(t)
 	olga := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 	res, err := olga.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{
-		Slug:  fixtures.InitechSlug,
-		Email: " " + fixtures.OutboundMessageStrangerDestination + " ",
+		WorkspaceId: fixtures.InitechPublicID,
+		Email:       " " + fixtures.OutboundMessageStrangerDestination + " ",
 	})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)
@@ -106,8 +106,8 @@ func TestContactErasedMessageOfAnAddressAloneHoldsNoAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	olga := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 	res, err := olga.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{
-		Slug:  fixtures.InitechSlug,
-		Email: fixtures.OutboundMessageStrangerDestination,
+		WorkspaceId: fixtures.InitechPublicID,
+		Email:       fixtures.OutboundMessageStrangerDestination,
 	})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, res)

@@ -7,8 +7,8 @@ import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteCreateEmailTemplateInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
-import { Route as workspaceRoute } from '../../routes/workspaces/$slug/route.tsx'
-import { Route as templatesRoute } from '../../routes/workspaces/$slug/templates/index.tsx'
+import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
 import { docCodec } from '../../utils/messageDoc.ts'
 
 export function TemplateForm({
@@ -17,7 +17,7 @@ export function TemplateForm({
   onSubmit,
 }: ResourceFormProps<SiteCreateEmailTemplateInput>) {
   const { t } = useTranslation()
-  const { slug } = workspaceRoute.useParams()
+  const { workspaceId } = workspaceRoute.useParams()
   // The form holds the document as JSON text; a blank or unreadable text is no document.
   const docText = form.values.doc
   const doc = useMemo(() => {
@@ -54,7 +54,7 @@ export function TemplateForm({
         />
 
         <Group justify="flex-end">
-          <ButtonLink variant="default" to={templatesRoute.to} params={{ slug }}>
+          <ButtonLink variant="default" to={templatesRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.cancel)}
           </ButtonLink>
           <Button type="submit" loading={isPending}>

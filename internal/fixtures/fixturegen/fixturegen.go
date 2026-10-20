@@ -34,7 +34,7 @@ var catalogColumns = []struct {
 	integer        bool
 }{
 	{"id", "ID", true},
-	{"slug", "Slug", false},
+	{"public_id", "PublicID", false},
 	{"email", "Email", false},
 	{"prefix", "Prefix", false},
 	{"collect_key", "CollectKey", false},

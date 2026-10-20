@@ -6,11 +6,13 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func ask(t *testing.T, h http.Handler, domain string) int {
@@ -57,4 +59,18 @@ func TestTLSAskIsNotOnThePublicMux(t *testing.T) {
 	asked, unknown := serve("/tls/ask?domain="+url.QueryEscape(host)), serve("/definitely-unknown")
 	assert.Equal(t, unknown.Code, asked.Code)
 	assert.Equal(t, unknown.Body.String(), asked.Body.String())
+}
+
+// A pending-deletion Workspace's tracking hosts are refused, so the edge stops issuing
+// certificates for them (ADR 0043); restoring brings them back.
+func TestTLSAskRefusesTheHostsOfADeletedWorkspace(t *testing.T) {
+	env := testhelper.Setup(t)
+	host := sendingdomains.TrackingHost(fixtures.SendingDomainTrackingServingDomain)
+	require.Equal(t, http.StatusOK, ask(t, env.Internal, host))
+
+	env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDeletedAt(time.Now()).ExecX(t.Context())
+	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host))
+
+	env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).ClearDeletedAt().ExecX(t.Context())
+	assert.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 }

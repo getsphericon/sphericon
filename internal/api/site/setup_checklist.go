@@ -11,7 +11,7 @@ import (
 
 // SiteSetupChecklistGet maps the Workspace's Setup checklist onto the DTO.
 func (h *Handlers) SiteSetupChecklistGet(ctx context.Context, params siteapi.SiteSetupChecklistGetParams) (siteapi.SiteSetupChecklistGetRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := problem(http.StatusNotFound, "workspace not found")
 		return &v, nil

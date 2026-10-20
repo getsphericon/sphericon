@@ -34,7 +34,7 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 
 	// The owner reads it on /site, attributed to the token.
 	env.DeliverToEE(t)
-	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(context.Background(), siteapi.SiteAuditListParams{Slug: fixtures.AcmeSlug})
+	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(context.Background(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	page, ok := list.(*siteapi.SiteAuditEntryList)
 	require.Truef(t, ok, "got %T", list)

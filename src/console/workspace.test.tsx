@@ -20,12 +20,11 @@ import { ConsoleWorkspacePage } from './workspace.tsx'
 // two differ and `consoleWorkspaceRoute.useParams()` looks the match up by id.
 const MOUNT = {
   path: consoleWorkspaceRoute.id,
-  initialPath: consoleWorkspaceRoute.id.replace('$workspaceId', '5'),
+  initialPath: consoleWorkspaceRoute.id.replace('$workspaceId', 'HooliWs5'),
 }
 
 const HOOLI: StaffWorkspaceDetailResource = {
-  id: '5',
-  slug: 'hooli',
+  id: 'HooliWs5',
   name: 'Hooli',
   createdAt: '2026-01-01T00:00:00Z',
   suspension: {
@@ -172,7 +171,7 @@ test('shows the metadata and who suspended the workspace, and why', async () => 
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByRole('heading', { name: 'Hooli' })).toBeInTheDocument()
-  await expect.element(screen.getByText('hooli', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('HooliWs5', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Staff member op-fixture')).toBeInTheDocument()
   await expect.element(screen.getByText('abuse report')).toBeInTheDocument()
 })
@@ -281,7 +280,7 @@ test('suspending needs a reason, and sends it only after the confirm button', as
   await dialog.getByRole('textbox', { name: /Reason/ }).fill('  abuse report ')
   await dialog.getByRole('button', { name: 'Suspend sending' }).click()
 
-  await expect.poll(() => suspended).toEqual([{ id: '5', body: { reason: 'abuse report' } }])
+  await expect.poll(() => suspended).toEqual([{ id: 'HooliWs5', body: { reason: 'abuse report' } }])
 })
 
 test('lifting a suspension asks for confirmation first', async () => {
@@ -303,7 +302,7 @@ test('lifting a suspension asks for confirmation first', async () => {
 
   await screen.getByRole('dialog').getByRole('button', { name: 'Lift suspension' }).click()
 
-  await expect.poll(() => lifted).toEqual(['5'])
+  await expect.poll(() => lifted).toEqual(['HooliWs5'])
 })
 
 test('a no-op says nothing changed', async () => {
@@ -409,7 +408,7 @@ test('exempting asks for confirmation first, then calls the API', async () => {
 
   await screen.getByRole('dialog').getByRole('button', { name: 'Exempt from detector' }).click()
 
-  await expect.poll(() => exempted).toEqual(['5'])
+  await expect.poll(() => exempted).toEqual(['HooliWs5'])
 })
 
 test('an exempt workspace offers to police it again', async () => {
@@ -429,5 +428,5 @@ test('an exempt workspace offers to police it again', async () => {
   await screen.getByRole('button', { name: 'Police again' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Police again' }).click()
 
-  await expect.poll(() => policed).toEqual(['5'])
+  await expect.poll(() => policed).toEqual(['HooliWs5'])
 })

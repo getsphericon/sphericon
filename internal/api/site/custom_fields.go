@@ -14,7 +14,7 @@ import (
 // are auto-created on first sight at ingest; this is a read-only catalogue. The full
 // set is returned in a single page (the catalogue is small and unpaginated).
 func (h *Handlers) SiteCustomFieldsList(ctx context.Context, params siteapi.SiteCustomFieldsListParams) (siteapi.SiteCustomFieldsListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteCustomFieldsListNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

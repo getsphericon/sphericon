@@ -141,10 +141,10 @@ func unauthorized(detail string) *problem {
 	}
 }
 
-// StaffWorkspacesList is a page of Workspaces, newest first, narrowed by a slug
+// StaffWorkspacesList is a page of Workspaces, newest first, narrowed by an id or name
 // search. Metadata only: no Contacts, content or Events.
 func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffapi.StaffWorkspacesListParams) (staffapi.StaffWorkspacesListRes, error) {
-	page, err := h.module.ListWorkspaces(ctx, review(params.Review), strings.TrimSpace(params.Slug.Value), pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.module.ListWorkspaces(ctx, review(params.Review), strings.TrimSpace(params.Search.Value), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
@@ -167,6 +167,8 @@ func review(p staffapi.OptStaffWorkspaceReview) Review {
 		return ReviewWarned
 	case staffapi.StaffWorkspaceReviewSystemFrozen:
 		return ReviewSystemFrozen
+	case staffapi.StaffWorkspaceReviewDeleted:
+		return ReviewDeleted
 	default:
 		return ReviewNone
 	}
@@ -174,7 +176,7 @@ func review(p staffapi.OptStaffWorkspaceReview) Review {
 
 // StaffWorkspacesGet is one Workspace's metadata and suspension state.
 func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffapi.StaffWorkspacesGetParams) (staffapi.StaffWorkspacesGetRes, error) {
-	id := int64(params.WorkspaceId)
+	id := string(params.WorkspaceId)
 	w, err := h.module.GetWorkspace(ctx, id)
 	if ent.IsNotFound(err) {
 		return workspaceNotFound(), nil
@@ -186,7 +188,7 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffapi.Staff
 	if err != nil {
 		return nil, err
 	}
-	active, err := h.module.ActiveHolds(ctx, id)
+	active, err := h.module.ActiveHolds(ctx, w.PublicID)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +221,7 @@ func workspaceDetail(w *ent.Workspace, d Deliverability, active []*ent.Hold, war
 		})
 	}
 	return staffapi.StaffWorkspaceDetailResource{
-		ID: base.ID, Slug: base.Slug, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Exempt: base.Exempt, Warned: base.Warned, Holds: shown,
+		ID: base.ID, Name: base.Name, CreatedAt: base.CreatedAt, Suspension: base.Suspension, Exempt: base.Exempt, Warned: base.Warned, Holds: shown,
 		Abuse: abuseResource(w, warning),
 		Deliverability: staffapi.StaffDeliverability{
 			WindowHours: int32(d.Window / time.Hour),
@@ -282,7 +284,7 @@ func change(w *ent.Workspace, changed bool) *staffapi.StaffSuspensionChange {
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffapi.StaffSuspendInput, params staffapi.StaffWorkspacesSuspendParams) (staffapi.StaffWorkspacesSuspendRes, error) {
-	id := int64(params.WorkspaceId)
+	id := string(params.WorkspaceId)
 	w, changed, err := h.module.SuspendWorkspace(ctx, h.bus, h.sender, id, Current(ctx), req.Reason)
 	if errors.Is(err, ErrReasonRequired) {
 		p := staffapi.StaffWorkspacesSuspendUnprocessableEntity{
@@ -304,7 +306,7 @@ func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffapi.Sta
 
 // StaffWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffapi.StaffWorkspacesUnsuspendParams) (staffapi.StaffWorkspacesUnsuspendRes, error) {
-	id := int64(params.WorkspaceId)
+	id := string(params.WorkspaceId)
 	w, changed, err := h.module.UnsuspendWorkspace(ctx, h.bus, id, Current(ctx))
 	if ent.IsNotFound(err) {
 		p := staffapi.StaffWorkspacesUnsuspendNotFound(notFoundProblem())
@@ -343,8 +345,8 @@ func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffapi.
 	return exemptionChange(w, changed), nil
 }
 
-func (h *Handlers) setExempt(ctx context.Context, wsID staffapi.EntityId, exempt bool) (w *ent.Workspace, changed, notFound bool, err error) {
-	id := int64(wsID)
+func (h *Handlers) setExempt(ctx context.Context, wsID staffapi.WorkspaceId, exempt bool) (w *ent.Workspace, changed, notFound bool, err error) {
+	id := string(wsID)
 	w, changed, err = h.module.SetAbuseExempt(ctx, h.bus, id, Current(ctx), exempt)
 	if ent.IsNotFound(err) {
 		return nil, false, true, nil
@@ -360,12 +362,17 @@ func exemptionChange(w *ent.Workspace, changed bool) *staffapi.StaffExemptionCha
 // state only. The Staff member sees the real actor id, which a customer never does.
 func workspaceResource(w *ent.Workspace) staffapi.StaffWorkspaceResource {
 	res := staffapi.StaffWorkspaceResource{
-		ID:        staffapi.EntityId(w.ID),
-		Slug:      w.Slug,
+		ID:        staffapi.WorkspaceId(w.PublicID),
 		Name:      w.Name,
 		CreatedAt: staffapi.Timestamp(w.CreatedAt),
 		Exempt:    w.AbuseExempt,
 		Warned:    w.AbuseWarningNotifiedAt != nil,
+	}
+	if w.DeletedAt != nil {
+		res.DeletedAt = staffapi.NewOptNilTimestamp(staffapi.Timestamp(*w.DeletedAt))
+	}
+	if w.ErasedAt != nil {
+		res.ErasedAt = staffapi.NewOptNilTimestamp(staffapi.Timestamp(*w.ErasedAt))
 	}
 	if w.SuspendedAt == nil {
 		return res

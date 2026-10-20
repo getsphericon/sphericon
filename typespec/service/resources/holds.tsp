@@ -77,7 +77,7 @@ model HoldList {
 namespace ServiceHolds {
   /** The holds of a Workspace that are active now; a lapsed one is not listed */
   @get
-  op list(@path workspaceId: EntityId):
+  op list(@path workspaceId: WorkspaceId):
     | HoldList
     | UnauthorizedProblem
     | NotFoundProblem
@@ -89,7 +89,7 @@ namespace ServiceHolds {
   @route("/{key}")
   @put
   op set(
-    @path workspaceId: EntityId,
+    @path workspaceId: WorkspaceId,
     @path key: string,
     @body body: HoldInput,
   ):
@@ -102,7 +102,7 @@ namespace ServiceHolds {
   /** Clear a hold by its key. Idempotent: clearing a missing hold succeeds with `changed` false. */
   @route("/{key}")
   @delete
-  op clear(@path workspaceId: EntityId, @path key: string):
+  op clear(@path workspaceId: WorkspaceId, @path key: string):
     | HoldClearResult
     | UnauthorizedProblem
     | NotFoundProblem

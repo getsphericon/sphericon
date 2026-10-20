@@ -26,7 +26,7 @@ import type { SiteIntegrationResource, SitePresetResource } from '../../generate
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 
 interface InboundModalProps {
-  slug: string
+  workspaceId: string
   integration: SiteIntegrationResource | null
   onClose: () => void
 }
@@ -34,7 +34,7 @@ interface InboundModalProps {
 // The inbound side of an Integration (ADR 0037): its hook URL, the Preset its provider
 // callbacks are read with and that Preset's params. Agents are the primary interface; this
 // is for support, so the params are a JSON editor, not a form generated from the schema.
-export function InboundModal({ slug, integration, onClose }: InboundModalProps) {
+export function InboundModal({ workspaceId, integration, onClose }: InboundModalProps) {
   const { t } = useTranslation()
   return (
     <Modal
@@ -44,7 +44,7 @@ export function InboundModal({ slug, integration, onClose }: InboundModalProps) 
       title={t(($) => $.settings.integrations.inbound.title, { name: integration?.name ?? '' })}
     >
       {integration ? (
-        <InboundForm key={integration.id} slug={slug} integration={integration} />
+        <InboundForm key={integration.id} workspaceId={workspaceId} integration={integration} />
       ) : null}
     </Modal>
   )
@@ -75,10 +75,10 @@ function parseParams(text: string): Record<string, unknown> | null {
 }
 
 function InboundForm({
-  slug,
+  workspaceId,
   integration,
 }: {
-  slug: string
+  workspaceId: string
   integration: SiteIntegrationResource
 }) {
   const { t } = useTranslation()
@@ -90,7 +90,7 @@ function InboundForm({
   const selected = presets.find((p) => p.name === preset)
   const invalid = preset !== null && parseParams(params) === null
 
-  const invalidate = [siteIntegrationsListQueryKey({ path: { slug } })]
+  const invalidate = [siteIntegrationsListQueryKey({ path: { workspaceId } })]
   const saveMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
     invalidate,
@@ -122,7 +122,7 @@ function InboundForm({
   const onSave = () => {
     const values = preset === null ? null : parseParams(params)
     saveMutation.mutate({
-      path: { slug, id: integration.id },
+      path: { workspaceId, id: integration.id },
       body: values ? { preset, params: values } : { preset },
     })
   }
@@ -136,7 +136,7 @@ function InboundForm({
         confirm: t(($) => $.settings.integrations.inbound.regenerate),
       },
       confirmProps: { color: 'red' },
-      onConfirm: () => regenerateMutation.mutate({ path: { slug, id: integration.id } }),
+      onConfirm: () => regenerateMutation.mutate({ path: { workspaceId, id: integration.id } }),
     })
   }
 
@@ -223,7 +223,7 @@ function InboundForm({
               loading={retireMutation.isPending}
               onClick={() =>
                 retireMutation.mutate({
-                  path: { slug, id: integration.id },
+                  path: { workspaceId, id: integration.id },
                   body: { retireSecrets: true },
                 })
               }

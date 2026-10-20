@@ -17,7 +17,7 @@ import (
 // SiteTokensList returns the workspace's API tokens; a revoked one stays listed, marked by
 // its revoked_at, so an owner sees a connector that was revoked (by hand or by reuse detection).
 func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokensListParams) (siteapi.SiteTokensListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := problem(http.StatusNotFound, "workspace not found")
 		return &v, nil
@@ -43,7 +43,7 @@ func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokens
 // SiteTokensCreate mints a workspace API token. The full secret is returned once;
 // only its bcrypt hash and public prefix are stored.
 func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreateTokenInput, params siteapi.SiteTokensCreateParams) (siteapi.SiteTokensCreateRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteTokensCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -89,7 +89,7 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 
 // SiteTokensDelete revokes (soft-deletes) a workspace API token.
 func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteTokensDeleteParams) (siteapi.SiteTokensDeleteRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteTokensDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

@@ -119,7 +119,7 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 		[]string{"PRIVATE KEY", row.DkimPrivateKeyEncrypted, updated.DkimPrivateKeyEncrypted})
 
 	env.DeliverToEE(t)
-	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(ctx, siteapi.SiteAuditListParams{Slug: fixtures.AcmeSlug})
+	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(ctx, siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	page, ok := list.(*siteapi.SiteAuditEntryList)
 	require.Truef(t, ok, "got %T", list)

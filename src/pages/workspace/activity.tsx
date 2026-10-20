@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 import { DetailedEventRowDetails } from '../../components/EventRowDetails.tsx'
 import { siteEventsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { Route as workspaceRoute } from '../../routes/workspaces/$slug/route.tsx'
+import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { formatDateTime } from '../../utils/datetime.ts'
 
 const PAGE_SIZE = 25
@@ -18,7 +18,7 @@ const LIVE_REFETCH_MS = 5000
 // manual reload — the primary way to verify that tracking works.
 export function ActivityPage() {
   const { t } = useTranslation()
-  const { slug } = workspaceRoute.useParams()
+  const { workspaceId } = workspaceRoute.useParams()
   const [page, setPage] = useState(1)
   const [live, setLive] = useState(true)
   const [actionFilter, setActionFilter] = useState('')
@@ -34,7 +34,7 @@ export function ActivityPage() {
 
   const eventsQuery = useQuery({
     ...siteEventsListOptions({
-      path: { slug },
+      path: { workspaceId },
       query: {
         page,
         pageSize: PAGE_SIZE,

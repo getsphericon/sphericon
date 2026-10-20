@@ -54,7 +54,7 @@ export function OAuthConsentPage() {
 // mint a one-time code; the browser is then sent back to the client.
 export function OAuthConsent({ request }: { request: ConsentRequest }) {
   const { t } = useTranslation()
-  const [workspaceSlug, setWorkspaceSlug] = useState<string | null>(null)
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [allowSend, setAllowSend] = useState(false)
 
   const describe = useQuery({
@@ -108,8 +108,8 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
   }
 
   const info = describe.data
-  const options = (workspaces.data ?? []).map((w) => ({ value: w.slug, label: w.name }))
-  const selected = workspaceSlug ?? options[0]?.value ?? null
+  const options = (workspaces.data ?? []).map((w) => ({ value: w.id, label: w.name }))
+  const selected = workspaceId ?? options[0]?.value ?? null
 
   const submit = (approve: boolean) => {
     if (!selected) {
@@ -122,7 +122,7 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
         codeChallenge: request.codeChallenge,
         state: request.state,
         scope: request.scope,
-        workspaceSlug: selected,
+        workspaceId: selected,
         approve,
         allowSend: approve && allowSend,
       },
@@ -149,7 +149,7 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
         label={t(($) => $.oauthConsent.workspaceLabel)}
         data={options}
         value={selected}
-        onChange={setWorkspaceSlug}
+        onChange={setWorkspaceId}
         allowDeselect={false}
       />
 

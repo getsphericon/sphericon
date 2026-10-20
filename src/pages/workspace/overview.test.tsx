@@ -7,7 +7,7 @@ import {
   handleSiteSetupChecklistGet,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import { Route as overviewRoute } from '../../routes/workspaces/$slug/index.tsx'
+import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -40,9 +40,9 @@ test('shows the workspace name and contacts count', async () => {
     handleSiteWorkspacesList({
       body: [
         {
-          id: '1',
+          id: 'TestWs01',
           name: 'Acme',
-          slug: 'test',
+
           collectKey: 'k',
           postalAddress: '',
           accountLinkAvailable: false,
@@ -56,15 +56,15 @@ test('shows the workspace name and contacts count', async () => {
   )
 
   const { screen } = await renderWithRouter(<OverviewPage />, {
-    path: '/workspaces/$slug/',
-    initialPath: '/workspaces/test/',
+    path: '/workspaces/$workspaceId/',
+    initialPath: '/workspaces/TestWs01/',
   })
 
   await expect.element(screen.getByText('Acme')).toBeInTheDocument()
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
 })
 
-const mount = routeMount(overviewRoute, { slug: 'test' })
+const mount = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
 
 test('switching the range refetches the analytics for that window', async () => {
   const ranges: (string | null)[] = []

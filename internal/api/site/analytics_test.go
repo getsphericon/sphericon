@@ -16,16 +16,16 @@ func TestSiteAnalyticsRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteAnalyticsOverview(context.Background(), siteapi.SiteAnalyticsOverviewParams{Slug: fixtures.AcmeSlug})
+	_, err := c.SiteAnalyticsOverview(context.Background(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }
 
-// A slug the user does not own is a 404, not a data leak.
+// A workspaceID the user does not own is a 404, not a data leak.
 func TestSiteAnalyticsRequireOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out, err := c.SiteAnalyticsOverview(context.Background(), siteapi.SiteAnalyticsOverviewParams{Slug: "does-not-exist"})
+	out, err := c.SiteAnalyticsOverview(context.Background(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.ProblemDetails{}, out)
 }
@@ -38,8 +38,8 @@ func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 	ctx := context.Background()
 
 	res, err := c.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{
-		Slug:  fixtures.AcmeSlug,
-		Range: siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
+		WorkspaceId: fixtures.AcmePublicID,
+		Range:       siteapi.NewOptSiteAnalyticsRange(siteapi.SiteAnalyticsRange7d),
 	})
 	require.NoError(t, err)
 	ov, ok := res.(*siteapi.SiteAnalyticsOverview)
@@ -52,7 +52,7 @@ func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 	assert.Positive(t, ov.Contacts.Total)
 	assert.Positive(t, ov.Automations.Total)
 
-	res, err = c.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{Slug: fixtures.AcmeSlug})
+	res, err = c.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.Len(t, res.(*siteapi.SiteAnalyticsOverview).Timeseries, 30, "30d is the default window")
 }

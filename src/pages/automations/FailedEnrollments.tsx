@@ -5,11 +5,17 @@ import { useTranslation } from 'react-i18next'
 import { siteEnrollmentsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 
 /** The Enrollments an HTTP step failed, with the reason it recorded. Renders nothing while none failed. */
-export function FailedEnrollments({ slug, automationId }: { slug: string; automationId: string }) {
+export function FailedEnrollments({
+  workspaceId,
+  automationId,
+}: {
+  workspaceId: string
+  automationId: string
+}) {
   const { t } = useTranslation()
   const failedQuery = useQuery(
     siteEnrollmentsListOptions({
-      path: { slug, automationId },
+      path: { workspaceId, automationId },
       query: { status: 'failed' },
     }),
   )

@@ -14,7 +14,7 @@ import type { MockInstance } from 'vitest'
 import { renderWithProviders } from './renderWithProviders.tsx'
 
 interface RenderWithRouterOptions {
-  // Memory-history entry the router starts on. The default carries a `slug`
+  // Memory-history entry the router starts on. The default carries a `workspaceId`
   // param so components calling useParams({ strict: false }) see one, matching
   // the app's workspace-scoped routes.
   initialPath?: string
@@ -62,8 +62,8 @@ function flatTree(path: string, ui: ReactNode) {
 export async function renderWithRouter(
   ui: ReactNode,
   {
-    initialPath = '/workspaces/test',
-    path = '/workspaces/$slug',
+    initialPath = '/workspaces/TestWs01',
+    path = '/workspaces/$workspaceId',
     route,
   }: RenderWithRouterOptions = {},
 ) {

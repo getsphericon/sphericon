@@ -21,8 +21,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldSlug holds the string denoting the slug field in the database.
-	FieldSlug = "slug"
+	// FieldPublicID holds the string denoting the public_id field in the database.
+	FieldPublicID = "public_id"
 	// FieldCollectKey holds the string denoting the collect_key field in the database.
 	FieldCollectKey = "collect_key"
 	// FieldRequireConfirmedOptIn holds the string denoting the require_confirmed_opt_in field in the database.
@@ -35,6 +35,10 @@ const (
 	FieldSecondFactorRequiredAt = "second_factor_required_at"
 	// FieldFeedPosition holds the string denoting the feed_position field in the database.
 	FieldFeedPosition = "feed_position"
+	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
+	FieldDeletedAt = "deleted_at"
+	// FieldErasedAt holds the string denoting the erased_at field in the database.
+	FieldErasedAt = "erased_at"
 	// FieldSuspendedAt holds the string denoting the suspended_at field in the database.
 	FieldSuspendedAt = "suspended_at"
 	// FieldSuspendedByKind holds the string denoting the suspended_by_kind field in the database.
@@ -304,13 +308,15 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldName,
-	FieldSlug,
+	FieldPublicID,
 	FieldCollectKey,
 	FieldRequireConfirmedOptIn,
 	FieldPostalAddress,
 	FieldRetentionDays,
 	FieldSecondFactorRequiredAt,
 	FieldFeedPosition,
+	FieldDeletedAt,
+	FieldErasedAt,
 	FieldSuspendedAt,
 	FieldSuspendedByKind,
 	FieldSuspendedByID,
@@ -338,10 +344,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// NameValidator is a validator for the "name" field. It is called by the builders before save.
-	NameValidator func(string) error
-	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
-	SlugValidator func(string) error
+	// PublicIDValidator is a validator for the "public_id" field. It is called by the builders before save.
+	PublicIDValidator func(string) error
 	// CollectKeyValidator is a validator for the "collect_key" field. It is called by the builders before save.
 	CollectKeyValidator func(string) error
 	// DefaultRequireConfirmedOptIn holds the default value on creation for the "require_confirmed_opt_in" field.
@@ -403,9 +407,9 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
-// BySlug orders the results by the slug field.
-func BySlug(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSlug, opts...).ToFunc()
+// ByPublicID orders the results by the public_id field.
+func ByPublicID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPublicID, opts...).ToFunc()
 }
 
 // ByCollectKey orders the results by the collect_key field.
@@ -436,6 +440,16 @@ func BySecondFactorRequiredAt(opts ...sql.OrderTermOption) OrderOption {
 // ByFeedPosition orders the results by the feed_position field.
 func ByFeedPosition(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFeedPosition, opts...).ToFunc()
+}
+
+// ByDeletedAt orders the results by the deleted_at field.
+func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
+}
+
+// ByErasedAt orders the results by the erased_at field.
+func ByErasedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldErasedAt, opts...).ToFunc()
 }
 
 // BySuspendedAt orders the results by the suspended_at field.

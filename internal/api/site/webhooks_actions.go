@@ -13,7 +13,7 @@ import (
 // SiteWebhooksRegenerateSecret replaces the endpoint's signing secret and returns the
 // endpoint with the new one.
 func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params siteapi.SiteWebhooksRegenerateSecretParams) (siteapi.SiteWebhooksRegenerateSecretRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWebhooksRegenerateSecretNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -36,7 +36,7 @@ func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params site
 // SiteWebhooksTest sends a sample event to the endpoint and returns what the receiver
 // answered, at once.
 func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.SiteTestWebhookInput, params siteapi.SiteWebhooksTestParams) (siteapi.SiteWebhooksTestRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWebhooksTestNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

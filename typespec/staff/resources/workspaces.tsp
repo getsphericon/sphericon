@@ -32,14 +32,19 @@ model StaffSuspension {
 /** A Workspace as the Staff console sees it: metadata only, never Contacts,
  * content or Events (ADR 0026). */
 model StaffWorkspaceResource {
-  /** Unique identifier */
-  id: EntityId;
+  /** The Workspace id: its short opaque public address (ADR 0043) */
+  id: WorkspaceId;
 
-  slug: string;
   name: string;
 
   /** When the Workspace was created */
   createdAt: Timestamp;
+
+  /** When the Workspace was deleted; present from deletion until a restore (ADR 0043) */
+  deletedAt?: Timestamp | null;
+
+  /** When the Workspace's data was erased; the row stays as a tombstone */
+  erasedAt?: Timestamp | null;
 
   /** Present only while sending is suspended */
   suspension?: StaffSuspension | null;
@@ -170,6 +175,9 @@ enum StaffWorkspaceReview {
 
   /** Suspended by the abuse detector (actor `system`) */
   systemFrozen,
+
+  /** In the deletion window or erased (ADR 0043); the default list hides them */
+  deleted,
 }
 
 /** Search filter of the Workspace list */
@@ -177,8 +185,9 @@ model StaffWorkspaceSearch {
   /** Only Workspaces in this review state */
   @query review?: StaffWorkspaceReview;
 
-  /** Only Workspaces whose slug contains this text (case-insensitive) */
-  @query slug?: string;
+  /** Only Workspaces whose id or name contains this text; the name matches case-insensitively,
+   * the id exactly */
+  @query search?: string;
 }
 
 /** Why a Workspace is being suspended; the owner is told */
@@ -206,7 +215,7 @@ model StaffSuspensionChange {
 @tag("StaffMember Workspaces")
 @route("/workspaces")
 namespace StaffWorkspaces {
-  /** List all Workspaces, newest first, optionally narrowed by a slug search */
+  /** List all Workspaces, newest first, optionally narrowed by an id or name search */
   @get
   op list(...StaffWorkspaceSearch, ...PageQuery):
     | Page<StaffWorkspaceResource>
@@ -215,7 +224,7 @@ namespace StaffWorkspaces {
   /** One Workspace's metadata, suspension state, rates and send volume */
   @route("/{workspaceId}")
   @get
-  op get(@path workspaceId: EntityId):
+  op get(@path workspaceId: WorkspaceId):
     | StaffWorkspaceDetailResource
     | UnauthorizedProblem
     | NotFoundProblem;
@@ -224,7 +233,7 @@ namespace StaffWorkspaces {
    * signed-in Staff member. Idempotent: an already-suspended Workspace is left as it was. */
   @route("/{workspaceId}/suspend")
   @post
-  op suspend(@path workspaceId: EntityId, @body body: StaffSuspendInput):
+  op suspend(@path workspaceId: WorkspaceId, @body body: StaffSuspendInput):
     | StaffSuspensionChange
     | UnauthorizedProblem
     | NotFoundProblem
@@ -234,7 +243,7 @@ namespace StaffWorkspaces {
    * not suspended is left as it was. */
   @route("/{workspaceId}/unsuspend")
   @post
-  op unsuspend(@path workspaceId: EntityId):
+  op unsuspend(@path workspaceId: WorkspaceId):
     | StaffSuspensionChange
     | UnauthorizedProblem
     | NotFoundProblem;
@@ -244,7 +253,7 @@ namespace StaffWorkspaces {
    * hand. Audited. Idempotent. */
   @route("/{workspaceId}/exempt")
   @post
-  op exempt(@path workspaceId: EntityId):
+  op exempt(@path workspaceId: WorkspaceId):
     | StaffExemptionChange
     | UnauthorizedProblem
     | NotFoundProblem;
@@ -252,7 +261,7 @@ namespace StaffWorkspaces {
   /** Police a Workspace by the abuse detector again. Audited. Idempotent. */
   @route("/{workspaceId}/unexempt")
   @post
-  op unexempt(@path workspaceId: EntityId):
+  op unexempt(@path workspaceId: WorkspaceId):
     | StaffExemptionChange
     | UnauthorizedProblem
     | NotFoundProblem;

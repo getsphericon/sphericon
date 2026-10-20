@@ -442,17 +442,18 @@ export default interface Resources {
         "createdAt": "Created",
         "empty": "No workspaces found",
         "exempt": "Exempt",
+        "id": "Id",
         "loadError": "Could not load workspaces",
         "name": "Name",
         "review": {
           "all": "All Workspaces",
+          "deleted": "Deleted",
           "label": "Review",
           "systemFrozen": "Frozen by the detector",
           "warned": "Warned"
         },
-        "searchLabel": "Search by slug",
-        "searchPlaceholder": "Search by slug",
-        "slug": "Slug",
+        "searchLabel": "Search by id or name",
+        "searchPlaceholder": "Search by id or name",
         "status": "Status",
         "suspended": "Suspended",
         "title": "Workspaces",
@@ -473,6 +474,17 @@ export default interface Resources {
       "noRecords": "No contacts yet",
       "statusFilter": "Filter by status",
       "updatedAt": "Updated at"
+    },
+    "createWorkspace": {
+      "descriptionAnother": "Create another workspace to run a separate brand or client. You become its owner.",
+      "descriptionFirst": "You are not in a workspace yet. Create one to get started; you become its owner.",
+      "errorTitle": "Could not create the workspace",
+      "nameDescription": "Any name works, and it can be changed later. Two workspaces may share a name.",
+      "nameLabel": "Workspace name",
+      "submit": "Create workspace",
+      "switcherLabel": "Create workspace",
+      "title": "Create a workspace",
+      "verifyFirst": "Verify your email address before creating a workspace."
     },
     "forgotPassword": {
       "backToLogin": "Back to sign in",
@@ -783,6 +795,17 @@ export default interface Resources {
       "backToWorkspace": "Back to workspace",
       "copied": "Copied",
       "copy": "Copy",
+      "danger": {
+        "confirmButton": "Delete workspace",
+        "confirmLabel": "Type {{name}} to confirm",
+        "deleteButton": "Delete workspace",
+        "deleted": "Workspace deleted. You can restore it from the user menu for 30 days.",
+        "description": "Deleting stops all sending and hides the workspace from every member. You can restore it for 30 days, after which its data is erased.",
+        "errorTitle": "Could not delete the workspace",
+        "modalTitle": "Delete this workspace?",
+        "title": "Danger zone",
+        "warning": "The workspace is frozen at once: nothing is sent, and its API tokens, collect key and tracking hosts stop working. Only an owner can restore it, within 30 days."
+      },
       "errorTitle": "Failed to update workspace",
       "installStatusReceived": "Events are arriving",
       "installStatusTitle": "Installation status",
@@ -1163,9 +1186,14 @@ export default interface Resources {
     "userMenu": {
       "account": "Account",
       "accountErrorTitle": "Could not open the account page",
+      "deletedWorkspaces": "Deleted workspaces",
+      "erasedOn": "erased {{date}}",
       "logout": "Sign out",
       "logoutErrorTitle": "Sign out failed",
       "profile": "Profile",
+      "restore": "Restore {{name}}",
+      "restoreErrorTitle": "Could not restore the workspace",
+      "restored": "Workspace restored",
       "workspaceSettings": "Workspace settings"
     },
     "validation": {

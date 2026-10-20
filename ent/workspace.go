@@ -23,8 +23,8 @@ type Workspace struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// Slug holds the value of the "slug" field.
-	Slug string `json:"slug,omitempty"`
+	// PublicID holds the value of the "public_id" field.
+	PublicID string `json:"public_id,omitempty"`
 	// CollectKey holds the value of the "collect_key" field.
 	CollectKey string `json:"-"`
 	// RequireConfirmedOptIn holds the value of the "require_confirmed_opt_in" field.
@@ -37,6 +37,10 @@ type Workspace struct {
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
 	// FeedPosition holds the value of the "feed_position" field.
 	FeedPosition int64 `json:"feed_position,omitempty"`
+	// DeletedAt holds the value of the "deleted_at" field.
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+	// ErasedAt holds the value of the "erased_at" field.
+	ErasedAt *time.Time `json:"erased_at,omitempty"`
 	// SuspendedAt holds the value of the "suspended_at" field.
 	SuspendedAt *time.Time `json:"suspended_at,omitempty"`
 	// SuspendedByKind holds the value of the "suspended_by_kind" field.
@@ -372,9 +376,9 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
-		case workspace.FieldName, workspace.FieldSlug, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
+		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
-		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
+		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldDeletedAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -415,11 +419,11 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Name = value.String
 			}
-		case workspace.FieldSlug:
+		case workspace.FieldPublicID:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field slug", values[i])
+				return fmt.Errorf("unexpected type %T for field public_id", values[i])
 			} else if value.Valid {
-				_m.Slug = value.String
+				_m.PublicID = value.String
 			}
 		case workspace.FieldCollectKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -458,6 +462,20 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field feed_position", values[i])
 			} else if value.Valid {
 				_m.FeedPosition = value.Int64
+			}
+		case workspace.FieldDeletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
+			} else if value.Valid {
+				_m.DeletedAt = new(time.Time)
+				*_m.DeletedAt = value.Time
+			}
+		case workspace.FieldErasedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field erased_at", values[i])
+			} else if value.Valid {
+				_m.ErasedAt = new(time.Time)
+				*_m.ErasedAt = value.Time
 			}
 		case workspace.FieldSuspendedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -694,8 +712,8 @@ func (_m *Workspace) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
-	builder.WriteString("slug=")
-	builder.WriteString(_m.Slug)
+	builder.WriteString("public_id=")
+	builder.WriteString(_m.PublicID)
 	builder.WriteString(", ")
 	builder.WriteString("collect_key=<sensitive>")
 	builder.WriteString(", ")
@@ -717,6 +735,16 @@ func (_m *Workspace) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("feed_position=")
 	builder.WriteString(fmt.Sprintf("%v", _m.FeedPosition))
+	builder.WriteString(", ")
+	if v := _m.DeletedAt; v != nil {
+		builder.WriteString("deleted_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.ErasedAt; v != nil {
+		builder.WriteString("erased_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.SuspendedAt; v != nil {
 		builder.WriteString("suspended_at=")

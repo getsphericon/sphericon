@@ -7,9 +7,9 @@ import {
   handleSiteTemplatesGet,
   handleSiteTemplatesUpdate,
 } from '../../generated/site/msw.gen.ts'
-import { Route as templatesEditRoute } from '../../routes/workspaces/$slug/templates/$templateId/edit.tsx'
-import { Route as templatesRoute } from '../../routes/workspaces/$slug/templates/index.tsx'
-import { Route as templatesCreateRoute } from '../../routes/workspaces/$slug/templates/new.tsx'
+import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
+import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
+import { Route as templatesCreateRoute } from '../../routes/workspaces/$workspaceId/templates/new.tsx'
 import { hex, TIMESTAMPS, UNSAVED_BRAND_KIT } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -17,7 +17,7 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { TemplateCreatePage, TemplateEditPage } from './resource.tsx'
 
-const EDIT_ROUTE = routeMount(templatesEditRoute, { slug: 'test', templateId: '7' })
+const EDIT_ROUTE = routeMount(templatesEditRoute, { workspaceId: 'TestWs01', templateId: '7' })
 
 const DOC = {
   type: 'doc',
@@ -58,12 +58,12 @@ function captureUpdates(saved: object) {
 test('Cancel links back to the templates list of the current workspace', async () => {
   const { screen } = await renderWithRouter(
     <TemplateCreatePage />,
-    routeMount(templatesCreateRoute, { slug: 'test' }),
+    routeMount(templatesCreateRoute, { workspaceId: 'TestWs01' }),
   )
 
   await expect
     .element(screen.getByRole('link', { name: 'Cancel' }))
-    .toHaveAttribute('href', routeMount(templatesRoute, { slug: 'test' }).initialPath)
+    .toHaveAttribute('href', routeMount(templatesRoute, { workspaceId: 'TestWs01' }).initialPath)
 })
 
 test('saving a message written in the editor sends its document and no body', async () => {
@@ -138,7 +138,7 @@ test('a new message is authored in the Brand kit and its palette is written into
 
   const { screen } = await renderWithRouter(
     <TemplateCreatePage />,
-    routeMount(templatesCreateRoute, { slug: 'test' }),
+    routeMount(templatesCreateRoute, { workspaceId: 'TestWs01' }),
   )
   await screen.getByLabelText('Name', { exact: false }).fill('Branded')
   await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()

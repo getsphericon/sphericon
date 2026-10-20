@@ -15,7 +15,7 @@ func TestSiteAutomationsCRUDAndActivation(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name:         "Welcome series",
@@ -24,7 +24,7 @@ func TestSiteAutomationsCRUDAndActivation(t *testing.T) {
 			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p></p>")},
 			{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(3600)},
 		},
-	}, siteapi.SiteAutomationsCreateParams{Slug: slug})
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", created)
@@ -41,20 +41,20 @@ func TestSiteAutomationsCRUDAndActivation(t *testing.T) {
 	assert.Equal(t, int32(3600), res.Steps[1].Seconds.Or(0))
 
 	// Activate / deactivate flip the status.
-	act, err := c.SiteAutomationsActivate(ctx, siteapi.SiteAutomationsActivateParams{Slug: slug, ID: res.ID})
+	act, err := c.SiteAutomationsActivate(ctx, siteapi.SiteAutomationsActivateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	actRes, ok := act.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", act)
 	assert.Equal(t, siteapi.SiteAutomationStatusActive, actRes.Status)
 
-	deact, err := c.SiteAutomationsDeactivate(ctx, siteapi.SiteAutomationsDeactivateParams{Slug: slug, ID: res.ID})
+	deact, err := c.SiteAutomationsDeactivate(ctx, siteapi.SiteAutomationsDeactivateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	deactRes, ok := deact.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", deact)
 	assert.Equal(t, siteapi.SiteAutomationStatusDraft, deactRes.Status)
 
 	// Fetch the created automation back by id (selection by key).
-	got, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{Slug: slug, ID: res.ID})
+	got, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	gotRes, ok := got.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", got)
@@ -63,18 +63,18 @@ func TestSiteAutomationsCRUDAndActivation(t *testing.T) {
 	// Update renames.
 	upd, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
 		Name: siteapi.NewOptString("Onboarding"),
-	}, siteapi.SiteAutomationsUpdateParams{Slug: slug, ID: res.ID})
+	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	updRes, ok := upd.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", upd)
 	assert.Equal(t, "Onboarding", updRes.Name)
 
 	// Delete, then a fetch by id resolves to 404.
-	del, err := c.SiteAutomationsDelete(ctx, siteapi.SiteAutomationsDeleteParams{Slug: slug, ID: res.ID})
+	del, err := c.SiteAutomationsDelete(ctx, siteapi.SiteAutomationsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteAutomationsDeleteNoContent{}, del)
 
-	gone, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{Slug: slug, ID: res.ID})
+	gone, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteAutomationsGetNotFound{}, gone)
 }

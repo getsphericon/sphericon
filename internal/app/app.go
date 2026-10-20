@@ -549,12 +549,12 @@ func (a *App) runJobs(ctx context.Context) error {
 // owner(s) through the system sender. It reports whether anything changed; an
 // already-suspended Workspace is left as it was and the owner is not told twice. If
 // the notice cannot be sent the suspension still stands and the error says so.
-func (a *App) SuspendWorkspace(ctx context.Context, slug string, by suspension.Actor, reason string) (bool, error) {
+func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspension.Actor, reason string) (bool, error) {
 	client, err := do.Invoke[*entClient](a.injector)
 	if err != nil {
 		return false, err
 	}
-	id, err := accounts.WorkspaceIDBySlug(ctx, client.Client, slug)
+	id, err := accounts.WorkspaceIDByPublicID(ctx, client.Client, publicID)
 	if err != nil {
 		return false, err
 	}
@@ -581,12 +581,12 @@ func (a *App) SuspendWorkspace(ctx context.Context, slug string, by suspension.A
 }
 
 // UnsuspendWorkspace lifts a Workspace's suspension; held sends resume on their own.
-func (a *App) UnsuspendWorkspace(ctx context.Context, slug string, by suspension.Actor) (bool, error) {
+func (a *App) UnsuspendWorkspace(ctx context.Context, publicID string, by suspension.Actor) (bool, error) {
 	client, err := do.Invoke[*entClient](a.injector)
 	if err != nil {
 		return false, err
 	}
-	id, err := accounts.WorkspaceIDBySlug(ctx, client.Client, slug)
+	id, err := accounts.WorkspaceIDByPublicID(ctx, client.Client, publicID)
 	if err != nil {
 		return false, err
 	}

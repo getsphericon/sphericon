@@ -59,7 +59,7 @@ type Handler interface {
 	StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (StaffWorkspacesGetRes, error)
 	// StaffWorkspacesList implements StaffWorkspaces_list operation.
 	//
-	// List all Workspaces, newest first, optionally narrowed by a slug search.
+	// List all Workspaces, newest first, optionally narrowed by an id or name search.
 	//
 	// GET /workspaces
 	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error)

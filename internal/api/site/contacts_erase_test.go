@@ -20,7 +20,7 @@ func TestSiteContactsEraseIsRefusedForMembers(t *testing.T) {
 	ctx := context.Background()
 	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	res, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.ContactBobID)})
+	res, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsDeleteForbidden{}, res)
 
@@ -36,7 +36,7 @@ func TestSiteContactsDeleteByOwnerErases(t *testing.T) {
 	ctx := context.Background()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.ContactLiamID)})
+	res, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsDeleteNoContent{}, res)
 
@@ -51,7 +51,7 @@ func TestSiteContactsEraseRecordsTheUserRequester(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteContactsDelete(context.Background(), siteapi.SiteContactsDeleteParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.ContactLiamID)})
+	res, err := c.SiteContactsDelete(context.Background(), siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteContactsDeleteNoContent{}, res)
 

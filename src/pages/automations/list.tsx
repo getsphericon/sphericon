@@ -12,19 +12,19 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { Route as automationsEditRoute } from '../../routes/workspaces/$slug/automations/$automationId/edit.tsx'
-import { Route as automationsRoute } from '../../routes/workspaces/$slug/automations/index.tsx'
-import { Route as automationsCreateRoute } from '../../routes/workspaces/$slug/automations/new.tsx'
+import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
+import { Route as automationsCreateRoute } from '../../routes/workspaces/$workspaceId/automations/new.tsx'
 
 export function AutomationsListPage() {
   const { t } = useTranslation()
-  const { slug } = automationsRoute.useParams()
+  const { workspaceId } = automationsRoute.useParams()
 
-  const listQueryKey = siteAutomationsListQueryKey({ path: { slug } })
+  const listQueryKey = siteAutomationsListQueryKey({ path: { workspaceId } })
 
   const deleteAutomation = useDeleteResource({
     mutation: siteAutomationsDeleteMutation(),
-    slug,
+    workspaceId,
     listQueryKey,
     successMessage: t(($) => $.notifications.automationDeleted),
     errorTitle: t(($) => $.alerts.automationDeleteErrorTitle),
@@ -48,13 +48,13 @@ export function AutomationsListPage() {
     <Stack>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.automations)}</Title>
-        <ButtonLink to={automationsCreateRoute.to} params={{ slug }}>
+        <ButtonLink to={automationsCreateRoute.to} params={{ workspaceId }}>
           {t(($) => $.automations.addAutomation)}
         </ButtonLink>
       </Group>
 
       <PagedTable
-        options={(query) => siteAutomationsListOptions({ path: { slug }, query })}
+        options={(query) => siteAutomationsListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.automationLoadErrorTitle)}
         noRecordsText={t(($) => $.automations.noRecords)}
         emptyState={t(($) => $.automations.emptyState)}
@@ -83,7 +83,9 @@ export function AutomationsListPage() {
                     variant="light"
                     color="orange"
                     loading={deactivateMutation.isPending}
-                    onClick={() => deactivateMutation.mutate({ path: { slug, id: record.id } })}
+                    onClick={() =>
+                      deactivateMutation.mutate({ path: { workspaceId, id: record.id } })
+                    }
                   >
                     {t(($) => $.automations.deactivate)}
                   </Button>
@@ -93,7 +95,9 @@ export function AutomationsListPage() {
                     variant="light"
                     color="teal"
                     loading={activateMutation.isPending}
-                    onClick={() => activateMutation.mutate({ path: { slug, id: record.id } })}
+                    onClick={() =>
+                      activateMutation.mutate({ path: { workspaceId, id: record.id } })
+                    }
                   >
                     {t(($) => $.automations.activate)}
                   </Button>
@@ -101,7 +105,7 @@ export function AutomationsListPage() {
                 <ButtonLink
                   size="compact-sm"
                   to={automationsEditRoute.to}
-                  params={{ slug, automationId: record.id }}
+                  params={{ workspaceId, automationId: record.id }}
                 >
                   {t(($) => $.actions.edit)}
                 </ButtonLink>

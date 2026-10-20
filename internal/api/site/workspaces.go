@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -65,16 +66,61 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	return r, nil
 }
 
-// activeHolds is the holds the send path honours now: none without the `staff`
-// license. A Workspace loaded with its holds edge is read from it; otherwise one query.
+// activeHolds is the holds the send path honours now: the pending-deletion Hold of a
+// deleted Workspace, and the Staff holds, which are none without the `staff` license. A
+// Workspace loaded with its holds edge is read from it; otherwise one query.
 func (h *Handlers) activeHolds(ctx context.Context, s *ent.Scoped, w *ent.Workspace) ([]*ent.Hold, error) {
 	if h.holdsHonoured != nil && !h.holdsHonoured() {
-		return nil, nil
+		return holds.PendingDeletion(w), nil
 	}
 	if loaded, err := w.Edges.HoldsOrErr(); err == nil {
-		return holds.Live(loaded, h.now()), nil
+		return append(holds.PendingDeletion(w), holds.Live(loaded, h.now())...), nil
 	}
 	return holds.Active(ctx, s, h.now())
+}
+
+// SiteWorkspacesCreate creates a Workspace for the authenticated User, who becomes its
+// Owner (ADR 0043). Only a Verified User may create one.
+func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCreateWorkspaceInput) (siteapi.SiteWorkspacesCreateRes, error) {
+	a := auth.GetSiteAuth(ctx)
+	if a == nil {
+		return nil, &ent.NotFoundError{}
+	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		v := siteapi.SiteWorkspacesCreateUnprocessableEntity(nameEmptyProblem())
+		return &v, nil
+	}
+	ws, err := h.accounts.CreateWorkspace(ctx, a.UserID, name)
+	if errors.Is(err, accounts.ErrEmailNotVerified) {
+		v := siteapi.SiteWorkspacesCreateForbidden(siteapi.ProblemDetails{
+			Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeEmailVerificationRequired),
+			Status: siteapi.NewOptInt32(http.StatusForbidden),
+			Title:  siteapi.NewOptString(http.StatusText(http.StatusForbidden)),
+			Detail: siteapi.NewOptString(i18n.T("errors.email_verification_required", nil)),
+		})
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	s, m, err := h.accounts.Scope(ctx, a.UserID, ws.PublicID)
+	if err != nil {
+		return nil, err
+	}
+	r, err := h.workspaceResource(ctx, s, m)
+	if err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
+func nameEmptyProblem() siteapi.ProblemDetails {
+	return problemWithErrors(
+		http.StatusUnprocessableEntity,
+		i18n.T("errors.name_empty", nil),
+		map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
+	)
 }
 
 // SiteWorkspacesAccountLink mints the Owner's Account link token. Without the
@@ -85,9 +131,9 @@ func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, params siteapi
 		v := siteapi.SiteWorkspacesAccountLinkNotFound(problem(http.StatusNotFound, "account link is not configured"))
 		return &v, nil
 	}
-	s, m, err := h.membershipFor(ctx, params.Slug)
+	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesAccountLinkNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteWorkspacesAccountLinkNotFound(workspaceNotFoundProblem())
 		return &v, nil
 	}
 	if err != nil {
@@ -120,9 +166,9 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 	if !req.Required {
 		load = h.membershipEvenIfWithheld
 	}
-	s, m, err := load(ctx, params.Slug)
+	s, m, err := load(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesSetSecondFactorRequirementNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteWorkspacesSetSecondFactorRequirementNotFound(workspaceNotFoundProblem())
 		return &v, nil
 	}
 	if err != nil {
@@ -149,25 +195,25 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 	return &r, nil
 }
 
-// SiteWorkspacesUpdate renames a workspace owned by the authenticated user. The
-// slug is immutable, so only the display name changes.
+// SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, params siteapi.SiteWorkspacesUpdateParams) (siteapi.SiteWorkspacesUpdateRes, error) {
-	s, m, err := h.membershipFor(ctx, params.Slug)
+	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteWorkspacesUpdateNotFound(workspaceNotFoundProblem())
 		return &v, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
+	if !accounts.CanRenameWorkspace(m.Role) {
+		v := siteapi.SiteWorkspacesUpdateForbidden(problem(http.StatusForbidden, "only owners and admins can rename the workspace"))
+		return &v, nil
+	}
+
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
-		v := siteapi.SiteWorkspacesUpdateUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			i18n.T("errors.name_empty", nil),
-			map[string][]string{"name": {i18n.T("errors.name_empty", nil)}},
-		))
+		v := siteapi.SiteWorkspacesUpdateUnprocessableEntity(nameEmptyProblem())
 		return &v, nil
 	}
 
@@ -187,4 +233,86 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 		return nil, err
 	}
 	return &resource, nil
+}
+
+func workspaceNotFoundProblem() siteapi.ProblemDetails {
+	return problem(http.StatusNotFound, "workspace not found")
+}
+
+// deletedWorkspaceResource is a Workspace in its deletion window with the date its data
+// will be erased.
+func deletedWorkspaceResource(w *ent.Workspace) siteapi.SiteDeletedWorkspaceResource {
+	return siteapi.SiteDeletedWorkspaceResource{
+		ID:        siteapi.WorkspaceId(w.PublicID),
+		Name:      w.Name,
+		DeletedAt: siteapi.Timestamp(*w.DeletedAt),
+		EraseAt:   siteapi.Timestamp(accounts.EraseDate(*w.DeletedAt)),
+	}
+}
+
+// SiteWorkspacesListDeleted lists the caller's Owner Workspaces in their deletion window.
+func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.SiteDeletedWorkspaceResource, error) {
+	a := auth.GetSiteAuth(ctx)
+	if a == nil {
+		return []siteapi.SiteDeletedWorkspaceResource{}, nil
+	}
+	items, err := h.accounts.DeletedWorkspaces(ctx, a.UserID, h.now())
+	if err != nil {
+		return nil, err
+	}
+	return lo.Map(items, func(m *ent.Membership, _ int) siteapi.SiteDeletedWorkspaceResource {
+		return deletedWorkspaceResource(m.Edges.Workspace)
+	}), nil
+}
+
+// SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
+func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, params siteapi.SiteWorkspacesDeleteParams) (siteapi.SiteWorkspacesDeleteRes, error) {
+	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteWorkspacesDeleteNotFound(workspaceNotFoundProblem())
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !accounts.CanDeleteWorkspace(m.Role) {
+		v := siteapi.SiteWorkspacesDeleteForbidden(problem(http.StatusForbidden, "only owners can delete the workspace"))
+		return &v, nil
+	}
+	w, err := h.accounts.DeleteWorkspace(ctx, s, h.actor(ctx), req.Name, h.now())
+	if errors.Is(err, accounts.ErrNameMismatch) {
+		v := siteapi.SiteWorkspacesDeleteUnprocessableEntity(problemWithErrors(
+			http.StatusUnprocessableEntity,
+			i18n.T("errors.workspace_name_mismatch", nil),
+			map[string][]string{"name": {i18n.T("errors.workspace_name_mismatch", nil)}},
+		))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r := deletedWorkspaceResource(w)
+	return &r, nil
+}
+
+// SiteWorkspacesRestore restores a Workspace in its deletion window (Owner only).
+func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.SiteWorkspacesRestoreParams) (siteapi.SiteWorkspacesRestoreRes, error) {
+	a := auth.GetSiteAuth(ctx)
+	if a == nil {
+		v := workspaceNotFoundProblem()
+		return &v, nil
+	}
+	m, err := h.accounts.RestoreWorkspace(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
+	if ent.IsNotFound(err) {
+		v := workspaceNotFoundProblem()
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r, err := h.workspaceResource(ctx, h.accounts.ScopeOf(m), m)
+	if err != nil {
+		return nil, err
+	}
+	return &r, nil
 }

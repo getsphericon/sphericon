@@ -8,16 +8,16 @@ import {
   handleSiteSuppressionsList,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
-import { Route as sendingRoute } from '../../../routes/workspaces/$slug/settings/sending.tsx'
+import { Route as sendingRoute } from '../../../routes/workspaces/$workspaceId/settings/sending.tsx'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
 import { SendingPage } from './sending.tsx'
 
 const workspace = {
-  id: '1',
+  id: 'TestWs01',
   name: 'Acme',
-  slug: 'test',
+
   collectKey: 'omck_test_key',
   postalAddress: '',
   accountLinkAvailable: false,
@@ -62,7 +62,7 @@ test('shows the providers, the sending domains and the suppression list', async 
 
   const { screen } = await renderWithRouter(
     <SendingPage />,
-    routeMount(sendingRoute, { slug: 'test' }),
+    routeMount(sendingRoute, { workspaceId: 'TestWs01' }),
   )
 
   await expect.element(screen.getByRole('heading', { name: 'Providers' })).toBeInTheDocument()

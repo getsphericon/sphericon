@@ -10,9 +10,9 @@ import type { SiteMembershipRole } from '../generated/site/types.gen.ts'
 // membership list (readable by any member). Undefined while loading or on error,
 // so role-gated UI stays hidden until the role is known. The backend enforces the
 // same gate (403) — this only avoids offering an action that would be refused.
-export function useCurrentRole(slug: string): SiteMembershipRole | undefined {
+export function useCurrentRole(workspaceId: string): SiteMembershipRole | undefined {
   const me = useQuery(siteUserGetMeOptions())
-  const members = useQuery(siteMembershipsListOptions({ path: { slug } }))
+  const members = useQuery(siteMembershipsListOptions({ path: { workspaceId } }))
   return members.data?.find((member) => member.userId === me.data?.id)?.role
 }
 

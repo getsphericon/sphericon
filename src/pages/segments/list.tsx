@@ -9,18 +9,18 @@ import {
   siteSegmentsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
-import { Route as segmentsEditRoute } from '../../routes/workspaces/$slug/segments/$segmentId/edit.tsx'
-import { Route as segmentsRoute } from '../../routes/workspaces/$slug/segments/index.tsx'
-import { Route as segmentsCreateRoute } from '../../routes/workspaces/$slug/segments/new.tsx'
+import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
+import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
+import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
 
 export function SegmentsListPage() {
   const { t } = useTranslation()
-  const { slug } = segmentsRoute.useParams()
+  const { workspaceId } = segmentsRoute.useParams()
 
   const deleteSegment = useDeleteResource({
     mutation: siteSegmentsDeleteMutation(),
-    slug,
-    listQueryKey: siteSegmentsListQueryKey({ path: { slug } }),
+    workspaceId,
+    listQueryKey: siteSegmentsListQueryKey({ path: { workspaceId } }),
     successMessage: t(($) => $.notifications.segmentDeleted),
     errorTitle: t(($) => $.alerts.segmentDeleteErrorTitle),
   })
@@ -29,13 +29,13 @@ export function SegmentsListPage() {
     <Stack>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.segments)}</Title>
-        <ButtonLink to={segmentsCreateRoute.to} params={{ slug }}>
+        <ButtonLink to={segmentsCreateRoute.to} params={{ workspaceId }}>
           {t(($) => $.segments.addSegment)}
         </ButtonLink>
       </Group>
 
       <PagedTable
-        options={(query) => siteSegmentsListOptions({ path: { slug }, query })}
+        options={(query) => siteSegmentsListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.segmentLoadErrorTitle)}
         noRecordsText={t(($) => $.segments.noRecords)}
         emptyState={t(($) => $.segments.emptyState)}
@@ -49,7 +49,7 @@ export function SegmentsListPage() {
                 <ButtonLink
                   size="compact-sm"
                   to={segmentsEditRoute.to}
-                  params={{ slug, segmentId: record.id }}
+                  params={{ workspaceId, segmentId: record.id }}
                 >
                   {t(($) => $.actions.edit)}
                 </ButtonLink>

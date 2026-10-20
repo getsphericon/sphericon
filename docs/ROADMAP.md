@@ -277,7 +277,7 @@ Register the new edges on `Workspace` (`ent/schema/workspace.go`).
 The frontend talks to the **site API**, so the primary contract goes there.
 
 - New `typespec/site/resources/broadcasts.tsp` (pattern: `typespec/site/resources/segments.tsp`):
-  a resource under `/w/{slug}/broadcasts`, CRUD + actions **`POST .../{id}/send`** and
+  a resource under `/w/{id}/broadcasts`, CRUD + actions **`POST .../{id}/send`** and
   **`POST .../{id}/schedule`**, a `stats` field on the resource. Wire it into `typespec/site/main.tsp`.
 - The existing `typespec/external/resources/broadcasts.tsp` — extend to the richer model later; for the
   MVP touch only the site spec.

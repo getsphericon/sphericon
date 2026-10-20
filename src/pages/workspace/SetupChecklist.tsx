@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteSetupProgress, SiteSetupStepStatus } from '../../generated/site/types.gen.ts'
-import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$slug/broadcasts/new.tsx'
-import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
-import { Route as sendingRoute } from '../../routes/workspaces/$slug/settings/sending.tsx'
+import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
+import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
+import { Route as sendingRoute } from '../../routes/workspaces/$workspaceId/settings/sending.tsx'
 import { SetupDomainStep } from './SetupDomainStep.tsx'
 
 type StepKey = keyof SiteSetupProgress['steps']
@@ -37,15 +37,15 @@ function StatusIcon({ status }: { status: SiteSetupStepStatus }) {
 function StepLink({
   step,
   to,
-  slug,
+  workspaceId,
 }: {
   step: StepKey
   to: (typeof STEPS)[number]['to']
-  slug: string
+  workspaceId: string
 }) {
   const { t } = useTranslation()
   return (
-    <ButtonLink to={to} params={{ slug }} variant="default" size="xs">
+    <ButtonLink to={to} params={{ workspaceId }} variant="default" size="xs">
       {t(($) => $.setupChecklist.steps[step].action)}
     </ButtonLink>
   )
@@ -55,10 +55,10 @@ function StepLink({
 // with its status as the server read it and a link to the page where it is done. No step
 // blocks another, so every undone step keeps its link.
 export function SetupChecklist({
-  slug,
+  workspaceId,
   checklist,
 }: {
-  slug: string
+  workspaceId: string
   checklist: SiteSetupProgress
 }) {
   const { t } = useTranslation()
@@ -95,11 +95,11 @@ export function SetupChecklist({
                     {t(($) => $.setupChecklist.steps[step].description)}
                   </Text>
                   {step === 'sendingDomain' && status === 'pending' && (
-                    <SetupDomainStep slug={slug} />
+                    <SetupDomainStep workspaceId={workspaceId} />
                   )}
                 </Stack>
               </Group>
-              {status !== 'done' && <StepLink step={step} to={to} slug={slug} />}
+              {status !== 'done' && <StepLink step={step} to={to} workspaceId={workspaceId} />}
             </Group>
           )
         })}

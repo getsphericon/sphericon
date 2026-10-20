@@ -20,28 +20,28 @@ func TestSiteContactsErrorBranches(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	acme, foreign := fixtures.AcmeSlug, fixtures.GlobexSlug
+	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	alice := idStr(fixtures.ContactAliceID)
 	missing := idStr(99999)
 
 	// Create: foreign workspace, then a duplicate alias key is a field-level 409.
-	r1, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress("new@example.com")}, siteapi.SiteContactsCreateParams{Slug: foreign})
+	r1, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress("new@example.com")}, siteapi.SiteContactsCreateParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsCreateNotFound{}, r1)
-	r2, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)}, siteapi.SiteContactsCreateParams{Slug: acme})
+	r2, err := c.SiteContactsCreate(ctx, &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)}, siteapi.SiteContactsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	conflict, ok := r2.(*siteapi.SiteContactsCreateConflict)
 	require.Truef(t, ok, "got %T", r2)
 	assert.Contains(t, conflict.Errors.Value, "email")
 
 	// Get.
-	g1, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{Slug: foreign, ID: alice})
+	g1, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: foreign, ID: alice})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsGetNotFound{}, g1)
-	g3, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{Slug: acme, ID: missing})
+	g3, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: acme, ID: missing})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsGetNotFound{}, g3)
-	g4, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{Slug: acme, ID: alice})
+	g4, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: acme, ID: alice})
 	require.NoError(t, err)
 	got, ok := g4.(*siteapi.SiteContactResource)
 	require.Truef(t, ok, "got %T", g4)
@@ -49,14 +49,14 @@ func TestSiteContactsErrorBranches(t *testing.T) {
 
 	// Update.
 	rename := &siteapi.SiteUpdateContactInput{FirstName: siteapi.NewOptNilString("Renamed")}
-	u1, err := c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{Slug: foreign, ID: alice})
+	u1, err := c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{WorkspaceId: foreign, ID: alice})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsUpdateNotFound{}, u1)
-	u3, err := c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{Slug: acme, ID: missing})
+	u3, err := c.SiteContactsUpdate(ctx, rename, siteapi.SiteContactsUpdateParams{WorkspaceId: acme, ID: missing})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsUpdateNotFound{}, u3)
 	u4, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
-		siteapi.SiteContactsUpdateParams{Slug: acme, ID: idStr(fixtures.ContactBobID)})
+		siteapi.SiteContactsUpdateParams{WorkspaceId: acme, ID: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsUpdateConflict{}, u4, "bob cannot take alice's email")
 	bob, err := env.DB.Contact.Get(ctx, fixtures.ContactBobID)
@@ -64,10 +64,10 @@ func TestSiteContactsErrorBranches(t *testing.T) {
 	assert.Equal(t, fixtures.ContactBobEmail, *bob.Email)
 
 	// Delete.
-	d1, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{Slug: foreign, ID: alice})
+	d1, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: foreign, ID: alice})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsDeleteNotFound{}, d1)
-	d2, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{Slug: acme, ID: missing})
+	d2, err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: acme, ID: missing})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsDeleteNotFound{}, d2)
 	stillThere, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactAliceID)).Exist(ctx)
@@ -91,7 +91,7 @@ func TestSiteAnalyticsRangesAndEmptyWorkspace(t *testing.T) {
 		{siteapi.SiteAnalyticsRange90d, 90},
 	} {
 		res, err := jane.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{
-			Slug: fixtures.GlobexSlug, Range: siteapi.NewOptSiteAnalyticsRange(tc.r),
+			WorkspaceId: fixtures.GlobexPublicID, Range: siteapi.NewOptSiteAnalyticsRange(tc.r),
 		})
 		require.NoError(t, err)
 		ov, ok := res.(*siteapi.SiteAnalyticsOverview)
@@ -104,7 +104,7 @@ func TestSiteAnalyticsRangesAndEmptyWorkspace(t *testing.T) {
 	}
 
 	// No range given defaults to 30 days.
-	def, err := jane.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{Slug: fixtures.GlobexSlug})
+	def, err := jane.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
 	assert.Len(t, def.(*siteapi.SiteAnalyticsOverview).Timeseries, 30)
 }
@@ -137,14 +137,14 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 
 	in := func() *siteapi.SiteOAuthDecisionInput {
 		return &siteapi.SiteOAuthDecisionInput{
-			ClientId: clientID, RedirectUri: redirect, WorkspaceSlug: fixtures.AcmeSlug, Approve: true,
+			ClientId: clientID, RedirectUri: redirect, WorkspaceId: fixtures.AcmePublicID, Approve: true,
 			CodeChallenge: oauth2.S256ChallengeFromVerifier(verifier),
 		}
 	}
 
 	// Decide: foreign workspace, unknown client, bad redirect, bad PKCE, bad scope.
 	foreignIn := in()
-	foreignIn.WorkspaceSlug = fixtures.GlobexSlug
+	foreignIn.WorkspaceId = fixtures.GlobexPublicID
 	e1, err := owner.SiteOAuthDecide(ctx, foreignIn)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteOAuthDecideNotFound{}, e1)

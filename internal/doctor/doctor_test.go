@@ -13,15 +13,20 @@ import (
 	"testing"
 	"time"
 
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/doctor"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -294,4 +299,20 @@ func TestRedactorHidesEverySecretInBothFormats(t *testing.T) {
 	assert.NotContains(t, out.String(), "p@ss")
 	assert.Contains(t, out.String(), "[redacted]")
 	assert.Contains(t, out.String(), "abc", "a value under four characters is left alone")
+}
+
+func TestADeletedWorkspaceIsLeftOutOfTheWorkspaceChecks(t *testing.T) {
+	in := healthy(t)
+	// The plain client refuses a feed change outside a transaction, so the deletion goes
+	// through an unguarded client on the same database.
+	raw := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, in.DB)))
+	raw.Workspace.Update().Where(workspace.IDIn(fixtures.AcmeID, fixtures.InitechID)).
+		SetDeletedAt(time.Now()).ExecX(context.Background())
+
+	r := doctor.Run(context.Background(), in)
+
+	for _, c := range r.Checks {
+		assert.NotEqual(t, "dkim mail.acme.com", c.Name)
+	}
+	assert.NotEqual(t, doctor.Warn, find(t, r, "app url in sent mail").Status, "mail of a deleted Workspace is not read")
 }

@@ -38,8 +38,8 @@ model SiteOAuthDecisionInput {
   /** Space-delimited scopes from the authorization request */
   scope?: string;
 
-  /** Workspace slug the token will belong to */
-  workspaceSlug: string;
+  /** Id of the Workspace the token will belong to */
+  workspaceId: WorkspaceId;
 
   /** true to approve, false to deny */
   approve: boolean;

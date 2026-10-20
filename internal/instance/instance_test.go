@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -15,11 +16,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
-// Workspaces cannot be deleted through the product yet and a fixture Workspace has rows in
-// most tables, so the "oldest Workspace is gone" rule runs on a database of its own that
-// holds only the two Workspaces it is about.
+// A fixture Workspace has rows in most tables, so the "oldest Workspace is deleted" rule runs
+// on a database of its own that holds only the two Workspaces it is about.
 func TestIsOwnerPassesToTheNextOldestWorkspaceWhenTheOldestIsDeleted(t *testing.T) {
 	ctx := t.Context()
 	sqlDB, err := sql.Open("pgx", testhelper.EmptyDBURL(t))
@@ -36,7 +37,7 @@ func TestIsOwnerPassesToTheNextOldestWorkspaceWhenTheOldestIsDeleted(t *testing.
 		workspace int64
 	}{{1, 1}, {2, 2}} {
 		require.NoError(t, client.User.Create().SetID(u.id).SetName("u").SetEmail(fmt.Sprintf("u%d@example.test", u.id)).Exec(ctx))
-		require.NoError(t, client.Workspace.Create().SetID(u.workspace).SetName("w").SetSlug(fmt.Sprintf("w%d", u.workspace)).
+		require.NoError(t, client.Workspace.Create().SetID(u.workspace).SetName("w").SetPublicID(workspaceid.New()).
 			SetCollectKey(fmt.Sprintf("c%d", u.workspace)).Exec(ctx))
 		require.NoError(t, client.Scoped(u.workspace).Membership().Create().SetUserID(u.id).SetRole(membership.RoleOwner).Exec(ctx))
 	}
@@ -47,9 +48,7 @@ func TestIsOwnerPassesToTheNextOldestWorkspaceWhenTheOldestIsDeleted(t *testing.
 	assert.True(t, first)
 	assert.False(t, second)
 
-	_, err = client.Scoped(1).Membership().Delete().Where(membership.UserID(1)).Exec(ctx)
-	require.NoError(t, err)
-	require.NoError(t, client.Workspace.DeleteOneID(1).Exec(ctx))
+	require.NoError(t, client.Workspace.UpdateOneID(1).SetDeletedAt(time.Now()).Exec(ctx))
 
 	first, err = mod.IsOwner(ctx, 1)
 	require.NoError(t, err)

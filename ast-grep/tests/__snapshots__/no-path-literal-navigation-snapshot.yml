@@ -46,16 +46,16 @@ snapshots:
         style: secondary
         start: 11
         end: 13
-  'redirect({ to: `/w/${slug}` })':
+  'redirect({ to: `/w/${workspaceId}` })':
     labels:
-      - source: 'to: `/w/${slug}`'
+      - source: 'to: `/w/${workspaceId}`'
         style: primary
         start: 11
-        end: 27
-      - source: '`/w/${slug}`'
+        end: 34
+      - source: '`/w/${workspaceId}`'
         style: secondary
         start: 15
-        end: 27
+        end: 34
       - source: to
         style: secondary
         start: 11

@@ -89,7 +89,7 @@ func TestAuditFiltersNarrowListAndExportAlike(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.list.Slug, tc.export.Slug = fixtures.GlobexSlug, fixtures.GlobexSlug
+			tc.list.WorkspaceId, tc.export.WorkspaceId = fixtures.GlobexPublicID, fixtures.GlobexPublicID
 			res, err := owner.SiteAuditList(ctx, tc.list)
 			require.NoError(t, err)
 			page, ok := res.(*siteapi.SiteAuditEntryList)
@@ -107,7 +107,7 @@ func TestAuditFilteredCursorPaginates(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJaneEmail)
 	ctx := context.Background()
 	params := siteapi.SiteAuditListParams{
-		Slug: fixtures.GlobexSlug, TargetType: siteapi.NewOptString("integration"), Limit: siteapi.NewOptInt32(1),
+		WorkspaceId: fixtures.GlobexPublicID, TargetType: siteapi.NewOptString("integration"), Limit: siteapi.NewOptInt32(1),
 	}
 	res, err := owner.SiteAuditList(ctx, params)
 	require.NoError(t, err)

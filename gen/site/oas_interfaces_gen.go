@@ -441,6 +441,18 @@ type SiteWorkspacesAccountLinkRes interface {
 	siteWorkspacesAccountLinkRes()
 }
 
+type SiteWorkspacesCreateRes interface {
+	siteWorkspacesCreateRes()
+}
+
+type SiteWorkspacesDeleteRes interface {
+	siteWorkspacesDeleteRes()
+}
+
+type SiteWorkspacesRestoreRes interface {
+	siteWorkspacesRestoreRes()
+}
+
 type SiteWorkspacesSetSecondFactorRequirementRes interface {
 	siteWorkspacesSetSecondFactorRequirementRes()
 }

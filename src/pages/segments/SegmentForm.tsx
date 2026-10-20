@@ -6,8 +6,8 @@ import * as z from 'zod'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
-import { Route as workspaceRoute } from '../../routes/workspaces/$slug/route.tsx'
-import { Route as segmentsRoute } from '../../routes/workspaces/$slug/segments/index.tsx'
+import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 import { definitionCodec, emptyGroup } from './rules.ts'
 import { SegmentRuleBuilder } from './SegmentRuleBuilder.tsx'
 
@@ -19,7 +19,7 @@ export interface SegmentPayload {
 
 export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<SegmentPayload>) {
   const { t } = useTranslation()
-  const { slug } = workspaceRoute.useParams()
+  const { workspaceId } = workspaceRoute.useParams()
   const definition = form.values.definition
   // The form holds the rule group as JSON text; a blank or unreadable text is the empty group.
   const group = useMemo(() => {
@@ -40,14 +40,14 @@ export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<Seg
           description={t(($) => $.segments.definitionHint)}
         >
           <SegmentRuleBuilder
-            slug={slug}
+            workspaceId={workspaceId}
             value={group}
             onChange={(next) => form.setFieldValue('definition', z.encode(definitionCodec, next))}
           />
         </Input.Wrapper>
 
         <Group justify="flex-end">
-          <ButtonLink variant="default" to={segmentsRoute.to} params={{ slug }}>
+          <ButtonLink variant="default" to={segmentsRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.cancel)}
           </ButtonLink>
           <Button type="submit" loading={isPending}>

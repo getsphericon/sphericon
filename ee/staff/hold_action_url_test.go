@@ -32,7 +32,7 @@ func (h *harness) setHoldWithURL(t *testing.T, key, actionURL string) serviceapi
 func TestLiftingAHoldLeavesTheSuspensionInForce(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	h.suspend(t, c, fixtures.AcmeID, "abuse report")
+	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
 	h.setHold(t, "review", time.Hour)
 
 	assert.True(t, h.clearHold(t, "review"))
@@ -56,7 +56,7 @@ func TestTheActionURLReachesTheConsoleAndTheOwnerAndRenewingWithoutItRemovesIt(t
 
 	list, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
-	acme, found := lo.Find(list, func(w siteapi.SiteWorkspaceResource) bool { return w.Slug == fixtures.AcmeSlug })
+	acme, found := lo.Find(list, func(w siteapi.SiteWorkspaceResource) bool { return w.ID == fixtures.AcmePublicID })
 	require.True(t, found)
 	require.Len(t, acme.Holds, 2)
 	assert.Equal(t, resolveURL, acme.Holds[0].ActionUrl.Value)

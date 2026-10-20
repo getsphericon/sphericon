@@ -24,7 +24,7 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	id := int64(fixtures.BroadcastDraftID)
-	params := siteapi.SiteBroadcastsGetParams{Slug: fixtures.AcmeSlug, ID: siteapi.EntityId(id)}
+	params := siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)}
 	get := func() siteapi.SiteBroadcastResource {
 		got, err := c.SiteBroadcastsGet(ctx, params)
 		require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	require.True(t, ok)
 	assert.WithinDuration(t, eta, time.Time(got), time.Second, "timestamps are served to the second")
 
-	list, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{Slug: fixtures.AcmeSlug})
+	list, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	listed, ok := list.(*siteapi.SiteBroadcastsListOK)
 	require.Truef(t, ok, "got %T", list)

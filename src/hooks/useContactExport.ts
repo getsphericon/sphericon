@@ -19,11 +19,11 @@ function exportFilename(response: Response): string | undefined {
 // (Content-Disposition), so call the generated SDK function and keep both. The server
 // streams the document as a download; it is read as the contract's typed
 // ContactExportDocument and written out as the saved file.
-export function useContactExport(slug: string) {
+export function useContactExport(workspaceId: string) {
   const { t } = useTranslation()
   return useMutation({
     mutationFn: (query: NonNullable<SiteContactsExportData['query']>) =>
-      siteContactsExport({ path: { slug }, query, parseAs: 'json', throwOnError: true }),
+      siteContactsExport({ path: { workspaceId }, query, parseAs: 'json', throwOnError: true }),
     onSuccess: ({ data, response }) =>
       saveAs(
         new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),

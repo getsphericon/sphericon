@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 
 import { handleSiteTransactionalEmailsList } from '../../generated/site/msw.gen.ts'
-import { Route as transactionalEmailsRoute } from '../../routes/workspaces/$slug/transactional-emails/index.tsx'
+import { Route as transactionalEmailsRoute } from '../../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { page } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -10,7 +10,7 @@ import { worker } from '../../test/worker.ts'
 import { formatDateTime } from '../../utils/datetime.ts'
 import { TransactionalEmailsListPage } from './list.tsx'
 
-const LIST_ROUTE = routeMount(transactionalEmailsRoute, { slug: 'test' })
+const LIST_ROUTE = routeMount(transactionalEmailsRoute, { workspaceId: 'TestWs01' })
 
 const SENT = {
   id: '1',

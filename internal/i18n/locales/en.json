@@ -54,6 +54,7 @@
   "errors.confirm_link_invalid": "invalid or expired confirmation link",
   "errors.confirm_link_bad": "invalid confirmation link",
   "errors.name_empty": "name must not be empty",
+  "errors.workspace_name_mismatch": "the typed name does not match the workspace name",
   "errors.sending_domain_invalid": "not a valid domain name",
   "errors.dkim_selector_invalid": "not a valid DKIM selector",
   "errors.retention_days_range": "retention must be between 1 and 3650 days",

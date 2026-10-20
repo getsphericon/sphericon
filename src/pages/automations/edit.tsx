@@ -4,15 +4,15 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { siteAutomationsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { Route as automationsEditRoute } from '../../routes/workspaces/$slug/automations/$automationId/edit.tsx'
+import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { AutomationBuilder } from './AutomationBuilder.tsx'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 
 export function AutomationEditPage() {
   const { t } = useTranslation()
-  const { slug, automationId } = automationsEditRoute.useParams()
+  const { workspaceId, automationId } = automationsEditRoute.useParams()
 
-  const getQuery = useQuery(siteAutomationsGetOptions({ path: { slug, id: automationId } }))
+  const getQuery = useQuery(siteAutomationsGetOptions({ path: { workspaceId, id: automationId } }))
 
   if (getQuery.isLoading) {
     return <Loader />
@@ -31,8 +31,8 @@ export function AutomationEditPage() {
   return (
     <Stack>
       <Title order={4}>{t(($) => $.automations.editTitle)}</Title>
-      <AutomationBuilder slug={slug} automation={getQuery.data} />
-      <FailedEnrollments slug={slug} automationId={automationId} />
+      <AutomationBuilder workspaceId={workspaceId} automation={getQuery.data} />
+      <FailedEnrollments workspaceId={workspaceId} automationId={automationId} />
     </Stack>
   )
 }

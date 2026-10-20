@@ -17,11 +17,11 @@ func TestSiteSuppressionsCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	// Create normalizes the destination and defaults the reason to manual.
 	created, err := c.SiteSuppressionsCreate(ctx, &siteapi.SiteCreateSuppressionInput{Destination: "Blocked@Example.com"},
-		siteapi.SiteSuppressionsCreateParams{Slug: slug})
+		siteapi.SiteSuppressionsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteSuppressionResource)
 	require.Truef(t, ok, "got %T", created)
@@ -30,7 +30,7 @@ func TestSiteSuppressionsCRUD(t *testing.T) {
 
 	// Suppressing the same destination again is idempotent (no duplicate).
 	again, err := c.SiteSuppressionsCreate(ctx, &siteapi.SiteCreateSuppressionInput{Destination: "blocked@example.com"},
-		siteapi.SiteSuppressionsCreateParams{Slug: slug})
+		siteapi.SiteSuppressionsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	againRes, ok := again.(*siteapi.SiteSuppressionResource)
 	require.Truef(t, ok, "got %T", again)
@@ -44,7 +44,7 @@ func TestSiteSuppressionsCRUD(t *testing.T) {
 	assert.True(t, exists, "created suppression is persisted")
 
 	// Delete removes it.
-	del, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{Slug: slug, ID: res.ID})
+	del, err := c.SiteSuppressionsDelete(ctx, siteapi.SiteSuppressionsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsDeleteNoContent{}, del)
 
@@ -55,12 +55,12 @@ func TestSiteSuppressionsCRUD(t *testing.T) {
 	assert.False(t, stillThere, "deleted suppression is gone")
 }
 
-// Suppressions are workspace-scoped: an unowned slug is a 404.
+// Suppressions are workspace-scoped: an unowned workspaceID is a 404.
 func TestSiteSuppressionsRequireOwnedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	out, err := c.SiteSuppressionsList(context.Background(), siteapi.SiteSuppressionsListParams{Slug: "does-not-exist"})
+	out, err := c.SiteSuppressionsList(context.Background(), siteapi.SiteSuppressionsListParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsListNotFound{}, out)
 }

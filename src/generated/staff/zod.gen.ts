@@ -236,7 +236,11 @@ export const zStaffSuspensionActor = z.object({
 /**
  * Which Workspaces the list surfaces for review
  */
-export const zStaffWorkspaceReview = z.enum(['warned', 'systemFrozen']);
+export const zStaffWorkspaceReview = z.enum([
+  'warned',
+  'systemFrozen',
+  'deleted'
+]);
 
 export const zTimeZoneName = z.string();
 
@@ -299,13 +303,20 @@ export const zStaffSuspension = z.object({
 });
 
 /**
+ * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
+ * Workspace's one public address.
+ */
+export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
+
+/**
  * A Workspace with its deliverability and active holds, as the detail page shows it
  */
 export const zStaffWorkspaceDetailResource = z.object({
-  id: zEntityId,
-  slug: z.string(),
+  id: zWorkspaceId,
   name: z.string(),
   createdAt: zTimestamp,
+  deletedAt: z.exactOptional(zTimestamp.nullable()),
+  erasedAt: z.exactOptional(zTimestamp.nullable()),
   suspension: z.exactOptional(zStaffSuspension.nullable()),
   exempt: z.boolean(),
   warned: z.boolean(),
@@ -319,10 +330,11 @@ export const zStaffWorkspaceDetailResource = z.object({
  * content or Events (ADR 0026).
  */
 export const zStaffWorkspaceResource = z.object({
-  id: zEntityId,
-  slug: z.string(),
+  id: zWorkspaceId,
   name: z.string(),
   createdAt: zTimestamp,
+  deletedAt: z.exactOptional(zTimestamp.nullable()),
+  erasedAt: z.exactOptional(zTimestamp.nullable()),
   suspension: z.exactOptional(zStaffSuspension.nullable()),
   exempt: z.boolean(),
   warned: z.boolean()
@@ -363,9 +375,10 @@ export const zPageQueryPageSize = z.int().min(-2147483648, { error: 'Invalid val
 export const zStaffWorkspaceSearchReview = zStaffWorkspaceReview;
 
 /**
- * Only Workspaces whose slug contains this text (case-insensitive)
+ * Only Workspaces whose id or name contains this text; the name matches case-insensitively,
+ * the id exactly
  */
-export const zStaffWorkspaceSearchSlug = z.string();
+export const zStaffWorkspaceSearchSearch = z.string();
 
 export const zStaffAuthLoginBody = zStaffLoginInput;
 
@@ -393,7 +406,7 @@ export const zStaffMeGetResponse = zStaffResource;
 
 export const zStaffWorkspacesListQuery = z.object({
   review: z.exactOptional(zStaffWorkspaceReview),
-  slug: z.exactOptional(z.string()),
+  search: z.exactOptional(z.string()),
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
 });
@@ -410,7 +423,7 @@ export const zStaffWorkspacesListResponse = z.object({
 });
 
 export const zStaffWorkspacesGetPath = z.object({
-  workspaceId: zEntityId
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -419,7 +432,7 @@ export const zStaffWorkspacesGetPath = z.object({
 export const zStaffWorkspacesGetResponse = zStaffWorkspaceDetailResource;
 
 export const zStaffWorkspaceAuditListPath = z.object({
-  workspaceId: zEntityId
+  workspaceId: zWorkspaceId
 });
 
 export const zStaffWorkspaceAuditListQuery = z.object({
@@ -433,7 +446,7 @@ export const zStaffWorkspaceAuditListQuery = z.object({
 export const zStaffWorkspaceAuditListResponse = zStaffAuditEntryList;
 
 export const zStaffWorkspacesExemptPath = z.object({
-  workspaceId: zEntityId
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -444,7 +457,7 @@ export const zStaffWorkspacesExemptResponse = zStaffExemptionChange;
 export const zStaffWorkspacesSuspendBody = zStaffSuspendInput;
 
 export const zStaffWorkspacesSuspendPath = z.object({
-  workspaceId: zEntityId
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -453,7 +466,7 @@ export const zStaffWorkspacesSuspendPath = z.object({
 export const zStaffWorkspacesSuspendResponse = zStaffSuspensionChange;
 
 export const zStaffWorkspacesUnexemptPath = z.object({
-  workspaceId: zEntityId
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -462,7 +475,7 @@ export const zStaffWorkspacesUnexemptPath = z.object({
 export const zStaffWorkspacesUnexemptResponse = zStaffExemptionChange;
 
 export const zStaffWorkspacesUnsuspendPath = z.object({
-  workspaceId: zEntityId
+  workspaceId: zWorkspaceId
 });
 
 /**

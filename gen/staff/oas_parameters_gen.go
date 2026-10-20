@@ -16,7 +16,7 @@ import (
 
 // StaffWorkspaceAuditListParams is parameters of StaffWorkspaceAudit_list operation.
 type StaffWorkspaceAuditListParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 	// Cursor from a previous page.
 	Cursor OptString `json:",omitempty,omitzero"`
 	// Page size.
@@ -29,7 +29,7 @@ func unpackStaffWorkspaceAuditListParams(packed middleware.Parameters) (params S
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -73,14 +73,14 @@ func decodeStaffWorkspaceAuditListParams(args [1]string, argsEscaped bool, r *ht
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -90,7 +90,15 @@ func decodeStaffWorkspaceAuditListParams(args [1]string, argsEscaped bool, r *ht
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err
@@ -198,7 +206,7 @@ func decodeStaffWorkspaceAuditListParams(args [1]string, argsEscaped bool, r *ht
 
 // StaffWorkspacesExemptParams is parameters of StaffWorkspaces_exempt operation.
 type StaffWorkspacesExemptParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 }
 
 func unpackStaffWorkspacesExemptParams(packed middleware.Parameters) (params StaffWorkspacesExemptParams) {
@@ -207,7 +215,7 @@ func unpackStaffWorkspacesExemptParams(packed middleware.Parameters) (params Sta
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
@@ -232,14 +240,14 @@ func decodeStaffWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -249,7 +257,15 @@ func decodeStaffWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err
@@ -270,7 +286,7 @@ func decodeStaffWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http
 
 // StaffWorkspacesGetParams is parameters of StaffWorkspaces_get operation.
 type StaffWorkspacesGetParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 }
 
 func unpackStaffWorkspacesGetParams(packed middleware.Parameters) (params StaffWorkspacesGetParams) {
@@ -279,7 +295,7 @@ func unpackStaffWorkspacesGetParams(packed middleware.Parameters) (params StaffW
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
@@ -304,14 +320,14 @@ func decodeStaffWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Re
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -321,7 +337,15 @@ func decodeStaffWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Re
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err
@@ -344,8 +368,9 @@ func decodeStaffWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Re
 type StaffWorkspacesListParams struct {
 	// Only Workspaces in this review state.
 	Review OptStaffWorkspaceReview `json:",omitempty,omitzero"`
-	// Only Workspaces whose slug contains this text (case-insensitive).
-	Slug OptString `json:",omitempty,omitzero"`
+	// Only Workspaces whose id or name contains this text; the name matches case-insensitively, the id
+	// exactly.
+	Search OptString `json:",omitempty,omitzero"`
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -364,11 +389,11 @@ func unpackStaffWorkspacesListParams(packed middleware.Parameters) (params Staff
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "search",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.Slug = v.(OptString)
+			params.Search = v.(OptString)
 		}
 	}
 	{
@@ -450,17 +475,17 @@ func decodeStaffWorkspacesListParams(args [0]string, argsEscaped bool, r *http.R
 			Err:  err,
 		}
 	}
-	// Decode query: slug.
+	// Decode query: search.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "slug",
+			Name:    "search",
 			Style:   uri.QueryStyleForm,
 			Explode: false,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSlugVal string
+				var paramsDotSearchVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -472,12 +497,12 @@ func decodeStaffWorkspacesListParams(args [0]string, argsEscaped bool, r *http.R
 						return err
 					}
 
-					paramsDotSlugVal = c
+					paramsDotSearchVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.Slug.SetTo(paramsDotSlugVal)
+				params.Search.SetTo(paramsDotSearchVal)
 				return nil
 			}); err != nil {
 				return err
@@ -486,7 +511,7 @@ func decodeStaffWorkspacesListParams(args [0]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "search",
 			In:   "query",
 			Err:  err,
 		}
@@ -588,7 +613,7 @@ func decodeStaffWorkspacesListParams(args [0]string, argsEscaped bool, r *http.R
 
 // StaffWorkspacesSuspendParams is parameters of StaffWorkspaces_suspend operation.
 type StaffWorkspacesSuspendParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 }
 
 func unpackStaffWorkspacesSuspendParams(packed middleware.Parameters) (params StaffWorkspacesSuspendParams) {
@@ -597,7 +622,7 @@ func unpackStaffWorkspacesSuspendParams(packed middleware.Parameters) (params St
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
@@ -622,14 +647,14 @@ func decodeStaffWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *htt
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -639,7 +664,15 @@ func decodeStaffWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *htt
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err
@@ -660,7 +693,7 @@ func decodeStaffWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *htt
 
 // StaffWorkspacesUnexemptParams is parameters of StaffWorkspaces_unexempt operation.
 type StaffWorkspacesUnexemptParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 }
 
 func unpackStaffWorkspacesUnexemptParams(packed middleware.Parameters) (params StaffWorkspacesUnexemptParams) {
@@ -669,7 +702,7 @@ func unpackStaffWorkspacesUnexemptParams(packed middleware.Parameters) (params S
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
@@ -694,14 +727,14 @@ func decodeStaffWorkspacesUnexemptParams(args [1]string, argsEscaped bool, r *ht
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -711,7 +744,15 @@ func decodeStaffWorkspacesUnexemptParams(args [1]string, argsEscaped bool, r *ht
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err
@@ -732,7 +773,7 @@ func decodeStaffWorkspacesUnexemptParams(args [1]string, argsEscaped bool, r *ht
 
 // StaffWorkspacesUnsuspendParams is parameters of StaffWorkspaces_unsuspend operation.
 type StaffWorkspacesUnsuspendParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 }
 
 func unpackStaffWorkspacesUnsuspendParams(packed middleware.Parameters) (params StaffWorkspacesUnsuspendParams) {
@@ -741,7 +782,7 @@ func unpackStaffWorkspacesUnsuspendParams(packed middleware.Parameters) (params 
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
@@ -766,14 +807,14 @@ func decodeStaffWorkspacesUnsuspendParams(args [1]string, argsEscaped bool, r *h
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -783,7 +824,15 @@ func decodeStaffWorkspacesUnsuspendParams(args [1]string, argsEscaped bool, r *h
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err

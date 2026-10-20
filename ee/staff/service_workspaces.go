@@ -29,11 +29,16 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 	}
 	for i, e := range page.Entries {
 		item := serviceapi.ServiceWorkspaceResource{
-			ID:        serviceapi.EntityId(e.Workspace.ID),
-			Slug:      e.Workspace.Slug,
+			ID:        serviceapi.WorkspaceId(e.Workspace.PublicID),
 			Name:      e.Workspace.Name,
 			CreatedAt: serviceapi.Timestamp(e.Workspace.CreatedAt),
 			Owners:    make([]serviceapi.ServiceWorkspaceOwner, len(e.Owners)),
+		}
+		if t := e.Workspace.DeletedAt; t != nil {
+			item.DeletedAt = serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*t))
+		}
+		if t := e.Workspace.ErasedAt; t != nil {
+			item.ErasedAt = serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*t))
 		}
 		for j, u := range e.Owners {
 			owner := serviceapi.ServiceWorkspaceOwner{
