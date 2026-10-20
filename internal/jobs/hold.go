@@ -69,7 +69,13 @@ func asDeferred(err error) (*DeferredError, bool) {
 // every job waking each second. The result is floored at deferralFloor and capped at
 // deferralCeiling, plus up to deferralJitter of random spread (jitter is in [0, 1)).
 func deferralDelay(wait time.Duration, backlog int, jitter float64) time.Duration {
-	base := min(max(wait*time.Duration(1+backlog), deferralFloor), deferralCeiling)
+	// The product saturates at the ceiling instead of overflowing int64: a long wait behind a
+	// large backlog would otherwise wrap negative and wake the job after the floor.
+	ahead := time.Duration(1 + backlog)
+	base := deferralCeiling
+	if wait <= deferralCeiling/ahead {
+		base = min(max(wait*ahead, deferralFloor), deferralCeiling)
+	}
 	return base + time.Duration(float64(base)*deferralJitter*jitter)
 }
 

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"pgregory.net/rapid"
 )
 
@@ -47,4 +48,12 @@ func TestDeferralDelayNeverShrinksWithBacklogOrJitter(t *testing.T) {
 			t.Fatalf("jitter %v -> %v shrank the delay: %v -> %v", jitter, moreJitter, base, got)
 		}
 	})
+}
+
+// A long wait behind a large backlog waits the ceiling: the product of the two once overflowed
+// int64, wrapped negative and woke the job after the floor.
+func TestDeferralDelayOfAHugeBacklogIsTheCeiling(t *testing.T) {
+	got := deferralDelay(48*time.Hour, 52_916, 0)
+
+	assert.Equal(t, deferralCeiling, got)
 }
