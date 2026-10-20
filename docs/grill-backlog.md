@@ -196,6 +196,11 @@ path already feeding Suppression.
 - Impersonation (deferred in ADR 0008 until support load appears).
 - Visual email editor (ADR 0040; roadmap Phase 3 remainder).
 - Native CRM / Zapier / e-commerce connectors (roadmap Phase 7).
+- Workspace configuration as code (idea from openstatus). Deliberately no remote CLI, `plan`/`apply`
+  or Terraform provider now: the audience is marketers, and agents already operate the platform
+  through MCP (ADR 0016). Revisit on a concrete ask (a Self-hoster wanting configuration in git, or
+  moving a Workspace between environments). First step then: export/import of Tags, Custom fields,
+  Segments, Templates and Automations as one file through the API and the UI, not a new binary.
 
 ## Candidate dependencies
 
