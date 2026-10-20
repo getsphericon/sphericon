@@ -1,6 +1,6 @@
 name: Nightly
 
-# Checks that do not need to run on every pull request: the Go coverage floor, the race detector, fuzzing, and
+# Checks that do not need to run on every pull request: the Go coverage floor, the race detector, mutation testing, fuzzing, and
 # the dependency scan, whose answer changes with the advisory database rather
 # than with our code. One scheduled run covers them; `workflow_dispatch` runs
 # them on demand. A scheduled workflow only runs from the default branch.
@@ -54,6 +54,24 @@ jobs:
 
       - name: Run tests with the race detector
         run: mise run test:race
+
+  # Mutation testing of the logic that decides what is sent: a surviving mutant is a change the
+  # tests do not notice.
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Mutate the logic packages
+        run: mise run test:mutation
 
   # Native fuzzing of the parsers that take outside input; a crash is saved under testdata/fuzz.
   fuzz:
