@@ -38,8 +38,9 @@ endpoints keep their plain JSON; they push single events and are not a bulk tran
 - **Streams:** Events; Outbound messages (delivery metadata and address, no body or subject, the
   basis of every send, unlike a Broadcast recipient); Contacts (columns, Custom fields as one JSON
   column, Tag names); Erasures; Audit entries. Custom fields are a column of the Contact row, so
-  they already move its `updated_at`; Tags are an edge (a join table) and do not, so a Tag change
-  touches the Contact's `updated_at` explicitly. The operations are hidden from MCP (ADR 0016),
+  they already move its `updated_at`; Tags are an edge (a join table), but the Tag change is an
+  update of the Contact by id, and ent's `UpdateDefault` on `updated_at` moves it in the same
+  transaction as the join row, so no extra write exists (a test pins it). The operations are hidden from MCP (ADR 0016),
   like the Audit log: a bulk feed is not an agent capability.
 - **Enterprise.** License feature `export` (`ee/export`) and an `export:read` token scope; the
   `audit` stream also needs the `audit` feature. Unlicensed, the operations answer 404 like

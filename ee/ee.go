@@ -65,7 +65,7 @@ func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, si
 		client:       client,
 		Audit:        auditLog,
 		Export:       export.New(lic),
-		Consumers:    []events.Consumer{audit.Consumer(client, lic)},
+		Consumers:    []events.Consumer{audit.Consumer(client, lic), export.Consumer(client, lic)},
 		StaffMembers: staff.NewModule(client, lic, auditLog, cipher, staffCfg),
 	}
 	e.abuseCfg = abuse.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
@@ -169,6 +169,14 @@ func (e *Edition) Jobs(bus *events.Bus, sender messaging.EmailSender) jobs.Exten
 		},
 		PeriodicJobs: []*river.PeriodicJob{retention.Periodic(), usage.Periodic(), abuse.Periodic()},
 	}
+}
+
+// ExportJobs is the river extension of the Export streams (ADR 0045): the prune job of the
+// Erasures stream over the instance's Event retention window (0 keeps every row). It is
+// separate from Jobs because it needs that window, a core setting; it removes nothing
+// without the `export` license.
+func (e *Edition) ExportJobs(eventsRetention time.Duration) jobs.Extension {
+	return export.Jobs(e.client, e.lic, eventsRetention)
 }
 
 // Webhooks gates the webhook dispatcher by license: `audit.entry` is forwarded to

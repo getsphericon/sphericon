@@ -111,11 +111,13 @@ type WorkspaceEdges struct {
 	Invitations []*Invitation `json:"invitations,omitempty"`
 	// AuditEntries holds the value of the audit_entries edge.
 	AuditEntries []*AuditEntry `json:"audit_entries,omitempty"`
+	// Erasures holds the value of the erasures edge.
+	Erasures []*Erasure `json:"erasures,omitempty"`
 	// Usages holds the value of the usages edge.
 	Usages []*Usage `json:"usages,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [26]bool
+	loadedTypes [27]bool
 }
 
 // ContactsOrErr returns the Contacts value or an error if the edge
@@ -343,10 +345,19 @@ func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
 	return nil, &NotLoadedError{edge: "audit_entries"}
 }
 
+// ErasuresOrErr returns the Erasures value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
+	if e.loadedTypes[25] {
+		return e.Erasures, nil
+	}
+	return nil, &NotLoadedError{edge: "erasures"}
+}
+
 // UsagesOrErr returns the Usages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
-	if e.loadedTypes[25] {
+	if e.loadedTypes[26] {
 		return e.Usages, nil
 	}
 	return nil, &NotLoadedError{edge: "usages"}
@@ -639,6 +650,11 @@ func (_m *Workspace) QueryInvitations() *InvitationQuery {
 // QueryAuditEntries queries the "audit_entries" edge of the Workspace entity.
 func (_m *Workspace) QueryAuditEntries() *AuditEntryQuery {
 	return NewWorkspaceClient(_m.config).QueryAuditEntries(_m)
+}
+
+// QueryErasures queries the "erasures" edge of the Workspace entity.
+func (_m *Workspace) QueryErasures() *ErasureQuery {
+	return NewWorkspaceClient(_m.config).QueryErasures(_m)
 }
 
 // QueryUsages queries the "usages" edge of the Workspace entity.

@@ -93,5 +93,7 @@ func (AuditEntry) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("workspace_id", "entry_key").Unique().StorageKey("audit_entries_workspace_id_entry_key"),
 		index.Fields("workspace_id", "id"),
+		// Backs the Audit Export stream (ADR 0045): the keyset page over (updated_at, id).
+		index.Fields("workspace_id", "updated_at", "id"),
 	}
 }
