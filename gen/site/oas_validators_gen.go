@@ -731,6 +731,22 @@ func (s *SiteAuthRegisterUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteAuthVerifyEmailBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteAuthVerifyEmailPreconditionRequired) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s SiteAutomationHttpErrorKind) Validate() error {
 	switch s {
 	case "invalid_body":

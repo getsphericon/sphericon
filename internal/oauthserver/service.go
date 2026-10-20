@@ -14,6 +14,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 	"net/url"
 	"slices"
 	"strings"
@@ -163,9 +164,7 @@ func redirectWith(redirectURI string, params url.Values, state string) (string, 
 		return "", fmt.Errorf("%w: bad redirect_uri", ErrInvalidRequest)
 	}
 	q := u.Query()
-	for k, v := range params {
-		q[k] = v
-	}
+	maps.Copy(q, params)
 	if state != "" {
 		q.Set("state", state)
 	}

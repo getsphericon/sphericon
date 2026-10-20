@@ -56,12 +56,12 @@ func ReadState(ctx context.Context, sqlDB *sql.DB) (SchemaState, error) {
 	}
 }
 
-// Refusal is a start that the guard stops; its message names the remedy.
-type Refusal struct {
+// RefusalError is a start that the guard stops; its message names the remedy.
+type RefusalError struct {
 	message string
 }
 
-func (r *Refusal) Error() string { return r.message }
+func (r *RefusalError) Error() string { return r.message }
 
 // Guard decides at start whether this binary may run on the database (ADR 0033).
 type Guard struct {
@@ -72,7 +72,7 @@ type Guard struct {
 	Majors []Major
 }
 
-// Check reads the state row and refuses (with a *Refusal) when the binary cannot run:
+// Check reads the state row and refuses (with a *RefusalError) when the binary cannot run:
 //   - it is older than the floor (a rollback past a removal), whatever the Major;
 //   - the database is two or more Majors behind it (a skipped Major): install the last
 //     release of the database's Major first;
@@ -94,7 +94,7 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 	tail := " Upgrade guide: " + UpgradeGuideURL
 
 	if semver.IsValid(g.Build.Version) && semver.IsValid(state.Floor) && semver.Compare(g.Build.Version, state.Floor) < 0 {
-		return &Refusal{message: fmt.Sprintf(
+		return &RefusalError{message: fmt.Sprintf(
 			"%s is older than the database allows: its schema is Major %d and needs %s or newer.%s",
 			who, state.Major, state.Floor, tail)}
 	}
@@ -106,11 +106,11 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 				needs = m.Floor
 			}
 		}
-		return &Refusal{message: fmt.Sprintf(
+		return &RefusalError{message: fmt.Sprintf(
 			"%s skipped a Major: the database is at Major %d and this binary at Major %d; install %s first, then upgrade again.%s",
 			who, state.Major, own, needs, tail)}
 	case behind == 1 && !g.AutoMigrate:
-		return &Refusal{message: fmt.Sprintf(
+		return &RefusalError{message: fmt.Sprintf(
 			"%s is one Major ahead of the database (Major %d, binary Major %d): run `sphericon migrate`, or set SPHERICON_DB_AUTO_MIGRATE=true.%s",
 			who, state.Major, own, tail)}
 	}

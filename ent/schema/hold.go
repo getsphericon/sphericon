@@ -20,7 +20,7 @@ type Hold struct {
 func (Hold) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "holds"},
-		Audited{Action: "hold", NameField: "key", Always: []string{"reason_code"}},
+		Audited{Action: "hold", NameField: "key"},
 	}
 }
 
@@ -43,6 +43,11 @@ func (Hold) Fields() []ent.Field {
 		// The message for the Workspace Owner, shown as given.
 		field.String("message").
 			NotEmpty(),
+		// Where the Workspace's Owners and Admins can resolve the hold, shown as a link
+		// next to the message. Absent when the setter gave none.
+		field.String("action_url").
+			Optional().
+			Nillable(),
 		field.Time("expires_at"),
 		// The name of the Service credential that last set it.
 		field.String("set_by").

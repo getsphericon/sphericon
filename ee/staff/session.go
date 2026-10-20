@@ -69,13 +69,11 @@ func NewSessions(client *ent.Client, lic *licensekey.License, cfg Config) *Sessi
 func (s *Sessions) Issue(op *ent.StaffMember) (*http.Cookie, error) {
 	now := s.now()
 	claims := gptoken.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    sessionIssuer,
-			Audience:  jwt.ClaimStrings{sessionIssuer},
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(s.ttl)),
-		},
-		User: &gptoken.User{Name: op.Email, ID: "staff_" + strconv.FormatInt(op.ID, 10), Email: op.Email},
+		Issuer:    sessionIssuer,
+		Audience:  jwt.ClaimStrings{sessionIssuer},
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(s.ttl)),
+		User:      &gptoken.User{Name: op.Email, ID: "staff_" + strconv.FormatInt(op.ID, 10), Email: op.Email},
 	}
 	claims.User.SetStrAttr(claimStaffID, strconv.FormatInt(op.ID, 10))
 	claims.User.SetStrAttr(claimEpoch, strconv.FormatInt(op.SessionEpoch, 10))

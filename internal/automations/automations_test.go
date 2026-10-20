@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -99,10 +98,10 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 		"remove_tag no tag":   {{Type: automations.StepRemoveTag}},
 	} {
 		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", TriggerEvent: "y", Steps: steps})
-		assert.ErrorIs(t, err, automations.ErrInvalidStep, name)
+		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
 
 		_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Steps: &steps})
-		assert.ErrorIs(t, err, automations.ErrInvalidStep, "update: "+name)
+		require.ErrorIs(t, err, automations.ErrInvalidStep, "update: "+name)
 	}
 
 	after, err := env.DB.Automation.Query().Count(ctx)
@@ -135,7 +134,7 @@ func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 	before, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
 
-	renamed, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Name: lo.ToPtr("Renamed"), TriggerEvent: lo.ToPtr("new.trigger")})
+	renamed, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Name: new("Renamed"), TriggerEvent: new("new.trigger")})
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", renamed.Name)
 	assert.Equal(t, "new.trigger", renamed.TriggerEvent)
@@ -175,7 +174,7 @@ func TestDeleteRemovesTheAutomation(t *testing.T) {
 
 	require.NoError(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), a.ID))
 	_, err = m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), a.ID)
-	assert.ErrorIs(t, err, automations.ErrNotFound)
+	require.ErrorIs(t, err, automations.ErrNotFound)
 	assert.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), a.ID), automations.ErrNotFound, "deleting twice")
 }
 
@@ -189,17 +188,17 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
-	assert.ErrorIs(t, err, automations.ErrNotFound)
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID, automations.UpdateInput{Name: lo.ToPtr("hijacked")})
-	assert.ErrorIs(t, err, automations.ErrNotFound)
+	require.ErrorIs(t, err, automations.ErrNotFound)
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID, automations.UpdateInput{Name: new("hijacked")})
+	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Activate(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
-	assert.ErrorIs(t, err, automations.ErrNotFound)
+	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Deactivate(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
-	assert.ErrorIs(t, err, automations.ErrNotFound)
-	assert.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID), automations.ErrNotFound)
+	require.ErrorIs(t, err, automations.ErrNotFound)
+	require.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID), automations.ErrNotFound)
 
 	_, err = m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), 999999)
-	assert.ErrorIs(t, err, automations.ErrNotFound, "an unknown id")
+	require.ErrorIs(t, err, automations.ErrNotFound, "an unknown id")
 
 	stored, err := env.DB.Automation.Get(ctx, foreign.ID)
 	require.NoError(t, err)

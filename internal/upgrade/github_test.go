@@ -166,7 +166,7 @@ func TestUpgradeRejectsATamperedDownload(t *testing.T) {
 
 	_, err := upgrade.Step(t.Context(), o)
 
-	assert.ErrorContains(t, err, "checksum mismatch")
+	require.ErrorContains(t, err, "checksum mismatch")
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
 }
 

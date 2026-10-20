@@ -19,8 +19,8 @@ model SiteWorkspaceHold {
   /** When the hold was set */
   since: Timestamp;
 
-  /** True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a money reason, not for abuse */
-  billing: boolean;
+  /** Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given */
+  actionUrl?: string | null;
 }
 
 /** Workspace the current user belongs to */
@@ -59,10 +59,6 @@ model SiteWorkspaceResource {
   /** Where to appeal a suspension by email (SPHERICON_SUPPORT_EMAIL); absent when the instance
    * configured none. */
   supportEmail?: string | null;
-
-  /** The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
-   * instance configured none, and then no billing text is shown. */
-  billingUrl?: string | null;
 
   /** The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its
    * own host, otherwise the app origin. */

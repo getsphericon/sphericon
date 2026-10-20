@@ -141,10 +141,7 @@ type Config struct {
 	// SupportEmail is the support contact shown with a suspension and in the owner notices
 	// (SPHERICON_SUPPORT_EMAIL): where an owner appeals. Empty shows none.
 	SupportEmail string
-	// BillingURL is the billing site a Workspace member under a hold is pointed to
-	// (SPHERICON_BILLING_URL). Empty (the self-host default) shows no link and no billing text.
-	BillingURL  string
-	AutoMigrate bool
+	AutoMigrate  bool
 	// MigrateTimeout bounds the lock wait and the run of a start with AutoMigrate on
 	// (SPHERICON_DB_MIGRATE_TIMEOUT); 0 is no limit.
 	MigrateTimeout time.Duration
@@ -304,7 +301,6 @@ type environment struct {
 	AbuseFreezeBouncePercent    float64 `env:"SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT" envDefault:"10"`
 
 	SupportEmail string `env:"SPHERICON_SUPPORT_EMAIL"`
-	BillingURL   string `env:"SPHERICON_BILLING_URL"`
 	AutoMigrate  bool   `env:"SPHERICON_DB_AUTO_MIGRATE"`
 
 	MigrateTimeout time.Duration `env:"SPHERICON_DB_MIGRATE_TIMEOUT" envDefault:"10m"`
@@ -455,7 +451,6 @@ func Load(envName string) (*Config, error) {
 		AbuseFreezeComplaintPercent: e.AbuseFreezeComplaintPercent,
 		AbuseFreezeBouncePercent:    e.AbuseFreezeBouncePercent,
 		SupportEmail:                strings.TrimSpace(e.SupportEmail),
-		BillingURL:                  strings.TrimSpace(e.BillingURL),
 		AutoMigrate:                 e.AutoMigrate,
 		MigrateTimeout:              e.MigrateTimeout,
 

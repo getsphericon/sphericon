@@ -18,7 +18,7 @@ func unserializable() map[string]any { return map[string]any{"bad": make(chan in
 func TestIngestCarriesTheEmailAndPhoneSnapshot(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NoError(t, eventlog.New(env.Bus).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
-		{SubjectID: "s-1", Action: "page_view", Email: ptr("nobody@example.com"), Phone: ptr("+15550100")},
+		{SubjectID: "s-1", Action: "page_view", Email: new("nobody@example.com"), Phone: new("+15550100")},
 	}))
 
 	got := outboxCollected(t, env)
@@ -51,12 +51,12 @@ func TestIngestEachIsolatesItems(t *testing.T) {
 	})
 
 	require.Len(t, errs, 5)
-	assert.NoError(t, errs[0])
-	assert.ErrorIs(t, errs[1], eventlog.ErrInvalid, "blank subject id")
-	assert.ErrorIs(t, errs[2], eventlog.ErrInvalid, "blank action")
-	assert.Error(t, errs[3])
-	assert.NotErrorIs(t, errs[3], eventlog.ErrInvalid)
-	assert.NoError(t, errs[4], "an earlier failure does not affect later items")
+	require.NoError(t, errs[0])
+	require.ErrorIs(t, errs[1], eventlog.ErrInvalid, "blank subject id")
+	require.ErrorIs(t, errs[2], eventlog.ErrInvalid, "blank action")
+	require.Error(t, errs[3])
+	require.NotErrorIs(t, errs[3], eventlog.ErrInvalid)
+	require.NoError(t, errs[4], "an earlier failure does not affect later items")
 
 	got := outboxCollected(t, env)
 	require.Len(t, got, 2)

@@ -26,6 +26,8 @@ const (
 	FieldReasonCode = "reason_code"
 	// FieldMessage holds the string denoting the message field in the database.
 	FieldMessage = "message"
+	// FieldActionURL holds the string denoting the action_url field in the database.
+	FieldActionURL = "action_url"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
 	// FieldSetBy holds the string denoting the set_by field in the database.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldKey,
 	FieldReasonCode,
 	FieldMessage,
+	FieldActionURL,
 	FieldExpiresAt,
 	FieldSetBy,
 }
@@ -119,6 +122,11 @@ func ByReasonCode(opts ...sql.OrderTermOption) OrderOption {
 // ByMessage orders the results by the message field.
 func ByMessage(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMessage, opts...).ToFunc()
+}
+
+// ByActionURL orders the results by the action_url field.
+func ByActionURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldActionURL, opts...).ToFunc()
 }
 
 // ByExpiresAt orders the results by the expires_at field.

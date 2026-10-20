@@ -1578,6 +1578,135 @@ func decodeSiteAuthConfirmEmailChangeParams(args [0]string, argsEscaped bool, r 
 	return params, nil
 }
 
+// SiteAuthResendVerificationParams is parameters of SiteAuth_resendVerification operation.
+type SiteAuthResendVerificationParams struct {
+	// The registration cookie of the browser asking, if any: the new link binds to whatever cookie the
+	// caller holds and then signs that browser in without a password.
+	REG OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSiteAuthResendVerificationParams(packed middleware.Parameters) (params SiteAuthResendVerificationParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "REG",
+			In:   "cookie",
+		}
+		if v, ok := packed[key]; ok {
+			params.REG = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSiteAuthResendVerificationParams(args [0]string, argsEscaped bool, r *http.Request) (params SiteAuthResendVerificationParams, _ error) {
+	c := uri.NewCookieDecoder(r)
+	// Decode cookie: REG.
+	if err := func() error {
+		cfg := uri.CookieParameterDecodingConfig{
+			Name:    "REG",
+			Explode: false,
+		}
+		if err := c.HasParam(cfg); err == nil {
+			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotREGVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotREGVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.REG.SetTo(paramsDotREGVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "REG",
+			In:   "cookie",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteAuthVerifyEmailParams is parameters of SiteAuth_verifyEmail operation.
+type SiteAuthVerifyEmailParams struct {
+	// The registration cookie of the browser that registered, if any. Its path is the auth prefix shared
+	// with resend, and it is SameSite=Strict: not sent on the cross-site click from the mail, but sent on
+	// the page's own later request.
+	REG OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSiteAuthVerifyEmailParams(packed middleware.Parameters) (params SiteAuthVerifyEmailParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "REG",
+			In:   "cookie",
+		}
+		if v, ok := packed[key]; ok {
+			params.REG = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSiteAuthVerifyEmailParams(args [0]string, argsEscaped bool, r *http.Request) (params SiteAuthVerifyEmailParams, _ error) {
+	c := uri.NewCookieDecoder(r)
+	// Decode cookie: REG.
+	if err := func() error {
+		cfg := uri.CookieParameterDecodingConfig{
+			Name:    "REG",
+			Explode: false,
+		}
+		if err := c.HasParam(cfg); err == nil {
+			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotREGVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotREGVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.REG.SetTo(paramsDotREGVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "REG",
+			In:   "cookie",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteAutomationsActivateParams is parameters of SiteAutomations_activate operation.
 type SiteAutomationsActivateParams struct {
 	// URL-safe unique slug; the route key for nested workspace resources.

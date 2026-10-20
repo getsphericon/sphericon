@@ -12164,6 +12164,18 @@ func (x *HoldScopedCreate) SetMessage(v string) *HoldScopedCreate {
 	return x
 }
 
+// SetActionURL sets the "action_url" field.
+func (x *HoldScopedCreate) SetActionURL(v string) *HoldScopedCreate {
+	x.b.SetActionURL(v)
+	return x
+}
+
+// SetNillableActionURL sets the "action_url" field if the given value is not nil.
+func (x *HoldScopedCreate) SetNillableActionURL(v *string) *HoldScopedCreate {
+	x.b.SetNillableActionURL(v)
+	return x
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (x *HoldScopedCreate) SetExpiresAt(v time.Time) *HoldScopedCreate {
 	x.b.SetExpiresAt(v)
@@ -12306,6 +12318,24 @@ func (u *HoldScopedUpsert) SetMessage(v string) *HoldScopedUpsert {
 // UpdateMessage sets the "message" field to the value that was provided on create.
 func (u *HoldScopedUpsert) UpdateMessage() *HoldScopedUpsert {
 	u.u.SetExcluded(hold.FieldMessage)
+	return u
+}
+
+// SetActionURL sets the "action_url" field.
+func (u *HoldScopedUpsert) SetActionURL(v string) *HoldScopedUpsert {
+	u.u.Set(hold.FieldActionURL, v)
+	return u
+}
+
+// UpdateActionURL sets the "action_url" field to the value that was provided on create.
+func (u *HoldScopedUpsert) UpdateActionURL() *HoldScopedUpsert {
+	u.u.SetExcluded(hold.FieldActionURL)
+	return u
+}
+
+// ClearActionURL clears the value of the "action_url" field.
+func (u *HoldScopedUpsert) ClearActionURL() *HoldScopedUpsert {
+	u.u.SetNull(hold.FieldActionURL)
 	return u
 }
 
@@ -12530,6 +12560,24 @@ func (x *HoldScopedUpdateOne) SetNillableMessage(v *string) *HoldScopedUpdateOne
 	return x
 }
 
+// SetActionURL sets the "action_url" field.
+func (x *HoldScopedUpdateOne) SetActionURL(v string) *HoldScopedUpdateOne {
+	x.b.SetActionURL(v)
+	return x
+}
+
+// SetNillableActionURL sets the "action_url" field if the given value is not nil.
+func (x *HoldScopedUpdateOne) SetNillableActionURL(v *string) *HoldScopedUpdateOne {
+	x.b.SetNillableActionURL(v)
+	return x
+}
+
+// ClearActionURL clears the value of the "action_url" field.
+func (x *HoldScopedUpdateOne) ClearActionURL() *HoldScopedUpdateOne {
+	x.b.ClearActionURL()
+	return x
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (x *HoldScopedUpdateOne) SetExpiresAt(v time.Time) *HoldScopedUpdateOne {
 	x.b.SetExpiresAt(v)
@@ -12653,6 +12701,24 @@ func (x *HoldScopedUpdate) SetMessage(v string) *HoldScopedUpdate {
 // SetNillableMessage sets the "message" field if the given value is not nil.
 func (x *HoldScopedUpdate) SetNillableMessage(v *string) *HoldScopedUpdate {
 	x.b.SetNillableMessage(v)
+	return x
+}
+
+// SetActionURL sets the "action_url" field.
+func (x *HoldScopedUpdate) SetActionURL(v string) *HoldScopedUpdate {
+	x.b.SetActionURL(v)
+	return x
+}
+
+// SetNillableActionURL sets the "action_url" field if the given value is not nil.
+func (x *HoldScopedUpdate) SetNillableActionURL(v *string) *HoldScopedUpdate {
+	x.b.SetNillableActionURL(v)
+	return x
+}
+
+// ClearActionURL clears the value of the "action_url" field.
+func (x *HoldScopedUpdate) ClearActionURL() *HoldScopedUpdate {
+	x.b.ClearActionURL()
 	return x
 }
 

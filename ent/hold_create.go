@@ -75,6 +75,20 @@ func (_c *HoldCreate) SetMessage(v string) *HoldCreate {
 	return _c
 }
 
+// SetActionURL sets the "action_url" field.
+func (_c *HoldCreate) SetActionURL(v string) *HoldCreate {
+	_c.mutation.SetActionURL(v)
+	return _c
+}
+
+// SetNillableActionURL sets the "action_url" field if the given value is not nil.
+func (_c *HoldCreate) SetNillableActionURL(v *string) *HoldCreate {
+	if v != nil {
+		_c.SetActionURL(*v)
+	}
+	return _c
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_c *HoldCreate) SetExpiresAt(v time.Time) *HoldCreate {
 	_c.mutation.SetExpiresAt(v)
@@ -245,6 +259,10 @@ func (_c *HoldCreate) createSpec() (*Hold, *sqlgraph.CreateSpec) {
 		_spec.SetField(hold.FieldMessage, field.TypeString, value)
 		_node.Message = value
 	}
+	if value, ok := _c.mutation.ActionURL(); ok {
+		_spec.SetField(hold.FieldActionURL, field.TypeString, value)
+		_node.ActionURL = &value
+	}
 	if value, ok := _c.mutation.ExpiresAt(); ok {
 		_spec.SetField(hold.FieldExpiresAt, field.TypeTime, value)
 		_node.ExpiresAt = value
@@ -367,6 +385,24 @@ func (u *HoldUpsert) SetMessage(v string) *HoldUpsert {
 // UpdateMessage sets the "message" field to the value that was provided on create.
 func (u *HoldUpsert) UpdateMessage() *HoldUpsert {
 	u.SetExcluded(hold.FieldMessage)
+	return u
+}
+
+// SetActionURL sets the "action_url" field.
+func (u *HoldUpsert) SetActionURL(v string) *HoldUpsert {
+	u.Set(hold.FieldActionURL, v)
+	return u
+}
+
+// UpdateActionURL sets the "action_url" field to the value that was provided on create.
+func (u *HoldUpsert) UpdateActionURL() *HoldUpsert {
+	u.SetExcluded(hold.FieldActionURL)
+	return u
+}
+
+// ClearActionURL clears the value of the "action_url" field.
+func (u *HoldUpsert) ClearActionURL() *HoldUpsert {
+	u.SetNull(hold.FieldActionURL)
 	return u
 }
 
@@ -501,6 +537,27 @@ func (u *HoldUpsertOne) SetMessage(v string) *HoldUpsertOne {
 func (u *HoldUpsertOne) UpdateMessage() *HoldUpsertOne {
 	return u.Update(func(s *HoldUpsert) {
 		s.UpdateMessage()
+	})
+}
+
+// SetActionURL sets the "action_url" field.
+func (u *HoldUpsertOne) SetActionURL(v string) *HoldUpsertOne {
+	return u.Update(func(s *HoldUpsert) {
+		s.SetActionURL(v)
+	})
+}
+
+// UpdateActionURL sets the "action_url" field to the value that was provided on create.
+func (u *HoldUpsertOne) UpdateActionURL() *HoldUpsertOne {
+	return u.Update(func(s *HoldUpsert) {
+		s.UpdateActionURL()
+	})
+}
+
+// ClearActionURL clears the value of the "action_url" field.
+func (u *HoldUpsertOne) ClearActionURL() *HoldUpsertOne {
+	return u.Update(func(s *HoldUpsert) {
+		s.ClearActionURL()
 	})
 }
 
@@ -805,6 +862,27 @@ func (u *HoldUpsertBulk) SetMessage(v string) *HoldUpsertBulk {
 func (u *HoldUpsertBulk) UpdateMessage() *HoldUpsertBulk {
 	return u.Update(func(s *HoldUpsert) {
 		s.UpdateMessage()
+	})
+}
+
+// SetActionURL sets the "action_url" field.
+func (u *HoldUpsertBulk) SetActionURL(v string) *HoldUpsertBulk {
+	return u.Update(func(s *HoldUpsert) {
+		s.SetActionURL(v)
+	})
+}
+
+// UpdateActionURL sets the "action_url" field to the value that was provided on create.
+func (u *HoldUpsertBulk) UpdateActionURL() *HoldUpsertBulk {
+	return u.Update(func(s *HoldUpsert) {
+		s.UpdateActionURL()
+	})
+}
+
+// ClearActionURL clears the value of the "action_url" field.
+func (u *HoldUpsertBulk) ClearActionURL() *HoldUpsertBulk {
+	return u.Update(func(s *HoldUpsert) {
+		s.ClearActionURL()
 	})
 }
 

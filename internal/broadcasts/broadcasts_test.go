@@ -105,9 +105,9 @@ func TestTransitionsOutOfSendingAreRefused(t *testing.T) {
 	m := broadcasts.New(q)
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID)
-	assert.ErrorIs(t, err, broadcasts.ErrNotSendable)
+	require.ErrorIs(t, err, broadcasts.ErrNotSendable)
 	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID, time.Now().Add(time.Hour))
-	assert.ErrorIs(t, err, broadcasts.ErrNotSendable)
+	require.ErrorIs(t, err, broadcasts.ErrNotSendable)
 	assert.Empty(t, q.calls)
 }
 
@@ -131,10 +131,10 @@ func TestUnscheduleRefusesWhatIsNotScheduled(t *testing.T) {
 
 	for _, id := range []int64{fixtures.BroadcastDraftID, fixtures.BroadcastSendingID} {
 		_, err := m.Unschedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), id)
-		assert.ErrorIs(t, err, broadcasts.ErrNotScheduled, "broadcast %d", id)
+		require.ErrorIs(t, err, broadcasts.ErrNotScheduled, "broadcast %d", id)
 	}
 	_, err := m.Unschedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999)
-	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
+	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 	_, err = m.Unschedule(context.Background(), env.DB.Scoped(fixtures.AcmeID+1000), fixtures.BroadcastScheduledID)
 	assert.ErrorIs(t, err, broadcasts.ErrNotFound, "another workspace's broadcast")
 }
@@ -144,7 +144,7 @@ func TestUnknownOrForeignBroadcastIsNotFound(t *testing.T) {
 	m := broadcasts.New(&recorder{})
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID+1000), fixtures.BroadcastDraftID)
-	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
+	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, time.Now().Add(time.Hour))
 	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
 }

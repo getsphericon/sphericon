@@ -78,6 +78,26 @@ func (_u *HoldUpdate) SetNillableMessage(v *string) *HoldUpdate {
 	return _u
 }
 
+// SetActionURL sets the "action_url" field.
+func (_u *HoldUpdate) SetActionURL(v string) *HoldUpdate {
+	_u.mutation.SetActionURL(v)
+	return _u
+}
+
+// SetNillableActionURL sets the "action_url" field if the given value is not nil.
+func (_u *HoldUpdate) SetNillableActionURL(v *string) *HoldUpdate {
+	if v != nil {
+		_u.SetActionURL(*v)
+	}
+	return _u
+}
+
+// ClearActionURL clears the value of the "action_url" field.
+func (_u *HoldUpdate) ClearActionURL() *HoldUpdate {
+	_u.mutation.ClearActionURL()
+	return _u
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_u *HoldUpdate) SetExpiresAt(v time.Time) *HoldUpdate {
 	_u.mutation.SetExpiresAt(v)
@@ -208,6 +228,12 @@ func (_u *HoldUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Message(); ok {
 		_spec.SetField(hold.FieldMessage, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.ActionURL(); ok {
+		_spec.SetField(hold.FieldActionURL, field.TypeString, value)
+	}
+	if _u.mutation.ActionURLCleared() {
+		_spec.ClearField(hold.FieldActionURL, field.TypeString)
+	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(hold.FieldExpiresAt, field.TypeTime, value)
 	}
@@ -310,6 +336,26 @@ func (_u *HoldUpdateOne) SetNillableMessage(v *string) *HoldUpdateOne {
 	if v != nil {
 		_u.SetMessage(*v)
 	}
+	return _u
+}
+
+// SetActionURL sets the "action_url" field.
+func (_u *HoldUpdateOne) SetActionURL(v string) *HoldUpdateOne {
+	_u.mutation.SetActionURL(v)
+	return _u
+}
+
+// SetNillableActionURL sets the "action_url" field if the given value is not nil.
+func (_u *HoldUpdateOne) SetNillableActionURL(v *string) *HoldUpdateOne {
+	if v != nil {
+		_u.SetActionURL(*v)
+	}
+	return _u
+}
+
+// ClearActionURL clears the value of the "action_url" field.
+func (_u *HoldUpdateOne) ClearActionURL() *HoldUpdateOne {
+	_u.mutation.ClearActionURL()
 	return _u
 }
 
@@ -472,6 +518,12 @@ func (_u *HoldUpdateOne) sqlSave(ctx context.Context) (_node *Hold, err error) {
 	}
 	if value, ok := _u.mutation.Message(); ok {
 		_spec.SetField(hold.FieldMessage, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ActionURL(); ok {
+		_spec.SetField(hold.FieldActionURL, field.TypeString, value)
+	}
+	if _u.mutation.ActionURLCleared() {
+		_spec.ClearField(hold.FieldActionURL, field.TypeString)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(hold.FieldExpiresAt, field.TypeTime, value)

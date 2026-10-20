@@ -188,7 +188,7 @@ func TestRunEventsStopsWhenTheContextIsCancelled(t *testing.T) {
 	cancel()
 	select {
 	case err := <-done:
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	case <-time.After(10 * time.Second):
 		t.Fatal("RunEvents did not return after cancel")
 	}
@@ -332,7 +332,7 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 
 	changed, err := a.SuspendWorkspace(ctx, "app-suspend-fail-test", suspension.CLI, "abuse")
 	assert.True(t, changed)
-	assert.ErrorContains(t, err, "workspace suspended, but the owner notice could not be sent")
+	require.ErrorContains(t, err, "workspace suspended, but the owner notice could not be sent")
 
 	client, cerr := invokeEnt(a)
 	require.NoError(t, cerr)
@@ -347,9 +347,9 @@ func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 	ctx := context.Background()
 
 	_, err = a.SuspendWorkspace(ctx, "no-such-workspace", suspension.CLI, "why")
-	assert.ErrorContains(t, err, `workspace "no-such-workspace"`)
+	require.ErrorContains(t, err, `workspace "no-such-workspace"`)
 	_, err = a.UnsuspendWorkspace(ctx, "no-such-workspace", suspension.CLI)
-	assert.ErrorContains(t, err, `workspace "no-such-workspace"`)
+	require.ErrorContains(t, err, `workspace "no-such-workspace"`)
 
 	ownedWorkspace(t, a, "app-suspend-input-test", "owner@app-suspend-input.test")
 	changed, err := a.SuspendWorkspace(ctx, "app-suspend-input-test", suspension.Actor{}, "reason")

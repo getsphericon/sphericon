@@ -8,16 +8,18 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
-// SiteAuthRegister creates an Unverified User from a name and an email (ADR 0030):
-// no password, no session, no Workspace. The verification email carries the link
-// where the address is proven and the password is set; the Workspace and the welcome
-// email follow that proof (SiteAuthVerifyEmail).
+// SiteAuthRegister creates an Unverified User from a name, an email and a password
+// (ADR 0030): no session, no Workspace. The password is stored hashed, and the mailed
+// token is bound to it and to the browser that registered, whose cookie the answer sets;
+// the link trusts the password only when that browser opens it (SiteAuthVerifyEmail).
+// The Workspace and the welcome email follow the proof.
 func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegisterInput) (siteapi.SiteAuthRegisterRes, error) {
 	if !h.signupOpen {
 		v := siteapi.SiteAuthRegisterForbidden(siteapi.ProblemDetails{
@@ -39,13 +41,17 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	// since these operations only declare 422 — and drop the per-field error
 	// map below. Hand-rolling also lets us TrimSpace and reject blank /
 	// whitespace-only values, which @minLength(1) would accept. Keep it here.
-	if name == "" || email == "" {
+	password := req.Password.Or("")
+	if name == "" || email == "" || password == "" {
 		fieldErrors := map[string][]string{}
 		if name == "" {
 			fieldErrors["name"] = []string{i18n.T("errors.name_required", nil)}
 		}
 		if email == "" {
 			fieldErrors["email"] = []string{i18n.T("errors.email_required", nil)}
+		}
+		if password == "" {
+			fieldErrors["password"] = []string{i18n.T("errors.password_required", nil)}
 		}
 		v := siteapi.SiteAuthRegisterUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity,
@@ -56,7 +62,7 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	}
 
 	if !h.requireVerification {
-		return h.registerVerified(ctx, name, email, req.Password.Or(""))
+		return h.registerVerified(ctx, name, email, password)
 	}
 
 	// Every request does the same work whatever the address is (ADR 0031): take a slot
@@ -68,24 +74,45 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	if err != nil {
 		return nil, err
 	}
+	// The password is hashed whatever the address is, so the work does not say whether
+	// it is Taken; a Verified User's hash is dropped unused.
+	hash, err := credentials.HashPassword(password)
+	if err != nil {
+		return nil, err
+	}
+	// replace is whether the address already holds a User whose password this registration
+	// replaces: every path but the one that creates it.
+	replace := true
 	u, err := h.accounts.UserByEmail(ctx, email)
 	if ent.IsNotFound(err) {
-		u, err = h.accounts.Register(ctx, name, email)
+		u, err = h.accounts.Register(ctx, name, email, hash)
+		replace = false
 		if db.IsUniqueViolation(err) {
 			// Two registrations of one new address raced: the loser finds the winner's row
-			// and follows the same path, so a race is not an answer of its own.
+			// and follows the existing-address path below, so a race is not an answer of its
+			// own. It replaces the winner's password too (ADR 0030 notes the consequence).
 			u, err = h.accounts.UserByEmail(ctx, email)
+			replace = true
 		}
 	}
 	if err != nil {
 		return nil, err
 	}
+	if replace {
+		// A repeated registration of an Unverified address replaces its password, which
+		// ends the earlier mails; a Verified User's row is left as it is.
+		if u, err = h.accounts.ReplaceUnverifiedPassword(ctx, u.ID, hash); err != nil {
+			return nil, err
+		}
+	}
 
-	// The token is bound to the User's password hash (empty while Unverified), so it
-	// works once: setting the password ends it. A Verified User's hash is a real one,
-	// and its notice carries no token at all. Best-effort send; a lost mail is asked
-	// for again.
-	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, u.ID, u.PasswordHash, verifyTokenTTL, map[string]string{"email": u.Email})
+	// The token is bound to the stored password hash, so it works until a registration
+	// replaces the hash or the address is verified, and it carries the hash of the
+	// registration cookie set below. A Verified User gets the same token and cookie, and
+	// its notice carries no token at all. Best-effort send; a lost mail is asked for again.
+	cookie, browser := h.sessions.NewRegistrationBrowser(verifyTokenTTL)
+	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, u.ID, u.PasswordHash, verifyTokenTTL,
+		auth.VerifyClaims(u.Email, browser))
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +121,7 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	} else {
 		_ = h.sysmail.EnqueueEmailVerification(ctx, u.Email, token, granted)
 	}
-	return &siteapi.SiteAuthRegisterAccepted{}, nil
+	return &siteapi.SiteAuthRegisterAccepted{SetCookie: siteapi.NewOptString(cookie.String())}, nil
 }
 
 // registerVerified is registration with the gate off (ADR 0030): the password comes
@@ -102,14 +129,6 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 // welcome email follows as it does after a verification link. No session starts; the
 // User signs in next.
 func (h *Handlers) registerVerified(ctx context.Context, name, email, password string) (siteapi.SiteAuthRegisterRes, error) {
-	if password == "" {
-		v := siteapi.SiteAuthRegisterUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			i18n.T("errors.password_required", nil),
-			map[string][]string{"password": {i18n.T("errors.password_required", nil)}},
-		))
-		return &v, nil
-	}
 	hash, err := credentials.HashPassword(password)
 	if err != nil {
 		return nil, err
@@ -141,7 +160,7 @@ func emailTaken() siteapi.SiteAuthRegisterRes {
 // job is queued); only an Unverified User's job delivers, the others' is a no-send one,
 // so neither the answer nor its timing says whether the address has an account. The
 // per-IP cap answers 429 in the rate limit middleware, before this runs.
-func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.SiteResendVerificationInput) (siteapi.SiteAuthResendVerificationRes, error) {
+func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.SiteResendVerificationInput, params siteapi.SiteAuthResendVerificationParams) (siteapi.SiteAuthResendVerificationRes, error) {
 	email := strings.TrimSpace(string(req.Email))
 	if email == "" {
 		return &siteapi.SiteAuthResendVerificationAccepted{}, nil
@@ -150,14 +169,21 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, err
 	}
-	// The same binding as at registration: the link works until the password is set.
+	// The same binding as at registration: the link works until the password is replaced
+	// or the address verified. It carries the hash of the registration cookie the request
+	// holds, none otherwise (then the link asks for a password); every request hashes the
+	// same way, so a cookie changes no timing.
 	var uid int64
 	var binding string
 	to := email
 	if u != nil {
 		uid, binding, to = u.ID, u.PasswordHash, u.Email
 	}
-	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, uid, binding, verifyTokenTTL, map[string]string{"email": to})
+	// The cookie is SameSite=Strict: the browser withholds it on the cross-site click from
+	// the mail, but sends it on the page's own request that follows (same site), which is
+	// the one that carries the token.
+	claims := auth.VerifyClaims(to, auth.RegistrationHash(params.REG.Or("")))
+	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, uid, binding, verifyTokenTTL, claims)
 	if err != nil {
 		return nil, err
 	}

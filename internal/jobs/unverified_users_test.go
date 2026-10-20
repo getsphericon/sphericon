@@ -110,6 +110,6 @@ func TestAddressCanRegisterOnlyAfterItsStaleUserIsPruned(t *testing.T) {
 
 	pruneUnverified(t, env, unverifiedRetention)
 
-	_, err = acc.Register(t.Context(), "Real Owner", fixtures.StaleUnverifiedUserEmail)
+	_, err = acc.Register(t.Context(), "Real Owner", fixtures.StaleUnverifiedUserEmail, "registered-hash")
 	require.NoError(t, err)
 }

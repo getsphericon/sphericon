@@ -22,7 +22,6 @@ function entry(over: Partial<SiteAuditEntryResource> = {}): SiteAuditEntryResour
     occurredAt: '2026-01-02T03:04:05Z',
     actor: { kind: 'user', id: '1', name: 'John' },
     action: 'membership.update',
-    billing: false,
     target: { type: 'membership', id: '3', name: 'Mary' },
     diff: { role: { from: 'member', to: 'admin' } },
     ...over,
@@ -273,7 +272,7 @@ test('the retention control is not offered without its license', async () => {
   await expect.element(screen.getByLabelText('Keep the log for (days)')).not.toBeInTheDocument()
 })
 
-test('a billing hold change is shown as billing activity, attributed to Sphericon staff', async () => {
+test('a hold change is attributed to Sphericon staff', async () => {
   worker.use(
     handleSiteAuditList({
       body: {
@@ -282,8 +281,7 @@ test('a billing hold change is shown as billing activity, attributed to Spherico
             id: '8',
             actor: { kind: 'staff', name: 'Sphericon staff' },
             action: 'hold.create',
-            billing: true,
-            target: { type: 'hold', name: 'billing' },
+            target: { type: 'hold', name: 'review' },
             diff: null,
           }),
         ],
@@ -294,7 +292,6 @@ test('a billing hold change is shown as billing activity, attributed to Spherico
     <AuditLogSection slug={SLUG} onFilterChange={() => {}} />,
   )
 
-  await expect.element(screen.getByText('Billing', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByRole('cell', { name: 'Sphericon staff' })).toBeInTheDocument()
 })
 

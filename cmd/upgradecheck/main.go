@@ -84,7 +84,7 @@ func runMigrations(title, base string) error {
 		return err
 	}
 	var added []string
-	for _, line := range strings.Fields(out) {
+	for line := range strings.FieldsSeq(out) {
 		if strings.HasSuffix(line, ".sql") {
 			added = append(added, filepath.Base(line))
 		}
