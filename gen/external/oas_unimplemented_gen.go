@@ -404,6 +404,39 @@ func (UnimplementedHandler) EventsCreate(ctx context.Context, req *RecordEventsI
 	return r, ht.ErrNotImplemented
 }
 
+// ExportAudit implements Export_audit operation.
+//
+// Read the Workspace's Audit entries, oldest first (Enterprise; needs the `export:read` scope and the
+// `audit` feature). Each line of the body is an `ExportAuditRow`; every key is always present. The
+// Audit log list is the human read; this is the machine stream.
+//
+// GET /export/audit
+func (UnimplementedHandler) ExportAudit(ctx context.Context, params ExportAuditParams) (r ExportAuditRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ExportContacts implements Export_contacts operation.
+//
+// Read the Workspace's Contacts, oldest change first (Enterprise; needs the `export:read` scope). Each
+// line of the body is an `ExportContactRow`; every key is always present.
+//
+// GET /export/contacts
+func (UnimplementedHandler) ExportContacts(ctx context.Context, params ExportContactsParams) (r ExportContactsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ExportErasures implements Export_erasures operation.
+//
+// Read the Workspace's Erasures, oldest first (Enterprise; needs the `export:read` scope). Each line
+// of the body is an `ExportErasureRow`; every key is always present. Rows live for the instance's
+// Event retention window and are kept for good when retention is off: a consumer absent for longer
+// re-seeds from an empty cursor.
+//
+// GET /export/erasures
+func (UnimplementedHandler) ExportErasures(ctx context.Context, params ExportErasuresParams) (r ExportErasuresRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ExportEvents implements Export_events operation.
 //
 // Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read` scope). Each
@@ -411,6 +444,16 @@ func (UnimplementedHandler) EventsCreate(ctx context.Context, req *RecordEventsI
 //
 // GET /export/events
 func (UnimplementedHandler) ExportEvents(ctx context.Context, params ExportEventsParams) (r ExportEventsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ExportMessages implements Export_messages operation.
+//
+// Read the Workspace's Outbound messages, oldest change first (Enterprise; needs the `export:read`
+// scope). Each line of the body is an `ExportMessageRow`; every key is always present.
+//
+// GET /export/messages
+func (UnimplementedHandler) ExportMessages(ctx context.Context, params ExportMessagesParams) (r ExportMessagesRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

@@ -169,8 +169,24 @@ type EventsCreateRes interface {
 	eventsCreateRes()
 }
 
+type ExportAuditRes interface {
+	exportAuditRes()
+}
+
+type ExportContactsRes interface {
+	exportContactsRes()
+}
+
+type ExportErasuresRes interface {
+	exportErasuresRes()
+}
+
 type ExportEventsRes interface {
 	exportEventsRes()
+}
+
+type ExportMessagesRes interface {
+	exportMessagesRes()
 }
 
 type IntegrationsCreateRes interface {

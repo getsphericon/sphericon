@@ -310,7 +310,7 @@ func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
 	assert.Equal(t, "api_token", data["requesterKind"])
 	assert.NotZero(t, data["requesterId"])
 	assert.NotContains(t, data, "email")
-	assert.NotContains(t, data, "contactId")
+	assert.NotContains(t, data, "phone")
 
 	// The stored Event holds no PII and no Contact reference.
 	require.NoError(t, events.Persist(ctx, env.DB, envelopes[0]))

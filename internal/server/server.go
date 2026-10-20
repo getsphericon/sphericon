@@ -139,9 +139,10 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// timeout. CORS precedes the limiter so a 429 still reaches the browser; guard
 	// sits inside CORS so preflights are answered before the check.
 	outer := chi.Middlewares{recoverer, requestID, corsMiddleware(cfg.CORSOrigins)}
-	if !cfg.AutoMigrate {
-		// The start guard (ADR 0033) ran once; a database reset or restored under the running
-		// process is caught here.
+	if cfg.IsDev && !cfg.AutoMigrate {
+		// Development only (ADR 0033): a database reset or rebuilt under the running process
+		// is named instead of answering bare 500s. A production Instance never answers 503 on
+		// a check of its own; the start guard is its whole protection.
 		outer = append(outer, SchemaGuard(dbpkg.NewSchemaWatch(db)))
 	}
 	inner := chi.Middlewares{clientip.Middleware, limiter.Middleware, middleware.Timeout(30 * time.Second), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}

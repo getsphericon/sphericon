@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -726,6 +727,56 @@ func ScopedEntities() []ScopedEntity {
 				if src.EditorVersion != nil {
 					b.SetEditorVersion(*src.EditorVersion)
 				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Name:    "Erasure",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.Erasure.Query().Where(erasure.WorkspaceID(ws)).Order(Asc(erasure.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.Erasure().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Erasure().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Erasure().Update().Where(erasure.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Erasure().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Erasure().Delete().Where(erasure.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.Erasure.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.Erasure().Create()
+				b.SetErasureKey(src.ErasureKey)
+				if src.ContactID != nil {
+					b.SetContactID(*src.ContactID)
+				}
+				b.SetSubjectID(src.SubjectID)
+				b.SetVisitorIds(src.VisitorIds)
+				if src.EmailSha256 != nil {
+					b.SetEmailSha256(*src.EmailSha256)
+				}
+				if src.PhoneSha256 != nil {
+					b.SetPhoneSha256(*src.PhoneSha256)
+				}
+				b.SetErasedAt(src.ErasedAt)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

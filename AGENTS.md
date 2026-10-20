@@ -294,7 +294,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   (tracking by recipient id, provider hooks, composition, and the Instance-wide Tracking host
   index, ADR 0038: the host gate `trackingHostGate` / `verifiedTrackingHost` in `trackinghost.go`,
   `tlsAskHandler` and `recipientOnHost` resolve a host to its Workspace before any scope exists), `ee/audit` (the Audit log bus
-  subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/retention` (the
+  subscriber: its envelope carries only a Workspace id, ADR 0022), `ee/export` (the Export streams' bus
+  subscriber, which writes the Erasures rows from `contact.erased`, and their prune job over every
+  Workspace's rows, ADR 0045), `ee/retention` (the
   periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/abuse` (the hourly
   abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
   exempt, then scopes to judge each, and writes its notice markers by id), `ee/usage` (the periodic

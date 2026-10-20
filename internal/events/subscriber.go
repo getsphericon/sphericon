@@ -61,6 +61,9 @@ const (
 	// so the outbox prune never deletes an Audit entry the subscriber has not consumed
 	// (ADR 0022); the subscriber is always registered, licensed or not.
 	GroupAudit = "audit"
+	// GroupExport is the Enterprise Export streams' subscriber group (ee/export), listed
+	// for the same reason as GroupAudit (ADR 0045).
+	GroupExport = "export"
 )
 
 // coreGroups are the groups core wires itself, in registration order.
@@ -71,7 +74,7 @@ func coreGroups() []string {
 // ConsumerGroups lists every consumer group registered in code, in registration
 // order: the core groups, then the extra consumers' (RegisterSubscribers).
 func ConsumerGroups() []string {
-	return append(coreGroups(), GroupAudit)
+	return append(coreGroups(), GroupAudit, GroupExport)
 }
 
 // RegisterSubscribers wires the domain-event consumers onto the shared watermill

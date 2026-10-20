@@ -153,6 +153,18 @@ func (f EmailTemplateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EmailTemplateMutation", m)
 }
 
+// The ErasureFunc type is an adapter to allow the use of ordinary
+// function as Erasure mutator.
+type ErasureFunc func(context.Context, *ent.ErasureMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ErasureFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ErasureMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ErasureMutation", m)
+}
+
 // The EventFunc type is an adapter to allow the use of ordinary
 // function as Event mutator.
 type EventFunc func(context.Context, *ent.EventMutation) (ent.Value, error)
