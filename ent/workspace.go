@@ -23,8 +23,6 @@ type Workspace struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// Slug holds the value of the "slug" field.
-	Slug string `json:"slug,omitempty"`
 	// PublicID holds the value of the "public_id" field.
 	PublicID string `json:"public_id,omitempty"`
 	// CollectKey holds the value of the "collect_key" field.
@@ -363,7 +361,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRetentionDays, workspace.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
-		case workspace.FieldName, workspace.FieldSlug, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
+		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
 		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
 			values[i] = new(sql.NullTime)
@@ -405,12 +403,6 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
-			}
-		case workspace.FieldSlug:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field slug", values[i])
-			} else if value.Valid {
-				_m.Slug = value.String
 			}
 		case workspace.FieldPublicID:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -685,9 +677,6 @@ func (_m *Workspace) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
-	builder.WriteString(", ")
-	builder.WriteString("slug=")
-	builder.WriteString(_m.Slug)
 	builder.WriteString(", ")
 	builder.WriteString("public_id=")
 	builder.WriteString(_m.PublicID)

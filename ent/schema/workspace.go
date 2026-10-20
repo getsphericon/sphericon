@@ -30,9 +30,6 @@ func (Workspace) Fields() []ent.Field {
 			Immutable(),
 		field.String("name").
 			NotEmpty(),
-		field.String("slug").
-			NotEmpty().
-			Unique(),
 		// The Workspace id (ADR 0043): 8 random base62 characters, the Workspace's one public
 		// address. Assigned at creation, never changed, unique; internal/workspaceid makes it.
 		field.String("public_id").

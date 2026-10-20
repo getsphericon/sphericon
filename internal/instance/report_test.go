@@ -62,7 +62,7 @@ func TestReportNamesNeitherAWorkspaceNorAPerson(t *testing.T) {
 	body, err := json.Marshal(buildReport(t, env, time.Now()))
 	require.NoError(t, err)
 
-	for _, secret := range []string{fixtures.AcmeSlug, fixtures.OwnerJohnEmail, "http", "@"} {
+	for _, secret := range []string{fixtures.AcmePublicID, fixtures.OwnerJohnEmail, "http", "@"} {
 		assert.NotContains(t, string(body), secret)
 	}
 }

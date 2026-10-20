@@ -33,8 +33,8 @@ import (
 )
 
 // forbiddenLabel matches label names that identify a tenant or a person (ADR 0018):
-// workspace id or slug, contact, email, recipient. Span attributes are out of scope.
-var forbiddenLabel = regexp.MustCompile(`(?i)workspace|slug|contact|email|recipient`)
+// workspace id, contact, email, recipient. Span attributes are out of scope.
+var forbiddenLabel = regexp.MustCompile(`(?i)workspace|contact|email|recipient`)
 
 // The metric label policy (ADR 0018) is enforced against the real exposition of the
 // metrics listener after real instrumented work ran: a domain event handled by the
@@ -79,7 +79,7 @@ func TestMetricsExpositionCarriesNoTenantLabels(t *testing.T) {
 		for _, m := range family.GetMetric() {
 			for _, label := range m.GetLabel() {
 				assert.NotRegexp(t, forbiddenLabel, label.GetName(), "forbidden label name on %s", name)
-				for _, secret := range []string{workspace.Slug, contactEmail} {
+				for _, secret := range []string{workspace.PublicID, contactEmail} {
 					assert.NotContains(t, label.GetValue(), secret, "tenant value in label %s of %s", label.GetName(), name)
 				}
 			}

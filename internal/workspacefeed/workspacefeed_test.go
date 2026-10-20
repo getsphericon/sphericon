@@ -25,7 +25,7 @@ func TestPlainClientRefusesAChangeToTheFeed(t *testing.T) {
 	t.Cleanup(func() { _ = pool.Close() })
 	client := db.NewEntClient(pool)
 
-	_, err = client.Workspace.Create().SetName("Plain").SetSlug("plain-feed").SetPublicID(workspaceid.New()).Save(t.Context())
+	_, err = client.Workspace.Create().SetName("Plain").SetPublicID(workspaceid.New()).Save(t.Context())
 	require.ErrorIs(t, err, workspacefeed.ErrNeedsTransaction)
 
 	err = client.User.UpdateOneID(1).SetEmail("moved@plain.test").Exec(t.Context())

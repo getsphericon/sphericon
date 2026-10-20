@@ -994,12 +994,8 @@ func init() {
 	workspaceDescName := workspaceFields[1].Descriptor()
 	// workspace.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	workspace.NameValidator = workspaceDescName.Validators[0].(func(string) error)
-	// workspaceDescSlug is the schema descriptor for slug field.
-	workspaceDescSlug := workspaceFields[2].Descriptor()
-	// workspace.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
-	workspace.SlugValidator = workspaceDescSlug.Validators[0].(func(string) error)
 	// workspaceDescPublicID is the schema descriptor for public_id field.
-	workspaceDescPublicID := workspaceFields[3].Descriptor()
+	workspaceDescPublicID := workspaceFields[2].Descriptor()
 	// workspace.PublicIDValidator is a validator for the "public_id" field. It is called by the builders before save.
 	workspace.PublicIDValidator = func() func(string) error {
 		validators := workspaceDescPublicID.Validators
@@ -1017,27 +1013,27 @@ func init() {
 		}
 	}()
 	// workspaceDescCollectKey is the schema descriptor for collect_key field.
-	workspaceDescCollectKey := workspaceFields[4].Descriptor()
+	workspaceDescCollectKey := workspaceFields[3].Descriptor()
 	// workspace.CollectKeyValidator is a validator for the "collect_key" field. It is called by the builders before save.
 	workspace.CollectKeyValidator = workspaceDescCollectKey.Validators[0].(func(string) error)
 	// workspaceDescRequireConfirmedOptIn is the schema descriptor for require_confirmed_opt_in field.
-	workspaceDescRequireConfirmedOptIn := workspaceFields[5].Descriptor()
+	workspaceDescRequireConfirmedOptIn := workspaceFields[4].Descriptor()
 	// workspace.DefaultRequireConfirmedOptIn holds the default value on creation for the require_confirmed_opt_in field.
 	workspace.DefaultRequireConfirmedOptIn = workspaceDescRequireConfirmedOptIn.Default.(bool)
 	// workspaceDescPostalAddress is the schema descriptor for postal_address field.
-	workspaceDescPostalAddress := workspaceFields[6].Descriptor()
+	workspaceDescPostalAddress := workspaceFields[5].Descriptor()
 	// workspace.DefaultPostalAddress holds the default value on creation for the postal_address field.
 	workspace.DefaultPostalAddress = workspaceDescPostalAddress.Default.(string)
 	// workspaceDescRetentionDays is the schema descriptor for retention_days field.
-	workspaceDescRetentionDays := workspaceFields[7].Descriptor()
+	workspaceDescRetentionDays := workspaceFields[6].Descriptor()
 	// workspace.RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	workspace.RetentionDaysValidator = workspaceDescRetentionDays.Validators[0].(func(int) error)
 	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
-	workspaceDescFeedPosition := workspaceFields[9].Descriptor()
+	workspaceDescFeedPosition := workspaceFields[8].Descriptor()
 	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[15].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[14].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 }

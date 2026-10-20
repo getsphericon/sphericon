@@ -29,7 +29,6 @@ require (
 	github.com/go-testfixtures/testfixtures/v3 v3.19.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/go-github/v88 v88.0.0
-	github.com/gosimple/slug v1.15.0
 	github.com/itchyny/gojq v0.12.19
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
@@ -132,7 +131,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
-	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.25.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.8 // indirect

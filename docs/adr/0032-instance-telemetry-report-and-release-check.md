@@ -6,7 +6,7 @@ exactly documented: its schema is a TypeSpec contract (`typespec/telemetry`, com
 file published in `docs/`, with an ogen-generated client), so the documentation is the contract and a
 test compares every built report against it. It carries the app version and edition, OS, arch,
 deploy shape, Postgres major, locale, the Instance's age, order-of-magnitude counts (Workspaces,
-Contacts, emails sent in 30 days) and "used in the last 30 days" flags. It never carries a name, slug,
+Contacts, emails sent in 30 days) and "used in the last 30 days" flags. It never carries a name,
 domain, address, host, error text, licence key or an exact number. The **Instance id** is a random
 value stored in the database, derived from nothing.
 

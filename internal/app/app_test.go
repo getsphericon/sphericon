@@ -262,7 +262,7 @@ func ownedWorkspace(t *testing.T, a *App, publicID, ownerEmail string) {
 	require.NoError(t, err)
 	// The Workspace feed takes a position only inside a transaction.
 	require.NoError(t, events.New(database).WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		ws := tx.Workspace.Create().SetName("App Test").SetSlug(strings.ToLower(publicID)).SetPublicID(publicID).
+		ws := tx.Workspace.Create().SetName("App Test").SetPublicID(publicID).
 			SetCollectKey("ck_" + publicID).SaveX(ctx)
 		u := tx.User.Create().SetName("Owner").SetEmail(ownerEmail).SaveX(ctx)
 		tx.Membership.Create().SetUserID(u.ID).SetWorkspaceID(ws.ID).SetRole(membership.RoleOwner).ExecX(ctx)

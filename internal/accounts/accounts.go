@@ -1,6 +1,6 @@
 // Package accounts is the raw-client home for what the scoped client cannot
 // express (ADR 0017): actors whose Workspace is not known up front. It owns the
-// User (identity, credentials), the Membership lookup that turns a /w/{slug} into
+// User (identity, credentials), the Membership lookup that turns a /w/{id} into
 // a Workspace scope, the Workspace itself (it is the tenant, not a tenant-owned
 // entity, so the scoped client has no wrapper for it), and the pending-Invitation
 // lookup by token (the token is the only handle). The site handlers use it
@@ -267,33 +267,16 @@ func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name strin
 	}
 }
 
-// createWorkspaceIn creates the Workspace and its owner Membership on tx, under the
-// first free slug derived from name, with the Workspace id it is given. A unique violation (a
-// lost race on the slug, or an id already taken) aborts tx, so the caller retries the whole
+// createWorkspaceIn creates the Workspace and its owner Membership on tx, with the
+// Workspace id it is given. A unique violation (an id already taken) aborts tx, so the caller retries the whole
 // transaction with a fresh id.
 func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name, publicID string) (*ent.Workspace, error) {
-	base := Slugify(name)
-	if base == "" {
-		base = "workspace"
-	}
-	slug := base
-	for i := 2; ; i++ {
-		exists, err := tx.Workspace.Query().Where(workspace.Slug(slug)).Exist(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			break
-		}
-		slug = fmt.Sprintf("%s-%d", base, i)
-	}
 	collectKey, err := credentials.GenerateCollectKey()
 	if err != nil {
 		return nil, err
 	}
 	ws, err := tx.Workspace.Create().
 		SetName(name).
-		SetSlug(slug).
 		SetPublicID(publicID).
 		SetCollectKey(collectKey).
 		Save(ctx)
@@ -429,7 +412,7 @@ func (a *Accounts) verified(ctx context.Context, write func(tx *ent.Client) (*en
 			return RecordUserAction(ctx, tx, pub, u, events.ActionUserEmailVerify, nil)
 		})
 		if written && db.IsUniqueViolation(err) {
-			continue // lost a race on the slug or drew a taken id; the next attempt retries
+			continue // drew a taken id; the next attempt retries
 		}
 		return verified, err
 	}

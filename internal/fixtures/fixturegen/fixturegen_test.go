@@ -21,7 +21,7 @@ func writeFixtures(t *testing.T, files map[string]string) string {
 
 func TestGenerateEmitsConstantsForAnnotatedRowsOnly(t *testing.T) {
 	dir := writeFixtures(t, map[string]string{
-		"workspaces.yml": "- id: 1 # fixture: Acme\n  slug: acme\n  collect_key: ck_1\n- id: 2\n  slug: other\n",
+		"workspaces.yml": "- id: 1 # fixture: Acme\n  public_id: acme\n  collect_key: ck_1\n- id: 2\n  public_id: other\n",
 		"contacts.yml":   "- id: 7 # fixture: ContactAlice\n  email: alice@example.com\n  created_at: '{{daysAgo 1}}'\n- id: 8\n  email: bob@example.com\n",
 	})
 
@@ -31,7 +31,7 @@ func TestGenerateEmitsConstantsForAnnotatedRowsOnly(t *testing.T) {
 	out := string(src)
 	require.Contains(t, out, "Code generated")
 	require.Contains(t, out, "AcmeID")
-	require.Contains(t, out, "AcmeSlug")
+	require.Contains(t, out, "AcmePublicID")
 	require.Contains(t, out, `"acme"`)
 	require.Contains(t, out, "AcmeCollectKey")
 	require.Contains(t, out, "ContactAliceID")
@@ -76,7 +76,7 @@ func TestGenerateExtractsTheSecondFactorSecretAndRecoveryCode(t *testing.T) {
 
 func TestGenerateFailsOnDuplicateName(t *testing.T) {
 	dir := writeFixtures(t, map[string]string{
-		"workspaces.yml": "- id: 1 # fixture: Dup\n  slug: a\n",
+		"workspaces.yml": "- id: 1 # fixture: Dup\n  public_id: a\n",
 		"contacts.yml":   "- id: 2 # fixture: Dup\n  email: a@example.com\n",
 	})
 
@@ -86,7 +86,7 @@ func TestGenerateFailsOnDuplicateName(t *testing.T) {
 
 func TestGenerateFailsOnAnnotationMatchingNoRow(t *testing.T) {
 	dir := writeFixtures(t, map[string]string{
-		"workspaces.yml": "# fixture: Orphan\n- id: 1\n  slug: a\n",
+		"workspaces.yml": "# fixture: Orphan\n- id: 1\n  public_id: a\n",
 	})
 
 	_, err := fixturegen.Generate(dir)

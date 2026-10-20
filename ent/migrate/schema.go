@@ -1305,7 +1305,6 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "name", Type: field.TypeString},
-		{Name: "slug", Type: field.TypeString, Unique: true},
 		{Name: "public_id", Type: field.TypeString, Unique: true, Size: 8},
 		{Name: "collect_key", Type: field.TypeString, Unique: true},
 		{Name: "require_confirmed_opt_in", Type: field.TypeBool, Default: false},
@@ -1331,7 +1330,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[11], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[10], WorkspacesColumns[0]},
 			},
 		},
 	}

@@ -195,7 +195,7 @@
             "description": "The kinds of sending Integration in use, each at most once."
           }
         },
-        "description": "What an Instance reports about itself. It carries no name, slug, domain, address, host, error\ntext, licence key or exact number, and nothing that identifies a Workspace or a person. A new\nfield is a change to this schema and to its documentation in the same commit.",
+        "description": "What an Instance reports about itself. It carries no name, domain, address, host, error\ntext, licence key or exact number, and nothing that identifies a Workspace or a person. A new\nfield is a change to this schema and to its documentation in the same commit.",
         "additionalProperties": false
       }
     }
