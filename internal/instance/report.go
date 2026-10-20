@@ -3,7 +3,6 @@ package instance
 import (
 	"context"
 	"fmt"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"runtime"
 	"slices"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/upgrade"
 )
 

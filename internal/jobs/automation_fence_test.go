@@ -98,7 +98,7 @@ func (e *realEnv) mod(t *testing.T, sender messaging.EmailSender) *outbound.Modu
 	sqlDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = sqlDB.Close() })
-	return outbound.New(events.New(sqlDB), holds.New(holds.Always, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
+	return outbound.New(events.New(sqlDB), holds.New(func() bool { return true }, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
 }
 
 // runRowIsLocked reports whether another writer would have to wait for the Enrollment's row:

@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
@@ -29,7 +28,7 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 		return []siteapi.SiteWorkspaceResource{}, nil
 	}
 
-	items, err := h.accounts.MembershipsOf(ctx, a.UserID, holds.ActiveEdge(h.now()))
+	items, err := h.accounts.MembershipsOf(ctx, a.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +57,10 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	if end, ok := secondfactor.Deadline(m); ok {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}
-	standing := holds.Of(m.Edges.Workspace, h.holdsHonoured == nil || h.holdsHonoured())
+	standing, err := h.holds.Standing(ctx, s)
+	if err != nil {
+		return r, err
+	}
 	r.Holds = lo.Map(standing.Holds(), func(hold *ent.Hold, _ int) siteapi.SiteWorkspaceHold {
 		return siteapi.SiteWorkspaceHold{Key: hold.Key, ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt), ActionUrl: nilableString(hold.ActionURL)}
 	})

@@ -93,13 +93,13 @@ func (a *Accounts) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
 	return events.Ingest(a.ent.Scoped(id)), nil
 }
 
-// MembershipsOf lists a User's Memberships with their User and Workspace loaded, and
-// the Workspace's Staff holds shaped by holdsEdge (holds.ActiveEdge), oldest first.
-func (a *Accounts) MembershipsOf(ctx context.Context, userID int64, holdsEdge func(*ent.HoldQuery)) ([]*ent.Membership, error) {
+// MembershipsOf lists a User's Memberships with their User and Workspace loaded, oldest
+// Workspace first.
+func (a *Accounts) MembershipsOf(ctx context.Context, userID int64) ([]*ent.Membership, error) {
 	return a.ent.Membership.Query().
 		Where(membership.UserID(userID), membership.HasWorkspaceWith(Live())).
 		WithUser().
-		WithWorkspace(func(q *ent.WorkspaceQuery) { q.WithHolds(holdsEdge) }).
+		WithWorkspace().
 		Order(ent.Asc(membership.FieldWorkspaceID)).
 		All(ctx)
 }

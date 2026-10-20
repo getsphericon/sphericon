@@ -223,8 +223,8 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 }
 
 // New builds the module. tracker may be nil only if no marketing Request is sent.
-func New(bus *events.Bus, hold *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
-	m := &Module{bus: bus, holds: hold, senders: senders, tracker: tracker, lease: DefaultLease}
+func New(bus *events.Bus, holds *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
+	m := &Module{bus: bus, holds: holds, senders: senders, tracker: tracker, lease: DefaultLease}
 	for _, o := range opts {
 		o(m)
 	}
@@ -500,17 +500,6 @@ func (m *Module) workspace(ctx context.Context, s *ent.Scoped) (*ent.Workspace, 
 	return ws, nil
 }
 
-// frozen is the Workspace freeze check: "" when the Workspace may send, else the reason
-// holds names (deletion, suspension, Staff hold, in that priority). Every send, a Test
-// send from the System sender included, passes it.
-func (m *Module) frozen(ctx context.Context, s *ent.Scoped) (string, error) {
-	reason, err := m.holds.Reason(ctx, s)
-	if err != nil {
-		return "", fmt.Errorf("outbound: freeze check: %w", err)
-	}
-	return reason, nil
-}
-
 // gateResult is the outcome of the source-level checks plus what they resolved.
 type gateResult struct {
 	hold string
@@ -523,10 +512,12 @@ type gateResult struct {
 	domain      string
 }
 
-// gate runs the source-level checks, in order: Workspace freeze, an Integration to
+// gate runs the source-level checks, in order: Workspace freeze (the reason holds names:
+// deletion, suspension, Staff hold, in that priority; a Test send from the System sender
+// passes it too), an Integration to
 // send through, and a verified Sending domain for the effective From address.
 func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName string) (gateResult, error) {
-	hold, err := m.frozen(ctx, s)
+	hold, err := m.holds.Reason(ctx, s)
 	if err != nil || hold != "" {
 		return gateResult{hold: hold}, err
 	}
@@ -829,7 +820,7 @@ func sendTestMessage(ctx context.Context, sender messaging.EmailSender, msg mess
 
 // sendTestFromSystem is the Test send of a Workspace with no verified Sending domain.
 func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, req TestRequest) (Result, error) {
-	hold, err := m.frozen(ctx, s)
+	hold, err := m.holds.Reason(ctx, s)
 	if err != nil {
 		return Result{}, err
 	}

@@ -11,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -69,9 +68,11 @@ func TestAHoldIsActiveOnlyWhileItsExpiryIsAfterNow(t *testing.T) {
 	w.hold(t, "past", w.now.Add(-time.Hour))
 
 	st := w.standing(t, true)
+	staffKeys := keys(st.Staff)
+	reason := st.Reason()
 
-	assert.Equal(t, []string{"future"}, keys(st.Staff))
-	assert.Equal(t, holds.ReasonStaff, st.Reason())
+	assert.Equal(t, []string{"future"}, staffKeys)
+	assert.Equal(t, holds.ReasonStaff, reason)
 }
 
 func TestASecondActiveHoldKeepsSendingFrozenAfterTheFirstIsCleared(t *testing.T) {
@@ -79,14 +80,18 @@ func TestASecondActiveHoldKeepsSendingFrozenAfterTheFirstIsCleared(t *testing.T)
 	w.hold(t, "b", w.now.Add(time.Hour))
 	w.hold(t, "a", w.now.Add(time.Hour))
 
-	assert.Equal(t, []string{"a", "b"}, keys(w.standing(t, true).Staff), "ordered by key")
+	both := w.standing(t, true)
+	bothKeys := keys(both.Staff)
+	assert.Equal(t, []string{"a", "b"}, bothKeys, "ordered by key")
 
 	_, err := w.s.Hold().Delete().Where(enthold.Key("a")).Exec(w.ctx)
 	require.NoError(t, err)
 
 	cleared := w.standing(t, true)
-	assert.Equal(t, []string{"b"}, keys(cleared.Staff))
-	assert.Equal(t, holds.ReasonStaff, cleared.Reason())
+	clearedKeys := keys(cleared.Staff)
+	clearedReason := cleared.Reason()
+	assert.Equal(t, []string{"b"}, clearedKeys)
+	assert.Equal(t, holds.ReasonStaff, clearedReason)
 }
 
 func TestSuspensionIsItsOwnSourceBesideStaffHolds(t *testing.T) {
@@ -95,10 +100,12 @@ func TestSuspensionIsItsOwnSourceBesideStaffHolds(t *testing.T) {
 	w.hold(t, "review", w.now.Add(time.Hour))
 
 	st := w.standing(t, true)
+	reason := st.Reason()
+	staffKeys := keys(st.Staff)
 
-	assert.Equal(t, holds.ReasonSuspended, st.Reason(), "suspension outranks Staff holds")
+	assert.Equal(t, holds.ReasonSuspended, reason, "suspension outranks Staff holds")
 	require.NotNil(t, st.SuspendedAt)
-	assert.Equal(t, []string{"review"}, keys(st.Staff), "never merged: the hold stays in its own list")
+	assert.Equal(t, []string{"review"}, staffKeys, "never merged: the hold stays in its own list")
 }
 
 func TestDeletionOutranksSuspensionAndStaffHolds(t *testing.T) {
@@ -107,13 +114,15 @@ func TestDeletionOutranksSuspensionAndStaffHolds(t *testing.T) {
 	w.hold(t, "review", w.now.Add(time.Hour))
 
 	st := w.standing(t, true)
+	reason := st.Reason()
+	listed := keys(st.Holds())
 
-	assert.Equal(t, holds.ReasonPendingDeletion, st.Reason())
+	assert.Equal(t, holds.ReasonPendingDeletion, reason)
 	require.NotNil(t, st.Deletion)
 	assert.Equal(t, holds.KeyPendingDeletion, st.Deletion.Key)
 	assert.Equal(t, holds.Message(holds.ReasonPendingDeletion), st.Deletion.Message)
 	assert.NotNil(t, st.SuspendedAt)
-	assert.Equal(t, []string{holds.KeyPendingDeletion, "review"}, keys(st.Holds()))
+	assert.Equal(t, []string{holds.KeyPendingDeletion, "review"}, listed)
 }
 
 func TestWithoutTheStaffLicenseHoldsAreIgnoredButDeletionAndSuspensionCount(t *testing.T) {
@@ -121,41 +130,29 @@ func TestWithoutTheStaffLicenseHoldsAreIgnoredButDeletionAndSuspensionCount(t *t
 	w.hold(t, "review", w.now.Add(time.Hour))
 
 	unlicensed := w.standing(t, false)
-	assert.Empty(t, unlicensed.Reason())
+	unlicensedReason := unlicensed.Reason()
+	assert.Empty(t, unlicensedReason)
 	assert.Empty(t, unlicensed.Staff)
 
 	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(w.now).ExecX(w.ctx)
-	assert.Equal(t, holds.ReasonSuspended, w.standing(t, false).Reason())
+	suspended := w.standing(t, false)
+	suspendedReason := suspended.Reason()
+	assert.Equal(t, holds.ReasonSuspended, suspendedReason)
 
 	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(w.now).ExecX(w.ctx)
-	assert.Equal(t, holds.ReasonPendingDeletion, w.standing(t, false).Reason())
+	deleted := w.standing(t, false)
+	deletedReason := deleted.Reason()
+	assert.Equal(t, holds.ReasonPendingDeletion, deletedReason)
 }
 
-// The site loads the Workspace with its holds edge under the active rule; the send path
-// queries. For the same rows they stand alike.
-func TestTheSiteViewAndTheSendPathAgree(t *testing.T) {
-	w := newWorld(t)
-	w.hold(t, "future", w.now.Add(time.Hour))
-	w.hold(t, "boundary", w.now)
-	w.hold(t, "past", w.now.Add(-time.Hour))
-
-	ws, err := w.env.DB.Workspace.Query().Where(workspace.ID(fixtures.AcmeID)).WithHolds(holds.ActiveEdge(w.now)).Only(w.ctx)
-	require.NoError(t, err)
-	site := holds.Of(ws, true)
-	send := w.standing(t, true)
-
-	assert.Equal(t, send.Reason(), site.Reason())
-	assert.Equal(t, keys(send.Holds()), keys(site.Holds()))
-	assert.Equal(t, []string{"future"}, keys(site.Staff))
-}
-
-// The send path's reason comes from the constructor's one function: with it off, Staff holds
-// are ignored while deletion and suspension still count; deletion is reported first.
+// The module's one function decides whether Staff holds count: with it off they are ignored
+// while deletion and suspension still count; deletion is reported first.
 func TestReasonHonoursTheLicenseFunctionAndReportsDeletionFirst(t *testing.T) {
 	w := newWorld(t)
 	w.hold(t, "review", w.now.Add(time.Hour))
-	on := holds.New(holds.Always, func() time.Time { return w.now })
-	off := holds.New(func() bool { return false }, func() time.Time { return w.now })
+	clock := func() time.Time { return w.now }
+	on := holds.New(func() bool { return true }, clock)
+	off := holds.New(func() bool { return false }, clock)
 	reason := func(h *holds.Holds) string {
 		t.Helper()
 		got, err := h.Reason(w.ctx, w.s)
@@ -163,13 +160,18 @@ func TestReasonHonoursTheLicenseFunctionAndReportsDeletionFirst(t *testing.T) {
 		return got
 	}
 
-	assert.Equal(t, holds.ReasonStaff, reason(on))
-	assert.Empty(t, reason(off))
+	onReason := reason(on)
+	offReason := reason(off)
+	assert.Equal(t, holds.ReasonStaff, onReason)
+	assert.Empty(t, offReason)
 
 	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(w.now).ExecX(w.ctx)
-	assert.Equal(t, holds.ReasonSuspended, reason(off))
+	suspendedOff := reason(off)
+	assert.Equal(t, holds.ReasonSuspended, suspendedOff)
 
 	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(w.now).ExecX(w.ctx)
-	assert.Equal(t, holds.ReasonPendingDeletion, reason(on))
-	assert.Equal(t, holds.ReasonPendingDeletion, reason(off))
+	deletedOn := reason(on)
+	deletedOff := reason(off)
+	assert.Equal(t, holds.ReasonPendingDeletion, deletedOn)
+	assert.Equal(t, holds.ReasonPendingDeletion, deletedOff)
 }

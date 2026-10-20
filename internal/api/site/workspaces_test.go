@@ -35,6 +35,27 @@ func TestSiteWorkspacesUpdateRenames(t *testing.T) {
 	assert.Equal(t, "Acme Inc", list[0].Name)
 }
 
+// A single-Workspace response lists the active Staff holds like the list does.
+func TestSiteWorkspacesUpdateResponseListsActiveStaffHolds(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	_, err := env.DB.Scoped(fixtures.AcmeID).Hold().Create().
+		SetKey("k1").SetReasonCode("review").SetMessage("held").SetSetBy("service-a").
+		SetExpiresAt(time.Now().Add(time.Hour)).Save(ctx)
+	require.NoError(t, err)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	res, err := c.SiteWorkspacesUpdate(ctx,
+		&siteapi.SiteUpdateWorkspaceInput{Name: "Acme Inc"},
+		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	updated, ok := res.(*siteapi.SiteWorkspaceResource)
+	require.Truef(t, ok, "got %T", res)
+
+	require.Len(t, updated.Holds, 1)
+	assert.Equal(t, "k1", updated.Holds[0].Key)
+}
+
 func TestSiteWorkspacesUpdateNotOwned(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)

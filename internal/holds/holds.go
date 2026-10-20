@@ -9,6 +9,7 @@ package holds
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -43,14 +44,8 @@ func Message(reason string) string {
 }
 
 // ActiveAt is the one rule for an active hold: its expiry is after now. It exists only as
-// this SQL predicate; every read, the eager-load of the holds edge included, passes it.
+// this SQL predicate; every read passes it.
 func ActiveAt(now time.Time) predicate.Hold { return enthold.ExpiresAtGT(now) }
-
-// ActiveEdge shapes the load of a Workspace's holds edge (`WithHolds`) to the active holds
-// in key order, so a Workspace loaded with its edge needs no Go filter.
-func ActiveEdge(now time.Time) func(*ent.HoldQuery) {
-	return func(q *ent.HoldQuery) { q.Where(ActiveAt(now)).Order(enthold.ByKey()) }
-}
 
 // KeyPendingDeletion is the key of the pending-deletion Hold (ADR 0043).
 const KeyPendingDeletion = "pending_deletion"
@@ -92,10 +87,10 @@ func (st Standing) Holds() []*ent.Hold {
 	return append([]*ent.Hold{st.Deletion}, st.Staff...)
 }
 
-// Of is the standing of a Workspace loaded with its holds edge through ActiveEdge (the
-// site's list of Workspaces). staffHonoured is the `staff` license: without it the Staff
-// holds are ignored, deletion and suspension still count.
-func Of(ws *ent.Workspace, staffHonoured bool) Standing {
+// standingOf is the standing of a Workspace row and its active Staff holds, which are
+// ignored when staffHonoured is false (the `staff` license): deletion and suspension
+// still count.
+func standingOf(ws *ent.Workspace, staff []*ent.Hold, staffHonoured bool) Standing {
 	st := Standing{SuspendedAt: ws.SuspendedAt}
 	if ws.DiscardedAt != nil {
 		st.Deletion = &ent.Hold{
@@ -108,7 +103,7 @@ func Of(ws *ent.Workspace, staffHonoured bool) Standing {
 		}
 	}
 	if staffHonoured {
-		st.Staff = ws.Edges.Holds
+		st.Staff = staff
 	}
 	return st
 }
@@ -120,13 +115,14 @@ func Read(ctx context.Context, s *ent.Scoped, now time.Time, staffHonoured bool)
 	if err != nil {
 		return Standing{}, err
 	}
+	var staff []*ent.Hold
 	if staffHonoured {
-		ws.Edges.Holds, err = s.Hold().Query().Where(ActiveAt(now)).Order(enthold.ByKey()).All(ctx)
+		staff, err = s.Hold().Query().Where(ActiveAt(now)).Order(enthold.ByKey()).All(ctx)
 		if err != nil {
 			return Standing{}, err
 		}
 	}
-	return Of(ws, staffHonoured), nil
+	return standingOf(ws, staff, staffHonoured), nil
 }
 
 // Holds answers the send path's "may this Workspace send now" from the standing. The one
@@ -143,14 +139,16 @@ func New(honoured func() bool, now func() time.Time) *Holds {
 	return &Holds{honoured: honoured, now: now}
 }
 
-// Always is the honoured function of an instance that honours Staff holds.
-func Always() bool { return true }
+// Standing is the standing of the scope's Workspace now, as this instance honours it.
+func (h *Holds) Standing(ctx context.Context, s *ent.Scoped) (Standing, error) {
+	return Read(ctx, s, h.now(), h.honoured())
+}
 
 // Reason is the reason a send is Held for the scope's Workspace, "" when it may send.
 func (h *Holds) Reason(ctx context.Context, s *ent.Scoped) (string, error) {
-	st, err := Read(ctx, s, h.now(), h.honoured())
+	st, err := h.Standing(ctx, s)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("holds: freeze check: %w", err)
 	}
 	return st.Reason(), nil
 }

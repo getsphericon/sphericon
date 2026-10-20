@@ -410,7 +410,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
 	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
 		Deletion:    workspacedeletion.New(client, bus),
-		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
+		AccountLink: accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Instance: inst,
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
