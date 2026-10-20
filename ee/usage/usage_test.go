@@ -235,3 +235,19 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 		assert.NotEqual(t, int64(fixtures.AcmeID), w.WorkspaceID)
 	}
 }
+
+func TestRefreshSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(jan).ExecX(t.Context())
+
+	require.NoError(t, usage.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), feb.Add(time.Hour)))
+
+	page, err := usage.List(t.Context(), env.DB, jan, pagination.Params{Page: 1, PageSize: 25})
+	require.NoError(t, err)
+	var ids []int64
+	for _, w := range page.Items {
+		ids = append(ids, w.WorkspaceID)
+	}
+	assert.NotEmpty(t, ids, "live Workspaces are still measured")
+	assert.NotContains(t, ids, fixtures.AcmeID)
+}

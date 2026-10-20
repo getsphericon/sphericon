@@ -1401,6 +1401,26 @@
             ],
             "description": "When the Workspace was created"
           },
+          "deletedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Workspace was deleted; present from deletion until a restore (ADR 0043)"
+          },
+          "erasedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Workspace's data was erased; the row stays as a tombstone"
+          },
           "suspension": {
             "type": "object",
             "allOf": [
@@ -1458,6 +1478,26 @@
             ],
             "description": "When the Workspace was created"
           },
+          "deletedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Workspace was deleted; present from deletion until a restore (ADR 0043)"
+          },
+          "erasedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Workspace's data was erased; the row stays as a tombstone"
+          },
           "suspension": {
             "type": "object",
             "allOf": [
@@ -1481,7 +1521,7 @@
       },
       "StaffWorkspaceReview": {
         "type": "string",
-        "enum": ["warned", "systemFrozen"],
+        "enum": ["warned", "systemFrozen", "deleted"],
         "description": "Which Workspaces the list surfaces for review"
       },
       "TimeZoneName": {

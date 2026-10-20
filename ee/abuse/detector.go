@@ -73,7 +73,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 		errs = append(errs, fmt.Errorf("end the warning episodes of suspended and exempt workspaces: %w", err))
 	}
 	candidates, err := d.client.Workspace.Query().
-		Where(workspace.SuspendedAtIsNil(), workspace.AbuseExempt(false)).
+		Where(workspace.SuspendedAtIsNil(), workspace.AbuseExempt(false), workspace.DeletedAtIsNil()).
 		All(ctx)
 	if err != nil {
 		return sum, errors.Join(append(errs, fmt.Errorf("list workspaces for the abuse detector: %w", err))...)

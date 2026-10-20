@@ -373,3 +373,17 @@ func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID).AbuseWarningNotifiedAt)
 }
+
+func TestAWorkspaceInItsDeletionWindowIsNotJudged(t *testing.T) {
+	env := testhelper.Setup(t)
+	now := time.Now()
+	lay(t, env, fixtures.VandelayID, "mail.vandelay.test", now, 2000, 0, 10)
+	env.DB.Workspace.UpdateOneID(fixtures.VandelayID).SetDeletedAt(now).ExecX(t.Context())
+
+	summary, err := detector(t, env).Run(t.Context(), now)
+
+	require.NoError(t, err)
+	assert.Equal(t, abuse.Summary{}, summary)
+	assert.False(t, suspended(t, env, fixtures.VandelayID))
+	assert.Empty(t, env.SystemMail.Messages())
+}

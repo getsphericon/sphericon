@@ -213,7 +213,11 @@ export const zStaffSuspensionActor = z.object({
 /**
  * Which Workspaces the list surfaces for review
  */
-export const zStaffWorkspaceReview = z.enum(['warned', 'systemFrozen']);
+export const zStaffWorkspaceReview = z.enum([
+  'warned',
+  'systemFrozen',
+  'deleted'
+]);
 
 export const zTimeZoneName = z.string();
 
@@ -289,6 +293,8 @@ export const zStaffWorkspaceDetailResource = z.object({
   id: zWorkspaceId,
   name: z.string(),
   createdAt: zTimestamp,
+  deletedAt: z.exactOptional(zTimestamp.nullable()),
+  erasedAt: z.exactOptional(zTimestamp.nullable()),
   suspension: z.exactOptional(zStaffSuspension.nullable()),
   exempt: z.boolean(),
   warned: z.boolean(),
@@ -305,6 +311,8 @@ export const zStaffWorkspaceResource = z.object({
   id: zWorkspaceId,
   name: z.string(),
   createdAt: zTimestamp,
+  deletedAt: z.exactOptional(zTimestamp.nullable()),
+  erasedAt: z.exactOptional(zTimestamp.nullable()),
   suspension: z.exactOptional(zStaffSuspension.nullable()),
   exempt: z.boolean(),
   warned: z.boolean()

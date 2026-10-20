@@ -70,3 +70,15 @@ func TestPrunesNothingWithoutTheRetentionLicense(t *testing.T) {
 	}
 	assert.Equal(t, 1, countEntries(t, env, fixtures.AcmeID))
 }
+
+func TestPruneSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetRetentionDays(7).SetDeletedAt(febFirst).ExecX(t.Context())
+	before := countEntries(t, env, fixtures.AcmeID)
+
+	n, err := retention.Prune(t.Context(), env.DB, licenseFor(t, licensekey.FeatureRetention), febFirst)
+
+	require.NoError(t, err)
+	assert.Zero(t, n)
+	assert.Equal(t, before, countEntries(t, env, fixtures.AcmeID))
+}

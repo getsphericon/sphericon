@@ -168,6 +168,8 @@ func review(p staffapi.OptStaffWorkspaceReview) Review {
 		return ReviewWarned
 	case staffapi.StaffWorkspaceReviewSystemFrozen:
 		return ReviewSystemFrozen
+	case staffapi.StaffWorkspaceReviewDeleted:
+		return ReviewDeleted
 	default:
 		return ReviewNone
 	}
@@ -366,6 +368,12 @@ func workspaceResource(w *ent.Workspace) staffapi.StaffWorkspaceResource {
 		CreatedAt: staffapi.Timestamp(w.CreatedAt),
 		Exempt:    w.AbuseExempt,
 		Warned:    w.AbuseWarningNotifiedAt != nil,
+	}
+	if w.DeletedAt != nil {
+		res.DeletedAt = staffapi.NewOptNilTimestamp(staffapi.Timestamp(*w.DeletedAt))
+	}
+	if w.ErasedAt != nil {
+		res.ErasedAt = staffapi.NewOptNilTimestamp(staffapi.Timestamp(*w.ErasedAt))
 	}
 	if w.SuspendedAt == nil {
 		return res

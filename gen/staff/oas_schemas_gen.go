@@ -2190,6 +2190,10 @@ type StaffWorkspaceDetailResource struct {
 	Name string      `json:"name"`
 	// When the Workspace was created.
 	CreatedAt Timestamp `json:"createdAt"`
+	// When the Workspace was deleted; present from deletion until a restore (ADR 0043).
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the Workspace's data was erased; the row stays as a tombstone.
+	ErasedAt OptNilTimestamp `json:"erasedAt"`
 	// Present only while sending is suspended.
 	Suspension OptNilStaffSuspension `json:"suspension"`
 	// Exempt from the abuse detector (set by a Staff member).
@@ -2215,6 +2219,16 @@ func (s *StaffWorkspaceDetailResource) GetName() string {
 // GetCreatedAt returns the value of CreatedAt.
 func (s *StaffWorkspaceDetailResource) GetCreatedAt() Timestamp {
 	return s.CreatedAt
+}
+
+// GetDeletedAt returns the value of DeletedAt.
+func (s *StaffWorkspaceDetailResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
+}
+
+// GetErasedAt returns the value of ErasedAt.
+func (s *StaffWorkspaceDetailResource) GetErasedAt() OptNilTimestamp {
+	return s.ErasedAt
 }
 
 // GetSuspension returns the value of Suspension.
@@ -2262,6 +2276,16 @@ func (s *StaffWorkspaceDetailResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+// SetDeletedAt sets the value of DeletedAt.
+func (s *StaffWorkspaceDetailResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
+}
+
+// SetErasedAt sets the value of ErasedAt.
+func (s *StaffWorkspaceDetailResource) SetErasedAt(val OptNilTimestamp) {
+	s.ErasedAt = val
+}
+
 // SetSuspension sets the value of Suspension.
 func (s *StaffWorkspaceDetailResource) SetSuspension(val OptNilStaffSuspension) {
 	s.Suspension = val
@@ -2303,6 +2327,10 @@ type StaffWorkspaceResource struct {
 	Name string      `json:"name"`
 	// When the Workspace was created.
 	CreatedAt Timestamp `json:"createdAt"`
+	// When the Workspace was deleted; present from deletion until a restore (ADR 0043).
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the Workspace's data was erased; the row stays as a tombstone.
+	ErasedAt OptNilTimestamp `json:"erasedAt"`
 	// Present only while sending is suspended.
 	Suspension OptNilStaffSuspension `json:"suspension"`
 	// Exempt from the abuse detector (set by a Staff member).
@@ -2324,6 +2352,16 @@ func (s *StaffWorkspaceResource) GetName() string {
 // GetCreatedAt returns the value of CreatedAt.
 func (s *StaffWorkspaceResource) GetCreatedAt() Timestamp {
 	return s.CreatedAt
+}
+
+// GetDeletedAt returns the value of DeletedAt.
+func (s *StaffWorkspaceResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
+}
+
+// GetErasedAt returns the value of ErasedAt.
+func (s *StaffWorkspaceResource) GetErasedAt() OptNilTimestamp {
+	return s.ErasedAt
 }
 
 // GetSuspension returns the value of Suspension.
@@ -2356,6 +2394,16 @@ func (s *StaffWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+// SetDeletedAt sets the value of DeletedAt.
+func (s *StaffWorkspaceResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
+}
+
+// SetErasedAt sets the value of ErasedAt.
+func (s *StaffWorkspaceResource) SetErasedAt(val OptNilTimestamp) {
+	s.ErasedAt = val
+}
+
 // SetSuspension sets the value of Suspension.
 func (s *StaffWorkspaceResource) SetSuspension(val OptNilStaffSuspension) {
 	s.Suspension = val
@@ -2378,6 +2426,7 @@ type StaffWorkspaceReview string
 const (
 	StaffWorkspaceReviewWarned       StaffWorkspaceReview = "warned"
 	StaffWorkspaceReviewSystemFrozen StaffWorkspaceReview = "systemFrozen"
+	StaffWorkspaceReviewDeleted      StaffWorkspaceReview = "deleted"
 )
 
 // AllValues returns all StaffWorkspaceReview values.
@@ -2385,6 +2434,7 @@ func (StaffWorkspaceReview) AllValues() []StaffWorkspaceReview {
 	return []StaffWorkspaceReview{
 		StaffWorkspaceReviewWarned,
 		StaffWorkspaceReviewSystemFrozen,
+		StaffWorkspaceReviewDeleted,
 	}
 }
 
@@ -2394,6 +2444,8 @@ func (s StaffWorkspaceReview) MarshalText() ([]byte, error) {
 	case StaffWorkspaceReviewWarned:
 		return []byte(s), nil
 	case StaffWorkspaceReviewSystemFrozen:
+		return []byte(s), nil
+	case StaffWorkspaceReviewDeleted:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -2408,6 +2460,9 @@ func (s *StaffWorkspaceReview) UnmarshalText(data []byte) error {
 		return nil
 	case StaffWorkspaceReviewSystemFrozen:
 		*s = StaffWorkspaceReviewSystemFrozen
+		return nil
+	case StaffWorkspaceReviewDeleted:
+		*s = StaffWorkspaceReviewDeleted
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

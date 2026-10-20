@@ -149,7 +149,7 @@ func (m *Module) Report(ctx context.Context) (telemetryapi.TelemetryReport, erro
 // oldest when that one is deleted, every Owner when there are several, and a transfer
 // follows the role. These Owners alone decide about the Instance.
 func (m *Module) IsOwner(ctx context.Context, userID int64) (bool, error) {
-	oldest, err := m.ent.Workspace.Query().Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
+	oldest, err := m.ent.Workspace.Query().Where(workspace.DeletedAtIsNil()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
 	if ent.IsNotFound(err) {
 		return false, nil
 	}

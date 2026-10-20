@@ -14,7 +14,7 @@ import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/worksp
 import { formatDateTime } from '../utils/datetime.ts'
 
 const PAGE_SIZE = 25
-const REVIEWS: StaffWorkspaceReview[] = ['warned', 'systemFrozen']
+const REVIEWS: StaffWorkspaceReview[] = ['warned', 'systemFrozen', 'deleted']
 
 // The Workspace list: every tenant's metadata (never its Contacts, content or
 // Events), searchable by id or name, a row opens the Workspace.
