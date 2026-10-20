@@ -18,7 +18,8 @@ func noNUL(next http.Handler) http.Handler {
 			writeProblem(w, http.StatusBadRequest, "NUL characters are not allowed")
 			return
 		}
-		if r.Body != nil && r.Body != http.NoBody {
+		// ContentLength 0 is a request without a body (a GET): there is nothing to read.
+		if r.ContentLength != 0 && r.Body != nil && r.Body != http.NoBody {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
 				problemErrorHandler(r.Context(), w, r, err)

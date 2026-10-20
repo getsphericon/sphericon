@@ -139,6 +139,10 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// timeout. CORS precedes the limiter so a 429 still reaches the browser; guard
 	// sits inside CORS so preflights are answered before the check.
 	outer := chi.Middlewares{recoverer, requestID, corsMiddleware(cfg.CORSOrigins)}
+	if cfg.IsDev {
+		// Development only: a 500 carries what failed, for the page to show (devdebug.go).
+		outer = append(chi.Middlewares{devDebug}, outer...)
+	}
 	if cfg.IsDev && !cfg.AutoMigrate {
 		// Development only (ADR 0033): a database reset or rebuilt under the running process
 		// is named instead of answering bare 500s. A production Instance never answers 503 on
@@ -276,6 +280,8 @@ func problemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 	if code < http.StatusInternalServerError {
 		prob["detail"] = err.Error()
+	} else if dbg := debugProblem(r, w, err.Error(), ""); dbg != nil {
+		prob["debug"] = dbg
 	}
 	_ = json.NewEncoder(w).Encode(prob)
 }
@@ -295,6 +301,12 @@ func writeProblem(w http.ResponseWriter, status int, detail string) {
 // writeCodedProblem renders an RFC 7807 problem; code, when set, is the problem's
 // machine-readable code.
 func writeCodedProblem(w http.ResponseWriter, status int, code, detail string) {
+	writeCodedProblemWith(w, status, code, detail, nil)
+}
+
+// writeCodedProblemWith is writeCodedProblem plus the debug block a development server adds
+// to a 500 (nil: none).
+func writeCodedProblemWith(w http.ResponseWriter, status int, code, detail string, dbg *problemDebug) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(status)
 	prob := map[string]any{
@@ -304,6 +316,9 @@ func writeCodedProblem(w http.ResponseWriter, status int, code, detail string) {
 	}
 	if code != "" {
 		prob["code"] = code
+	}
+	if dbg != nil {
+		prob["debug"] = dbg
 	}
 	_ = json.NewEncoder(w).Encode(prob)
 }
@@ -354,13 +369,15 @@ func recoverer(next http.Handler) http.Handler {
 				if id := w.Header().Get("X-Request-Id"); id != "" {
 					logger = logger.With("request_id", id)
 				}
+				stack := string(debug.Stack())
 				logger.Error("panic recovered",
 					"err", rec,
 					"method", r.Method,
 					"path", r.URL.Path,
-					"stack", string(debug.Stack()),
+					"stack", stack,
 				)
-				writeProblem(w, http.StatusInternalServerError, "internal server error")
+				dbg := debugProblem(r, w, fmt.Sprint(rec), stack)
+				writeCodedProblemWith(w, http.StatusInternalServerError, "", "internal server error", dbg)
 			}
 		}()
 		next.ServeHTTP(w, r)

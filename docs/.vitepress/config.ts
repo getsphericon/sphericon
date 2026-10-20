@@ -43,6 +43,7 @@ export default defineConfig({
             { text: 'MCP for agents', link: '/guide/mcp' },
             { text: 'Answering a GDPR request', link: '/guide/gdpr' },
             { text: 'Self-hosting', link: '/self-hosting' },
+            { text: 'Configuration reference', link: '/configuration' },
             { text: 'Sphericon Cloud', link: '/guide/cloud' },
           ],
         },

@@ -1,8 +1,9 @@
-import { Alert } from '@mantine/core'
+import { Alert, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
 
 import { getApiErrorMessage } from '../utils/apiErrors.ts'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
+import { ProblemDebugPanel } from './ProblemDebugPanel.tsx'
 
 interface ApiErrorAlertProps {
   error: ApiErrorLike | null | undefined
@@ -13,7 +14,10 @@ interface ApiErrorAlertProps {
 export function ApiErrorAlert({ error, title, fallback }: ApiErrorAlertProps) {
   return (
     <Alert color="red" title={title}>
-      {getApiErrorMessage(error, fallback)}
+      <Stack gap="xs">
+        {getApiErrorMessage(error, fallback)}
+        <ProblemDebugPanel error={error} />
+      </Stack>
     </Alert>
   )
 }

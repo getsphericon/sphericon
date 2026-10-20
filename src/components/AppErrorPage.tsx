@@ -2,6 +2,7 @@ import { Button, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { getApiErrorMessage } from '../utils/apiErrors.ts'
+import { ProblemDebugPanel } from './ProblemDebugPanel.tsx'
 
 interface AppErrorPageProps {
   error: unknown
@@ -14,7 +15,7 @@ export function AppErrorPage({ error }: AppErrorPageProps) {
   const { t } = useTranslation()
 
   return (
-    <Stack align="center" maw={520} mx="auto" mt={120} gap="xs" ta="center">
+    <Stack align="center" maw={900} mx="auto" mt={120} gap="xs" ta="center">
       <Title order={2}>{t(($) => $.appError.title)}</Title>
       <Text c="dimmed">
         {getApiErrorMessage(
@@ -22,6 +23,7 @@ export function AppErrorPage({ error }: AppErrorPageProps) {
           t(($) => $.appError.fallback),
         )}
       </Text>
+      <ProblemDebugPanel error={error} />
       <Button
         mt="md"
         onClick={() => {
