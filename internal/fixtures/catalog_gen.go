@@ -5,6 +5,8 @@ package fixtures
 // Fixture catalog: named anchor rows. Annotate a row with `# fixture: Name` on its
 // first line in fixtures/*.yml and run `mise run generate`.
 const (
+	// AcmeAdminMembershipID is from fixtures/memberships.
+	AcmeAdminMembershipID = 18
 	// AcmeAuditEntryAction is from fixtures/audit_entries.
 	AcmeAuditEntryAction = "membership.update"
 	// AcmeAuditEntryID is from fixtures/audit_entries.
@@ -23,6 +25,14 @@ const (
 	AcmeSlug = "acme"
 	// AcmeUsageSnapshotID is from fixtures/usages.
 	AcmeUsageSnapshotID = 1
+	// AdminAliceEmail is from fixtures/users.
+	AdminAliceEmail = "alice@acme.test"
+	// AdminAliceID is from fixtures/users.
+	AdminAliceID = 19
+	// AdminAliceName is from fixtures/users.
+	AdminAliceName = "Alice"
+	// AdminAlicePassword is from fixtures/users.
+	AdminAlicePassword = "alice-test-password"
 	// AnchorTokenID is from fixtures/api_tokens.
 	AnchorTokenID = 1
 	// AnchorTokenName is from fixtures/api_tokens.
