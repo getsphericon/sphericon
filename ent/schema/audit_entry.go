@@ -11,7 +11,7 @@ import (
 // AuditEntry is one row of a Workspace's append-only Audit log (GLOSSARY, ADR 0022).
 // It is an Enterprise feature (ee/LICENSE): only the ee/audit subscriber writes it, and
 // only the ee/audit reader reads it. ent keeps one schema package per graph, so the
-// table is declared here next to the others and migrated by the same Atlas flow; the
+// table is declared here next to the others and migrated by the same flow; the
 // license gate lives in ee/, not in the schema. No code path updates or deletes a row
 // (the ee/retention prune job, ADR 0014, is the only remover).
 type AuditEntry struct {

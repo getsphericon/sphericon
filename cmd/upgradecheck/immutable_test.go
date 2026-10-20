@@ -35,7 +35,7 @@ func TestImmutabilityReportsExactlyModifiedAndDeleted(t *testing.T) {
 }
 
 func TestImmutabilityIgnoresBookkeepingFiles(t *testing.T) {
-	got := Immutability([]string{"migrations/atlas.sum", "docs/x.sql", "migrations/sub/a.sql"}, []string{"migrations/atlas.sum"}, false)
+	got := Immutability([]string{"migrations/README.md", "docs/x.sql", "migrations/sub/a.sql"}, []string{"migrations/README.md"}, false)
 	assert.Empty(t, got)
 }
 

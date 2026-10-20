@@ -96,7 +96,7 @@ func (SendingDomain) Indexes() []ent.Index {
 		// A Tracking domain host (track.<domain>) belongs to one Workspace across the
 		// Instance (ADR 0038): the host is derived from the domain, so the domain is unique
 		// among rows whose DNS is verified. Unverified claims never block anyone. The
-		// migration builds it CONCURRENTLY (ADR 0033), which atlas cannot emit.
+		// migration builds it CONCURRENTLY (ADR 0033); the diff cannot emit that.
 		index.Fields("domain").
 			Unique().
 			Annotations(entsql.IndexWhere("tracking_state IN ('dns_verified', 'serving')")),

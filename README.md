@@ -24,7 +24,7 @@ belong to a `workspace`.
 
 - **Backend** — Go + [ogen](https://ogen.dev/) (HTTP servers in `gen/*`), ORM
   [ent](https://entgo.io/), queues [river](https://riverqueue.com/), pub/sub
-  [watermill](https://watermill.io/), migrations via [Atlas](https://atlasgo.io/).
+  [watermill](https://watermill.io/), migrations diffed by ent, applied by [goose](https://github.com/pressly/goose).
 - **Frontend** — React 19 + Vite, [Mantine](https://mantine.dev/),
   [TanStack Router/Query](https://tanstack.com/), and the generated
   [`@hey-api/openapi-ts`](https://heyapi.dev/) client + react-query hooks.
@@ -56,7 +56,7 @@ After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the 
 ## Development
 
 **The only prerequisite is [mise](https://mise.jdx.dev).** It installs and pins the whole
-toolchain from `.mise.toml` / `mise.lock` (Go, Node, pnpm, golangci-lint, atlas, air,
+toolchain from `.mise.toml` / `mise.lock` (Go, Node, pnpm, golangci-lint, air,
 Caddy, Mailpit, gitleaks, jactionlint, zizmor, hk, …), runs the dev stack as daemons and
 installs the git hooks.
 
@@ -153,8 +153,9 @@ Daemons:
 > databases on it, named `sphericon_<dir>`. See AGENTS.md, "Common commands" and "Dev environment".
 >
 > The backend runs the real Go server under [air](https://github.com/air-verse/air) for
-> hot reload. Migrations run via Atlas (`mise run db:migrate`); the dev backend itself does not
-> self-migrate. On Linux, binding `:443` needs `net.ipv4.ip_unprivileged_port_start=0`.
+> hot reload. Migrations run via goose (`mise run db:migrate`); the dev backend itself does not
+> self-migrate. A dev database made by an older checkout (before goose became the only runner) needs
+> `mise run db:reset` once. On Linux, binding `:443` needs `net.ipv4.ip_unprivileged_port_start=0`.
 > The old Grafana/OTLP dev container is gone: leave `OTEL_EXPORTER_OTLP_ENDPOINT` unset
 > (the dev stack serves Prometheus metrics on `127.0.0.1:9090/metrics` via the opt-in
 > `SPHERICON_METRICS_ADDR`; see [ADR 0018](docs/adr/0018-metrics-opt-in-internal-listener.md)) or point it
@@ -164,7 +165,7 @@ Daemons:
 
 The server ships as a **self-contained static binary**: the React SPA, the `t.js` tracker,
 and the database migrations are all embedded (`go:embed`, built with `-tags embed_spa`).
-No Node.js, no Atlas CLI, and no extra runtime dependencies are needed.
+No Node.js, no migration CLI, and no extra runtime dependencies are needed.
 
 ### Docker image
 
@@ -211,9 +212,8 @@ Two options:
 - **On startup** — set `SPHERICON_DB_AUTO_MIGRATE=true` and the binary applies pending migrations
   in-process before serving. Use only for single-replica deploys against a fresh database.
 
-> The production binary tracks applied migrations (via goose) in its own `goose_db_version` table. The
-> dev Atlas CLI flow (`mise run db:migrate`) uses Atlas's `atlas_schema_revisions` table — never
-> point `SPHERICON_DB_AUTO_MIGRATE` at a database previously managed by the Atlas CLI dev flow.
+> Dev and production share one runner: goose, tracking applied migrations in the `goose_db_version`
+> table. A developer with a database from before this switch runs `mise run db:reset` once.
 
 ### Configuration
 

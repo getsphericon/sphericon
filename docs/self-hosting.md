@@ -196,9 +196,7 @@ Migrations are embedded in the binary. You apply them one of two ways:
 Before upgrading, take a database backup; see [Upgrading](./operations/upgrading) for the
 full procedure and [Backup and restore](./operations/backup) for what to protect.
 
-> The binary tracks applied migrations (via goose) in its own `goose_db_version` table. Don't point
-> it at a database previously managed by the Atlas dev-CLI flow (which uses
-> `atlas_schema_revisions`).
+> The binary tracks applied migrations (via goose) in its own `goose_db_version` table.
 
 ## Docker and Compose
 

@@ -31,8 +31,7 @@ func main() {
 			// its advisory lock and the next feed position in raw SQL.
 			gen.FeatureExecQuery,
 			// VersionedMigration generates migrate.NamedDiff, which cmd/db uses to write
-			// the next Atlas migration straight from the ent schema (the community Atlas
-			// binary cannot read ent:// itself).
+			// the next migration straight from the ent schema.
 			gen.FeatureVersionedMigration,
 		},
 		// The scoped client (ADR 0017): ent/template/scoped*.tmpl generate ent/scoped*.go.

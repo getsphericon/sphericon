@@ -2,7 +2,6 @@
 air = "latest"
 ast-grep = "latest"
 caddy = "latest"
-atlas-community = "latest"
 gitleaks = "latest"
 go = "latest"
 golangci-lint = "2"

@@ -7,7 +7,7 @@ Re-verify before adopting — these numbers age.
 
 Already in use (don't re-introduce): ent, ogen, river, watermill, samber/do, go-pkgz/auth,
 golang-jwt, tink-go, go-crypt/crypt, osteele/liquid, k3a/html2text, wneessen/go-mail,
-nikoksr/notify, golang.org/x/net, spf13/viper, ariga.io/atlas; frontend: React 19, Mantine,
+nikoksr/notify, golang.org/x/net, spf13/viper, ariga.io/atlas (the diff library in cmd/db); frontend: React 19, Mantine,
 TanStack Router/Query, react-querybuilder + @react-querybuilder/mantine, @mantine/tiptap.
 
 ## Quick wins — replace current hand-rolled utilities

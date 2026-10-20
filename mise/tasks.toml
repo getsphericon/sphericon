@@ -76,7 +76,7 @@ env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 run = "go run ./cmd/db drop"
 
 ["db:migrate"]
-description = "Apply the migrations: the app schema, river's tables and the domain-event outbox (`sphericon migrate`: goose, the runner the start guard and the tests read, not Atlas)"
+description = "Apply the migrations: the app schema, river's tables and the domain-event outbox (`sphericon migrate`: goose, the runner the start guard and the tests read)"
 depends = ["db:up"]
 run = "go run ./cmd/server migrate"
 
@@ -86,7 +86,7 @@ depends = ["db:migrate"]
 run = "go run ./cmd/seed"
 
 ["db:reset"]
-description = "Drop, recreate and migrate the dev database"
+description = "Drop, recreate and migrate the dev database (run once on a dev database made before the goose-only switch)"
 run = [{ task = "db:drop" }, "go run ./cmd/db create", { task = "db:migrate" }]
 
 ["db:reset-test"]
@@ -94,7 +94,7 @@ description = "Drop and recreate the test database"
 run = [{ task = "db:drop-test" }, { task = "db:up" }]
 
 ["db:generate"]
-description = "Generate an Atlas migration from the ent schema (ent's own diff engine; the community Atlas binary cannot read ent://)"
+description = "Generate the next migration from the ent schema (ent's own diff engine, written as a goose file)"
 depends = ["db:up"]
 usage = 'arg "<name>" help="migration name"'
 run = 'go run ./cmd/db generate "${usage_name}"'

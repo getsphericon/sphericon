@@ -11,7 +11,7 @@ description = "Throwaway DKIM keys and fixture payloads in committed test data"
 paths = ['''^fixtures/''']
 
 [[allowlists]]
-description = "Hashes / generated code / committed dev+test env samples (incl. the removed .env.docker.sample, still in history) that trip generic-api-key"
+description = "Hashes / generated code / committed dev+test env samples (incl. the removed .env.docker.sample and migrations/atlas.sum, still in history) that trip generic-api-key"
 targetRules = ["generic-api-key"]
 paths = [
   '''^migrations/atlas\.sum$''',

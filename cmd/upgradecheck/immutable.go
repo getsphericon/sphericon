@@ -18,7 +18,7 @@ var collapseLine = regexp.MustCompile(`(?m)^History-Collapse:[ \t]*\S`)
 func IsHistoryCollapse(body string) bool { return collapseLine.MatchString(body) }
 
 // isMigrationFile reports whether a path under migrations/ is a real migration (a goose .sql file
-// or a Go migration), not a bookkeeping file such as atlas.sum.
+// or a Go migration), not a bookkeeping file.
 func isMigrationFile(p string) bool {
 	if path.Dir(p) != "migrations" {
 		return false

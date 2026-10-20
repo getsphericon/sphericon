@@ -267,7 +267,7 @@ Follow the pattern in `ent/schema/segment.go` (workspace edge, `id` Int64 immuta
   (`broadcast_id`, `contact_id`) for idempotency.
 
 Register the new edges on `Workspace` (`ent/schema/workspace.go`).
-**Order matters** (Atlas diffs migrations from generated `ent/`, not from `ent/schema/`):
+**Order matters** (the migration diff reads generated `ent/`, not from `ent/schema/`):
 
 1. edit `ent/schema/*.go` → 2) `mise run generate:backend` (regenerates `ent/`) →
 2. `mise run db:generate name=add_broadcasts` → 4) `mise run db:migrate`.
