@@ -77,6 +77,7 @@ const (
 	SendingDomainsVerifyOperation      OperationName = "SendingDomainsVerify"
 	SuppressionsCreateOperation        OperationName = "SuppressionsCreate"
 	TagsApplyOperation                 OperationName = "TagsApply"
+	TagsDeleteOperation                OperationName = "TagsDelete"
 	TagsListOperation                  OperationName = "TagsList"
 	TagsListForContactOperation        OperationName = "TagsListForContact"
 	TagsRemoveOperation                OperationName = "TagsRemove"

@@ -377,6 +377,10 @@ type SiteTagsApplyRes interface {
 	siteTagsApplyRes()
 }
 
+type SiteTagsDeleteRes interface {
+	siteTagsDeleteRes()
+}
+
 type SiteTagsListForContactRes interface {
 	siteTagsListForContactRes()
 }

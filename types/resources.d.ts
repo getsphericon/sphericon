@@ -1229,7 +1229,9 @@ export default interface Resources {
       "unsubscribeAll": "Unsubscribe from all emails"
     },
     "usedByKind": {
-      "broadcast": "Broadcast"
+      "automation": "Automation",
+      "broadcast": "Broadcast",
+      "segment": "Segment"
     },
     "userMenu": {
       "account": "Account",

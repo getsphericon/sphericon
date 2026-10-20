@@ -310,7 +310,8 @@ namespace SiteIntegrations {
     | NoContentResponse
     | BadRequestProblem
     | ForbiddenProblem
-    | NotFoundProblem;
+    | NotFoundProblem
+    | InUseProblem;
 }
 
 // A Preset's params are dynamic by nature, so the contract carries the Preset's JSON Schema

@@ -4899,6 +4899,30 @@ func (s *TagsApplyUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *TagsDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TagsDeleteNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TagsDeleteUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *TagsListBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5662,6 +5686,10 @@ func (s *UsedBy) Validate() error {
 func (s UsedByKind) Validate() error {
 	switch s {
 	case "broadcast":
+		return nil
+	case "automation":
+		return nil
+	case "segment":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

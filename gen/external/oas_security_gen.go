@@ -104,6 +104,7 @@ var operationRolesBearerAuth = map[string][]string{
 	SendingDomainsVerifyOperation:      []string{},
 	SuppressionsCreateOperation:        []string{},
 	TagsApplyOperation:                 []string{},
+	TagsDeleteOperation:                []string{},
 	TagsListOperation:                  []string{},
 	TagsListForContactOperation:        []string{},
 	TagsRemoveOperation:                []string{},

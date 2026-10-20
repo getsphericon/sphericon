@@ -1693,7 +1693,11 @@ export const zSiteWorkspaceHold = z.object({
  * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
  * of live user a removal can find, so a client branches on it without parsing text.
  */
-export const zUsedByKind = z.enum(['broadcast']);
+export const zUsedByKind = z.enum([
+  'broadcast',
+  'automation',
+  'segment'
+]);
 
 /**
  * A row that uses the one a removal was refused for: what a client shows to say what to
@@ -3210,6 +3214,16 @@ export const zSiteTagsListResponse = z.object({
   totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
+
+export const zSiteTagsDeletePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteTagsDeleteResponse = z.void();
 
 export const zSiteTemplatesListPath = z.object({
   workspaceId: zWorkspaceId

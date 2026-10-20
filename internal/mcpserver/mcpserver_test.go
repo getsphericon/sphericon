@@ -72,7 +72,7 @@ var (
 		"email_lint", "email_schema", "brand_get", "templates_list", "templates_create", "templates_get", "templates_update", "templates_delete",
 		"webhooks_list", "webhooks_create", "webhooks_get", "webhooks_update", "webhooks_delete",
 		"webhooks_regenerate_secret", "webhooks_test",
-		"tags_list", "tags_list_for_contact", "tags_apply", "tags_remove",
+		"tags_list", "tags_list_for_contact", "tags_apply", "tags_remove", "tags_delete",
 		"automations_list", "automations_create", "automations_get", "automations_update", "automations_delete",
 		"automations_deactivate", "automations_dry_run_http_step", "enrollments_list", "enrollments_get",
 	}

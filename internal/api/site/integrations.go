@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
@@ -261,6 +262,10 @@ func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.Si
 
 	id := int64(params.ID)
 	err = h.integrations.Delete(ctx, s, id)
+	if refused, ok := inuse.As(err); ok {
+		v := inUseProblem(refused)
+		return &v, nil
+	}
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsDeleteNotFound(problem(http.StatusNotFound, "integration not found"))
 		return &v, nil

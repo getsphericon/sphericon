@@ -15,7 +15,11 @@ export function useApiErrorMessage() {
   return (error: unknown, fallback: string) => {
     const usedBy = getUsedBy(error)
     if (usedBy) {
-      const kinds = { broadcast: t(($) => $.usedByKind.broadcast) }
+      const kinds = {
+        broadcast: t(($) => $.usedByKind.broadcast),
+        automation: t(($) => $.usedByKind.automation),
+        segment: t(($) => $.usedByKind.segment),
+      }
       const users = usedBy.map((user) => `${kinds[user.kind]} "${user.name}"`).join(', ')
       return t(($) => $.notifications.inUse, { users })
     }

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
@@ -224,6 +225,10 @@ func (h *Handlers) IntegrationsDelete(ctx context.Context, params externalapi.In
 	}
 	id := int64(params.ID)
 	err := h.integrations.Delete(ctx, auth.TokenScoped(ctx), id)
+	if refused, ok := inuse.As(err); ok {
+		res := inUseProblem(refused)
+		return &res, nil
+	}
 	if ent.IsNotFound(err) {
 		res := externalapi.IntegrationsDeleteNotFound(problem(http.StatusNotFound, "integration not found"))
 		return &res, nil

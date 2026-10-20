@@ -108,6 +108,12 @@ model ConflictProblem is Response<409> {
 enum UsedByKind {
   /** A Broadcast that has not finished sending */
   broadcast,
+
+  /** An Automation */
+  automation,
+
+  /** A Segment, through a rule that names a Tag */
+  segment,
 }
 
 /** A row that uses the one a removal was refused for: what a client shows to say what to

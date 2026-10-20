@@ -182,6 +182,23 @@ test('deletes a provider after confirmation', async () => {
   await expect.poll(() => deleted).toBe(true)
 })
 
+test('a provider that live work uses is not deleted and the work is named', async () => {
+  worker.use(
+    list([smtp]),
+    handleSiteIntegrationsDelete(() =>
+      problem(409, { usedBy: [{ kind: 'broadcast', id: '7', name: 'Summer sale teaser' }] }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+
+  await expect.element(screen.getByText('Failed to delete provider')).toBeInTheDocument()
+  await expect.element(screen.getByText(/Broadcast "Summer sale teaser"/)).toBeInTheDocument()
+})
+
 test('shows an error alert when providers fail to load', async () => {
   worker.use(handleSiteIntegrationsList(() => problem(500, { detail: 'boom' })))
   const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)

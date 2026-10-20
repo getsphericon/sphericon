@@ -13,6 +13,7 @@ package sendingdomains
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net"
 	"regexp"
@@ -22,13 +23,18 @@ import (
 	"golang.org/x/net/idna"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/liveuse"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/samber/lo"
 )
 
 // DefaultSelector is the DKIM selector used when the caller supplies none.
@@ -188,11 +194,83 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	return row, nil
 }
 
-// Delete removes a Sending domain.
+// Delete removes a Sending domain, unless live work sends from it: then it returns an
+// *inuse.Error naming that work (ADR 0049). A domain is used through the domain of a From
+// address, not an id: a scheduled or sending Broadcast uses the domain of its From address, and
+// when it has none, of the default Integration's configured one; an active Automation that sends
+// email uses the domain of that configured From, as its steps carry no From of their own. A sent
+// or failed Broadcast is history and does not block. An unknown id is ent's not-found error.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		row, err := ts.SendingDomain().Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		users, err := m.liveUsers(ctx, ts, row.Domain)
+		if err != nil {
+			return err
+		}
+		if len(users) > 0 {
+			return &inuse.Error{What: "sending domain", Users: users}
+		}
 		return ts.SendingDomain().DeleteOneID(id).Exec(ctx)
 	})
+}
+
+// liveUsers is the live work whose From address is on the domain.
+func (m *Module) liveUsers(ctx context.Context, s *ent.Scoped, domain string) ([]inuse.User, error) {
+	configured, err := m.configuredFromDomain(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	live, err := s.Broadcast().Query().
+		Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).
+		Order(ent.Asc(broadcast.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var users []inuse.User
+	for _, b := range live {
+		from := messaging.DomainOf(lo.FromPtr(b.FromEmail))
+		if b.FromEmail == nil || from == "" {
+			from = configured
+		}
+		if from == domain {
+			users = append(users, inuse.User{Kind: inuse.Broadcast, ID: b.ID, Name: b.Name})
+		}
+	}
+	if configured != domain {
+		return users, nil
+	}
+	sending, err := liveuse.EmailAutomations(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	return append(users, sending...), nil
+}
+
+// configuredFromDomain is the domain of the From address the Workspace's default email
+// Integration is configured with, "" when there is no such Integration or it has no From.
+func (m *Module) configuredFromDomain(ctx context.Context, s *ent.Scoped) (string, error) {
+	integ, err := messaging.DefaultEmailIntegration(ctx, s)
+	if errors.Is(err, messaging.ErrNoProvider) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	raw, err := m.cipher.Decrypt(integ.ConfigEncrypted)
+	if err != nil {
+		return "", err
+	}
+	var cfg struct {
+		From string `json:"from"`
+	}
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return "", err
+	}
+	return messaging.DomainOf(cfg.From), nil
 }
 
 // Verify schedules a live DKIM check of the domain. It confirms the domain is in the

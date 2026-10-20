@@ -1156,7 +1156,10 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 	s.UsedBy = val
 }
 
-func (*InUseProblemDetails) siteSegmentsDeleteRes() {}
+func (*InUseProblemDetails) siteIntegrationsDeleteRes()   {}
+func (*InUseProblemDetails) siteSegmentsDeleteRes()       {}
+func (*InUseProblemDetails) siteSendingDomainsDeleteRes() {}
+func (*InUseProblemDetails) siteTagsDeleteRes()           {}
 
 // Validation errors grouped by field.
 type InUseProblemDetailsErrors map[string][]string
@@ -13856,6 +13859,19 @@ type SiteTagsApplyUnprocessableEntity ProblemDetails
 
 func (*SiteTagsApplyUnprocessableEntity) siteTagsApplyRes() {}
 
+type SiteTagsDeleteBadRequest ProblemDetails
+
+func (*SiteTagsDeleteBadRequest) siteTagsDeleteRes() {}
+
+// SiteTagsDeleteNoContent is response for SiteTagsDelete operation.
+type SiteTagsDeleteNoContent struct{}
+
+func (*SiteTagsDeleteNoContent) siteTagsDeleteRes() {}
+
+type SiteTagsDeleteNotFound ProblemDetails
+
+func (*SiteTagsDeleteNotFound) siteTagsDeleteRes() {}
+
 type SiteTagsListBadRequest ProblemDetails
 
 func (*SiteTagsListBadRequest) siteTagsListRes() {}
@@ -16311,13 +16327,17 @@ func (s *UsedBy) SetName(val string) {
 type UsedByKind string
 
 const (
-	UsedByKindBroadcast UsedByKind = "broadcast"
+	UsedByKindBroadcast  UsedByKind = "broadcast"
+	UsedByKindAutomation UsedByKind = "automation"
+	UsedByKindSegment    UsedByKind = "segment"
 )
 
 // AllValues returns all UsedByKind values.
 func (UsedByKind) AllValues() []UsedByKind {
 	return []UsedByKind{
 		UsedByKindBroadcast,
+		UsedByKindAutomation,
+		UsedByKindSegment,
 	}
 }
 
@@ -16325,6 +16345,10 @@ func (UsedByKind) AllValues() []UsedByKind {
 func (s UsedByKind) MarshalText() ([]byte, error) {
 	switch s {
 	case UsedByKindBroadcast:
+		return []byte(s), nil
+	case UsedByKindAutomation:
+		return []byte(s), nil
+	case UsedByKindSegment:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -16336,6 +16360,12 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 	switch UsedByKind(data) {
 	case UsedByKindBroadcast:
 		*s = UsedByKindBroadcast
+		return nil
+	case UsedByKindAutomation:
+		*s = UsedByKindAutomation
+		return nil
+	case UsedByKindSegment:
+		*s = UsedByKindSegment
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

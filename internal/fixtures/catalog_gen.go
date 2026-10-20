@@ -765,6 +765,10 @@ const (
 	SegmentNewsletterID = 2
 	// SegmentNewsletterName is from fixtures/segments.
 	SegmentNewsletterName = "Newsletter subscribers"
+	// SegmentNewsletterReadersID is from fixtures/segments.
+	SegmentNewsletterReadersID = 105
+	// SegmentNewsletterReadersName is from fixtures/segments.
+	SegmentNewsletterReadersName = "Newsletter readers"
 	// SegmentProPlanID is from fixtures/segments.
 	SegmentProPlanID = 100
 	// SegmentProPlanName is from fixtures/segments.
@@ -935,6 +939,14 @@ const (
 	TagInitechID = 300
 	// TagInitechName is from fixtures/tags.
 	TagInitechName = "initech-shared"
+	// TagNewsletterID is from fixtures/tags.
+	TagNewsletterID = 2
+	// TagNewsletterName is from fixtures/tags.
+	TagNewsletterName = "newsletter"
+	// TagUnusedID is from fixtures/tags.
+	TagUnusedID = 3
+	// TagUnusedName is from fixtures/tags.
+	TagUnusedName = "unused"
 	// TagVipID is from fixtures/tags.
 	TagVipID = 1
 	// TagVipName is from fixtures/tags.

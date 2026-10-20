@@ -15,6 +15,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/samber/lo"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/tag"
 )
 
@@ -344,4 +346,47 @@ func Decode(def string, into json.Unmarshaler) error {
 		return fmt.Errorf("decode segment definition: %w", err)
 	}
 	return nil
+}
+
+// namesTag reports whether any rule of the group, at any depth, targets the Tag called name.
+// A malformed definition names nothing.
+func (g Group) namesTag(name string) bool {
+	for _, raw := range g.Rules {
+		var probe struct {
+			Kind string `json:"kind"`
+		}
+		if json.Unmarshal(raw, &probe) != nil {
+			continue
+		}
+		switch probe.Kind {
+		case kindGroup:
+			var sub Group
+			if json.Unmarshal(raw, &sub) == nil && sub.namesTag(name) {
+				return true
+			}
+		case kindRule:
+			var r Rule
+			if json.Unmarshal(raw, &r) == nil && r.Field == tagField && strings.TrimSpace(r.Value) == name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// UsingTag returns the Workspace's Segments whose rule names the Tag by its name, in id order.
+// A Segment rule keeps the name, not an id, so deleting the Tag would leave it matching nothing.
+func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Segment, error) {
+	all, err := s.Segment().Query().Order(ent.Asc(segment.FieldID)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var using []*ent.Segment
+	for _, seg := range all {
+		g, err := Parse(lo.FromPtr(seg.Definition))
+		if err == nil && g.namesTag(name) {
+			using = append(using, seg)
+		}
+	}
+	return using, nil
 }

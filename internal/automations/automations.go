@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -205,6 +206,13 @@ func CurrentSteps(a *ent.Automation) ([]Step, error) {
 		return nil, nil
 	}
 	return Decode(a.Edges.Versions[0].Steps)
+}
+
+// Loaded returns the Workspace's Automations matching preds, each carrying its current steps
+// (CurrentSteps). A live-dependency check reads them to see which Tag, Integration or Sending
+// domain an Automation's steps use (ADR 0049).
+func Loaded(ctx context.Context, s *ent.Scoped, preds ...predicate.Automation) ([]*ent.Automation, error) {
+	return s.Automation().Query().Where(preds...).WithVersions(latest).Order(ent.Asc(automation.FieldID)).All(ctx)
 }
 
 // List returns one page of the Workspace's Automations, newest first.

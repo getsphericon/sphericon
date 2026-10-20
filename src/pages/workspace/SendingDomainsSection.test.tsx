@@ -99,6 +99,23 @@ test('deletes a domain after confirmation', async () => {
   await expect.poll(() => deleted).toBe(true)
 })
 
+test('a domain that live work sends from is not deleted and the work is named', async () => {
+  worker.use(
+    list([domain()]),
+    handleSiteSendingDomainsDelete(() =>
+      problem(409, { usedBy: [{ kind: 'automation', id: '3', name: 'Welcome series' }] }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Delete' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+
+  await expect.element(screen.getByText('Failed to delete domain')).toBeInTheDocument()
+  await expect.element(screen.getByText(/Automation "Welcome series"/)).toBeInTheDocument()
+})
+
 test('shows an error alert when the list fails to load', async () => {
   worker.use(handleSiteSendingDomainsList(() => problem(500, { detail: 'boom' })))
   const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)

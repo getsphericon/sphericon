@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 )
@@ -134,6 +135,10 @@ func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.
 
 	id := int64(params.ID)
 	err = h.sendingDomains.Delete(ctx, s, id)
+	if refused, ok := inuse.As(err); ok {
+		v := inUseProblem(refused)
+		return &v, nil
+	}
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsDeleteNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &v, nil

@@ -306,7 +306,11 @@ export const zStaffSuspension = z.object({
  * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
  * of live user a removal can find, so a client branches on it without parsing text.
  */
-export const zUsedByKind = z.enum(['broadcast']);
+export const zUsedByKind = z.enum([
+  'broadcast',
+  'automation',
+  'segment'
+]);
 
 /**
  * A row that uses the one a removal was refused for: what a client shows to say what to

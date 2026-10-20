@@ -696,6 +696,12 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/contacts/{contactId}/tags
 	SiteTagsApply(ctx context.Context, req *SiteApplyTagInput, params SiteTagsApplyParams) (SiteTagsApplyRes, error)
+	// SiteTagsDelete implements SiteTags_delete operation.
+	//
+	// Delete a tag from the catalogue, unless a segment rule or an automation step names it.
+	//
+	// DELETE /workspaces/{workspaceId}/tags/{id}
+	SiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) (SiteTagsDeleteRes, error)
 	// SiteTagsList implements SiteTags_list operation.
 	//
 	// List the workspace's tags (feeds the segment builder).

@@ -5031,6 +5031,22 @@ func (s *SiteTagsApplyUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteTagsDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteTagsDeleteNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteTagsListBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -6392,6 +6408,10 @@ func (s *UsedBy) Validate() error {
 func (s UsedByKind) Validate() error {
 	switch s {
 	case "broadcast":
+		return nil
+	case "automation":
+		return nil
+	case "segment":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

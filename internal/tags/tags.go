@@ -9,12 +9,16 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"slices"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/tag"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/segments"
 )
 
 // Domain errors. Callers match with errors.Is.
@@ -23,6 +27,8 @@ var (
 	ErrContactNotFound = errors.New("tags: contact not found")
 	// ErrInvalidName: the Tag name is blank.
 	ErrInvalidName = errors.New("tags: name is required")
+	// ErrNotFound: no such Tag in this Workspace.
+	ErrNotFound = errors.New("tags: tag not found")
 )
 
 // Module is the tags module. It holds no state: every call receives the
@@ -96,6 +102,47 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, contactID int64, nam
 	}
 	// Same touch of updated_at as Apply, in the same transaction as the join row.
 	return events.Unaudited(s).Contact().UpdateOneID(contactID).RemoveTagIDs(t.ID).Exec(ctx)
+}
+
+// Delete removes a Tag from the catalogue, and from every Contact that has it, unless a Segment
+// rule or an Automation step names it: then it returns an *inuse.Error naming those Segments and
+// Automations (ADR 0049), because both name the Tag and would silently stop matching or applying.
+// A missing Tag is ErrNotFound.
+func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
+	t, err := s.Tag().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	var users []inuse.User
+	segs, err := segments.UsingTag(ctx, s, t.Name)
+	if err != nil {
+		return err
+	}
+	for _, seg := range segs {
+		users = append(users, inuse.User{Kind: inuse.Segment, ID: seg.ID, Name: seg.Name})
+	}
+	autos, err := automations.Loaded(ctx, s)
+	if err != nil {
+		return err
+	}
+	for _, a := range autos {
+		steps, err := automations.CurrentSteps(a)
+		if err != nil {
+			return err
+		}
+		if slices.ContainsFunc(steps, func(st automations.Step) bool {
+			return (st.Type == automations.StepApplyTag || st.Type == automations.StepRemoveTag) && strings.TrimSpace(st.Tag) == t.Name
+		}) {
+			users = append(users, inuse.User{Kind: inuse.Automation, ID: a.ID, Name: a.Name})
+		}
+	}
+	if len(users) > 0 {
+		return &inuse.Error{What: "tag", Users: users}
+	}
+	return s.Tag().DeleteOneID(id).Exec(ctx)
 }
 
 func requireContact(ctx context.Context, s *ent.Scoped, contactID int64) error {

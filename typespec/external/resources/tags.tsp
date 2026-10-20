@@ -57,6 +57,17 @@ namespace Tags {
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
+  /** Delete a tag from the catalogue, unless a segment rule or an automation step names it. The 409 names the users. */
+  @route("/tags/{id}")
+  @delete
+  op delete(@path id: EntityId):
+    | NoContentResponse
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | InUseProblem;
+
   /** Remove a tag from a contact. Idempotent; the tag stays in the catalogue. */
   @route("/contacts/{contactId}/tags/{name}")
   @delete

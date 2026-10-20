@@ -16,6 +16,10 @@ type Kind string
 const (
 	// Broadcast is a Broadcast that has not finished sending.
 	Broadcast Kind = "broadcast"
+	// Automation is an Automation: one whose steps use the row, or an active one.
+	Automation Kind = "automation"
+	// Segment is a Segment whose rule names the row.
+	Segment Kind = "segment"
 )
 
 // User is one row that uses the row a removal was refused for.

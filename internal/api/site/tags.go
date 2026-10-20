@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/tags"
 )
@@ -114,6 +115,33 @@ func (h *Handlers) SiteTagsRemove(ctx context.Context, params siteapi.SiteTagsRe
 		return nil, err
 	}
 	return &siteapi.SiteTagsRemoveNoContent{}, nil
+}
+
+// SiteTagsDelete deletes a Tag from the catalogue unless a Segment rule or an Automation step
+// names it (ADR 0049).
+func (h *Handlers) SiteTagsDelete(ctx context.Context, params siteapi.SiteTagsDeleteParams) (siteapi.SiteTagsDeleteRes, error) {
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteTagsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.tags.Delete(ctx, scoped, int64(params.ID))
+	if refused, ok := inuse.As(err); ok {
+		v := inUseProblem(refused)
+		return &v, nil
+	}
+	if errors.Is(err, tags.ErrNotFound) {
+		v := siteapi.SiteTagsDeleteNotFound(problem(http.StatusNotFound, "tag not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteTagsDeleteNoContent{}, nil
 }
 
 // siteTagsPage maps and pages a small in-memory tag set.

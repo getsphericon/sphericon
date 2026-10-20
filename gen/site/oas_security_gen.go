@@ -118,6 +118,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteSuppressionsDeleteOperation:                   []string{},
 	SiteSuppressionsListOperation:                     []string{},
 	SiteTagsApplyOperation:                            []string{},
+	SiteTagsDeleteOperation:                           []string{},
 	SiteTagsListOperation:                             []string{},
 	SiteTagsListForContactOperation:                   []string{},
 	SiteTagsRemoveOperation:                           []string{},

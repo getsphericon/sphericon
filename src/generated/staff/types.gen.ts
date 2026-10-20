@@ -738,7 +738,11 @@ export type UsedBy = {
  * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
  * of live user a removal can find, so a client branches on it without parsing text.
  */
-export const UsedByKind = { BROADCAST: 'broadcast' } as const;
+export const UsedByKind = {
+  BROADCAST: 'broadcast',
+  AUTOMATION: 'automation',
+  SEGMENT: 'segment'
+} as const;
 
 /**
  * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind

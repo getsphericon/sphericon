@@ -11,6 +11,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 )
@@ -117,6 +118,10 @@ func (h *Handlers) SendingDomainsDelete(ctx context.Context, params externalapi.
 	}
 	id := int64(params.ID)
 	err := h.sendingDomains.Delete(ctx, auth.TokenScoped(ctx), id)
+	if refused, ok := inuse.As(err); ok {
+		res := inUseProblem(refused)
+		return &res, nil
+	}
 	if ent.IsNotFound(err) {
 		res := externalapi.SendingDomainsDeleteNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &res, nil

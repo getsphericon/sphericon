@@ -16,17 +16,21 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/liveuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/samber/lo"
 )
 
 // ErrDefaultConflict means another default Integration already exists for the channel.
@@ -320,11 +324,52 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	return updated, nil
 }
 
-// Delete removes an Integration. An unknown id is ent's not-found error.
+// Delete removes an Integration, unless live work uses it: then it returns an *inuse.Error
+// naming that work (ADR 0049). A scheduled or sending Broadcast uses the Integration it names,
+// and the default one when it names none; an active Automation that sends email uses the default
+// one, which is where its email steps go. A sent or failed Broadcast is history and does not
+// block. An unknown id is ent's not-found error.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		row, err := ts.Integration().Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		users, err := liveUsers(ctx, ts, row)
+		if err != nil {
+			return err
+		}
+		if len(users) > 0 {
+			return &inuse.Error{What: "integration", Users: users}
+		}
 		return ts.Integration().DeleteOneID(id).Exec(ctx)
 	})
+}
+
+// liveUsers is the live work that uses the Integration.
+func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inuse.User, error) {
+	uses := broadcast.IntegrationID(row.ID)
+	if row.IsDefault {
+		uses = broadcast.Or(uses, broadcast.IntegrationIDIsNil())
+	}
+	live, err := s.Broadcast().Query().
+		Where(uses, broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).
+		Order(ent.Asc(broadcast.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	users := lo.Map(live, func(b *ent.Broadcast, _ int) inuse.User {
+		return inuse.User{Kind: inuse.Broadcast, ID: b.ID, Name: b.Name}
+	})
+	if !row.IsDefault || row.Channel != integration.ChannelEmail {
+		return users, nil
+	}
+	sending, err := liveuse.EmailAutomations(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	return append(users, sending...), nil
 }
 
 func applyLimit[T any](l Limit, set func(int) T, clear func() T) {

@@ -43,6 +43,13 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 40}}'
+# Names the Tag "newsletter" in a rule, so that Tag cannot be deleted while it exists (ADR 0049).
+- id: 105 # fixture: SegmentNewsletterReaders
+  name: Newsletter readers
+  definition: '{"kind":"group","combinator":"and","rules":[{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"tag","operator":"has","value":"newsletter"}]}]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: SegmentGlobex

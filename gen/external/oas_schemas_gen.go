@@ -5965,7 +5965,10 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 	s.UsedBy = val
 }
 
-func (*InUseProblemDetails) segmentsDeleteRes() {}
+func (*InUseProblemDetails) integrationsDeleteRes()   {}
+func (*InUseProblemDetails) segmentsDeleteRes()       {}
+func (*InUseProblemDetails) sendingDomainsDeleteRes() {}
+func (*InUseProblemDetails) tagsDeleteRes()           {}
 
 // Validation errors grouped by field.
 type InUseProblemDetailsErrors map[string][]string
@@ -10277,6 +10280,7 @@ func (*ProblemDetailsHeaders) sendingDomainsUpdateRes()      {}
 func (*ProblemDetailsHeaders) sendingDomainsVerifyRes()      {}
 func (*ProblemDetailsHeaders) suppressionsCreateRes()        {}
 func (*ProblemDetailsHeaders) tagsApplyRes()                 {}
+func (*ProblemDetailsHeaders) tagsDeleteRes()                {}
 func (*ProblemDetailsHeaders) tagsListForContactRes()        {}
 func (*ProblemDetailsHeaders) tagsListRes()                  {}
 func (*ProblemDetailsHeaders) tagsRemoveRes()                {}
@@ -12400,6 +12404,23 @@ type TagsApplyUnprocessableEntity ProblemDetails
 
 func (*TagsApplyUnprocessableEntity) tagsApplyRes() {}
 
+type TagsDeleteBadRequest ProblemDetails
+
+func (*TagsDeleteBadRequest) tagsDeleteRes() {}
+
+// TagsDeleteNoContent is response for TagsDelete operation.
+type TagsDeleteNoContent struct{}
+
+func (*TagsDeleteNoContent) tagsDeleteRes() {}
+
+type TagsDeleteNotFound ProblemDetails
+
+func (*TagsDeleteNotFound) tagsDeleteRes() {}
+
+type TagsDeleteUnauthorized ProblemDetails
+
+func (*TagsDeleteUnauthorized) tagsDeleteRes() {}
+
 type TagsListBadRequest ProblemDetails
 
 func (*TagsListBadRequest) tagsListRes() {}
@@ -13893,13 +13914,17 @@ func (s *UsedBy) SetName(val string) {
 type UsedByKind string
 
 const (
-	UsedByKindBroadcast UsedByKind = "broadcast"
+	UsedByKindBroadcast  UsedByKind = "broadcast"
+	UsedByKindAutomation UsedByKind = "automation"
+	UsedByKindSegment    UsedByKind = "segment"
 )
 
 // AllValues returns all UsedByKind values.
 func (UsedByKind) AllValues() []UsedByKind {
 	return []UsedByKind{
 		UsedByKindBroadcast,
+		UsedByKindAutomation,
+		UsedByKindSegment,
 	}
 }
 
@@ -13907,6 +13932,10 @@ func (UsedByKind) AllValues() []UsedByKind {
 func (s UsedByKind) MarshalText() ([]byte, error) {
 	switch s {
 	case UsedByKindBroadcast:
+		return []byte(s), nil
+	case UsedByKindAutomation:
+		return []byte(s), nil
+	case UsedByKindSegment:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -13918,6 +13947,12 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 	switch UsedByKind(data) {
 	case UsedByKindBroadcast:
 		*s = UsedByKindBroadcast
+		return nil
+	case UsedByKindAutomation:
+		*s = UsedByKindAutomation
+		return nil
+	case UsedByKindSegment:
+		*s = UsedByKindSegment
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

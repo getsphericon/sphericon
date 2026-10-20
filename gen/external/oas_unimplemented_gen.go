@@ -679,6 +679,16 @@ func (UnimplementedHandler) TagsApply(ctx context.Context, req *ApplyTagInput, p
 	return r, ht.ErrNotImplemented
 }
 
+// TagsDelete implements Tags_delete operation.
+//
+// Delete a tag from the catalogue, unless a segment rule or an automation step names it. The 409 names
+// the users.
+//
+// DELETE /tags/{id}
+func (UnimplementedHandler) TagsDelete(ctx context.Context, params TagsDeleteParams) (r TagsDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // TagsList implements Tags_list operation.
 //
 // List the workspace's tags.

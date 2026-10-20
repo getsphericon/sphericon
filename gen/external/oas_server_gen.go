@@ -461,6 +461,13 @@ type Handler interface {
 	//
 	// POST /contacts/{contactId}/tags
 	TagsApply(ctx context.Context, req *ApplyTagInput, params TagsApplyParams) (TagsApplyRes, error)
+	// TagsDelete implements Tags_delete operation.
+	//
+	// Delete a tag from the catalogue, unless a segment rule or an automation step names it. The 409 names
+	// the users.
+	//
+	// DELETE /tags/{id}
+	TagsDelete(ctx context.Context, params TagsDeleteParams) (TagsDeleteRes, error)
 	// TagsList implements Tags_list operation.
 	//
 	// List the workspace's tags.

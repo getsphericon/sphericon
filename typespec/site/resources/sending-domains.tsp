@@ -156,7 +156,8 @@ interface SiteSendingDomains {
   delete(...ResourceParameters<SiteSendingDomainResource>):
     | NoContentResponse
     | BadRequestProblem
-    | NotFoundProblem;
+    | NotFoundProblem
+    | InUseProblem;
 
   /** Trigger an immediate DKIM re-check (fire-and-forget) */
   @action("verify")

@@ -1001,6 +1001,15 @@ func (UnimplementedHandler) SiteTagsApply(ctx context.Context, req *SiteApplyTag
 	return r, ht.ErrNotImplemented
 }
 
+// SiteTagsDelete implements SiteTags_delete operation.
+//
+// Delete a tag from the catalogue, unless a segment rule or an automation step names it.
+//
+// DELETE /workspaces/{workspaceId}/tags/{id}
+func (UnimplementedHandler) SiteTagsDelete(ctx context.Context, params SiteTagsDeleteParams) (r SiteTagsDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteTagsList implements SiteTags_list operation.
 //
 // List the workspace's tags (feeds the segment builder).

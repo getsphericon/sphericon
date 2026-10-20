@@ -119,7 +119,8 @@ interface SendingDomains
   extends ExternalCrudUnique<
       SendingDomainResource,
       CreateSendingDomainInput,
-      UpdateSendingDomainInput
+      UpdateSendingDomainInput,
+      InUseProblem
     > {
   /** Trigger a live DKIM DNS check. The check runs in the background: the response is the domain as it stands now, 202 Accepted; read it again for the outcome (`verified`, `lastCheckedAt`). Verification is never set by the caller. */
   @action("verify")

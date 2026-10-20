@@ -59,6 +59,15 @@ namespace SiteTags {
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
+  /** Delete a tag from the catalogue, unless a segment rule or an automation step names it */
+  @route("/tags/{id}")
+  @delete
+  op delete(@path workspaceId: WorkspaceId, @path id: EntityId):
+    | NoContentResponse
+    | BadRequestProblem
+    | NotFoundProblem
+    | InUseProblem;
+
   /** Remove a tag from a contact. Idempotent; the tag stays in the catalogue. */
   @route("/contacts/{contactId}/tags/{name}")
   @delete

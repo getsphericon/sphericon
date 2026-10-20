@@ -188,7 +188,8 @@ interface Integrations
   extends ExternalCrudUnique<
       IntegrationResource,
       CreateIntegrationInput,
-      UpdateIntegrationInput
+      UpdateIntegrationInput,
+      InUseProblem
     > {
   /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider. Needs a person: hidden from MCP. */
   @action("regenerate-key")

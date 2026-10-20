@@ -3724,7 +3724,11 @@ export type UsedBy = {
  * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
  * of live user a removal can find, so a client branches on it without parsing text.
  */
-export const UsedByKind = { BROADCAST: 'broadcast' } as const;
+export const UsedByKind = {
+  BROADCAST: 'broadcast',
+  AUTOMATION: 'automation',
+  SEGMENT: 'segment'
+} as const;
 
 /**
  * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
@@ -7178,6 +7182,12 @@ export type SiteIntegrationsDeleteErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
 };
 
 export type SiteIntegrationsDeleteError = SiteIntegrationsDeleteErrors[keyof SiteIntegrationsDeleteErrors];
@@ -8063,6 +8073,12 @@ export type SiteSendingDomainsDeleteErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
 };
 
 export type SiteSendingDomainsDeleteError = SiteSendingDomainsDeleteErrors[keyof SiteSendingDomainsDeleteErrors];
@@ -8388,6 +8404,44 @@ export type SiteTagsListResponses = {
 };
 
 export type SiteTagsListResponse = SiteTagsListResponses[keyof SiteTagsListResponses];
+
+export type SiteTagsDeleteData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/tags/{id}';
+};
+
+export type SiteTagsDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
+   */
+  409: InUseProblemDetails;
+};
+
+export type SiteTagsDeleteError = SiteTagsDeleteErrors[keyof SiteTagsDeleteErrors];
+
+export type SiteTagsDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteTagsDeleteResponse = SiteTagsDeleteResponses[keyof SiteTagsDeleteResponses];
 
 export type SiteTemplatesListData = {
   body?: never;

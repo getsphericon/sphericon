@@ -285,6 +285,10 @@ type TagsApplyRes interface {
 	tagsApplyRes()
 }
 
+type TagsDeleteRes interface {
+	tagsDeleteRes()
+}
+
 type TagsListForContactRes interface {
 	tagsListForContactRes()
 }

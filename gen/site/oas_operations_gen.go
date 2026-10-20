@@ -106,6 +106,7 @@ const (
 	SiteSuppressionsDeleteOperation                   OperationName = "SiteSuppressionsDelete"
 	SiteSuppressionsListOperation                     OperationName = "SiteSuppressionsList"
 	SiteTagsApplyOperation                            OperationName = "SiteTagsApply"
+	SiteTagsDeleteOperation                           OperationName = "SiteTagsDelete"
 	SiteTagsListOperation                             OperationName = "SiteTagsList"
 	SiteTagsListForContactOperation                   OperationName = "SiteTagsListForContact"
 	SiteTagsRemoveOperation                           OperationName = "SiteTagsRemove"
