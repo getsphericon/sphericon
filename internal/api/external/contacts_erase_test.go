@@ -12,7 +12,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -142,7 +141,6 @@ func TestExternalContactsEraseRemovesThePersonsData(t *testing.T) {
 	r, err := env.DB.BroadcastRecipient.Get(ctx, fixtures.BroadcastRecipientErasableID)
 	require.NoError(t, err)
 	assert.Zero(t, r.ContactID)
-	assert.Equal(t, broadcastrecipient.StatusSent, r.Status)
 }
 
 func TestExternalContactsEraseLeavesOtherContactsAlone(t *testing.T) {

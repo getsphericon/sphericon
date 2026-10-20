@@ -6622,22 +6622,6 @@ func (s *ContactExportBroadcastRecipient) encodeFields(e *jx.Encoder) {
 		s.BroadcastId.Encode(e)
 	}
 	{
-		e.FieldStart("status")
-		e.Str(s.Status)
-	}
-	{
-		if s.Error.Set {
-			e.FieldStart("error")
-			s.Error.Encode(e)
-		}
-	}
-	{
-		if s.SentAt.Set {
-			e.FieldStart("sentAt")
-			s.SentAt.Encode(e)
-		}
-	}
-	{
 		if s.OpenedAt.Set {
 			e.FieldStart("openedAt")
 			s.OpenedAt.Encode(e)
@@ -6661,16 +6645,13 @@ func (s *ContactExportBroadcastRecipient) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactExportBroadcastRecipient = [9]string{
+var jsonFieldsNameOfContactExportBroadcastRecipient = [6]string{
 	0: "id",
 	1: "broadcastId",
-	2: "status",
-	3: "error",
-	4: "sentAt",
-	5: "openedAt",
-	6: "clickedAt",
-	7: "unsubscribedAt",
-	8: "createdAt",
+	2: "openedAt",
+	3: "clickedAt",
+	4: "unsubscribedAt",
+	5: "createdAt",
 }
 
 // Decode decodes ContactExportBroadcastRecipient from json.
@@ -6678,7 +6659,7 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode ContactExportBroadcastRecipient to nil")
 	}
-	var requiredBitSet [2]uint8
+	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -6701,38 +6682,6 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"broadcastId\"")
-			}
-		case "status":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Str()
-				s.Status = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"status\"")
-			}
-		case "error":
-			if err := func() error {
-				s.Error.Reset()
-				if err := s.Error.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"error\"")
-			}
-		case "sentAt":
-			if err := func() error {
-				s.SentAt.Reset()
-				if err := s.SentAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"sentAt\"")
 			}
 		case "openedAt":
 			if err := func() error {
@@ -6765,7 +6714,7 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"unsubscribedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -6783,9 +6732,8 @@ func (s *ContactExportBroadcastRecipient) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
-		0b00000111,
-		0b00000001,
+	for i, mask := range [1]uint8{
+		0b00100011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

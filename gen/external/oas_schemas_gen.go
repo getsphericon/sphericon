@@ -2268,19 +2268,13 @@ func (s *ContactBatchStatus) UnmarshalText(data []byte) error {
 	}
 }
 
-// The contact's delivery record in one broadcast.
+// The contact's engagement with one broadcast (how its send ended is in `outboundMessages`).
 // Ref: #/components/schemas/ContactExportBroadcastRecipient
 type ContactExportBroadcastRecipient struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
 	// The broadcast.
 	BroadcastId EntityId `json:"broadcastId"`
-	// Delivery status.
-	Status string `json:"status"`
-	// Why delivery failed.
-	Error OptNilString `json:"error"`
-	// When the broadcast was sent to the contact.
-	SentAt OptNilTimestamp `json:"sentAt"`
 	// When the contact opened it.
 	OpenedAt OptNilTimestamp `json:"openedAt"`
 	// When the contact clicked it.
@@ -2299,21 +2293,6 @@ func (s *ContactExportBroadcastRecipient) GetID() EntityId {
 // GetBroadcastId returns the value of BroadcastId.
 func (s *ContactExportBroadcastRecipient) GetBroadcastId() EntityId {
 	return s.BroadcastId
-}
-
-// GetStatus returns the value of Status.
-func (s *ContactExportBroadcastRecipient) GetStatus() string {
-	return s.Status
-}
-
-// GetError returns the value of Error.
-func (s *ContactExportBroadcastRecipient) GetError() OptNilString {
-	return s.Error
-}
-
-// GetSentAt returns the value of SentAt.
-func (s *ContactExportBroadcastRecipient) GetSentAt() OptNilTimestamp {
-	return s.SentAt
 }
 
 // GetOpenedAt returns the value of OpenedAt.
@@ -2344,21 +2323,6 @@ func (s *ContactExportBroadcastRecipient) SetID(val EntityId) {
 // SetBroadcastId sets the value of BroadcastId.
 func (s *ContactExportBroadcastRecipient) SetBroadcastId(val EntityId) {
 	s.BroadcastId = val
-}
-
-// SetStatus sets the value of Status.
-func (s *ContactExportBroadcastRecipient) SetStatus(val string) {
-	s.Status = val
-}
-
-// SetError sets the value of Error.
-func (s *ContactExportBroadcastRecipient) SetError(val OptNilString) {
-	s.Error = val
-}
-
-// SetSentAt sets the value of SentAt.
-func (s *ContactExportBroadcastRecipient) SetSentAt(val OptNilTimestamp) {
-	s.SentAt = val
 }
 
 // SetOpenedAt sets the value of OpenedAt.

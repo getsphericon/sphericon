@@ -1,7 +1,9 @@
-# Workspace acme (id 1). Per-recipient delivery log for the sent broadcasts
-# (200-205). sent_at drives the analytics cohort + time series; opened_at is a
-# subset of sent, clicked_at a subset of opened. Counts here match the
-# denormalized counters on each broadcast in broadcasts.yml.
+# Workspace acme (id 1). Per-recipient audience and engagement for the sent broadcasts
+# (200-205). A recipient holds no delivery state (ADR 0015): how its send ended is its row in
+# outbound_messages.yml (kind: broadcast, key "broadcast:<id>"), and a recipient with no message
+# is pending. The send time that drives the analytics cohort + time series is the message's;
+# opened_at is a subset of sent, clicked_at a subset of opened. A broadcast's figures are
+# derived from these rows, never stored.
 
 # --- Broadcast 200: sent 3d ago, 10 sent, 5 opened, 2 clicked ---
 - {
@@ -9,8 +11,6 @@
     broadcast_id: 200,
     contact_id: 100,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     opened_at: '{{daysAgo 2}}',
     clicked_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
@@ -21,8 +21,6 @@
     broadcast_id: 200,
     contact_id: 101,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     opened_at: '{{daysAgo 2}}',
     clicked_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
@@ -33,8 +31,6 @@
     broadcast_id: 200,
     contact_id: 102,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     opened_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 2}}',
@@ -44,8 +40,6 @@
     broadcast_id: 200,
     contact_id: 103,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     opened_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 2}}',
@@ -55,8 +49,6 @@
     broadcast_id: 200,
     contact_id: 104,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     opened_at: '{{daysAgo 2}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 2}}',
@@ -66,8 +58,6 @@
     broadcast_id: 200,
     contact_id: 105,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 3}}',
   }
@@ -76,8 +66,6 @@
     broadcast_id: 200,
     contact_id: 106,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 3}}',
   }
@@ -86,8 +74,6 @@
     broadcast_id: 200,
     contact_id: 107,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 3}}',
   }
@@ -96,8 +82,6 @@
     broadcast_id: 200,
     contact_id: 108,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 3}}',
   }
@@ -106,8 +90,6 @@
     broadcast_id: 200,
     contact_id: 109,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 3}}',
   }
@@ -118,8 +100,6 @@
     broadcast_id: 201,
     contact_id: 105,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     opened_at: '{{daysAgo 8}}',
     clicked_at: '{{daysAgo 8}}',
     created_at: '{{daysAgo 9}}',
@@ -130,8 +110,6 @@
     broadcast_id: 201,
     contact_id: 106,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     opened_at: '{{daysAgo 8}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 8}}',
@@ -141,8 +119,6 @@
     broadcast_id: 201,
     contact_id: 107,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     opened_at: '{{daysAgo 8}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 8}}',
@@ -152,8 +128,6 @@
     broadcast_id: 201,
     contact_id: 108,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     opened_at: '{{daysAgo 8}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 8}}',
@@ -163,8 +137,6 @@
     broadcast_id: 201,
     contact_id: 109,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 9}}',
   }
@@ -173,8 +145,6 @@
     broadcast_id: 201,
     contact_id: 110,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 9}}',
   }
@@ -183,8 +153,6 @@
     broadcast_id: 201,
     contact_id: 111,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 9}}',
   }
@@ -193,8 +161,6 @@
     broadcast_id: 201,
     contact_id: 112,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 9}}',
   }
@@ -203,8 +169,6 @@
     broadcast_id: 201,
     contact_id: 113,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 9}}',
   }
@@ -213,8 +177,6 @@
     broadcast_id: 201,
     contact_id: 114,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 9}}',
     created_at: '{{daysAgo 9}}',
     updated_at: '{{daysAgo 9}}',
   }
@@ -225,8 +187,6 @@
     broadcast_id: 202,
     contact_id: 110,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     opened_at: '{{daysAgo 15}}',
     clicked_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
@@ -237,8 +197,6 @@
     broadcast_id: 202,
     contact_id: 111,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     opened_at: '{{daysAgo 15}}',
     clicked_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
@@ -249,8 +207,6 @@
     broadcast_id: 202,
     contact_id: 112,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     opened_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 15}}',
@@ -260,8 +216,6 @@
     broadcast_id: 202,
     contact_id: 113,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     opened_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 15}}',
@@ -271,8 +225,6 @@
     broadcast_id: 202,
     contact_id: 114,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     opened_at: '{{daysAgo 15}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 15}}',
@@ -282,8 +234,6 @@
     broadcast_id: 202,
     contact_id: 115,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 16}}',
   }
@@ -292,8 +242,6 @@
     broadcast_id: 202,
     contact_id: 116,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 16}}',
   }
@@ -302,8 +250,6 @@
     broadcast_id: 202,
     contact_id: 117,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 16}}',
   }
@@ -312,8 +258,6 @@
     broadcast_id: 202,
     contact_id: 118,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 16}}',
   }
@@ -322,8 +266,6 @@
     broadcast_id: 202,
     contact_id: 119,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 16}}',
     created_at: '{{daysAgo 16}}',
     updated_at: '{{daysAgo 16}}',
   }
@@ -334,8 +276,6 @@
     broadcast_id: 203,
     contact_id: 115,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 24}}',
     opened_at: '{{daysAgo 23}}',
     clicked_at: '{{daysAgo 23}}',
     created_at: '{{daysAgo 24}}',
@@ -346,8 +286,6 @@
     broadcast_id: 203,
     contact_id: 116,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 24}}',
     opened_at: '{{daysAgo 23}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 23}}',
@@ -357,8 +295,6 @@
     broadcast_id: 203,
     contact_id: 117,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 24}}',
     opened_at: '{{daysAgo 23}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 23}}',
@@ -368,8 +304,6 @@
     broadcast_id: 203,
     contact_id: 118,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 24}}',
     opened_at: '{{daysAgo 23}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 23}}',
@@ -379,8 +313,6 @@
     broadcast_id: 203,
     contact_id: 119,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 24}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 24}}',
   }
@@ -389,8 +321,6 @@
     broadcast_id: 203,
     contact_id: 120,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 24}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 24}}',
   }
@@ -399,8 +329,6 @@
     broadcast_id: 203,
     contact_id: 121,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 24}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 24}}',
   }
@@ -409,8 +337,6 @@
     broadcast_id: 203,
     contact_id: 122,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 24}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 24}}',
   }
@@ -419,8 +345,6 @@
     broadcast_id: 203,
     contact_id: 123,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 24}}',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 24}}',
   }
@@ -429,8 +353,6 @@
     broadcast_id: 203,
     contact_id: 124,
     workspace_id: 1,
-    status: failed,
-    error: '550 mailbox unavailable',
     created_at: '{{daysAgo 24}}',
     updated_at: '{{daysAgo 24}}',
   }
@@ -441,8 +363,6 @@
     broadcast_id: 204,
     contact_id: 120,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     opened_at: '{{daysAgo 39}}',
     clicked_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
@@ -453,8 +373,6 @@
     broadcast_id: 204,
     contact_id: 121,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     opened_at: '{{daysAgo 39}}',
     clicked_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
@@ -465,8 +383,6 @@
     broadcast_id: 204,
     contact_id: 122,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     opened_at: '{{daysAgo 39}}',
     clicked_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
@@ -477,8 +393,6 @@
     broadcast_id: 204,
     contact_id: 123,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     opened_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 39}}',
@@ -488,8 +402,6 @@
     broadcast_id: 204,
     contact_id: 124,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     opened_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 39}}',
@@ -499,8 +411,6 @@
     broadcast_id: 204,
     contact_id: 125,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     opened_at: '{{daysAgo 39}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 39}}',
@@ -510,8 +420,6 @@
     broadcast_id: 204,
     contact_id: 126,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 40}}',
   }
@@ -520,8 +428,6 @@
     broadcast_id: 204,
     contact_id: 127,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 40}}',
   }
@@ -530,8 +436,6 @@
     broadcast_id: 204,
     contact_id: 128,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 40}}',
   }
@@ -540,8 +444,6 @@
     broadcast_id: 204,
     contact_id: 129,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 40}}',
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 40}}',
   }
@@ -552,8 +454,6 @@
     broadcast_id: 205,
     contact_id: 100,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     opened_at: '{{daysAgo 69}}',
     clicked_at: '{{daysAgo 69}}',
     created_at: '{{daysAgo 70}}',
@@ -564,8 +464,6 @@
     broadcast_id: 205,
     contact_id: 103,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     opened_at: '{{daysAgo 69}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 69}}',
@@ -575,8 +473,6 @@
     broadcast_id: 205,
     contact_id: 105,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     opened_at: '{{daysAgo 69}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 69}}',
@@ -586,8 +482,6 @@
     broadcast_id: 205,
     contact_id: 107,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     opened_at: '{{daysAgo 69}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 69}}',
@@ -597,8 +491,6 @@
     broadcast_id: 205,
     contact_id: 110,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 70}}',
   }
@@ -607,8 +499,6 @@
     broadcast_id: 205,
     contact_id: 113,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 70}}',
   }
@@ -617,8 +507,6 @@
     broadcast_id: 205,
     contact_id: 115,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 70}}',
   }
@@ -627,8 +515,6 @@
     broadcast_id: 205,
     contact_id: 118,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 70}}',
   }
@@ -637,8 +523,6 @@
     broadcast_id: 205,
     contact_id: 120,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 70}}',
   }
@@ -647,8 +531,6 @@
     broadcast_id: 205,
     contact_id: 125,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 70}}',
     created_at: '{{daysAgo 70}}',
     updated_at: '{{daysAgo 70}}',
   }
@@ -659,7 +541,6 @@
     broadcast_id: 900,
     contact_id: 900,
     workspace_id: 2,
-    status: pending,
     created_at: '2026-01-01 00:00:00',
     updated_at: '2026-01-01 00:00:00',
   }
@@ -669,10 +550,7 @@
     id: 3000, # fixture: BroadcastRecipientErasable
     broadcast_id: 300,
     contact_id: 300,
-    outbound_message_id: 300,
     workspace_id: 3,
-    status: sent,
-    sent_at: '2026-01-02 00:00:00',
     created_at: '2026-01-02 00:00:00',
     updated_at: '2026-01-02 00:00:00',
   }
@@ -680,10 +558,7 @@
     id: 3001, # fixture: BroadcastRecipientBystander
     broadcast_id: 300,
     contact_id: 301,
-    outbound_message_id: 302,
     workspace_id: 3,
-    status: sent,
-    sent_at: '2026-01-02 00:00:00',
     created_at: '2026-01-02 00:00:00',
     updated_at: '2026-01-02 00:00:00',
   }
@@ -694,7 +569,6 @@
     broadcast_id: 301,
     contact_id: 300,
     workspace_id: 3,
-    status: pending,
     created_at: '2026-01-03 00:00:00',
     updated_at: '2026-01-03 00:00:00',
   }
@@ -703,7 +577,6 @@
     broadcast_id: 301,
     contact_id: 301,
     workspace_id: 3,
-    status: pending,
     created_at: '2026-01-03 00:00:00',
     updated_at: '2026-01-03 00:00:00',
   }
@@ -712,7 +585,6 @@
     broadcast_id: 302,
     contact_id: 300,
     workspace_id: 3,
-    status: pending,
     created_at: '2026-01-03 00:00:00',
     updated_at: '2026-01-03 00:00:00',
   }
@@ -723,8 +595,6 @@
     broadcast_id: 200,
     contact_id: 800,
     workspace_id: 1,
-    status: sent,
-    sent_at: '{{daysAgo 3}}',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 3}}',
   }
@@ -735,8 +605,6 @@
     broadcast_id: 103,
     contact_id: 100,
     workspace_id: 1,
-    status: failed,
-    error: '550 mailbox unavailable',
     created_at: '{{daysAgo 7}}',
     updated_at: '{{daysAgo 7}}',
   }
@@ -745,8 +613,6 @@
     broadcast_id: 103,
     contact_id: 101,
     workspace_id: 1,
-    status: failed,
-    error: '550 mailbox unavailable',
     created_at: '{{daysAgo 7}}',
     updated_at: '{{daysAgo 7}}',
   }
@@ -755,8 +621,6 @@
     broadcast_id: 103,
     contact_id: 102,
     workspace_id: 1,
-    status: failed,
-    error: '421 try again later',
     created_at: '{{daysAgo 7}}',
     updated_at: '{{daysAgo 7}}',
   }
@@ -765,8 +629,6 @@
     broadcast_id: 103,
     contact_id: 103,
     workspace_id: 1,
-    status: skipped,
-    error: 'suppressed',
     created_at: '{{daysAgo 7}}',
     updated_at: '{{daysAgo 7}}',
   }
@@ -775,8 +637,6 @@
     broadcast_id: 103,
     contact_id: 104,
     workspace_id: 1,
-    status: skipped,
-    error: 'unsubscribed_source',
     created_at: '{{daysAgo 7}}',
     updated_at: '{{daysAgo 7}}',
   }

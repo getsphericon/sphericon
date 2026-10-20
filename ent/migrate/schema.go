@@ -250,13 +250,6 @@ var (
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "scheduled", "sending", "sent", "failed"}, Default: "draft"},
 		{Name: "scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
-		{Name: "recipients_total", Type: field.TypeInt, Default: 0},
-		{Name: "sent_count", Type: field.TypeInt, Default: 0},
-		{Name: "opened_count", Type: field.TypeInt, Default: 0},
-		{Name: "clicked_count", Type: field.TypeInt, Default: 0},
-		{Name: "unsubscribed_count", Type: field.TypeInt, Default: 0},
-		{Name: "failed_count", Type: field.TypeInt, Default: 0},
-		{Name: "skipped_count", Type: field.TypeInt, Default: 0},
 		{Name: "hold_reason", Type: field.TypeString, Nullable: true},
 		{Name: "last_scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -269,7 +262,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[25]},
+				Columns:    []*schema.Column{BroadcastsColumns[18]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -278,7 +271,7 @@ var (
 			{
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[25]},
+				Columns: []*schema.Column{BroadcastsColumns[18]},
 			},
 		},
 	}
@@ -288,11 +281,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "sent", "skipped", "failed"}, Default: "pending"},
-		{Name: "outbound_message_id", Type: field.TypeInt64, Nullable: true},
-		{Name: "error", Type: field.TypeString, Nullable: true},
 		{Name: "deferred_until", Type: field.TypeTime, Nullable: true},
-		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "opened_at", Type: field.TypeTime, Nullable: true},
 		{Name: "clicked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "unsubscribed_at", Type: field.TypeTime, Nullable: true},
@@ -307,13 +296,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_recipients_broadcasts_recipients",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[12]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[8]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "broadcast_recipients_workspaces_broadcast_recipients",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[13]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[9]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -322,17 +311,12 @@ var (
 			{
 				Name:    "broadcast_recipients_broadcast_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[12], BroadcastRecipientsColumns[3]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[8], BroadcastRecipientsColumns[3]},
 			},
 			{
 				Name:    "broadcastrecipient_broadcast_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[12]},
-			},
-			{
-				Name:    "broadcastrecipient_workspace_id_sent_at",
-				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[13], BroadcastRecipientsColumns[8]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[8]},
 			},
 		},
 	}

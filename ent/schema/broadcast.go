@@ -79,30 +79,8 @@ func (Broadcast) Fields() []ent.Field {
 		field.Time("sent_at").
 			Optional().
 			Nillable(),
-		field.Int("recipients_total").
-			Default(0).
-			NonNegative(),
-		field.Int("sent_count").
-			Default(0).
-			NonNegative(),
-		field.Int("opened_count").
-			Default(0).
-			NonNegative(),
-		field.Int("clicked_count").
-			Default(0).
-			NonNegative(),
-		field.Int("unsubscribed_count").
-			Default(0).
-			NonNegative(),
-		field.Int("failed_count").
-			Default(0).
-			NonNegative(),
-		// Recipients Send-eligibility skipped at send time (an unsubscribe or
-		// Suppression that landed after planning) — final for them, neither sent nor
-		// failed (ADR 0015).
-		field.Int("skipped_count").
-			Default(0).
-			NonNegative(),
+		// No delivery figures are stored: they are derived from the recipients and their
+		// Outbound messages (ADR 0015), so they cannot drift from the rows.
 		// Why the broadcast is currently held (ADR 0015): a reversible, per-source
 		// hold — Workspace suspension, an unverified Sending domain, no Integration —
 		// not a failure. Set while any recipient is held, cleared when one sends; the

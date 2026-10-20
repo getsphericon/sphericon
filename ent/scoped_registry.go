@@ -410,13 +410,6 @@ func ScopedEntities() []ScopedEntity {
 				if src.SentAt != nil {
 					b.SetSentAt(*src.SentAt)
 				}
-				b.SetRecipientsTotal(src.RecipientsTotal)
-				b.SetSentCount(src.SentCount)
-				b.SetOpenedCount(src.OpenedCount)
-				b.SetClickedCount(src.ClickedCount)
-				b.SetUnsubscribedCount(src.UnsubscribedCount)
-				b.SetFailedCount(src.FailedCount)
-				b.SetSkippedCount(src.SkippedCount)
 				if src.HoldReason != nil {
 					b.SetHoldReason(*src.HoldReason)
 				}
@@ -483,18 +476,8 @@ func ScopedEntities() []ScopedEntity {
 				if src.ContactID != 0 {
 					b.SetContactID(remap("Contact", src.ContactID))
 				}
-				b.SetStatus(src.Status)
-				if src.OutboundMessageID != nil {
-					b.SetOutboundMessageID(remap("OutboundMessage", *src.OutboundMessageID))
-				}
-				if src.Error != nil {
-					b.SetError(*src.Error)
-				}
 				if src.DeferredUntil != nil {
 					b.SetDeferredUntil(*src.DeferredUntil)
-				}
-				if src.SentAt != nil {
-					b.SetSentAt(*src.SentAt)
 				}
 				if src.OpenedAt != nil {
 					b.SetOpenedAt(*src.OpenedAt)
@@ -522,12 +505,6 @@ func ScopedEntities() []ScopedEntity {
 					Name: "contact_id", Target: "Contact",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.BroadcastRecipient().UpdateOneID(id).SetContactID(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "outbound_message_id", Target: "OutboundMessage",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.BroadcastRecipient().UpdateOneID(id).SetOutboundMessageID(target).Exec(ctx)
 					},
 				},
 			},

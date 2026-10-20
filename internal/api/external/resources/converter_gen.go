@@ -47,9 +47,6 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 	if source != nil {
 		externalapiContactExportBroadcastRecipient.ID = external.EntityId((*source).ID)
 		externalapiContactExportBroadcastRecipient.BroadcastId = external.EntityId((*source).BroadcastID)
-		externalapiContactExportBroadcastRecipient.Status = string((*source).Status)
-		externalapiContactExportBroadcastRecipient.Error = optNilString((*source).Error)
-		externalapiContactExportBroadcastRecipient.SentAt = optNilTimestamp((*source).SentAt)
 		externalapiContactExportBroadcastRecipient.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		externalapiContactExportBroadcastRecipient.ClickedAt = optNilTimestamp((*source).ClickedAt)
 		externalapiContactExportBroadcastRecipient.UnsubscribedAt = optNilTimestamp((*source).UnsubscribedAt)

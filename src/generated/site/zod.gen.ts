@@ -1137,14 +1137,11 @@ export const zSiteUpdateContactInput = z.object({
 export const zTimestamp = z.iso.datetime();
 
 /**
- * The contact's delivery record in one broadcast
+ * The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)
  */
 export const zContactExportBroadcastRecipient = z.object({
   id: zEntityId,
   broadcastId: zEntityId,
-  status: z.string(),
-  error: z.exactOptional(z.string().nullable()),
-  sentAt: z.exactOptional(zTimestamp.nullable()),
   openedAt: z.exactOptional(zTimestamp.nullable()),
   clickedAt: z.exactOptional(zTimestamp.nullable()),
   unsubscribedAt: z.exactOptional(zTimestamp.nullable()),

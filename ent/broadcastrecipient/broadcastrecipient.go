@@ -3,7 +3,6 @@
 package broadcastrecipient
 
 import (
-	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -25,16 +24,8 @@ const (
 	FieldBroadcastID = "broadcast_id"
 	// FieldContactID holds the string denoting the contact_id field in the database.
 	FieldContactID = "contact_id"
-	// FieldStatus holds the string denoting the status field in the database.
-	FieldStatus = "status"
-	// FieldOutboundMessageID holds the string denoting the outbound_message_id field in the database.
-	FieldOutboundMessageID = "outbound_message_id"
-	// FieldError holds the string denoting the error field in the database.
-	FieldError = "error"
 	// FieldDeferredUntil holds the string denoting the deferred_until field in the database.
 	FieldDeferredUntil = "deferred_until"
-	// FieldSentAt holds the string denoting the sent_at field in the database.
-	FieldSentAt = "sent_at"
 	// FieldOpenedAt holds the string denoting the opened_at field in the database.
 	FieldOpenedAt = "opened_at"
 	// FieldClickedAt holds the string denoting the clicked_at field in the database.
@@ -71,11 +62,7 @@ var Columns = []string{
 	FieldWorkspaceID,
 	FieldBroadcastID,
 	FieldContactID,
-	FieldStatus,
-	FieldOutboundMessageID,
-	FieldError,
 	FieldDeferredUntil,
-	FieldSentAt,
 	FieldOpenedAt,
 	FieldClickedAt,
 	FieldUnsubscribedAt,
@@ -99,34 +86,6 @@ var (
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
 )
-
-// Status defines the type for the "status" enum field.
-type Status string
-
-// StatusPending is the default value of the Status enum.
-const DefaultStatus = StatusPending
-
-// Status values.
-const (
-	StatusPending Status = "pending"
-	StatusSent    Status = "sent"
-	StatusSkipped Status = "skipped"
-	StatusFailed  Status = "failed"
-)
-
-func (s Status) String() string {
-	return string(s)
-}
-
-// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
-func StatusValidator(s Status) error {
-	switch s {
-	case StatusPending, StatusSent, StatusSkipped, StatusFailed:
-		return nil
-	default:
-		return fmt.Errorf("broadcastrecipient: invalid enum value for status field: %q", s)
-	}
-}
 
 // OrderOption defines the ordering options for the BroadcastRecipient queries.
 type OrderOption func(*sql.Selector)
@@ -161,29 +120,9 @@ func ByContactID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContactID, opts...).ToFunc()
 }
 
-// ByStatus orders the results by the status field.
-func ByStatus(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldStatus, opts...).ToFunc()
-}
-
-// ByOutboundMessageID orders the results by the outbound_message_id field.
-func ByOutboundMessageID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldOutboundMessageID, opts...).ToFunc()
-}
-
-// ByError orders the results by the error field.
-func ByError(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldError, opts...).ToFunc()
-}
-
 // ByDeferredUntil orders the results by the deferred_until field.
 func ByDeferredUntil(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeferredUntil, opts...).ToFunc()
-}
-
-// BySentAt orders the results by the sent_at field.
-func BySentAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSentAt, opts...).ToFunc()
 }
 
 // ByOpenedAt orders the results by the opened_at field.

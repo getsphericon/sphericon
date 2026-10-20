@@ -239,48 +239,6 @@ func init() {
 	broadcastDescBodyText := broadcastFields[8].Descriptor()
 	// broadcast.DefaultBodyText holds the default value on creation for the body_text field.
 	broadcast.DefaultBodyText = broadcastDescBodyText.Default.(string)
-	// broadcastDescRecipientsTotal is the schema descriptor for recipients_total field.
-	broadcastDescRecipientsTotal := broadcastFields[14].Descriptor()
-	// broadcast.DefaultRecipientsTotal holds the default value on creation for the recipients_total field.
-	broadcast.DefaultRecipientsTotal = broadcastDescRecipientsTotal.Default.(int)
-	// broadcast.RecipientsTotalValidator is a validator for the "recipients_total" field. It is called by the builders before save.
-	broadcast.RecipientsTotalValidator = broadcastDescRecipientsTotal.Validators[0].(func(int) error)
-	// broadcastDescSentCount is the schema descriptor for sent_count field.
-	broadcastDescSentCount := broadcastFields[15].Descriptor()
-	// broadcast.DefaultSentCount holds the default value on creation for the sent_count field.
-	broadcast.DefaultSentCount = broadcastDescSentCount.Default.(int)
-	// broadcast.SentCountValidator is a validator for the "sent_count" field. It is called by the builders before save.
-	broadcast.SentCountValidator = broadcastDescSentCount.Validators[0].(func(int) error)
-	// broadcastDescOpenedCount is the schema descriptor for opened_count field.
-	broadcastDescOpenedCount := broadcastFields[16].Descriptor()
-	// broadcast.DefaultOpenedCount holds the default value on creation for the opened_count field.
-	broadcast.DefaultOpenedCount = broadcastDescOpenedCount.Default.(int)
-	// broadcast.OpenedCountValidator is a validator for the "opened_count" field. It is called by the builders before save.
-	broadcast.OpenedCountValidator = broadcastDescOpenedCount.Validators[0].(func(int) error)
-	// broadcastDescClickedCount is the schema descriptor for clicked_count field.
-	broadcastDescClickedCount := broadcastFields[17].Descriptor()
-	// broadcast.DefaultClickedCount holds the default value on creation for the clicked_count field.
-	broadcast.DefaultClickedCount = broadcastDescClickedCount.Default.(int)
-	// broadcast.ClickedCountValidator is a validator for the "clicked_count" field. It is called by the builders before save.
-	broadcast.ClickedCountValidator = broadcastDescClickedCount.Validators[0].(func(int) error)
-	// broadcastDescUnsubscribedCount is the schema descriptor for unsubscribed_count field.
-	broadcastDescUnsubscribedCount := broadcastFields[18].Descriptor()
-	// broadcast.DefaultUnsubscribedCount holds the default value on creation for the unsubscribed_count field.
-	broadcast.DefaultUnsubscribedCount = broadcastDescUnsubscribedCount.Default.(int)
-	// broadcast.UnsubscribedCountValidator is a validator for the "unsubscribed_count" field. It is called by the builders before save.
-	broadcast.UnsubscribedCountValidator = broadcastDescUnsubscribedCount.Validators[0].(func(int) error)
-	// broadcastDescFailedCount is the schema descriptor for failed_count field.
-	broadcastDescFailedCount := broadcastFields[19].Descriptor()
-	// broadcast.DefaultFailedCount holds the default value on creation for the failed_count field.
-	broadcast.DefaultFailedCount = broadcastDescFailedCount.Default.(int)
-	// broadcast.FailedCountValidator is a validator for the "failed_count" field. It is called by the builders before save.
-	broadcast.FailedCountValidator = broadcastDescFailedCount.Validators[0].(func(int) error)
-	// broadcastDescSkippedCount is the schema descriptor for skipped_count field.
-	broadcastDescSkippedCount := broadcastFields[20].Descriptor()
-	// broadcast.DefaultSkippedCount holds the default value on creation for the skipped_count field.
-	broadcast.DefaultSkippedCount = broadcastDescSkippedCount.Default.(int)
-	// broadcast.SkippedCountValidator is a validator for the "skipped_count" field. It is called by the builders before save.
-	broadcast.SkippedCountValidator = broadcastDescSkippedCount.Validators[0].(func(int) error)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()
 	broadcastrecipientMixinFields0 := broadcastrecipientMixin[0].Fields()
 	_ = broadcastrecipientMixinFields0

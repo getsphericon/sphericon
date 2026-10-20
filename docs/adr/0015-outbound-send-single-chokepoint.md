@@ -45,7 +45,9 @@ recipient, enrollment + step, transactional id), so job retries and client retri
 mechanism. The row carries the surface and its reference, the Sending source (none for
 Transactional), the Sending domain, the provider message id and the outcome. This generalises
 the `TransactionalEmail` claim from ADR 0005 to all surfaces; Broadcast recipient stays the
-frozen audience snapshot and engagement rollup and points at its message. It stores provenance
+frozen audience snapshot and engagement rollup and points at its message: it holds no delivery
+state of its own, and every recipient ends with exactly one message (a recipient that cannot
+go out ends with a Failed one, recorded by Outbound send). It stores provenance
 and outcome, never rendered content (the by-reference rule of ADR 0005 and the copy rule of
 ADR 0003 are untouched — they decide which content the caller passes in).
 

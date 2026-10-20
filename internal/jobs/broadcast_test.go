@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -102,15 +103,13 @@ func TestSendBroadcastDeliversToEligibleContacts(t *testing.T) {
 	assert.Equal(t, broadcasts.Stats{Recipients: eligibleCount, Sent: eligibleCount}, figuresOf(t, env, fixtures.BroadcastDraftID))
 	require.NotNil(t, got.SentAt)
 
-	// A recipient row exists per eligible contact, all marked sent.
+	// A recipient row exists per eligible contact, none still pending (the figures above
+	// count each one's sent message).
 	recs, err := env.DB.BroadcastRecipient.Query().
 		Where(broadcastrecipient.BroadcastID(fixtures.BroadcastDraftID)).
 		All(ctx)
 	require.NoError(t, err)
 	assert.Len(t, recs, eligibleCount)
-	for _, r := range recs {
-		assert.Equal(t, broadcastrecipient.StatusSent, r.Status)
-	}
 
 	// Each send publishes an email.sent event onto the transactional outbox, so the
 	// send fact reaches the Event log (Events are the source of truth; persist runs
@@ -145,13 +144,13 @@ func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, holds.ReasonSuspended, held.Reason)
-	assert.Equal(t, broadcastrecipient.StatusPending, env.DB.BroadcastRecipient.GetX(ctx, ids[1]).Status)
+	assert.True(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(ids[1]), broadcasts.Pending()).ExistX(ctx))
 	require.NotNil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).HoldReason)
 	assert.Len(t, fs.sent, 1)
 
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearSuspendedAt().ExecX(ctx)
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[1]))
-	assert.Equal(t, broadcastrecipient.StatusSent, env.DB.BroadcastRecipient.GetX(ctx, ids[1]).Status)
+	assert.False(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(ids[1]), broadcasts.Pending()).ExistX(ctx))
 	assert.Nil(t, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).HoldReason, "the hold clears when a send goes through")
 }
 
@@ -173,7 +172,7 @@ func TestUnsubscribeBetweenPlanAndSendSkipsTheRecipient(t *testing.T) {
 		SetSendingSource(eligibility.SourceBroadcasts).ExecX(ctx)
 
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
-	assert.Equal(t, broadcastrecipient.StatusSkipped, env.DB.BroadcastRecipient.GetX(ctx, ids[0]).Status)
+	assert.Equal(t, outboundmessage.StatusSkipped, env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastRecipientID(ids[0])).OnlyX(ctx).Status)
 	for _, m := range fs.sent {
 		assert.NotEqual(t, *c.Email, m.To, "an unsubscribed destination is never sent to")
 	}
@@ -314,9 +313,14 @@ func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 		All(ctx)
 	require.NoError(t, err)
 	assert.Len(t, recs, eligible)
-	for _, r := range recs {
-		assert.Equal(t, broadcastrecipient.StatusFailed, r.Status)
-		require.NotNil(t, r.Error)
+	msgs, err := env.DB.OutboundMessage.Query().
+		Where(outboundmessage.BroadcastID(fixtures.BroadcastScheduledID)).
+		All(ctx)
+	require.NoError(t, err)
+	assert.Len(t, msgs, eligible, "every recipient ends with one message, each failed with its cause")
+	for _, m := range msgs {
+		assert.Equal(t, outboundmessage.StatusFailed, m.Status)
+		require.NotNil(t, m.Reason)
 	}
 
 	assert.Zero(t, countOutboxEvents(t, env, "email.sent", fixtures.BroadcastScheduledID), "no email.sent event when the send fails")
@@ -377,4 +381,10 @@ func figuresOf(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadca
 	got, err := broadcasts.StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), broadcastID)
 	require.NoError(t, err)
 	return got[broadcastID]
+}
+
+// stillPending reports whether the recipient's send has not ended (see broadcasts.Pending).
+func stillPending(ctx context.Context, client *ent.Client, recipientID int64) bool {
+	return client.BroadcastRecipient.Query().
+		Where(broadcastrecipient.ID(recipientID), broadcasts.Pending()).ExistX(ctx)
 }

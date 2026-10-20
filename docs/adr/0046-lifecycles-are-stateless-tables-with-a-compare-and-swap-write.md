@@ -22,8 +22,9 @@ domain's `tracking_state` is written from a row that was read earlier.
   `UPDATE ... WHERE status = <the state read>`; a miss fails the transition, so the database, not
   the process, decides a race. Exit actions run before the write and are not rolled back: they
   carry no side effects.
-- **The machines:** Broadcast, BroadcastRecipient, AutomationRun, OutboundMessage (its lease
-  fence stays inside the write), the Workspace deletion cycle (`active`, `pending_deletion`,
+- **The machines:** Broadcast, AutomationRun, OutboundMessage (its lease
+  fence stays inside the write; a Broadcast recipient has no machine of its own, see "Amendment:
+  a Broadcast recipient has no state of its own"), the Workspace deletion cycle (`active`, `pending_deletion`,
   `erased`; restore only from `pending_deletion` inside the window, erase only from
   `pending_deletion`) and a Sending domain's `tracking_state` (every edge listed, demotions
   included). A table for an any-to-any machine is still the map of what exists.
@@ -95,3 +96,23 @@ lock is seen under it (the effect never starts, the step ends as stale).
   connections (`testhelper.RealDBURL`).
 - Not fenced: tag steps (they send nothing; a tag applied just after an exit is a data change,
   not a message) and a `wait`.
+
+## Amendment: a Broadcast recipient has no state of its own
+
+BroadcastRecipient was first listed as a machine (`pending`, then `sent`, `skipped` or `failed`).
+That state duplicated the Outbound message's, so every send was recorded twice, in two writes, and
+a crash between them left the two rows disagreeing until a retry repaired them. ADR 0015 already
+says what the recipient is: the frozen audience snapshot and the engagement rollup, pointing at
+its message. So the recipient has no status, no sent time and no error; the Outbound message is
+its one machine (above), and a recipient is _pending_ while it has no message, or one that is still
+claimed.
+
+- **Every recipient ends with exactly one message.** A recipient that can never go out (its Contact
+  has no address, or its last attempt failed) still ends with a Failed message, which Outbound send
+  records when no attempt ever claimed the key. A live claim is not failed: it may still reach the
+  provider, so the give-up waits out the lease and asks again.
+- **A Broadcast's figures are derived, never stored.** Recipients, sent, skipped, failed and pending
+  come from the recipient rows and their messages, and opens, clicks and unsubscribes are the
+  timestamps on the recipient, set once each. The figures are live while the Broadcast sends and
+  cannot drift from the rows. Only the Broadcast keeps a machine here, and finalizing it is the
+  `sending` to `sent` move once no recipient is pending.

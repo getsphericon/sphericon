@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
@@ -58,12 +57,12 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, holds.ReasonStaff, held.Reason)
-	assert.Equal(t, broadcastrecipient.StatusPending, env.DB.BroadcastRecipient.GetX(ctx, ids[1]).Status, "the recipient is neither failed nor consumed")
+	assert.True(t, stillPending(ctx, env.DB, ids[1]), "the recipient is neither failed nor consumed")
 	assert.Len(t, fs.sent, 1)
 
 	clock.t = clock.t.Add(2 * time.Hour)
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[1]), "the retry goes through with no one clearing anything")
-	assert.Equal(t, broadcastrecipient.StatusSent, env.DB.BroadcastRecipient.GetX(ctx, ids[1]).Status)
+	assert.False(t, stillPending(ctx, env.DB, ids[1]))
 	assert.Len(t, fs.sent, 2)
 }
 

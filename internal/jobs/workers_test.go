@@ -670,13 +670,13 @@ func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
 	// Not the last attempt: the error surfaces for retry, row stays pending.
 	err = failing.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID}))
 	require.Error(t, err)
-	assert.Equal(t, broadcastrecipient.StatusPending, e.DB.BroadcastRecipient.GetX(ctx, ids[0]).Status)
+	assert.True(t, stillPending(ctx, e.DB, ids[0]))
 
 	// Last attempt: the row is marked failed so the broadcast can finalize.
 	last := job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID})
 	last.Attempt = last.MaxAttempts
 	require.Error(t, failing.Work(ctx, last))
-	assert.Equal(t, broadcastrecipient.StatusFailed, e.DB.BroadcastRecipient.GetX(ctx, ids[0]).Status)
+	assert.False(t, stillPending(ctx, e.DB, ids[0]), "the last attempt fails the recipient so the broadcast can finalize")
 }
 
 func TestErrorHandlerLogsAndKeepsRetrying(t *testing.T) {

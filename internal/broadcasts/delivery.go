@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/qmuntal/stateless"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
@@ -31,8 +28,9 @@ type DeferredError struct {
 func (e *DeferredError) Error() string { return "send deferred: send rate limit spent" }
 
 // Delivery is the send side of the Broadcast lifecycle: one recipient at a time through
-// Outbound send, the recipient's status, the hold reason and the final settling of the
-// Broadcast. It holds no client: every call receives the Workspace-scoped client.
+// Outbound send, the hold reason and the final settling of the Broadcast. A recipient has no
+// delivery state of its own: how its send ended is its Outbound message's (ADR 0015), and it is
+// pending until then. It holds no client: every call receives the Workspace-scoped client.
 type Delivery struct {
 	out *outbound.Module
 }
@@ -40,56 +38,14 @@ type Delivery struct {
 // NewDelivery builds the delivery over the Outbound send module.
 func NewDelivery(out *outbound.Module) *Delivery { return &Delivery{out: out} }
 
-// recipient triggers (ADR 0046): only a pending recipient can leave.
-type recipientTrigger string
-
-const (
-	recipientSent    recipientTrigger = "sent"
-	recipientSkipped recipientTrigger = "skipped"
-	recipientFailed  recipientTrigger = "failed"
-)
-
-// recipientMachine is the BroadcastRecipient transition table: pending to sent, skipped or
-// failed, each a compare-and-swap on the status read. set carries the columns the move writes.
-func recipientMachine(s *ent.Scoped, id int64, set func(*ent.BroadcastRecipientScopedUpdate)) *stateless.StateMachine {
-	m := lifecycle.New(lifecycle.Storage[broadcastrecipient.Status]{
-		Read: func(ctx context.Context) (broadcastrecipient.Status, error) {
-			r, err := s.BroadcastRecipient().Get(ctx, id)
-			if err != nil {
-				return "", err
-			}
-			return r.Status, nil
-		},
-		Write: func(ctx context.Context, from, to broadcastrecipient.Status) (bool, error) {
-			u := s.BroadcastRecipient().Update().
-				Where(broadcastrecipient.ID(id), broadcastrecipient.StatusEQ(from)).
-				SetStatus(to)
-			if set != nil {
-				set(u)
-			}
-			n, err := u.Save(ctx)
-			return n > 0, err
-		},
-	})
-	m.Configure(broadcastrecipient.StatusPending).
-		Permit(recipientSent, broadcastrecipient.StatusSent).
-		Permit(recipientSkipped, broadcastrecipient.StatusSkipped).
-		Permit(recipientFailed, broadcastrecipient.StatusFailed)
-	m.Configure(broadcastrecipient.StatusSent)
-	m.Configure(broadcastrecipient.StatusSkipped)
-	m.Configure(broadcastrecipient.StatusFailed)
-	return m
-}
-
-// SendRecipient hands one recipient's email to Outbound send and maps the Outcome onto the
-// recipient, then settles the Broadcast if that was its last pending recipient. It is
-// idempotent: a recipient already decided is left alone, and the Outbound idempotency key
-// makes a retry after a committed send replay the recorded result.
+// SendRecipient hands one recipient's email to Outbound send, then settles the Broadcast if
+// that was its last pending recipient. It is idempotent: a recipient already decided is left
+// alone (a stale job is just that), and the Outbound idempotency key makes a retry after a
+// committed send replay the recorded result.
 //
 // A returned error is for the adapter to retry: *HeldError (the source is on hold),
 // *DeferredError (its Send rate limit is spent), outbound.ErrInProgress (a live claim) or a
-// fault; none consumed the recipient. lifecycle.ErrInvalidTransition means the recipient was
-// decided meanwhile: a stale job, finished without a retry.
+// fault; none consumed the recipient.
 func (d *Delivery) SendRecipient(ctx context.Context, s *ent.Scoped, recipientID int64) error {
 	rec, err := s.BroadcastRecipient().Get(ctx, recipientID)
 	if ent.IsNotFound(err) {
@@ -98,7 +54,12 @@ func (d *Delivery) SendRecipient(ctx context.Context, s *ent.Scoped, recipientID
 	if err != nil {
 		return fmt.Errorf("load recipient %d: %w", recipientID, err)
 	}
-	if rec.Status == broadcastrecipient.StatusPending {
+	pending, err := s.BroadcastRecipient().Query().
+		Where(broadcastrecipient.ID(rec.ID), Pending()).Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("read recipient %d: %w", recipientID, err)
+	}
+	if pending {
 		if err := d.deliver(ctx, s, rec); err != nil {
 			return err
 		}
@@ -131,54 +92,30 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	if retry := res.Retry(0); retry.Wanted {
 		return d.retryLater(ctx, s, b, rec, res)
 	}
-	return d.apply(ctx, s, rec, res)
+	return d.settle(ctx, s, rec, res)
 }
 
 // errNoEmail is the reason of a recipient whose Contact has no address to send to.
 var errNoEmail = errors.New("contact has no email")
 
-// fail ends a recipient's send as Failed with cause: Outbound send records the one message,
-// and the recipient follows what that message says (a send that already went out stays sent).
-// outbound.ErrInProgress is a live claim: the caller waits and asks again.
+// fail ends a recipient's send as Failed with cause: Outbound send records the one message (a
+// send that already went out stays sent). outbound.ErrInProgress is a live claim: the caller
+// waits and asks again.
 func (d *Delivery) fail(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, cause error) error {
 	res, err := d.out.FailRecipient(ctx, s, rec, cause)
 	if err != nil {
 		return err
 	}
-	return d.apply(ctx, s, rec, res)
+	return d.settle(ctx, s, rec, res)
 }
 
-// apply maps a decided Outbound outcome onto the recipient.
-func (d *Delivery) apply(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, res outbound.Result) error {
-	switch res.Outcome {
-	case outbound.Sent:
-		// A send went through: the hold, if any, has lifted.
-		if err := setHold(ctx, s, rec.BroadcastID, ""); err != nil {
-			return err
-		}
-		return moveRecipient(ctx, s, rec.ID, recipientSent, func(u *ent.BroadcastRecipientScopedUpdate) {
-			withMessage(u, res).SetSentAt(time.Now())
-		})
-	case outbound.Skipped:
-		return moveRecipient(ctx, s, rec.ID, recipientSkipped, func(u *ent.BroadcastRecipientScopedUpdate) {
-			withMessage(u, res).SetError(res.Reason)
-		})
-	default: // outbound.Failed
-		return moveRecipient(ctx, s, rec.ID, recipientFailed, func(u *ent.BroadcastRecipientScopedUpdate) {
-			withMessage(u, res).SetError(res.Reason)
-		})
+// settle takes what a decided Outbound outcome means for the Broadcast. The message already
+// holds the recipient's outcome; a send that went through lifts the Broadcast's hold, if any.
+func (d *Delivery) settle(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, res outbound.Result) error {
+	if res.Outcome != outbound.Sent {
+		return nil
 	}
-}
-
-func withMessage(u *ent.BroadcastRecipientScopedUpdate, res outbound.Result) *ent.BroadcastRecipientScopedUpdate {
-	if res.MessageID != 0 {
-		u.SetOutboundMessageID(res.MessageID)
-	}
-	return u
-}
-
-func moveRecipient(ctx context.Context, s *ent.Scoped, id int64, t recipientTrigger, set func(*ent.BroadcastRecipientScopedUpdate)) error {
-	return recipientMachine(s, id, set).FireCtx(ctx, t)
+	return setHold(ctx, s, rec.BroadcastID, "")
 }
 
 // retryLater is the recipient's turn when Outbound send wants a retry (a Hold or a
@@ -210,18 +147,14 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	}
 	retry := res.Retry(ahead)
 	// Best effort, like the count: it only sharpens later recipients' backlog.
-	upd := s.BroadcastRecipient().UpdateOneID(rec.ID).SetDeferredUntil(now.Add(retry.After))
-	if res.MessageID != 0 {
-		upd.SetOutboundMessageID(res.MessageID)
-	}
-	_ = upd.Exec(ctx)
+	_ = s.BroadcastRecipient().UpdateOneID(rec.ID).SetDeferredUntil(now.Add(retry.After)).Exec(ctx)
 	return &DeferredError{Delay: retry.After}
 }
 
 // GiveUp records the terminal failure of a recipient whose last attempt failed with cause:
 // Outbound send ends its message as Failed with the cause as its reason (a send that already
 // reached the provider stays sent), and the Broadcast settles if none is left pending. A
-// recipient already decided is lifecycle.ErrInvalidTransition and keeps its status.
+// recipient already decided keeps its outcome.
 //
 // outbound.ErrInProgress means another attempt still holds a live claim and may yet reach the
 // provider: nothing is failed, and the adapter waits out the lease and gives up again.

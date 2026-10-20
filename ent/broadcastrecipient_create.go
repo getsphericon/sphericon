@@ -78,48 +78,6 @@ func (_c *BroadcastRecipientCreate) SetNillableContactID(v *int64) *BroadcastRec
 	return _c
 }
 
-// SetStatus sets the "status" field.
-func (_c *BroadcastRecipientCreate) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientCreate {
-	_c.mutation.SetStatus(v)
-	return _c
-}
-
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (_c *BroadcastRecipientCreate) SetNillableStatus(v *broadcastrecipient.Status) *BroadcastRecipientCreate {
-	if v != nil {
-		_c.SetStatus(*v)
-	}
-	return _c
-}
-
-// SetOutboundMessageID sets the "outbound_message_id" field.
-func (_c *BroadcastRecipientCreate) SetOutboundMessageID(v int64) *BroadcastRecipientCreate {
-	_c.mutation.SetOutboundMessageID(v)
-	return _c
-}
-
-// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
-func (_c *BroadcastRecipientCreate) SetNillableOutboundMessageID(v *int64) *BroadcastRecipientCreate {
-	if v != nil {
-		_c.SetOutboundMessageID(*v)
-	}
-	return _c
-}
-
-// SetError sets the "error" field.
-func (_c *BroadcastRecipientCreate) SetError(v string) *BroadcastRecipientCreate {
-	_c.mutation.SetError(v)
-	return _c
-}
-
-// SetNillableError sets the "error" field if the given value is not nil.
-func (_c *BroadcastRecipientCreate) SetNillableError(v *string) *BroadcastRecipientCreate {
-	if v != nil {
-		_c.SetError(*v)
-	}
-	return _c
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (_c *BroadcastRecipientCreate) SetDeferredUntil(v time.Time) *BroadcastRecipientCreate {
 	_c.mutation.SetDeferredUntil(v)
@@ -130,20 +88,6 @@ func (_c *BroadcastRecipientCreate) SetDeferredUntil(v time.Time) *BroadcastReci
 func (_c *BroadcastRecipientCreate) SetNillableDeferredUntil(v *time.Time) *BroadcastRecipientCreate {
 	if v != nil {
 		_c.SetDeferredUntil(*v)
-	}
-	return _c
-}
-
-// SetSentAt sets the "sent_at" field.
-func (_c *BroadcastRecipientCreate) SetSentAt(v time.Time) *BroadcastRecipientCreate {
-	_c.mutation.SetSentAt(v)
-	return _c
-}
-
-// SetNillableSentAt sets the "sent_at" field if the given value is not nil.
-func (_c *BroadcastRecipientCreate) SetNillableSentAt(v *time.Time) *BroadcastRecipientCreate {
-	if v != nil {
-		_c.SetSentAt(*v)
 	}
 	return _c
 }
@@ -249,10 +193,6 @@ func (_c *BroadcastRecipientCreate) defaults() {
 		v := broadcastrecipient.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.Status(); !ok {
-		v := broadcastrecipient.DefaultStatus
-		_c.mutation.SetStatus(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -268,14 +208,6 @@ func (_c *BroadcastRecipientCreate) check() error {
 	}
 	if _, ok := _c.mutation.BroadcastID(); !ok {
 		return &ValidationError{Name: "broadcast_id", err: errors.New(`ent: missing required field "BroadcastRecipient.broadcast_id"`)}
-	}
-	if _, ok := _c.mutation.Status(); !ok {
-		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "BroadcastRecipient.status"`)}
-	}
-	if v, ok := _c.mutation.Status(); ok {
-		if err := broadcastrecipient.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "BroadcastRecipient.status": %w`, err)}
-		}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "BroadcastRecipient.workspace"`)}
@@ -328,25 +260,9 @@ func (_c *BroadcastRecipientCreate) createSpec() (*BroadcastRecipient, *sqlgraph
 		_spec.SetField(broadcastrecipient.FieldContactID, field.TypeInt64, value)
 		_node.ContactID = value
 	}
-	if value, ok := _c.mutation.Status(); ok {
-		_spec.SetField(broadcastrecipient.FieldStatus, field.TypeEnum, value)
-		_node.Status = value
-	}
-	if value, ok := _c.mutation.OutboundMessageID(); ok {
-		_spec.SetField(broadcastrecipient.FieldOutboundMessageID, field.TypeInt64, value)
-		_node.OutboundMessageID = &value
-	}
-	if value, ok := _c.mutation.Error(); ok {
-		_spec.SetField(broadcastrecipient.FieldError, field.TypeString, value)
-		_node.Error = &value
-	}
 	if value, ok := _c.mutation.DeferredUntil(); ok {
 		_spec.SetField(broadcastrecipient.FieldDeferredUntil, field.TypeTime, value)
 		_node.DeferredUntil = &value
-	}
-	if value, ok := _c.mutation.SentAt(); ok {
-		_spec.SetField(broadcastrecipient.FieldSentAt, field.TypeTime, value)
-		_node.SentAt = &value
 	}
 	if value, ok := _c.mutation.OpenedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldOpenedAt, field.TypeTime, value)
@@ -506,60 +422,6 @@ func (u *BroadcastRecipientUpsert) ClearContactID() *BroadcastRecipientUpsert {
 	return u
 }
 
-// SetStatus sets the "status" field.
-func (u *BroadcastRecipientUpsert) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientUpsert {
-	u.Set(broadcastrecipient.FieldStatus, v)
-	return u
-}
-
-// UpdateStatus sets the "status" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsert) UpdateStatus() *BroadcastRecipientUpsert {
-	u.SetExcluded(broadcastrecipient.FieldStatus)
-	return u
-}
-
-// SetOutboundMessageID sets the "outbound_message_id" field.
-func (u *BroadcastRecipientUpsert) SetOutboundMessageID(v int64) *BroadcastRecipientUpsert {
-	u.Set(broadcastrecipient.FieldOutboundMessageID, v)
-	return u
-}
-
-// UpdateOutboundMessageID sets the "outbound_message_id" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsert) UpdateOutboundMessageID() *BroadcastRecipientUpsert {
-	u.SetExcluded(broadcastrecipient.FieldOutboundMessageID)
-	return u
-}
-
-// AddOutboundMessageID adds v to the "outbound_message_id" field.
-func (u *BroadcastRecipientUpsert) AddOutboundMessageID(v int64) *BroadcastRecipientUpsert {
-	u.Add(broadcastrecipient.FieldOutboundMessageID, v)
-	return u
-}
-
-// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
-func (u *BroadcastRecipientUpsert) ClearOutboundMessageID() *BroadcastRecipientUpsert {
-	u.SetNull(broadcastrecipient.FieldOutboundMessageID)
-	return u
-}
-
-// SetError sets the "error" field.
-func (u *BroadcastRecipientUpsert) SetError(v string) *BroadcastRecipientUpsert {
-	u.Set(broadcastrecipient.FieldError, v)
-	return u
-}
-
-// UpdateError sets the "error" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsert) UpdateError() *BroadcastRecipientUpsert {
-	u.SetExcluded(broadcastrecipient.FieldError)
-	return u
-}
-
-// ClearError clears the value of the "error" field.
-func (u *BroadcastRecipientUpsert) ClearError() *BroadcastRecipientUpsert {
-	u.SetNull(broadcastrecipient.FieldError)
-	return u
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (u *BroadcastRecipientUpsert) SetDeferredUntil(v time.Time) *BroadcastRecipientUpsert {
 	u.Set(broadcastrecipient.FieldDeferredUntil, v)
@@ -575,24 +437,6 @@ func (u *BroadcastRecipientUpsert) UpdateDeferredUntil() *BroadcastRecipientUpse
 // ClearDeferredUntil clears the value of the "deferred_until" field.
 func (u *BroadcastRecipientUpsert) ClearDeferredUntil() *BroadcastRecipientUpsert {
 	u.SetNull(broadcastrecipient.FieldDeferredUntil)
-	return u
-}
-
-// SetSentAt sets the "sent_at" field.
-func (u *BroadcastRecipientUpsert) SetSentAt(v time.Time) *BroadcastRecipientUpsert {
-	u.Set(broadcastrecipient.FieldSentAt, v)
-	return u
-}
-
-// UpdateSentAt sets the "sent_at" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsert) UpdateSentAt() *BroadcastRecipientUpsert {
-	u.SetExcluded(broadcastrecipient.FieldSentAt)
-	return u
-}
-
-// ClearSentAt clears the value of the "sent_at" field.
-func (u *BroadcastRecipientUpsert) ClearSentAt() *BroadcastRecipientUpsert {
-	u.SetNull(broadcastrecipient.FieldSentAt)
 	return u
 }
 
@@ -771,69 +615,6 @@ func (u *BroadcastRecipientUpsertOne) ClearContactID() *BroadcastRecipientUpsert
 	})
 }
 
-// SetStatus sets the "status" field.
-func (u *BroadcastRecipientUpsertOne) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetStatus(v)
-	})
-}
-
-// UpdateStatus sets the "status" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertOne) UpdateStatus() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateStatus()
-	})
-}
-
-// SetOutboundMessageID sets the "outbound_message_id" field.
-func (u *BroadcastRecipientUpsertOne) SetOutboundMessageID(v int64) *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetOutboundMessageID(v)
-	})
-}
-
-// AddOutboundMessageID adds v to the "outbound_message_id" field.
-func (u *BroadcastRecipientUpsertOne) AddOutboundMessageID(v int64) *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.AddOutboundMessageID(v)
-	})
-}
-
-// UpdateOutboundMessageID sets the "outbound_message_id" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertOne) UpdateOutboundMessageID() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateOutboundMessageID()
-	})
-}
-
-// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
-func (u *BroadcastRecipientUpsertOne) ClearOutboundMessageID() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearOutboundMessageID()
-	})
-}
-
-// SetError sets the "error" field.
-func (u *BroadcastRecipientUpsertOne) SetError(v string) *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetError(v)
-	})
-}
-
-// UpdateError sets the "error" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertOne) UpdateError() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateError()
-	})
-}
-
-// ClearError clears the value of the "error" field.
-func (u *BroadcastRecipientUpsertOne) ClearError() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearError()
-	})
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (u *BroadcastRecipientUpsertOne) SetDeferredUntil(v time.Time) *BroadcastRecipientUpsertOne {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
@@ -852,27 +633,6 @@ func (u *BroadcastRecipientUpsertOne) UpdateDeferredUntil() *BroadcastRecipientU
 func (u *BroadcastRecipientUpsertOne) ClearDeferredUntil() *BroadcastRecipientUpsertOne {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearDeferredUntil()
-	})
-}
-
-// SetSentAt sets the "sent_at" field.
-func (u *BroadcastRecipientUpsertOne) SetSentAt(v time.Time) *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetSentAt(v)
-	})
-}
-
-// UpdateSentAt sets the "sent_at" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertOne) UpdateSentAt() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateSentAt()
-	})
-}
-
-// ClearSentAt clears the value of the "sent_at" field.
-func (u *BroadcastRecipientUpsertOne) ClearSentAt() *BroadcastRecipientUpsertOne {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearSentAt()
 	})
 }
 
@@ -1226,69 +986,6 @@ func (u *BroadcastRecipientUpsertBulk) ClearContactID() *BroadcastRecipientUpser
 	})
 }
 
-// SetStatus sets the "status" field.
-func (u *BroadcastRecipientUpsertBulk) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetStatus(v)
-	})
-}
-
-// UpdateStatus sets the "status" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertBulk) UpdateStatus() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateStatus()
-	})
-}
-
-// SetOutboundMessageID sets the "outbound_message_id" field.
-func (u *BroadcastRecipientUpsertBulk) SetOutboundMessageID(v int64) *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetOutboundMessageID(v)
-	})
-}
-
-// AddOutboundMessageID adds v to the "outbound_message_id" field.
-func (u *BroadcastRecipientUpsertBulk) AddOutboundMessageID(v int64) *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.AddOutboundMessageID(v)
-	})
-}
-
-// UpdateOutboundMessageID sets the "outbound_message_id" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertBulk) UpdateOutboundMessageID() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateOutboundMessageID()
-	})
-}
-
-// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
-func (u *BroadcastRecipientUpsertBulk) ClearOutboundMessageID() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearOutboundMessageID()
-	})
-}
-
-// SetError sets the "error" field.
-func (u *BroadcastRecipientUpsertBulk) SetError(v string) *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetError(v)
-	})
-}
-
-// UpdateError sets the "error" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertBulk) UpdateError() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateError()
-	})
-}
-
-// ClearError clears the value of the "error" field.
-func (u *BroadcastRecipientUpsertBulk) ClearError() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearError()
-	})
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (u *BroadcastRecipientUpsertBulk) SetDeferredUntil(v time.Time) *BroadcastRecipientUpsertBulk {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
@@ -1307,27 +1004,6 @@ func (u *BroadcastRecipientUpsertBulk) UpdateDeferredUntil() *BroadcastRecipient
 func (u *BroadcastRecipientUpsertBulk) ClearDeferredUntil() *BroadcastRecipientUpsertBulk {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearDeferredUntil()
-	})
-}
-
-// SetSentAt sets the "sent_at" field.
-func (u *BroadcastRecipientUpsertBulk) SetSentAt(v time.Time) *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.SetSentAt(v)
-	})
-}
-
-// UpdateSentAt sets the "sent_at" field to the value that was provided on create.
-func (u *BroadcastRecipientUpsertBulk) UpdateSentAt() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.UpdateSentAt()
-	})
-}
-
-// ClearSentAt clears the value of the "sent_at" field.
-func (u *BroadcastRecipientUpsertBulk) ClearSentAt() *BroadcastRecipientUpsertBulk {
-	return u.Update(func(s *BroadcastRecipientUpsert) {
-		s.ClearSentAt()
 	})
 }
 

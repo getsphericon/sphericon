@@ -52,20 +52,6 @@ type Broadcast struct {
 	ScheduledAt *time.Time `json:"scheduled_at,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
 	SentAt *time.Time `json:"sent_at,omitempty"`
-	// RecipientsTotal holds the value of the "recipients_total" field.
-	RecipientsTotal int `json:"recipients_total,omitempty"`
-	// SentCount holds the value of the "sent_count" field.
-	SentCount int `json:"sent_count,omitempty"`
-	// OpenedCount holds the value of the "opened_count" field.
-	OpenedCount int `json:"opened_count,omitempty"`
-	// ClickedCount holds the value of the "clicked_count" field.
-	ClickedCount int `json:"clicked_count,omitempty"`
-	// UnsubscribedCount holds the value of the "unsubscribed_count" field.
-	UnsubscribedCount int `json:"unsubscribed_count,omitempty"`
-	// FailedCount holds the value of the "failed_count" field.
-	FailedCount int `json:"failed_count,omitempty"`
-	// SkippedCount holds the value of the "skipped_count" field.
-	SkippedCount int `json:"skipped_count,omitempty"`
 	// HoldReason holds the value of the "hold_reason" field.
 	HoldReason *string `json:"hold_reason,omitempty"`
 	// LastScheduledAt holds the value of the "last_scheduled_at" field.
@@ -114,7 +100,7 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case broadcast.FieldDoc:
 			values[i] = new([]byte)
-		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldSegmentID, broadcast.FieldIntegrationID, broadcast.FieldRecipientsTotal, broadcast.FieldSentCount, broadcast.FieldOpenedCount, broadcast.FieldClickedCount, broadcast.FieldUnsubscribedCount, broadcast.FieldFailedCount, broadcast.FieldSkippedCount:
+		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldSegmentID, broadcast.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
 		case broadcast.FieldName, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldBodyText, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
@@ -246,48 +232,6 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 				_m.SentAt = new(time.Time)
 				*_m.SentAt = value.Time
 			}
-		case broadcast.FieldRecipientsTotal:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field recipients_total", values[i])
-			} else if value.Valid {
-				_m.RecipientsTotal = int(value.Int64)
-			}
-		case broadcast.FieldSentCount:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field sent_count", values[i])
-			} else if value.Valid {
-				_m.SentCount = int(value.Int64)
-			}
-		case broadcast.FieldOpenedCount:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field opened_count", values[i])
-			} else if value.Valid {
-				_m.OpenedCount = int(value.Int64)
-			}
-		case broadcast.FieldClickedCount:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field clicked_count", values[i])
-			} else if value.Valid {
-				_m.ClickedCount = int(value.Int64)
-			}
-		case broadcast.FieldUnsubscribedCount:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field unsubscribed_count", values[i])
-			} else if value.Valid {
-				_m.UnsubscribedCount = int(value.Int64)
-			}
-		case broadcast.FieldFailedCount:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field failed_count", values[i])
-			} else if value.Valid {
-				_m.FailedCount = int(value.Int64)
-			}
-		case broadcast.FieldSkippedCount:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field skipped_count", values[i])
-			} else if value.Valid {
-				_m.SkippedCount = int(value.Int64)
-			}
 		case broadcast.FieldHoldReason:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hold_reason", values[i])
@@ -409,27 +353,6 @@ func (_m *Broadcast) String() string {
 		builder.WriteString("sent_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
-	builder.WriteString(", ")
-	builder.WriteString("recipients_total=")
-	builder.WriteString(fmt.Sprintf("%v", _m.RecipientsTotal))
-	builder.WriteString(", ")
-	builder.WriteString("sent_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SentCount))
-	builder.WriteString(", ")
-	builder.WriteString("opened_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.OpenedCount))
-	builder.WriteString(", ")
-	builder.WriteString("clicked_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ClickedCount))
-	builder.WriteString(", ")
-	builder.WriteString("unsubscribed_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.UnsubscribedCount))
-	builder.WriteString(", ")
-	builder.WriteString("failed_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.FailedCount))
-	builder.WriteString(", ")
-	builder.WriteString("skipped_count=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SkippedCount))
 	builder.WriteString(", ")
 	if v := _m.HoldReason; v != nil {
 		builder.WriteString("hold_reason=")

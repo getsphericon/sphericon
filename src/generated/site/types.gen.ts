@@ -6,7 +6,7 @@ export type ClientOptions = {
 };
 
 /**
- * The contact's delivery record in one broadcast
+ * The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
   /**
@@ -17,18 +17,6 @@ export type ContactExportBroadcastRecipient = {
    * The broadcast
    */
   broadcastId: EntityId;
-  /**
-   * Delivery status
-   */
-  status: string;
-  /**
-   * Why delivery failed
-   */
-  error?: string | null;
-  /**
-   * When the broadcast was sent to the contact
-   */
-  sentAt?: Timestamp | null;
   /**
    * When the contact opened it
    */

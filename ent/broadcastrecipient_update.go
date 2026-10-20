@@ -92,67 +92,6 @@ func (_u *BroadcastRecipientUpdate) ClearContactID() *BroadcastRecipientUpdate {
 	return _u
 }
 
-// SetStatus sets the "status" field.
-func (_u *BroadcastRecipientUpdate) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientUpdate {
-	_u.mutation.SetStatus(v)
-	return _u
-}
-
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdate) SetNillableStatus(v *broadcastrecipient.Status) *BroadcastRecipientUpdate {
-	if v != nil {
-		_u.SetStatus(*v)
-	}
-	return _u
-}
-
-// SetOutboundMessageID sets the "outbound_message_id" field.
-func (_u *BroadcastRecipientUpdate) SetOutboundMessageID(v int64) *BroadcastRecipientUpdate {
-	_u.mutation.ResetOutboundMessageID()
-	_u.mutation.SetOutboundMessageID(v)
-	return _u
-}
-
-// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdate) SetNillableOutboundMessageID(v *int64) *BroadcastRecipientUpdate {
-	if v != nil {
-		_u.SetOutboundMessageID(*v)
-	}
-	return _u
-}
-
-// AddOutboundMessageID adds value to the "outbound_message_id" field.
-func (_u *BroadcastRecipientUpdate) AddOutboundMessageID(v int64) *BroadcastRecipientUpdate {
-	_u.mutation.AddOutboundMessageID(v)
-	return _u
-}
-
-// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
-func (_u *BroadcastRecipientUpdate) ClearOutboundMessageID() *BroadcastRecipientUpdate {
-	_u.mutation.ClearOutboundMessageID()
-	return _u
-}
-
-// SetError sets the "error" field.
-func (_u *BroadcastRecipientUpdate) SetError(v string) *BroadcastRecipientUpdate {
-	_u.mutation.SetError(v)
-	return _u
-}
-
-// SetNillableError sets the "error" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdate) SetNillableError(v *string) *BroadcastRecipientUpdate {
-	if v != nil {
-		_u.SetError(*v)
-	}
-	return _u
-}
-
-// ClearError clears the value of the "error" field.
-func (_u *BroadcastRecipientUpdate) ClearError() *BroadcastRecipientUpdate {
-	_u.mutation.ClearError()
-	return _u
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (_u *BroadcastRecipientUpdate) SetDeferredUntil(v time.Time) *BroadcastRecipientUpdate {
 	_u.mutation.SetDeferredUntil(v)
@@ -170,26 +109,6 @@ func (_u *BroadcastRecipientUpdate) SetNillableDeferredUntil(v *time.Time) *Broa
 // ClearDeferredUntil clears the value of the "deferred_until" field.
 func (_u *BroadcastRecipientUpdate) ClearDeferredUntil() *BroadcastRecipientUpdate {
 	_u.mutation.ClearDeferredUntil()
-	return _u
-}
-
-// SetSentAt sets the "sent_at" field.
-func (_u *BroadcastRecipientUpdate) SetSentAt(v time.Time) *BroadcastRecipientUpdate {
-	_u.mutation.SetSentAt(v)
-	return _u
-}
-
-// SetNillableSentAt sets the "sent_at" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdate) SetNillableSentAt(v *time.Time) *BroadcastRecipientUpdate {
-	if v != nil {
-		_u.SetSentAt(*v)
-	}
-	return _u
-}
-
-// ClearSentAt clears the value of the "sent_at" field.
-func (_u *BroadcastRecipientUpdate) ClearSentAt() *BroadcastRecipientUpdate {
-	_u.mutation.ClearSentAt()
 	return _u
 }
 
@@ -318,11 +237,6 @@ func (_u *BroadcastRecipientUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BroadcastRecipientUpdate) check() error {
-	if v, ok := _u.mutation.Status(); ok {
-		if err := broadcastrecipient.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "BroadcastRecipient.status": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BroadcastRecipient.workspace"`)
 	}
@@ -362,35 +276,11 @@ func (_u *BroadcastRecipientUpdate) sqlSave(ctx context.Context) (_node int, err
 	if _u.mutation.ContactIDCleared() {
 		_spec.ClearField(broadcastrecipient.FieldContactID, field.TypeInt64)
 	}
-	if value, ok := _u.mutation.Status(); ok {
-		_spec.SetField(broadcastrecipient.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.OutboundMessageID(); ok {
-		_spec.SetField(broadcastrecipient.FieldOutboundMessageID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedOutboundMessageID(); ok {
-		_spec.AddField(broadcastrecipient.FieldOutboundMessageID, field.TypeInt64, value)
-	}
-	if _u.mutation.OutboundMessageIDCleared() {
-		_spec.ClearField(broadcastrecipient.FieldOutboundMessageID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.Error(); ok {
-		_spec.SetField(broadcastrecipient.FieldError, field.TypeString, value)
-	}
-	if _u.mutation.ErrorCleared() {
-		_spec.ClearField(broadcastrecipient.FieldError, field.TypeString)
-	}
 	if value, ok := _u.mutation.DeferredUntil(); ok {
 		_spec.SetField(broadcastrecipient.FieldDeferredUntil, field.TypeTime, value)
 	}
 	if _u.mutation.DeferredUntilCleared() {
 		_spec.ClearField(broadcastrecipient.FieldDeferredUntil, field.TypeTime)
-	}
-	if value, ok := _u.mutation.SentAt(); ok {
-		_spec.SetField(broadcastrecipient.FieldSentAt, field.TypeTime, value)
-	}
-	if _u.mutation.SentAtCleared() {
-		_spec.ClearField(broadcastrecipient.FieldSentAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.OpenedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldOpenedAt, field.TypeTime, value)
@@ -551,67 +441,6 @@ func (_u *BroadcastRecipientUpdateOne) ClearContactID() *BroadcastRecipientUpdat
 	return _u
 }
 
-// SetStatus sets the "status" field.
-func (_u *BroadcastRecipientUpdateOne) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientUpdateOne {
-	_u.mutation.SetStatus(v)
-	return _u
-}
-
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdateOne) SetNillableStatus(v *broadcastrecipient.Status) *BroadcastRecipientUpdateOne {
-	if v != nil {
-		_u.SetStatus(*v)
-	}
-	return _u
-}
-
-// SetOutboundMessageID sets the "outbound_message_id" field.
-func (_u *BroadcastRecipientUpdateOne) SetOutboundMessageID(v int64) *BroadcastRecipientUpdateOne {
-	_u.mutation.ResetOutboundMessageID()
-	_u.mutation.SetOutboundMessageID(v)
-	return _u
-}
-
-// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdateOne) SetNillableOutboundMessageID(v *int64) *BroadcastRecipientUpdateOne {
-	if v != nil {
-		_u.SetOutboundMessageID(*v)
-	}
-	return _u
-}
-
-// AddOutboundMessageID adds value to the "outbound_message_id" field.
-func (_u *BroadcastRecipientUpdateOne) AddOutboundMessageID(v int64) *BroadcastRecipientUpdateOne {
-	_u.mutation.AddOutboundMessageID(v)
-	return _u
-}
-
-// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
-func (_u *BroadcastRecipientUpdateOne) ClearOutboundMessageID() *BroadcastRecipientUpdateOne {
-	_u.mutation.ClearOutboundMessageID()
-	return _u
-}
-
-// SetError sets the "error" field.
-func (_u *BroadcastRecipientUpdateOne) SetError(v string) *BroadcastRecipientUpdateOne {
-	_u.mutation.SetError(v)
-	return _u
-}
-
-// SetNillableError sets the "error" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdateOne) SetNillableError(v *string) *BroadcastRecipientUpdateOne {
-	if v != nil {
-		_u.SetError(*v)
-	}
-	return _u
-}
-
-// ClearError clears the value of the "error" field.
-func (_u *BroadcastRecipientUpdateOne) ClearError() *BroadcastRecipientUpdateOne {
-	_u.mutation.ClearError()
-	return _u
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (_u *BroadcastRecipientUpdateOne) SetDeferredUntil(v time.Time) *BroadcastRecipientUpdateOne {
 	_u.mutation.SetDeferredUntil(v)
@@ -629,26 +458,6 @@ func (_u *BroadcastRecipientUpdateOne) SetNillableDeferredUntil(v *time.Time) *B
 // ClearDeferredUntil clears the value of the "deferred_until" field.
 func (_u *BroadcastRecipientUpdateOne) ClearDeferredUntil() *BroadcastRecipientUpdateOne {
 	_u.mutation.ClearDeferredUntil()
-	return _u
-}
-
-// SetSentAt sets the "sent_at" field.
-func (_u *BroadcastRecipientUpdateOne) SetSentAt(v time.Time) *BroadcastRecipientUpdateOne {
-	_u.mutation.SetSentAt(v)
-	return _u
-}
-
-// SetNillableSentAt sets the "sent_at" field if the given value is not nil.
-func (_u *BroadcastRecipientUpdateOne) SetNillableSentAt(v *time.Time) *BroadcastRecipientUpdateOne {
-	if v != nil {
-		_u.SetSentAt(*v)
-	}
-	return _u
-}
-
-// ClearSentAt clears the value of the "sent_at" field.
-func (_u *BroadcastRecipientUpdateOne) ClearSentAt() *BroadcastRecipientUpdateOne {
-	_u.mutation.ClearSentAt()
 	return _u
 }
 
@@ -790,11 +599,6 @@ func (_u *BroadcastRecipientUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BroadcastRecipientUpdateOne) check() error {
-	if v, ok := _u.mutation.Status(); ok {
-		if err := broadcastrecipient.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "BroadcastRecipient.status": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BroadcastRecipient.workspace"`)
 	}
@@ -851,35 +655,11 @@ func (_u *BroadcastRecipientUpdateOne) sqlSave(ctx context.Context) (_node *Broa
 	if _u.mutation.ContactIDCleared() {
 		_spec.ClearField(broadcastrecipient.FieldContactID, field.TypeInt64)
 	}
-	if value, ok := _u.mutation.Status(); ok {
-		_spec.SetField(broadcastrecipient.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.OutboundMessageID(); ok {
-		_spec.SetField(broadcastrecipient.FieldOutboundMessageID, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedOutboundMessageID(); ok {
-		_spec.AddField(broadcastrecipient.FieldOutboundMessageID, field.TypeInt64, value)
-	}
-	if _u.mutation.OutboundMessageIDCleared() {
-		_spec.ClearField(broadcastrecipient.FieldOutboundMessageID, field.TypeInt64)
-	}
-	if value, ok := _u.mutation.Error(); ok {
-		_spec.SetField(broadcastrecipient.FieldError, field.TypeString, value)
-	}
-	if _u.mutation.ErrorCleared() {
-		_spec.ClearField(broadcastrecipient.FieldError, field.TypeString)
-	}
 	if value, ok := _u.mutation.DeferredUntil(); ok {
 		_spec.SetField(broadcastrecipient.FieldDeferredUntil, field.TypeTime, value)
 	}
 	if _u.mutation.DeferredUntilCleared() {
 		_spec.ClearField(broadcastrecipient.FieldDeferredUntil, field.TypeTime)
-	}
-	if value, ok := _u.mutation.SentAt(); ok {
-		_spec.SetField(broadcastrecipient.FieldSentAt, field.TypeTime, value)
-	}
-	if _u.mutation.SentAtCleared() {
-		_spec.ClearField(broadcastrecipient.FieldSentAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.OpenedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldOpenedAt, field.TypeTime, value)

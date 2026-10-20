@@ -213,10 +213,14 @@ _Avoid_: Campaign, newsletter blast, mailshot, email blast
 
 **Broadcast recipient**:
 The per-(Broadcast, Contact) record — the frozen audience snapshot taken at send
-time, pointing at its Outbound message for delivery state (sent / failed), and the home of a denormalized
-**rollup** of engagement (opened / clicked) derived from the underlying `email.opened` /
-`email.clicked` Events, for per-broadcast stats. The Events are the source of truth; the
-rollup is a convenience view. Contrast Segment, which is a live query and never materialized.
+time. It holds no delivery state of its own: its send ends in exactly one Outbound message
+(sent / skipped / failed), and it is _pending_ until then. It is also the home of a denormalized
+**rollup** of engagement (opened / clicked / unsubscribed, each set once) for per-broadcast
+stats; opens and clicks are also the `email.opened` / `email.clicked` Events, which are the
+source of truth, so the rollup is a convenience view. A Broadcast's figures (recipients, sent,
+skipped, failed, pending, opened, clicked, unsubscribed) are derived from its recipients and
+their messages and never stored, so they are live while it sends. Contrast Segment, which is a
+live query and never materialized.
 _Avoid_: Send log, delivery row
 
 **Outbound send**:

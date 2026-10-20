@@ -17,7 +17,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -99,6 +98,12 @@ func (d *delivery) stats() broadcasts.Stats {
 	return figures[fixtures.BroadcastSendingID]
 }
 
+// pending reports whether the recipient's send has not ended.
+func (d *delivery) pending(recipientID int64) bool {
+	return d.env.DB.BroadcastRecipient.Query().
+		Where(broadcastrecipient.ID(recipientID), broadcasts.Pending()).ExistX(d.ctx)
+}
+
 // messageOf is the one Outbound message of a recipient's send.
 func (d *delivery) messageOf(recipientID int64) *ent.OutboundMessage {
 	return d.env.DB.OutboundMessage.Query().
@@ -125,10 +130,9 @@ func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
 
 	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
 
-	rec := d.recipientRow(id)
-	assert.Equal(t, broadcastrecipient.StatusSent, rec.Status)
-	assert.NotNil(t, rec.SentAt)
-	assert.NotNil(t, rec.OutboundMessageID)
+	msg := d.messageOf(id)
+	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
+	assert.NotNil(t, msg.SentAt)
 	assert.Len(t, d.box.sent, 1)
 	b := d.broadcastRow()
 	assert.Nil(t, b.HoldReason, "a send clears the hold reason")
@@ -153,10 +157,6 @@ func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
 
 	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
 
-	rec := d.recipientRow(id)
-	assert.Equal(t, broadcastrecipient.StatusFailed, rec.Status)
-	require.NotNil(t, rec.Error)
-	assert.Equal(t, "contact has no email", *rec.Error)
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Failed: 1}, d.stats())
 	assert.Empty(t, d.box.sent)
 
@@ -175,7 +175,7 @@ func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
 
 	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
 
-	assert.Equal(t, broadcastrecipient.StatusSkipped, d.recipientRow(id).Status)
+	assert.Equal(t, outboundmessage.StatusSkipped, d.messageOf(id).Status)
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1}, d.stats())
 	assert.Empty(t, d.box.sent)
 }
@@ -187,9 +187,9 @@ func TestRecipientThatCannotRenderFails(t *testing.T) {
 
 	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
 
-	rec := d.recipientRow(id)
-	assert.Equal(t, broadcastrecipient.StatusFailed, rec.Status)
-	assert.NotNil(t, rec.Error)
+	msg := d.messageOf(id)
+	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
+	assert.NotNil(t, msg.Reason)
 }
 
 func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
@@ -203,7 +203,7 @@ func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, holds.ReasonSuspended, held.Reason)
 	assert.True(t, broadcasts.IsRetryLater(err))
-	assert.Equal(t, broadcastrecipient.StatusPending, d.recipientRow(id).Status)
+	assert.True(t, d.pending(id))
 	b := d.broadcastRow()
 	require.NotNil(t, b.HoldReason)
 	assert.Equal(t, holds.ReasonSuspended, *b.HoldReason)
@@ -230,9 +230,8 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	require.ErrorAs(t, err, &deferred)
 	assert.Positive(t, deferred.Delay)
 	assert.True(t, broadcasts.IsRetryLater(err))
-	rec := d.recipientRow(second)
-	assert.Equal(t, broadcastrecipient.StatusPending, rec.Status)
-	assert.NotNil(t, rec.DeferredUntil)
+	assert.True(t, d.pending(second))
+	assert.NotNil(t, d.recipientRow(second).DeferredUntil)
 	assert.Nil(t, d.broadcastRow().HoldReason, "busy is not a hold")
 }
 
@@ -247,10 +246,6 @@ func TestGiveUpFailsTheRecipientWithTheCauseAndSettlesTheBroadcast(t *testing.T)
 
 	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable")))
 
-	rec := d.recipientRow(id)
-	assert.Equal(t, broadcastrecipient.StatusFailed, rec.Status)
-	require.NotNil(t, rec.Error)
-	assert.Equal(t, "smtp unavailable", *rec.Error)
 	assert.Equal(t, broadcast.StatusSent, d.broadcastRow().Status)
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Failed: 1}, d.stats())
 
@@ -269,7 +264,7 @@ func TestGiveUpWaitsOutALiveClaim(t *testing.T) {
 	err := d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable"))
 
 	require.ErrorIs(t, err, outbound.ErrInProgress)
-	assert.Equal(t, broadcastrecipient.StatusPending, d.recipientRow(id).Status)
+	assert.True(t, d.pending(id))
 	assert.Equal(t, outboundmessage.StatusPending, d.messageOf(id).Status)
 	assert.Equal(t, broadcast.StatusSending, d.broadcastRow().Status)
 }
@@ -281,7 +276,7 @@ func TestGiveUpFailsAnExpiredClaim(t *testing.T) {
 
 	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable")))
 
-	assert.Equal(t, broadcastrecipient.StatusFailed, d.recipientRow(id).Status)
+	assert.False(t, d.pending(id))
 	assert.Equal(t, outboundmessage.StatusFailed, d.messageOf(id).Status)
 }
 
@@ -299,20 +294,22 @@ func TestGiveUpAfterTheMailLeftKeepsTheRecipientSent(t *testing.T) {
 
 	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("late failure")))
 
-	assert.Equal(t, broadcastrecipient.StatusSent, d.recipientRow(id).Status)
+	assert.False(t, d.pending(id))
 	assert.Equal(t, outboundmessage.StatusSent, d.messageOf(id).Status)
 	assert.Len(t, d.box.sent, 1)
 }
 
-func TestOnlyAPendingRecipientCanLeavePending(t *testing.T) {
+// A recipient that is already decided keeps its outcome: a late give-up neither fails it nor
+// rewrites its message.
+func TestAGiveUpAfterTheSendKeepsItsOutcome(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
 	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
 
-	err := d.del.GiveUp(d.ctx, d.s, id, errors.New("late"))
+	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("late")))
 
-	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
-	assert.Equal(t, broadcastrecipient.StatusSent, d.recipientRow(id).Status)
+	assert.Equal(t, outboundmessage.StatusSent, d.messageOf(id).Status)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, d.stats())
 }
 
 func TestHeldErrorMessage(t *testing.T) {

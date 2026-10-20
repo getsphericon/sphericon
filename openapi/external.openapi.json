@@ -10224,7 +10224,7 @@
       },
       "ContactExportBroadcastRecipient": {
         "type": "object",
-        "required": ["id", "broadcastId", "status", "createdAt"],
+        "required": ["id", "broadcastId", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -10241,25 +10241,6 @@
               }
             ],
             "description": "The broadcast"
-          },
-          "status": {
-            "type": "string",
-            "description": "Delivery status"
-          },
-          "error": {
-            "type": "string",
-            "nullable": true,
-            "description": "Why delivery failed"
-          },
-          "sentAt": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "nullable": true,
-            "description": "When the broadcast was sent to the contact"
           },
           "openedAt": {
             "type": "string",
@@ -10300,7 +10281,7 @@
             "description": "Creation timestamp"
           }
         },
-        "description": "The contact's delivery record in one broadcast"
+        "description": "The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)"
       },
       "ContactExportConfirmation": {
         "type": "object",

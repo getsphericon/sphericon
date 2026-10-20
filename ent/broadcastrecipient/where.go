@@ -80,24 +80,9 @@ func ContactID(v int64) predicate.BroadcastRecipient {
 	return predicate.BroadcastRecipient(sql.FieldEQ(FieldContactID, v))
 }
 
-// OutboundMessageID applies equality check predicate on the "outbound_message_id" field. It's identical to OutboundMessageIDEQ.
-func OutboundMessageID(v int64) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldEQ(FieldOutboundMessageID, v))
-}
-
-// Error applies equality check predicate on the "error" field. It's identical to ErrorEQ.
-func Error(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldEQ(FieldError, v))
-}
-
 // DeferredUntil applies equality check predicate on the "deferred_until" field. It's identical to DeferredUntilEQ.
 func DeferredUntil(v time.Time) predicate.BroadcastRecipient {
 	return predicate.BroadcastRecipient(sql.FieldEQ(FieldDeferredUntil, v))
-}
-
-// SentAt applies equality check predicate on the "sent_at" field. It's identical to SentAtEQ.
-func SentAt(v time.Time) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldEQ(FieldSentAt, v))
 }
 
 // OpenedAt applies equality check predicate on the "opened_at" field. It's identical to OpenedAtEQ.
@@ -285,151 +270,6 @@ func ContactIDNotNil() predicate.BroadcastRecipient {
 	return predicate.BroadcastRecipient(sql.FieldNotNull(FieldContactID))
 }
 
-// StatusEQ applies the EQ predicate on the "status" field.
-func StatusEQ(v Status) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldEQ(FieldStatus, v))
-}
-
-// StatusNEQ applies the NEQ predicate on the "status" field.
-func StatusNEQ(v Status) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNEQ(FieldStatus, v))
-}
-
-// StatusIn applies the In predicate on the "status" field.
-func StatusIn(vs ...Status) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldIn(FieldStatus, vs...))
-}
-
-// StatusNotIn applies the NotIn predicate on the "status" field.
-func StatusNotIn(vs ...Status) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNotIn(FieldStatus, vs...))
-}
-
-// OutboundMessageIDEQ applies the EQ predicate on the "outbound_message_id" field.
-func OutboundMessageIDEQ(v int64) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldEQ(FieldOutboundMessageID, v))
-}
-
-// OutboundMessageIDNEQ applies the NEQ predicate on the "outbound_message_id" field.
-func OutboundMessageIDNEQ(v int64) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNEQ(FieldOutboundMessageID, v))
-}
-
-// OutboundMessageIDIn applies the In predicate on the "outbound_message_id" field.
-func OutboundMessageIDIn(vs ...int64) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldIn(FieldOutboundMessageID, vs...))
-}
-
-// OutboundMessageIDNotIn applies the NotIn predicate on the "outbound_message_id" field.
-func OutboundMessageIDNotIn(vs ...int64) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNotIn(FieldOutboundMessageID, vs...))
-}
-
-// OutboundMessageIDGT applies the GT predicate on the "outbound_message_id" field.
-func OutboundMessageIDGT(v int64) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldGT(FieldOutboundMessageID, v))
-}
-
-// OutboundMessageIDGTE applies the GTE predicate on the "outbound_message_id" field.
-func OutboundMessageIDGTE(v int64) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldGTE(FieldOutboundMessageID, v))
-}
-
-// OutboundMessageIDLT applies the LT predicate on the "outbound_message_id" field.
-func OutboundMessageIDLT(v int64) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldLT(FieldOutboundMessageID, v))
-}
-
-// OutboundMessageIDLTE applies the LTE predicate on the "outbound_message_id" field.
-func OutboundMessageIDLTE(v int64) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldLTE(FieldOutboundMessageID, v))
-}
-
-// OutboundMessageIDIsNil applies the IsNil predicate on the "outbound_message_id" field.
-func OutboundMessageIDIsNil() predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldIsNull(FieldOutboundMessageID))
-}
-
-// OutboundMessageIDNotNil applies the NotNil predicate on the "outbound_message_id" field.
-func OutboundMessageIDNotNil() predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNotNull(FieldOutboundMessageID))
-}
-
-// ErrorEQ applies the EQ predicate on the "error" field.
-func ErrorEQ(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldEQ(FieldError, v))
-}
-
-// ErrorNEQ applies the NEQ predicate on the "error" field.
-func ErrorNEQ(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNEQ(FieldError, v))
-}
-
-// ErrorIn applies the In predicate on the "error" field.
-func ErrorIn(vs ...string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldIn(FieldError, vs...))
-}
-
-// ErrorNotIn applies the NotIn predicate on the "error" field.
-func ErrorNotIn(vs ...string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNotIn(FieldError, vs...))
-}
-
-// ErrorGT applies the GT predicate on the "error" field.
-func ErrorGT(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldGT(FieldError, v))
-}
-
-// ErrorGTE applies the GTE predicate on the "error" field.
-func ErrorGTE(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldGTE(FieldError, v))
-}
-
-// ErrorLT applies the LT predicate on the "error" field.
-func ErrorLT(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldLT(FieldError, v))
-}
-
-// ErrorLTE applies the LTE predicate on the "error" field.
-func ErrorLTE(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldLTE(FieldError, v))
-}
-
-// ErrorContains applies the Contains predicate on the "error" field.
-func ErrorContains(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldContains(FieldError, v))
-}
-
-// ErrorHasPrefix applies the HasPrefix predicate on the "error" field.
-func ErrorHasPrefix(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldHasPrefix(FieldError, v))
-}
-
-// ErrorHasSuffix applies the HasSuffix predicate on the "error" field.
-func ErrorHasSuffix(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldHasSuffix(FieldError, v))
-}
-
-// ErrorIsNil applies the IsNil predicate on the "error" field.
-func ErrorIsNil() predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldIsNull(FieldError))
-}
-
-// ErrorNotNil applies the NotNil predicate on the "error" field.
-func ErrorNotNil() predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNotNull(FieldError))
-}
-
-// ErrorEqualFold applies the EqualFold predicate on the "error" field.
-func ErrorEqualFold(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldEqualFold(FieldError, v))
-}
-
-// ErrorContainsFold applies the ContainsFold predicate on the "error" field.
-func ErrorContainsFold(v string) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldContainsFold(FieldError, v))
-}
-
 // DeferredUntilEQ applies the EQ predicate on the "deferred_until" field.
 func DeferredUntilEQ(v time.Time) predicate.BroadcastRecipient {
 	return predicate.BroadcastRecipient(sql.FieldEQ(FieldDeferredUntil, v))
@@ -478,56 +318,6 @@ func DeferredUntilIsNil() predicate.BroadcastRecipient {
 // DeferredUntilNotNil applies the NotNil predicate on the "deferred_until" field.
 func DeferredUntilNotNil() predicate.BroadcastRecipient {
 	return predicate.BroadcastRecipient(sql.FieldNotNull(FieldDeferredUntil))
-}
-
-// SentAtEQ applies the EQ predicate on the "sent_at" field.
-func SentAtEQ(v time.Time) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldEQ(FieldSentAt, v))
-}
-
-// SentAtNEQ applies the NEQ predicate on the "sent_at" field.
-func SentAtNEQ(v time.Time) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNEQ(FieldSentAt, v))
-}
-
-// SentAtIn applies the In predicate on the "sent_at" field.
-func SentAtIn(vs ...time.Time) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldIn(FieldSentAt, vs...))
-}
-
-// SentAtNotIn applies the NotIn predicate on the "sent_at" field.
-func SentAtNotIn(vs ...time.Time) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNotIn(FieldSentAt, vs...))
-}
-
-// SentAtGT applies the GT predicate on the "sent_at" field.
-func SentAtGT(v time.Time) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldGT(FieldSentAt, v))
-}
-
-// SentAtGTE applies the GTE predicate on the "sent_at" field.
-func SentAtGTE(v time.Time) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldGTE(FieldSentAt, v))
-}
-
-// SentAtLT applies the LT predicate on the "sent_at" field.
-func SentAtLT(v time.Time) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldLT(FieldSentAt, v))
-}
-
-// SentAtLTE applies the LTE predicate on the "sent_at" field.
-func SentAtLTE(v time.Time) predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldLTE(FieldSentAt, v))
-}
-
-// SentAtIsNil applies the IsNil predicate on the "sent_at" field.
-func SentAtIsNil() predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldIsNull(FieldSentAt))
-}
-
-// SentAtNotNil applies the NotNil predicate on the "sent_at" field.
-func SentAtNotNil() predicate.BroadcastRecipient {
-	return predicate.BroadcastRecipient(sql.FieldNotNull(FieldSentAt))
 }
 
 // OpenedAtEQ applies the EQ predicate on the "opened_at" field.

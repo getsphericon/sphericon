@@ -4917,90 +4917,6 @@ func (x *BroadcastScopedCreate) SetNillableSentAt(v *time.Time) *BroadcastScoped
 	return x
 }
 
-// SetRecipientsTotal sets the "recipients_total" field.
-func (x *BroadcastScopedCreate) SetRecipientsTotal(v int) *BroadcastScopedCreate {
-	x.b.SetRecipientsTotal(v)
-	return x
-}
-
-// SetNillableRecipientsTotal sets the "recipients_total" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableRecipientsTotal(v *int) *BroadcastScopedCreate {
-	x.b.SetNillableRecipientsTotal(v)
-	return x
-}
-
-// SetSentCount sets the "sent_count" field.
-func (x *BroadcastScopedCreate) SetSentCount(v int) *BroadcastScopedCreate {
-	x.b.SetSentCount(v)
-	return x
-}
-
-// SetNillableSentCount sets the "sent_count" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableSentCount(v *int) *BroadcastScopedCreate {
-	x.b.SetNillableSentCount(v)
-	return x
-}
-
-// SetOpenedCount sets the "opened_count" field.
-func (x *BroadcastScopedCreate) SetOpenedCount(v int) *BroadcastScopedCreate {
-	x.b.SetOpenedCount(v)
-	return x
-}
-
-// SetNillableOpenedCount sets the "opened_count" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableOpenedCount(v *int) *BroadcastScopedCreate {
-	x.b.SetNillableOpenedCount(v)
-	return x
-}
-
-// SetClickedCount sets the "clicked_count" field.
-func (x *BroadcastScopedCreate) SetClickedCount(v int) *BroadcastScopedCreate {
-	x.b.SetClickedCount(v)
-	return x
-}
-
-// SetNillableClickedCount sets the "clicked_count" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableClickedCount(v *int) *BroadcastScopedCreate {
-	x.b.SetNillableClickedCount(v)
-	return x
-}
-
-// SetUnsubscribedCount sets the "unsubscribed_count" field.
-func (x *BroadcastScopedCreate) SetUnsubscribedCount(v int) *BroadcastScopedCreate {
-	x.b.SetUnsubscribedCount(v)
-	return x
-}
-
-// SetNillableUnsubscribedCount sets the "unsubscribed_count" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableUnsubscribedCount(v *int) *BroadcastScopedCreate {
-	x.b.SetNillableUnsubscribedCount(v)
-	return x
-}
-
-// SetFailedCount sets the "failed_count" field.
-func (x *BroadcastScopedCreate) SetFailedCount(v int) *BroadcastScopedCreate {
-	x.b.SetFailedCount(v)
-	return x
-}
-
-// SetNillableFailedCount sets the "failed_count" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableFailedCount(v *int) *BroadcastScopedCreate {
-	x.b.SetNillableFailedCount(v)
-	return x
-}
-
-// SetSkippedCount sets the "skipped_count" field.
-func (x *BroadcastScopedCreate) SetSkippedCount(v int) *BroadcastScopedCreate {
-	x.b.SetSkippedCount(v)
-	return x
-}
-
-// SetNillableSkippedCount sets the "skipped_count" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableSkippedCount(v *int) *BroadcastScopedCreate {
-	x.b.SetNillableSkippedCount(v)
-	return x
-}
-
 // SetHoldReason sets the "hold_reason" field.
 func (x *BroadcastScopedCreate) SetHoldReason(v string) *BroadcastScopedCreate {
 	x.b.SetHoldReason(v)
@@ -5348,132 +5264,6 @@ func (u *BroadcastScopedUpsert) UpdateSentAt() *BroadcastScopedUpsert {
 // ClearSentAt clears the value of the "sent_at" field.
 func (u *BroadcastScopedUpsert) ClearSentAt() *BroadcastScopedUpsert {
 	u.u.SetNull(broadcast.FieldSentAt)
-	return u
-}
-
-// SetRecipientsTotal sets the "recipients_total" field.
-func (u *BroadcastScopedUpsert) SetRecipientsTotal(v int) *BroadcastScopedUpsert {
-	u.u.Set(broadcast.FieldRecipientsTotal, v)
-	return u
-}
-
-// AddRecipientsTotal adds v to the "recipients_total" field.
-func (u *BroadcastScopedUpsert) AddRecipientsTotal(v int) *BroadcastScopedUpsert {
-	u.u.Add(broadcast.FieldRecipientsTotal, v)
-	return u
-}
-
-// UpdateRecipientsTotal sets the "recipients_total" field to the value that was provided on create.
-func (u *BroadcastScopedUpsert) UpdateRecipientsTotal() *BroadcastScopedUpsert {
-	u.u.SetExcluded(broadcast.FieldRecipientsTotal)
-	return u
-}
-
-// SetSentCount sets the "sent_count" field.
-func (u *BroadcastScopedUpsert) SetSentCount(v int) *BroadcastScopedUpsert {
-	u.u.Set(broadcast.FieldSentCount, v)
-	return u
-}
-
-// AddSentCount adds v to the "sent_count" field.
-func (u *BroadcastScopedUpsert) AddSentCount(v int) *BroadcastScopedUpsert {
-	u.u.Add(broadcast.FieldSentCount, v)
-	return u
-}
-
-// UpdateSentCount sets the "sent_count" field to the value that was provided on create.
-func (u *BroadcastScopedUpsert) UpdateSentCount() *BroadcastScopedUpsert {
-	u.u.SetExcluded(broadcast.FieldSentCount)
-	return u
-}
-
-// SetOpenedCount sets the "opened_count" field.
-func (u *BroadcastScopedUpsert) SetOpenedCount(v int) *BroadcastScopedUpsert {
-	u.u.Set(broadcast.FieldOpenedCount, v)
-	return u
-}
-
-// AddOpenedCount adds v to the "opened_count" field.
-func (u *BroadcastScopedUpsert) AddOpenedCount(v int) *BroadcastScopedUpsert {
-	u.u.Add(broadcast.FieldOpenedCount, v)
-	return u
-}
-
-// UpdateOpenedCount sets the "opened_count" field to the value that was provided on create.
-func (u *BroadcastScopedUpsert) UpdateOpenedCount() *BroadcastScopedUpsert {
-	u.u.SetExcluded(broadcast.FieldOpenedCount)
-	return u
-}
-
-// SetClickedCount sets the "clicked_count" field.
-func (u *BroadcastScopedUpsert) SetClickedCount(v int) *BroadcastScopedUpsert {
-	u.u.Set(broadcast.FieldClickedCount, v)
-	return u
-}
-
-// AddClickedCount adds v to the "clicked_count" field.
-func (u *BroadcastScopedUpsert) AddClickedCount(v int) *BroadcastScopedUpsert {
-	u.u.Add(broadcast.FieldClickedCount, v)
-	return u
-}
-
-// UpdateClickedCount sets the "clicked_count" field to the value that was provided on create.
-func (u *BroadcastScopedUpsert) UpdateClickedCount() *BroadcastScopedUpsert {
-	u.u.SetExcluded(broadcast.FieldClickedCount)
-	return u
-}
-
-// SetUnsubscribedCount sets the "unsubscribed_count" field.
-func (u *BroadcastScopedUpsert) SetUnsubscribedCount(v int) *BroadcastScopedUpsert {
-	u.u.Set(broadcast.FieldUnsubscribedCount, v)
-	return u
-}
-
-// AddUnsubscribedCount adds v to the "unsubscribed_count" field.
-func (u *BroadcastScopedUpsert) AddUnsubscribedCount(v int) *BroadcastScopedUpsert {
-	u.u.Add(broadcast.FieldUnsubscribedCount, v)
-	return u
-}
-
-// UpdateUnsubscribedCount sets the "unsubscribed_count" field to the value that was provided on create.
-func (u *BroadcastScopedUpsert) UpdateUnsubscribedCount() *BroadcastScopedUpsert {
-	u.u.SetExcluded(broadcast.FieldUnsubscribedCount)
-	return u
-}
-
-// SetFailedCount sets the "failed_count" field.
-func (u *BroadcastScopedUpsert) SetFailedCount(v int) *BroadcastScopedUpsert {
-	u.u.Set(broadcast.FieldFailedCount, v)
-	return u
-}
-
-// AddFailedCount adds v to the "failed_count" field.
-func (u *BroadcastScopedUpsert) AddFailedCount(v int) *BroadcastScopedUpsert {
-	u.u.Add(broadcast.FieldFailedCount, v)
-	return u
-}
-
-// UpdateFailedCount sets the "failed_count" field to the value that was provided on create.
-func (u *BroadcastScopedUpsert) UpdateFailedCount() *BroadcastScopedUpsert {
-	u.u.SetExcluded(broadcast.FieldFailedCount)
-	return u
-}
-
-// SetSkippedCount sets the "skipped_count" field.
-func (u *BroadcastScopedUpsert) SetSkippedCount(v int) *BroadcastScopedUpsert {
-	u.u.Set(broadcast.FieldSkippedCount, v)
-	return u
-}
-
-// AddSkippedCount adds v to the "skipped_count" field.
-func (u *BroadcastScopedUpsert) AddSkippedCount(v int) *BroadcastScopedUpsert {
-	u.u.Add(broadcast.FieldSkippedCount, v)
-	return u
-}
-
-// UpdateSkippedCount sets the "skipped_count" field to the value that was provided on create.
-func (u *BroadcastScopedUpsert) UpdateSkippedCount() *BroadcastScopedUpsert {
-	u.u.SetExcluded(broadcast.FieldSkippedCount)
 	return u
 }
 
@@ -5902,132 +5692,6 @@ func (x *BroadcastScopedUpdateOne) ClearSentAt() *BroadcastScopedUpdateOne {
 	return x
 }
 
-// SetRecipientsTotal sets the "recipients_total" field.
-func (x *BroadcastScopedUpdateOne) SetRecipientsTotal(v int) *BroadcastScopedUpdateOne {
-	x.b.SetRecipientsTotal(v)
-	return x
-}
-
-// SetNillableRecipientsTotal sets the "recipients_total" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableRecipientsTotal(v *int) *BroadcastScopedUpdateOne {
-	x.b.SetNillableRecipientsTotal(v)
-	return x
-}
-
-// AddRecipientsTotal adds value to the "recipients_total" field.
-func (x *BroadcastScopedUpdateOne) AddRecipientsTotal(v int) *BroadcastScopedUpdateOne {
-	x.b.AddRecipientsTotal(v)
-	return x
-}
-
-// SetSentCount sets the "sent_count" field.
-func (x *BroadcastScopedUpdateOne) SetSentCount(v int) *BroadcastScopedUpdateOne {
-	x.b.SetSentCount(v)
-	return x
-}
-
-// SetNillableSentCount sets the "sent_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableSentCount(v *int) *BroadcastScopedUpdateOne {
-	x.b.SetNillableSentCount(v)
-	return x
-}
-
-// AddSentCount adds value to the "sent_count" field.
-func (x *BroadcastScopedUpdateOne) AddSentCount(v int) *BroadcastScopedUpdateOne {
-	x.b.AddSentCount(v)
-	return x
-}
-
-// SetOpenedCount sets the "opened_count" field.
-func (x *BroadcastScopedUpdateOne) SetOpenedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.SetOpenedCount(v)
-	return x
-}
-
-// SetNillableOpenedCount sets the "opened_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableOpenedCount(v *int) *BroadcastScopedUpdateOne {
-	x.b.SetNillableOpenedCount(v)
-	return x
-}
-
-// AddOpenedCount adds value to the "opened_count" field.
-func (x *BroadcastScopedUpdateOne) AddOpenedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.AddOpenedCount(v)
-	return x
-}
-
-// SetClickedCount sets the "clicked_count" field.
-func (x *BroadcastScopedUpdateOne) SetClickedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.SetClickedCount(v)
-	return x
-}
-
-// SetNillableClickedCount sets the "clicked_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableClickedCount(v *int) *BroadcastScopedUpdateOne {
-	x.b.SetNillableClickedCount(v)
-	return x
-}
-
-// AddClickedCount adds value to the "clicked_count" field.
-func (x *BroadcastScopedUpdateOne) AddClickedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.AddClickedCount(v)
-	return x
-}
-
-// SetUnsubscribedCount sets the "unsubscribed_count" field.
-func (x *BroadcastScopedUpdateOne) SetUnsubscribedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.SetUnsubscribedCount(v)
-	return x
-}
-
-// SetNillableUnsubscribedCount sets the "unsubscribed_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableUnsubscribedCount(v *int) *BroadcastScopedUpdateOne {
-	x.b.SetNillableUnsubscribedCount(v)
-	return x
-}
-
-// AddUnsubscribedCount adds value to the "unsubscribed_count" field.
-func (x *BroadcastScopedUpdateOne) AddUnsubscribedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.AddUnsubscribedCount(v)
-	return x
-}
-
-// SetFailedCount sets the "failed_count" field.
-func (x *BroadcastScopedUpdateOne) SetFailedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.SetFailedCount(v)
-	return x
-}
-
-// SetNillableFailedCount sets the "failed_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableFailedCount(v *int) *BroadcastScopedUpdateOne {
-	x.b.SetNillableFailedCount(v)
-	return x
-}
-
-// AddFailedCount adds value to the "failed_count" field.
-func (x *BroadcastScopedUpdateOne) AddFailedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.AddFailedCount(v)
-	return x
-}
-
-// SetSkippedCount sets the "skipped_count" field.
-func (x *BroadcastScopedUpdateOne) SetSkippedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.SetSkippedCount(v)
-	return x
-}
-
-// SetNillableSkippedCount sets the "skipped_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableSkippedCount(v *int) *BroadcastScopedUpdateOne {
-	x.b.SetNillableSkippedCount(v)
-	return x
-}
-
-// AddSkippedCount adds value to the "skipped_count" field.
-func (x *BroadcastScopedUpdateOne) AddSkippedCount(v int) *BroadcastScopedUpdateOne {
-	x.b.AddSkippedCount(v)
-	return x
-}
-
 // SetHoldReason sets the "hold_reason" field.
 func (x *BroadcastScopedUpdateOne) SetHoldReason(v string) *BroadcastScopedUpdateOne {
 	x.b.SetHoldReason(v)
@@ -6401,132 +6065,6 @@ func (x *BroadcastScopedUpdate) ClearSentAt() *BroadcastScopedUpdate {
 	return x
 }
 
-// SetRecipientsTotal sets the "recipients_total" field.
-func (x *BroadcastScopedUpdate) SetRecipientsTotal(v int) *BroadcastScopedUpdate {
-	x.b.SetRecipientsTotal(v)
-	return x
-}
-
-// SetNillableRecipientsTotal sets the "recipients_total" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableRecipientsTotal(v *int) *BroadcastScopedUpdate {
-	x.b.SetNillableRecipientsTotal(v)
-	return x
-}
-
-// AddRecipientsTotal adds value to the "recipients_total" field.
-func (x *BroadcastScopedUpdate) AddRecipientsTotal(v int) *BroadcastScopedUpdate {
-	x.b.AddRecipientsTotal(v)
-	return x
-}
-
-// SetSentCount sets the "sent_count" field.
-func (x *BroadcastScopedUpdate) SetSentCount(v int) *BroadcastScopedUpdate {
-	x.b.SetSentCount(v)
-	return x
-}
-
-// SetNillableSentCount sets the "sent_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableSentCount(v *int) *BroadcastScopedUpdate {
-	x.b.SetNillableSentCount(v)
-	return x
-}
-
-// AddSentCount adds value to the "sent_count" field.
-func (x *BroadcastScopedUpdate) AddSentCount(v int) *BroadcastScopedUpdate {
-	x.b.AddSentCount(v)
-	return x
-}
-
-// SetOpenedCount sets the "opened_count" field.
-func (x *BroadcastScopedUpdate) SetOpenedCount(v int) *BroadcastScopedUpdate {
-	x.b.SetOpenedCount(v)
-	return x
-}
-
-// SetNillableOpenedCount sets the "opened_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableOpenedCount(v *int) *BroadcastScopedUpdate {
-	x.b.SetNillableOpenedCount(v)
-	return x
-}
-
-// AddOpenedCount adds value to the "opened_count" field.
-func (x *BroadcastScopedUpdate) AddOpenedCount(v int) *BroadcastScopedUpdate {
-	x.b.AddOpenedCount(v)
-	return x
-}
-
-// SetClickedCount sets the "clicked_count" field.
-func (x *BroadcastScopedUpdate) SetClickedCount(v int) *BroadcastScopedUpdate {
-	x.b.SetClickedCount(v)
-	return x
-}
-
-// SetNillableClickedCount sets the "clicked_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableClickedCount(v *int) *BroadcastScopedUpdate {
-	x.b.SetNillableClickedCount(v)
-	return x
-}
-
-// AddClickedCount adds value to the "clicked_count" field.
-func (x *BroadcastScopedUpdate) AddClickedCount(v int) *BroadcastScopedUpdate {
-	x.b.AddClickedCount(v)
-	return x
-}
-
-// SetUnsubscribedCount sets the "unsubscribed_count" field.
-func (x *BroadcastScopedUpdate) SetUnsubscribedCount(v int) *BroadcastScopedUpdate {
-	x.b.SetUnsubscribedCount(v)
-	return x
-}
-
-// SetNillableUnsubscribedCount sets the "unsubscribed_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableUnsubscribedCount(v *int) *BroadcastScopedUpdate {
-	x.b.SetNillableUnsubscribedCount(v)
-	return x
-}
-
-// AddUnsubscribedCount adds value to the "unsubscribed_count" field.
-func (x *BroadcastScopedUpdate) AddUnsubscribedCount(v int) *BroadcastScopedUpdate {
-	x.b.AddUnsubscribedCount(v)
-	return x
-}
-
-// SetFailedCount sets the "failed_count" field.
-func (x *BroadcastScopedUpdate) SetFailedCount(v int) *BroadcastScopedUpdate {
-	x.b.SetFailedCount(v)
-	return x
-}
-
-// SetNillableFailedCount sets the "failed_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableFailedCount(v *int) *BroadcastScopedUpdate {
-	x.b.SetNillableFailedCount(v)
-	return x
-}
-
-// AddFailedCount adds value to the "failed_count" field.
-func (x *BroadcastScopedUpdate) AddFailedCount(v int) *BroadcastScopedUpdate {
-	x.b.AddFailedCount(v)
-	return x
-}
-
-// SetSkippedCount sets the "skipped_count" field.
-func (x *BroadcastScopedUpdate) SetSkippedCount(v int) *BroadcastScopedUpdate {
-	x.b.SetSkippedCount(v)
-	return x
-}
-
-// SetNillableSkippedCount sets the "skipped_count" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableSkippedCount(v *int) *BroadcastScopedUpdate {
-	x.b.SetNillableSkippedCount(v)
-	return x
-}
-
-// AddSkippedCount adds value to the "skipped_count" field.
-func (x *BroadcastScopedUpdate) AddSkippedCount(v int) *BroadcastScopedUpdate {
-	x.b.AddSkippedCount(v)
-	return x
-}
-
 // SetHoldReason sets the "hold_reason" field.
 func (x *BroadcastScopedUpdate) SetHoldReason(v string) *BroadcastScopedUpdate {
 	x.b.SetHoldReason(v)
@@ -6781,42 +6319,6 @@ func (x *BroadcastRecipientScopedCreate) SetNillableContactID(v *int64) *Broadca
 	return x
 }
 
-// SetStatus sets the "status" field.
-func (x *BroadcastRecipientScopedCreate) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientScopedCreate {
-	x.b.SetStatus(v)
-	return x
-}
-
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (x *BroadcastRecipientScopedCreate) SetNillableStatus(v *broadcastrecipient.Status) *BroadcastRecipientScopedCreate {
-	x.b.SetNillableStatus(v)
-	return x
-}
-
-// SetOutboundMessageID sets the "outbound_message_id" field.
-func (x *BroadcastRecipientScopedCreate) SetOutboundMessageID(v int64) *BroadcastRecipientScopedCreate {
-	x.b.SetOutboundMessageID(v)
-	return x
-}
-
-// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
-func (x *BroadcastRecipientScopedCreate) SetNillableOutboundMessageID(v *int64) *BroadcastRecipientScopedCreate {
-	x.b.SetNillableOutboundMessageID(v)
-	return x
-}
-
-// SetError sets the "error" field.
-func (x *BroadcastRecipientScopedCreate) SetError(v string) *BroadcastRecipientScopedCreate {
-	x.b.SetError(v)
-	return x
-}
-
-// SetNillableError sets the "error" field if the given value is not nil.
-func (x *BroadcastRecipientScopedCreate) SetNillableError(v *string) *BroadcastRecipientScopedCreate {
-	x.b.SetNillableError(v)
-	return x
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (x *BroadcastRecipientScopedCreate) SetDeferredUntil(v time.Time) *BroadcastRecipientScopedCreate {
 	x.b.SetDeferredUntil(v)
@@ -6826,18 +6328,6 @@ func (x *BroadcastRecipientScopedCreate) SetDeferredUntil(v time.Time) *Broadcas
 // SetNillableDeferredUntil sets the "deferred_until" field if the given value is not nil.
 func (x *BroadcastRecipientScopedCreate) SetNillableDeferredUntil(v *time.Time) *BroadcastRecipientScopedCreate {
 	x.b.SetNillableDeferredUntil(v)
-	return x
-}
-
-// SetSentAt sets the "sent_at" field.
-func (x *BroadcastRecipientScopedCreate) SetSentAt(v time.Time) *BroadcastRecipientScopedCreate {
-	x.b.SetSentAt(v)
-	return x
-}
-
-// SetNillableSentAt sets the "sent_at" field if the given value is not nil.
-func (x *BroadcastRecipientScopedCreate) SetNillableSentAt(v *time.Time) *BroadcastRecipientScopedCreate {
-	x.b.SetNillableSentAt(v)
 	return x
 }
 
@@ -6892,11 +6382,6 @@ func (x *BroadcastRecipientScopedCreate) check(ctx context.Context) error {
 	if v, ok := m.ContactID(); ok {
 		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
 			return fmt.Errorf("contact_id: %w", err)
-		}
-	}
-	if v, ok := m.OutboundMessageID(); ok {
-		if err := x.s.verifyOutboundMessage(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("outbound_message_id: %w", err)
 		}
 	}
 	return nil
@@ -6994,48 +6479,6 @@ func (u *BroadcastRecipientScopedUpsert) ClearContactID() *BroadcastRecipientSco
 	return u
 }
 
-// SetStatus sets the "status" field.
-func (u *BroadcastRecipientScopedUpsert) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientScopedUpsert {
-	u.u.Set(broadcastrecipient.FieldStatus, v)
-	return u
-}
-
-// UpdateStatus sets the "status" field to the value that was provided on create.
-func (u *BroadcastRecipientScopedUpsert) UpdateStatus() *BroadcastRecipientScopedUpsert {
-	u.u.SetExcluded(broadcastrecipient.FieldStatus)
-	return u
-}
-
-// UpdateOutboundMessageID sets the "outbound_message_id" field to the value that was provided on create.
-func (u *BroadcastRecipientScopedUpsert) UpdateOutboundMessageID() *BroadcastRecipientScopedUpsert {
-	u.u.SetExcluded(broadcastrecipient.FieldOutboundMessageID)
-	return u
-}
-
-// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
-func (u *BroadcastRecipientScopedUpsert) ClearOutboundMessageID() *BroadcastRecipientScopedUpsert {
-	u.u.SetNull(broadcastrecipient.FieldOutboundMessageID)
-	return u
-}
-
-// SetError sets the "error" field.
-func (u *BroadcastRecipientScopedUpsert) SetError(v string) *BroadcastRecipientScopedUpsert {
-	u.u.Set(broadcastrecipient.FieldError, v)
-	return u
-}
-
-// UpdateError sets the "error" field to the value that was provided on create.
-func (u *BroadcastRecipientScopedUpsert) UpdateError() *BroadcastRecipientScopedUpsert {
-	u.u.SetExcluded(broadcastrecipient.FieldError)
-	return u
-}
-
-// ClearError clears the value of the "error" field.
-func (u *BroadcastRecipientScopedUpsert) ClearError() *BroadcastRecipientScopedUpsert {
-	u.u.SetNull(broadcastrecipient.FieldError)
-	return u
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (u *BroadcastRecipientScopedUpsert) SetDeferredUntil(v time.Time) *BroadcastRecipientScopedUpsert {
 	u.u.Set(broadcastrecipient.FieldDeferredUntil, v)
@@ -7051,24 +6494,6 @@ func (u *BroadcastRecipientScopedUpsert) UpdateDeferredUntil() *BroadcastRecipie
 // ClearDeferredUntil clears the value of the "deferred_until" field.
 func (u *BroadcastRecipientScopedUpsert) ClearDeferredUntil() *BroadcastRecipientScopedUpsert {
 	u.u.SetNull(broadcastrecipient.FieldDeferredUntil)
-	return u
-}
-
-// SetSentAt sets the "sent_at" field.
-func (u *BroadcastRecipientScopedUpsert) SetSentAt(v time.Time) *BroadcastRecipientScopedUpsert {
-	u.u.Set(broadcastrecipient.FieldSentAt, v)
-	return u
-}
-
-// UpdateSentAt sets the "sent_at" field to the value that was provided on create.
-func (u *BroadcastRecipientScopedUpsert) UpdateSentAt() *BroadcastRecipientScopedUpsert {
-	u.u.SetExcluded(broadcastrecipient.FieldSentAt)
-	return u
-}
-
-// ClearSentAt clears the value of the "sent_at" field.
-func (u *BroadcastRecipientScopedUpsert) ClearSentAt() *BroadcastRecipientScopedUpsert {
-	u.u.SetNull(broadcastrecipient.FieldSentAt)
 	return u
 }
 
@@ -7303,60 +6728,6 @@ func (x *BroadcastRecipientScopedUpdateOne) ClearContactID() *BroadcastRecipient
 	return x
 }
 
-// SetStatus sets the "status" field.
-func (x *BroadcastRecipientScopedUpdateOne) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetStatus(v)
-	return x
-}
-
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdateOne) SetNillableStatus(v *broadcastrecipient.Status) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetNillableStatus(v)
-	return x
-}
-
-// SetOutboundMessageID sets the "outbound_message_id" field.
-func (x *BroadcastRecipientScopedUpdateOne) SetOutboundMessageID(v int64) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetOutboundMessageID(v)
-	return x
-}
-
-// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdateOne) SetNillableOutboundMessageID(v *int64) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetNillableOutboundMessageID(v)
-	return x
-}
-
-// AddOutboundMessageID adds value to the "outbound_message_id" field.
-func (x *BroadcastRecipientScopedUpdateOne) AddOutboundMessageID(v int64) *BroadcastRecipientScopedUpdateOne {
-	x.b.AddOutboundMessageID(v)
-	return x
-}
-
-// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
-func (x *BroadcastRecipientScopedUpdateOne) ClearOutboundMessageID() *BroadcastRecipientScopedUpdateOne {
-	x.b.ClearOutboundMessageID()
-	return x
-}
-
-// SetError sets the "error" field.
-func (x *BroadcastRecipientScopedUpdateOne) SetError(v string) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetError(v)
-	return x
-}
-
-// SetNillableError sets the "error" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdateOne) SetNillableError(v *string) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetNillableError(v)
-	return x
-}
-
-// ClearError clears the value of the "error" field.
-func (x *BroadcastRecipientScopedUpdateOne) ClearError() *BroadcastRecipientScopedUpdateOne {
-	x.b.ClearError()
-	return x
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (x *BroadcastRecipientScopedUpdateOne) SetDeferredUntil(v time.Time) *BroadcastRecipientScopedUpdateOne {
 	x.b.SetDeferredUntil(v)
@@ -7372,24 +6743,6 @@ func (x *BroadcastRecipientScopedUpdateOne) SetNillableDeferredUntil(v *time.Tim
 // ClearDeferredUntil clears the value of the "deferred_until" field.
 func (x *BroadcastRecipientScopedUpdateOne) ClearDeferredUntil() *BroadcastRecipientScopedUpdateOne {
 	x.b.ClearDeferredUntil()
-	return x
-}
-
-// SetSentAt sets the "sent_at" field.
-func (x *BroadcastRecipientScopedUpdateOne) SetSentAt(v time.Time) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetSentAt(v)
-	return x
-}
-
-// SetNillableSentAt sets the "sent_at" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdateOne) SetNillableSentAt(v *time.Time) *BroadcastRecipientScopedUpdateOne {
-	x.b.SetNillableSentAt(v)
-	return x
-}
-
-// ClearSentAt clears the value of the "sent_at" field.
-func (x *BroadcastRecipientScopedUpdateOne) ClearSentAt() *BroadcastRecipientScopedUpdateOne {
-	x.b.ClearSentAt()
 	return x
 }
 
@@ -7468,11 +6821,6 @@ func (x *BroadcastRecipientScopedUpdateOne) check(ctx context.Context) error {
 	if v, ok := m.ContactID(); ok {
 		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
 			return fmt.Errorf("contact_id: %w", err)
-		}
-	}
-	if v, ok := m.OutboundMessageID(); ok {
-		if err := x.s.verifyOutboundMessage(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("outbound_message_id: %w", err)
 		}
 	}
 	return nil
@@ -7570,60 +6918,6 @@ func (x *BroadcastRecipientScopedUpdate) ClearContactID() *BroadcastRecipientSco
 	return x
 }
 
-// SetStatus sets the "status" field.
-func (x *BroadcastRecipientScopedUpdate) SetStatus(v broadcastrecipient.Status) *BroadcastRecipientScopedUpdate {
-	x.b.SetStatus(v)
-	return x
-}
-
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdate) SetNillableStatus(v *broadcastrecipient.Status) *BroadcastRecipientScopedUpdate {
-	x.b.SetNillableStatus(v)
-	return x
-}
-
-// SetOutboundMessageID sets the "outbound_message_id" field.
-func (x *BroadcastRecipientScopedUpdate) SetOutboundMessageID(v int64) *BroadcastRecipientScopedUpdate {
-	x.b.SetOutboundMessageID(v)
-	return x
-}
-
-// SetNillableOutboundMessageID sets the "outbound_message_id" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdate) SetNillableOutboundMessageID(v *int64) *BroadcastRecipientScopedUpdate {
-	x.b.SetNillableOutboundMessageID(v)
-	return x
-}
-
-// AddOutboundMessageID adds value to the "outbound_message_id" field.
-func (x *BroadcastRecipientScopedUpdate) AddOutboundMessageID(v int64) *BroadcastRecipientScopedUpdate {
-	x.b.AddOutboundMessageID(v)
-	return x
-}
-
-// ClearOutboundMessageID clears the value of the "outbound_message_id" field.
-func (x *BroadcastRecipientScopedUpdate) ClearOutboundMessageID() *BroadcastRecipientScopedUpdate {
-	x.b.ClearOutboundMessageID()
-	return x
-}
-
-// SetError sets the "error" field.
-func (x *BroadcastRecipientScopedUpdate) SetError(v string) *BroadcastRecipientScopedUpdate {
-	x.b.SetError(v)
-	return x
-}
-
-// SetNillableError sets the "error" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdate) SetNillableError(v *string) *BroadcastRecipientScopedUpdate {
-	x.b.SetNillableError(v)
-	return x
-}
-
-// ClearError clears the value of the "error" field.
-func (x *BroadcastRecipientScopedUpdate) ClearError() *BroadcastRecipientScopedUpdate {
-	x.b.ClearError()
-	return x
-}
-
 // SetDeferredUntil sets the "deferred_until" field.
 func (x *BroadcastRecipientScopedUpdate) SetDeferredUntil(v time.Time) *BroadcastRecipientScopedUpdate {
 	x.b.SetDeferredUntil(v)
@@ -7639,24 +6933,6 @@ func (x *BroadcastRecipientScopedUpdate) SetNillableDeferredUntil(v *time.Time) 
 // ClearDeferredUntil clears the value of the "deferred_until" field.
 func (x *BroadcastRecipientScopedUpdate) ClearDeferredUntil() *BroadcastRecipientScopedUpdate {
 	x.b.ClearDeferredUntil()
-	return x
-}
-
-// SetSentAt sets the "sent_at" field.
-func (x *BroadcastRecipientScopedUpdate) SetSentAt(v time.Time) *BroadcastRecipientScopedUpdate {
-	x.b.SetSentAt(v)
-	return x
-}
-
-// SetNillableSentAt sets the "sent_at" field if the given value is not nil.
-func (x *BroadcastRecipientScopedUpdate) SetNillableSentAt(v *time.Time) *BroadcastRecipientScopedUpdate {
-	x.b.SetNillableSentAt(v)
-	return x
-}
-
-// ClearSentAt clears the value of the "sent_at" field.
-func (x *BroadcastRecipientScopedUpdate) ClearSentAt() *BroadcastRecipientScopedUpdate {
-	x.b.ClearSentAt()
 	return x
 }
 
@@ -7735,11 +7011,6 @@ func (x *BroadcastRecipientScopedUpdate) check(ctx context.Context) error {
 	if v, ok := m.ContactID(); ok {
 		if err := x.s.verifyContact(ctx, []int64{v}); err != nil {
 			return fmt.Errorf("contact_id: %w", err)
-		}
-	}
-	if v, ok := m.OutboundMessageID(); ok {
-		if err := x.s.verifyOutboundMessage(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("outbound_message_id: %w", err)
 		}
 	}
 	return nil

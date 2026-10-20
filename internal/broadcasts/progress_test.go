@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -25,7 +24,7 @@ func sendingWithPending(t *testing.T, env *testhelper.TestEnv, n int) *broadcast
 	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).Exec(ctx))
 	contacts := []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID}
 	for _, c := range contacts[:n] {
-		_, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(c).SetStatus(broadcastrecipient.StatusPending).Save(ctx)
+		_, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(c).Save(ctx)
 		require.NoError(t, err)
 	}
 	return &broadcastsFixture{id: id}

@@ -47,20 +47,6 @@ const (
 	FieldScheduledAt = "scheduled_at"
 	// FieldSentAt holds the string denoting the sent_at field in the database.
 	FieldSentAt = "sent_at"
-	// FieldRecipientsTotal holds the string denoting the recipients_total field in the database.
-	FieldRecipientsTotal = "recipients_total"
-	// FieldSentCount holds the string denoting the sent_count field in the database.
-	FieldSentCount = "sent_count"
-	// FieldOpenedCount holds the string denoting the opened_count field in the database.
-	FieldOpenedCount = "opened_count"
-	// FieldClickedCount holds the string denoting the clicked_count field in the database.
-	FieldClickedCount = "clicked_count"
-	// FieldUnsubscribedCount holds the string denoting the unsubscribed_count field in the database.
-	FieldUnsubscribedCount = "unsubscribed_count"
-	// FieldFailedCount holds the string denoting the failed_count field in the database.
-	FieldFailedCount = "failed_count"
-	// FieldSkippedCount holds the string denoting the skipped_count field in the database.
-	FieldSkippedCount = "skipped_count"
 	// FieldHoldReason holds the string denoting the hold_reason field in the database.
 	FieldHoldReason = "hold_reason"
 	// FieldLastScheduledAt holds the string denoting the last_scheduled_at field in the database.
@@ -106,13 +92,6 @@ var Columns = []string{
 	FieldStatus,
 	FieldScheduledAt,
 	FieldSentAt,
-	FieldRecipientsTotal,
-	FieldSentCount,
-	FieldOpenedCount,
-	FieldClickedCount,
-	FieldUnsubscribedCount,
-	FieldFailedCount,
-	FieldSkippedCount,
 	FieldHoldReason,
 	FieldLastScheduledAt,
 }
@@ -142,34 +121,6 @@ var (
 	DefaultBody string
 	// DefaultBodyText holds the default value on creation for the "body_text" field.
 	DefaultBodyText string
-	// DefaultRecipientsTotal holds the default value on creation for the "recipients_total" field.
-	DefaultRecipientsTotal int
-	// RecipientsTotalValidator is a validator for the "recipients_total" field. It is called by the builders before save.
-	RecipientsTotalValidator func(int) error
-	// DefaultSentCount holds the default value on creation for the "sent_count" field.
-	DefaultSentCount int
-	// SentCountValidator is a validator for the "sent_count" field. It is called by the builders before save.
-	SentCountValidator func(int) error
-	// DefaultOpenedCount holds the default value on creation for the "opened_count" field.
-	DefaultOpenedCount int
-	// OpenedCountValidator is a validator for the "opened_count" field. It is called by the builders before save.
-	OpenedCountValidator func(int) error
-	// DefaultClickedCount holds the default value on creation for the "clicked_count" field.
-	DefaultClickedCount int
-	// ClickedCountValidator is a validator for the "clicked_count" field. It is called by the builders before save.
-	ClickedCountValidator func(int) error
-	// DefaultUnsubscribedCount holds the default value on creation for the "unsubscribed_count" field.
-	DefaultUnsubscribedCount int
-	// UnsubscribedCountValidator is a validator for the "unsubscribed_count" field. It is called by the builders before save.
-	UnsubscribedCountValidator func(int) error
-	// DefaultFailedCount holds the default value on creation for the "failed_count" field.
-	DefaultFailedCount int
-	// FailedCountValidator is a validator for the "failed_count" field. It is called by the builders before save.
-	FailedCountValidator func(int) error
-	// DefaultSkippedCount holds the default value on creation for the "skipped_count" field.
-	DefaultSkippedCount int
-	// SkippedCountValidator is a validator for the "skipped_count" field. It is called by the builders before save.
-	SkippedCountValidator func(int) error
 )
 
 // Status defines the type for the "status" enum field.
@@ -282,41 +233,6 @@ func ByScheduledAt(opts ...sql.OrderTermOption) OrderOption {
 // BySentAt orders the results by the sent_at field.
 func BySentAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSentAt, opts...).ToFunc()
-}
-
-// ByRecipientsTotal orders the results by the recipients_total field.
-func ByRecipientsTotal(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldRecipientsTotal, opts...).ToFunc()
-}
-
-// BySentCount orders the results by the sent_count field.
-func BySentCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSentCount, opts...).ToFunc()
-}
-
-// ByOpenedCount orders the results by the opened_count field.
-func ByOpenedCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldOpenedCount, opts...).ToFunc()
-}
-
-// ByClickedCount orders the results by the clicked_count field.
-func ByClickedCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldClickedCount, opts...).ToFunc()
-}
-
-// ByUnsubscribedCount orders the results by the unsubscribed_count field.
-func ByUnsubscribedCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUnsubscribedCount, opts...).ToFunc()
-}
-
-// ByFailedCount orders the results by the failed_count field.
-func ByFailedCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFailedCount, opts...).ToFunc()
-}
-
-// BySkippedCount orders the results by the skipped_count field.
-func BySkippedCount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSkippedCount, opts...).ToFunc()
 }
 
 // ByHoldReason orders the results by the hold_reason field.

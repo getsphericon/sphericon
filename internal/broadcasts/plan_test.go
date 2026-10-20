@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -427,8 +428,7 @@ func TestSuppressionDuringPacingIsHonouredAtSendTime(t *testing.T) {
 
 	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, rec.ID))
 
-	status := d.recipientRow(rec.ID).Status
-	assert.Equal(t, broadcastrecipient.StatusSkipped, status)
+	assert.Equal(t, outboundmessage.StatusSkipped, d.messageOf(rec.ID).Status)
 	for _, m := range d.box.sent {
 		assert.NotEqual(t, *alice.Email, m.To)
 	}

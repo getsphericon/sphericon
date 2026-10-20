@@ -35,7 +35,9 @@ func TestExternalContactsEraseRemovesUnsentBroadcastRecipients(t *testing.T) {
 	// stays as an anonymous delivery record, see the erasure matrix test).
 	r, err := env.DB.BroadcastRecipient.Get(ctx, fixtures.BroadcastRecipientBystanderPendingID)
 	require.NoError(t, err)
-	assert.Equal(t, broadcastrecipient.StatusPending, r.Status)
+	stillPending, err := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(r.ID), broadcasts.Pending()).Exist(ctx)
+	require.NoError(t, err)
+	assert.True(t, stillPending)
 	ok, err := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(fixtures.BroadcastRecipientErasableID)).Exist(ctx)
 	require.NoError(t, err)
 	assert.True(t, ok)

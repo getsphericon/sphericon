@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -41,7 +40,7 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).SetLastScheduledAt(eta).Exec(ctx))
 	var recipients []int64
 	for _, contactID := range []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID} {
-		rec, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(contactID).SetStatus(broadcastrecipient.StatusPending).Save(ctx)
+		rec, err := s.BroadcastRecipient().Create().SetBroadcastID(id).SetContactID(contactID).Save(ctx)
 		require.NoError(t, err)
 		recipients = append(recipients, rec.ID)
 	}

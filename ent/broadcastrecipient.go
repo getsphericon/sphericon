@@ -29,16 +29,8 @@ type BroadcastRecipient struct {
 	BroadcastID int64 `json:"broadcast_id,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
 	ContactID int64 `json:"contact_id,omitempty"`
-	// Status holds the value of the "status" field.
-	Status broadcastrecipient.Status `json:"status,omitempty"`
-	// OutboundMessageID holds the value of the "outbound_message_id" field.
-	OutboundMessageID *int64 `json:"outbound_message_id,omitempty"`
-	// Error holds the value of the "error" field.
-	Error *string `json:"error,omitempty"`
 	// DeferredUntil holds the value of the "deferred_until" field.
 	DeferredUntil *time.Time `json:"deferred_until,omitempty"`
-	// SentAt holds the value of the "sent_at" field.
-	SentAt *time.Time `json:"sent_at,omitempty"`
 	// OpenedAt holds the value of the "opened_at" field.
 	OpenedAt *time.Time `json:"opened_at,omitempty"`
 	// ClickedAt holds the value of the "clicked_at" field.
@@ -89,11 +81,9 @@ func (*BroadcastRecipient) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case broadcastrecipient.FieldID, broadcastrecipient.FieldWorkspaceID, broadcastrecipient.FieldBroadcastID, broadcastrecipient.FieldContactID, broadcastrecipient.FieldOutboundMessageID:
+		case broadcastrecipient.FieldID, broadcastrecipient.FieldWorkspaceID, broadcastrecipient.FieldBroadcastID, broadcastrecipient.FieldContactID:
 			values[i] = new(sql.NullInt64)
-		case broadcastrecipient.FieldStatus, broadcastrecipient.FieldError:
-			values[i] = new(sql.NullString)
-		case broadcastrecipient.FieldCreatedAt, broadcastrecipient.FieldUpdatedAt, broadcastrecipient.FieldDeferredUntil, broadcastrecipient.FieldSentAt, broadcastrecipient.FieldOpenedAt, broadcastrecipient.FieldClickedAt, broadcastrecipient.FieldUnsubscribedAt:
+		case broadcastrecipient.FieldCreatedAt, broadcastrecipient.FieldUpdatedAt, broadcastrecipient.FieldDeferredUntil, broadcastrecipient.FieldOpenedAt, broadcastrecipient.FieldClickedAt, broadcastrecipient.FieldUnsubscribedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -146,39 +136,12 @@ func (_m *BroadcastRecipient) assignValues(columns []string, values []any) error
 			} else if value.Valid {
 				_m.ContactID = value.Int64
 			}
-		case broadcastrecipient.FieldStatus:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field status", values[i])
-			} else if value.Valid {
-				_m.Status = broadcastrecipient.Status(value.String)
-			}
-		case broadcastrecipient.FieldOutboundMessageID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field outbound_message_id", values[i])
-			} else if value.Valid {
-				_m.OutboundMessageID = new(int64)
-				*_m.OutboundMessageID = value.Int64
-			}
-		case broadcastrecipient.FieldError:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field error", values[i])
-			} else if value.Valid {
-				_m.Error = new(string)
-				*_m.Error = value.String
-			}
 		case broadcastrecipient.FieldDeferredUntil:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field deferred_until", values[i])
 			} else if value.Valid {
 				_m.DeferredUntil = new(time.Time)
 				*_m.DeferredUntil = value.Time
-			}
-		case broadcastrecipient.FieldSentAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field sent_at", values[i])
-			} else if value.Valid {
-				_m.SentAt = new(time.Time)
-				*_m.SentAt = value.Time
 			}
 		case broadcastrecipient.FieldOpenedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -262,26 +225,8 @@ func (_m *BroadcastRecipient) String() string {
 	builder.WriteString("contact_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ContactID))
 	builder.WriteString(", ")
-	builder.WriteString("status=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Status))
-	builder.WriteString(", ")
-	if v := _m.OutboundMessageID; v != nil {
-		builder.WriteString("outbound_message_id=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.Error; v != nil {
-		builder.WriteString("error=")
-		builder.WriteString(*v)
-	}
-	builder.WriteString(", ")
 	if v := _m.DeferredUntil; v != nil {
 		builder.WriteString("deferred_until=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	if v := _m.SentAt; v != nil {
-		builder.WriteString("sent_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

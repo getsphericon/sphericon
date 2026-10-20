@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
@@ -183,8 +182,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	require.NoError(t, err)
 
 	rec, err := env.DB.BroadcastRecipient.Create().
-		SetBroadcastID(b.ID).SetWorkspaceID(fixtures.AcmeID).SetContactID(c.ID).
-		SetStatus(broadcastrecipient.StatusSent).Save(ctx)
+		SetBroadcastID(b.ID).SetWorkspaceID(fixtures.AcmeID).SetContactID(c.ID).Save(ctx)
 	require.NoError(t, err)
 
 	token, err := tr.Token(rec.ID)

@@ -28,9 +28,6 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 	if source != nil {
 		siteapiContactExportBroadcastRecipient.ID = site.EntityId((*source).ID)
 		siteapiContactExportBroadcastRecipient.BroadcastId = site.EntityId((*source).BroadcastID)
-		siteapiContactExportBroadcastRecipient.Status = string((*source).Status)
-		siteapiContactExportBroadcastRecipient.Error = optNilString((*source).Error)
-		siteapiContactExportBroadcastRecipient.SentAt = optNilTimestamp((*source).SentAt)
 		siteapiContactExportBroadcastRecipient.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		siteapiContactExportBroadcastRecipient.ClickedAt = optNilTimestamp((*source).ClickedAt)
 		siteapiContactExportBroadcastRecipient.UnsubscribedAt = optNilTimestamp((*source).UnsubscribedAt)

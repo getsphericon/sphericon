@@ -37,27 +37,14 @@ func (BroadcastRecipient) Fields() []ent.Field {
 		field.Int64("contact_id").
 			Optional().
 			Annotations(ScopedRef{Entity: "Contact"}),
-		field.Enum("status").
-			Values("pending", "sent", "skipped", "failed").
-			Default("pending"),
-		// The Outbound message that carried (or decided) this recipient's send, a plain
-		// id snapshot (ADR 0015): delivery state lives on the message, this row stays
-		// the frozen audience snapshot plus engagement rollup.
-		field.Int64("outbound_message_id").
-			Optional().
-			Nillable().
-			Annotations(ScopedRef{Entity: "OutboundMessage"}),
-		field.String("error").
-			Optional().
-			Nillable(),
+		// No delivery state here (ADR 0015): this row is the frozen audience snapshot plus
+		// the engagement rollup. How its send ended is its Outbound message's (the message
+		// carries this row's id), and it is pending until that message leaves pending.
 		// When a Deferral last put this recipient's job to sleep until (ADR 0023). A
 		// recipient whose job is still asleep is not queueing for a token, so the
 		// backlog a deferred job waits behind counts only pending recipients that are
 		// awake: no deferral recorded, or one that has passed.
 		field.Time("deferred_until").
-			Optional().
-			Nillable(),
-		field.Time("sent_at").
 			Optional().
 			Nillable(),
 		field.Time("opened_at").
@@ -90,8 +77,5 @@ func (BroadcastRecipient) Indexes() []ent.Index {
 			Unique().
 			StorageKey("broadcast_recipients_broadcast_id_contact_id"),
 		index.Fields("broadcast_id"),
-		// Supports the workspace analytics dashboard, which scans recipients by
-		// workspace + delivery time for engagement aggregates and time series.
-		index.Fields("workspace_id", "sent_at"),
 	}
 }

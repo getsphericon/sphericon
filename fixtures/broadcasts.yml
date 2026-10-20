@@ -1,6 +1,6 @@
 # Workspace acme (id 1). Every lifecycle state is represented. Sent broadcasts
-# (ids 200-205) carry denormalized counters that match their rows in
-# broadcast_recipients.yml; their sent_at values are spread across the last ~70
+# (ids 200-205) have their recipients in broadcast_recipients.yml and those recipients' messages
+# in outbound_messages.yml (a broadcast's figures are derived from them); their sent_at values are spread across the last ~70
 # days so the analytics time series has bars in both the 30d and 90d windows.
 - id: 100 # fixture: BroadcastDraft
   name: Summer sale teaser
@@ -40,8 +40,6 @@
   from_email: hello@codebasics.dev
   body: '<p>Lorem ipsum learning content.</p>'
   status: failed
-  failed_count: 3
-  skipped_count: 2
   workspace_id: 1
   created_at: '{{daysAgo 7}}'
   updated_at: '{{daysAgo 7}}'
@@ -81,11 +79,6 @@
   body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 3}}'
-  recipients_total: 10
-  sent_count: 10
-  opened_count: 5
-  clicked_count: 2
-  failed_count: 0
   workspace_id: 1
   created_at: '{{daysAgo 4}}'
   updated_at: '{{daysAgo 3}}'
@@ -97,11 +90,6 @@
   body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 9}}'
-  recipients_total: 10
-  sent_count: 10
-  opened_count: 4
-  clicked_count: 1
-  failed_count: 0
   workspace_id: 1
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 9}}'
@@ -113,11 +101,6 @@
   body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 16}}'
-  recipients_total: 10
-  sent_count: 10
-  opened_count: 5
-  clicked_count: 2
-  failed_count: 0
   workspace_id: 1
   created_at: '{{daysAgo 17}}'
   updated_at: '{{daysAgo 16}}'
@@ -129,11 +112,6 @@
   body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 24}}'
-  recipients_total: 10
-  sent_count: 9
-  opened_count: 4
-  clicked_count: 1
-  failed_count: 1
   workspace_id: 1
   created_at: '{{daysAgo 25}}'
   updated_at: '{{daysAgo 24}}'
@@ -145,11 +123,6 @@
   body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 40}}'
-  recipients_total: 10
-  sent_count: 10
-  opened_count: 6
-  clicked_count: 3
-  failed_count: 0
   workspace_id: 1
   created_at: '{{daysAgo 41}}'
   updated_at: '{{daysAgo 40}}'
@@ -161,11 +134,6 @@
   body: '<p>Lorem ipsum learning content.</p>'
   status: sent
   sent_at: '{{daysAgo 70}}'
-  recipients_total: 10
-  sent_count: 10
-  opened_count: 4
-  clicked_count: 1
-  failed_count: 0
   workspace_id: 1
   created_at: '{{daysAgo 71}}'
   updated_at: '{{daysAgo 70}}'
@@ -231,7 +199,6 @@
   from_email: hello@mail.initech.test
   body: '<p>Launch.</p>'
   status: sending
-  recipients_total: 2
   workspace_id: 3
   created_at: '2026-01-03 00:00:00'
   updated_at: '2026-01-03 00:00:00'
@@ -242,7 +209,6 @@
   from_email: hello@mail.initech.test
   body: '<p>Reminder.</p>'
   status: sending
-  recipients_total: 1
   workspace_id: 3
   created_at: '2026-01-03 00:00:00'
   updated_at: '2026-01-03 00:00:00'
