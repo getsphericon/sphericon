@@ -1217,6 +1217,10 @@ type AutomationsActivateUnprocessableEntity ProblemDetails
 
 func (*AutomationsActivateUnprocessableEntity) automationsActivateRes() {}
 
+type AutomationsCreateBadRequest ProblemDetails
+
+func (*AutomationsCreateBadRequest) automationsCreateRes() {}
+
 type AutomationsCreateUnauthorized ProblemDetails
 
 func (*AutomationsCreateUnauthorized) automationsCreateRes() {}
@@ -1940,6 +1944,10 @@ func (s *BroadcastStatus) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type BroadcastsCreateBadRequest ProblemDetails
+
+func (*BroadcastsCreateBadRequest) broadcastsCreateRes() {}
 
 type BroadcastsCreateUnauthorized ProblemDetails
 
@@ -3393,6 +3401,10 @@ func (s *ContactResourceCustomFields) init() ContactResourceCustomFields {
 	return m
 }
 
+type ContactsBatchUpsertBadRequest ProblemDetails
+
+func (*ContactsBatchUpsertBadRequest) contactsBatchUpsertRes() {}
+
 type ContactsBatchUpsertUnauthorized ProblemDetails
 
 func (*ContactsBatchUpsertUnauthorized) contactsBatchUpsertRes() {}
@@ -3400,6 +3412,10 @@ func (*ContactsBatchUpsertUnauthorized) contactsBatchUpsertRes() {}
 type ContactsBatchUpsertUnprocessableEntity ProblemDetails
 
 func (*ContactsBatchUpsertUnprocessableEntity) contactsBatchUpsertRes() {}
+
+type ContactsCreateBadRequest ProblemDetails
+
+func (*ContactsCreateBadRequest) contactsCreateRes() {}
 
 type ContactsCreateConflict ProblemDetails
 
@@ -4587,6 +4603,10 @@ func (*DryRunHttpStepResult) automationsDryRunHttpStepRes() {}
 
 type EmailAddress string
 
+type EmailLintLintBadRequest ProblemDetails
+
+func (*EmailLintLintBadRequest) emailLintLintRes() {}
+
 type EmailLintLintUnauthorized ProblemDetails
 
 func (*EmailLintLintUnauthorized) emailLintLintRes() {}
@@ -4803,6 +4823,10 @@ func (s *EmailSchemaTypeAttrs) init() EmailSchemaTypeAttrs {
 	}
 	return m
 }
+
+type EmailsSendBadRequest ProblemDetails
+
+func (*EmailsSendBadRequest) emailsSendRes() {}
 
 type EmailsSendConflict ProblemDetails
 
@@ -5475,6 +5499,10 @@ func (s *EventInputProperties) init() EventInputProperties {
 	return m
 }
 
+type EventsBatchSubmitBadRequest ProblemDetails
+
+func (*EventsBatchSubmitBadRequest) eventsBatchSubmitRes() {}
+
 type EventsBatchSubmitUnauthorized ProblemDetails
 
 func (*EventsBatchSubmitUnauthorized) eventsBatchSubmitRes() {}
@@ -5482,6 +5510,10 @@ func (*EventsBatchSubmitUnauthorized) eventsBatchSubmitRes() {}
 type EventsBatchSubmitUnprocessableEntity ProblemDetails
 
 func (*EventsBatchSubmitUnprocessableEntity) eventsBatchSubmitRes() {}
+
+type EventsCreateBadRequest ProblemDetails
+
+func (*EventsCreateBadRequest) eventsCreateRes() {}
 
 // EventsCreateNoContent is response for EventsCreate operation.
 type EventsCreateNoContent struct{}
@@ -5495,6 +5527,168 @@ func (*EventsCreateUnauthorized) eventsCreateRes() {}
 type EventsCreateUnprocessableEntity ProblemDetails
 
 func (*EventsCreateUnprocessableEntity) eventsCreateRes() {}
+
+type ExportAuditBadRequest ProblemDetails
+
+func (*ExportAuditBadRequest) exportAuditRes() {}
+
+type ExportAuditNotFound ProblemDetails
+
+func (*ExportAuditNotFound) exportAuditRes() {}
+
+type ExportAuditOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ExportAuditOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// ExportAuditOKHeaders wraps ExportAuditOK with response headers.
+type ExportAuditOKHeaders struct {
+	XNextCursor string
+	Response    ExportAuditOK
+}
+
+// GetXNextCursor returns the value of XNextCursor.
+func (s *ExportAuditOKHeaders) GetXNextCursor() string {
+	return s.XNextCursor
+}
+
+// GetResponse returns the value of Response.
+func (s *ExportAuditOKHeaders) GetResponse() ExportAuditOK {
+	return s.Response
+}
+
+// SetXNextCursor sets the value of XNextCursor.
+func (s *ExportAuditOKHeaders) SetXNextCursor(val string) {
+	s.XNextCursor = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ExportAuditOKHeaders) SetResponse(val ExportAuditOK) {
+	s.Response = val
+}
+
+func (*ExportAuditOKHeaders) exportAuditRes() {}
+
+type ExportAuditUnauthorized ProblemDetails
+
+func (*ExportAuditUnauthorized) exportAuditRes() {}
+
+type ExportContactsBadRequest ProblemDetails
+
+func (*ExportContactsBadRequest) exportContactsRes() {}
+
+type ExportContactsNotFound ProblemDetails
+
+func (*ExportContactsNotFound) exportContactsRes() {}
+
+type ExportContactsOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ExportContactsOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// ExportContactsOKHeaders wraps ExportContactsOK with response headers.
+type ExportContactsOKHeaders struct {
+	XNextCursor string
+	Response    ExportContactsOK
+}
+
+// GetXNextCursor returns the value of XNextCursor.
+func (s *ExportContactsOKHeaders) GetXNextCursor() string {
+	return s.XNextCursor
+}
+
+// GetResponse returns the value of Response.
+func (s *ExportContactsOKHeaders) GetResponse() ExportContactsOK {
+	return s.Response
+}
+
+// SetXNextCursor sets the value of XNextCursor.
+func (s *ExportContactsOKHeaders) SetXNextCursor(val string) {
+	s.XNextCursor = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ExportContactsOKHeaders) SetResponse(val ExportContactsOK) {
+	s.Response = val
+}
+
+func (*ExportContactsOKHeaders) exportContactsRes() {}
+
+type ExportContactsUnauthorized ProblemDetails
+
+func (*ExportContactsUnauthorized) exportContactsRes() {}
+
+type ExportErasuresBadRequest ProblemDetails
+
+func (*ExportErasuresBadRequest) exportErasuresRes() {}
+
+type ExportErasuresNotFound ProblemDetails
+
+func (*ExportErasuresNotFound) exportErasuresRes() {}
+
+type ExportErasuresOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ExportErasuresOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// ExportErasuresOKHeaders wraps ExportErasuresOK with response headers.
+type ExportErasuresOKHeaders struct {
+	XNextCursor string
+	Response    ExportErasuresOK
+}
+
+// GetXNextCursor returns the value of XNextCursor.
+func (s *ExportErasuresOKHeaders) GetXNextCursor() string {
+	return s.XNextCursor
+}
+
+// GetResponse returns the value of Response.
+func (s *ExportErasuresOKHeaders) GetResponse() ExportErasuresOK {
+	return s.Response
+}
+
+// SetXNextCursor sets the value of XNextCursor.
+func (s *ExportErasuresOKHeaders) SetXNextCursor(val string) {
+	s.XNextCursor = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ExportErasuresOKHeaders) SetResponse(val ExportErasuresOK) {
+	s.Response = val
+}
+
+func (*ExportErasuresOKHeaders) exportErasuresRes() {}
+
+type ExportErasuresUnauthorized ProblemDetails
+
+func (*ExportErasuresUnauthorized) exportErasuresRes() {}
 
 type ExportEventsBadRequest ProblemDetails
 
@@ -5549,6 +5743,60 @@ func (*ExportEventsOKHeaders) exportEventsRes() {}
 type ExportEventsUnauthorized ProblemDetails
 
 func (*ExportEventsUnauthorized) exportEventsRes() {}
+
+type ExportMessagesBadRequest ProblemDetails
+
+func (*ExportMessagesBadRequest) exportMessagesRes() {}
+
+type ExportMessagesNotFound ProblemDetails
+
+func (*ExportMessagesNotFound) exportMessagesRes() {}
+
+type ExportMessagesOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ExportMessagesOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// ExportMessagesOKHeaders wraps ExportMessagesOK with response headers.
+type ExportMessagesOKHeaders struct {
+	XNextCursor string
+	Response    ExportMessagesOK
+}
+
+// GetXNextCursor returns the value of XNextCursor.
+func (s *ExportMessagesOKHeaders) GetXNextCursor() string {
+	return s.XNextCursor
+}
+
+// GetResponse returns the value of Response.
+func (s *ExportMessagesOKHeaders) GetResponse() ExportMessagesOK {
+	return s.Response
+}
+
+// SetXNextCursor sets the value of XNextCursor.
+func (s *ExportMessagesOKHeaders) SetXNextCursor(val string) {
+	s.XNextCursor = val
+}
+
+// SetResponse sets the value of Response.
+func (s *ExportMessagesOKHeaders) SetResponse(val ExportMessagesOK) {
+	s.Response = val
+}
+
+func (*ExportMessagesOKHeaders) exportMessagesRes() {}
+
+type ExportMessagesUnauthorized ProblemDetails
+
+func (*ExportMessagesUnauthorized) exportMessagesRes() {}
 
 // Delivery channel an integration belongs to.
 // Ref: #/components/schemas/IntegrationChannel
@@ -6020,6 +6268,10 @@ func (s *IntegrationResourceParams) init() IntegrationResourceParams {
 	}
 	return m
 }
+
+type IntegrationsCreateBadRequest ProblemDetails
+
+func (*IntegrationsCreateBadRequest) integrationsCreateRes() {}
 
 type IntegrationsCreateConflict ProblemDetails
 
@@ -9550,6 +9802,7 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
+func (*ProblemDetailsHeaders) auditEntriesListRes()          {}
 func (*ProblemDetailsHeaders) authMeGetRes()                 {}
 func (*ProblemDetailsHeaders) authTokensBootstrapRes()       {}
 func (*ProblemDetailsHeaders) authTokensCreateRes()          {}
@@ -9577,6 +9830,8 @@ func (*ProblemDetailsHeaders) broadcastsUpdateRes()          {}
 func (*ProblemDetailsHeaders) contactsBatchUpsertRes()       {}
 func (*ProblemDetailsHeaders) contactsCreateRes()            {}
 func (*ProblemDetailsHeaders) contactsDeleteRes()            {}
+func (*ProblemDetailsHeaders) contactsEraseByRes()           {}
+func (*ProblemDetailsHeaders) contactsExportRes()            {}
 func (*ProblemDetailsHeaders) contactsGetRes()               {}
 func (*ProblemDetailsHeaders) contactsListRes()              {}
 func (*ProblemDetailsHeaders) contactsUpdateRes()            {}
@@ -10224,6 +10479,10 @@ func NewSegmentRuleGroupSegmentRuleNodeSum(v SegmentRuleGroup) SegmentRuleNodeSu
 	s.SetSegmentRuleGroup(v)
 	return s
 }
+
+type SegmentsCreateBadRequest ProblemDetails
+
+func (*SegmentsCreateBadRequest) segmentsCreateRes() {}
 
 type SegmentsCreateUnauthorized ProblemDetails
 
@@ -10931,6 +11190,10 @@ func (*SendingDomainResource) sendingDomainsCreateRes() {}
 func (*SendingDomainResource) sendingDomainsGetRes()    {}
 func (*SendingDomainResource) sendingDomainsUpdateRes() {}
 func (*SendingDomainResource) sendingDomainsVerifyRes() {}
+
+type SendingDomainsCreateBadRequest ProblemDetails
+
+func (*SendingDomainsCreateBadRequest) sendingDomainsCreateRes() {}
 
 type SendingDomainsCreateConflict ProblemDetails
 
@@ -11654,6 +11917,10 @@ func (s *SuppressionResource) SetCreatedAt(val Timestamp) {
 
 func (*SuppressionResource) suppressionsCreateRes() {}
 
+type SuppressionsCreateBadRequest ProblemDetails
+
+func (*SuppressionsCreateBadRequest) suppressionsCreateRes() {}
+
 type SuppressionsCreateUnauthorized ProblemDetails
 
 func (*SuppressionsCreateUnauthorized) suppressionsCreateRes() {}
@@ -12015,6 +12282,10 @@ func (s *TemplateResourceDoc) init() TemplateResourceDoc {
 	}
 	return m
 }
+
+type TemplatesCreateBadRequest ProblemDetails
+
+func (*TemplatesCreateBadRequest) templatesCreateRes() {}
 
 type TemplatesCreateUnauthorized ProblemDetails
 
@@ -12500,6 +12771,10 @@ func (s *UnsubscribeResource) SetCreatedAt(val Timestamp) {
 }
 
 func (*UnsubscribeResource) unsubscribesCreateRes() {}
+
+type UnsubscribesCreateBadRequest ProblemDetails
+
+func (*UnsubscribesCreateBadRequest) unsubscribesCreateRes() {}
 
 type UnsubscribesCreateUnauthorized ProblemDetails
 
@@ -13478,6 +13753,10 @@ func (s *WebhookTestResult) SetKind(val OptWebhookErrorKind) {
 }
 
 func (*WebhookTestResult) webhooksTestRes() {}
+
+type WebhooksCreateBadRequest ProblemDetails
+
+func (*WebhooksCreateBadRequest) webhooksCreateRes() {}
 
 type WebhooksCreateUnauthorized ProblemDetails
 

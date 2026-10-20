@@ -125,6 +125,11 @@ export default interface Resources {
     "app": {
       "name": "Sphericon"
     },
+    "appError": {
+      "fallback": "The page could not be loaded.",
+      "reload": "Reload",
+      "title": "Something went wrong"
+    },
     "automations": {
       "activate": "Activate",
       "addAutomation": "New automation",

@@ -82,6 +82,9 @@ func (Contact) Indexes() []ent.Index {
 		// The identified Contacts of a Workspace: the usage peak counts them on every
 		// mutation that can move the count, and this keeps that an index-only scan of the
 		// Workspace's own rows instead of a scan of the whole table.
+		// Backs the Contacts Export stream (ADR 0045): the keyset page over (updated_at, id)
+		// inside one Workspace.
+		index.Fields("workspace_id", "updated_at", "id"),
 		index.Fields("workspace_id").
 			StorageKey("contacts_workspace_id_identified").
 			Annotations(entsql.IndexWhere("email IS NOT NULL AND email <> ''")),

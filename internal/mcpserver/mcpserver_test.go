@@ -205,6 +205,7 @@ func TestMCPDoesNotExposeTheExportStreams(t *testing.T) {
 	env := testhelper.Setup(t)
 	got := listedTools(t, env.MCPClient(t, env.ScopedBearer(t, "export:read")))
 	assert.NotContains(t, toolNames(got), "export_events")
+	assert.NotContains(t, toolNames(got), "export_erasures")
 	assert.ElementsMatch(t, authoringTools, toolNames(got))
 }
 

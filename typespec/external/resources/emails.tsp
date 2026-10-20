@@ -74,6 +74,7 @@ namespace EmailLint {
     | LintEmailResult
     | UnauthorizedProblem
     | TooManyRequestsProblem
+    | BadRequestProblem
     | UnprocessableEntityProblem;
 }
 
@@ -159,6 +160,7 @@ namespace Emails {
         @statusCode statusCode: 202;
         @body body: SendTransactionalEmailResponse;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | TooManyRequestsProblem
     | NotFoundProblem

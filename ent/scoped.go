@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -277,6 +278,22 @@ func (s *Scoped) verifyEmailTemplate(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("EmailTemplate: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyErasure fails with ErrNotInWorkspace unless every id is a Erasure of the Workspace.
+func (s *Scoped) verifyErasure(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.Erasure.Query().Where(erasure.IDIn(ids...), erasure.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("Erasure: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -11023,6 +11040,476 @@ func (x *EmailTemplateScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *EmailTemplateScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ErasureScoped reaches Erasure entities of one Workspace.
+type ErasureScoped struct{ s *Scoped }
+
+// Erasure returns the Erasure entities of the Workspace.
+func (s *Scoped) Erasure() *ErasureScoped { return &ErasureScoped{s: s} }
+
+// Query returns a Erasure query already confined to the Workspace.
+func (t *ErasureScoped) Query() *ErasureQuery {
+	return t.s.c.Erasure.Query().Where(erasure.WorkspaceID(t.s.ws))
+}
+
+// Get returns the Erasure with the id; a row of another Workspace is not found.
+func (t *ErasureScoped) Get(ctx context.Context, id int64) (*Erasure, error) {
+	return t.Query().Where(erasure.ID(id)).Only(ctx)
+}
+
+// ErasureScopedDeleteOne wraps ErasureDeleteOne.
+type ErasureScopedDeleteOne struct {
+	s *Scoped
+	b *ErasureDeleteOne
+}
+
+// DeleteOneID deletes the Erasure with the id; a row of another Workspace is not found.
+func (t *ErasureScoped) DeleteOneID(id int64) *ErasureScopedDeleteOne {
+	return &ErasureScopedDeleteOne{s: t.s, b: t.s.c.Erasure.DeleteOneID(id).Where(erasure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ErasureScopedDeleteOne) Where(ps ...predicate.Erasure) *ErasureScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *ErasureScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// ErasureScopedDelete wraps ErasureDelete.
+type ErasureScopedDelete struct {
+	s *Scoped
+	b *ErasureDelete
+}
+
+// Delete deletes the Erasure entities of the Workspace that match the predicates.
+func (t *ErasureScoped) Delete() *ErasureScopedDelete {
+	return &ErasureScopedDelete{s: t.s, b: t.s.c.Erasure.Delete().Where(erasure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *ErasureScopedDelete) Where(ps ...predicate.Erasure) *ErasureScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *ErasureScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// ErasureScopedCreate wraps ErasureCreate. It has no way to name a Workspace.
+type ErasureScopedCreate struct {
+	s *Scoped
+	b *ErasureCreate
+}
+
+// Create starts a Erasure in the Workspace.
+func (t *ErasureScoped) Create() *ErasureScopedCreate {
+	return &ErasureScopedCreate{s: t.s, b: t.s.c.Erasure.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *ErasureScopedCreate) SetCreatedAt(v time.Time) *ErasureScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *ErasureScopedCreate) SetNillableCreatedAt(v *time.Time) *ErasureScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ErasureScopedCreate) SetUpdatedAt(v time.Time) *ErasureScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *ErasureScopedCreate) SetNillableUpdatedAt(v *time.Time) *ErasureScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetErasureKey sets the "erasure_key" field.
+func (x *ErasureScopedCreate) SetErasureKey(v string) *ErasureScopedCreate {
+	x.b.SetErasureKey(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *ErasureScopedCreate) SetContactID(v int64) *ErasureScopedCreate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *ErasureScopedCreate) SetNillableContactID(v *int64) *ErasureScopedCreate {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// SetSubjectID sets the "subject_id" field.
+func (x *ErasureScopedCreate) SetSubjectID(v string) *ErasureScopedCreate {
+	x.b.SetSubjectID(v)
+	return x
+}
+
+// SetNillableSubjectID sets the "subject_id" field if the given value is not nil.
+func (x *ErasureScopedCreate) SetNillableSubjectID(v *string) *ErasureScopedCreate {
+	x.b.SetNillableSubjectID(v)
+	return x
+}
+
+// SetVisitorIds sets the "visitor_ids" field.
+func (x *ErasureScopedCreate) SetVisitorIds(v []string) *ErasureScopedCreate {
+	x.b.SetVisitorIds(v)
+	return x
+}
+
+// SetEmailSha256 sets the "email_sha256" field.
+func (x *ErasureScopedCreate) SetEmailSha256(v string) *ErasureScopedCreate {
+	x.b.SetEmailSha256(v)
+	return x
+}
+
+// SetNillableEmailSha256 sets the "email_sha256" field if the given value is not nil.
+func (x *ErasureScopedCreate) SetNillableEmailSha256(v *string) *ErasureScopedCreate {
+	x.b.SetNillableEmailSha256(v)
+	return x
+}
+
+// SetPhoneSha256 sets the "phone_sha256" field.
+func (x *ErasureScopedCreate) SetPhoneSha256(v string) *ErasureScopedCreate {
+	x.b.SetPhoneSha256(v)
+	return x
+}
+
+// SetNillablePhoneSha256 sets the "phone_sha256" field if the given value is not nil.
+func (x *ErasureScopedCreate) SetNillablePhoneSha256(v *string) *ErasureScopedCreate {
+	x.b.SetNillablePhoneSha256(v)
+	return x
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (x *ErasureScopedCreate) SetErasedAt(v time.Time) *ErasureScopedCreate {
+	x.b.SetErasedAt(v)
+	return x
+}
+
+func (x *ErasureScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the Erasure.
+func (x *ErasureScopedCreate) Save(ctx context.Context) (*Erasure, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ErasureScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// ErasureScopedCreateBulk creates several Erasure entities of one Workspace at once.
+type ErasureScopedCreateBulk struct {
+	s  *Scoped
+	xs []*ErasureScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *ErasureScoped) CreateBulk(xs ...*ErasureScopedCreate) *ErasureScopedCreateBulk {
+	return &ErasureScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *ErasureScopedCreateBulk) raw(ctx context.Context) (*ErasureCreateBulk, error) {
+	builders := make([]*ErasureCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("Erasure: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.Erasure.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the Erasure entities.
+func (b *ErasureScopedCreateBulk) Save(ctx context.Context) ([]*Erasure, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *ErasureScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// ErasureScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type ErasureScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ErasureScopedUpsert) SetUpdatedAt(v time.Time) *ErasureScopedUpsert {
+	u.u.Set(erasure.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ErasureScopedUpsert) UpdateUpdatedAt() *ErasureScopedUpsert {
+	u.u.SetExcluded(erasure.FieldUpdatedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+func (t *ErasureScoped) conflictOptions(columns []string) []sql.ConflictOption {
+	return []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(erasure.FieldWorkspaceID, t.s.ws)),
+	}
+}
+
+// ErasureScopedUpsertOne is the "upsert" of one Erasure.
+type ErasureScopedUpsertOne struct {
+	x *ErasureScopedCreate
+	u *ErasureUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *ErasureScopedCreate) OnConflictColumns(columns ...string) *ErasureScopedUpsertOne {
+	return &ErasureScopedUpsertOne{x: x, u: x.b.OnConflict((&ErasureScoped{s: x.s}).conflictOptions(columns)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ErasureScopedUpsertOne) UpdateNewValues() *ErasureScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ErasureScopedUpsertOne) Ignore() *ErasureScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ErasureScopedUpsertOne) DoNothing() *ErasureScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ErasureScopedUpsertOne) Update(set func(*ErasureScopedUpsert)) *ErasureScopedUpsertOne {
+	u.u.Update(func(s *ErasureUpsert) { set(&ErasureScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *ErasureScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *ErasureScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// ErasureScopedUpsertBulk is the "upsert" of several Erasure entities.
+type ErasureScopedUpsertBulk struct {
+	b       *ErasureScopedCreateBulk
+	t       *ErasureScoped
+	columns []string
+	opts    []func(*ErasureUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *ErasureScopedCreateBulk) OnConflictColumns(columns ...string) *ErasureScopedUpsertBulk {
+	return &ErasureScopedUpsertBulk{b: b, t: &ErasureScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ErasureScopedUpsertBulk) UpdateNewValues() *ErasureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *ErasureUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ErasureScopedUpsertBulk) Ignore() *ErasureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *ErasureUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ErasureScopedUpsertBulk) DoNothing() *ErasureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *ErasureUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ErasureScopedUpsertBulk) Update(set func(*ErasureScopedUpsert)) *ErasureScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *ErasureUpsertBulk) {
+		r.Update(func(s *ErasureUpsert) { set(&ErasureScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *ErasureScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// ErasureScopedUpdateOne wraps ErasureUpdateOne. It has no way to move the row to another Workspace.
+type ErasureScopedUpdateOne struct {
+	s *Scoped
+	b *ErasureUpdateOne
+}
+
+// UpdateOneID updates the Erasure with the id; a row of another Workspace is not found.
+func (t *ErasureScoped) UpdateOneID(id int64) *ErasureScopedUpdateOne {
+	return &ErasureScopedUpdateOne{s: t.s, b: t.s.c.Erasure.UpdateOneID(id).Where(erasure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ErasureScopedUpdateOne) Where(ps ...predicate.Erasure) *ErasureScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ErasureScopedUpdateOne) SetUpdatedAt(v time.Time) *ErasureScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *ErasureScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the Erasure.
+func (x *ErasureScopedUpdateOne) Save(ctx context.Context) (*Erasure, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ErasureScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ErasureScopedUpdate wraps ErasureUpdate: a conditional bulk update of one Workspace.
+type ErasureScopedUpdate struct {
+	s *Scoped
+	b *ErasureUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the Erasure entities of the Workspace that match the predicates.
+func (t *ErasureScoped) Update() *ErasureScopedUpdate {
+	return &ErasureScopedUpdate{s: t.s, b: t.s.c.Erasure.Update().Where(erasure.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *ErasureScopedUpdate) Where(ps ...predicate.Erasure) *ErasureScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *ErasureScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *ErasureScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(erasure.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ErasureScopedUpdate) SetUpdatedAt(v time.Time) *ErasureScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *ErasureScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *ErasureScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *ErasureScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

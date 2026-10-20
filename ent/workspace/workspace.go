@@ -105,6 +105,8 @@ const (
 	EdgeInvitations = "invitations"
 	// EdgeAuditEntries holds the string denoting the audit_entries edge name in mutations.
 	EdgeAuditEntries = "audit_entries"
+	// EdgeErasures holds the string denoting the erasures edge name in mutations.
+	EdgeErasures = "erasures"
 	// EdgeUsages holds the string denoting the usages edge name in mutations.
 	EdgeUsages = "usages"
 	// Table holds the table name of the workspace in the database.
@@ -284,6 +286,13 @@ const (
 	AuditEntriesInverseTable = "audit_entries"
 	// AuditEntriesColumn is the table column denoting the audit_entries relation/edge.
 	AuditEntriesColumn = "workspace_id"
+	// ErasuresTable is the table that holds the erasures relation/edge.
+	ErasuresTable = "erasures"
+	// ErasuresInverseTable is the table name for the Erasure entity.
+	// It exists in this package in order to avoid circular dependency with the "erasure" package.
+	ErasuresInverseTable = "erasures"
+	// ErasuresColumn is the table column denoting the erasures relation/edge.
+	ErasuresColumn = "workspace_id"
 	// UsagesTable is the table that holds the usages relation/edge.
 	UsagesTable = "usages"
 	// UsagesInverseTable is the table name for the Usage entity.
@@ -833,6 +842,20 @@ func ByAuditEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByErasuresCount orders the results by erasures count.
+func ByErasuresCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newErasuresStep(), opts...)
+	}
+}
+
+// ByErasures orders the results by erasures terms.
+func ByErasures(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newErasuresStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUsagesCount orders the results by usages count.
 func ByUsagesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1019,6 +1042,13 @@ func newAuditEntriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AuditEntriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AuditEntriesTable, AuditEntriesColumn),
+	)
+}
+func newErasuresStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ErasuresInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ErasuresTable, ErasuresColumn),
 	)
 }
 func newUsagesStep() *sqlgraph.Step {

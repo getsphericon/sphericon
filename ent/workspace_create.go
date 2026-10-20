@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -685,6 +686,21 @@ func (_c *WorkspaceCreate) AddAuditEntries(v ...*AuditEntry) *WorkspaceCreate {
 	return _c.AddAuditEntryIDs(ids...)
 }
 
+// AddErasureIDs adds the "erasures" edge to the Erasure entity by IDs.
+func (_c *WorkspaceCreate) AddErasureIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddErasureIDs(ids...)
+	return _c
+}
+
+// AddErasures adds the "erasures" edges to the Erasure entity.
+func (_c *WorkspaceCreate) AddErasures(v ...*Erasure) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddErasureIDs(ids...)
+}
+
 // AddUsageIDs adds the "usages" edge to the Usage entity by IDs.
 func (_c *WorkspaceCreate) AddUsageIDs(ids ...int64) *WorkspaceCreate {
 	_c.mutation.AddUsageIDs(ids...)
@@ -1313,6 +1329,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(auditentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ErasuresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ErasuresTable,
+			Columns: []string{workspace.ErasuresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(erasure.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

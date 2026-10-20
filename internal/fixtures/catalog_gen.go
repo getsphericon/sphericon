@@ -17,10 +17,14 @@ const (
 	AcmeMemberMembershipID = 3
 	// AcmeName is from fixtures/workspaces.
 	AcmeName = "Acme"
+	// AcmeOldErasureID is from fixtures/erasures.
+	AcmeOldErasureID = 1
 	// AcmeOwnerMembershipID is from fixtures/memberships.
 	AcmeOwnerMembershipID = 1
 	// AcmePublicID is from fixtures/workspaces.
 	AcmePublicID = "AcmeWs01"
+	// AcmeRecentErasureID is from fixtures/erasures.
+	AcmeRecentErasureID = 2
 	// AcmeUsageSnapshotID is from fixtures/usages.
 	AcmeUsageSnapshotID = 1
 	// AnchorTokenID is from fixtures/api_tokens.
@@ -199,6 +203,14 @@ const (
 	ContactNoahEmail = "noah.js@codebasics.dev"
 	// ContactNoahID is from fixtures/contacts.
 	ContactNoahID = 102
+	// ContractTokenID is from fixtures/api_tokens.
+	ContractTokenID = 103
+	// ContractTokenName is from fixtures/api_tokens.
+	ContractTokenName = "Contract fuzzing token"
+	// ContractTokenPrefix is from fixtures/api_tokens.
+	ContractTokenPrefix = "contractfz01"
+	// ContractTokenSecret is from fixtures/api_tokens.
+	ContractTokenSecret = "contract-token-secret"
 	// CustomFieldGlobexID is from fixtures/custom_fields.
 	CustomFieldGlobexID = 900
 	// CustomFieldGlobexKey is from fixtures/custom_fields.
@@ -385,6 +397,8 @@ const (
 	GlobexAuditWebhookCreateID = 4
 	// GlobexCollectKey is from fixtures/workspaces.
 	GlobexCollectKey = "omck_test_globex_collect_key"
+	// GlobexErasureID is from fixtures/erasures.
+	GlobexErasureID = 900
 	// GlobexID is from fixtures/workspaces.
 	GlobexID = 2
 	// GlobexMaryMembershipID is from fixtures/memberships.

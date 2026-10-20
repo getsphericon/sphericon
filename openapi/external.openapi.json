@@ -157,6 +157,50 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Audit"],
@@ -807,6 +851,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AutomationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -2009,6 +2063,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -3105,6 +3169,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -3205,6 +3279,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UpsertContactsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3349,6 +3433,50 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Contacts"]
@@ -3427,6 +3555,50 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4271,6 +4443,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -4384,6 +4566,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LintEmailResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -4554,6 +4746,16 @@
         "responses": {
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
             "description": "RFC 7807 unauthorized response",
@@ -4787,6 +4989,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -4868,10 +5080,290 @@
         }
       }
     },
+    "/export/audit": {
+      "get": {
+        "operationId": "Export_audit",
+        "description": "Read the Workspace's Audit entries, oldest first (Enterprise; needs the `export:read`\nscope and the `audit` feature). Each line of the body is an `ExportAuditRow`; every key\nis always present. The Audit log list is the human read; this is the machine stream.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.cursor"
+          },
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
+            "headers": {
+              "X-Next-Cursor": {
+                "required": true,
+                "description": "Opaque cursor for the next page",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Export"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
+    "/export/contacts": {
+      "get": {
+        "operationId": "Export_contacts",
+        "description": "Read the Workspace's Contacts, oldest change first (Enterprise; needs the `export:read`\nscope). Each line of the body is an `ExportContactRow`; every key is always present.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.cursor"
+          },
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
+            "headers": {
+              "X-Next-Cursor": {
+                "required": true,
+                "description": "Opaque cursor for the next page",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Export"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
+    "/export/erasures": {
+      "get": {
+        "operationId": "Export_erasures",
+        "description": "Read the Workspace's Erasures, oldest first (Enterprise; needs the `export:read` scope).\nEach line of the body is an `ExportErasureRow`; every key is always present. Rows live for\nthe instance's Event retention window and are kept for good when retention is off: a\nconsumer absent for longer re-seeds from an empty cursor.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.cursor"
+          },
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
+            "headers": {
+              "X-Next-Cursor": {
+                "required": true,
+                "description": "Opaque cursor for the next page",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Export"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
     "/export/events": {
       "get": {
         "operationId": "Export_events",
         "description": "Read the Workspace's Events, oldest change first (Enterprise; needs the `export:read`\nscope). Each line of the body is an `ExportEventRow`; every key is always present.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.cursor"
+          },
+          {
+            "$ref": "#/components/parameters/ExportPageQuery.limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
+            "headers": {
+              "X-Next-Cursor": {
+                "required": true,
+                "description": "Opaque cursor for the next page",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Export"],
+        "x-mcp": {
+          "hidden": true
+        }
+      }
+    },
+    "/export/messages": {
+      "get": {
+        "operationId": "Export_messages",
+        "description": "Read the Workspace's Outbound messages, oldest change first (Enterprise; needs the\n`export:read` scope). Each line of the body is an `ExportMessageRow`; every key is\nalways present.",
         "parameters": [
           {
             "$ref": "#/components/parameters/ExportPageQuery.cursor"
@@ -5083,6 +5575,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IntegrationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -5853,6 +6355,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -6493,6 +7005,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SendingDomainResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -7153,6 +7675,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -7505,6 +8037,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TemplateResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -7916,6 +8458,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -8136,6 +8688,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WebhookResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -10948,8 +11510,9 @@
       },
       "EntityId": {
         "type": "string",
+        "pattern": "^[0-9]{1,18}$",
         "format": "int64",
-        "description": "A primary key, written as a decimal string so JavaScript never rounds it. The format\nmakes the Go servers parse it into an int64: a malformed id is refused as a 400 before\na handler runs."
+        "description": "A primary key, written as a decimal string so JavaScript never rounds it. The format\nmakes the Go servers parse it into an int64: a malformed id is refused as a 400 before\na handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can\ntell a malformed id from a valid one without trying it. Eighteen digits is the most a key\nreaches, so every id the schema admits fits an int64."
       },
       "EventActionResource": {
         "type": "object",
@@ -11047,6 +11610,284 @@
         },
         "description": "Event payload"
       },
+      "ExportAuditRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "occurred_at",
+          "actor_kind",
+          "actor_id",
+          "actor_name",
+          "action",
+          "target_type",
+          "target_id",
+          "target_name",
+          "diff",
+          "request_id",
+          "ip",
+          "user_agent",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "occurred_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the change happened"
+          },
+          "actor_kind": {
+            "type": "string",
+            "description": "Who did it: `user`, `api_token`, `staff` or `system`"
+          },
+          "actor_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The actor's id; absent for the system and for Staff"
+          },
+          "actor_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name of the actor when the entry was written"
+          },
+          "action": {
+            "type": "string",
+            "description": "What was done, as `<entity>.<verb>`"
+          },
+          "target_type": {
+            "type": "string",
+            "description": "What it was done to"
+          },
+          "target_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The target's id"
+          },
+          "target_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The target's name when the entry was written; absent for a Contact"
+          },
+          "diff": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactExportJson"
+              }
+            ],
+            "description": "Before/after of the changed fields as one JSON column; secrets appear as changed only"
+          },
+          "request_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Request id of the change"
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true,
+            "description": "Client address of the change"
+          },
+          "user_agent": {
+            "type": "string",
+            "nullable": true,
+            "description": "Client user agent of the change"
+          },
+          "created_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last change timestamp: the cursor column"
+          }
+        },
+        "description": "One row of the Audit stream (Enterprise): an Audit entry as a machine reads it. Entries are append-only, so a row is delivered once; a Staff member's entry shows as `staff` with the name \"Sphericon staff\" and no id, like on every read surface"
+      },
+      "ExportContactRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "subject_id",
+          "email",
+          "phone",
+          "first_name",
+          "last_name",
+          "time_zone",
+          "custom_fields",
+          "tags",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "subject_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The customer's own user id; absent when the Contact has none"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Email address; absent for an anonymous Contact"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number; absent when the Contact has none"
+          },
+          "first_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "First name"
+          },
+          "last_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last name"
+          },
+          "time_zone": {
+            "type": "string",
+            "nullable": true,
+            "description": "IANA time zone identifier"
+          },
+          "custom_fields": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactExportJson"
+              }
+            ],
+            "description": "Custom field values keyed by the field's machine key, as one JSON column"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Names of the Tags the Contact has, ordered by name"
+          },
+          "created_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last change timestamp, a Tag change included: the cursor column and the version of the row"
+          }
+        },
+        "description": "One row of the Contacts stream. A row is delivered again whenever it changes: a column or Custom field edit, a Tag attached or detached, an Erasure's anonymization"
+      },
+      "ExportErasureRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "contact_id",
+          "subject_id",
+          "visitor_ids",
+          "email_sha256",
+          "phone_sha256",
+          "erased_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "contact_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The erased Contact; absent when the Erasure named an address or an anonymous Visitor with no Contact"
+          },
+          "subject_id": {
+            "type": "string",
+            "description": "The customer's own id for the person (the Contact's `subject_id`, or its Sphericon id when it had none); empty when there was none"
+          },
+          "visitor_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The anonymous devices erased with the Contact"
+          },
+          "email_sha256": {
+            "type": "string",
+            "nullable": true,
+            "description": "SHA-256, as lowercase hex, of the lowercased email address; absent when there was none"
+          },
+          "phone_sha256": {
+            "type": "string",
+            "nullable": true,
+            "description": "SHA-256, as lowercase hex, of the phone number; absent when there was none"
+          },
+          "erased_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Erasure happened"
+          },
+          "created_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last change timestamp: the cursor column and the version of the row"
+          }
+        },
+        "description": "One row of the Erasures stream: the keys one Erasure matched on, so a consumer deletes the\nsame rows from its copy. Match on any of them: `contact_id` on Events and Contacts,\n`subject_id` on Events, `visitor_ids` on Events, `email_sha256` and `phone_sha256` against\nthe SHA-256 (hex) of the lowercased address or of the phone number as stored. The address\nand the phone themselves are never part of the stream. A row is never changed once written."
+      },
       "ExportEventRow": {
         "type": "object",
         "required": [
@@ -11140,6 +11981,179 @@
           }
         },
         "description": "One row of the Events stream. A row is delivered again whenever it changes (an anonymous Event stitched onto a Contact, an `email.*` Event anonymized by an Erasure)"
+      },
+      "ExportMessageRow": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "channel",
+          "destination",
+          "status",
+          "reason",
+          "contact_id",
+          "broadcast_id",
+          "automation_id",
+          "automation_run_id",
+          "automation_step",
+          "integration_id",
+          "template_id",
+          "sending_source",
+          "sending_domain",
+          "provider_message_id",
+          "claimed_at",
+          "sent_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Which surface asked for the send: `broadcast`, `automation` or `transactional`"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Delivery channel"
+          },
+          "destination": {
+            "type": "string",
+            "nullable": true,
+            "description": "Lower-cased destination address; absent once an Erasure anonymized the row"
+          },
+          "status": {
+            "type": "string",
+            "description": "`pending` (claimed, provider not yet answered), `sent`, `skipped` or `failed`"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why the message was skipped, or the failure text"
+          },
+          "contact_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Contact the destination resolved to; absent for a stranger or after an Erasure"
+          },
+          "broadcast_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Broadcast the message belongs to"
+          },
+          "automation_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Automation the message belongs to"
+          },
+          "automation_run_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Automation run that sent the message"
+          },
+          "automation_step": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The step of the Automation that sent the message"
+          },
+          "integration_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration the message went out through"
+          },
+          "template_id": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Template a transactional send referenced"
+          },
+          "sending_source": {
+            "type": "string",
+            "nullable": true,
+            "description": "The unsubscribe Sending source; absent for a transactional send"
+          },
+          "sending_domain": {
+            "type": "string",
+            "nullable": true,
+            "description": "Domain of the effective From address"
+          },
+          "provider_message_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The provider's id for the accepted message"
+          },
+          "claimed_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the send was claimed, before the provider was called"
+          },
+          "sent_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the provider accepted the message"
+          },
+          "created_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          },
+          "updated_at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Last change timestamp: the cursor column and the version of the row"
+          }
+        },
+        "description": "One row of the Outbound messages stream: the delivery record of one send, whichever\nsurface asked for it. It carries provenance and outcome only, never a subject or a body.\nA row is delivered again whenever it changes (a status change, an Erasure clearing the\ndestination and the Contact)."
       },
       "GoneProblem": {
         "type": "object",

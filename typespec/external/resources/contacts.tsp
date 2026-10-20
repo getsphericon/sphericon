@@ -135,6 +135,7 @@ interface Contacts
     | ContactExportTypedDownload
     | BadRequestProblem
     | UnauthorizedProblem
+    | TooManyRequestsProblem
     | NotFoundProblem;
 
   /**
@@ -158,6 +159,7 @@ interface Contacts
     | NoContentResponse
     | BadRequestProblem
     | UnauthorizedProblem
+    | TooManyRequestsProblem
     | NotFoundProblem;
 }
 
@@ -230,6 +232,7 @@ namespace ContactsBatch {
     | UpsertContactsResult
     | UnauthorizedProblem
     | TooManyRequestsProblem
+    | BadRequestProblem
     | UnprocessableEntityProblem;
 }
 

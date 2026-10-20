@@ -51,8 +51,9 @@ func TestReadyzIsUnavailableWhenTheDatabaseIsUnreachable(t *testing.T) {
 
 func TestProblemErrorHandlerRendersOgenErrorsAsProblemJSON(t *testing.T) {
 	// A client error keeps its status and explains itself.
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/x", nil)
 	rec := httptest.NewRecorder()
-	problemErrorHandler(t.Context(), rec, nil, &ogenerrors.DecodeRequestError{Err: errors.New("bad body")})
+	problemErrorHandler(t.Context(), rec, req, &ogenerrors.DecodeRequestError{Err: errors.New("bad body")})
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 	assert.Contains(t, rec.Body.String(), `"title":"Bad Request"`)
@@ -60,7 +61,7 @@ func TestProblemErrorHandlerRendersOgenErrorsAsProblemJSON(t *testing.T) {
 
 	// Anything else is a 500 that never leaks the cause.
 	rec = httptest.NewRecorder()
-	problemErrorHandler(t.Context(), rec, nil, errors.New("db password is hunter2"))
+	problemErrorHandler(t.Context(), rec, req, errors.New("db password is hunter2"))
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 	assert.JSONEq(t, `{"status":500,"title":"Internal Server Error"}`, rec.Body.String())
 }

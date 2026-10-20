@@ -513,6 +513,18 @@ run = "for f in openapi/*.openapi.json; do vacuum lint --no-banner --silent --no
 description = "osv-scanner over go.mod and pnpm-lock.yaml (nightly, like govulncheck: its answer changes with the advisory database, not with the diff); the advisories that stand are in osv-scanner.toml"
 run = "osv-scanner scan source --recursive --config osv-scanner.toml ."
 
+["check:contract"]
+description = "Schemathesis fuzzes the external API against openapi/external.openapi.json: rebuilds the dedicated e2e DB (never the dev one: the fuzzer writes and deletes), seeds it, boots the server on it (nightly: a minute or two)"
+depends = ["db:up"]
+env = { SPHERICON_ENV = "e2e", DATABASE_URL = "{{env.E2E_DB_URL}}", SPHERICON_METRICS_ADDR = "" }
+run = [
+  "go run ./cmd/db drop",
+  "go run ./cmd/db create",
+  "atlas migrate apply --env local --allow-dirty --tx-mode none",
+  "go run ./cmd/seed",
+  "mise/scripts/contract.sh",
+]
+
 ["check:shell"]
 description = "shellcheck the scripts under mise/scripts/"
 run = "shellcheck -x --source-path=SCRIPTDIR mise/scripts/*.sh"

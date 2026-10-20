@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -760,6 +761,21 @@ func (_u *WorkspaceUpdate) AddAuditEntries(v ...*AuditEntry) *WorkspaceUpdate {
 	return _u.AddAuditEntryIDs(ids...)
 }
 
+// AddErasureIDs adds the "erasures" edge to the Erasure entity by IDs.
+func (_u *WorkspaceUpdate) AddErasureIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddErasureIDs(ids...)
+	return _u
+}
+
+// AddErasures adds the "erasures" edges to the Erasure entity.
+func (_u *WorkspaceUpdate) AddErasures(v ...*Erasure) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddErasureIDs(ids...)
+}
+
 // AddUsageIDs adds the "usages" edge to the Usage entity by IDs.
 func (_u *WorkspaceUpdate) AddUsageIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddUsageIDs(ids...)
@@ -1303,6 +1319,27 @@ func (_u *WorkspaceUpdate) RemoveAuditEntries(v ...*AuditEntry) *WorkspaceUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAuditEntryIDs(ids...)
+}
+
+// ClearErasures clears all "erasures" edges to the Erasure entity.
+func (_u *WorkspaceUpdate) ClearErasures() *WorkspaceUpdate {
+	_u.mutation.ClearErasures()
+	return _u
+}
+
+// RemoveErasureIDs removes the "erasures" edge to Erasure entities by IDs.
+func (_u *WorkspaceUpdate) RemoveErasureIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveErasureIDs(ids...)
+	return _u
+}
+
+// RemoveErasures removes "erasures" edges to Erasure entities.
+func (_u *WorkspaceUpdate) RemoveErasures(v ...*Erasure) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveErasureIDs(ids...)
 }
 
 // ClearUsages clears all "usages" edges to the Usage entity.
@@ -2621,6 +2658,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ErasuresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ErasuresTable,
+			Columns: []string{workspace.ErasuresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(erasure.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedErasuresIDs(); len(nodes) > 0 && !_u.mutation.ErasuresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ErasuresTable,
+			Columns: []string{workspace.ErasuresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(erasure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ErasuresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ErasuresTable,
+			Columns: []string{workspace.ErasuresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(erasure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.UsagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -3393,6 +3475,21 @@ func (_u *WorkspaceUpdateOne) AddAuditEntries(v ...*AuditEntry) *WorkspaceUpdate
 	return _u.AddAuditEntryIDs(ids...)
 }
 
+// AddErasureIDs adds the "erasures" edge to the Erasure entity by IDs.
+func (_u *WorkspaceUpdateOne) AddErasureIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddErasureIDs(ids...)
+	return _u
+}
+
+// AddErasures adds the "erasures" edges to the Erasure entity.
+func (_u *WorkspaceUpdateOne) AddErasures(v ...*Erasure) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddErasureIDs(ids...)
+}
+
 // AddUsageIDs adds the "usages" edge to the Usage entity by IDs.
 func (_u *WorkspaceUpdateOne) AddUsageIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddUsageIDs(ids...)
@@ -3936,6 +4033,27 @@ func (_u *WorkspaceUpdateOne) RemoveAuditEntries(v ...*AuditEntry) *WorkspaceUpd
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAuditEntryIDs(ids...)
+}
+
+// ClearErasures clears all "erasures" edges to the Erasure entity.
+func (_u *WorkspaceUpdateOne) ClearErasures() *WorkspaceUpdateOne {
+	_u.mutation.ClearErasures()
+	return _u
+}
+
+// RemoveErasureIDs removes the "erasures" edge to Erasure entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveErasureIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveErasureIDs(ids...)
+	return _u
+}
+
+// RemoveErasures removes "erasures" edges to Erasure entities.
+func (_u *WorkspaceUpdateOne) RemoveErasures(v ...*Erasure) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveErasureIDs(ids...)
 }
 
 // ClearUsages clears all "usages" edges to the Usage entity.
@@ -5277,6 +5395,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(auditentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ErasuresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ErasuresTable,
+			Columns: []string{workspace.ErasuresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(erasure.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedErasuresIDs(); len(nodes) > 0 && !_u.mutation.ErasuresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ErasuresTable,
+			Columns: []string{workspace.ErasuresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(erasure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ErasuresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ErasuresTable,
+			Columns: []string{workspace.ErasuresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(erasure.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

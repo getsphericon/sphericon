@@ -85,8 +85,11 @@ type Target struct {
 	VisitorIDs []string
 	// Destinations are the Contact's addresses.
 	Destinations []string
+	// Phone is the Contact's phone number; empty when it has none or there is no Contact.
+	Phone string
 	// SubjectID is the customer's own id for the person (the Contact's subject_id, or
 	// its sphericon id when it has none); only the contact.erased delivery carries it.
+	// Empty for an address alone: the address is never echoed into the message.
 	SubjectID string
 	// IdentifierKind is what the Identifier was.
 	IdentifierKind string
@@ -164,6 +167,9 @@ func resolve(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error)
 	if c.Email != nil {
 		t.Destinations = append(t.Destinations, strings.ToLower(*c.Email))
 	}
+	if c.Phone != nil {
+		t.Phone = *c.Phone
+	}
 	return t, nil
 }
 
@@ -206,7 +212,7 @@ func resolveContactless(ctx context.Context, s *ent.Scoped, id Identifier) (*Tar
 	)
 	switch {
 	case id.email != "":
-		t = &Target{Destinations: []string{id.email}, SubjectID: id.email}
+		t = &Target{Destinations: []string{id.email}}
 		known, err = s.OutboundMessage().Query().Where(outboundmessage.Destination(id.email)).Exist(ctx)
 	case id.visitorID != "":
 		t = &Target{VisitorIDs: []string{id.visitorID}, SubjectID: id.visitorID}

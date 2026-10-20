@@ -1,4 +1,4 @@
-h1:M1nVvdj7oRoM26IMTbmap9urYMojfcxi6lz17L5A0KY=
+h1:/O+f7PYsDG23wjOZRm5L8+7FuPolTem4hgcDzGPixG8=
 20260630101109_init.sql h1:Pgj3WXyEdlsbabERn8ue309EON5bAyWNV1X8O9IkKos=
 20260630175449_send_eligibility_model.sql h1:vEOs/vQyOdwj2FK2h5B0795pY2DVs3jbv3IpH5A/njw=
 20260630204007_transactional_email.sql h1:sotbb1MKWbZO2UzTf7TruRuFpMaXirns67+ithjM1Lc=
@@ -72,3 +72,7 @@ h1:M1nVvdj7oRoM26IMTbmap9urYMojfcxi6lz17L5A0KY=
 20261020030003_workspace_public_id_required.sql h1:LrOVTszqeemIggr83b9FYBaX0QAdD+yUgWYkVEJzlYg=
 20261020030004_drop_workspace_slug.sql h1:WGTQn4Pd1QzVTweGHRcTKWgxgmF6+TLHepgKPeq8WfA=
 20261020030005_workspace_deletion.sql h1:VamxlnXVA7rPV5EXV37EGeFYJFXnsZYpo3/M1uuAdVk=
+20261020032023_contact_export_index.sql h1:lIVV0aE+Zx35aJfy/ecd7KHmzHxeyPz9e4/Qr4fizZ8=
+20261020032054_audit_export_index.sql h1:MS6l25xIewi/f1lRTCD+jFYNRTP/M86GOO+J6HV6QR8=
+20261020032113_outbound_message_export_index.sql h1:B+TBJF5J79z9VmHF8vIJMEvvheaGIKgq7TPrdzLS0P4=
+20261020032428_erasures_export_stream.sql h1:1bPvK/XhyORZe0ipYw0xPNLG6HymZxer5kxqzQ1vRik=

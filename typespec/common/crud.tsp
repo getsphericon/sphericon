@@ -129,6 +129,7 @@ interface ExternalCrud<
         @statusCode statusCode: 201;
         @body body: Resource;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | TooManyRequestsProblem
     | WriteConflict

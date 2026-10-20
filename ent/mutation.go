@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/instancestate"
@@ -76,6 +77,7 @@ const (
 	TypeContact            = "Contact"
 	TypeCustomField        = "CustomField"
 	TypeEmailTemplate      = "EmailTemplate"
+	TypeErasure            = "Erasure"
 	TypeEvent              = "Event"
 	TypeHold               = "Hold"
 	TypeInstanceState      = "InstanceState"
@@ -13042,6 +13044,991 @@ func (m *EmailTemplateMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown EmailTemplate edge %s", name)
+}
+
+// ErasureMutation represents an operation that mutates the Erasure nodes in the graph.
+type ErasureMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int64
+	created_at        *time.Time
+	updated_at        *time.Time
+	erasure_key       *string
+	contact_id        *int64
+	addcontact_id     *int64
+	subject_id        *string
+	visitor_ids       *[]string
+	appendvisitor_ids []string
+	email_sha256      *string
+	phone_sha256      *string
+	erased_at         *time.Time
+	clearedFields     map[string]struct{}
+	workspace         *int64
+	clearedworkspace  bool
+	done              bool
+	oldValue          func(context.Context) (*Erasure, error)
+	predicates        []predicate.Erasure
+}
+
+var _ ent.Mutation = (*ErasureMutation)(nil)
+
+// erasureOption allows management of the mutation configuration using functional options.
+type erasureOption func(*ErasureMutation)
+
+// newErasureMutation creates new mutation for the Erasure entity.
+func newErasureMutation(c config, op Op, opts ...erasureOption) *ErasureMutation {
+	m := &ErasureMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeErasure,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withErasureID sets the ID field of the mutation.
+func withErasureID(id int64) erasureOption {
+	return func(m *ErasureMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Erasure
+		)
+		m.oldValue = func(ctx context.Context) (*Erasure, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Erasure.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withErasure sets the old Erasure of the mutation.
+func withErasure(node *Erasure) erasureOption {
+	return func(m *ErasureMutation) {
+		m.oldValue = func(context.Context) (*Erasure, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ErasureMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ErasureMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Erasure entities.
+func (m *ErasureMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ErasureMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ErasureMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Erasure.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ErasureMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ErasureMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ErasureMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ErasureMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ErasureMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ErasureMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *ErasureMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *ErasureMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *ErasureMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetErasureKey sets the "erasure_key" field.
+func (m *ErasureMutation) SetErasureKey(s string) {
+	m.erasure_key = &s
+}
+
+// ErasureKey returns the value of the "erasure_key" field in the mutation.
+func (m *ErasureMutation) ErasureKey() (r string, exists bool) {
+	v := m.erasure_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErasureKey returns the old "erasure_key" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldErasureKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErasureKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErasureKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErasureKey: %w", err)
+	}
+	return oldValue.ErasureKey, nil
+}
+
+// ResetErasureKey resets all changes to the "erasure_key" field.
+func (m *ErasureMutation) ResetErasureKey() {
+	m.erasure_key = nil
+}
+
+// SetContactID sets the "contact_id" field.
+func (m *ErasureMutation) SetContactID(i int64) {
+	m.contact_id = &i
+	m.addcontact_id = nil
+}
+
+// ContactID returns the value of the "contact_id" field in the mutation.
+func (m *ErasureMutation) ContactID() (r int64, exists bool) {
+	v := m.contact_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContactID returns the old "contact_id" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldContactID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContactID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContactID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContactID: %w", err)
+	}
+	return oldValue.ContactID, nil
+}
+
+// AddContactID adds i to the "contact_id" field.
+func (m *ErasureMutation) AddContactID(i int64) {
+	if m.addcontact_id != nil {
+		*m.addcontact_id += i
+	} else {
+		m.addcontact_id = &i
+	}
+}
+
+// AddedContactID returns the value that was added to the "contact_id" field in this mutation.
+func (m *ErasureMutation) AddedContactID() (r int64, exists bool) {
+	v := m.addcontact_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearContactID clears the value of the "contact_id" field.
+func (m *ErasureMutation) ClearContactID() {
+	m.contact_id = nil
+	m.addcontact_id = nil
+	m.clearedFields[erasure.FieldContactID] = struct{}{}
+}
+
+// ContactIDCleared returns if the "contact_id" field was cleared in this mutation.
+func (m *ErasureMutation) ContactIDCleared() bool {
+	_, ok := m.clearedFields[erasure.FieldContactID]
+	return ok
+}
+
+// ResetContactID resets all changes to the "contact_id" field.
+func (m *ErasureMutation) ResetContactID() {
+	m.contact_id = nil
+	m.addcontact_id = nil
+	delete(m.clearedFields, erasure.FieldContactID)
+}
+
+// SetSubjectID sets the "subject_id" field.
+func (m *ErasureMutation) SetSubjectID(s string) {
+	m.subject_id = &s
+}
+
+// SubjectID returns the value of the "subject_id" field in the mutation.
+func (m *ErasureMutation) SubjectID() (r string, exists bool) {
+	v := m.subject_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubjectID returns the old "subject_id" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldSubjectID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubjectID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubjectID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubjectID: %w", err)
+	}
+	return oldValue.SubjectID, nil
+}
+
+// ResetSubjectID resets all changes to the "subject_id" field.
+func (m *ErasureMutation) ResetSubjectID() {
+	m.subject_id = nil
+}
+
+// SetVisitorIds sets the "visitor_ids" field.
+func (m *ErasureMutation) SetVisitorIds(s []string) {
+	m.visitor_ids = &s
+	m.appendvisitor_ids = nil
+}
+
+// VisitorIds returns the value of the "visitor_ids" field in the mutation.
+func (m *ErasureMutation) VisitorIds() (r []string, exists bool) {
+	v := m.visitor_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVisitorIds returns the old "visitor_ids" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldVisitorIds(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVisitorIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVisitorIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVisitorIds: %w", err)
+	}
+	return oldValue.VisitorIds, nil
+}
+
+// AppendVisitorIds adds s to the "visitor_ids" field.
+func (m *ErasureMutation) AppendVisitorIds(s []string) {
+	m.appendvisitor_ids = append(m.appendvisitor_ids, s...)
+}
+
+// AppendedVisitorIds returns the list of values that were appended to the "visitor_ids" field in this mutation.
+func (m *ErasureMutation) AppendedVisitorIds() ([]string, bool) {
+	if len(m.appendvisitor_ids) == 0 {
+		return nil, false
+	}
+	return m.appendvisitor_ids, true
+}
+
+// ResetVisitorIds resets all changes to the "visitor_ids" field.
+func (m *ErasureMutation) ResetVisitorIds() {
+	m.visitor_ids = nil
+	m.appendvisitor_ids = nil
+}
+
+// SetEmailSha256 sets the "email_sha256" field.
+func (m *ErasureMutation) SetEmailSha256(s string) {
+	m.email_sha256 = &s
+}
+
+// EmailSha256 returns the value of the "email_sha256" field in the mutation.
+func (m *ErasureMutation) EmailSha256() (r string, exists bool) {
+	v := m.email_sha256
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmailSha256 returns the old "email_sha256" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldEmailSha256(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmailSha256 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmailSha256 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmailSha256: %w", err)
+	}
+	return oldValue.EmailSha256, nil
+}
+
+// ClearEmailSha256 clears the value of the "email_sha256" field.
+func (m *ErasureMutation) ClearEmailSha256() {
+	m.email_sha256 = nil
+	m.clearedFields[erasure.FieldEmailSha256] = struct{}{}
+}
+
+// EmailSha256Cleared returns if the "email_sha256" field was cleared in this mutation.
+func (m *ErasureMutation) EmailSha256Cleared() bool {
+	_, ok := m.clearedFields[erasure.FieldEmailSha256]
+	return ok
+}
+
+// ResetEmailSha256 resets all changes to the "email_sha256" field.
+func (m *ErasureMutation) ResetEmailSha256() {
+	m.email_sha256 = nil
+	delete(m.clearedFields, erasure.FieldEmailSha256)
+}
+
+// SetPhoneSha256 sets the "phone_sha256" field.
+func (m *ErasureMutation) SetPhoneSha256(s string) {
+	m.phone_sha256 = &s
+}
+
+// PhoneSha256 returns the value of the "phone_sha256" field in the mutation.
+func (m *ErasureMutation) PhoneSha256() (r string, exists bool) {
+	v := m.phone_sha256
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPhoneSha256 returns the old "phone_sha256" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldPhoneSha256(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPhoneSha256 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPhoneSha256 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPhoneSha256: %w", err)
+	}
+	return oldValue.PhoneSha256, nil
+}
+
+// ClearPhoneSha256 clears the value of the "phone_sha256" field.
+func (m *ErasureMutation) ClearPhoneSha256() {
+	m.phone_sha256 = nil
+	m.clearedFields[erasure.FieldPhoneSha256] = struct{}{}
+}
+
+// PhoneSha256Cleared returns if the "phone_sha256" field was cleared in this mutation.
+func (m *ErasureMutation) PhoneSha256Cleared() bool {
+	_, ok := m.clearedFields[erasure.FieldPhoneSha256]
+	return ok
+}
+
+// ResetPhoneSha256 resets all changes to the "phone_sha256" field.
+func (m *ErasureMutation) ResetPhoneSha256() {
+	m.phone_sha256 = nil
+	delete(m.clearedFields, erasure.FieldPhoneSha256)
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (m *ErasureMutation) SetErasedAt(t time.Time) {
+	m.erased_at = &t
+}
+
+// ErasedAt returns the value of the "erased_at" field in the mutation.
+func (m *ErasureMutation) ErasedAt() (r time.Time, exists bool) {
+	v := m.erased_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErasedAt returns the old "erased_at" field's value of the Erasure entity.
+// If the Erasure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ErasureMutation) OldErasedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErasedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErasedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErasedAt: %w", err)
+	}
+	return oldValue.ErasedAt, nil
+}
+
+// ResetErasedAt resets all changes to the "erased_at" field.
+func (m *ErasureMutation) ResetErasedAt() {
+	m.erased_at = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *ErasureMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[erasure.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *ErasureMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *ErasureMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *ErasureMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the ErasureMutation builder.
+func (m *ErasureMutation) Where(ps ...predicate.Erasure) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ErasureMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ErasureMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Erasure, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ErasureMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ErasureMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Erasure).
+func (m *ErasureMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ErasureMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, erasure.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, erasure.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, erasure.FieldWorkspaceID)
+	}
+	if m.erasure_key != nil {
+		fields = append(fields, erasure.FieldErasureKey)
+	}
+	if m.contact_id != nil {
+		fields = append(fields, erasure.FieldContactID)
+	}
+	if m.subject_id != nil {
+		fields = append(fields, erasure.FieldSubjectID)
+	}
+	if m.visitor_ids != nil {
+		fields = append(fields, erasure.FieldVisitorIds)
+	}
+	if m.email_sha256 != nil {
+		fields = append(fields, erasure.FieldEmailSha256)
+	}
+	if m.phone_sha256 != nil {
+		fields = append(fields, erasure.FieldPhoneSha256)
+	}
+	if m.erased_at != nil {
+		fields = append(fields, erasure.FieldErasedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ErasureMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case erasure.FieldCreatedAt:
+		return m.CreatedAt()
+	case erasure.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case erasure.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case erasure.FieldErasureKey:
+		return m.ErasureKey()
+	case erasure.FieldContactID:
+		return m.ContactID()
+	case erasure.FieldSubjectID:
+		return m.SubjectID()
+	case erasure.FieldVisitorIds:
+		return m.VisitorIds()
+	case erasure.FieldEmailSha256:
+		return m.EmailSha256()
+	case erasure.FieldPhoneSha256:
+		return m.PhoneSha256()
+	case erasure.FieldErasedAt:
+		return m.ErasedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ErasureMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case erasure.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case erasure.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case erasure.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case erasure.FieldErasureKey:
+		return m.OldErasureKey(ctx)
+	case erasure.FieldContactID:
+		return m.OldContactID(ctx)
+	case erasure.FieldSubjectID:
+		return m.OldSubjectID(ctx)
+	case erasure.FieldVisitorIds:
+		return m.OldVisitorIds(ctx)
+	case erasure.FieldEmailSha256:
+		return m.OldEmailSha256(ctx)
+	case erasure.FieldPhoneSha256:
+		return m.OldPhoneSha256(ctx)
+	case erasure.FieldErasedAt:
+		return m.OldErasedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Erasure field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ErasureMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case erasure.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case erasure.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case erasure.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case erasure.FieldErasureKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErasureKey(v)
+		return nil
+	case erasure.FieldContactID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContactID(v)
+		return nil
+	case erasure.FieldSubjectID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubjectID(v)
+		return nil
+	case erasure.FieldVisitorIds:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVisitorIds(v)
+		return nil
+	case erasure.FieldEmailSha256:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmailSha256(v)
+		return nil
+	case erasure.FieldPhoneSha256:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPhoneSha256(v)
+		return nil
+	case erasure.FieldErasedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErasedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Erasure field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ErasureMutation) AddedFields() []string {
+	var fields []string
+	if m.addcontact_id != nil {
+		fields = append(fields, erasure.FieldContactID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ErasureMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case erasure.FieldContactID:
+		return m.AddedContactID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ErasureMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case erasure.FieldContactID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddContactID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Erasure numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ErasureMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(erasure.FieldContactID) {
+		fields = append(fields, erasure.FieldContactID)
+	}
+	if m.FieldCleared(erasure.FieldEmailSha256) {
+		fields = append(fields, erasure.FieldEmailSha256)
+	}
+	if m.FieldCleared(erasure.FieldPhoneSha256) {
+		fields = append(fields, erasure.FieldPhoneSha256)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ErasureMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ErasureMutation) ClearField(name string) error {
+	switch name {
+	case erasure.FieldContactID:
+		m.ClearContactID()
+		return nil
+	case erasure.FieldEmailSha256:
+		m.ClearEmailSha256()
+		return nil
+	case erasure.FieldPhoneSha256:
+		m.ClearPhoneSha256()
+		return nil
+	}
+	return fmt.Errorf("unknown Erasure nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ErasureMutation) ResetField(name string) error {
+	switch name {
+	case erasure.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case erasure.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case erasure.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case erasure.FieldErasureKey:
+		m.ResetErasureKey()
+		return nil
+	case erasure.FieldContactID:
+		m.ResetContactID()
+		return nil
+	case erasure.FieldSubjectID:
+		m.ResetSubjectID()
+		return nil
+	case erasure.FieldVisitorIds:
+		m.ResetVisitorIds()
+		return nil
+	case erasure.FieldEmailSha256:
+		m.ResetEmailSha256()
+		return nil
+	case erasure.FieldPhoneSha256:
+		m.ResetPhoneSha256()
+		return nil
+	case erasure.FieldErasedAt:
+		m.ResetErasedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Erasure field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ErasureMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, erasure.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ErasureMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case erasure.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ErasureMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ErasureMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ErasureMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, erasure.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ErasureMutation) EdgeCleared(name string) bool {
+	switch name {
+	case erasure.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ErasureMutation) ClearEdge(name string) error {
+	switch name {
+	case erasure.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown Erasure unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ErasureMutation) ResetEdge(name string) error {
+	switch name {
+	case erasure.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown Erasure edge %s", name)
 }
 
 // EventMutation represents an operation that mutates the Event nodes in the graph.
@@ -37209,6 +38196,9 @@ type WorkspaceMutation struct {
 	audit_entries               map[int64]struct{}
 	removedaudit_entries        map[int64]struct{}
 	clearedaudit_entries        bool
+	erasures                    map[int64]struct{}
+	removederasures             map[int64]struct{}
+	clearederasures             bool
 	usages                      map[int64]struct{}
 	removedusages               map[int64]struct{}
 	clearedusages               bool
@@ -39588,6 +40578,60 @@ func (m *WorkspaceMutation) ResetAuditEntries() {
 	m.removedaudit_entries = nil
 }
 
+// AddErasureIDs adds the "erasures" edge to the Erasure entity by ids.
+func (m *WorkspaceMutation) AddErasureIDs(ids ...int64) {
+	if m.erasures == nil {
+		m.erasures = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.erasures[ids[i]] = struct{}{}
+	}
+}
+
+// ClearErasures clears the "erasures" edge to the Erasure entity.
+func (m *WorkspaceMutation) ClearErasures() {
+	m.clearederasures = true
+}
+
+// ErasuresCleared reports if the "erasures" edge to the Erasure entity was cleared.
+func (m *WorkspaceMutation) ErasuresCleared() bool {
+	return m.clearederasures
+}
+
+// RemoveErasureIDs removes the "erasures" edge to the Erasure entity by IDs.
+func (m *WorkspaceMutation) RemoveErasureIDs(ids ...int64) {
+	if m.removederasures == nil {
+		m.removederasures = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.erasures, ids[i])
+		m.removederasures[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedErasures returns the removed IDs of the "erasures" edge to the Erasure entity.
+func (m *WorkspaceMutation) RemovedErasuresIDs() (ids []int64) {
+	for id := range m.removederasures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ErasuresIDs returns the "erasures" edge IDs in the mutation.
+func (m *WorkspaceMutation) ErasuresIDs() (ids []int64) {
+	for id := range m.erasures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetErasures resets all changes to the "erasures" edge.
+func (m *WorkspaceMutation) ResetErasures() {
+	m.erasures = nil
+	m.clearederasures = false
+	m.removederasures = nil
+}
+
 // AddUsageIDs adds the "usages" edge to the Usage entity by ids.
 func (m *WorkspaceMutation) AddUsageIDs(ids ...int64) {
 	if m.usages == nil {
@@ -40200,7 +41244,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 26)
+	edges := make([]string, 0, 27)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -40275,6 +41319,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.audit_entries != nil {
 		edges = append(edges, workspace.EdgeAuditEntries)
+	}
+	if m.erasures != nil {
+		edges = append(edges, workspace.EdgeErasures)
 	}
 	if m.usages != nil {
 		edges = append(edges, workspace.EdgeUsages)
@@ -40436,6 +41483,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeErasures:
+		ids := make([]ent.Value, 0, len(m.erasures))
+		for id := range m.erasures {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeUsages:
 		ids := make([]ent.Value, 0, len(m.usages))
 		for id := range m.usages {
@@ -40448,7 +41501,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 26)
+	edges := make([]string, 0, 27)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -40523,6 +41576,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedaudit_entries != nil {
 		edges = append(edges, workspace.EdgeAuditEntries)
+	}
+	if m.removederasures != nil {
+		edges = append(edges, workspace.EdgeErasures)
 	}
 	if m.removedusages != nil {
 		edges = append(edges, workspace.EdgeUsages)
@@ -40684,6 +41740,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeErasures:
+		ids := make([]ent.Value, 0, len(m.removederasures))
+		for id := range m.removederasures {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeUsages:
 		ids := make([]ent.Value, 0, len(m.removedusages))
 		for id := range m.removedusages {
@@ -40696,7 +41758,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 26)
+	edges := make([]string, 0, 27)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -40772,6 +41834,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	if m.clearedaudit_entries {
 		edges = append(edges, workspace.EdgeAuditEntries)
 	}
+	if m.clearederasures {
+		edges = append(edges, workspace.EdgeErasures)
+	}
 	if m.clearedusages {
 		edges = append(edges, workspace.EdgeUsages)
 	}
@@ -40832,6 +41897,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedinvitations
 	case workspace.EdgeAuditEntries:
 		return m.clearedaudit_entries
+	case workspace.EdgeErasures:
+		return m.clearederasures
 	case workspace.EdgeUsages:
 		return m.clearedusages
 	}
@@ -40924,6 +41991,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeAuditEntries:
 		m.ResetAuditEntries()
+		return nil
+	case workspace.EdgeErasures:
+		m.ResetErasures()
 		return nil
 	case workspace.EdgeUsages:
 		m.ResetUsages()

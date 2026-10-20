@@ -1,0 +1,26 @@
+# Contract fuzzing of the external API (mise run check:contract): Schemathesis generates requests
+# from openapi/external.openapi.json and checks the real server answers as the contract says.
+
+[checks]
+# A request that satisfies the schema may still be refused for a reason the schema cannot state:
+# 400 for "exactly one of id or email", 402 for an Enterprise feature, 422 for a rule on values (an unknown
+# sending source). The contract documents them, so they are not a failure here.
+positive_data_acceptance.expected-statuses = [
+  "2xx",
+  "3xx",
+  400,
+  401,
+  402,
+  403,
+  404,
+  409,
+  422,
+  429,
+  "5xx",
+]
+
+# The run authenticates with a token of the fixtures; fuzzing the operation that revokes a token
+# would soon revoke that one and turn every later request into a 401.
+[[operations]]
+include-name = "DELETE /auth/tokens/{id}"
+enabled = false
