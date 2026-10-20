@@ -27,10 +27,16 @@ type Holdings struct {
 	Suppressions    int
 }
 
-// NormalizeEmail trims and lowercases an address the way ByEmail does, and rejects
-// anything that is not a single plain address (no display name, no list).
+// canonicalEmail is the one rule for the form an address is matched in: trimmed and
+// lowercased. ByEmail and NormalizeEmail both use it.
+func canonicalEmail(raw string) string { return strings.ToLower(strings.TrimSpace(raw)) }
+
+// NormalizeEmail returns the canonical form of an address and rejects anything that is
+// not a single plain address (no display name, no list). Callers hand the raw input to
+// Lookup and ByEmail, which normalize themselves; a handler calls this only to answer
+// 400 for an invalid address before it acts.
 func NormalizeEmail(raw string) (string, error) {
-	email := strings.ToLower(strings.TrimSpace(raw))
+	email := canonicalEmail(raw)
 	addr, err := mail.ParseAddress(email)
 	if err != nil || addr.Address != email {
 		return "", ErrInvalidEmail

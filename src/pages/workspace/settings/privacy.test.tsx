@@ -98,6 +98,19 @@ test('a rejected address shows the problem instead of a result', async () => {
   const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)
   await lookUp(screen, 'not an address')
 
+  await expect.element(screen.getByText('This is not a valid email address.')).toBeInTheDocument()
+  await expect.element(screen.getByText('Could not look up the address.')).not.toBeInTheDocument()
+})
+
+test('a failed lookup other than a rejected address shows the generic error', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteContactsLookup(() => problem(500, { detail: 'boom' })),
+  )
+
+  const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)
+  await lookUp(screen, 'alice@example.com')
+
   await expect.element(screen.getByText('Could not look up the address.')).toBeInTheDocument()
 })
 
@@ -188,6 +201,34 @@ test('Erase asks for a confirmation that says what is removed, anonymized and ke
   await expect.element(screen.getByText('Address erased')).toBeInTheDocument()
   await expect.element(screen.getByText('Contact: none')).toBeInTheDocument()
   expect(erased).toEqual(['alice@example.com'])
+  await expect.element(screen.getByRole('button', { name: 'Erase' })).toBeDisabled()
+})
+
+test('after an Erase the lookup shows only the kept opt-outs and Erase is disabled', async () => {
+  let lookups = 0
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    handleSiteContactsLookup(() => {
+      lookups += 1
+      return Response.json(
+        lookups === 1
+          ? held
+          : { contactHeld: false, events: 0, deliveryRecords: 0, unsubscribes: 1, suppressions: 2 },
+      )
+    }),
+    handleSiteContactsErase(() => new Response(null, { status: 204 })),
+  )
+
+  const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)
+  await lookUp(screen, 'alice@example.com')
+  await screen.getByRole('button', { name: 'Erase' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Erase' }).click()
+
+  await expect.element(screen.getByText('Contact: none')).toBeInTheDocument()
+  await expect.element(screen.getByText('Events: 0')).toBeInTheDocument()
+  await expect.element(screen.getByText('Delivery records: 0')).toBeInTheDocument()
+  await expect.element(screen.getByText('Unsubscribes: 1')).toBeInTheDocument()
+  await expect.element(screen.getByText('Suppressions: 2')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Erase' })).toBeDisabled()
 })
 

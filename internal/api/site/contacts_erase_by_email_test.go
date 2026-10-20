@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -94,4 +95,19 @@ func TestSiteContactsEraseByEmailRecordsTheUserRequester(t *testing.T) {
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "user", msgs[0].Data["requesterKind"])
 	assert.NotZero(t, msgs[0].Data["requesterId"])
+}
+
+// Erase by address leaves an Audit entry for the removed Contact that carries no address
+// and no name (ADR 0021: the erasure must not re-store the PII); it keeps the actor.
+func TestSiteContactsEraseByEmailAuditEntryHoldsNoAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	require.IsType(t, &siteapi.SiteContactsEraseNoContent{}, eraseByEmail(t, c, fixtures.AcmeSlug, fixtures.ContactExportSubjectEmail))
+
+	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, "contact.delete")
+
+	require.Len(t, got, 1)
+	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
+	assert.NotContains(t, fmt.Sprintf("%+v", got[0]), fixtures.ContactExportSubjectEmail)
+	assert.Empty(t, got[0].Target.Name.Value, "no name of the erased Contact")
 }

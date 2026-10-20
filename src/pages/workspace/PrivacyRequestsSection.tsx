@@ -15,9 +15,25 @@ import { useContactExport } from '../../hooks/useContactExport.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 
-// EraseAction is offered exactly while Erasure would find something: a Contact or
-// delivery records hold the address (kept opt-outs alone do not count). A not-found
-// answer means someone erased it meanwhile: say so and refresh the lookup.
+// The two decisions the lookup drives. Erase is possible exactly while Erasure would find
+// something: a Contact or delivery records hold the address (kept opt-outs alone do not
+// count). Nothing is held when every count is zero and no Contact exists.
+function canErase(held: SiteContactLookup): boolean {
+  return held.contactHeld || held.deliveryRecords > 0
+}
+
+function holdsNothing(held: SiteContactLookup): boolean {
+  return (
+    !held.contactHeld &&
+    held.events === 0 &&
+    held.deliveryRecords === 0 &&
+    held.unsubscribes === 0 &&
+    held.suppressions === 0
+  )
+}
+
+// EraseAction is offered while canErase holds. A not-found answer means someone erased
+// it meanwhile: say so and refresh the lookup.
 function EraseAction({
   slug,
   email,
@@ -67,7 +83,7 @@ function EraseAction({
       color="red"
       variant="light"
       w="fit-content"
-      disabled={!held.contactHeld && held.deliveryRecords === 0}
+      disabled={!canErase(held)}
       loading={erase.isPending}
       onClick={() =>
         confirm({
@@ -84,8 +100,8 @@ function EraseAction({
 }
 
 // LookupResult shows what the Workspace holds for the looked-up address, as counts.
-// Erase and Export build on this result: they read the same lookup to decide whether
-// they are offered (a Contact or delivery records hold the address).
+// Erase and Export build on this result: Erase reads the same lookup (canErase) to decide
+// whether it is offered.
 function LookupResult({
   slug,
   email,
@@ -97,14 +113,8 @@ function LookupResult({
 }) {
   const { t } = useTranslation()
   const exportMutation = useContactExport(slug)
-  const nothingHeld =
-    !held.contactHeld &&
-    held.events === 0 &&
-    held.deliveryRecords === 0 &&
-    held.unsubscribes === 0 &&
-    held.suppressions === 0
 
-  if (nothingHeld) {
+  if (holdsNothing(held)) {
     return <Text>{t(($) => $.settings.privacy.nothingHeld)}</Text>
   }
   return (
@@ -172,7 +182,11 @@ export function PrivacyRequestsSection({ slug }: { slug: string }) {
       </form>
       <Stack mt="md">
         {lookup.isError ? (
-          <Alert color="red">{t(($) => $.settings.privacy.lookupError)}</Alert>
+          <Alert color="red">
+            {hasErrorStatus(lookup.error, [400])
+              ? t(($) => $.settings.privacy.invalidEmail)
+              : t(($) => $.settings.privacy.lookupError)}
+          </Alert>
         ) : null}
         {lookup.data ? <LookupResult slug={slug} email={email} held={lookup.data} /> : null}
       </Stack>

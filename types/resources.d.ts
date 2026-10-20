@@ -925,6 +925,7 @@ export default interface Resources {
         "eraseConfirmTitle": "Erase {{email}}?",
         "erased": "Address erased",
         "events": "Events: {{n}}",
+        "invalidEmail": "This is not a valid email address.",
         "lookup": "Look up",
         "lookupError": "Could not look up the address.",
         "membersOnly": "Only owners and admins can handle privacy requests.",

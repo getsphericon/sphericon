@@ -30,7 +30,7 @@ func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteCon
 		return &v, nil
 	}
 
-	email, err := erasure.NormalizeEmail(params.Email)
+	_, err = erasure.NormalizeEmail(params.Email)
 	if errors.Is(err, erasure.ErrInvalidEmail) {
 		v := siteapi.SiteContactsEraseBadRequest(problem(http.StatusBadRequest, "invalid email address"))
 		return &v, nil
@@ -39,7 +39,7 @@ func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteCon
 		return nil, err
 	}
 
-	err = h.erasure.Erase(ctx, scoped, erasure.ByEmail(email),
+	err = h.erasure.Erase(ctx, scoped, erasure.ByEmail(params.Email),
 		erasure.Requester{Kind: erasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if errors.Is(err, erasure.ErrNotFound) {
 		v := siteapi.SiteContactsEraseNotFound(problem(http.StatusNotFound, "nothing found for the address"))
