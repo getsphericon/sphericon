@@ -55,7 +55,6 @@ require (
 	github.com/riverqueue/river/rivershared v0.49.0
 	github.com/riverqueue/river/rivertype v0.49.0
 	github.com/riverqueue/rivercontrib/otelriver v0.12.0
-	github.com/robbiet480/go.sns v0.0.0-20230523235941-e8d832c79d68
 	github.com/rs/cors v1.11.1
 	github.com/samber/do/v2 v2.1.0
 	github.com/samber/lo v1.53.0
