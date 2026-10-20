@@ -1,0 +1,235 @@
+package broadcasts_test
+
+import (
+	"context"
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/tracking"
+)
+
+// mailbox is the Workspace's provider: it records what it sends, or fails every send.
+type mailbox struct {
+	sent []messaging.EmailMessage
+	err  error
+}
+
+func (m *mailbox) DefaultFrom() (string, string) { return "hello@codebasics.dev", "CodeBasics" }
+
+func (m *mailbox) Send(_ context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
+	if m.err != nil {
+		return messaging.Receipt{}, m.err
+	}
+	m.sent = append(m.sent, msg)
+	return messaging.Receipt{}, nil
+}
+
+type provider struct{ sender messaging.EmailSender }
+
+func (p provider) EmailSender(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
+	return p.sender, nil
+}
+
+// delivery is a sending Broadcast (the fixture, with no recipients yet) over a mailbox.
+type delivery struct {
+	t   *testing.T
+	env *testhelper.TestEnv
+	box *mailbox
+	out *outbound.Module
+	del *broadcasts.Delivery
+	s   *ent.Scoped
+	ctx context.Context
+}
+
+func newDelivery(t *testing.T) *delivery {
+	t.Helper()
+	env := testhelper.Setup(t)
+	box := &mailbox{}
+	out := outbound.New(env.Bus, provider{box}, tracking.New("test-secret", "http://local"))
+	return &delivery{
+		t: t, env: env, box: box, ctx: context.Background(),
+		out: out, del: broadcasts.NewDelivery(out),
+		s: env.DB.Scoped(fixtures.AcmeID),
+	}
+}
+
+// recipient adds a pending recipient row for a Contact to the sending Broadcast.
+func (d *delivery) recipient(contactID int64) int64 {
+	rec, err := d.s.BroadcastRecipient().Create().
+		SetBroadcastID(fixtures.BroadcastSendingID).SetContactID(contactID).Save(d.ctx)
+	require.NoError(d.t, err)
+	return rec.ID
+}
+
+func (d *delivery) recipientRow(id int64) *ent.BroadcastRecipient {
+	return d.env.DB.BroadcastRecipient.GetX(d.ctx, id)
+}
+
+func (d *delivery) broadcastRow() *ent.Broadcast {
+	return d.env.DB.Broadcast.GetX(d.ctx, fixtures.BroadcastSendingID)
+}
+
+func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetHoldReason(outbound.HoldSuspended).ExecX(d.ctx)
+
+	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+
+	rec := d.recipientRow(id)
+	assert.Equal(t, broadcastrecipient.StatusSent, rec.Status)
+	assert.NotNil(t, rec.SentAt)
+	assert.NotNil(t, rec.OutboundMessageID)
+	assert.Len(t, d.box.sent, 1)
+	b := d.broadcastRow()
+	assert.Nil(t, b.HoldReason, "a send clears the hold reason")
+	assert.Equal(t, broadcast.StatusSent, b.Status, "the last pending recipient settles the Broadcast")
+	assert.Equal(t, 1, b.SentCount)
+}
+
+func TestSendRecipientIsIdempotent(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+
+	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+
+	assert.Len(t, d.box.sent, 1)
+}
+
+func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
+	d := newDelivery(t)
+	d.env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).ClearEmail().ExecX(d.ctx)
+	id := d.recipient(fixtures.ContactAliceID)
+
+	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+
+	rec := d.recipientRow(id)
+	assert.Equal(t, broadcastrecipient.StatusFailed, rec.Status)
+	require.NotNil(t, rec.Error)
+	assert.Equal(t, "contact has no email", *rec.Error)
+	assert.Equal(t, 1, d.broadcastRow().FailedCount)
+	assert.Empty(t, d.box.sent)
+}
+
+func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+	alice := d.env.DB.Contact.GetX(d.ctx, fixtures.ContactAliceID)
+	d.env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).SetChannel("email").
+		SetDestination(*alice.Email).SetReason("bounce").ExecX(d.ctx)
+
+	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+
+	assert.Equal(t, broadcastrecipient.StatusSkipped, d.recipientRow(id).Status)
+	b := d.broadcastRow()
+	assert.Equal(t, 1, b.SkippedCount)
+	assert.Zero(t, b.SentCount)
+	assert.Zero(t, b.FailedCount)
+	assert.Empty(t, d.box.sent)
+}
+
+func TestRecipientThatCannotRenderFails(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetSubject("{% if %}broken").ExecX(d.ctx)
+
+	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+
+	rec := d.recipientRow(id)
+	assert.Equal(t, broadcastrecipient.StatusFailed, rec.Status)
+	assert.NotNil(t, rec.Error)
+}
+
+func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+	d.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(d.ctx)
+
+	err := d.del.SendRecipient(d.ctx, d.s, id)
+
+	var held *broadcasts.HeldError
+	require.ErrorAs(t, err, &held)
+	assert.Equal(t, outbound.HoldSuspended, held.Reason)
+	assert.True(t, broadcasts.IsRetryLater(err))
+	assert.Equal(t, broadcastrecipient.StatusPending, d.recipientRow(id).Status)
+	b := d.broadcastRow()
+	require.NotNil(t, b.HoldReason)
+	assert.Equal(t, outbound.HoldSuspended, *b.HoldReason)
+	assert.Equal(t, broadcast.StatusSending, b.Status, "a hold keeps the status")
+}
+
+func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
+	d := newDelivery(t)
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(d.ctx)
+	// Transactional traffic spends the Integration's capacity and is itself never slowed.
+	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
+		res, err := d.out.Send(d.ctx, d.s, outbound.Request{
+			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
+			Subject: "Receipt", Body: "<p>Hi</p>",
+		})
+		require.NoError(t, err)
+		require.Equal(t, outbound.Sent, res.Outcome)
+	}
+	second := d.recipient(fixtures.ContactAliceID)
+
+	err := d.del.SendRecipient(d.ctx, d.s, second)
+
+	var deferred *broadcasts.DeferredError
+	require.ErrorAs(t, err, &deferred)
+	assert.Positive(t, deferred.Delay)
+	assert.True(t, broadcasts.IsRetryLater(err))
+	rec := d.recipientRow(second)
+	assert.Equal(t, broadcastrecipient.StatusPending, rec.Status)
+	assert.NotNil(t, rec.DeferredUntil)
+	assert.Nil(t, d.broadcastRow().HoldReason, "busy is not a hold")
+}
+
+func TestUnknownRecipientIsNothingToSend(t *testing.T) {
+	d := newDelivery(t)
+	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, 424242))
+}
+
+func TestGiveUpFailsTheRecipientWithTheCauseAndSettlesTheBroadcast(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+
+	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable")))
+
+	rec := d.recipientRow(id)
+	assert.Equal(t, broadcastrecipient.StatusFailed, rec.Status)
+	require.NotNil(t, rec.Error)
+	assert.Equal(t, "smtp unavailable", *rec.Error)
+	b := d.broadcastRow()
+	assert.Equal(t, broadcast.StatusSent, b.Status)
+	assert.Equal(t, 1, b.FailedCount)
+}
+
+func TestOnlyAPendingRecipientCanLeavePending(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+	require.NoError(t, d.del.SendRecipient(d.ctx, d.s, id))
+
+	err := d.del.GiveUp(d.ctx, d.s, id, errors.New("late"))
+
+	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
+	assert.Equal(t, broadcastrecipient.StatusSent, d.recipientRow(id).Status)
+}
+
+func TestHeldErrorMessage(t *testing.T) {
+	assert.Equal(t, "send held: no_integration", (&broadcasts.HeldError{Reason: "no_integration"}).Error())
+}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -54,7 +55,7 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 
 	setHold(t, env, "k1", clock.t.Add(time.Hour))
 	err = jobs.SendToRecipient(ctx, env.DB, mod, ids[1])
-	var held *jobs.HeldError
+	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, outbound.HoldStaff, held.Reason)
 	assert.Equal(t, broadcastrecipient.StatusPending, env.DB.BroadcastRecipient.GetX(ctx, ids[1]).Status, "the recipient is neither failed nor consumed")

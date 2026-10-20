@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -82,7 +83,7 @@ func NewSendBroadcastWorker(client *ent.Client, mod *outbound.Module) *SendBroad
 }
 
 func NewSendRecipientWorker(client *ent.Client, mod *outbound.Module) *SendRecipientWorker {
-	return &SendRecipientWorker{ent: client, mod: mod}
+	return &SendRecipientWorker{ent: client, del: broadcasts.NewDelivery(mod)}
 }
 
 // River exposes the wrapped client so tests can build a worker context.

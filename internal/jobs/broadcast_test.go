@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -138,7 +139,7 @@ func TestPlanBroadcastHoldsOnUnverifiedFromDomain(t *testing.T) {
 	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetFromEmail("noreply@news.acme.com").ExecX(ctx)
 
 	_, err := jobs.PlanBroadcast(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), fixtures.BroadcastDraftID)
-	var held *jobs.HeldError
+	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, outbound.HoldUnverifiedDomain, held.Reason)
 
@@ -177,7 +178,7 @@ func TestSuspensionMidBroadcastPausesRecipientsAndResumes(t *testing.T) {
 
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).SetSuspendedByKind(workspace.SuspendedByKindSystem).ExecX(ctx)
 	err = jobs.SendToRecipient(ctx, env.DB, mod, ids[1])
-	var held *jobs.HeldError
+	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, outbound.HoldSuspended, held.Reason)
 	assert.Equal(t, broadcastrecipient.StatusPending, env.DB.BroadcastRecipient.GetX(ctx, ids[1]).Status)
@@ -478,7 +479,7 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 	// Fixture broadcast 100; the resolver reports no usable provider. That is a
 	// reversible hold on the source, not a failed broadcast.
 	err := jobs.SendBroadcast(ctx, env.DB, newMod(env, failingResolver(messaging.ErrNoProvider)), fixtures.BroadcastDraftID)
-	var held *jobs.HeldError
+	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, outbound.HoldNoIntegration, held.Reason)
 

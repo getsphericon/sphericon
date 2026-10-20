@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -164,59 +163,6 @@ func TestPlanBroadcastFailsOnABrokenSegment(t *testing.T) {
 		_, err := jobs.PlanBroadcast(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), fixtures.BroadcastDraftID)
 		require.Error(t, err)
 		assert.Equal(t, broadcast.StatusFailed, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
-	})
-}
-
-func TestSendToRecipientOutcomes(t *testing.T) {
-	ctx := context.Background()
-	plan := func(t *testing.T, env *testhelper.TestEnv) (ids []int64) {
-		t.Helper()
-		ids, err := jobs.PlanBroadcast(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), fixtures.BroadcastDraftID)
-		require.NoError(t, err)
-		require.NotEmpty(t, ids)
-		return ids
-	}
-	status := func(env *testhelper.TestEnv, id int64) broadcastrecipient.Status {
-		return env.DB.BroadcastRecipient.GetX(ctx, id).Status
-	}
-
-	t.Run("a contact that lost its email fails terminally", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		ids := plan(t, env)
-		rec := env.DB.BroadcastRecipient.GetX(ctx, ids[0])
-		env.DB.Contact.UpdateOneID(rec.ContactID).ClearEmail().ExecX(ctx)
-		require.NoError(t, jobs.SendToRecipient(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), ids[0]))
-		assert.Equal(t, broadcastrecipient.StatusFailed, status(env, ids[0]))
-	})
-
-	t.Run("a suppression after planning skips the recipient", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		ids := plan(t, env)
-		rec := env.DB.BroadcastRecipient.GetX(ctx, ids[0])
-		c := env.DB.Contact.GetX(ctx, rec.ContactID)
-		env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).SetChannel("email").
-			SetDestination(*c.Email).SetReason("bounce").ExecX(ctx)
-		require.NoError(t, jobs.SendToRecipient(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), ids[0]))
-		assert.Equal(t, broadcastrecipient.StatusSkipped, status(env, ids[0]))
-	})
-
-	t.Run("a held workspace leaves the recipient pending", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		ids := plan(t, env)
-		_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaints")
-		require.NoError(t, err)
-		err = jobs.SendToRecipient(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), ids[0])
-		require.Error(t, err)
-		var held *jobs.HeldError
-		require.ErrorAs(t, err, &held)
-		assert.Equal(t, broadcastrecipient.StatusPending, status(env, ids[0]))
-	})
-
-	// A recipient that is gone was erased with its Contact (ADR 0021) after its job
-	// was queued: nothing to send, nothing to retry.
-	t.Run("unknown recipient", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		require.NoError(t, jobs.SendToRecipient(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), 424242))
 	})
 }
 

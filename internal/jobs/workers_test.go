@@ -697,10 +697,6 @@ func TestErrorHandlerLogsAndKeepsRetrying(t *testing.T) {
 	assert.Contains(t, buf.String(), "kaboom")
 }
 
-func TestHeldErrorMessage(t *testing.T) {
-	assert.Equal(t, "send held: no_integration", (&jobs.HeldError{Reason: "no_integration"}).Error())
-}
-
 // A queued plan job that fires after its Broadcast has finished is stale: it finishes
 // without an error (so river does not retry it) and leaves the status alone.
 func TestSendBroadcastWorkerFinishesAStaleJob(t *testing.T) {

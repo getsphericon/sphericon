@@ -171,27 +171,46 @@ func BroadcastDue(ctx context.Context, client *ent.Client, broadcastID int64, jo
 type SendRecipientWorker struct {
 	river.WorkerDefaults[SendRecipientArgs]
 	ent *ent.Client
-	mod *outbound.Module
+	del *broadcasts.Delivery
 }
 
+// Work is the river adapter over the module's recipient delivery: it keeps only the queue
+// concerns, snoozing on a retry decision and recognising the last attempt.
 func (w *SendRecipientWorker) Work(ctx context.Context, job *river.Job[SendRecipientArgs]) error {
-	if err := SendToRecipient(ctx, w.ent, w.mod, job.Args.RecipientID); err != nil {
-		if isDeferrable(err) {
-			// A hold or a Deferral is not a failure: wait it out without spending an attempt.
-			return snoozeIfDeferrable(err)
-		}
-		// On the final attempt, record the terminal failure so the broadcast can
-		// finalize instead of hanging in "sending", then surface the error (river
-		// discards the job and the ErrorHandler logs it).
-		if job.Attempt >= job.MaxAttempts {
-			_ = markRecipientFailed(ctx, w.ent, w.mod, job.Args.RecipientID, err)
-			_ = FinalizeBroadcast(ctx, w.ent, job.Args.BroadcastID)
-		}
-		return err
+	s, err := recipientScope(ctx, w.ent, job.Args.RecipientID)
+	if err != nil || s == nil {
+		return err // no such recipient: erased with its Contact after the job was queued
 	}
-	// Cheap conditional no-op until the last recipient lands, at which point it
-	// flips the broadcast to "sent" — no separate finalizer job needed.
-	return FinalizeBroadcast(ctx, w.ent, job.Args.BroadcastID)
+	err = w.del.SendRecipient(ctx, s, job.Args.RecipientID)
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, lifecycle.ErrInvalidTransition):
+		return nil // stale: the recipient was decided meanwhile, nothing to retry
+	case isDeferrable(err):
+		// A hold or a Deferral is not a failure: wait it out without spending an attempt.
+		return snoozeIfDeferrable(err)
+	}
+	// On the final attempt the module records the terminal failure so the Broadcast can
+	// finalize instead of hanging in "sending"; the error still surfaces (river discards
+	// the job and the ErrorHandler logs it).
+	if job.Attempt >= job.MaxAttempts {
+		_ = w.del.GiveUp(ctx, s, job.Args.RecipientID, err)
+	}
+	return err
+}
+
+// recipientScope loads the recipient row that names the Workspace and scopes to it (the job
+// entry point, ADR 0017). It returns nil, nil for a recipient that no longer exists.
+func recipientScope(ctx context.Context, client *ent.Client, recipientID int64) (*ent.Scoped, error) {
+	rec, err := client.BroadcastRecipient.Get(ctx, recipientID)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("load recipient %d: %w", recipientID, err)
+	}
+	return client.Scoped(rec.WorkspaceID), nil
 }
 
 // SendBroadcast renders and sends a broadcast to its eligible audience
@@ -207,16 +226,23 @@ func SendBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module
 	if err != nil {
 		return err
 	}
+	del := broadcasts.NewDelivery(mod)
 	for _, id := range ids {
-		if serr := SendToRecipient(ctx, client, mod, id); serr != nil {
+		s, serr := recipientScope(ctx, client, id)
+		if serr == nil && s != nil {
+			serr = del.SendRecipient(ctx, s, id)
+		}
+		if serr != nil {
 			if isDeferrable(serr) {
 				// The source is on hold (or a claim is live): stop, leaving the remaining
 				// recipients pending for a later run rather than consuming them.
 				return serr
 			}
-			// Synchronous path has no retry runtime — a failed send is terminal, so
-			// mark the row failed (a bad recipient must not abort the batch).
-			_ = markRecipientFailed(ctx, client, mod, id, serr)
+			// Synchronous path has no retry runtime: a failed send is terminal, so
+			// give the recipient up (a bad recipient must not abort the batch).
+			if s != nil {
+				_ = del.GiveUp(ctx, s, id, serr)
+			}
 		}
 	}
 	return FinalizeBroadcast(ctx, client, broadcastID)
@@ -256,10 +282,10 @@ func PlanBroadcast(ctx context.Context, client *ent.Client, mod *outbound.Module
 		return nil, fmt.Errorf("preflight broadcast %d: %w", b.ID, err)
 	}
 	if hold != "" {
-		setBroadcastHold(ctx, s, b.ID, hold)
-		return nil, &HeldError{Reason: hold}
+		broadcasts.SetHold(ctx, s, b.ID, hold)
+		return nil, &broadcasts.HeldError{Reason: hold}
 	}
-	setBroadcastHold(ctx, s, b.ID, "")
+	broadcasts.SetHold(ctx, s, b.ID, "")
 
 	if err := broadcasts.Begin(ctx, s, b.ID); err != nil {
 		return nil, err
@@ -350,115 +376,14 @@ func failBroadcast(ctx context.Context, s *ent.Scoped, id int64) error {
 	return broadcasts.Fail(ctx, s, id)
 }
 
-// SendToRecipient hands one broadcast recipient's email to Outbound send and maps
-// the Outcome onto the recipient row. It is idempotent: a recipient already at a
-// final status is left alone, and the module's idempotency key makes a retry after
-// a committed send replay the recorded result. A returned error is retryable
-// (provider down, claim in flight); a *HeldError means the source is on hold and a
-// *DeferredError that its Send rate limit is spent; either way the job should be
-// deferred, not failed.
+// SendToRecipient scopes to the recipient's Workspace and delivers it through the
+// module (see broadcasts.Delivery.SendRecipient).
 func SendToRecipient(ctx context.Context, client *ent.Client, mod *outbound.Module, recipientID int64) error {
-	rec, err := client.BroadcastRecipient.Get(ctx, recipientID)
-	if ent.IsNotFound(err) {
-		return nil // erased with its Contact (ADR 0021) after the job was queued: nothing to send
-	}
-	if err != nil {
-		return fmt.Errorf("load recipient %d: %w", recipientID, err)
-	}
-	// Job entry point: the scoped client is built from the loaded row's Workspace.
-	s := client.Scoped(rec.WorkspaceID)
-	if rec.Status != broadcastrecipient.StatusPending {
-		return nil // already decided (retry after a committed send) — don't re-send
-	}
-
-	b, err := s.Broadcast().Get(ctx, rec.BroadcastID)
-	if err != nil {
-		return fmt.Errorf("load broadcast %d: %w", rec.BroadcastID, err)
-	}
-	c, err := s.Contact().Get(ctx, rec.ContactID)
-	if ent.IsNotFound(err) {
-		return nil // the Contact was erased (ADR 0021): never send to it
-	}
-	if err != nil {
-		return fmt.Errorf("load contact %d: %w", rec.ContactID, err)
-	}
-	// Guard: the audience filters EmailNotNil, but a contact could lose its email
-	// between plan and send. Terminal — the row can't ever send.
-	if c.Email == nil {
-		_ = s.BroadcastRecipient().UpdateOneID(rec.ID).SetStatus(broadcastrecipient.StatusFailed).SetError("contact has no email").Exec(ctx)
-		return nil
-	}
-
-	req := outbound.BroadcastRecipient(b, rec, c)
-
-	res, err := mod.Send(ctx, s, req)
-	if err != nil {
+	s, err := recipientScope(ctx, client, recipientID)
+	if err != nil || s == nil {
 		return err
 	}
-	upd := s.BroadcastRecipient().UpdateOneID(rec.ID)
-	if res.MessageID != 0 {
-		upd.SetOutboundMessageID(res.MessageID)
-	}
-	retry := res.Retry(0)
-	if retry.Wanted {
-		return deferRecipient(ctx, s, upd, b, rec, res)
-	}
-	switch res.Outcome {
-	case outbound.Sent:
-		setBroadcastHold(ctx, s, b.ID, "") // a send went through: the hold, if any, has lifted
-		err = upd.SetStatus(broadcastrecipient.StatusSent).SetSentAt(time.Now()).Exec(ctx)
-	case outbound.Skipped:
-		err = upd.SetStatus(broadcastrecipient.StatusSkipped).SetError(res.Reason).Exec(ctx)
-	default: // outbound.Failed
-		err = upd.SetStatus(broadcastrecipient.StatusFailed).SetError(res.Reason).Exec(ctx)
-	}
-	return err
-}
-
-// deferRecipient is the recipient's turn when Outbound send wants a retry (a Hold or a
-// Deferral): nothing was consumed, so the job snoozes by the Outbound retry policy.
-func deferRecipient(ctx context.Context, s *ent.Scoped, upd *ent.BroadcastRecipientScopedUpdateOne, b *ent.Broadcast, rec *ent.BroadcastRecipient, res outbound.Result) error {
-	if res.Outcome == outbound.Held {
-		setBroadcastHold(ctx, s, b.ID, res.Reason)
-		return &HeldError{Reason: res.Reason}
-	}
-	// The Integration is busy, not blocked: the Broadcast stays sending with no hold
-	// reason and this recipient stays pending, retried after the wait.
-	now := time.Now()
-	ahead, cerr := s.BroadcastRecipient().Query().
-		Where(
-			broadcastrecipient.BroadcastID(rec.BroadcastID),
-			broadcastrecipient.StatusEQ(broadcastrecipient.StatusPending),
-			broadcastrecipient.IDLT(rec.ID),
-			// Only the awake ones queue for a token; a recipient asleep on its own
-			// Deferral is not ahead of this one yet.
-			broadcastrecipient.Or(
-				broadcastrecipient.DeferredUntilIsNil(),
-				broadcastrecipient.DeferredUntilLTE(now),
-			),
-		).Count(ctx)
-	if cerr != nil {
-		ahead = 0 // the estimate only spreads retries; never fail the send over it
-	}
-	retry := res.Retry(ahead)
-	// Best effort, like the count: it only sharpens later jobs' backlog.
-	_ = upd.SetDeferredUntil(now.Add(retry.After)).Exec(ctx)
-	return &DeferredError{Delay: retry.After}
-}
-
-// markRecipientFailed records a terminal delivery failure on a recipient row and
-// gives up the Outbound claim so a stale pending message does not linger.
-func markRecipientFailed(ctx context.Context, client *ent.Client, mod *outbound.Module, recipientID int64, cause error) error {
-	rec, err := client.BroadcastRecipient.Get(ctx, recipientID)
-	if err != nil {
-		return err
-	}
-	s := client.Scoped(rec.WorkspaceID)
-	_ = mod.MarkRecipientFailed(ctx, s, recipientID, cause)
-	return s.BroadcastRecipient().UpdateOneID(rec.ID).
-		SetStatus(broadcastrecipient.StatusFailed).
-		SetError(cause.Error()).
-		Exec(ctx)
+	return broadcasts.NewDelivery(mod).SendRecipient(ctx, s, recipientID)
 }
 
 // FinalizeBroadcast loads the broadcast and settles it once none of its recipients
