@@ -2,9 +2,9 @@
 
 <p align="center">
   Open-core marketing automation you can run yourself.<br />
-  <a href="https://docs.getsphericon.app/">Documentation</a> ·
+  <a href="https://getsphericon.com/docs/">Documentation</a> ·
   <a href="https://github.com/getsphericon/sphericon/releases">Releases</a> ·
-  <a href="docs/self-hosting.md">Self-hosting</a>
+  <a href="https://getsphericon.com/docs/self-hosting">Self-hosting</a>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@ lock-in.
 ## Features
 
 - **Contacts and events** — one profile per person, built from imports, the API and the
-  [tracking snippet](https://docs.getsphericon.app/guide/tracking) on your site.
+  [tracking snippet](https://getsphericon.com/docs/guide/tracking) on your site.
 - **Segments and tags** — audiences defined by rules over contacts, tags and events.
 - **Broadcasts** — one-off email to a segment, with per-broadcast stats.
 - **Automations** — sequences triggered by what a contact does, with waits and emails.
@@ -34,9 +34,9 @@ lock-in.
 - **Deliverability built in** — unsubscribes, bounces and spam complaints are honored
   automatically, mail is signed with your own DKIM key and sent with one-click unsubscribe,
   so you never write to someone who asked you to stop.
-- **API and webhooks** — a workspace-scoped [API](https://docs.getsphericon.app/guide/api) with
+- **API and webhooks** — a workspace-scoped [API](https://getsphericon.com/docs/guide/api) with
   scoped tokens, and webhooks for what happens next.
-- **Agent-ready** — an [MCP server](https://docs.getsphericon.app/guide/mcp) lets an AI agent
+- **Agent-ready** — an [MCP server](https://getsphericon.com/docs/guide/mcp) lets an AI agent
   draft campaigns; sending stays opt-in per token.
 - **Privacy tools** — GDPR export and erasure.
 - **Multi-user workspaces** — owners, admins and members, with two-factor sign-in.
@@ -62,8 +62,8 @@ docker compose up -d
 
 Then put a reverse proxy with HTTPS in front of port 3000 and open it to create your account.
 The full guide covers HTTPS, the first run, plain Docker, the single binary and Kubernetes
-(Helm): [`docs/self-hosting.md`](docs/self-hosting.md). Every environment variable is in
-[`docs/configuration.md`](docs/configuration.md).
+(Helm): [self-hosting](https://getsphericon.com/docs/self-hosting). Every environment variable is in
+[configuration](https://getsphericon.com/docs/configuration).
 
 Images are published to `ghcr.io/getsphericon/sphericon` (linux amd64/arm64) on every release,
 and release archives for linux and darwin are attached to each
