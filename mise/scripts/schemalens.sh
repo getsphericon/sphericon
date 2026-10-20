@@ -14,7 +14,9 @@ if [ ! -x "$cache/schemalens-adapter-ent" ]; then
   archive="schemalens-adapter-ent_${version}_${os}_${arch}.tar.gz"
   tmp=$(mktemp -d)
   trap 'rm -rf "$tmp"' EXIT
-  gh release download "v$version" -R mokevnin/schemalens -p "$archive" -p checksums.txt -D "$tmp"
+  base="https://github.com/mokevnin/schemalens/releases/download/v$version"
+  curl -fsSL --output "$tmp/$archive" "$base/$archive"
+  curl -fsSL --output "$tmp/checksums.txt" "$base/checksums.txt"
   (cd "$tmp" && grep " $archive\$" checksums.txt | shasum -a 256 -c -)
   mkdir -p "$cache"
   tar -xzf "$tmp/$archive" -C "$cache" schemalens-adapter-ent

@@ -162,6 +162,10 @@ jobs:
       - name: Run tests
         run: mise run test
 
+      # Needs the migrated database the tests' Postgres provides, so it is not part of `check`.
+      - name: Check the schema against the models
+        run: mise run check:schema
+
   test-e2e:
     runs-on: ubuntu-latest
 

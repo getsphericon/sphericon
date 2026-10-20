@@ -1,0 +1,4 @@
+exclusions:
+  - rule: narrow-key
+    object: public.goose_db_version.column:id
+    reason: goose's own migration bookkeeping table, one row per migration file, bounded by the number of migrations and not part of the ent model

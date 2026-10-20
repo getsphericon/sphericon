@@ -172,7 +172,10 @@ Schema consistency: `mise run check:schema` runs [schemalens](https://github.com
 (pinned in `.mise.toml`, its ent adapter fetched into the user cache by `mise/scripts/schemalens.sh`)
 against the migrated dev database and compares it with the ent schema. Each finding carries a `fix`
 for the ent schema: apply it, `mise run db:generate`, re-run. An exclusion needs a `reason` and the
-user's say-so. It is not yet part of `check`: the existing findings are being triaged.
+user's say-so (`schemalens.yml`). CI runs it in the `test` job, not in `check`, because it needs the
+migrated database. An enum field gets its CHECK from `TableWithEnumChecks` in its schema's
+`Annotations()`; a new migration that adds a constraint or an index follows the Squawk rules above
+(`NOT VALID` then `VALIDATE`, `CONCURRENTLY`, both under `-- +goose NO TRANSACTION`).
 
 Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are in `CODING_STANDARDS.md`.
 
