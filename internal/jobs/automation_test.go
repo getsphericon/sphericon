@@ -195,7 +195,7 @@ func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 	require.Len(t, runIDs, 1)
 
 	fs := &fakeSender{}
-	mod := outbound.New(env.Bus, resolvingTo(fs), tracking.New("secret", "https://app.test"))
+	mod := outbound.New(env.Bus, env.Holds, resolvingTo(fs), tracking.New("secret", "https://app.test"))
 	_, err = jobs.RunStep(ctx, env.DB, noFence, mod, runIDs[0])
 	require.NoError(t, err)
 

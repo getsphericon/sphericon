@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/integration"
-	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/logging"
@@ -55,7 +55,7 @@ type hook struct {
 func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	row, err := h.ent.Integration.Query().
-		Where(integration.IngestKey(r.PathValue("key")), integration.HasWorkspaceWith(workspace.DiscardedAtIsNil())).
+		Where(integration.IngestKey(r.PathValue("key")), integration.HasWorkspaceWith(accounts.Live())).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		http.NotFound(w, r)

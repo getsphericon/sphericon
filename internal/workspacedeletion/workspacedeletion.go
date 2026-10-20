@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
@@ -106,7 +107,7 @@ func stateOf(ws *ent.Workspace) State {
 func inState(state State) predicate.Workspace {
 	switch state {
 	case StateActive:
-		return workspace.DiscardedAtIsNil()
+		return accounts.Live()
 	case StatePendingDeletion:
 		return pendingDeletion()
 	default:

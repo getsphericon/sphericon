@@ -137,7 +137,7 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	t.Cleanup(pool.Close)
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	require.NoError(t, err)
-	mod := outbound.New(env.Bus, nil, tracking.New("test-secret", "http://local"))
+	mod := outbound.New(env.Bus, env.Holds, nil, tracking.New("test-secret", "http://local"))
 	client, err := jobs.NewClient(pool, env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
 	require.NoError(t, err)
 	admin, err := river.NewClient(riverpgxv5.New(pool), &river.Config{})

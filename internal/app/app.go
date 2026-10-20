@@ -1029,7 +1029,7 @@ func register(injector do.Injector, env string, o options) {
 		if err != nil {
 			return nil, err
 		}
-		opts := []outbound.Option{outbound.WithFreezers(edition.Freezer()), outbound.WithTestSendBudget(attempts)}
+		opts := []outbound.Option{outbound.WithTestSendBudget(attempts)}
 		if cfg.SystemMailConfigured() {
 			sys, err := do.Invoke[*systemSender](i)
 			if err != nil {
@@ -1040,7 +1040,7 @@ func register(injector do.Injector, env string, o options) {
 		if cfg.TrackingCNAMETarget != "" {
 			opts = append(opts, outbound.WithTrackingDomains())
 		}
-		return &outboundModule{outbound.New(bus.Bus, resolver, tracker, opts...)}, nil
+		return &outboundModule{outbound.New(bus.Bus, edition.Holds(), resolver, tracker, opts...)}, nil
 	})
 
 	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).
@@ -1587,7 +1587,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	return apisite.Deps{
 		Instance:    inst,
 		Deletion:    deletion,
-		AccountLink: accountLink, HoldsHonoured: edition.HoldsHonoured, AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
+		AccountLink: accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, MCPURL: cfg.MCPOrigin(),
 		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, Integrations: integ,

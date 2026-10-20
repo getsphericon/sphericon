@@ -18,16 +18,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
-// holdClock is the clock the Staff hold freezer reads, moved by the test.
+// holdClock is the clock the Staff hold read uses, moved by the test.
 type holdClock struct{ t time.Time }
 
 func (c *holdClock) now() time.Time { return c.t }
 
-// heldMod is an Outbound module whose send gate asks the Staff hold freezer, as the
+// heldMod is an Outbound module whose send gate reads Staff holds on the test clock, as the
 // running application's does.
 func heldMod(env *testhelper.TestEnv, clock *holdClock, resolver outbound.Senders) *outbound.Module {
-	return outbound.New(env.Bus, resolver, tracking.New("test-secret", "http://local"),
-		outbound.WithFreezers(holds.Freezer{Now: clock.now}))
+	return outbound.New(env.Bus, holds.New(func() bool { return true }, clock.now), resolver, tracking.New("test-secret", "http://local"))
 }
 
 func setHold(t *testing.T, env *testhelper.TestEnv, key string, expires time.Time) {

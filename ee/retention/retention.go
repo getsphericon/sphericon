@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 )
 
 // Interval is how often the prune job runs; the window is in days, so hourly is ample.
@@ -64,7 +65,7 @@ func Prune(ctx context.Context, client *ent.Client, lic *licensekey.License, now
 		return 0, nil
 	}
 	workspaces, err := client.Workspace.Query().
-		Where(workspace.RetentionDaysNotNil(), workspace.DiscardedAtIsNil()).
+		Where(workspace.RetentionDaysNotNil(), accounts.Live()).
 		Select(workspace.FieldID, workspace.FieldRetentionDays).
 		All(ctx)
 	if err != nil {

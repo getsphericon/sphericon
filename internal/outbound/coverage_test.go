@@ -48,17 +48,6 @@ func captureLog(t *testing.T) *bytes.Buffer {
 	return &buf
 }
 
-type freezer struct {
-	reason string
-	err    error
-	calls  int
-}
-
-func (f *freezer) Frozen(context.Context, *ent.Scoped, *ent.Workspace) (string, error) {
-	f.calls++
-	return f.reason, f.err
-}
-
 // cancelingSenders resolves the sender but cancels the context on the way, so the
 // next database call of the attempt fails.
 type cancelingSenders struct {
@@ -118,7 +107,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 
 	t.Run("sender cannot be resolved", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		m := outbound.New(env.Bus, senders{err: errors.New("vault down")}, nil)
+		m := outbound.New(env.Bus, env.Holds, senders{err: errors.New("vault down")}, nil)
 		_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:nosender", "a@example.com"))
 		require.ErrorContains(t, err, "resolve sender")
 		assert.ErrorContains(t, err, "vault down")
@@ -128,58 +117,26 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 		env := testhelper.Setup(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		m := outbound.New(env.Bus, cancelingSenders{cancel: cancel, sender: env.CustomerMail}, nil)
+		m := outbound.New(env.Bus, env.Holds, cancelingSenders{cancel: cancel, sender: env.CustomerMail}, nil)
 		_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:domaindb", "a@example.com"))
 		assert.ErrorContains(t, err, "check sending domain")
 	})
-
-	t.Run("freeze check fails", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		m := newModule(env, outbound.WithFreezers(&freezer{err: errors.New("hold source down")}))
-		_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:freezeerr", "a@example.com"))
-		require.ErrorContains(t, err, "freeze check")
-		assert.Empty(t, env.CustomerMail.Messages())
-	})
 }
 
-func TestFreezersHoldAfterTheCoreSuspensionCheck(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	open := &freezer{}
-	held := &freezer{reason: "staff_hold"}
-	m := newModule(env, outbound.WithFreezers(open), outbound.WithFreezers(held))
-
-	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:frozen", "a@example.com"))
-	require.NoError(t, err)
-	assert.Equal(t, outbound.Held, res.Outcome)
-	assert.Equal(t, "staff_hold", res.Reason)
-	assert.Zero(t, res.MessageID, "a freeze hold records nothing")
-	assert.Empty(t, env.CustomerMail.Messages())
-	assert.Equal(t, 1, open.calls, "freezers run in registration order, across WithFreezers calls")
-
-	hold, err := m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "")
-	require.NoError(t, err)
-	assert.Equal(t, "staff_hold", hold, "Preflight applies the same gate")
-
-	held.reason = ""
-	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:frozen", "a@example.com"))
-	require.NoError(t, err)
-	assert.Equal(t, outbound.Sent, res.Outcome, "the same Request goes out once the freeze lifts")
+// liftHold sets the expiry of the fixture Workspace's Staff hold, a real row: a future one
+// makes it active, a past one lapses it.
+func liftHold(t *testing.T, env *testhelper.TestEnv, expires time.Time) {
+	t.Helper()
+	env.DB.Hold.UpdateOneID(fixtures.HoldAcmeLapsedID).SetExpiresAt(expires).ExecX(context.Background())
 }
 
-// Send and Preflight read one gate: with the real holds.Freezer they agree on an
-// active hold, a lapsed one and a hold the license does not honour.
+// Send and Preflight read one gate and agree, on real rows, on an active Staff hold and a
+// lapsed one; the send goes out again once the hold lapses.
 func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	honoured := true
-	m := newModule(env, outbound.WithFreezers(holds.Freezer{Enabled: func() bool { return honoured }}))
-	create := func(key string, expires time.Time) {
-		_, err := s.Hold().Create().SetKey(key).SetReasonCode("review").SetMessage("held").
-			SetSetBy("service-a").SetExpiresAt(expires).Save(ctx)
-		require.NoError(t, err)
-	}
+	m := newModule(env)
 	agree := func(key, want string) {
 		t.Helper()
 		hold, err := m.Preflight(ctx, s, "")
@@ -189,30 +146,63 @@ func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 		assert.Equal(t, want, hold, "Preflight")
 		if want == "" {
 			assert.Equal(t, outbound.Sent, res.Outcome, "Send")
-		} else {
-			assert.Equal(t, outbound.Held, res.Outcome, "Send")
-			assert.Equal(t, want, res.Reason, "Send")
+			return
 		}
+		assert.Equal(t, outbound.Held, res.Outcome, "Send")
+		assert.Equal(t, want, res.Reason, "Send")
+		assert.Zero(t, res.MessageID, "a hold records nothing")
 	}
 
-	// The fixture Workspace already carries a lapsed hold.
 	agree("tx:lapsed", "")
-	create("active", time.Now().Add(time.Hour))
+	liftHold(t, env, time.Now().Add(time.Hour))
 	agree("tx:active", holds.ReasonStaff)
-	honoured = false
-	agree("tx:unlicensed", "")
+	assert.Len(t, env.CustomerMail.Messages(), 1, "only the lapsed-hold send went out")
+	liftHold(t, env, time.Now().Add(-time.Hour))
+	agree("tx:active", "")
 }
 
-func TestSuspensionIsCheckedBeforeFreezers(t *testing.T) {
+func TestDeletionIsReportedBeforeSuspensionAndStaffHolds(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	f := &freezer{}
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := newModule(env)
 
-	res, err := newModule(env, outbound.WithFreezers(f)).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:susp", "a@example.com"))
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
+	res, err := m.Send(ctx, s, transactional("tx:susp", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, holds.ReasonSuspended, res.Reason)
-	assert.Zero(t, f.calls)
+
+	liftHold(t, env, time.Now().Add(time.Hour))
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
+	res, err = m.Send(ctx, s, transactional("tx:both", "a@example.com"))
+	require.NoError(t, err)
+	assert.Equal(t, holds.ReasonPendingDeletion, res.Reason)
+	assert.Empty(t, env.CustomerMail.Messages())
+}
+
+// A core-only instance (no `staff` license) honors deletion and suspension and ignores Staff
+// holds.
+func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := outbound.New(env.Bus, holds.New(func() bool { return false }, time.Now), senders{sender: env.CustomerMail},
+		tracking.New("test-secret", "http://local"))
+	liftHold(t, env, time.Now().Add(time.Hour))
+
+	res, err := m.Send(ctx, s, transactional("tx:core", "a@example.com"))
+	require.NoError(t, err)
+	assert.Equal(t, outbound.Sent, res.Outcome, "the Staff hold is ignored")
+
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(time.Now()).ExecX(ctx)
+	res, err = m.Send(ctx, s, transactional("tx:core-susp", "a@example.com"))
+	require.NoError(t, err)
+	assert.Equal(t, holds.ReasonSuspended, res.Reason)
+
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
+	res, err = m.Send(ctx, s, transactional("tx:core-del", "a@example.com"))
+	require.NoError(t, err)
+	assert.Equal(t, holds.ReasonPendingDeletion, res.Reason)
 }
 
 func TestWithLeaseControlsWhenAClaimCanBeTakenOver(t *testing.T) {
@@ -585,7 +575,7 @@ func TestAStaleClaimTokenCannotWriteSent(t *testing.T) {
 		env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(req.Key)).
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 	}}
-	m := outbound.New(env.Bus, senders{sender: slow}, tracking.New("test-secret", "http://local"))
+	m := outbound.New(env.Bus, env.Holds, senders{sender: slow}, tracking.New("test-secret", "http://local"))
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 
@@ -598,9 +588,11 @@ func TestPreflightErrors(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := newModule(env).Preflight(ctx, env.DB.Scoped(987654), "")
-	require.ErrorContains(t, err, "load workspace 987654")
+	require.ErrorContains(t, err, "freeze check")
 
-	_, err = newModule(env, outbound.WithFreezers(&freezer{err: errors.New("down")})).Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "")
+	canceled, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = newModule(env).Preflight(canceled, env.DB.Scoped(fixtures.AcmeID), "")
 	assert.ErrorContains(t, err, "freeze check")
 }
 
@@ -612,12 +604,6 @@ func TestSendTestOutcomes(t *testing.T) {
 		env := testhelper.Setup(t)
 		_, err := newModule(env).SendTest(ctx, env.DB.Scoped(987654), req)
 		assert.ErrorContains(t, err, "load workspace 987654")
-	})
-
-	t.Run("gate error", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		_, err := newModule(env, outbound.WithFreezers(&freezer{err: errors.New("down")})).SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), req)
-		assert.ErrorContains(t, err, "freeze check")
 	})
 
 	t.Run("content that does not render is Failed", func(t *testing.T) {

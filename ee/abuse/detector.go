@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -73,7 +74,7 @@ func (d *Detector) Run(ctx context.Context, now time.Time) (Summary, error) {
 		errs = append(errs, fmt.Errorf("end the warning episodes of suspended and exempt workspaces: %w", err))
 	}
 	candidates, err := d.client.Workspace.Query().
-		Where(workspace.SuspendedAtIsNil(), workspace.AbuseExempt(false), workspace.DiscardedAtIsNil()).
+		Where(workspace.SuspendedAtIsNil(), workspace.AbuseExempt(false), accounts.Live()).
 		All(ctx)
 	if err != nil {
 		return sum, errors.Join(append(errs, fmt.Errorf("list workspaces for the abuse detector: %w", err))...)

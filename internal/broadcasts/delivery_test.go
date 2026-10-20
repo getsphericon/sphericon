@@ -67,7 +67,7 @@ func newDelivery(t *testing.T) *delivery {
 	env := testhelper.Setup(t)
 	box := &mailbox{}
 	res := &provider{sender: box}
-	out := outbound.New(env.Bus, res, tracking.New("test-secret", "http://local"))
+	out := outbound.New(env.Bus, env.Holds, res, tracking.New("test-secret", "http://local"))
 	return &delivery{
 		t: t, env: env, box: box, res: res, ctx: context.Background(),
 		out: out, del: broadcasts.NewDelivery(out),

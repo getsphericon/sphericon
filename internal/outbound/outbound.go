@@ -163,14 +163,6 @@ type Senders interface {
 	EmailSender(ctx context.Context, s *ent.Scoped) (messaging.EmailSender, error)
 }
 
-// Freezer is an extra reason a Workspace may not send right now, consulted after the
-// core suspension check (ADR 0007, 0009): the Staff hold plugs in here. It
-// returns "" when the Workspace may send, otherwise a Hold* style reason. It reads
-// through the Workspace's scope s, so an implementation holds no raw client.
-type Freezer interface {
-	Frozen(ctx context.Context, s *ent.Scoped, ws *ent.Workspace) (reason string, err error)
-}
-
 // Asker is the User who asks for a Test send. Only they may receive one from the System
 // sender (ADR 0041).
 type Asker struct {
@@ -199,7 +191,7 @@ type Module struct {
 	// trackingDomains reports whether the Instance offers Tracking domains at all.
 	trackingDomains bool
 	lease           time.Duration
-	freezers        []Freezer
+	holds           *holds.Holds
 	// system is the Instance's System sender; nil on an Instance with no outbound mail.
 	system messaging.EmailSender
 	// testBudget caps Test sends from the System sender; nil means uncapped.
@@ -217,11 +209,6 @@ func WithLease(d time.Duration) Option { return func(m *Module) { m.lease = d } 
 // track.<domain>. Off, every link uses the Instance's host (ADR 0038).
 func WithTrackingDomains() Option { return func(m *Module) { m.trackingDomains = true } }
 
-// WithFreezers adds extra freeze reasons after the core suspension check.
-func WithFreezers(f ...Freezer) Option {
-	return func(m *Module) { m.freezers = append(m.freezers, f...) }
-}
-
 // WithSystemSender gives the module the Instance's System sender, which a Test send falls
 // back to while the Workspace has no verified Sending domain (ADR 0041).
 func WithSystemSender(s messaging.EmailSender) Option { return func(m *Module) { m.system = s } }
@@ -236,8 +223,8 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 }
 
 // New builds the module. tracker may be nil only if no marketing Request is sent.
-func New(bus *events.Bus, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
-	m := &Module{bus: bus, senders: senders, tracker: tracker, lease: DefaultLease}
+func New(bus *events.Bus, holds *holds.Holds, senders Senders, tracker *tracking.Tracker, opts ...Option) *Module {
+	m := &Module{bus: bus, holds: holds, senders: senders, tracker: tracker, lease: DefaultLease}
 	for _, o := range opts {
 		o(m)
 	}
@@ -334,7 +321,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	if err != nil {
 		return Result{}, err
 	}
-	g, err := m.gate(ctx, s, ws, req.FromEmail, req.FromName)
+	g, err := m.gate(ctx, s, req.FromEmail, req.FromName)
 	if err != nil {
 		return Result{}, err
 	}
@@ -421,11 +408,7 @@ func (m *Module) contactErased(ctx context.Context, s *ent.Scoped, req Request) 
 // Planning code (Broadcast) calls it to fail or pause fast instead of finding out
 // per recipient; the answer is the same gate Send applies.
 func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, fromEmail string) (hold string, err error) {
-	ws, err := m.workspace(ctx, s)
-	if err != nil {
-		return "", err
-	}
-	g, err := m.gate(ctx, s, ws, fromEmail, "")
+	g, err := m.gate(ctx, s, fromEmail, "")
 	if err != nil {
 		return "", err
 	}
@@ -517,30 +500,6 @@ func (m *Module) workspace(ctx context.Context, s *ent.Scoped) (*ent.Workspace, 
 	return ws, nil
 }
 
-// frozen is the Workspace freeze check: "" when the Workspace may send, else the Hold*
-// reason. Every send, a Test send from the System sender included, passes it.
-func (m *Module) frozen(ctx context.Context, s *ent.Scoped, ws *ent.Workspace) (string, error) {
-	// Workspace deletion (ADR 0043) is its own Hold source, not the suspension: restoring
-	// clears it and leaves a suspension in place. Checked first, so a suspended and deleted
-	// Workspace reports the deletion.
-	if deleted := holds.PendingDeletion(ws); len(deleted) > 0 {
-		return deleted[0].ReasonCode, nil
-	}
-	if ws.SuspendedAt != nil {
-		return holds.ReasonSuspended, nil
-	}
-	for _, f := range m.freezers {
-		reason, err := f.Frozen(ctx, s, ws)
-		if err != nil {
-			return "", fmt.Errorf("outbound: freeze check: %w", err)
-		}
-		if reason != "" {
-			return reason, nil
-		}
-	}
-	return "", nil
-}
-
 // gateResult is the outcome of the source-level checks plus what they resolved.
 type gateResult struct {
 	hold string
@@ -553,10 +512,12 @@ type gateResult struct {
 	domain      string
 }
 
-// gate runs the source-level checks, in order: Workspace freeze, an Integration to
+// gate runs the source-level checks, in order: Workspace freeze (the reason holds names:
+// deletion, suspension, Staff hold, in that priority; a Test send from the System sender
+// passes it too), an Integration to
 // send through, and a verified Sending domain for the effective From address.
-func (m *Module) gate(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, fromEmail, fromName string) (gateResult, error) {
-	hold, err := m.frozen(ctx, s, ws)
+func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName string) (gateResult, error) {
+	hold, err := m.holds.Reason(ctx, s)
 	if err != nil || hold != "" {
 		return gateResult{hold: hold}, err
 	}
@@ -823,7 +784,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 			return m.sendTestFromSystem(ctx, s, ws, req)
 		}
 	}
-	g, err := m.gate(ctx, s, ws, req.FromEmail, req.FromName)
+	g, err := m.gate(ctx, s, req.FromEmail, req.FromName)
 	if err != nil {
 		return Result{}, err
 	}
@@ -859,7 +820,7 @@ func sendTestMessage(ctx context.Context, sender messaging.EmailSender, msg mess
 
 // sendTestFromSystem is the Test send of a Workspace with no verified Sending domain.
 func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, req TestRequest) (Result, error) {
-	hold, err := m.frozen(ctx, s, ws)
+	hold, err := m.holds.Reason(ctx, s)
 	if err != nil {
 		return Result{}, err
 	}

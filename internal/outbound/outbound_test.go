@@ -40,8 +40,15 @@ func (s senders) EmailSender(context.Context, *ent.Scoped) (messaging.EmailSende
 	return s.sender, s.err
 }
 
+// newCoreModule is newModule for a test under testing/synctest, which ignores Staff holds:
+// fake time starts in 2000, before the fixture hold's real-clock expiry, so it would read active.
+func newCoreModule(env *testhelper.TestEnv, opts ...outbound.Option) *outbound.Module {
+	return outbound.New(env.Bus, env.CoreHolds(), senders{sender: env.CustomerMail},
+		tracking.New("test-secret", "http://local"), opts...)
+}
+
 func newModule(env *testhelper.TestEnv, opts ...outbound.Option) *outbound.Module {
-	return outbound.New(env.Bus, senders{sender: env.CustomerMail},
+	return outbound.New(env.Bus, env.Holds, senders{sender: env.CustomerMail},
 		tracking.New("test-secret", "http://local"), opts...)
 }
 
@@ -182,7 +189,7 @@ func TestMarketingCarriesFooterAndOneClickHeader(t *testing.T) {
 
 func TestMarketingWithoutTrackerFailsClosed(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outbound.New(env.Bus, senders{sender: env.CustomerMail}, nil)
+	m := outbound.New(env.Bus, env.Holds, senders{sender: env.CustomerMail}, nil)
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:notracker", fixtures.ContactAliceID))
 	require.ErrorIs(t, err, outbound.ErrNoTracker)
@@ -239,7 +246,9 @@ func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	assert.Empty(t, env.CustomerMail.Messages())
 
 	// The owner's Hold is the same rule: the send gate's reason and wording.
-	owner := holds.PendingDeletion(env.DB.Workspace.GetX(ctx, fixtures.AcmeID))
+	standing, err := env.Holds.Standing(ctx, env.DB.Scoped(fixtures.AcmeID))
+	require.NoError(t, err)
+	owner := standing.Holds()
 	require.Len(t, owner, 1)
 	assert.Equal(t, res.Reason, owner[0].ReasonCode)
 	assert.Equal(t, outbound.Detail(res.Reason), owner[0].Message)
@@ -284,7 +293,7 @@ func TestDomainLosingVerificationAtSignTimeIsHeldAndFreesTheClaim(t *testing.T) 
 
 func TestNoIntegrationIsHeld(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outbound.New(env.Bus, senders{err: messaging.ErrNoProvider}, tracking.New("s", "http://local"))
+	m := outbound.New(env.Bus, env.Holds, senders{err: messaging.ErrNoProvider}, tracking.New("s", "http://local"))
 
 	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:noint", "a@example.com"))
 	require.NoError(t, err)
@@ -437,7 +446,7 @@ func TestSlowAttemptCannotRecordOverATakeover(t *testing.T) {
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 		second, secondErr = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	}
-	m = outbound.New(env.Bus, senders{sender: s}, tracking.New("s", "http://local"))
+	m = outbound.New(env.Bus, env.Holds, senders{sender: s}, tracking.New("s", "http://local"))
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	require.ErrorIs(t, err, outbound.ErrInProgress, "the slow attempt lost its claim and must not record")

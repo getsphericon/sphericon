@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -97,7 +98,7 @@ func (e *realEnv) mod(t *testing.T, sender messaging.EmailSender) *outbound.Modu
 	sqlDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = sqlDB.Close() })
-	return outbound.New(events.New(sqlDB), resolvingTo(sender), tracking.New("test-secret", "http://local"))
+	return outbound.New(events.New(sqlDB), holds.New(func() bool { return true }, time.Now), resolvingTo(sender), tracking.New("test-secret", "http://local"))
 }
 
 // runRowIsLocked reports whether another writer would have to wait for the Enrollment's row:

@@ -9,9 +9,8 @@ package holds
 
 import (
 	"context"
+	"fmt"
 	"time"
-
-	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
@@ -44,80 +43,112 @@ func Message(reason string) string {
 	}
 }
 
-// ActiveAt is the one rule for an active hold: its expiry is after now. Every read
-// goes through it, in SQL here and in Go in Live.
+// ActiveAt is the one rule for an active hold: its expiry is after now. It exists only as
+// this SQL predicate; every read passes it.
 func ActiveAt(now time.Time) predicate.Hold { return enthold.ExpiresAtGT(now) }
 
 // KeyPendingDeletion is the key of the pending-deletion Hold (ADR 0043).
 const KeyPendingDeletion = "pending_deletion"
 
-// PendingDeletion is the pending-deletion Hold of a deleted Workspace, none for a live one.
-// It is not a row: Workspace deletion is its own Hold source beside the Staff holds, and
-// lifts when the Workspace is restored. It lasts to the erase date, the end of the window.
-// It is the one statement of "a deleted Workspace is held": the send gate and the owner's
-// list both read it.
-func PendingDeletion(ws *ent.Workspace) []*ent.Hold {
-	if ws.DiscardedAt == nil {
-		return nil
-	}
-	return []*ent.Hold{{
-		Key:        KeyPendingDeletion,
-		ReasonCode: ReasonPendingDeletion,
-		Message:    Message(ReasonPendingDeletion),
-		SetBy:      "system",
-		CreatedAt:  *ws.DiscardedAt,
-		ExpiresAt:  workspacedeletion.EraseDate(*ws.DiscardedAt),
-	}}
+// Standing is a Workspace's standing: its independent freeze sources, never merged
+// (glossary: Workspace suspension and Staff hold are independent reasons). Reason names
+// the one a send reports, in priority order: deletion, suspension, Staff holds.
+type Standing struct {
+	// Deletion is the pending-deletion Hold of a deleted Workspace, nil for a live one.
+	// It is not a row: Workspace deletion is its own source and lifts on restore. It
+	// lasts to the erase date, the end of the window.
+	Deletion *ent.Hold
+	// SuspendedAt is when the Workspace was suspended (ADR 0007), nil when it is not.
+	SuspendedAt *time.Time
+	// Staff are the active Staff holds by key: none without the `staff` license.
+	Staff []*ent.Hold
 }
 
-// Active lists the holds of the scope's Workspace that are active at now: the
-// pending-deletion Hold of a deleted Workspace first, then the Staff holds ordered by
-// key. It is what the owner-facing and console reads of a Workspace's holds use.
-func Active(ctx context.Context, s *ent.Scoped, now time.Time) ([]*ent.Hold, error) {
+// Reason is the reason a send is Held, "" when the Workspace may send.
+func (st Standing) Reason() string {
+	switch {
+	case st.Deletion != nil:
+		return ReasonPendingDeletion
+	case st.SuspendedAt != nil:
+		return ReasonSuspended
+	case len(st.Staff) > 0:
+		return ReasonStaff
+	default:
+		return ""
+	}
+}
+
+// Holds is the list the owner sees: the pending-deletion Hold, if any, then the Staff
+// holds. Suspension is not in it: it is the SuspendedAt field.
+func (st Standing) Holds() []*ent.Hold {
+	if st.Deletion == nil {
+		return st.Staff
+	}
+	return append([]*ent.Hold{st.Deletion}, st.Staff...)
+}
+
+// standingOf is the standing of a Workspace row and its active Staff holds, which are
+// ignored when staffHonoured is false (the `staff` license): deletion and suspension
+// still count.
+func standingOf(ws *ent.Workspace, staff []*ent.Hold, staffHonoured bool) Standing {
+	st := Standing{SuspendedAt: ws.SuspendedAt}
+	if ws.DiscardedAt != nil {
+		st.Deletion = &ent.Hold{
+			Key:        KeyPendingDeletion,
+			ReasonCode: ReasonPendingDeletion,
+			Message:    Message(ReasonPendingDeletion),
+			SetBy:      "system",
+			CreatedAt:  *ws.DiscardedAt,
+			ExpiresAt:  workspacedeletion.EraseDate(*ws.DiscardedAt),
+		}
+	}
+	if staffHonoured {
+		st.Staff = staff
+	}
+	return st
+}
+
+// Read is the standing of the scope's Workspace at now, one query for its row and one for
+// its active Staff holds (none are read without the license).
+func Read(ctx context.Context, s *ent.Scoped, now time.Time, staffHonoured bool) (Standing, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
-		return nil, err
+		return Standing{}, err
 	}
-	staff, err := s.Hold().Query().
-		Where(ActiveAt(now)).
-		Order(enthold.ByKey()).
-		All(ctx)
+	var staff []*ent.Hold
+	if staffHonoured {
+		staff, err = s.Hold().Query().Where(ActiveAt(now)).Order(enthold.ByKey()).All(ctx)
+		if err != nil {
+			return Standing{}, err
+		}
+	}
+	return standingOf(ws, staff, staffHonoured), nil
+}
+
+// Holds answers the send path's "may this Workspace send now" from the standing. The one
+// thing that varies between editions is whether Staff holds are honoured (the `staff`
+// license); it is the one function the constructor takes.
+type Holds struct {
+	honoured func() bool
+	now      func() time.Time
+}
+
+// New builds the module. honoured reports whether Staff holds count at all (deletion and
+// suspension always do); now is the clock a hold's expiry is read against.
+func New(honoured func() bool, now func() time.Time) *Holds {
+	return &Holds{honoured: honoured, now: now}
+}
+
+// Standing is the standing of the scope's Workspace now, as this instance honours it.
+func (h *Holds) Standing(ctx context.Context, s *ent.Scoped) (Standing, error) {
+	return Read(ctx, s, h.now(), h.honoured())
+}
+
+// Reason is the reason a send is Held for the scope's Workspace, "" when it may send.
+func (h *Holds) Reason(ctx context.Context, s *ent.Scoped) (string, error) {
+	st, err := h.Standing(ctx, s)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("holds: freeze check: %w", err)
 	}
-	return append(PendingDeletion(ws), staff...), nil
-}
-
-// Live keeps the holds of rows that are active at now, in their order. It is Active
-// over rows already loaded (the eager-loaded edge, where no predicate can be passed), so
-// it states ActiveAt's rule in Go: keep it in step.
-func Live(rows []*ent.Hold, now time.Time) []*ent.Hold {
-	return lo.Filter(rows, func(h *ent.Hold, _ int) bool { return h.ExpiresAt.After(now) })
-}
-
-// Freezer answers the send path's "may this Workspace send now" from the active holds
-// (it satisfies outbound.Freezer, which the edition's wiring returns it as): any one active
-// hold freezes sending, and a second keeps it frozen after the first is cleared.
-type Freezer struct {
-	// Now is the clock; nil is time.Now.
-	Now func() time.Time
-	// Enabled reports whether holds are honoured at all (the `staff` license); nil
-	// is always.
-	Enabled func() bool
-}
-
-// Frozen implements outbound.Freezer.
-func (f Freezer) Frozen(ctx context.Context, s *ent.Scoped, _ *ent.Workspace) (string, error) {
-	if f.Enabled != nil && !f.Enabled() {
-		return "", nil
-	}
-	now := time.Now
-	if f.Now != nil {
-		now = f.Now
-	}
-	held, err := s.Hold().Query().Where(ActiveAt(now())).Exist(ctx)
-	if err != nil || !held {
-		return "", err
-	}
-	return ReasonStaff, nil
+	return st.Reason(), nil
 }

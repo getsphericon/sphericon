@@ -346,7 +346,7 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 // newMod builds the Outbound send module over a test resolver, with a real tracker
 // so marketing sends carry their unsubscribe footer and header.
 func newMod(env *testhelper.TestEnv, resolver outbound.Senders) *outbound.Module {
-	return outbound.New(env.Bus, resolver, tracking.New("test-secret", "http://local"))
+	return outbound.New(env.Bus, env.Holds, resolver, tracking.New("test-secret", "http://local"))
 }
 
 // The synchronous adapter runs the production sequence: the module plans, paces and settles

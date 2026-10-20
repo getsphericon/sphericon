@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
@@ -112,7 +113,7 @@ type Handlers struct {
 	now            func() time.Time
 	accountLink    *accountlink.Link
 	instance       *instance.Module
-	holdsHonoured  func() bool
+	holds          *holds.Holds
 	mcpURL         string
 	// requireVerification is the email verification gate (ADR 0030): off only on an
 	// install that set SPHERICON_REQUIRE_EMAIL_VERIFICATION=false.
@@ -209,9 +210,9 @@ type Deps struct {
 	// AccountLink mints the Owner's Account link token; nil when the installation is
 	// not configured for it, which leaves the operation answering 404.
 	AccountLink *accountlink.Link
-	// HoldsHonoured reports whether Staff holds are shown to Owners: the same
-	// license gate the send path applies (ADR 0009). Nil is always.
-	HoldsHonoured func() bool
+	// Holds reads a Workspace's standing: the same module, so the same license gate,
+	// the send path applies (ADR 0009).
+	Holds *holds.Holds
 	// RequireEmailVerification is the email verification gate (ADR 0030): when false,
 	// registration takes a password and yields a Verified User at once, and login
 	// checks no verification.
@@ -233,7 +234,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, integrations: d.Integrations, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holdsHonoured: d.HoldsHonoured, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, mcpURL: d.MCPURL, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen,
 		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}

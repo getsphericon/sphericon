@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
@@ -58,27 +57,14 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	if end, ok := secondfactor.Deadline(m); ok {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}
-	active, err := h.activeHolds(ctx, s, m.Edges.Workspace)
+	standing, err := h.holds.Standing(ctx, s)
 	if err != nil {
 		return r, err
 	}
-	r.Holds = lo.Map(active, func(hold *ent.Hold, _ int) siteapi.SiteWorkspaceHold {
+	r.Holds = lo.Map(standing.Holds(), func(hold *ent.Hold, _ int) siteapi.SiteWorkspaceHold {
 		return siteapi.SiteWorkspaceHold{Key: hold.Key, ReasonCode: hold.ReasonCode, Message: hold.Message, Since: siteapi.Timestamp(hold.CreatedAt), ActionUrl: nilableString(hold.ActionURL)}
 	})
 	return r, nil
-}
-
-// activeHolds is the holds the send path honours now: the pending-deletion Hold of a
-// deleted Workspace, and the Staff holds, which are none without the `staff` license. A
-// Workspace loaded with its holds edge is read from it; otherwise one query.
-func (h *Handlers) activeHolds(ctx context.Context, s *ent.Scoped, w *ent.Workspace) ([]*ent.Hold, error) {
-	if h.holdsHonoured != nil && !h.holdsHonoured() {
-		return holds.PendingDeletion(w), nil
-	}
-	if loaded, err := w.Edges.HoldsOrErr(); err == nil {
-		return append(holds.PendingDeletion(w), holds.Live(loaded, h.now())...), nil
-	}
-	return holds.Active(ctx, s, h.now())
 }
 
 // SiteWorkspacesCreate creates a Workspace for the authenticated User, who becomes its

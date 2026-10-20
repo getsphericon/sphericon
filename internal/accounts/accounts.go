@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -94,14 +93,13 @@ func (a *Accounts) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
 	return events.Ingest(a.ent.Scoped(id)), nil
 }
 
-// MembershipsOf lists a User's Memberships with their User and Workspace loaded, and
-// the Workspace's Staff holds (every row, by key: expiry is the caller's to apply),
-// oldest Workspace first.
+// MembershipsOf lists a User's Memberships with their User and Workspace loaded, oldest
+// Workspace first.
 func (a *Accounts) MembershipsOf(ctx context.Context, userID int64) ([]*ent.Membership, error) {
 	return a.ent.Membership.Query().
 		Where(membership.UserID(userID), membership.HasWorkspaceWith(Live())).
 		WithUser().
-		WithWorkspace(func(q *ent.WorkspaceQuery) { q.WithHolds(func(h *ent.HoldQuery) { h.Order(enthold.ByKey()) }) }).
+		WithWorkspace().
 		Order(ent.Asc(membership.FieldWorkspaceID)).
 		All(ctx)
 }
