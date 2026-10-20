@@ -5,12 +5,15 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/login"
+	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 
 // SiteUserGetMe returns the authenticated user's profile. Auth is enforced by
@@ -66,8 +69,9 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 			))
 			return &v, nil
 		}
-		// Verify the current password the same way the direct login provider does.
-		if u.PasswordHash == "" || !credentials.VerifyPassword(u.PasswordHash, currentPassword) {
+		if proved, err := h.proveCurrentPassword(ctx, u, currentPassword); err != nil {
+			return nil, err
+		} else if !proved {
 			v := siteapi.SiteUserUpdateMeForbidden(problem(http.StatusForbidden, i18n.T("errors.current_password_incorrect", nil)))
 			return &v, nil
 		}
@@ -130,7 +134,9 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 		return &v, nil
 	}
 
-	if u.PasswordHash == "" || !credentials.VerifyPassword(u.PasswordHash, req.CurrentPassword) {
+	if proved, err := h.proveCurrentPassword(ctx, u, req.CurrentPassword); err != nil {
+		return nil, err
+	} else if !proved {
 		v := siteapi.SiteUserEmailChangeForbidden(problem(http.StatusForbidden, i18n.T("errors.current_password_incorrect", nil)))
 		return &v, nil
 	}
@@ -174,4 +180,18 @@ func (h *Handlers) SiteUserSignOutEverywhere(ctx context.Context) (*siteapi.Site
 		return nil, err
 	}
 	return &siteapi.SiteUserSignOutEverywhereNoContent{SetCookie: h.sessions.Cleared().String()}, nil
+}
+
+// proveCurrentPassword is the profile's proof of the current password: the login module's
+// one prove path (throttle first, decoy hash, a failure counted on the Login budget).
+// While the address's delay runs it returns the 429 error even for a right password.
+func (h *Handlers) proveCurrentPassword(ctx context.Context, u *ent.User, password string) (bool, error) {
+	res, err := h.login.Prove(ctx, u.Email, u.PasswordHash, password)
+	if err != nil {
+		return false, err
+	}
+	if res.Proof == login.ProofThrottled {
+		return false, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
+	}
+	return res.Proof == login.ProofHolds, nil
 }

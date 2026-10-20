@@ -7,11 +7,8 @@ import (
 	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
@@ -183,19 +180,15 @@ func (h *Handlers) proveIdentity(ctx context.Context, password siteapi.OptString
 		v := problem(http.StatusForbidden, i18n.T("errors.provider_login_required", nil))
 		return userID, &v, nil
 	}
-	wait, err := h.attempts.Delay(ctx, accounts.KindLogin, u.Email)
+	proved, err := h.proveCurrentPassword(ctx, u, password.Value)
 	if err != nil {
 		return 0, nil, err
 	}
-	if wait > 0 {
-		return 0, nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount,
-			h.attempts.Limit(accounts.KindLogin), wait, h.attempts.Now())
-	}
-	if password.Set && credentials.VerifyPassword(u.PasswordHash, password.Value) {
+	if proved {
 		return userID, nil, nil
 	}
 	v := passwordIncorrectProblem()
-	return userID, &v, h.attempts.RecordFailure(ctx, accounts.KindLogin, u.Email)
+	return userID, &v, nil
 }
 
 // providerLoginFresh is whether the request's session began with a Sign-in provider login

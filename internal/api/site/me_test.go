@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/getsphericon/sphericon/config"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -85,4 +86,58 @@ func TestSiteUserUpdateMePasswordChange(t *testing.T) {
 	// The new password works; the old one no longer does.
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, fixtures.OwnerJohnEmail, "newsecret123"))
 	assert.Equal(t, http.StatusUnauthorized, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
+}
+
+func TestSiteUserUpdateMeWrongCurrentPasswordsAreThrottled(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{LoginFailures: 3}))
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	for range 3 {
+		res, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
+			CurrentPassword: siteapi.NewOptString("wrong"),
+			NewPassword:     siteapi.NewOptString("newsecret123"),
+		})
+		require.NoError(t, err)
+		require.IsType(t, &siteapi.SiteUserUpdateMeForbidden{}, res)
+	}
+
+	res, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
+		CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword),
+		NewPassword:     siteapi.NewOptString("newsecret123"),
+	})
+
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.ProblemDetailsHeaders{}, res, "while the delay runs even the right password is refused")
+}
+
+func TestSiteUserEmailChangeWrongCurrentPasswordsAreThrottled(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{LoginFailures: 3}))
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	for range 3 {
+		res, err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
+			NewEmail: "new-john@gmail.com", CurrentPassword: "wrong",
+		})
+		require.NoError(t, err)
+		require.IsType(t, &siteapi.SiteUserEmailChangeForbidden{}, res)
+	}
+
+	res, err := c.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
+		NewEmail: "new-john@gmail.com", CurrentPassword: fixtures.OwnerJohnPassword,
+	})
+
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.ProblemDetailsHeaders{}, res)
+}
+
+func TestAWrongCurrentPasswordOnTheProfileCountsAgainstTheLoginBudget(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{LoginFailures: 3}))
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	for range 3 {
+		_, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
+			CurrentPassword: siteapi.NewOptString("wrong"),
+			NewPassword:     siteapi.NewOptString("newsecret123"),
+		})
+		require.NoError(t, err)
+	}
+
+	assert.Equal(t, http.StatusTooManyRequests, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
 }

@@ -55,7 +55,8 @@ namespace SiteUser {
 
   /** Update the authenticated user's profile (name and/or password). A password
    * change ends every session of the user (ADR 0020); the acting one continues
-   * under the fresh session cookie set in this response. */
+   * under the fresh session cookie set in this response. A wrong current password feeds the
+   * Login throttle, which answers 429 even for a right one while its delay runs. */
   @put
   op updateMe(@body body: SiteUpdateMeInput):
     | {
@@ -67,7 +68,8 @@ namespace SiteUser {
         @body body: SiteUserResource;
       }
     | ForbiddenProblem
-    | UnprocessableEntityProblem;
+    | UnprocessableEntityProblem
+    | TooManyRequestsProblem;
 
   /** Request an email change; sends a confirmation link to the new address.
    * Requires the current password. A taken address answers 202 like a free one: its
@@ -77,7 +79,8 @@ namespace SiteUser {
   op emailChange(@body body: SiteEmailChangeInput):
     | AcceptedResponse
     | ForbiddenProblem
-    | UnprocessableEntityProblem;
+    | UnprocessableEntityProblem
+    | TooManyRequestsProblem;
 
   /** Sign out everywhere: end every session of the user, on every device,
    * including the one making the request (its cookie is cleared). */

@@ -433,7 +433,8 @@ export const siteUserGetMe = <ThrowOnError extends boolean = false>(options?: Op
 /**
  * Update the authenticated user's profile (name and/or password). A password
  * change ends every session of the user (ADR 0020); the acting one continues
- * under the fresh session cookie set in this response.
+ * under the fresh session cookie set in this response. A wrong current password feeds the
+ * Login throttle, which answers 429 even for a right one while its delay runs.
  */
 export const siteUserUpdateMe = <ThrowOnError extends boolean = false>(options: Options<SiteUserUpdateMeData, ThrowOnError>): RequestResult<SiteUserUpdateMeResponses, SiteUserUpdateMeErrors, ThrowOnError> => (options.client ?? client).put<SiteUserUpdateMeResponses, SiteUserUpdateMeErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
