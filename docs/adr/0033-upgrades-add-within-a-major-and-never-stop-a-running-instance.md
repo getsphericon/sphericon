@@ -37,10 +37,13 @@ research behind them is `docs/research/self-hoster-upgrade-prior-art.md`.
   needs) and when the database is two or more Majors behind it (a skipped Major; it names the
   last release of the database's Major, to install first). When the database is one Major behind it
   migrates if `SPHERICON_DB_AUTO_MIGRATE` is on, otherwise refuses and names `sphericon migrate`.
+  Inside a Major it does the same for migrations the database has not run: a binary's queries name
+  the columns its own migrations add, so without auto-migrate it refuses and names `sphericon
+  migrate` rather than start and answer with a bare 500.
   It does not refuse merely because the database's Major is higher: the last release of a Major
   is exactly the floor of the next, so it starts on the next Major's schema and an interrupted
-  Upgrade leaves the Instance running. A release inside a Major is compatible with the schema of
-  any other release of it, in both directions. Every refusal names the version, the commit and a
+  Upgrade leaves the Instance running. A release inside a Major runs on the schema of any other
+  release of it once its own migrations have run, and an older release runs on a newer schema. Every refusal names the version, the commit and a
   link to the upgrade guide. A build with no release number (`dev`) is never older than a floor.
 - **The new version migrates before it serves.** An Upgrade runs the migration with the new binary
   while the old one keeps running, and only then swaps and restarts. An interruption leaves the old

@@ -253,6 +253,11 @@ commit and a link to this page:
   SPHERICON_DB_AUTO_MIGRATE=true."** A newer binary on a database that has not been migrated. Run
   `sphericon migrate` (or `sphericon upgrade`), or turn on `SPHERICON_DB_AUTO_MIGRATE` to migrate on
   start (a start waits for the lock for at most `SPHERICON_DB_MIGRATE_TIMEOUT`).
+- **"needs N migration(s) the database has not run: run `sphericon migrate` ..."** A binary of the
+  database's own Major whose newer, add-only migrations have not run yet, for example a fresh build
+  started before `migrate`. Run `sphericon migrate` (or `sphericon upgrade`), or turn on
+  `SPHERICON_DB_AUTO_MIGRATE`. The binary refuses instead of starting, because its queries name
+  columns the database does not have yet.
 
 A binary of the database's own Major starts, and so does the last release of the previous Major
 (the floor of the next), which is why an interrupted walk leaves the Instance running. A build
