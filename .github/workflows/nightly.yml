@@ -91,3 +91,6 @@ jobs:
 
       - name: Check for vulnerable dependencies
         run: mise run check:vulns
+
+      - name: Check the Go and pnpm lockfiles against OSV
+        run: mise run check:osv
