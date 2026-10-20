@@ -11221,6 +11221,16 @@
         "maximum": 10000,
         "description": "A per-second Send rate limit the caller may set"
       },
+      "PreconditionRequiredProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)"
+      },
       "PresetResource": {
         "type": "object",
         "required": ["name", "description", "paramsSchema"],

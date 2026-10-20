@@ -3,6 +3,7 @@ package accounts_test
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -18,12 +19,12 @@ import (
 func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := accounts.New(env.DB, env.Bus)
-	u, err := acc.Register(t.Context(), "Grace", "grace@example.com")
+	u, err := acc.Register(t.Context(), "Grace", "grace@example.com", "registered-hash")
 	require.NoError(t, err)
 
-	_, err = acc.VerifyEmail(t.Context(), u.ID, "hash-one", "Grace")
+	_, err = acc.VerifyEmail(t.Context(), u.ID, lo.ToPtr("hash-one"), "Grace")
 	require.NoError(t, err)
-	_, err = acc.VerifyEmail(t.Context(), u.ID, "hash-two", "Second")
+	_, err = acc.VerifyEmail(t.Context(), u.ID, lo.ToPtr("hash-two"), "Second")
 	require.ErrorIs(t, err, accounts.ErrAlreadyVerified)
 
 	stored, err := acc.User(t.Context(), u.ID)

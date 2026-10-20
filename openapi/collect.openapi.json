@@ -423,6 +423,16 @@
         },
         "description": "RFC 7807 payment required response: the feature needs an Enterprise license"
       },
+      "PreconditionRequiredProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)"
+      },
       "ProblemCode": {
         "type": "string",
         "enum": ["second_factor_required", "email_verification_required", "signup_closed"],

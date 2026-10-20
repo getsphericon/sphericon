@@ -792,10 +792,6 @@ export type SiteAuditEntryResource = {
    */
   action: string;
   /**
-   * True when the change set, renewed or lifted a billing hold (reason code `non_payment` or `free_plan_cap`): shown as billing activity
-   */
-  billing: boolean;
-  /**
    * What it was done to
    */
   target: SiteAuditTarget;
@@ -2260,17 +2256,16 @@ export type SiteRecoveryCodesInput = {
 };
 
 /**
- * Register with a name and an email: no password is taken before the address is
- * proven (ADR 0030). Only an install with `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` takes a
- * password here.
+ * Register with a name, an email and a password. The User stays Unverified until the
+ * address is proven (ADR 0030); the password is trusted only when the verification link
+ * is opened in the browser that registered.
  */
 export type SiteRegisterInput = {
   name: string;
   email: EmailAddress;
   /**
-   * Required when the install does not require email verification, where it makes
-   * the account usable at once. Otherwise ignored and never stored: the password is
-   * set by the verification link.
+   * Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated
+   * registration of the address replaces it.
    */
   password?: string;
 };
@@ -3213,11 +3208,15 @@ export type SiteUserResource = {
 };
 
 /**
- * Prove an email address with the token sent to it and set the password
+ * Prove an email address with the token sent to it
  */
 export type SiteVerifyEmailInput = {
   token: string;
-  password: string;
+  /**
+   * Needed only when the link is not opened in the Registration browser: it replaces
+   * the password given at registration. Ignored in the Registration browser.
+   */
+  password?: string;
 };
 
 /**
@@ -3364,9 +3363,9 @@ export type SiteWorkspaceHold = {
    */
   since: Timestamp;
   /**
-   * True for a billing hold (reason code `non_payment` or `free_plan_cap`): sending is paused for a money reason, not for abuse
+   * Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given
    */
-  billing: boolean;
+  actionUrl?: string | null;
 };
 
 /**
@@ -3414,11 +3413,6 @@ export type SiteWorkspaceResource = {
    * configured none.
    */
   supportEmail?: string | null;
-  /**
-   * The billing site a member under a hold is pointed to (SPHERICON_BILLING_URL); absent when the
-   * instance configured none, and then no billing text is shown.
-   */
-  billingUrl?: string | null;
   /**
    * The public origin an AI agent connects to as `<mcpUrl>/mcp`: SPHERICON_MCP_URL when MCP has its
    * own host, otherwise the app origin.
@@ -3925,6 +3919,11 @@ export type SiteAuthVerifyEmailErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 precondition required response: the request needs something it did not carry
+   * (a verification link opened outside its Registration browser needs a password, ADR 0030)
+   */
+  428: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */

@@ -62,8 +62,6 @@ type Converter interface {
 	// goverter:ignore Holds
 	// The support contact is instance configuration, attached by the handler.
 	// goverter:ignore SupportEmail
-	// The billing link is instance configuration, attached by the handler.
-	// goverter:ignore BillingUrl
 	// The MCP origin is instance configuration, attached by the handler.
 	// goverter:ignore McpUrl
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
