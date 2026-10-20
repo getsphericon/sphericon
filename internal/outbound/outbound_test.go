@@ -222,6 +222,31 @@ func TestSuspendedWorkspaceIsHeldNotConsumed(t *testing.T) {
 	assert.Equal(t, outbound.Sent, res.Outcome)
 }
 
+// A pending-deletion Workspace is frozen by its own Hold source (ADR 0043), not the
+// suspension: nothing is consumed, and restoring lets the same Request go out.
+func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	m := newModule(env)
+
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(time.Now()).ExecX(ctx)
+	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:deleted", fixtures.ContactAliceID))
+	require.NoError(t, err)
+	assert.Equal(t, outbound.Held, res.Outcome)
+	assert.Equal(t, outbound.HoldPendingDeletion, res.Reason)
+	assert.Zero(t, res.MessageID)
+	assert.Empty(t, env.CustomerMail.Messages())
+
+	tx, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:deleted", "a@example.com"))
+	require.NoError(t, err)
+	assert.Equal(t, outbound.Held, tx.Outcome, "transactional sends are refused too")
+
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDeletedAt().ExecX(ctx)
+	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:deleted", fixtures.ContactAliceID))
+	require.NoError(t, err)
+	assert.Equal(t, outbound.Sent, res.Outcome)
+}
+
 func TestUnverifiedFromDomainIsHeld(t *testing.T) {
 	env := testhelper.Setup(t)
 

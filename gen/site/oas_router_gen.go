@@ -104,6 +104,9 @@ var (
 	rn101AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn126AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
 	rn59AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -116,7 +119,7 @@ var (
 	rn68AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn126AllowedHeaders = map[string]string{
+	rn129AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn87AllowedHeaders = map[string]string{
@@ -1085,6 +1088,37 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'd': // Prefix: "deleted"
+						origElem := elem
+						if l := len("deleted"); len(elem) >= l && elem[0:l] == "deleted" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleSiteWorkspacesListDeletedRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+						elem = origElem
+					}
 					// Param: "workspaceId"
 					// Match until "/"
 					idx := strings.IndexByte(elem, '/')
@@ -2047,6 +2081,33 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 							}
 
+						case 'd': // Prefix: "delete"
+
+							if l := len("delete"); len(elem) >= l && elem[0:l] == "delete" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "POST":
+									s.handleSiteWorkspacesDeleteRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: rn126AllowedHeaders,
+										acceptPost:     "application/json",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
 						case 'e': // Prefix: "events"
 
 							if l := len("events"); len(elem) >= l && elem[0:l] == "events" {
@@ -2392,6 +2453,33 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 							}
 
+						case 'r': // Prefix: "restore"
+
+							if l := len("restore"); len(elem) >= l && elem[0:l] == "restore" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "POST":
+									s.handleSiteWorkspacesRestoreRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
 						case 's': // Prefix: "s"
 
 							if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
@@ -2434,7 +2522,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										default:
 											s.notAllowed(w, r, notAllowedParams{
 												allowedMethods: "PUT",
-												allowedHeaders: rn126AllowedHeaders,
+												allowedHeaders: rn129AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -4123,6 +4211,37 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						break
 					}
 
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'd': // Prefix: "deleted"
+						origElem := elem
+						if l := len("deleted"); len(elem) >= l && elem[0:l] == "deleted" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = SiteWorkspacesListDeletedOperation
+								r.summary = ""
+								r.operationID = "SiteWorkspaces_listDeleted"
+								r.operationGroup = ""
+								r.pathPattern = "/workspaces/deleted"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+						elem = origElem
+					}
 					// Param: "workspaceId"
 					// Match until "/"
 					idx := strings.IndexByte(elem, '/')
@@ -5072,6 +5191,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 							}
 
+						case 'd': // Prefix: "delete"
+
+							if l := len("delete"); len(elem) >= l && elem[0:l] == "delete" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "POST":
+									r.name = SiteWorkspacesDeleteOperation
+									r.summary = ""
+									r.operationID = "SiteWorkspaces_delete"
+									r.operationGroup = ""
+									r.pathPattern = "/workspaces/{workspaceId}/delete"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
 						case 'e': // Prefix: "events"
 
 							if l := len("events"); len(elem) >= l && elem[0:l] == "events" {
@@ -5412,6 +5556,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 								}
 
+							}
+
+						case 'r': // Prefix: "restore"
+
+							if l := len("restore"); len(elem) >= l && elem[0:l] == "restore" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "POST":
+									r.name = SiteWorkspacesRestoreOperation
+									r.summary = ""
+									r.operationID = "SiteWorkspaces_restore"
+									r.operationGroup = ""
+									r.pathPattern = "/workspaces/{workspaceId}/restore"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
 							}
 
 						case 's': // Prefix: "s"

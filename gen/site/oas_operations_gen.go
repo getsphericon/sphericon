@@ -120,7 +120,10 @@ const (
 	SiteWebhooksUpdateOperation                       OperationName = "SiteWebhooksUpdate"
 	SiteWorkspacesAccountLinkOperation                OperationName = "SiteWorkspacesAccountLink"
 	SiteWorkspacesCreateOperation                     OperationName = "SiteWorkspacesCreate"
+	SiteWorkspacesDeleteOperation                     OperationName = "SiteWorkspacesDelete"
 	SiteWorkspacesListOperation                       OperationName = "SiteWorkspacesList"
+	SiteWorkspacesListDeletedOperation                OperationName = "SiteWorkspacesListDeleted"
+	SiteWorkspacesRestoreOperation                    OperationName = "SiteWorkspacesRestore"
 	SiteWorkspacesSetSecondFactorRequirementOperation OperationName = "SiteWorkspacesSetSecondFactorRequirement"
 	SiteWorkspacesUpdateOperation                     OperationName = "SiteWorkspacesUpdate"
 )

@@ -259,6 +259,11 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = owner.SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Acme Two"}, // workspace.update
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
+	_, err = owner.SiteWorkspacesDelete(ctx, &siteapi.SiteDeleteWorkspaceInput{Name: "Acme Two"}, // workspace.delete
+		siteapi.SiteWorkspacesDeleteParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	_, err = owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{WorkspaceId: fixtures.AcmePublicID}) // workspace.restore
+	require.NoError(t, err)
 	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse") // workspace.suspend
 	require.NoError(t, err)
 	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42")) // workspace.unsuspend

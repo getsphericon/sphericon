@@ -1559,6 +1559,39 @@ export const SiteCustomFieldType = {
 export type SiteCustomFieldType = typeof SiteCustomFieldType[keyof typeof SiteCustomFieldType];
 
 /**
+ * Delete a Workspace (ADR 0043): the typed name must equal the stored name.
+ */
+export type SiteDeleteWorkspaceInput = {
+  /**
+   * The Workspace's name, typed to confirm the deletion
+   */
+  name: string;
+};
+
+/**
+ * A Workspace in its deletion window, as an Owner of it sees it (ADR 0043): frozen and
+ * hidden, restorable until its data is erased.
+ */
+export type SiteDeletedWorkspaceResource = {
+  /**
+   * The Workspace id
+   */
+  id: WorkspaceId;
+  /**
+   * Display name
+   */
+  name: string;
+  /**
+   * When the Workspace was deleted
+   */
+  deletedAt: Timestamp;
+  /**
+   * When its data will be erased: 30 days after it was deleted
+   */
+  eraseAt: Timestamp;
+};
+
+/**
  * A DNS record the user publishes to authenticate a sending domain
  */
 export type SiteDnsRecord = {
@@ -4586,6 +4619,22 @@ export type SiteWorkspacesCreateResponses = {
 
 export type SiteWorkspacesCreateResponse = SiteWorkspacesCreateResponses[keyof SiteWorkspacesCreateResponses];
 
+export type SiteWorkspacesListDeletedData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/workspaces/deleted';
+};
+
+export type SiteWorkspacesListDeletedResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<SiteDeletedWorkspaceResource>;
+};
+
+export type SiteWorkspacesListDeletedResponse = SiteWorkspacesListDeletedResponses[keyof SiteWorkspacesListDeletedResponses];
+
 export type SiteWorkspacesUpdateData = {
   body: SiteUpdateWorkspaceInput;
   path: {
@@ -6286,6 +6335,41 @@ export type SiteCustomFieldsListResponses = {
 
 export type SiteCustomFieldsListResponse = SiteCustomFieldsListResponses[keyof SiteCustomFieldsListResponses];
 
+export type SiteWorkspacesDeleteData = {
+  body: SiteDeleteWorkspaceInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/delete';
+};
+
+export type SiteWorkspacesDeleteErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteWorkspacesDeleteError = SiteWorkspacesDeleteErrors[keyof SiteWorkspacesDeleteErrors];
+
+export type SiteWorkspacesDeleteResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteDeletedWorkspaceResource;
+};
+
+export type SiteWorkspacesDeleteResponse = SiteWorkspacesDeleteResponses[keyof SiteWorkspacesDeleteResponses];
+
 export type SiteEventsListData = {
   body?: never;
   path: {
@@ -6912,6 +6996,37 @@ export type SiteMembershipsResetSecondFactorResponses = {
 };
 
 export type SiteMembershipsResetSecondFactorResponse = SiteMembershipsResetSecondFactorResponses[keyof SiteMembershipsResetSecondFactorResponses];
+
+export type SiteWorkspacesRestoreData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/restore';
+};
+
+export type SiteWorkspacesRestoreErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteWorkspacesRestoreError = SiteWorkspacesRestoreErrors[keyof SiteWorkspacesRestoreErrors];
+
+export type SiteWorkspacesRestoreResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesRestoreResponse = SiteWorkspacesRestoreResponses[keyof SiteWorkspacesRestoreResponses];
 
 export type SiteWorkspacesSetSecondFactorRequirementData = {
   body: SiteSecondFactorRequirementInput;

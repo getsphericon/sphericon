@@ -61,6 +61,8 @@ const (
 	ActionUserRecoveryCodeUse         = "user.recovery_code_use"
 	ActionWorkspaceCreate             = "workspace.create"
 	ActionWorkspaceUpdate             = "workspace.update"
+	ActionWorkspaceDelete             = "workspace.delete"
+	ActionWorkspaceRestore            = "workspace.restore"
 	ActionWorkspaceSuspend            = "workspace.suspend"
 	ActionWorkspaceUnsuspend          = "workspace.unsuspend"
 	ActionWorkspaceAbuseExempt        = "workspace.abuse_exempt"
@@ -88,6 +90,8 @@ var ExplicitAuditActions = []string{
 	ActionUserRecoveryCodeUse,
 	ActionWorkspaceCreate,
 	ActionWorkspaceUpdate,
+	ActionWorkspaceDelete,
+	ActionWorkspaceRestore,
 	ActionWorkspaceSuspend,
 	ActionWorkspaceUnsuspend,
 	ActionWorkspaceAbuseExempt,

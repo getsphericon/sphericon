@@ -1930,6 +1930,29 @@
         }
       }
     },
+    "/workspaces/deleted": {
+      "get": {
+        "operationId": "SiteWorkspaces_listDeleted",
+        "description": "List the Workspaces in their deletion window that the authenticated User owns, with\nthe date their data will be erased.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteDeletedWorkspaceResource"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"]
+      }
+    },
     "/workspaces/{workspaceId}": {
       "put": {
         "operationId": "SiteWorkspaces_update",
@@ -4484,6 +4507,75 @@
         "tags": ["Site Custom Fields"]
       }
     },
+    "/workspaces/{workspaceId}/delete": {
+      "post": {
+        "operationId": "SiteWorkspaces_delete",
+        "description": "Delete a Workspace (Owner only). The typed name must equal the Workspace's name,\nelse 422. The Workspace is frozen at once and hidden: it answers 404 on its paths\nand leaves every Member's list; an Owner restores it within 30 days. Recorded as an\nAudit entry.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteDeletedWorkspaceResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteDeleteWorkspaceInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspaceId}/events": {
       "get": {
         "operationId": "SiteEvents_list",
@@ -5314,6 +5406,55 @@
           }
         },
         "tags": ["Site Memberships"]
+      }
+    },
+    "/workspaces/{workspaceId}/restore": {
+      "post": {
+        "operationId": "SiteWorkspaces_restore",
+        "description": "Restore a Workspace in its deletion window (Owner only). It removes only the\npending-deletion freeze: a Workspace suspension or Staff hold stays. Recorded as an\nAudit entry.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"]
       }
     },
     "/workspaces/{workspaceId}/second-factor-requirement": {
@@ -9877,6 +10018,52 @@
         "type": "string",
         "enum": ["string", "number", "bool", "datetime"],
         "description": "A Custom field's value type"
+      },
+      "SiteDeleteWorkspaceInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The Workspace's name, typed to confirm the deletion"
+          }
+        },
+        "description": "Delete a Workspace (ADR 0043): the typed name must equal the stored name."
+      },
+      "SiteDeletedWorkspaceResource": {
+        "type": "object",
+        "required": ["id", "name", "deletedAt", "eraseAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceId"
+              }
+            ],
+            "description": "The Workspace id"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name"
+          },
+          "deletedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Workspace was deleted"
+          },
+          "eraseAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When its data will be erased: 30 days after it was deleted"
+          }
+        },
+        "description": "A Workspace in its deletion window, as an Owner of it sees it (ADR 0043): frozen and\nhidden, restorable until its data is erased."
       },
       "SiteDnsRecord": {
         "type": "object",

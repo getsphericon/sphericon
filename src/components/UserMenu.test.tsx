@@ -1,13 +1,23 @@
 import { HttpResponse } from 'msw'
-import { expect, test, vi } from 'vitest'
+import { beforeEach, expect, test, vi } from 'vitest'
 
-import { handleSiteAuthLogout, handleSiteWorkspacesAccountLink } from '../generated/site/msw.gen.ts'
+import {
+  handleSiteAuthLogout,
+  handleSiteWorkspacesAccountLink,
+  handleSiteWorkspacesListDeleted,
+  handleSiteWorkspacesRestore,
+} from '../generated/site/msw.gen.ts'
 import { Route as profileRoute } from '../routes/account/index.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { worker } from '../test/worker.ts'
 import { UserMenu } from './UserMenu.tsx'
+
+// Opening the menu asks for the deleted workspaces; most tests have none.
+beforeEach(() => {
+  worker.use(handleSiteWorkspacesListDeleted({ body: [] }))
+})
 
 test('logout calls the site logout operation and navigates to login', async () => {
   let calls = 0
@@ -112,4 +122,51 @@ test('the account link item opens the external page with the token', async () =>
       'noopener',
     ])
   open.mockRestore()
+})
+
+const deletedInitech = {
+  id: 'InitcWs3',
+  name: 'Initech',
+  deletedAt: '2026-02-01T00:00:00Z',
+  eraseAt: '2026-03-03T00:00:00Z',
+}
+
+test('lists the deleted workspaces with their erase date and restores one', async () => {
+  const restored: string[] = []
+  worker.use(
+    handleSiteWorkspacesListDeleted({ body: [deletedInitech] }),
+    handleSiteWorkspacesRestore(({ params }) => {
+      restored.push(params.workspaceId)
+      return HttpResponse.json({
+        id: 'InitcWs3',
+        name: 'Initech',
+        collectKey: 'omck_test_key',
+        postalAddress: '',
+        accountLinkAvailable: false,
+        mcpUrl: 'https://sphericon.test',
+        holds: [],
+        role: 'owner',
+        createdAt: '2026-01-01T00:00:00Z',
+      })
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
+  await screen.getByRole('button').click()
+
+  await expect.element(screen.getByText('Deleted workspaces')).toBeInTheDocument()
+  await expect.element(screen.getByText(/erased .*2026/)).toBeInTheDocument()
+  await screen.getByRole('menuitem', { name: 'Restore Initech' }).click()
+
+  await expect.poll(() => restored).toEqual(['InitcWs3'])
+  await expect
+    .poll(() => navigate.mock.calls)
+    .toContainEqual([{ to: '/workspaces/$workspaceId', params: { workspaceId: 'InitcWs3' } }])
+})
+
+test('shows no deleted-workspaces section when none is pending', async () => {
+  const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
+  await screen.getByRole('button', { expanded: false }).click()
+
+  await expect.element(screen.getByText('Profile')).toBeInTheDocument()
+  expect(screen.container.textContent).not.toContain('Deleted workspaces')
 })

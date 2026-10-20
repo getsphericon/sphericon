@@ -191,6 +191,46 @@ func (_u *WorkspaceUpdate) AddFeedPosition(v int64) *WorkspaceUpdate {
 	return _u
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *WorkspaceUpdate) SetDeletedAt(v time.Time) *WorkspaceUpdate {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableDeletedAt(v *time.Time) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *WorkspaceUpdate) ClearDeletedAt() *WorkspaceUpdate {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (_u *WorkspaceUpdate) SetErasedAt(v time.Time) *WorkspaceUpdate {
+	_u.mutation.SetErasedAt(v)
+	return _u
+}
+
+// SetNillableErasedAt sets the "erased_at" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableErasedAt(v *time.Time) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetErasedAt(*v)
+	}
+	return _u
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (_u *WorkspaceUpdate) ClearErasedAt() *WorkspaceUpdate {
+	_u.mutation.ClearErasedAt()
+	return _u
+}
+
 // SetSuspendedAt sets the "suspended_at" field.
 func (_u *WorkspaceUpdate) SetSuspendedAt(v time.Time) *WorkspaceUpdate {
 	_u.mutation.SetSuspendedAt(v)
@@ -1403,6 +1443,18 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedFeedPosition(); ok {
 		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(workspace.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(workspace.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ErasedAt(); ok {
+		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ErasedAtCleared() {
+		_spec.ClearField(workspace.FieldErasedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
@@ -2777,6 +2829,46 @@ func (_u *WorkspaceUpdateOne) AddFeedPosition(v int64) *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *WorkspaceUpdateOne) SetDeletedAt(v time.Time) *WorkspaceUpdateOne {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableDeletedAt(v *time.Time) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *WorkspaceUpdateOne) ClearDeletedAt() *WorkspaceUpdateOne {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (_u *WorkspaceUpdateOne) SetErasedAt(v time.Time) *WorkspaceUpdateOne {
+	_u.mutation.SetErasedAt(v)
+	return _u
+}
+
+// SetNillableErasedAt sets the "erased_at" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableErasedAt(v *time.Time) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetErasedAt(*v)
+	}
+	return _u
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (_u *WorkspaceUpdateOne) ClearErasedAt() *WorkspaceUpdateOne {
+	_u.mutation.ClearErasedAt()
+	return _u
+}
+
 // SetSuspendedAt sets the "suspended_at" field.
 func (_u *WorkspaceUpdateOne) SetSuspendedAt(v time.Time) *WorkspaceUpdateOne {
 	_u.mutation.SetSuspendedAt(v)
@@ -4019,6 +4111,18 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if value, ok := _u.mutation.AddedFeedPosition(); ok {
 		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(workspace.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(workspace.FieldDeletedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ErasedAt(); ok {
+		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ErasedAtCleared() {
+		_spec.ClearField(workspace.FieldErasedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)

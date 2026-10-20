@@ -35,6 +35,10 @@ const (
 	FieldSecondFactorRequiredAt = "second_factor_required_at"
 	// FieldFeedPosition holds the string denoting the feed_position field in the database.
 	FieldFeedPosition = "feed_position"
+	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
+	FieldDeletedAt = "deleted_at"
+	// FieldErasedAt holds the string denoting the erased_at field in the database.
+	FieldErasedAt = "erased_at"
 	// FieldSuspendedAt holds the string denoting the suspended_at field in the database.
 	FieldSuspendedAt = "suspended_at"
 	// FieldSuspendedByKind holds the string denoting the suspended_by_kind field in the database.
@@ -302,6 +306,8 @@ var Columns = []string{
 	FieldRetentionDays,
 	FieldSecondFactorRequiredAt,
 	FieldFeedPosition,
+	FieldDeletedAt,
+	FieldErasedAt,
 	FieldSuspendedAt,
 	FieldSuspendedByKind,
 	FieldSuspendedByID,
@@ -427,6 +433,16 @@ func BySecondFactorRequiredAt(opts ...sql.OrderTermOption) OrderOption {
 // ByFeedPosition orders the results by the feed_position field.
 func ByFeedPosition(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFeedPosition, opts...).ToFunc()
+}
+
+// ByDeletedAt orders the results by the deleted_at field.
+func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
+}
+
+// ByErasedAt orders the results by the erased_at field.
+func ByErasedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldErasedAt, opts...).ToFunc()
 }
 
 // BySuspendedAt orders the results by the suspended_at field.

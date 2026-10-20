@@ -20,6 +20,7 @@ import (
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/credentials"
@@ -62,7 +63,7 @@ func New(client *ent.Client, bus *events.Bus, opts ...Option) *Accounts {
 // not a member.
 func (a *Accounts) Scope(ctx context.Context, userID int64, publicID string) (*ent.Scoped, *ent.Membership, error) {
 	m, err := a.ent.Membership.Query().
-		Where(membership.UserID(userID), membership.HasWorkspaceWith(workspace.PublicID(publicID))).
+		Where(membership.UserID(userID), membership.HasWorkspaceWith(workspace.PublicID(publicID), workspace.DeletedAtIsNil())).
 		WithUser().
 		WithWorkspace().
 		Only(ctx)
@@ -86,7 +87,7 @@ func (a *Accounts) ScopeOf(m *ent.Membership) *ent.Scoped {
 // BootstrapScope is the scoped client of the oldest Workspace, for the bootstrap
 // token (no caller token exists yet to say which Workspace is meant).
 func (a *Accounts) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
-	id, err := a.ent.Workspace.Query().Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
+	id, err := a.ent.Workspace.Query().Where(workspace.DeletedAtIsNil()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func (a *Accounts) BootstrapScope(ctx context.Context) (*ent.Scoped, error) {
 // oldest Workspace first.
 func (a *Accounts) MembershipsOf(ctx context.Context, userID int64) ([]*ent.Membership, error) {
 	return a.ent.Membership.Query().
-		Where(membership.UserID(userID)).
+		Where(membership.UserID(userID), membership.HasWorkspaceWith(workspace.DeletedAtIsNil())).
 		WithUser().
 		WithWorkspace(func(q *ent.WorkspaceQuery) { q.WithHolds(func(h *ent.HoldQuery) { h.Order(enthold.ByKey()) }) }).
 		Order(ent.Asc(membership.FieldWorkspaceID)).
@@ -751,4 +752,108 @@ func WorkspaceIDByPublicID(ctx context.Context, client *ent.Client, publicID str
 		return 0, fmt.Errorf("workspace %q: %w", publicID, err)
 	}
 	return id, nil
+}
+
+// DeletionWindow is how long a deleted Workspace stays restorable before its data is
+// erased (ADR 0043). A constant, not configuration.
+const DeletionWindow = 30 * 24 * time.Hour
+
+// ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
+var ErrNameMismatch = errors.New("accounts: the typed name does not match the workspace name")
+
+// pendingDeletion is a Workspace in its deletion window at now: deleted, not yet erased,
+// and not past the window.
+func pendingDeletion(now time.Time) predicate.Workspace {
+	return workspace.And(
+		workspace.DeletedAtGT(now.Add(-DeletionWindow)),
+		workspace.ErasedAtIsNil(),
+	)
+}
+
+// EraseDate is when the data of a Workspace deleted at deletedAt is erased.
+func EraseDate(deletedAt time.Time) time.Time { return deletedAt.Add(DeletionWindow) }
+
+// DeleteWorkspace deletes the scoped Workspace (ADR 0043): it sets deleted_at, which the
+// send path reads as the pending-deletion Hold and the lookups read as "not found". The
+// typed name must equal the stored name (ErrNameMismatch otherwise). Deleting an already
+// deleted Workspace keeps its first deleted_at. The caller has checked the Owner role.
+// Recorded as `workspace.delete` in the same transaction.
+func (a *Accounts) DeleteWorkspace(ctx context.Context, s *ent.Scoped, actor events.Actor, typedName string, now time.Time) (*ent.Workspace, error) {
+	var deleted *ent.Workspace
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		ws, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		if err != nil {
+			return err
+		}
+		if typedName != ws.Name {
+			return ErrNameMismatch
+		}
+		if ws.DeletedAt != nil {
+			deleted = ws
+			return nil
+		}
+		if deleted, err = tx.Workspace.UpdateOneID(ws.ID).SetDeletedAt(now).Save(ctx); err != nil {
+			return err
+		}
+		return events.RecordAudit(ctx, pub, &events.AuditEntry{
+			WorkspaceID: ws.ID,
+			Actor:       actor,
+			Action:      events.ActionWorkspaceDelete,
+			TargetType:  workspace.Label,
+			TargetID:    strconv.FormatInt(ws.ID, 10),
+			TargetName:  ws.Name,
+			Diff:        map[string]any{"deleted": map[string]any{"from": false, "to": true}},
+		})
+	})
+	return deleted, err
+}
+
+// DeletedWorkspaces lists the Workspaces the User owns that are in their deletion window,
+// most recently deleted first, each with its Owner Membership and Workspace loaded.
+func (a *Accounts) DeletedWorkspaces(ctx context.Context, userID int64, now time.Time) ([]*ent.Membership, error) {
+	return a.ent.Membership.Query().
+		Where(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner),
+			membership.HasWorkspaceWith(pendingDeletion(now))).
+		WithWorkspace().
+		All(ctx)
+}
+
+// RestoreWorkspace ends the deletion of the Workspace publicID for a User: it clears
+// deleted_at, which lifts only the pending-deletion Hold (a suspension or Staff hold stays).
+// A Workspace outside its window, or one the User has no Membership on, is an ent NotFound
+// error; a Membership that is not an Owner gets ErrOwnerOnly. Recorded as
+// `workspace.restore` in the same transaction. The returned Membership carries its User
+// and the restored Workspace.
+func (a *Accounts) RestoreWorkspace(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Membership, error) {
+	m, err := a.ent.Membership.Query().
+		Where(membership.UserID(userID),
+			membership.HasWorkspaceWith(workspace.PublicID(publicID), pendingDeletion(now))).
+		WithUser().
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if m.Role != membership.RoleOwner {
+		return nil, ErrOwnerOnly
+	}
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		ws, err := tx.Workspace.UpdateOneID(m.WorkspaceID).ClearDeletedAt().Save(ctx)
+		if err != nil {
+			return err
+		}
+		m.Edges.Workspace = ws
+		return events.RecordAudit(ctx, pub, &events.AuditEntry{
+			WorkspaceID: ws.ID,
+			Actor:       actor,
+			Action:      events.ActionWorkspaceRestore,
+			TargetType:  workspace.Label,
+			TargetID:    strconv.FormatInt(ws.ID, 10),
+			TargetName:  ws.Name,
+			Diff:        map[string]any{"deleted": map[string]any{"from": true, "to": false}},
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }

@@ -32,6 +32,21 @@ func TestExternalAuthMeRequiresACredential(t *testing.T) {
 	assert.IsType(t, &externalapi.AuthMeGetUnauthorized{}, res)
 }
 
+func TestExternalTokensOfADeletedWorkspaceAreRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(time.Now()).ExecX(ctx)
+
+	res, err := env.ExternalAnchor(t).AuthMeGet(ctx)
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.AuthMeGetUnauthorized{}, res)
+
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDeletedAt().ExecX(ctx)
+	res, err = env.ExternalAnchor(t).AuthMeGet(ctx)
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.ApiTokenInfo{}, res, "restored, the token works again")
+}
+
 func TestExternalAuthTokensListIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

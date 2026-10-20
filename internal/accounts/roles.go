@@ -71,6 +71,12 @@ func CanRenameWorkspace(role membership.Role) bool {
 	return role == membership.RoleOwner || role == membership.RoleAdmin
 }
 
+// CanDeleteWorkspace reports whether role may delete the Workspace and restore it within its
+// deletion window (ADR 0043). Owner only.
+func CanDeleteWorkspace(role membership.Role) bool {
+	return role == membership.RoleOwner
+}
+
 // ChangeMembershipRole sets the Role of the Membership targetID in the Workspace s on
 // behalf of a caller holding callerRole, and records `membership.update` with the role
 // change as an Audit entry in the same transaction (ADR 0022): a rolled-back change

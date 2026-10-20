@@ -787,6 +787,17 @@ export default interface Resources {
       "backToWorkspace": "Back to workspace",
       "copied": "Copied",
       "copy": "Copy",
+      "danger": {
+        "confirmButton": "Delete workspace",
+        "confirmLabel": "Type {{name}} to confirm",
+        "deleteButton": "Delete workspace",
+        "deleted": "Workspace deleted. You can restore it from the user menu for 30 days.",
+        "description": "Deleting stops all sending and hides the workspace from every member. You can restore it for 30 days, after which its data is erased.",
+        "errorTitle": "Could not delete the workspace",
+        "modalTitle": "Delete this workspace?",
+        "title": "Danger zone",
+        "warning": "The workspace is frozen at once: nothing is sent, and its API tokens, collect key and tracking hosts stop working. Only an owner can restore it, within 30 days."
+      },
       "errorTitle": "Failed to update workspace",
       "installStatusReceived": "Events are arriving",
       "installStatusTitle": "Installation status",
@@ -1145,9 +1156,14 @@ export default interface Resources {
     "userMenu": {
       "account": "Account",
       "accountErrorTitle": "Could not open the account page",
+      "deletedWorkspaces": "Deleted workspaces",
+      "erasedOn": "erased {{date}}",
       "logout": "Sign out",
       "logoutErrorTitle": "Sign out failed",
       "profile": "Profile",
+      "restore": "Restore {{name}}",
+      "restoreErrorTitle": "Could not restore the workspace",
+      "restored": "Workspace restored",
       "workspaceSettings": "Workspace settings"
     },
     "validation": {

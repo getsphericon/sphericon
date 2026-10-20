@@ -1103,12 +1103,43 @@ func (UnimplementedHandler) SiteWorkspacesCreate(ctx context.Context, req *SiteC
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesDelete implements SiteWorkspaces_delete operation.
+//
+// Delete a Workspace (Owner only). The typed name must equal the Workspace's name, else 422. The
+// Workspace is frozen at once and hidden: it answers 404 on its paths and leaves every Member's list;
+// an Owner restores it within 30 days. Recorded as an Audit entry.
+//
+// POST /workspaces/{workspaceId}/delete
+func (UnimplementedHandler) SiteWorkspacesDelete(ctx context.Context, req *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (r SiteWorkspacesDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesList implements SiteWorkspaces_list operation.
 //
 // List workspaces owned by the authenticated user.
 //
 // GET /workspaces
 func (UnimplementedHandler) SiteWorkspacesList(ctx context.Context) (r []SiteWorkspaceResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteWorkspacesListDeleted implements SiteWorkspaces_listDeleted operation.
+//
+// List the Workspaces in their deletion window that the authenticated User owns, with the date their
+// data will be erased.
+//
+// GET /workspaces/deleted
+func (UnimplementedHandler) SiteWorkspacesListDeleted(ctx context.Context) (r []SiteDeletedWorkspaceResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteWorkspacesRestore implements SiteWorkspaces_restore operation.
+//
+// Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
+// freeze: a Workspace suspension or Staff hold stays. Recorded as an Audit entry.
+//
+// POST /workspaces/{workspaceId}/restore
+func (UnimplementedHandler) SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (r SiteWorkspacesRestoreRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

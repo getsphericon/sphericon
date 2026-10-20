@@ -121,6 +121,28 @@ model SiteCreateWorkspaceInput {
   name: string;
 }
 
+/** Delete a Workspace (ADR 0043): the typed name must equal the stored name. */
+model SiteDeleteWorkspaceInput {
+  /** The Workspace's name, typed to confirm the deletion */
+  name: string;
+}
+
+/** A Workspace in its deletion window, as an Owner of it sees it (ADR 0043): frozen and
+ * hidden, restorable until its data is erased. */
+model SiteDeletedWorkspaceResource {
+  /** The Workspace id */
+  id: WorkspaceId;
+
+  /** Display name */
+  name: string;
+
+  /** When the Workspace was deleted */
+  deletedAt: Timestamp;
+
+  /** When its data will be erased: 30 days after it was deleted */
+  eraseAt: Timestamp;
+}
+
 /** Switch the Two-factor requirement on or off */
 model SiteSecondFactorRequirementInput {
   /** Whether every User with a Membership must have a Second factor */
@@ -148,6 +170,40 @@ namespace SiteWorkspaces {
       }
     | ForbiddenProblem
     | UnprocessableEntityProblem;
+
+  /** List the Workspaces in their deletion window that the authenticated User owns, with
+   * the date their data will be erased. */
+  @get
+  @route("/deleted")
+  op listDeleted(): {
+    @statusCode statusCode: 200;
+    @body body: SiteDeletedWorkspaceResource[];
+  };
+
+  /** Delete a Workspace (Owner only). The typed name must equal the Workspace's name,
+   * else 422. The Workspace is frozen at once and hidden: it answers 404 on its paths
+   * and leaves every Member's list; an Owner restores it within 30 days. Recorded as an
+   * Audit entry. */
+  @post
+  @route("/{workspaceId}/delete")
+  op delete(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteDeleteWorkspaceInput,
+  ):
+    | SiteDeletedWorkspaceResource
+    | ForbiddenProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Restore a Workspace in its deletion window (Owner only). It removes only the
+   * pending-deletion freeze: a Workspace suspension or Staff hold stays. Recorded as an
+   * Audit entry. */
+  @post
+  @route("/{workspaceId}/restore")
+  op restore(@path workspaceId: WorkspaceId):
+    | SiteWorkspaceResource
+    | ForbiddenProblem
+    | NotFoundProblem;
 
   /** Rename a workspace or change its postal address (Owner and Admin only). The id
    * never changes. */

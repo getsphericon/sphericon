@@ -8035,6 +8035,79 @@ func (s *SiteCustomFieldsListOK) SetTotalPages(val int32) {
 
 func (*SiteCustomFieldsListOK) siteCustomFieldsListRes() {}
 
+// Delete a Workspace (ADR 0043): the typed name must equal the stored name.
+// Ref: #/components/schemas/SiteDeleteWorkspaceInput
+type SiteDeleteWorkspaceInput struct {
+	// The Workspace's name, typed to confirm the deletion.
+	Name string `json:"name"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteDeleteWorkspaceInput) GetName() string {
+	return s.Name
+}
+
+// SetName sets the value of Name.
+func (s *SiteDeleteWorkspaceInput) SetName(val string) {
+	s.Name = val
+}
+
+// A Workspace in its deletion window, as an Owner of it sees it (ADR 0043): frozen and hidden,
+// restorable until its data is erased.
+// Ref: #/components/schemas/SiteDeletedWorkspaceResource
+type SiteDeletedWorkspaceResource struct {
+	// The Workspace id.
+	ID WorkspaceId `json:"id"`
+	// Display name.
+	Name string `json:"name"`
+	// When the Workspace was deleted.
+	DeletedAt Timestamp `json:"deletedAt"`
+	// When its data will be erased: 30 days after it was deleted.
+	EraseAt Timestamp `json:"eraseAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteDeletedWorkspaceResource) GetID() WorkspaceId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SiteDeletedWorkspaceResource) GetName() string {
+	return s.Name
+}
+
+// GetDeletedAt returns the value of DeletedAt.
+func (s *SiteDeletedWorkspaceResource) GetDeletedAt() Timestamp {
+	return s.DeletedAt
+}
+
+// GetEraseAt returns the value of EraseAt.
+func (s *SiteDeletedWorkspaceResource) GetEraseAt() Timestamp {
+	return s.EraseAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteDeletedWorkspaceResource) SetID(val WorkspaceId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SiteDeletedWorkspaceResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetDeletedAt sets the value of DeletedAt.
+func (s *SiteDeletedWorkspaceResource) SetDeletedAt(val Timestamp) {
+	s.DeletedAt = val
+}
+
+// SetEraseAt sets the value of EraseAt.
+func (s *SiteDeletedWorkspaceResource) SetEraseAt(val Timestamp) {
+	s.EraseAt = val
+}
+
+func (*SiteDeletedWorkspaceResource) siteWorkspacesDeleteRes() {}
+
 // A DNS record the user publishes to authenticate a sending domain.
 // Ref: #/components/schemas/SiteDnsRecord
 type SiteDnsRecord struct {
@@ -15336,6 +15409,7 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 }
 
 func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                     {}
+func (*SiteWorkspaceResource) siteWorkspacesRestoreRes()                    {}
 func (*SiteWorkspaceResource) siteWorkspacesSetSecondFactorRequirementRes() {}
 func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                     {}
 
@@ -15354,6 +15428,26 @@ func (*SiteWorkspacesCreateForbidden) siteWorkspacesCreateRes() {}
 type SiteWorkspacesCreateUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesCreateUnprocessableEntity) siteWorkspacesCreateRes() {}
+
+type SiteWorkspacesDeleteForbidden ProblemDetails
+
+func (*SiteWorkspacesDeleteForbidden) siteWorkspacesDeleteRes() {}
+
+type SiteWorkspacesDeleteNotFound ProblemDetails
+
+func (*SiteWorkspacesDeleteNotFound) siteWorkspacesDeleteRes() {}
+
+type SiteWorkspacesDeleteUnprocessableEntity ProblemDetails
+
+func (*SiteWorkspacesDeleteUnprocessableEntity) siteWorkspacesDeleteRes() {}
+
+type SiteWorkspacesRestoreForbidden ProblemDetails
+
+func (*SiteWorkspacesRestoreForbidden) siteWorkspacesRestoreRes() {}
+
+type SiteWorkspacesRestoreNotFound ProblemDetails
+
+func (*SiteWorkspacesRestoreNotFound) siteWorkspacesRestoreRes() {}
 
 type SiteWorkspacesSetSecondFactorRequirementForbidden ProblemDetails
 

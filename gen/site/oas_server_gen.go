@@ -756,12 +756,34 @@ type Handler interface {
 	//
 	// POST /workspaces
 	SiteWorkspacesCreate(ctx context.Context, req *SiteCreateWorkspaceInput) (SiteWorkspacesCreateRes, error)
+	// SiteWorkspacesDelete implements SiteWorkspaces_delete operation.
+	//
+	// Delete a Workspace (Owner only). The typed name must equal the Workspace's name, else 422. The
+	// Workspace is frozen at once and hidden: it answers 404 on its paths and leaves every Member's list;
+	// an Owner restores it within 30 days. Recorded as an Audit entry.
+	//
+	// POST /workspaces/{workspaceId}/delete
+	SiteWorkspacesDelete(ctx context.Context, req *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (SiteWorkspacesDeleteRes, error)
 	// SiteWorkspacesList implements SiteWorkspaces_list operation.
 	//
 	// List workspaces owned by the authenticated user.
 	//
 	// GET /workspaces
 	SiteWorkspacesList(ctx context.Context) ([]SiteWorkspaceResource, error)
+	// SiteWorkspacesListDeleted implements SiteWorkspaces_listDeleted operation.
+	//
+	// List the Workspaces in their deletion window that the authenticated User owns, with the date their
+	// data will be erased.
+	//
+	// GET /workspaces/deleted
+	SiteWorkspacesListDeleted(ctx context.Context) ([]SiteDeletedWorkspaceResource, error)
+	// SiteWorkspacesRestore implements SiteWorkspaces_restore operation.
+	//
+	// Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
+	// freeze: a Workspace suspension or Staff hold stays. Recorded as an Audit entry.
+	//
+	// POST /workspaces/{workspaceId}/restore
+	SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (SiteWorkspacesRestoreRes, error)
 	// SiteWorkspacesSetSecondFactorRequirement implements SiteWorkspaces_setSecondFactorRequirement operation.
 	//
 	// Switch the Two-factor requirement on or off (owner and admin only). Switching it on while it is

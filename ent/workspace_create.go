@@ -164,6 +164,34 @@ func (_c *WorkspaceCreate) SetNillableFeedPosition(v *int64) *WorkspaceCreate {
 	return _c
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_c *WorkspaceCreate) SetDeletedAt(v time.Time) *WorkspaceCreate {
+	_c.mutation.SetDeletedAt(v)
+	return _c
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableDeletedAt(v *time.Time) *WorkspaceCreate {
+	if v != nil {
+		_c.SetDeletedAt(*v)
+	}
+	return _c
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (_c *WorkspaceCreate) SetErasedAt(v time.Time) *WorkspaceCreate {
+	_c.mutation.SetErasedAt(v)
+	return _c
+}
+
+// SetNillableErasedAt sets the "erased_at" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableErasedAt(v *time.Time) *WorkspaceCreate {
+	if v != nil {
+		_c.SetErasedAt(*v)
+	}
+	return _c
+}
+
 // SetSuspendedAt sets the "suspended_at" field.
 func (_c *WorkspaceCreate) SetSuspendedAt(v time.Time) *WorkspaceCreate {
 	_c.mutation.SetSuspendedAt(v)
@@ -857,6 +885,14 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
 		_node.FeedPosition = value
 	}
+	if value, ok := _c.mutation.DeletedAt(); ok {
+		_spec.SetField(workspace.FieldDeletedAt, field.TypeTime, value)
+		_node.DeletedAt = &value
+	}
+	if value, ok := _c.mutation.ErasedAt(); ok {
+		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
+		_node.ErasedAt = &value
+	}
 	if value, ok := _c.mutation.SuspendedAt(); ok {
 		_spec.SetField(workspace.FieldSuspendedAt, field.TypeTime, value)
 		_node.SuspendedAt = &value
@@ -1483,6 +1519,42 @@ func (u *WorkspaceUpsert) AddFeedPosition(v int64) *WorkspaceUpsert {
 	return u
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (u *WorkspaceUpsert) SetDeletedAt(v time.Time) *WorkspaceUpsert {
+	u.Set(workspace.FieldDeletedAt, v)
+	return u
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateDeletedAt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldDeletedAt)
+	return u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *WorkspaceUpsert) ClearDeletedAt() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldDeletedAt)
+	return u
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (u *WorkspaceUpsert) SetErasedAt(v time.Time) *WorkspaceUpsert {
+	u.Set(workspace.FieldErasedAt, v)
+	return u
+}
+
+// UpdateErasedAt sets the "erased_at" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateErasedAt() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldErasedAt)
+	return u
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (u *WorkspaceUpsert) ClearErasedAt() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldErasedAt)
+	return u
+}
+
 // SetSuspendedAt sets the "suspended_at" field.
 func (u *WorkspaceUpsert) SetSuspendedAt(v time.Time) *WorkspaceUpsert {
 	u.Set(workspace.FieldSuspendedAt, v)
@@ -1819,6 +1891,48 @@ func (u *WorkspaceUpsertOne) AddFeedPosition(v int64) *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) UpdateFeedPosition() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateFeedPosition()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *WorkspaceUpsertOne) SetDeletedAt(v time.Time) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateDeletedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *WorkspaceUpsertOne) ClearDeletedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearDeletedAt()
+	})
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (u *WorkspaceUpsertOne) SetErasedAt(v time.Time) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetErasedAt(v)
+	})
+}
+
+// UpdateErasedAt sets the "erased_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateErasedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateErasedAt()
+	})
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (u *WorkspaceUpsertOne) ClearErasedAt() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearErasedAt()
 	})
 }
 
@@ -2347,6 +2461,48 @@ func (u *WorkspaceUpsertBulk) AddFeedPosition(v int64) *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) UpdateFeedPosition() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateFeedPosition()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *WorkspaceUpsertBulk) SetDeletedAt(v time.Time) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateDeletedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *WorkspaceUpsertBulk) ClearDeletedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearDeletedAt()
+	})
+}
+
+// SetErasedAt sets the "erased_at" field.
+func (u *WorkspaceUpsertBulk) SetErasedAt(v time.Time) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetErasedAt(v)
+	})
+}
+
+// UpdateErasedAt sets the "erased_at" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateErasedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateErasedAt()
+	})
+}
+
+// ClearErasedAt clears the value of the "erased_at" field.
+func (u *WorkspaceUpsertBulk) ClearErasedAt() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearErasedAt()
 	})
 }
 

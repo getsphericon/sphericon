@@ -351,6 +351,13 @@ export const zSiteCustomFieldType = z.enum([
 ]);
 
 /**
+ * Delete a Workspace (ADR 0043): the typed name must equal the stored name.
+ */
+export const zSiteDeleteWorkspaceInput = z.object({
+  name: z.string()
+});
+
+/**
  * A DNS record the user publishes to authenticate a sending domain
  */
 export const zSiteDnsRecord = z.object({
@@ -1605,6 +1612,17 @@ export const zSiteWorkspaceHold = z.object({
 export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
 
 /**
+ * A Workspace in its deletion window, as an Owner of it sees it (ADR 0043): frozen and
+ * hidden, restorable until its data is erased.
+ */
+export const zSiteDeletedWorkspaceResource = z.object({
+  id: zWorkspaceId,
+  name: z.string(),
+  deletedAt: zTimestamp,
+  eraseAt: zTimestamp
+});
+
+/**
  * The user's decision on an authorization request
  */
 export const zSiteOAuthDecisionInput = z.object({
@@ -2142,6 +2160,11 @@ export const zSiteWorkspacesCreateBody = zSiteCreateWorkspaceInput;
  */
 export const zSiteWorkspacesCreateResponse = zSiteWorkspaceResource;
 
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesListDeletedResponse = z.array(zSiteDeletedWorkspaceResource);
+
 export const zSiteWorkspacesUpdateBody = zSiteUpdateWorkspaceInput;
 
 export const zSiteWorkspacesUpdatePath = z.object({
@@ -2628,6 +2651,17 @@ export const zSiteCustomFieldsListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
+export const zSiteWorkspacesDeleteBody = zSiteDeleteWorkspaceInput;
+
+export const zSiteWorkspacesDeletePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesDeleteResponse = zSiteDeletedWorkspaceResource;
+
 export const zSiteEventsListPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -2792,6 +2826,15 @@ export const zSiteMembershipsResetSecondFactorPath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteMembershipsResetSecondFactorResponse = z.void();
+
+export const zSiteWorkspacesRestorePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesRestoreResponse = zSiteWorkspaceResource;
 
 export const zSiteWorkspacesSetSecondFactorRequirementBody = zSiteSecondFactorRequirementInput;
 

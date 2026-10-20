@@ -10,6 +10,7 @@ import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { BrandKitSection } from '../BrandKitSection.tsx'
+import { DeleteWorkspaceSection } from './DeleteWorkspaceSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
 // GeneralSection is split out so the rename form seeds its initial value from the
@@ -79,6 +80,7 @@ export function GeneralPage() {
         <Stack>
           <GeneralSection workspace={workspace} />
           <BrandKitSection workspace={workspace} />
+          <DeleteWorkspaceSection workspace={workspace} />
         </Stack>
       )}
     </SettingsFrame>

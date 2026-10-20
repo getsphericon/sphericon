@@ -83,6 +83,15 @@ func (Workspace) Fields() []ent.Field {
 		// only by internal/workspacefeed.
 		field.Int64("feed_position").
 			Default(0),
+		// Workspace deletion (ADR 0043): deleted_at starts the 30-day window, in which the
+		// Workspace is frozen, hidden and restorable; erased_at is set when the erasure job
+		// has removed its data and left the row as a tombstone. Both NULL for a live Workspace.
+		field.Time("deleted_at").
+			Optional().
+			Nillable(),
+		field.Time("erased_at").
+			Optional().
+			Nillable(),
 		field.Time("suspended_at").
 			Optional().
 			Nillable(),

@@ -18,6 +18,7 @@ import {
 import { Route as profileRoute } from '../routes/account/index.tsx'
 import { Route as loginRoute } from '../routes/login.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { DeletedWorkspacesMenuSection } from './DeletedWorkspacesMenuSection.tsx'
 import { MenuItemLink } from './RouterLink.tsx'
 
 // UserMenu is the header account dropdown: profile, workspace settings, logout.
@@ -102,6 +103,7 @@ export function UserMenu({
             {t(($) => $.userMenu.account)}
           </Menu.Item>
         ) : null}
+        <DeletedWorkspacesMenuSection />
         <Menu.Divider />
         <Menu.Item
           color="red"

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -235,4 +237,90 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 		return nil, err
 	}
 	return &resource, nil
+}
+
+// deletedWorkspaceResource is a Workspace in its deletion window with the date its data
+// will be erased.
+func deletedWorkspaceResource(w *ent.Workspace) siteapi.SiteDeletedWorkspaceResource {
+	return siteapi.SiteDeletedWorkspaceResource{
+		ID:        siteapi.WorkspaceId(w.PublicID),
+		Name:      w.Name,
+		DeletedAt: siteapi.Timestamp(*w.DeletedAt),
+		EraseAt:   siteapi.Timestamp(accounts.EraseDate(*w.DeletedAt)),
+	}
+}
+
+// SiteWorkspacesListDeleted lists the caller's Owner Workspaces in their deletion window.
+func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.SiteDeletedWorkspaceResource, error) {
+	a := auth.GetSiteAuth(ctx)
+	if a == nil {
+		return []siteapi.SiteDeletedWorkspaceResource{}, nil
+	}
+	items, err := h.accounts.DeletedWorkspaces(ctx, a.UserID, h.now())
+	if err != nil {
+		return nil, err
+	}
+	resources := lo.Map(items, func(m *ent.Membership, _ int) siteapi.SiteDeletedWorkspaceResource {
+		return deletedWorkspaceResource(m.Edges.Workspace)
+	})
+	slices.SortFunc(resources, func(x, y siteapi.SiteDeletedWorkspaceResource) int {
+		return time.Time(y.DeletedAt).Compare(time.Time(x.DeletedAt))
+	})
+	return resources, nil
+}
+
+// SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
+func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, params siteapi.SiteWorkspacesDeleteParams) (siteapi.SiteWorkspacesDeleteRes, error) {
+	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteWorkspacesDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !accounts.CanDeleteWorkspace(m.Role) {
+		v := siteapi.SiteWorkspacesDeleteForbidden(problem(http.StatusForbidden, "only owners can delete the workspace"))
+		return &v, nil
+	}
+	w, err := h.accounts.DeleteWorkspace(ctx, s, h.actor(ctx), req.Name, h.now())
+	if errors.Is(err, accounts.ErrNameMismatch) {
+		v := siteapi.SiteWorkspacesDeleteUnprocessableEntity(problemWithErrors(
+			http.StatusUnprocessableEntity,
+			i18n.T("errors.workspace_name_mismatch", nil),
+			map[string][]string{"name": {i18n.T("errors.workspace_name_mismatch", nil)}},
+		))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r := deletedWorkspaceResource(w)
+	return &r, nil
+}
+
+// SiteWorkspacesRestore restores a Workspace in its deletion window (Owner only).
+func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.SiteWorkspacesRestoreParams) (siteapi.SiteWorkspacesRestoreRes, error) {
+	a := auth.GetSiteAuth(ctx)
+	if a == nil {
+		v := siteapi.SiteWorkspacesRestoreNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	m, err := h.accounts.RestoreWorkspace(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
+	if ent.IsNotFound(err) {
+		v := siteapi.SiteWorkspacesRestoreNotFound(problem(http.StatusNotFound, "workspace not found"))
+		return &v, nil
+	}
+	if errors.Is(err, accounts.ErrOwnerOnly) {
+		v := siteapi.SiteWorkspacesRestoreForbidden(problem(http.StatusForbidden, "only owners can restore the workspace"))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r, err := h.workspaceResource(ctx, h.accounts.ScopeOf(m), m)
+	if err != nil {
+		return nil, err
+	}
+	return &r, nil
 }
