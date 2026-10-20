@@ -6164,6 +6164,22 @@ func (s *SiteWorkspacesDeleteUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteWorkspacesRestoreConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWorkspacesRestoreNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteWorkspacesSetSecondFactorRequirementForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {

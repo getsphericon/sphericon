@@ -7423,6 +7423,10 @@ export type SiteWorkspacesRestoreErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
 };
 
 export type SiteWorkspacesRestoreError = SiteWorkspacesRestoreErrors[keyof SiteWorkspacesRestoreErrors];

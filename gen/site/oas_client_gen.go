@@ -887,8 +887,9 @@ type Invoker interface {
 	//
 	// Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
 	// freeze: a Workspace suspension or Staff hold stays. A deleted Workspace is not exposed to anyone but
-	// its Owners, so a caller who is not an Owner gets 404 as for an unknown one. Recorded as an Audit
-	// entry.
+	// its Owners, so a caller who is not an Owner gets 404 as for an unknown one. A Workspace past its
+	// window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
+	// 404. Recorded as an Audit entry.
 	//
 	// POST /workspaces/{workspaceId}/restore
 	SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (SiteWorkspacesRestoreRes, error)
@@ -19223,8 +19224,9 @@ func (c *Client) sendSiteWorkspacesListDeleted(ctx context.Context) (res []SiteD
 //
 // Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
 // freeze: a Workspace suspension or Staff hold stays. A deleted Workspace is not exposed to anyone but
-// its Owners, so a caller who is not an Owner gets 404 as for an unknown one. Recorded as an Audit
-// entry.
+// its Owners, so a caller who is not an Owner gets 404 as for an unknown one. A Workspace past its
+// window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
+// 404. Recorded as an Audit entry.
 //
 // POST /workspaces/{workspaceId}/restore
 func (c *Client) SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (SiteWorkspacesRestoreRes, error) {

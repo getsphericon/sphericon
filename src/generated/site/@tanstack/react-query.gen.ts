@@ -2049,7 +2049,9 @@ export const siteMembershipsResetSecondFactorMutation = (options?: Partial<Optio
  * Restore a Workspace in its deletion window (Owner only). It removes only the
  * pending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted
  * Workspace is not exposed to anyone but its Owners, so a caller who is not an Owner
- * gets 404 as for an unknown one. Recorded as an Audit entry.
+ * gets 404 as for an unknown one. A Workspace past its window, or already being
+ * erased, answers 409; an erased one has no Owner left to ask, so it answers 404.
+ * Recorded as an Audit entry.
  */
 export const siteWorkspacesRestoreMutation = (options?: Partial<Options<SiteWorkspacesRestoreData>>): UseMutationOptions<SiteWorkspacesRestoreResponse, SiteWorkspacesRestoreError, Options<SiteWorkspacesRestoreData>> => {
   const mutationOptions: UseMutationOptions<SiteWorkspacesRestoreResponse, SiteWorkspacesRestoreError, Options<SiteWorkspacesRestoreData>> = {

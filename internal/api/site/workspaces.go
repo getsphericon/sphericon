@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
@@ -300,12 +301,16 @@ func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDe
 func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.SiteWorkspacesRestoreParams) (siteapi.SiteWorkspacesRestoreRes, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
-		v := workspaceNotFoundProblem()
+		v := siteapi.SiteWorkspacesRestoreNotFound(workspaceNotFoundProblem())
 		return &v, nil
 	}
 	m, err := h.deletion.Restore(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
 	if ent.IsNotFound(err) {
-		v := workspaceNotFoundProblem()
+		v := siteapi.SiteWorkspacesRestoreNotFound(workspaceNotFoundProblem())
+		return &v, nil
+	}
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		v := siteapi.SiteWorkspacesRestoreConflict(problem(http.StatusConflict, i18n.T("errors.workspace_not_restorable", nil)))
 		return &v, nil
 	}
 	if err != nil {

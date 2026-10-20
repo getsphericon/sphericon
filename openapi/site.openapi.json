@@ -5933,7 +5933,7 @@
     "/workspaces/{workspaceId}/restore": {
       "post": {
         "operationId": "SiteWorkspaces_restore",
-        "description": "Restore a Workspace in its deletion window (Owner only). It removes only the\npending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted\nWorkspace is not exposed to anyone but its Owners, so a caller who is not an Owner\ngets 404 as for an unknown one. Recorded as an Audit entry.",
+        "description": "Restore a Workspace in its deletion window (Owner only). It removes only the\npending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted\nWorkspace is not exposed to anyone but its Owners, so a caller who is not an Owner\ngets 404 as for an unknown one. A Workspace past its window, or already being\nerased, answers 409; an erased one has no Owner left to ask, so it answers 404.\nRecorded as an Audit entry.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -5957,6 +5957,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
             "content": {
               "application/problem+json": {
                 "schema": {

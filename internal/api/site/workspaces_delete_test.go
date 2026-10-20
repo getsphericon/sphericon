@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"context"
-	"net/http"
 	"testing"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
-	"github.com/ogen-go/ogen/validate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -148,19 +146,18 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 
 	res, err := env.SiteActor(t, fixtures.InitechAdminAdaEmail).SiteWorkspacesRestore(ctx, params)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res, "a Member cannot tell the deleted Workspace exists")
+	assert.IsType(t, &siteapi.SiteWorkspacesRestoreNotFound{}, res, "a Member cannot tell the deleted Workspace exists")
 
 	res, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesRestore(ctx, params)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res, "a stranger cannot tell it exists")
+	assert.IsType(t, &siteapi.SiteWorkspacesRestoreNotFound{}, res, "a stranger cannot tell it exists")
 
 	// Past the window the Workspace is no longer restorable.
 	env.DB.Workspace.UpdateOneID(fixtures.InitechID).
 		SetDeletedAt(time.Now().Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(ctx)
-	_, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
-	var unexpected *validate.UnexpectedStatusCodeError
-	require.ErrorAs(t, err, &unexpected)
-	assert.Equal(t, http.StatusConflict, unexpected.StatusCode, "a Workspace past its window is a conflict")
+	res, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteWorkspacesRestoreConflict{}, res, "a Workspace past its window is a conflict")
 	deleted, err := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesListDeleted(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, deleted)

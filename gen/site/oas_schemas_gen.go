@@ -4236,7 +4236,6 @@ func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
 func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
 func (*ProblemDetails) siteSetupChecklistGetRes()              {}
 func (*ProblemDetails) siteTokensListRes()                     {}
-func (*ProblemDetails) siteWorkspacesRestoreRes()              {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -15947,6 +15946,14 @@ func (*SiteWorkspacesDeleteNotFound) siteWorkspacesDeleteRes() {}
 type SiteWorkspacesDeleteUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesDeleteUnprocessableEntity) siteWorkspacesDeleteRes() {}
+
+type SiteWorkspacesRestoreConflict ProblemDetails
+
+func (*SiteWorkspacesRestoreConflict) siteWorkspacesRestoreRes() {}
+
+type SiteWorkspacesRestoreNotFound ProblemDetails
+
+func (*SiteWorkspacesRestoreNotFound) siteWorkspacesRestoreRes() {}
 
 type SiteWorkspacesSetSecondFactorRequirementForbidden ProblemDetails
 

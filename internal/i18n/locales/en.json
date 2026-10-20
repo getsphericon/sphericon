@@ -61,6 +61,7 @@
   "errors.not_me_link_invalid": "invalid or already used link",
   "errors.confirm_link_bad": "invalid confirmation link",
   "errors.name_empty": "name must not be empty",
+  "errors.workspace_not_restorable": "the workspace can no longer be restored",
   "errors.workspace_name_mismatch": "the typed name does not match the workspace name",
   "errors.sending_domain_invalid": "not a valid domain name",
   "errors.dkim_selector_invalid": "not a valid DKIM selector",
