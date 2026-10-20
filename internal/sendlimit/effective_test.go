@@ -38,11 +38,11 @@ func TestEffectiveOfTakesTheLowestOfManualAndProviderValues(t *testing.T) {
 		want             sendlimit.Value
 	}{
 		{"neither", nil, nil, sendlimit.Value{}},
-		{"provider only", nil, ptr(14), sendlimit.Value{Limit: ptr(14), Source: sendlimit.SourceProvider}},
-		{"manual only", ptr(5), nil, sendlimit.Value{Limit: ptr(5), Source: sendlimit.SourceManual}},
-		{"manual is lower", ptr(5), ptr(14), sendlimit.Value{Limit: ptr(5), Source: sendlimit.SourceManual}},
-		{"provider is lower", ptr(50), ptr(14), sendlimit.Value{Limit: ptr(14), Source: sendlimit.SourceProvider}},
-		{"manual wins a tie", ptr(14), ptr(14), sendlimit.Value{Limit: ptr(14), Source: sendlimit.SourceManual}},
+		{"provider only", nil, new(14), sendlimit.Value{Limit: new(14), Source: sendlimit.SourceProvider}},
+		{"manual only", new(5), nil, sendlimit.Value{Limit: new(5), Source: sendlimit.SourceManual}},
+		{"manual is lower", new(5), new(14), sendlimit.Value{Limit: new(5), Source: sendlimit.SourceManual}},
+		{"provider is lower", new(50), new(14), sendlimit.Value{Limit: new(14), Source: sendlimit.SourceProvider}},
+		{"manual wins a tie", new(14), new(14), sendlimit.Value{Limit: new(14), Source: sendlimit.SourceManual}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

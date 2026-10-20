@@ -263,7 +263,7 @@ func (h *Handlers) scopedWithRoleFor(ctx context.Context, slug string) (*ent.Sco
 // membershipFor is scopedFor plus the caller's Membership (its User and Workspace
 // loaded). It is where the Two-factor requirement is enforced (ADR 0020): once a
 // User's grace in a requiring Workspace has ended without a Second factor, every
-// request to that Workspace fails with errSecondFactorRequired (403
+// request to that Workspace fails with secondFactorRequiredError (403
 // second_factor_required); other Workspaces and the /me endpoints are unaffected.
 func (h *Handlers) membershipFor(ctx context.Context, slug string) (*ent.Scoped, *ent.Membership, error) {
 	s, m, err := h.membershipEvenIfWithheld(ctx, slug)
@@ -271,7 +271,7 @@ func (h *Handlers) membershipFor(ctx context.Context, slug string) (*ent.Scoped,
 		return nil, nil, err
 	}
 	if secondfactor.Withheld(m, h.now()) {
-		return nil, nil, errSecondFactorRequired{}
+		return nil, nil, secondFactorRequiredError{}
 	}
 	return s, m, nil
 }
@@ -287,15 +287,15 @@ func (h *Handlers) membershipEvenIfWithheld(ctx context.Context, slug string) (*
 	return h.accounts.Scope(ctx, a.UserID, slug)
 }
 
-// errSecondFactorRequired is secondfactor.ErrRequired as the problem the site
+// secondFactorRequiredError is secondfactor.ErrRequired as the problem the site
 // answers it with. Returned as an error, it is rendered by the server's error
 // handler, which reads it through its Problem method.
-type errSecondFactorRequired struct{}
+type secondFactorRequiredError struct{}
 
-func (errSecondFactorRequired) Error() string { return secondfactor.ErrRequired.Error() }
-func (errSecondFactorRequired) Unwrap() error { return secondfactor.ErrRequired }
+func (secondFactorRequiredError) Error() string { return secondfactor.ErrRequired.Error() }
+func (secondFactorRequiredError) Unwrap() error { return secondfactor.ErrRequired }
 
 // Problem is the 403 second_factor_required answer.
-func (errSecondFactorRequired) Problem() (status int, code, detail string) {
+func (secondFactorRequiredError) Problem() (status int, code, detail string) {
 	return http.StatusForbidden, string(siteapi.ProblemCodeSecondFactorRequired), i18n.T("errors.second_factor_required", nil)
 }

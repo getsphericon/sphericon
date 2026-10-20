@@ -125,6 +125,7 @@ func (m *Module) ListWorkspaces(ctx context.Context, review Review, slug string,
 			q = q.Where(entworkspace.SlugContainsFold(slug))
 		}
 		switch review {
+		case ReviewNone:
 		case ReviewWarned:
 			q = q.Where(entworkspace.AbuseWarningNotifiedAtNotNil(), entworkspace.SuspendedAtIsNil(), entworkspace.AbuseExempt(false))
 		case ReviewSystemFrozen:

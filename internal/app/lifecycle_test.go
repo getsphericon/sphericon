@@ -53,7 +53,7 @@ func TestStartServesAndCloseStopsEverything(t *testing.T) {
 	}
 	select {
 	case err := <-a.Done():
-		assert.NoError(t, err, "a graceful close is not a server error")
+		require.NoError(t, err, "a graceful close is not a server error")
 	case <-time.After(5 * time.Second):
 		t.Fatal("Done never reported")
 	}
@@ -72,7 +72,7 @@ func TestStartTwiceIsRefused(t *testing.T) {
 	a, _ := lifecycleApp(t)
 	require.NoError(t, a.Start(context.Background()))
 
-	assert.ErrorIs(t, a.Start(context.Background()), ErrAlreadyStarted)
+	require.ErrorIs(t, a.Start(context.Background()), ErrAlreadyStarted)
 
 	require.NoError(t, a.Close(closeCtx(t)))
 }
@@ -100,7 +100,7 @@ func TestStartUnwindsWhenTheMetricsAddressIsTaken(t *testing.T) {
 	require.Error(t, a.Start(context.Background()))
 
 	_, _, err = testhelper.TryHTTPGet(t.Context(), "http://"+ln.Addr().String()+"/healthz")
-	assert.Error(t, err, "nothing serves after a failed Start")
+	require.Error(t, err, "nothing serves after a failed Start")
 	assert.NotNil(t, a.Shutdown(context.Background()), "the container is already shut down")
 	assert.NoError(t, a.Close(closeCtx(t)), "Close after a failed Start is harmless")
 }

@@ -79,7 +79,7 @@ func TestListReportsCountAndFetchErrors(t *testing.T) {
 	_, fetch := catalogue(1)
 	_, err := pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 1},
 		func(context.Context) (int, error) { return 0, assert.AnError }, fetch)
-	assert.ErrorIs(t, err, assert.AnError)
+	require.ErrorIs(t, err, assert.AnError)
 
 	count, _ := catalogue(1)
 	_, err = pagination.List(context.Background(), pagination.Params{Page: 1, PageSize: 1}, count,

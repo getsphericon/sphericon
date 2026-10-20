@@ -18,6 +18,8 @@ func analyticsWindow(r siteapi.OptSiteAnalyticsRange) analytics.Window {
 			return analytics.Window7Days
 		case siteapi.SiteAnalyticsRange90d:
 			return analytics.Window90Days
+		case siteapi.SiteAnalyticsRange30d:
+			return analytics.Window30Days
 		}
 	}
 	return analytics.Window30Days

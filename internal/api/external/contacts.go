@@ -46,8 +46,7 @@ func (h *Handlers) ContactsCreate(ctx context.Context, req *externalapi.CreateCo
 	}
 
 	c, err := h.contacts.Create(ctx, auth.TokenScoped(ctx), createContactAttributes(req))
-	var conflict *contacts.ConflictError
-	if errors.As(err, &conflict) {
+	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
 		res := externalapi.ContactsCreateConflict(conflictProblem(conflict))
 		return &res, nil
 	}
@@ -89,8 +88,7 @@ func (h *Handlers) ContactsUpdate(ctx context.Context, req *externalapi.UpdateCo
 	id := int64(params.ID)
 
 	c, err := h.contacts.Update(ctx, auth.TokenScoped(ctx), id, updateContactAttributes(req))
-	var conflict *contacts.ConflictError
-	if errors.As(err, &conflict) {
+	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
 		res := externalapi.ContactsUpdateConflict(conflictProblem(conflict))
 		return &res, nil
 	}

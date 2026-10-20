@@ -118,8 +118,8 @@ func TestNoMailListsWhatTheInboxHeld(t *testing.T) {
 	err := in.noMail(t.Context(), Match{To: "want@b.test"}, time.Minute, nil)
 
 	require.Error(t, err)
-	assert.ErrorContains(t, err, "want@b.test")
-	assert.ErrorContains(t, err, "other@b.test")
+	require.ErrorContains(t, err, "want@b.test")
+	require.ErrorContains(t, err, "other@b.test")
 	assert.ErrorContains(t, err, "Wrong place")
 }
 

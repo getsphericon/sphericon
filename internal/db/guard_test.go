@@ -66,7 +66,7 @@ func TestGuardRefusesABinaryOlderThanTheFloorAndNamesTheRelease(t *testing.T) {
 
 	err := guard("v0.5.1", false).Check(t.Context(), sqlDB)
 
-	var refusal *db.Refusal
+	var refusal *db.RefusalError
 	require.ErrorAs(t, err, &refusal)
 	assert.Contains(t, err.Error(), "sphericon v0.5.1 (commit abc1234, built 2026-10-18T10:00:00Z)")
 	assert.Contains(t, err.Error(), "v0.5.2 or newer")
@@ -87,7 +87,7 @@ func TestGuardRefusesASkippedMajorAndNamesTheReleaseToInstallFirst(t *testing.T)
 
 	err := guard("v0.6.0", true).Check(t.Context(), sqlDB)
 
-	var refusal *db.Refusal
+	var refusal *db.RefusalError
 	require.ErrorAs(t, err, &refusal)
 	assert.Contains(t, err.Error(), "install v0.4.7 first")
 	assert.Contains(t, err.Error(), "sphericon v0.6.0 (commit abc1234")
@@ -99,7 +99,7 @@ func TestGuardRefusesOneMajorAheadAndNamesMigrateUnlessAutoMigrateIsOn(t *testin
 	sqlDB := migratedAt(t, 2, "v0.4.7")
 
 	err := guard("v0.6.0", false).Check(t.Context(), sqlDB)
-	var refusal *db.Refusal
+	var refusal *db.RefusalError
 	require.ErrorAs(t, err, &refusal)
 	assert.Contains(t, err.Error(), "sphericon migrate")
 	assert.Contains(t, err.Error(), "sphericon v0.6.0 (commit abc1234")

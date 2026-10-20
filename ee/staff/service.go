@@ -59,8 +59,8 @@ var ServiceOperationScopes = map[serviceapi.OperationName][]Scope{
 func ServiceOperations() []serviceapi.OperationName {
 	t := reflect.TypeFor[serviceapi.Handler]()
 	names := make([]serviceapi.OperationName, 0, t.NumMethod())
-	for i := range t.NumMethod() {
-		names = append(names, t.Method(i).Name)
+	for method := range t.Methods() {
+		names = append(names, method.Name)
 	}
 	return names
 }

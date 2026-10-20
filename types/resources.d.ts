@@ -640,14 +640,16 @@ export default interface Resources {
       "verifiedBadge": "Verified"
     },
     "registration": {
-      "checkEmailBody": "If {{email}} can be registered, we sent it a link. Follow it to confirm your address and choose your password. If you already have an account, sign in instead.",
+      "checkEmailBody": "If {{email}} can be registered, we sent it a link. Follow it in this browser to confirm your address and sign in. If you already have an account, sign in instead.",
       "checkEmailTitle": "Check your email",
+      "confirmPasswordLabel": "Confirm password",
       "createdBody": "Your account is ready. Sign in with your email and password.",
       "createdTitle": "Account created",
       "emailLabel": "Email",
       "errorMessage": "We couldn't create your account. Please check your details and try again.",
       "errorTitle": "Registration failed",
       "loginLink": "Already have an account? Sign in",
+      "mismatch": "Passwords do not match",
       "nameLabel": "Name",
       "passwordLabel": "Password",
       "signInLink": "Sign in",
@@ -1147,12 +1149,13 @@ export default interface Resources {
       "errorMessage": "We couldn't verify your email. The link may have expired.",
       "errorTitle": "Verification failed",
       "mismatch": "Passwords do not match",
+      "otherBrowserBody": "This link was not opened in the browser you registered in, so choose a password to finish. It replaces the one you entered on the registration form.",
       "passwordLabel": "Password",
+      "retry": "Try again",
       "signIn": "Sign in",
       "submitButton": "Set password",
-      "successBody": "Your email is confirmed and your password is set. You can sign in now.",
-      "successTitle": "Email verified",
-      "title": "Set your password"
+      "title": "Set your password",
+      "verifying": "Confirming your email…"
     },
     "workspaceHold": {
       "actionContact": "To resolve it, contact an Owner or Admin of this workspace.",

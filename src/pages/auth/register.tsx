@@ -15,25 +15,30 @@ import { Route as loginRoute } from '../../routes/login.tsx'
 export function RegisterPage() {
   const { t } = useTranslation()
   const apiErrorMessage = useApiErrorMessage()
-  // With the gate off (ADR 0030) the form collects the password and the account is
-  // usable at once; with it on, a link to the address sets the password.
-  const collectsPassword = !requiresEmailVerification()
+  // With the gate off (ADR 0030) the account is usable at once; with it on, the link
+  // to the address proves it, and signs in when followed in this browser.
+  const usableAtOnce = !requiresEmailVerification()
   // The address the verification link went to; set once registration is accepted.
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [created, setCreated] = useState(false)
 
-  const form = useForm<Required<SiteRegisterInput>>({
+  const form = useForm<Required<SiteRegisterInput> & { confirm: string }>({
     initialValues: {
       name: '',
       email: '',
       password: '',
+      confirm: '',
+    },
+    validate: {
+      confirm: (value, values) =>
+        value === values.password ? null : t(($) => $.registration.mismatch),
     },
   })
 
   const registerMutation = useMutation({
     ...siteAuthRegisterMutation(),
     onSuccess: (_data, variables) => {
-      if (collectsPassword) {
+      if (usableAtOnce) {
         setCreated(true)
       } else {
         setSentTo(variables.body.email)
@@ -56,7 +61,7 @@ export function RegisterPage() {
       body: {
         name: values.name.trim(),
         email: values.email.trim(),
-        ...(collectsPassword ? { password: values.password } : {}),
+        password: values.password,
       },
     })
   }
@@ -114,14 +119,18 @@ export function RegisterPage() {
             required
             {...form.getInputProps('email')}
           />
-          {collectsPassword && (
-            <PasswordInput
-              label={t(($) => $.registration.passwordLabel)}
-              autoComplete="new-password"
-              required
-              {...form.getInputProps('password')}
-            />
-          )}
+          <PasswordInput
+            label={t(($) => $.registration.passwordLabel)}
+            autoComplete="new-password"
+            required
+            {...form.getInputProps('password')}
+          />
+          <PasswordInput
+            label={t(($) => $.registration.confirmPasswordLabel)}
+            autoComplete="new-password"
+            required
+            {...form.getInputProps('confirm')}
+          />
 
           <Group justify="space-between" align="center">
             <AnchorLink to={loginRoute.to} size="sm">

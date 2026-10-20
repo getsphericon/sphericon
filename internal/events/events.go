@@ -67,14 +67,14 @@ func DedupKey(source string, workspaceID int64, clientEventID string) string {
 	return fmt.Sprintf("%s:%d:%s", source, workspaceID, clientEventID)
 }
 
-// Rejection is why a customer's Event was refused. Its message is worded for the caller.
-type Rejection struct{ Reason string }
+// RejectionError is why a customer's Event was refused. Its message is worded for the caller.
+type RejectionError struct{ Reason string }
 
-func (r *Rejection) Error() string { return r.Reason }
+func (r *RejectionError) Error() string { return r.Reason }
 
-// AsRejection reports whether err is a Rejection, and which.
-func AsRejection(err error) (*Rejection, bool) {
-	var r *Rejection
+// AsRejection reports whether err is a RejectionError, and which.
+func AsRejection(err error) (*RejectionError, bool) {
+	var r *RejectionError
 	return r, errors.As(err, &r)
 }
 
@@ -82,9 +82,9 @@ func AsRejection(err error) (*Rejection, bool) {
 func CheckAction(action string) error {
 	switch {
 	case strings.TrimSpace(action) == "":
-		return &Rejection{"subject id and action are required"}
+		return &RejectionError{"subject id and action are required"}
 	case ReservedAction(action):
-		return &Rejection{fmt.Sprintf("action %q is reserved for the system", action)}
+		return &RejectionError{fmt.Sprintf("action %q is reserved for the system", action)}
 	}
 	return nil
 }
@@ -369,7 +369,7 @@ type CollectedEvent struct {
 	Email       string         `json:"email,omitempty"`
 	Phone       string         `json:"phone,omitempty"`
 	Properties  map[string]any `json:"properties,omitempty"`
-	OccurredAt  time.Time      `json:"occurredAt,omitempty"`
+	OccurredAt  time.Time      `json:"occurredAt,omitzero"`
 	// DedupID is the persist idempotency key of an event the client gave a clientEventId
 	// (DedupKey: the source, the Workspace and that id). Empty for an event without one.
 	DedupID string `json:"dedupId,omitempty"`

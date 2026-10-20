@@ -141,7 +141,7 @@ func TestExternalContactsBatchUpsertCarriesCustomFields(t *testing.T) {
 func TestItemErrorWordsDomainErrorsAndHidesTheRest(t *testing.T) {
 	assert.Equal(t, (&contacts.ConflictError{Field: contacts.FieldPhone}).Message(), external.ItemError(&contacts.ConflictError{Field: contacts.FieldPhone}))
 	assert.Equal(t, contacts.ErrIdentityRequired.Error(), external.ItemError(contacts.ErrIdentityRequired))
-	assert.Equal(t, "no way in", external.ItemError(&events.Rejection{Reason: "no way in"}))
+	assert.Equal(t, "no way in", external.ItemError(&events.RejectionError{Reason: "no way in"}))
 	assert.Equal(t, "internal error", external.ItemError(errors.New("pq: connection refused at 10.0.0.3")))
 }
 

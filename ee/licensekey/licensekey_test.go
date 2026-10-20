@@ -61,11 +61,11 @@ func TestParse(t *testing.T) {
 	assert.False(t, lapsed)
 
 	_, err = licensekey.Parse(expiredForged, pub, now)
-	assert.ErrorIs(t, err, licensekey.ErrInvalid, "a forged key is refused even when expired")
+	require.ErrorIs(t, err, licensekey.ErrInvalid, "a forged key is refused even when expired")
 
 	for name, key := range map[string]string{"forged": forged, "garbage": "nonsense", "bad base64": "!!.!!.!!"} {
 		_, err := licensekey.Parse(key, pub, now)
-		assert.ErrorIs(t, err, licensekey.ErrInvalid, name)
+		require.ErrorIs(t, err, licensekey.ErrInvalid, name)
 	}
 
 	var none *licensekey.License

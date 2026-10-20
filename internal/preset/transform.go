@@ -60,7 +60,7 @@ func forbiddenCall(v reflect.Value) (string, bool) {
 		if v.IsNil() {
 			return "", false
 		}
-		if f, ok := v.Interface().(*gojq.Func); ok && forbiddenFuncs[f.Name] {
+		if f, ok := reflect.TypeAssert[*gojq.Func](v); ok && forbiddenFuncs[f.Name] {
 			return f.Name, true
 		}
 		return forbiddenCall(v.Elem())

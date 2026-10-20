@@ -114,28 +114,25 @@ type Converter interface {
 // ExportMapper adapts the Converter to contactexport.Mapper.
 type ExportMapper struct{ Converter }
 
-func (m ExportMapper) Contact(r *ent.Contact) json.Marshaler { return ptr(m.ContactToExport(r)) }
-func (m ExportMapper) Tag(r *ent.Tag) json.Marshaler         { return ptr(m.TagToExport(r)) }
-func (m ExportMapper) Visitor(r *ent.Visitor) json.Marshaler { return ptr(m.VisitorToExport(r)) }
-func (m ExportMapper) Event(r *ent.Event) json.Marshaler     { return ptr(m.EventToExport(r)) }
+func (m ExportMapper) Contact(r *ent.Contact) json.Marshaler { return new(m.ContactToExport(r)) }
+func (m ExportMapper) Tag(r *ent.Tag) json.Marshaler         { return new(m.TagToExport(r)) }
+func (m ExportMapper) Visitor(r *ent.Visitor) json.Marshaler { return new(m.VisitorToExport(r)) }
+func (m ExportMapper) Event(r *ent.Event) json.Marshaler     { return new(m.EventToExport(r)) }
 func (m ExportMapper) Unsubscribe(r *ent.Unsubscribe) json.Marshaler {
-	return ptr(m.UnsubscribeToExport(r))
+	return new(m.UnsubscribeToExport(r))
 }
 func (m ExportMapper) Suppression(r *ent.Suppression) json.Marshaler {
-	return ptr(m.SuppressionToExport(r))
+	return new(m.SuppressionToExport(r))
 }
 func (m ExportMapper) Confirmation(r *ent.Confirmation) json.Marshaler {
-	return ptr(m.ConfirmationToExport(r))
+	return new(m.ConfirmationToExport(r))
 }
 func (m ExportMapper) OutboundMessage(r *ent.OutboundMessage) json.Marshaler {
-	return ptr(m.OutboundMessageToExport(r))
+	return new(m.OutboundMessageToExport(r))
 }
 func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshaler {
-	return ptr(m.BroadcastRecipientToExport(r))
+	return new(m.BroadcastRecipientToExport(r))
 }
-
-// ptr returns the address of v; the generated JSON encoders have pointer receivers.
-func ptr[T any](v T) *T { return &v }
 
 func optNilInt32(v *int) siteapi.OptNilInt32 {
 	if v == nil {

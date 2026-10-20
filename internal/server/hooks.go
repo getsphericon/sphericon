@@ -66,8 +66,7 @@ func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
 	// Bounded to what the engine parses, so an oversized body is never held in memory.
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, preset.MaxBodyBytes))
 	if err != nil {
-		var tooBig *http.MaxBytesError
-		if errors.As(err, &tooBig) {
+		if tooBig, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			writeProblem(w, http.StatusRequestEntityTooLarge, tooBig.Error())
 			return
 		}

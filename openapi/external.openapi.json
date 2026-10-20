@@ -2,7 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Sphericon External API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "The Sphericon external API: manage a workspace's contacts, events, segments, automations and broadcasts with a workspace API token."
   },
   "tags": [
     {
@@ -11226,6 +11227,16 @@
         "minimum": 1,
         "maximum": 10000,
         "description": "A per-second Send rate limit the caller may set"
+      },
+      "PreconditionRequiredProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)"
       },
       "PresetResource": {
         "type": "object",

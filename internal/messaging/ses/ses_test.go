@@ -28,6 +28,7 @@ type sesAPI struct {
 }
 
 func newSESAPI(t *testing.T, status int, body string) *sesAPI {
+	t.Helper()
 	return newSESAPIWithErrorType(t, status, "", body)
 }
 
@@ -39,10 +40,10 @@ func newSESAPIWithErrorType(t *testing.T, status int, errorType, body string) *s
 	api.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		api.hits++
 		raw, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		api.body = nil
 		if len(raw) > 0 {
-			require.NoError(t, json.Unmarshal(raw, &api.body))
+			assert.NoError(t, json.Unmarshal(raw, &api.body))
 		}
 		api.path = r.URL.Path
 		api.auth = r.Header.Get("Authorization")
@@ -117,21 +118,21 @@ func TestSendErrors(t *testing.T) {
 	t.Run("invalid message never reaches the API", func(t *testing.T) {
 		api := newSESAPI(t, http.StatusOK, okBody)
 		_, err := build(t, api.srv.URL).Send(ctx, messaging.EmailMessage{To: "bad", Text: "x"})
-		assert.ErrorContains(t, err, "invalid to address")
+		require.ErrorContains(t, err, "invalid to address")
 		assert.Zero(t, api.hits)
 	})
 
 	t.Run("API rejection is wrapped", func(t *testing.T) {
 		api := newSESAPIWithErrorType(t, http.StatusBadRequest, "MessageRejected", rejectedBody)
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
-		assert.ErrorContains(t, err, "ses: send")
+		require.ErrorContains(t, err, "ses: send")
 		assert.ErrorContains(t, err, "MessageRejected")
 	})
 
 	t.Run("a Throttling reply is classified as too fast", func(t *testing.T) {
 		api := newSESAPIWithErrorType(t, http.StatusTooManyRequests, "TooManyRequestsException", throttledBody("Maximum sending rate exceeded."))
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
-		assert.ErrorIs(t, err, messaging.ErrBusy)
+		require.ErrorIs(t, err, messaging.ErrBusy)
 		assert.NotErrorIs(t, err, messaging.ErrQuotaExceeded)
 	})
 
@@ -144,7 +145,7 @@ func TestSendErrors(t *testing.T) {
 	t.Run("a rejected message is not busy", func(t *testing.T) {
 		api := newSESAPIWithErrorType(t, http.StatusBadRequest, "MessageRejected", rejectedBody)
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
-		assert.NotErrorIs(t, err, messaging.ErrBusy)
+		require.NotErrorIs(t, err, messaging.ErrBusy)
 		assert.NotErrorIs(t, err, messaging.ErrQuotaExceeded)
 	})
 
@@ -152,7 +153,7 @@ func TestSendErrors(t *testing.T) {
 		t.Setenv("AWS_USE_FIPS_ENDPOINT", "not-a-bool")
 		api := newSESAPI(t, http.StatusOK, okBody)
 		_, err := build(t, api.srv.URL).Send(ctx, msg)
-		assert.ErrorContains(t, err, "ses: load config")
+		require.ErrorContains(t, err, "ses: load config")
 		assert.Zero(t, api.hits)
 	})
 }

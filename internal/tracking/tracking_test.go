@@ -86,11 +86,11 @@ func TestDecodeConfirmRejectsExpired(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = tr.DecodeConfirm(signed)
-	assert.Error(t, err, "expired confirmation token is rejected")
+	require.Error(t, err, "expired confirmation token is rejected")
 	assert.True(t, tracking.IsExpired(err), "and recognised as expired")
 
 	_, err = tr.DecodeConfirm("garbage")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.False(t, tracking.IsExpired(err), "a malformed token is invalid, not expired")
 }
 
@@ -152,7 +152,7 @@ func TestDecodeAcceptsTheSecondarySecretButSignsWithThePrimary(t *testing.T) {
 	_, err = tracking.New("new-secret", "https://app.test").Decode(fresh)
 	require.NoError(t, err, "a new link verifies without the secondary secret")
 	_, err = old.Decode(fresh)
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	_, err = tracking.New("new-secret", "https://app.test").Decode(mailed)
 	assert.Error(t, err, "once the secondary secret is removed, the old link no longer verifies")

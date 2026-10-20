@@ -145,6 +145,6 @@ func TestReencryptStopsOnAValueNoKeyReads(t *testing.T) {
 
 	counts, err := rekey.New(env.DB, foreignKey).Run(ctx)
 	require.ErrorIs(t, err, secrets.ErrCiphertext)
-	assert.ErrorContains(t, err, "integrations.config_encrypted")
+	require.ErrorContains(t, err, "integrations.config_encrypted")
 	assert.Empty(t, counts)
 }

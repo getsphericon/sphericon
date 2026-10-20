@@ -13,13 +13,13 @@ import (
 // Resolver serves zones (keys are fully qualified, with the trailing dot) and
 // returns a *net.Resolver wired to the server; the server stops with the test.
 // A name outside every zone answers NXDOMAIN; a zone with Err set answers SERVFAIL.
-func Resolver(t testing.TB, zones map[string]mockdns.Zone) *net.Resolver {
-	t.Helper()
-	srv, err := mockdns.NewServerWithLogger(zones, logger{t}, false)
+func Resolver(tb testing.TB, zones map[string]mockdns.Zone) *net.Resolver {
+	tb.Helper()
+	srv, err := mockdns.NewServerWithLogger(zones, logger{tb}, false)
 	if err != nil {
-		t.Fatalf("start mock DNS server: %v", err)
+		tb.Fatalf("start mock DNS server: %v", err)
 	}
-	t.Cleanup(func() { _ = srv.Close() })
+	tb.Cleanup(func() { _ = srv.Close() })
 	return srv.NewResolver()
 }
 

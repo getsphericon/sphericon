@@ -83,9 +83,8 @@ func Parse(name string, data []byte, opts ...Option) (*Preset, error) {
 		return nil, parseError(name, 1, err.Error())
 	}
 	if err := fileSchema.Validate(doc); err != nil {
-		var ve *jsonschema.ValidationError
 		line := 1
-		if errors.As(err, &ve) {
+		if ve, ok := errors.AsType[*jsonschema.ValidationError](err); ok {
 			line = lineOf(root.Content[0], deepest(ve))
 		}
 		return nil, parseError(name, line, err.Error())

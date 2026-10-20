@@ -2,7 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Sphericon StaffMember API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "The API of the platform Staff console (Enterprise): sign-in with a password and a TOTP, and the cross-workspace views and actions of a Staff member."
   },
   "tags": [
     {
@@ -780,6 +781,16 @@
           }
         },
         "description": "RFC 7807 payment required response: the feature needs an Enterprise license"
+      },
+      "PreconditionRequiredProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)"
       },
       "ProblemCode": {
         "type": "string",

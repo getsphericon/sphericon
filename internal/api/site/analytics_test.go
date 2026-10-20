@@ -49,8 +49,8 @@ func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 	assert.Equal(t, int32(11), ov.Email.SentCount)
 	assert.Equal(t, int32(5), ov.Email.OpenedCount)
 	assert.Equal(t, int32(2), ov.Email.ClickedCount)
-	assert.Greater(t, ov.Contacts.Total, int32(0))
-	assert.Greater(t, ov.Automations.Total, int32(0))
+	assert.Positive(t, ov.Contacts.Total)
+	assert.Positive(t, ov.Automations.Total)
 
 	res, err = c.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{Slug: fixtures.AcmeSlug})
 	require.NoError(t, err)

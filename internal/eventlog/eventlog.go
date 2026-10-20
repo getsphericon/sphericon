@@ -64,7 +64,7 @@ type Input struct {
 // and a live Event old enough to be history.
 func (m *Module) validate(in Input) error {
 	if strings.TrimSpace(in.SubjectID) == "" {
-		return &events.Rejection{Reason: "subject id and action are required"}
+		return &events.RejectionError{Reason: "subject id and action are required"}
 	}
 	if err := events.CheckAction(in.Action); err != nil {
 		return err
@@ -72,11 +72,11 @@ func (m *Module) validate(in Input) error {
 	now := m.live.Now()
 	switch {
 	case in.Backfill && in.OccurredAt.IsZero():
-		return &events.Rejection{Reason: "a backfilled event needs occurredAt"}
+		return &events.RejectionError{Reason: "a backfilled event needs occurredAt"}
 	case in.Backfill && in.OccurredAt.After(now):
-		return &events.Rejection{Reason: "occurredAt of a backfilled event must not be in the future"}
+		return &events.RejectionError{Reason: "occurredAt of a backfilled event must not be in the future"}
 	case !in.Backfill && !in.OccurredAt.IsZero() && in.OccurredAt.Before(now.Add(-m.live.Window)):
-		return &events.Rejection{Reason: fmt.Sprintf("occurredAt is more than %d hours ago: send history with backfill", int(m.live.Window.Hours()))}
+		return &events.RejectionError{Reason: fmt.Sprintf("occurredAt is more than %d hours ago: send history with backfill", int(m.live.Window.Hours()))}
 	}
 	return nil
 }
@@ -84,7 +84,7 @@ func (m *Module) validate(in Input) error {
 // Ingest attaches each Event to an existing Contact by stable identity (an unknown
 // identity stays anonymous; a Contact is never created) and publishes the whole batch
 // atomically: either every Event is accepted or none is. An Event that fails validate
-// refuses the whole batch with an *events.Rejection.
+// refuses the whole batch with an *events.RejectionError.
 func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) error {
 	for _, in := range inputs {
 		if err := m.validate(in); err != nil {

@@ -54,8 +54,7 @@ func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCrea
 	}
 
 	c, err := h.contacts.Create(ctx, scoped, createContactAttributes(req))
-	var conflict *contacts.ConflictError
-	if errors.As(err, &conflict) {
+	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
 		v := siteapi.SiteContactsCreateConflict(conflictProblem(conflict))
 		return &v, nil
 	}
@@ -101,8 +100,7 @@ func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpda
 
 	id := int64(params.ID)
 	c, err := h.contacts.Update(ctx, scoped, id, updateContactAttributes(req))
-	var conflict *contacts.ConflictError
-	if errors.As(err, &conflict) {
+	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
 		v := siteapi.SiteContactsUpdateConflict(conflictProblem(conflict))
 		return &v, nil
 	}

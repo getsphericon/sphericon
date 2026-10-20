@@ -220,15 +220,13 @@ func collectErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 func problemErrorHandler(_ context.Context, w http.ResponseWriter, _ *http.Request, err error) {
 	// A rate limit rejection already set its headers on the shared writer and was
 	// counted and logged where it was decided (ratelimit.LimitedError).
-	var limited *ratelimit.LimitedError
-	if errors.As(err, &limited) {
+	if _, ok := errors.AsType[*ratelimit.LimitedError](err); ok {
 		ratelimit.WriteProblem(w)
 		return
 	}
 	// A handler error that knows its own problem (the site's
 	// second_factor_required, ADR 0020) is rendered as it says.
-	var known problemError
-	if errors.As(err, &known) {
+	if known, ok := errors.AsType[problemError](err); ok {
 		status, code, detail := known.Problem()
 		writeCodedProblem(w, status, code, detail)
 		return
