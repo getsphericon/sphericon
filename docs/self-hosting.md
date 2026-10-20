@@ -261,7 +261,7 @@ workspace. Do not expose it before one of these:
    ```
 
    It creates a verified user and its first workspace and prints a one-time password; sign in with
-   it and change it in your profile. The name becomes the workspace name. With sign-up closed, every
+   it and change it in your profile. The workspace is named "Personal". With sign-up closed, every
    later user comes from an owner's invitation, and accepting an invitation keeps working.
 
 2. **Leave sign-up open** and register the first owner yourself before the host is reachable by

@@ -326,24 +326,27 @@ func markVerified(ctx context.Context, tx *ent.Client, id int64, name, passwordH
 	return tx.User.Get(ctx, id)
 }
 
+// FirstWorkspaceName is the fixed name of the Workspace made for a User at verification.
+const FirstWorkspaceName = "Personal"
+
 // VerifyEmail completes a registration from its link (ADR 0030), in one transaction:
 // it stamps the Verified email, sets the password hash, bumps the session epoch
 // (ending every session issued before, as a password change does) and creates the
-// User's first Workspace named workspaceName with the User as owner. It records
+// User's first Workspace, named FirstWorkspaceName, with the User as owner. It records
 // `user.email_verify` in that Workspace's Audit log and returns the User.
 // ErrAlreadyVerified when the User is no longer Unverified (a used link).
-func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash, workspaceName string) (*ent.User, error) {
-	return a.verified(ctx, workspaceName, func(tx *ent.Client) (*ent.User, error) {
+func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash string) (*ent.User, error) {
+	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
 		return markVerified(ctx, tx, id, "", passwordHash)
 	})
 }
 
 // RegisterVerified is registration on an install that does not require email
 // verification (ADR 0030): in one transaction it creates a User that is Verified at
-// once with its password, and the first Workspace, exactly as VerifyEmail does. The
+// once with its password, and the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The
 // unique index on the email refuses a taken address (see db.IsUniqueViolation).
 func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	return a.verified(ctx, name, func(tx *ent.Client) (*ent.User, error) {
+	return a.verified(ctx, func(tx *ent.Client) (*ent.User, error) {
 		return tx.User.Create().
 			SetName(name).
 			SetEmail(email).
@@ -355,7 +358,7 @@ func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHa
 
 // CreateOwner is the Instance operator's way to make a first Owner on an Instance that
 // closed sign-up (ADR 0042): a Verified User with a generated password and its first
-// Workspace, named after the User, exactly as RegisterVerified makes them. The password
+// Workspace, named FirstWorkspaceName, exactly as RegisterVerified makes them. The password
 // is returned once; the unique index on the email refuses a taken address (see
 // db.IsUniqueViolation).
 func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (password string, err error) {
@@ -373,7 +376,7 @@ func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (passwor
 // verified is what makes a User Verified, shared by VerifyEmail and RegisterVerified:
 // write stores the User's verified state, then the User's first Workspace is created
 // and `user.email_verify` recorded in its Audit log, all in one transaction.
-func (a *Accounts) verified(ctx context.Context, workspaceName string, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, error) {
+func (a *Accounts) verified(ctx context.Context, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, error) {
 	for {
 		var verified *ent.User
 		written := false
@@ -383,7 +386,7 @@ func (a *Accounts) verified(ctx context.Context, workspaceName string, write fun
 				return err
 			}
 			written = true
-			if _, err := createWorkspaceIn(ctx, tx, u.ID, workspaceName); err != nil {
+			if _, err := createWorkspaceIn(ctx, tx, u.ID, FirstWorkspaceName); err != nil {
 				return err
 			}
 			verified = u
@@ -437,7 +440,7 @@ func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash str
 		return nil, false, err
 	}
 	if u.EmailVerifiedAt == nil {
-		u, err = a.VerifyEmail(ctx, id, passwordHash, u.Name)
+		u, err = a.VerifyEmail(ctx, id, passwordHash)
 		if err == nil {
 			return u, true, nil
 		}

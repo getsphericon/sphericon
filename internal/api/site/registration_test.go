@@ -126,8 +126,8 @@ func TestTheVerifyLinkSetsThePasswordCreatesTheWorkspaceAndAllowsLogin(t *testin
 	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "grace-hopper", spaces[0].Slug)
-	assert.Equal(t, "Grace Hopper", spaces[0].Name)
+	assert.Equal(t, "personal", spaces[0].Slug)
+	assert.Equal(t, "Personal", spaces[0].Name)
 }
 
 func TestTheVerifyLinkWorksOnce(t *testing.T) {
@@ -170,7 +170,7 @@ func TestVerifyingIsRecordedInTheNewWorkspacesAuditLog(t *testing.T) {
 	env := testhelper.Setup(t)
 	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1")
 
-	got := entriesNamed(t, env, "grace@example.com", "grace-hopper", events.ActionUserEmailVerify)
+	got := entriesNamed(t, env, "grace@example.com", "personal", events.ActionUserEmailVerify)
 
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
@@ -214,9 +214,10 @@ func TestWithTheGateOffRegisteringCreatesAVerifiedUserWithAWorkspaceAndSignInWor
 	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "grace-hopper", spaces[0].Slug)
+	assert.Equal(t, "personal", spaces[0].Slug)
+	assert.Equal(t, "Personal", spaces[0].Name)
 
-	got := entriesNamed(t, env, "grace@example.com", "grace-hopper", events.ActionUserEmailVerify)
+	got := entriesNamed(t, env, "grace@example.com", "personal", events.ActionUserEmailVerify)
 	assert.Len(t, got, 1)
 }
 
@@ -281,7 +282,8 @@ func TestPasswordResetProvesTheAddressOfAnUnverifiedUser(t *testing.T) {
 	spaces, err := env.SiteWithToken(t, sessionCookie(rec.Result()).Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "grace-hopper", spaces[0].Slug)
+	assert.Equal(t, "personal", spaces[0].Slug)
+	assert.Equal(t, "Personal", spaces[0].Name)
 }
 
 // The reset of a Verified User is only a password change: no second Workspace, no welcome.
@@ -458,4 +460,21 @@ func TestRegisteringStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
 	}
 
 	assert.Len(t, env.SystemMail.Messages(), limit, "the owner is not mail-bombed")
+}
+
+func TestVerifyingAnEmailCreatesAWorkspaceNamedPersonalOwnedByTheUser(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "password123")
+	registerAndVerify(t, env, "Ada Lovelace", "ada@example.com", "password123")
+
+	for _, email := range []string{"grace@example.com", "ada@example.com"} {
+		u, err := env.DB.User.Query().Where(entuser.Email(email)).Only(t.Context())
+		require.NoError(t, err)
+		ms, err := env.DB.Membership.Query().Where(entmembership.UserID(u.ID)).WithWorkspace().All(t.Context())
+		require.NoError(t, err)
+		require.Len(t, ms, 1)
+		assert.Equal(t, entmembership.RoleOwner, ms[0].Role)
+		assert.Equal(t, "Personal", ms[0].Edges.Workspace.Name)
+	}
 }
