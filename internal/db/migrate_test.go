@@ -149,3 +149,26 @@ func migrationsWhere(t *testing.T, keep func(name string) bool) fstest.MapFS {
 	}
 	return out
 }
+
+// Dropping the recipient's own outcome refuses a Broadcast recipient that was decided before its
+// Outbound message existed: the outcome would be lost with the column (ADR 0033 guard). A pending
+// recipient has nothing to lose, and once the message exists the migration goes through.
+func TestMigrateRefusesToDropARecipientOutcomeThatHasNoOutboundMessage(t *testing.T) {
+	const dropping = "20261020185327_drop_recipient_outcome_and_broadcast_counters.sql"
+	sqlDB := openEmpty(t)
+	before := migrationsWhere(t, func(name string) bool { return name < dropping })
+	all := migrationsWhere(t, func(name string) bool { return name <= dropping })
+	_, err := db.MigrateFS(t.Context(), sqlDB, before)
+	require.NoError(t, err)
+	testhelper.InsertDecidedRecipientWithoutMessage(t, sqlDB)
+
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.ErrorContains(t, err, "would lose their outcome")
+
+	testhelper.InsertSentMessageForRecipient(t, sqlDB)
+	_, err = db.MigrateFS(t.Context(), sqlDB, all)
+	require.NoError(t, err)
+
+	columns := testhelper.ColumnsOf(t, sqlDB, "broadcast_recipients", "status", "error", "sent_at", "outbound_message_id")
+	assert.Zero(t, columns, "the recipient's own outcome is gone")
+}

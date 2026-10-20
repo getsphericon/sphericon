@@ -30,11 +30,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/suspension"
@@ -677,6 +679,41 @@ func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
 	last.Attempt = last.MaxAttempts
 	require.Error(t, failing.Work(ctx, last))
 	assert.False(t, stillPending(ctx, e.DB, ids[0]), "the last attempt fails the recipient so the broadcast can finalize")
+}
+
+// takeoverSender fails the send after another attempt took over the claim, as one that outlived
+// its lease would find: the failure cannot release a claim that is no longer its own.
+type takeoverSender struct{ db *ent.Client }
+
+func (takeoverSender) DefaultFrom() (string, string) { return "hello@codebasics.dev", "CodeBasics" }
+
+func (s takeoverSender) Send(ctx context.Context, _ messaging.EmailMessage) (messaging.Receipt, error) {
+	s.db.OutboundMessage.Update().
+		Where(outboundmessage.StatusEQ(outboundmessage.StatusPending)).
+		SetClaimedAt(time.Now()).ExecX(ctx)
+	return messaging.Receipt{}, errors.New("smtp unavailable")
+}
+
+// On the last attempt a recipient whose claim another attempt still holds is not failed: that
+// attempt may yet reach the provider, so the job snoozes (which spends no attempt) and gives up
+// once the lease is out.
+func TestSendRecipientWorkerSnoozesInsteadOfGivingUpOnALiveClaim(t *testing.T) {
+	e := newRiverEnv(t)
+	ctx := e.workCtx()
+	mod := newMod(e.TestEnv, resolvingTo(e.sender))
+	ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
+	require.NoError(t, err)
+	require.NotEmpty(t, ids)
+
+	worker := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(takeoverSender{db: e.DB})))
+	last := job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID})
+	last.Attempt = last.MaxAttempts
+
+	var snooze *river.JobSnoozeError
+	require.ErrorAs(t, worker.Work(ctx, last), &snooze)
+
+	assert.True(t, stillPending(ctx, e.DB, ids[0]), "nothing is failed while the claim is live")
+	assert.Equal(t, broadcast.StatusSending, e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
 }
 
 func TestErrorHandlerLogsAndKeepsRetrying(t *testing.T) {

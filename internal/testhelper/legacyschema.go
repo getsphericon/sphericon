@@ -18,3 +18,44 @@ func InsertLegacyWorkspaces(t *testing.T, sqlDB *sql.DB, names ...string) {
 		require.NoError(t, err)
 	}
 }
+
+// InsertDecidedRecipientWithoutMessage adds a Workspace and a Broadcast with one recipient decided
+// as sent (id 1) and one still pending (id 2), neither with an Outbound message: the state of a
+// database from before every recipient had its message. It writes the columns a later migration
+// drops, which the ent client no longer has, so it talks SQL like InsertLegacyWorkspaces.
+func InsertDecidedRecipientWithoutMessage(t *testing.T, sqlDB *sql.DB) {
+	t.Helper()
+	for _, q := range []string{
+		`INSERT INTO workspaces (id, name, public_id, collect_key, created_at, updated_at) VALUES (1, 'w', 'aaaaaaaa', 'k', now(), now())`,
+		`INSERT INTO broadcasts (id, name, workspace_id, created_at, updated_at) VALUES (1, 'b', 1, now(), now())`,
+		`INSERT INTO contacts (id, workspace_id, created_at, updated_at) VALUES (1, 1, now(), now()), (2, 1, now(), now())`,
+		`INSERT INTO broadcast_recipients (id, broadcast_id, contact_id, status, workspace_id, created_at, updated_at)
+		   VALUES (1, 1, 1, 'sent', 1, now(), now()), (2, 1, 2, 'pending', 1, now(), now())`,
+	} {
+		_, err := sqlDB.ExecContext(t.Context(), q)
+		require.NoError(t, err, q)
+	}
+}
+
+// InsertSentMessageForRecipient gives recipient 1 of InsertDecidedRecipientWithoutMessage its
+// Outbound message.
+func InsertSentMessageForRecipient(t *testing.T, sqlDB *sql.DB) {
+	t.Helper()
+	_, err := sqlDB.ExecContext(t.Context(),
+		`INSERT INTO outbound_messages (kind, idempotency_key, status, claimed_at, broadcast_id, broadcast_recipient_id, workspace_id, created_at, updated_at)
+		   VALUES ('broadcast', 'broadcast:1', 'sent', now(), 1, 1, 1, now(), now())`)
+	require.NoError(t, err)
+}
+
+// ColumnsOf counts how many of the named columns the table has.
+func ColumnsOf(t *testing.T, sqlDB *sql.DB, table string, columns ...string) int {
+	t.Helper()
+	n := 0
+	for _, column := range columns {
+		var found int
+		require.NoError(t, sqlDB.QueryRowContext(t.Context(),
+			`SELECT count(*) FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`, table, column).Scan(&found))
+		n += found
+	}
+	return n
+}
