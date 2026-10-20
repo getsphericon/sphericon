@@ -378,6 +378,19 @@ recreate for the image. None of them stops a running Instance; see
 rather than `latest` in production. Migrations only move forward, so to roll back restore the
 backup taken before the upgrade.
 
+### Upgrading to the Workspace id release
+
+Workspace slugs are gone (ADR 0043): every Workspace has an 8-character id, such as `k3Fz9aQ1`, and
+it is the only address. The migration refuses to run until every Workspace has one, so upgrade
+through the release that backfills the ids first if you skipped it. After the upgrade:
+
+- Bookmarks and links that carry a slug stop working: a Workspace is now at `/workspaces/{id}/...`.
+  The id never changes, not even when the Workspace is renamed.
+- `sphericon workspace suspend <id> <reason...>` and `sphericon workspace unsuspend <id>` take the
+  Workspace id, not the slug.
+- A deleted Workspace stays restorable by its Owners for 30 days, then its data is erased and only a
+  tombstone row remains.
+
 ## Kubernetes
 
 The chart lives in `charts/sphericon` and is published at every release as an OCI artifact,

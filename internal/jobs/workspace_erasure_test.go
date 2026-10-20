@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -108,6 +109,29 @@ func TestErasureReleasesTheTrackingHostsAndAdvancesTheFeed(t *testing.T) {
 	assert.NotNil(t, tomb.Workspace.DeletedAt)
 	assert.Empty(t, tomb.Workspace.Name)
 	assert.Empty(t, tomb.Owners)
+}
+
+// Deleting a row can write another: here deleting a Contact writes an Event, after the
+// Events step has run. The erasure settles, so nothing is left behind the tombstone.
+func TestErasureRemovesRowsWrittenWhileItDeletes(t *testing.T) {
+	env := testhelper.Setup(t)
+	deleteWorkspace(t, env, fixtures.UmbrellaID, accounts.DeletionWindow+time.Hour)
+	env.DB.Contact.Use(func(next ent.Mutator) ent.Mutator {
+		return hook.ContactFunc(func(ctx context.Context, m *ent.ContactMutation) (ent.Value, error) {
+			v, err := next.Mutate(ctx, m)
+			if err != nil || !m.Op().Is(ent.OpDelete|ent.OpDeleteOne) {
+				return v, err
+			}
+			return v, m.Client().Event.Create().SetWorkspaceID(fixtures.UmbrellaID).SetAction("written.during.erasure").Exec(ctx)
+		})
+	})
+
+	runErasure(t, env)
+
+	for name, n := range rowsOf(t, env, fixtures.UmbrellaID) {
+		assert.Zerof(t, n, "%s rows are erased", name)
+	}
+	assert.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.UmbrellaID).ErasedAt)
 }
 
 func TestASecondErasureRunChangesNothing(t *testing.T) {

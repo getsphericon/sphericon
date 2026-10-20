@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
@@ -36,13 +37,42 @@ func IsBilling(reasonCode string) bool {
 // goes through it, in SQL here and in Go in Live.
 func ActiveAt(now time.Time) predicate.Hold { return enthold.ExpiresAtGT(now) }
 
-// Active lists the holds of the scope's Workspace that are active at now, ordered by
+// KeyPendingDeletion is the key of the pending-deletion Hold (ADR 0043).
+const KeyPendingDeletion = "pending_deletion"
+
+// PendingDeletion is the pending-deletion Hold of a deleted Workspace, none for a live one.
+// It is not a row: Workspace deletion is its own Hold source beside the Staff holds, and
+// lifts when the Workspace is restored. It lasts to the erase date, the end of the window.
+func PendingDeletion(ws *ent.Workspace) []*ent.Hold {
+	if ws.DeletedAt == nil {
+		return nil
+	}
+	return []*ent.Hold{{
+		Key:        KeyPendingDeletion,
+		ReasonCode: outbound.HoldPendingDeletion,
+		Message:    outbound.Detail(outbound.HoldPendingDeletion),
+		SetBy:      "system",
+		CreatedAt:  *ws.DeletedAt,
+		ExpiresAt:  accounts.EraseDate(*ws.DeletedAt),
+	}}
+}
+
+// Active lists the holds of the scope's Workspace that are active at now: the
+// pending-deletion Hold of a deleted Workspace first, then the Staff holds ordered by
 // key. It is what the owner-facing and console reads of a Workspace's holds use.
 func Active(ctx context.Context, s *ent.Scoped, now time.Time) ([]*ent.Hold, error) {
-	return s.Hold().Query().
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return nil, err
+	}
+	staff, err := s.Hold().Query().
 		Where(ActiveAt(now)).
 		Order(enthold.ByKey()).
 		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return append(PendingDeletion(ws), staff...), nil
 }
 
 // Live keeps the holds of rows that are active at now, in their order. It is Active

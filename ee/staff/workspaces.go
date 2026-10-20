@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -139,8 +140,8 @@ const (
 )
 
 // ListWorkspaces is one page of every Workspace, newest first, optionally only those
-// in a review state and those whose id or name contains search: the name case-insensitively, the id exactly (base62 is
-// case-sensitive). It reads the Workspace rows themselves
+// in a review state and those whose id or name contains search: the name matches
+// case-insensitively, the id as a case-sensitive substring (base62 is case-sensitive). It reads the Workspace rows themselves
 // through the raw client: the Staff console shows tenant metadata only, never a
 // Workspace's Contacts, content or Events, so no Workspace-scoped query is made.
 func (m *Module) ListWorkspaces(ctx context.Context, review Review, search string, p pagination.Params) (pagination.Page[*ent.Workspace], error) {
@@ -155,7 +156,7 @@ func (m *Module) ListWorkspaces(ctx context.Context, review Review, search strin
 		if review == ReviewDeleted {
 			q = q.Where(entworkspace.DeletedAtNotNil())
 		} else {
-			q = q.Where(entworkspace.DeletedAtIsNil())
+			q = q.Where(accounts.Live())
 		}
 		switch review {
 		case ReviewWarned:

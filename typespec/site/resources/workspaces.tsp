@@ -196,13 +196,13 @@ namespace SiteWorkspaces {
     | UnprocessableEntityProblem;
 
   /** Restore a Workspace in its deletion window (Owner only). It removes only the
-   * pending-deletion freeze: a Workspace suspension or Staff hold stays. Recorded as an
-   * Audit entry. */
+   * pending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted
+   * Workspace is not exposed to anyone but its Owners, so a caller who is not an Owner
+   * gets 404 as for an unknown one. Recorded as an Audit entry. */
   @post
   @route("/{workspaceId}/restore")
   op restore(@path workspaceId: WorkspaceId):
     | SiteWorkspaceResource
-    | ForbiddenProblem
     | NotFoundProblem;
 
   /** Rename a workspace or change its postal address (Owner and Admin only). The id

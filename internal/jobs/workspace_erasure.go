@@ -352,28 +352,27 @@ func EraseWorkspaces(ctx context.Context, client *ent.Client, bus *events.Bus, n
 	return erased, errors.Join(errs...)
 }
 
+// maxErasurePasses bounds the passes eraseWorkspace makes over the steps. Deleting a row
+// can write another (an ent hook, the bus), so one pass can leave rows behind; each pass
+// removes what the one before it caused, so it settles in a few.
+const maxErasurePasses = 10
+
 func eraseWorkspace(ctx context.Context, client *ent.Client, bus *events.Bus, id int64, now time.Time, batch int) error {
 	// The raw client builds the scope after the row that names the Workspace is loaded; it
 	// has no actor, so the deletes below are not audited.
-	for _, step := range erasureSteps {
-		for {
-			removed := 0
-			err := bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-				s := tx.Scoped(id)
-				rows, err := step.ids(ctx, s, batch)
-				if err != nil || len(rows) == 0 {
-					return err
-				}
-				removed = len(rows)
-				return step.remove(ctx, s, rows)
-			})
-			if err != nil {
-				return err
-			}
-			if removed < batch {
-				break
-			}
+	//
+	// Rerun every step until a whole pass finds nothing to remove: a row written while
+	// another kind was being deleted is then removed too, before the tombstone is made.
+	settled := false
+	for pass := 0; pass < maxErasurePasses && !settled; pass++ {
+		removed, err := erasePass(ctx, bus, id, batch)
+		if err != nil {
+			return err
 		}
+		settled = removed == 0
+	}
+	if !settled {
+		return fmt.Errorf("rows are still being written after %d passes", maxErasurePasses)
 	}
 	key, err := credentials.GenerateCollectKey()
 	if err != nil {
@@ -391,4 +390,31 @@ func eraseWorkspace(ctx context.Context, client *ent.Client, bus *events.Bus, id
 			SetErasedAt(now).
 			Exec(ctx)
 	})
+}
+
+// erasePass runs every step once, each in batches, and returns how many rows it removed.
+func erasePass(ctx context.Context, bus *events.Bus, id int64, batch int) (int, error) {
+	total := 0
+	for _, step := range erasureSteps {
+		for {
+			removed := 0
+			err := bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+				s := tx.Scoped(id)
+				rows, err := step.ids(ctx, s, batch)
+				if err != nil || len(rows) == 0 {
+					return err
+				}
+				removed = len(rows)
+				return step.remove(ctx, s, rows)
+			})
+			if err != nil {
+				return total, err
+			}
+			total += removed
+			if removed < batch {
+				break
+			}
+		}
+	}
+	return total, nil
 }

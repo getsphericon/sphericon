@@ -6173,19 +6173,7 @@ func encodeSiteWorkspacesRestoreResponse(response SiteWorkspacesRestoreRes, w ht
 
 		return nil
 
-	case *SiteWorkspacesRestoreForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesRestoreNotFound:
+	case *ProblemDetails:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 

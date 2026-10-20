@@ -93,6 +93,21 @@ func TestHookOfAnUnknownKeyIsNotFound(t *testing.T) {
 	assert.Empty(t, outboxEvents(t, env, "a@example.com"))
 }
 
+// A Workspace in its deletion window takes no new data (ADR 0043): its hook answers 404 and
+// publishes nothing, and answers again once the Workspace is restored.
+func TestHookOfADeletedWorkspaceIsNotFound(t *testing.T) {
+	env := setupHooks(t)
+	key := fixtures.IntegrationAcmeGenericAIngestKey
+	body := failureBody("evt_1", fixtures.ContactAliceEmail, true)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(hookClock).ExecX(t.Context())
+
+	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", body).Code)
+	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
+
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDeletedAt().ExecX(t.Context())
+	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
+}
+
 // An Integration accepts only its own secret: a callback signed for one Integration of the
 // Workspace is refused at the other's URL, and changes nothing.
 func TestTwoIntegrationsOfAWorkspaceEachAcceptOnlyTheirOwnSecret(t *testing.T) {

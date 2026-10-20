@@ -90,8 +90,9 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 	var q reportQueries
 	workspaces := q.count(client.Workspace.Query().Where(workspace.DeletedAtIsNil()).Count(ctx))
 	// Erasure deletes the Contact row (GLOSSARY: there is no softer delete), so an erased
-	// Contact is already gone; anonymous tracker Contacts have no email and are left out.
-	contacts := q.count(client.Contact.Query().Where(contact.EmailNotNil(), contact.EmailNEQ("")).Count(ctx))
+	// Contact is already gone, and those of a Workspace in its deletion window are left out; anonymous tracker Contacts have no email and are left out.
+	contacts := q.count(client.Contact.Query().
+		Where(contact.EmailNotNil(), contact.EmailNEQ(""), contact.HasWorkspaceWith(workspace.DeletedAtIsNil())).Count(ctx))
 	emails := q.count(client.OutboundMessage.Query().
 		Where(outboundmessage.StatusEQ(outboundmessage.StatusSent), outboundmessage.SentAtGTE(since)).Count(ctx))
 	broadcasts := q.exists(client.Broadcast.Query().

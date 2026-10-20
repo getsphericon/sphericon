@@ -146,18 +146,18 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 
 	res, err := env.SiteActor(t, fixtures.InitechAdminAdaEmail).SiteWorkspacesRestore(ctx, params)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesRestoreForbidden{}, res)
+	assert.IsType(t, &siteapi.ProblemDetails{}, res, "a Member cannot tell the deleted Workspace exists")
 
 	res, err = env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWorkspacesRestore(ctx, params)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesRestoreNotFound{}, res, "a stranger cannot tell it exists")
+	assert.IsType(t, &siteapi.ProblemDetails{}, res, "a stranger cannot tell it exists")
 
 	// Past the window the Workspace is no longer restorable.
 	env.DB.Workspace.UpdateOneID(fixtures.InitechID).
 		SetDeletedAt(time.Now().Add(-accounts.DeletionWindow - time.Hour)).ExecX(ctx)
 	res, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteWorkspacesRestoreNotFound{}, res)
+	assert.IsType(t, &siteapi.ProblemDetails{}, res)
 	deleted, err := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesListDeleted(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, deleted)

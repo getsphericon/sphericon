@@ -7008,10 +7008,6 @@ export type SiteWorkspacesRestoreData = {
 
 export type SiteWorkspacesRestoreErrors = {
   /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;

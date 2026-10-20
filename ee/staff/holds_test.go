@@ -13,6 +13,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -161,6 +162,26 @@ func TestTheMaximumExpiryIsConfigurable(t *testing.T) {
 
 	assert.IsType(t, &serviceapi.ServiceHoldsSetUnprocessableEntity{}, h.setHold(t, "k", 3*time.Hour))
 	assert.IsType(t, &serviceapi.HoldSetResult{}, h.setHold(t, "k", time.Hour))
+}
+
+// Workspace deletion (ADR 0043) is a Hold source of its own: the holds readers report it
+// beside the Staff holds while the Workspace is deleted, and restoring lifts it alone.
+func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
+	h := newHarness(t)
+	h.setHoldResult(t, "k1", time.Hour)
+	deletedAt := h.clock.now().Add(-time.Hour).UTC().Truncate(time.Second)
+	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(deletedAt).ExecX(t.Context())
+
+	items := h.listHolds(t)
+	require.Len(t, items, 2)
+	assert.Equal(t, holds.KeyPendingDeletion, items[0].Key)
+	assert.Equal(t, outbound.HoldPendingDeletion, items[0].ReasonCode)
+	assert.Equal(t, "k1", items[1].Key)
+
+	h.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDeletedAt().ExecX(t.Context())
+	items = h.listHolds(t)
+	require.Len(t, items, 1)
+	assert.Equal(t, "k1", items[0].Key)
 }
 
 func TestHoldsOfAnUnknownWorkspaceAreNotFound(t *testing.T) {

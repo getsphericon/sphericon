@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/logging"
@@ -22,6 +23,8 @@ import (
 // belongs to one Integration and so names its Workspace. This is a composition root of
 // the scoped client (see AGENTS.md): it resolves the Integration by key with the raw
 // client, then scopes to the Integration's Workspace.
+//
+// A Workspace in its deletion window takes no new data (ADR 0043): its keys answer 404.
 //
 // The Integration's Preset verifies the request (a bad signature or wrong source is 4xx)
 // and turns the payload into Delivery failures, which are published through the bus in
@@ -52,7 +55,7 @@ type hook struct {
 func (h *hook) handle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	row, err := h.ent.Integration.Query().
-		Where(integration.IngestKey(r.PathValue("key"))).
+		Where(integration.IngestKey(r.PathValue("key")), integration.HasWorkspaceWith(workspace.DeletedAtIsNil())).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		http.NotFound(w, r)

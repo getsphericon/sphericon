@@ -5,9 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"slices"
 	"strings"
-	"time"
 
 	"github.com/samber/lo"
 
@@ -71,14 +69,15 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	return r, nil
 }
 
-// activeHolds is the holds the send path honours now: none without the `staff`
-// license. A Workspace loaded with its holds edge is read from it; otherwise one query.
+// activeHolds is the holds the send path honours now: the pending-deletion Hold of a
+// deleted Workspace, and the Staff holds, which are none without the `staff` license. A
+// Workspace loaded with its holds edge is read from it; otherwise one query.
 func (h *Handlers) activeHolds(ctx context.Context, s *ent.Scoped, w *ent.Workspace) ([]*ent.Hold, error) {
 	if h.holdsHonoured != nil && !h.holdsHonoured() {
-		return nil, nil
+		return holds.PendingDeletion(w), nil
 	}
 	if loaded, err := w.Edges.HoldsOrErr(); err == nil {
-		return holds.Live(loaded, h.now()), nil
+		return append(holds.PendingDeletion(w), holds.Live(loaded, h.now())...), nil
 	}
 	return holds.Active(ctx, s, h.now())
 }
@@ -137,7 +136,7 @@ func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, params siteapi
 	}
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesAccountLinkNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteWorkspacesAccountLinkNotFound(workspaceNotFoundProblem())
 		return &v, nil
 	}
 	if err != nil {
@@ -172,7 +171,7 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 	}
 	s, m, err := load(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesSetSecondFactorRequirementNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteWorkspacesSetSecondFactorRequirementNotFound(workspaceNotFoundProblem())
 		return &v, nil
 	}
 	if err != nil {
@@ -203,7 +202,7 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, params siteapi.SiteWorkspacesUpdateParams) (siteapi.SiteWorkspacesUpdateRes, error) {
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteWorkspacesUpdateNotFound(workspaceNotFoundProblem())
 		return &v, nil
 	}
 	if err != nil {
@@ -239,6 +238,10 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 	return &resource, nil
 }
 
+func workspaceNotFoundProblem() siteapi.ProblemDetails {
+	return problem(http.StatusNotFound, "workspace not found")
+}
+
 // deletedWorkspaceResource is a Workspace in its deletion window with the date its data
 // will be erased.
 func deletedWorkspaceResource(w *ent.Workspace) siteapi.SiteDeletedWorkspaceResource {
@@ -260,20 +263,16 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	resources := lo.Map(items, func(m *ent.Membership, _ int) siteapi.SiteDeletedWorkspaceResource {
+	return lo.Map(items, func(m *ent.Membership, _ int) siteapi.SiteDeletedWorkspaceResource {
 		return deletedWorkspaceResource(m.Edges.Workspace)
-	})
-	slices.SortFunc(resources, func(x, y siteapi.SiteDeletedWorkspaceResource) int {
-		return time.Time(y.DeletedAt).Compare(time.Time(x.DeletedAt))
-	})
-	return resources, nil
+	}), nil
 }
 
 // SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
 func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, params siteapi.SiteWorkspacesDeleteParams) (siteapi.SiteWorkspacesDeleteRes, error) {
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := siteapi.SiteWorkspacesDeleteNotFound(workspaceNotFoundProblem())
 		return &v, nil
 	}
 	if err != nil {
@@ -303,16 +302,12 @@ func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDe
 func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.SiteWorkspacesRestoreParams) (siteapi.SiteWorkspacesRestoreRes, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
-		v := siteapi.SiteWorkspacesRestoreNotFound(problem(http.StatusNotFound, "workspace not found"))
+		v := workspaceNotFoundProblem()
 		return &v, nil
 	}
 	m, err := h.accounts.RestoreWorkspace(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
 	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesRestoreNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
-	if errors.Is(err, accounts.ErrOwnerOnly) {
-		v := siteapi.SiteWorkspacesRestoreForbidden(problem(http.StatusForbidden, "only owners can restore the workspace"))
+		v := workspaceNotFoundProblem()
 		return &v, nil
 	}
 	if err != nil {

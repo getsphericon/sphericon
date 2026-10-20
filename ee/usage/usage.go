@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -108,7 +109,7 @@ func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, n
 		return nil
 	}
 	workspaces, err := client.Workspace.Query().
-		Where(workspace.DeletedAtIsNil()).
+		Where(accounts.Live()).
 		Select(workspace.FieldID, workspace.FieldCreatedAt).
 		Order(ent.Asc(workspace.FieldID)).
 		All(ctx)
