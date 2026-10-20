@@ -2,7 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Sphericon Site API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "The API of the Sphericon web app, authenticated by the session cookie."
   },
   "tags": [
     {

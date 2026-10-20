@@ -2,7 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Sphericon External API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "The Sphericon external API: manage a workspace's contacts, events, segments, automations and broadcasts with a workspace API token."
   },
   "tags": [
     {

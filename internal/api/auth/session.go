@@ -58,13 +58,11 @@ func NewSessions(jwtSecret string, ttl time.Duration, secure bool, now func() ti
 func (s *Sessions) Issue(u *ent.User) (*http.Cookie, error) {
 	now := s.now()
 	claims := gptoken.Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    sessionIssuer,
-			Audience:  jwt.ClaimStrings{sessionIssuer},
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(s.ttl)),
-		},
-		User: &gptoken.User{Name: u.Email, ID: "user_" + strconv.FormatInt(u.ID, 10), Email: u.Email},
+		Issuer:    sessionIssuer,
+		Audience:  jwt.ClaimStrings{sessionIssuer},
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(s.ttl)),
+		User:      &gptoken.User{Name: u.Email, ID: "user_" + strconv.FormatInt(u.ID, 10), Email: u.Email},
 	}
 	StampUser(&claims, u)
 	tk, err := s.verifier[0].Token(claims)

@@ -142,7 +142,7 @@ func TestCollectKeyResolvesTheOwningWorkspace(t *testing.T) {
 	for key, ws := range map[string]int64{fixtures.AcmeCollectKey: fixtures.AcmeID, fixtures.GlobexCollectKey: fixtures.GlobexID} {
 		ctx, err := h.HandleApiKeyAuth(context.Background(), "", collectapi.ApiKeyAuth{APIKey: key})
 		require.NoError(t, err)
-		assert.EqualValues(t, ws, collectWorkspaceID(ctx))
+		assert.Equal(t, ws, collectWorkspaceID(ctx))
 	}
 
 	for name, key := range map[string]string{"empty": "", "unknown": "omck_nope", "ingest key is not a collect key": fixtures.IntegrationAcmeGenericAIngestKey} {

@@ -29,15 +29,13 @@ func outboxCollected(t *testing.T, env *testhelper.TestEnv) []*events.CollectedE
 	return out
 }
 
-func ptr(s string) *string { return &s }
-
 func TestIngestAttachesEventToExistingContactByAlias(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := eventlog.New(env.Bus)
 
 	err := m.Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
-		{SubjectID: "s-1", Action: "page_view", Email: ptr("ALICE@example.com")},
-		{SubjectID: "nobody", Action: "signup", Email: ptr("nobody@example.com")},
+		{SubjectID: "s-1", Action: "page_view", Email: new("ALICE@example.com")},
+		{SubjectID: "nobody", Action: "signup", Email: new("nobody@example.com")},
 	})
 	require.NoError(t, err)
 

@@ -308,7 +308,7 @@ type CollectedEvent struct {
 	Email       string         `json:"email,omitempty"`
 	Phone       string         `json:"phone,omitempty"`
 	Properties  map[string]any `json:"properties,omitempty"`
-	OccurredAt  time.Time      `json:"occurredAt,omitempty"`
+	OccurredAt  time.Time      `json:"occurredAt,omitzero"`
 	// DedupID is the persist idempotency key of an event the client gave a clientEventId
 	// (visitors.CollectDedupKey: the Workspace and that id). Empty for an event without one.
 	DedupID string `json:"dedupId,omitempty"`

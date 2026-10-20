@@ -136,7 +136,9 @@ func TestSenderSendsOncePerDay(t *testing.T) {
 }
 
 func TestSenderOffsetIsAStableTimeOfDayDerivedFromTheInstanceId(t *testing.T) {
-	assert.Equal(t, instance.ReportOffset("abc"), instance.ReportOffset("abc"))
+	first := instance.ReportOffset("abc")
+	second := instance.ReportOffset("abc")
+	assert.Equal(t, first, second)
 	for _, id := range []string{"a", "b", "c", "d", "e", "f"} {
 		assert.Less(t, instance.ReportOffset(id), 6*time.Hour)
 		assert.GreaterOrEqual(t, instance.ReportOffset(id), time.Duration(0))
@@ -177,6 +179,7 @@ func TestSenderStaysSilent(t *testing.T) {
 		"do not track":                      {"1.4.2", func(c *config.Config) { c.DoNotTrack = true }, nil},
 		"do not track beats environment on": {"1.4.2", func(c *config.Config) { c.Telemetry = &yes; c.DoNotTrack = true }, nil},
 		"switched off in the app": {"1.4.2", nil, func(t *testing.T, r *rig) {
+			t.Helper()
 			_, err := r.mod.SetTelemetry(t.Context(), false)
 			require.NoError(t, err)
 		}},
@@ -184,6 +187,7 @@ func TestSenderStaysSilent(t *testing.T) {
 		"dev build":               {"dev", nil, nil},
 		"prerelease build":        {"1.5.0-rc.1", nil, nil},
 		"notice not acknowledged": {"1.4.2", nil, func(t *testing.T, r *rig) {
+			t.Helper()
 			require.NoError(t, r.db.InstanceState.UpdateOneID(1).ClearNoticeAcknowledgedAt().Exec(t.Context()))
 		}},
 	} {

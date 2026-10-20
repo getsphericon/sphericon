@@ -112,7 +112,7 @@ func TestScopedClientIsolation(t *testing.T) {
 				for _, ref := range e.Refs {
 					target := firstID(ctx, t, env.DB, entities, ref.Target, globex)
 					err := ref.Set(ctx, scoped, own[0], target)
-					assert.ErrorIs(t, err, ent.ErrNotInWorkspace, "ref %s -> %s", ref.Name, ref.Target)
+					require.ErrorIs(t, err, ent.ErrNotInWorkspace, "ref %s -> %s", ref.Name, ref.Target)
 
 					// The same reference to an own row is accepted.
 					ownTarget := firstID(ctx, t, env.DB, entities, ref.Target, acme)

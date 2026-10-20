@@ -44,12 +44,12 @@ func TestDecryptRejectsTamperedOrForeign(t *testing.T) {
 	c := testCipher(t)
 
 	_, err := c.Decrypt("not-base64!!!")
-	assert.ErrorIs(t, err, ErrCiphertext)
+	require.ErrorIs(t, err, ErrCiphertext)
 
 	enc, err := c.Encrypt([]byte("payload"))
 	require.NoError(t, err)
 	_, err = c.Decrypt(enc + "tampered")
-	assert.ErrorIs(t, err, ErrCiphertext)
+	require.ErrorIs(t, err, ErrCiphertext)
 
 	// Ciphertext from a different keyset must not decrypt.
 	other := testCipher(t)

@@ -54,8 +54,8 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	ctx := context.Background()
 
 	full, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{
-		SubjectID: lo.ToPtr("user-1"), Email: lo.ToPtr("clear.me@example.com"), Phone: lo.ToPtr("+15559990"),
-		FirstName: lo.ToPtr("Clear"), LastName: lo.ToPtr("Me"), TimeZone: lo.ToPtr("Europe/Berlin"),
+		SubjectID: new("user-1"), Email: new("clear.me@example.com"), Phone: new("+15559990"),
+		FirstName: new("Clear"), LastName: new("Me"), TimeZone: new("Europe/Berlin"),
 		CustomFields: map[string]any{"plan": "pro"},
 	})
 	require.NoError(t, err)
@@ -82,9 +82,9 @@ func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
 	m := contacts.New(env.Bus)
 
 	out := m.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), []contacts.Attributes{
-		{Email: lo.ToPtr("batch.new@example.com"), CustomFields: map[string]any{"source": "import"}},
-		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: lo.ToPtr("Ignored")},
-		{FirstName: lo.ToPtr("No identity")},
+		{Email: new("batch.new@example.com"), CustomFields: map[string]any{"source": "import"}},
+		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: new("Ignored")},
+		{FirstName: new("No identity")},
 	})
 	require.Len(t, out, 3)
 
@@ -106,11 +106,11 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{Phone: lo.ToPtr("+15557770")})
+	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{Phone: new("+15557770")})
 	require.NoError(t, err)
 
 	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{
-		Phone: lo.ToPtr("+15557770"), Email: lo.ToPtr("Filled.In@Example.com"), SubjectID: lo.ToPtr("sub-9"),
+		Phone: new("+15557770"), Email: new("Filled.In@Example.com"), SubjectID: new("sub-9"),
 		CustomFields: map[string]any{"tier": "gold"},
 	})
 	require.NoError(t, err)
@@ -120,7 +120,7 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	assert.Equal(t, "sub-9", lo.FromPtr(res.Contact.SubjectID))
 	assert.Equal(t, "gold", res.Contact.CustomFields["tier"])
 
-	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{Phone: lo.ToPtr("+15557770"), CustomFields: map[string]any{"visits": float64(1)}})
+	again, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{Phone: new("+15557770"), CustomFields: map[string]any{"visits": float64(1)}})
 	require.NoError(t, err)
 	assert.Equal(t, map[string]any{"tier": "gold", "visits": float64(1)}, again.Contact.CustomFields, "custom fields merge")
 }
@@ -141,17 +141,17 @@ func TestResolvePrefersSubjectThenEmailThenPhone(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	bySubject, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{SubjectID: lo.ToPtr("resolve-subject")})
+	bySubject, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{SubjectID: new("resolve-subject")})
 	require.NoError(t, err)
-	byPhone, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{Phone: lo.ToPtr("+15558880")})
+	byPhone, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.Attributes{Phone: new("+15558880")})
 	require.NoError(t, err)
 
-	got, err := contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), lo.ToPtr(" resolve-subject "), lo.ToPtr(fixtures.ContactAliceEmail), nil)
+	got, err := contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new(" resolve-subject "), lo.ToPtr(fixtures.ContactAliceEmail), nil)
 	require.NoError(t, err)
 	require.NotNil(t, got)
 	assert.Equal(t, bySubject.ID, got.ID, "subject_id wins over email")
 
-	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), lo.ToPtr("unknown"), lo.ToPtr("nobody@example.com"), lo.ToPtr("+15558880"))
+	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new("unknown"), new("nobody@example.com"), new("+15558880"))
 	require.NoError(t, err)
 	require.NotNil(t, got)
 	assert.Equal(t, byPhone.ID, got.ID, "falls through to the next key")

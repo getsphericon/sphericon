@@ -205,6 +205,12 @@ env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
 usage = 'arg "[go_test_args]" var=#true default="./..." help="packages and flags for go test"'
 run = 'eval "set -- $usage_go_test_args"; mise/scripts/heavy.sh go test ${CI:+-shuffle=on} "$@"'
 
+["test:race"]
+description = "Go tests under the race detector, two packages at a time (the JavaScript runtime is several times slower with it, so this runs nightly, not per pull request)"
+depends = ["db:up"]
+env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
+run = "mise/scripts/heavy.sh go test -race -shuffle=on -p 2 ./..."
+
 ["test:fuzz"]
 description = "Go native fuzzing of the parsers that take outside input (FUZZTIME per target, default 30s); a crash lands in the package's testdata/fuzz as a regression"
 env = { FUZZTIME = "30s" }
@@ -357,6 +363,7 @@ depends = [
   "check:deps",
   "check:security",
   "check:ast",
+  "check:openapi",
   "check:typos",
   "check:adr",
   "check:env",
@@ -490,6 +497,10 @@ test "$(helm show chart "$pkg" | sed -n 's/^appVersion: *//p' | tr -d '"')" = "$
   || { echo "error: packaged appVersion is not $version"; exit 1; }
 if [ -n "${usage_registry:-}" ]; then helm push "$pkg" "$usage_registry"; fi
 '''
+
+["check:openapi"]
+description = "vacuum lints the generated OpenAPI documents (the recommended ruleset; a finding of severity error fails)"
+run = "for f in openapi/*.openapi.json; do vacuum lint --no-banner --silent --no-style --fail-severity error \"$f\" || exit 1; done"
 
 ["check:shell"]
 description = "shellcheck the scripts under mise/scripts/"

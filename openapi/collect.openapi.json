@@ -2,7 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Sphericon Collect API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "Event ingestion for customer sites and apps, authenticated by a collect key."
   },
   "tags": [
     {

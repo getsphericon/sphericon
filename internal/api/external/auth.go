@@ -121,7 +121,7 @@ func mintInput(req *externalapi.CreateApiTokenInput) apitokens.Input {
 		Scopes: lo.Map(req.Scopes, func(sc externalapi.ApiTokenScope, _ int) string { return string(sc) }),
 	}
 	if v, ok := req.ExpiresAt.Get(); ok {
-		in.ExpiresAt = lo.ToPtr(time.Time(v))
+		in.ExpiresAt = new(time.Time(v))
 	}
 	return in
 }

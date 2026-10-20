@@ -2,7 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Sphericon StaffMember API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "The API of the platform Staff console (Enterprise): sign-in with a password and a TOTP, and the cross-workspace views and actions of a Staff member."
   },
   "tags": [
     {

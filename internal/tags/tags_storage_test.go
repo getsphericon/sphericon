@@ -35,11 +35,11 @@ func TestStorageFailuresSurfaceAsErrors(t *testing.T) {
 
 	_, err = m.ForContact(ctx, wsID, fixtures.ContactAliceID)
 	require.Error(t, err)
-	assert.NotErrorIs(t, err, tags.ErrContactNotFound)
+	require.NotErrorIs(t, err, tags.ErrContactNotFound)
 
 	_, err = m.Apply(ctx, wsID, fixtures.ContactAliceID, "vip")
 	require.Error(t, err)
-	assert.NotErrorIs(t, err, tags.ErrContactNotFound)
+	require.NotErrorIs(t, err, tags.ErrContactNotFound)
 
 	err = m.Remove(ctx, wsID, fixtures.ContactAliceID, "vip")
 	require.Error(t, err)

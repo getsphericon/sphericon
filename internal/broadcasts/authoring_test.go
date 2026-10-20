@@ -37,7 +37,7 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 
 	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
-	require.Equal(t, page.TotalItems, len(page.Items))
+	require.Len(t, page.Items, page.TotalItems)
 	require.Greater(t, page.TotalItems, 2)
 	for i, b := range page.Items {
 		assert.EqualValues(t, fixtures.AcmeID, b.WorkspaceID)
@@ -81,9 +81,9 @@ func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {
 	assert.Equal(t, before.Name, b.Name, "unset fields keep the stored value")
 
 	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, broadcasts.Fields{Subject: &subject})
-	assert.ErrorIs(t, err, broadcasts.ErrNotDraft)
+	require.ErrorIs(t, err, broadcasts.ErrNotDraft)
 	_, err = m.Update(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID, broadcasts.Fields{Subject: &subject})
-	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
+	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 	_, err = m.Update(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.Fields{Subject: &subject})
 	assert.Error(t, err)
 }
@@ -105,16 +105,16 @@ func TestSetAudience(t *testing.T) {
 
 	globexSeg := int64(fixtures.SegmentGlobexID)
 	_, err = m.SetAudience(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &globexSeg)
-	assert.ErrorIs(t, err, broadcasts.ErrSegmentNotFound, "another workspace's segment is not usable")
+	require.ErrorIs(t, err, broadcasts.ErrSegmentNotFound, "another workspace's segment is not usable")
 
 	_, err = m.SetAudience(ctx, env.DB.Scoped(fixtures.AcmeID), 987654, &globexSeg)
-	assert.ErrorIs(t, err, broadcasts.ErrNotFound, "an unknown broadcast is reported before the segment")
+	require.ErrorIs(t, err, broadcasts.ErrNotFound, "an unknown broadcast is reported before the segment")
 
 	_, err = m.SetAudience(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, &seg)
-	assert.ErrorIs(t, err, broadcasts.ErrNotDraft)
+	require.ErrorIs(t, err, broadcasts.ErrNotDraft)
 
 	_, err = m.SetAudience(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, &seg)
-	assert.Error(t, err, "segment lookup failure")
+	require.Error(t, err, "segment lookup failure")
 	_, err = m.SetAudience(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, nil)
 	assert.Error(t, err, "update failure")
 }
@@ -127,8 +127,8 @@ func TestDeleteDraft(t *testing.T) {
 	require.NoError(t, m.DeleteDraft(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID))
 	assert.False(t, env.DB.Broadcast.Query().Where(broadcast.ID(fixtures.BroadcastDraftID)).ExistX(ctx))
 
-	assert.ErrorIs(t, m.DeleteDraft(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID), broadcasts.ErrNotDraft)
-	assert.ErrorIs(t, m.DeleteDraft(ctx, env.DB.Scoped(fixtures.AcmeID), 987654), broadcasts.ErrNotFound)
+	require.ErrorIs(t, m.DeleteDraft(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID), broadcasts.ErrNotDraft)
+	require.ErrorIs(t, m.DeleteDraft(ctx, env.DB.Scoped(fixtures.AcmeID), 987654), broadcasts.ErrNotFound)
 	assert.Error(t, m.DeleteDraft(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastEmptyAudienceID))
 }
 
@@ -162,9 +162,9 @@ func TestGetUnknownAndErrors(t *testing.T) {
 	m := broadcasts.New(&recorder{})
 
 	_, err := m.Get(context.Background(), env.DB.Scoped(fixtures.AcmeID), 987654)
-	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
+	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 	_, err = m.Get(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.NotErrorIs(t, err, broadcasts.ErrNotFound)
 }
 
@@ -198,8 +198,6 @@ func TestTransitionStoreErrors(t *testing.T) {
 	})
 }
 
-func ptr[T any](v T) *T { return &v }
-
 // Another Workspace's rows are invisible through the scoped client: a foreign
 // Broadcast is not found, and a foreign Segment cannot become the audience.
 func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
@@ -209,11 +207,11 @@ func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := m.Get(ctx, acme, fixtures.BroadcastGlobexID)
-	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
+	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 	_, err = m.Send(ctx, acme, fixtures.BroadcastGlobexID)
-	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
+	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 
-	_, err = m.SetAudience(ctx, acme, fixtures.BroadcastDraftID, ptr(int64(fixtures.SegmentGlobexID)))
+	_, err = m.SetAudience(ctx, acme, fixtures.BroadcastDraftID, new(int64(fixtures.SegmentGlobexID)))
 	assert.ErrorIs(t, err, broadcasts.ErrSegmentNotFound)
 }
 
@@ -225,9 +223,9 @@ func TestDeleteRemovesABroadcastOfAnyStatusAndIsWorkspaceScoped(t *testing.T) {
 
 	require.NoError(t, m.Delete(ctx, s, fixtures.BroadcastFailedID))
 	_, err := m.Get(ctx, s, fixtures.BroadcastFailedID)
-	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
+	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 
-	assert.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID), broadcasts.ErrNotFound,
+	require.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID), broadcasts.ErrNotFound,
 		"another Workspace's Broadcast is not found")
 	_, err = m.Get(ctx, s, fixtures.BroadcastDraftID)
 	assert.NoError(t, err)

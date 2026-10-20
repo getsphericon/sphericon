@@ -93,7 +93,7 @@ func TestSiteSendingDomainsListScopedToWorkspace(t *testing.T) {
 	// Count matches the acme fixtures dynamically (don't hardcode dataset size).
 	want, err := env.DB.SendingDomain.Query().Where(sendingdomain.WorkspaceID(fixtures.AcmeID)).Count(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, want, len(page.Items))
+	assert.Len(t, page.Items, want)
 	for _, item := range page.Items {
 		assert.NotEmpty(t, item.Domain)
 		assert.Equal(t, "sphericon._domainkey."+item.Domain, item.DkimRecord.Host)

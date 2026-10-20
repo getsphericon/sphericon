@@ -39,6 +39,6 @@ func TestUpgradeNotesPrintsNothingWhenThereAreNone(t *testing.T) {
 }
 
 func TestUpgradeNotesNeedsSince(t *testing.T) {
-	assert.Error(t, notes(t, &bytes.Buffer{}))
+	require.Error(t, notes(t, &bytes.Buffer{}))
 	assert.Error(t, notes(t, &bytes.Buffer{}, "--since", "latest"))
 }

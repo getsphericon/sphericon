@@ -42,9 +42,9 @@ func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
 		prov   *int
 		want   time.Duration // for 3 pending
 	}{
-		{"manual only", ptr(2), nil, 1500 * time.Millisecond},
-		{"provider only", nil, ptr(4), 750 * time.Millisecond},
-		{"provider lower than manual", ptr(10), ptr(1), 3 * time.Second},
+		{"manual only", new(2), nil, 1500 * time.Millisecond},
+		{"provider only", nil, new(4), 750 * time.Millisecond},
+		{"provider lower than manual", new(10), new(1), 3 * time.Second},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

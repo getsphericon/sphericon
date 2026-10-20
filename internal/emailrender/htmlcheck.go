@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -61,8 +62,8 @@ func checkHTML(src string) error {
 // closeTag pops the element name closes. Elements between it and the top of the stack
 // are closed implicitly only when HTML allows their end tag to be omitted.
 func closeTag(open []string, name string) ([]string, error) {
-	for i := len(open) - 1; i >= 0; i-- {
-		if open[i] != name {
+	for i, o := range slices.Backward(open) {
+		if o != name {
 			continue
 		}
 		for _, skipped := range open[i+1:] {

@@ -35,8 +35,6 @@ func limited(t *testing.T, env *testhelper.TestEnv, perSecond, perDay *int) {
 	upd.ExecX(context.Background())
 }
 
-func ptr(n int) *int { return &n }
-
 func send(t *testing.T, m *outbound.Module, env *testhelper.TestEnv, key string) outbound.Result {
 	t.Helper()
 	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, key, fixtures.ContactAliceID))
@@ -50,7 +48,7 @@ func TestSpentPerSecondLimitIsADeferralWithTheWaitUntilCapacityReturns(t *testin
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, ptr(2), nil)
+		limited(t, env, new(2), nil)
 
 		assert.Equal(t, outbound.Sent, send(t, m, env, "bc:1").Outcome)
 		assert.Equal(t, outbound.Sent, send(t, m, env, "bc:2").Outcome)
@@ -68,7 +66,7 @@ func TestDeferredSendLeavesNoClaimAndSendsExactlyOnceAfterTheWait(t *testing.T) 
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, ptr(1), nil)
+		limited(t, env, new(1), nil)
 
 		require.Equal(t, outbound.Sent, send(t, m, env, "bc:a").Outcome)
 		res := send(t, m, env, "bc:b")
@@ -95,7 +93,7 @@ func TestDailyLimitIsRollingAndReportsItsOwnWait(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, nil, ptr(2))
+		limited(t, env, nil, new(2))
 
 		require.Equal(t, outbound.Sent, send(t, m, env, "bc:1").Outcome)
 		require.Equal(t, outbound.Sent, send(t, m, env, "bc:2").Outcome)
@@ -114,7 +112,7 @@ func TestReservationTakesFromBothBucketsOrNone(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, ptr(1), ptr(2))
+		limited(t, env, new(1), new(2))
 
 		require.Equal(t, outbound.Sent, send(t, m, env, "bc:1").Outcome) // second 0, day 1
 		require.Equal(t, outbound.Deferral, send(t, m, env, "bc:2").Outcome)
@@ -132,7 +130,7 @@ func TestSkippedAndHeldMessagesSpendNoCapacity(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, ptr(1), nil)
+		limited(t, env, new(1), nil)
 		ctx := context.Background()
 
 		// Skipped: the destination is suppressed.
@@ -171,7 +169,7 @@ func TestTransactionalSendsAreNeverDeferredEvenWithTheLimitSpent(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, ptr(1), nil)
+		limited(t, env, new(1), nil)
 
 		require.Equal(t, outbound.Sent, send(t, m, env, "bc:1").Outcome)
 		require.Equal(t, outbound.Deferral, send(t, m, env, "bc:2").Outcome)
@@ -188,7 +186,7 @@ func TestTransactionalSendsSpendCapacityAndDelayLaterMarketingSends(t *testing.T
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, ptr(1), nil)
+		limited(t, env, new(1), nil)
 		ctx := context.Background()
 
 		// Three Transactional sends drive the per-second bucket to minus two tokens.
@@ -213,7 +211,7 @@ func TestTransactionalSendsCountTowardTheDailyBucketToo(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, nil, ptr(2))
+		limited(t, env, nil, new(2))
 
 		for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
 			res, err := m.Send(context.Background(), acme(env), transactional(key, "a@example.com"))
@@ -230,7 +228,7 @@ func TestTransactionalThatIsSkippedSpendsNoCapacity(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, ptr(1), nil)
+		limited(t, env, new(1), nil)
 
 		res, err := m.Send(context.Background(), acme(env), transactional("tx:sup", suppressd))
 		require.NoError(t, err)
@@ -258,7 +256,7 @@ func TestAutomationAndBroadcastSendsShareOneLimit(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, ptr(1), nil)
+		limited(t, env, new(1), nil)
 
 		auto := marketing(t, env, "auto:1", fixtures.ContactAliceID)
 		auto.Kind = outboundmessage.KindAutomation
@@ -275,10 +273,10 @@ func TestChangedLimitTakesEffectImmediatelyAndProportionally(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env)
-		limited(t, env, ptr(10), nil)
+		limited(t, env, new(10), nil)
 
 		require.Equal(t, outbound.Sent, send(t, m, env, "bc:1").Outcome) // bucket 9/10 full
-		limited(t, env, ptr(1), nil)
+		limited(t, env, new(1), nil)
 
 		res := send(t, m, env, "bc:2") // 0.9 of one token: not enough yet
 		assert.Equal(t, outbound.Deferral, res.Outcome)
