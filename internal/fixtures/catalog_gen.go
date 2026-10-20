@@ -19,6 +19,8 @@ const (
 	AcmeName = "Acme"
 	// AcmeOwnerMembershipID is from fixtures/memberships.
 	AcmeOwnerMembershipID = 1
+	// AcmePublicID is from fixtures/workspaces.
+	AcmePublicID = "AcmeWs01"
 	// AcmeSlug is from fixtures/workspaces.
 	AcmeSlug = "acme"
 	// AcmeUsageSnapshotID is from fixtures/usages.
@@ -393,6 +395,8 @@ const (
 	GlobexName = "Globex"
 	// GlobexOwnerMembershipID is from fixtures/memberships.
 	GlobexOwnerMembershipID = 2
+	// GlobexPublicID is from fixtures/workspaces.
+	GlobexPublicID = "GlobxWs2"
 	// GlobexSamMembershipID is from fixtures/memberships.
 	GlobexSamMembershipID = 9
 	// GlobexSlug is from fixtures/workspaces.
@@ -413,6 +417,8 @@ const (
 	HooliID = 5
 	// HooliName is from fixtures/workspaces.
 	HooliName = "Hooli"
+	// HooliPublicID is from fixtures/workspaces.
+	HooliPublicID = "HooliWs5"
 	// HooliSallyMembershipID is from fixtures/memberships.
 	HooliSallyMembershipID = 17
 	// HooliSlug is from fixtures/workspaces.
@@ -471,6 +477,8 @@ const (
 	InitechOwnerOlgaName = "Olga"
 	// InitechOwnerOlgaPassword is from fixtures/users.
 	InitechOwnerOlgaPassword = "olga-test-password"
+	// InitechPublicID is from fixtures/workspaces.
+	InitechPublicID = "InitcWs3"
 	// InitechRitaMembershipID is from fixtures/memberships.
 	InitechRitaMembershipID = 13
 	// InitechSlug is from fixtures/workspaces.
@@ -553,6 +561,8 @@ const (
 	KramericaOwnerNewmanName = "Newman"
 	// KramericaOwnerNewmanPassword is from fixtures/users.
 	KramericaOwnerNewmanPassword = "newman-test-password"
+	// KramericaPublicID is from fixtures/workspaces.
+	KramericaPublicID = "KramrWs8"
 	// KramericaSlug is from fixtures/workspaces.
 	KramericaSlug = "kramerica"
 	// MemberMaryEmail is from fixtures/users.
@@ -755,6 +765,8 @@ const (
 	SoylentID = 6
 	// SoylentName is from fixtures/workspaces.
 	SoylentName = "Soylent"
+	// SoylentPublicID is from fixtures/workspaces.
+	SoylentPublicID = "SoylnWs6"
 	// SoylentSlug is from fixtures/workspaces.
 	SoylentSlug = "soylent"
 	// StaffAlsoCustomerEmail is from fixtures/staff_members.
@@ -861,6 +873,8 @@ const (
 	UmbrellaOwnerRitaName = "Rita"
 	// UmbrellaOwnerRitaPassword is from fixtures/users.
 	UmbrellaOwnerRitaPassword = "rita-test-password"
+	// UmbrellaPublicID is from fixtures/workspaces.
+	UmbrellaPublicID = "UmbrlWs4"
 	// UmbrellaRitaMembershipID is from fixtures/memberships.
 	UmbrellaRitaMembershipID = 10
 	// UmbrellaSamMembershipID is from fixtures/memberships.
@@ -901,6 +915,8 @@ const (
 	VandelayOwnerCosmoName = "Cosmo"
 	// VandelayOwnerCosmoPassword is from fixtures/users.
 	VandelayOwnerCosmoPassword = "cosmo-test-password"
+	// VandelayPublicID is from fixtures/workspaces.
+	VandelayPublicID = "VandlWs7"
 	// VandelaySlug is from fixtures/workspaces.
 	VandelaySlug = "vandelay"
 	// VisitorAnonymousID is from fixtures/visitors.
@@ -915,6 +931,8 @@ const (
 	WayneID = 9
 	// WayneName is from fixtures/workspaces.
 	WayneName = "Wayne"
+	// WaynePublicID is from fixtures/workspaces.
+	WaynePublicID = "WayneWs9"
 	// WayneSlug is from fixtures/workspaces.
 	WayneSlug = "wayne"
 	// WebhookCodebasicsDisabledID is from fixtures/webhook_endpoints.

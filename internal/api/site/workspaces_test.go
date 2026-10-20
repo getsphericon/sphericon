@@ -127,3 +127,14 @@ func TestSiteWorkspacesListShowsNoHoldsWithoutTheStaffLicense(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug).Holds)
 }
+
+func TestSiteWorkspacesListCarriesTheWorkspaceId(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	list, err := c.SiteWorkspacesList(context.Background())
+	require.NoError(t, err)
+
+	require.Len(t, list, 1)
+	assert.Equal(t, siteapi.WorkspaceId(fixtures.AcmePublicID), list[0].PublicId)
+}

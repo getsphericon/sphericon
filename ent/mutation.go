@@ -37039,6 +37039,7 @@ type WorkspaceMutation struct {
 	updated_at                  *time.Time
 	name                        *string
 	slug                        *string
+	public_id                   *string
 	collect_key                 *string
 	require_confirmed_opt_in    *bool
 	postal_address              *string
@@ -37385,6 +37386,42 @@ func (m *WorkspaceMutation) OldSlug(ctx context.Context) (v string, err error) {
 // ResetSlug resets all changes to the "slug" field.
 func (m *WorkspaceMutation) ResetSlug() {
 	m.slug = nil
+}
+
+// SetPublicID sets the "public_id" field.
+func (m *WorkspaceMutation) SetPublicID(s string) {
+	m.public_id = &s
+}
+
+// PublicID returns the value of the "public_id" field in the mutation.
+func (m *WorkspaceMutation) PublicID() (r string, exists bool) {
+	v := m.public_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPublicID returns the old "public_id" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldPublicID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPublicID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPublicID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPublicID: %w", err)
+	}
+	return oldValue.PublicID, nil
+}
+
+// ResetPublicID resets all changes to the "public_id" field.
+func (m *WorkspaceMutation) ResetPublicID() {
+	m.public_id = nil
 }
 
 // SetCollectKey sets the "collect_key" field.
@@ -39500,7 +39537,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -39512,6 +39549,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.slug != nil {
 		fields = append(fields, workspace.FieldSlug)
+	}
+	if m.public_id != nil {
+		fields = append(fields, workspace.FieldPublicID)
 	}
 	if m.collect_key != nil {
 		fields = append(fields, workspace.FieldCollectKey)
@@ -39571,6 +39611,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case workspace.FieldSlug:
 		return m.Slug()
+	case workspace.FieldPublicID:
+		return m.PublicID()
 	case workspace.FieldCollectKey:
 		return m.CollectKey()
 	case workspace.FieldRequireConfirmedOptIn:
@@ -39616,6 +39658,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldName(ctx)
 	case workspace.FieldSlug:
 		return m.OldSlug(ctx)
+	case workspace.FieldPublicID:
+		return m.OldPublicID(ctx)
 	case workspace.FieldCollectKey:
 		return m.OldCollectKey(ctx)
 	case workspace.FieldRequireConfirmedOptIn:
@@ -39680,6 +39724,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSlug(v)
+		return nil
+	case workspace.FieldPublicID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPublicID(v)
 		return nil
 	case workspace.FieldCollectKey:
 		v, ok := value.(string)
@@ -39929,6 +39980,9 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldSlug:
 		m.ResetSlug()
+		return nil
+	case workspace.FieldPublicID:
+		m.ResetPublicID()
 		return nil
 	case workspace.FieldCollectKey:
 		m.ResetCollectKey()

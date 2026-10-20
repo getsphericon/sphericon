@@ -25,18 +25,33 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
 // Accounts reads and writes Users, Workspaces and Memberships over the raw client.
 type Accounts struct {
-	ent *ent.Client
-	bus *events.Bus
+	ent         *ent.Client
+	bus         *events.Bus
+	newPublicID func() string
+}
+
+// Option tunes Accounts.
+type Option func(*Accounts)
+
+// WithWorkspaceIDs replaces the generator of Workspace ids (workspaceid.New by default). A test
+// uses it to force a collision and watch creation retry.
+func WithWorkspaceIDs(generate func() string) Option {
+	return func(a *Accounts) { a.newPublicID = generate }
 }
 
 // New builds Accounts over the ent client; the bus opens the transactions that
 // span several writes.
-func New(client *ent.Client, bus *events.Bus) *Accounts {
-	return &Accounts{ent: client, bus: bus}
+func New(client *ent.Client, bus *events.Bus, opts ...Option) *Accounts {
+	a := &Accounts{ent: client, bus: bus, newPublicID: workspaceid.New}
+	for _, opt := range opts {
+		opt(a)
+	}
+	return a
 }
 
 // Scope resolves the Workspace addressed by a /w/{slug} path segment for a User and
@@ -223,20 +238,21 @@ func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name strin
 		var ws *ent.Workspace
 		err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 			var err error
-			ws, err = createWorkspaceIn(ctx, tx, userID, name)
+			ws, err = createWorkspaceIn(ctx, tx, userID, name, a.newPublicID())
 			return err
 		})
 		if db.IsUniqueViolation(err) {
-			continue // lost a race on the slug; the next attempt sees it taken
+			continue // lost a race on the slug or drew a taken id; the next attempt retries
 		}
 		return ws, err
 	}
 }
 
 // createWorkspaceIn creates the Workspace and its owner Membership on tx, under the
-// first free slug derived from name. A unique violation (a lost race on the slug)
-// aborts tx, so the caller retries the whole transaction.
-func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name string) (*ent.Workspace, error) {
+// first free slug derived from name, with the Workspace id it is given. A unique violation (a
+// lost race on the slug, or an id already taken) aborts tx, so the caller retries the whole
+// transaction with a fresh id.
+func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name, publicID string) (*ent.Workspace, error) {
 	base := Slugify(name)
 	if base == "" {
 		base = "workspace"
@@ -259,6 +275,7 @@ func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name s
 	ws, err := tx.Workspace.Create().
 		SetName(name).
 		SetSlug(slug).
+		SetPublicID(publicID).
 		SetCollectKey(collectKey).
 		Save(ctx)
 	if err != nil {
@@ -383,14 +400,14 @@ func (a *Accounts) verified(ctx context.Context, workspaceName string, write fun
 				return err
 			}
 			written = true
-			if _, err := createWorkspaceIn(ctx, tx, u.ID, workspaceName); err != nil {
+			if _, err := createWorkspaceIn(ctx, tx, u.ID, workspaceName, a.newPublicID()); err != nil {
 				return err
 			}
 			verified = u
 			return RecordUserAction(ctx, tx, pub, u, events.ActionUserEmailVerify, nil)
 		})
 		if written && db.IsUniqueViolation(err) {
-			continue // lost a race on the slug; the next attempt sees it taken
+			continue // lost a race on the slug or drew a taken id; the next attempt retries
 		}
 		return verified, err
 	}

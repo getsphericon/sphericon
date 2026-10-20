@@ -1607,10 +1607,17 @@ export const zSiteWorkspaceHold = z.object({
 });
 
 /**
+ * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
+ * Workspace's one public address.
+ */
+export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
+
+/**
  * Workspace the current user belongs to
  */
 export const zSiteWorkspaceResource = z.object({
   id: zEntityId,
+  publicId: zWorkspaceId,
   name: z.string(),
   slug: z.string(),
   collectKey: z.string(),

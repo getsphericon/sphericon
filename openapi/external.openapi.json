@@ -12676,6 +12676,11 @@
           }
         },
         "description": "What the receiver answered to a test delivery. The endpoint's failure state is not touched."
+      },
+      "WorkspaceId": {
+        "type": "string",
+        "pattern": "^[0-9A-Za-z]{8}$",
+        "description": "A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the\nWorkspace's one public address."
       }
     },
     "securitySchemes": {

@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
 // smtpSink is a minimal SMTP server that records the RCPT of every accepted message,
@@ -262,7 +263,7 @@ func ownedWorkspace(t *testing.T, a *App, slug, ownerEmail string) {
 	require.NoError(t, err)
 	// The Workspace feed takes a position only inside a transaction.
 	require.NoError(t, events.New(database).WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		ws := tx.Workspace.Create().SetName("App Test").SetSlug(slug).
+		ws := tx.Workspace.Create().SetName("App Test").SetSlug(slug).SetPublicID(workspaceid.New()).
 			SetCollectKey("ck_" + slug).SaveX(ctx)
 		u := tx.User.Create().SetName("Owner").SetEmail(ownerEmail).SaveX(ctx)
 		tx.Membership.Create().SetUserID(u.ID).SetWorkspaceID(ws.ID).SetRole(membership.RoleOwner).ExecX(ctx)

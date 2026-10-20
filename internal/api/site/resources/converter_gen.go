@@ -306,6 +306,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 	var siteapiSiteWorkspaceResource site.SiteWorkspaceResource
 	if source != nil {
 		siteapiSiteWorkspaceResource.ID = site.EntityId((*source).ID)
+		siteapiSiteWorkspaceResource.PublicId = site.WorkspaceId((*source).PublicID)
 		siteapiSiteWorkspaceResource.Name = (*source).Name
 		siteapiSiteWorkspaceResource.Slug = (*source).Slug
 		siteapiSiteWorkspaceResource.CollectKey = (*source).CollectKey

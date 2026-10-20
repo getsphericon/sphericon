@@ -37,7 +37,7 @@ func Migrate(ctx context.Context, sqlDB *sql.DB) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return MigrateFS(ctx, sqlDB, files)
+	return migrateFS(ctx, sqlDB, files, goMigrations())
 }
 
 // Status reads the schema state and the embedded migrations without changing anything.
@@ -46,7 +46,7 @@ func Status(ctx context.Context, sqlDB *sql.DB) (SchemaStatus, error) {
 	if err != nil {
 		return SchemaStatus{}, err
 	}
-	st, err := StatusFS(ctx, sqlDB, files)
+	st, err := statusFS(ctx, sqlDB, files, goMigrations())
 	if err != nil {
 		return SchemaStatus{}, err
 	}
@@ -57,14 +57,18 @@ func Status(ctx context.Context, sqlDB *sql.DB) (SchemaStatus, error) {
 	return st, nil
 }
 
-// MigrateFS is Migrate over any migrations directory.
+// MigrateFS is Migrate over any migrations directory of SQL files.
 func MigrateFS(ctx context.Context, sqlDB *sql.DB, files fs.FS) (int, error) {
+	return migrateFS(ctx, sqlDB, files, nil)
+}
+
+func migrateFS(ctx context.Context, sqlDB *sql.DB, files fs.FS, gos []*goose.Migration) (int, error) {
 	// A lock wait is bounded by ctx alone: goose's own default would give up after five minutes.
 	locker, err := lock.NewPostgresSessionLocker(lock.WithLockTimeout(1, math.MaxInt32))
 	if err != nil {
 		return 0, err
 	}
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, files, goose.WithSessionLocker(locker))
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, files, goose.WithSessionLocker(locker), goose.WithGoMigrations(gos...))
 	if err != nil {
 		return 0, err
 	}
@@ -72,9 +76,13 @@ func MigrateFS(ctx context.Context, sqlDB *sql.DB, files fs.FS) (int, error) {
 	return len(results), err
 }
 
-// StatusFS is Status over any migrations directory.
+// StatusFS is Status over any migrations directory of SQL files.
 func StatusFS(ctx context.Context, sqlDB *sql.DB, files fs.FS) (SchemaStatus, error) {
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, files)
+	return statusFS(ctx, sqlDB, files, nil)
+}
+
+func statusFS(ctx context.Context, sqlDB *sql.DB, files fs.FS, gos []*goose.Migration) (SchemaStatus, error) {
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, files, goose.WithGoMigrations(gos...))
 	if err != nil {
 		return SchemaStatus{}, err
 	}

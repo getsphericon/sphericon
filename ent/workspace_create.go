@@ -88,6 +88,12 @@ func (_c *WorkspaceCreate) SetSlug(v string) *WorkspaceCreate {
 	return _c
 }
 
+// SetPublicID sets the "public_id" field.
+func (_c *WorkspaceCreate) SetPublicID(v string) *WorkspaceCreate {
+	_c.mutation.SetPublicID(v)
+	return _c
+}
+
 // SetCollectKey sets the "collect_key" field.
 func (_c *WorkspaceCreate) SetCollectKey(v string) *WorkspaceCreate {
 	_c.mutation.SetCollectKey(v)
@@ -757,6 +763,14 @@ func (_c *WorkspaceCreate) check() error {
 			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "Workspace.slug": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.PublicID(); !ok {
+		return &ValidationError{Name: "public_id", err: errors.New(`ent: missing required field "Workspace.public_id"`)}
+	}
+	if v, ok := _c.mutation.PublicID(); ok {
+		if err := workspace.PublicIDValidator(v); err != nil {
+			return &ValidationError{Name: "public_id", err: fmt.Errorf(`ent: validator failed for field "Workspace.public_id": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.CollectKey(); !ok {
 		return &ValidationError{Name: "collect_key", err: errors.New(`ent: missing required field "Workspace.collect_key"`)}
 	}
@@ -832,6 +846,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Slug(); ok {
 		_spec.SetField(workspace.FieldSlug, field.TypeString, value)
 		_node.Slug = value
+	}
+	if value, ok := _c.mutation.PublicID(); ok {
+		_spec.SetField(workspace.FieldPublicID, field.TypeString, value)
+		_node.PublicID = value
 	}
 	if value, ok := _c.mutation.CollectKey(); ok {
 		_spec.SetField(workspace.FieldCollectKey, field.TypeString, value)
@@ -1653,6 +1671,9 @@ func (u *WorkspaceUpsertOne) UpdateNewValues() *WorkspaceUpsertOne {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(workspace.FieldCreatedAt)
 		}
+		if _, exists := u.create.mutation.PublicID(); exists {
+			s.SetIgnore(workspace.FieldPublicID)
+		}
 	}))
 	return u
 }
@@ -2190,6 +2211,9 @@ func (u *WorkspaceUpsertBulk) UpdateNewValues() *WorkspaceUpsertBulk {
 			}
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(workspace.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.PublicID(); exists {
+				s.SetIgnore(workspace.FieldPublicID)
 			}
 		}
 	}))

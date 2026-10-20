@@ -326,6 +326,12 @@ export const zStaffSuspensionChange = z.object({
 });
 
 /**
+ * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
+ * Workspace's one public address.
+ */
+export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
+
+/**
  * Page number (1-based)
  */
 export const zPageQueryPage = z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).default(1);

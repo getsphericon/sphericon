@@ -594,6 +594,12 @@ export type TimeZoneName = string;
 export type Timestamp = string;
 
 /**
+ * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
+ * Workspace's one public address.
+ */
+export type WorkspaceId = string;
+
+/**
  * Page number (1-based)
  */
 export type PageQueryPage = number;

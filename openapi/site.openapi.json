@@ -12215,6 +12215,7 @@
         "type": "object",
         "required": [
           "id",
+          "publicId",
           "name",
           "slug",
           "collectKey",
@@ -12233,6 +12234,14 @@
               }
             ],
             "description": "Unique identifier"
+          },
+          "publicId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceId"
+              }
+            ],
+            "description": "The Workspace id: its short opaque public address (ADR 0043)"
           },
           "name": {
             "type": "string",
@@ -12335,6 +12344,11 @@
       "Timestamp": {
         "type": "string",
         "format": "date-time"
+      },
+      "WorkspaceId": {
+        "type": "string",
+        "pattern": "^[0-9A-Za-z]{8}$",
+        "description": "A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the\nWorkspace's one public address."
       }
     },
     "securitySchemes": {

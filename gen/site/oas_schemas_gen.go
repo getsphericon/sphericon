@@ -15124,6 +15124,8 @@ func (s *SiteWorkspaceHold) SetBilling(val bool) {
 type SiteWorkspaceResource struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
+	// The Workspace id: its short opaque public address (ADR 0043).
+	PublicId WorkspaceId `json:"publicId"`
 	// Display name.
 	Name string `json:"name"`
 	// URL-safe unique slug; the route key for nested workspace resources.
@@ -15172,6 +15174,11 @@ type SiteWorkspaceResource struct {
 // GetID returns the value of ID.
 func (s *SiteWorkspaceResource) GetID() EntityId {
 	return s.ID
+}
+
+// GetPublicId returns the value of PublicId.
+func (s *SiteWorkspaceResource) GetPublicId() WorkspaceId {
+	return s.PublicId
 }
 
 // GetName returns the value of Name.
@@ -15252,6 +15259,11 @@ func (s *SiteWorkspaceResource) GetCreatedAt() Timestamp {
 // SetID sets the value of ID.
 func (s *SiteWorkspaceResource) SetID(val EntityId) {
 	s.ID = val
+}
+
+// SetPublicId sets the value of PublicId.
+func (s *SiteWorkspaceResource) SetPublicId(val WorkspaceId) {
+	s.PublicId = val
 }
 
 // SetName sets the value of Name.
@@ -15361,3 +15373,5 @@ func (*SiteWorkspacesUpdateUnprocessableEntity) siteWorkspacesUpdateRes() {}
 type TimeZoneName string
 
 type Timestamp time.Time
+
+type WorkspaceId string

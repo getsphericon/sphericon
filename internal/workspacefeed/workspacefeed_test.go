@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/workspacefeed"
+	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
 // A position taken outside a transaction would be a second statement: a crash between
@@ -24,7 +25,7 @@ func TestPlainClientRefusesAChangeToTheFeed(t *testing.T) {
 	t.Cleanup(func() { _ = pool.Close() })
 	client := db.NewEntClient(pool)
 
-	_, err = client.Workspace.Create().SetName("Plain").SetSlug("plain-feed").Save(t.Context())
+	_, err = client.Workspace.Create().SetName("Plain").SetSlug("plain-feed").SetPublicID(workspaceid.New()).Save(t.Context())
 	require.ErrorIs(t, err, workspacefeed.ErrNeedsTransaction)
 
 	err = client.User.UpdateOneID(1).SetEmail("moved@plain.test").Exec(t.Context())

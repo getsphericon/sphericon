@@ -1399,6 +1399,11 @@
         "enum": ["emails_sent", "in_flight_sends", "contacts"],
         "description": "A metric of Usage"
       },
+      "WorkspaceId": {
+        "type": "string",
+        "pattern": "^[0-9A-Za-z]{8}$",
+        "description": "A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the\nWorkspace's one public address."
+      },
       "WorkspaceUsageResource": {
         "type": "object",
         "required": ["workspaceId", "period", "figures"],

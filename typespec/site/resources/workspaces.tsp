@@ -30,6 +30,9 @@ model SiteWorkspaceResource {
   /** Unique identifier */
   id: EntityId;
 
+  /** The Workspace id: its short opaque public address (ADR 0043) */
+  publicId: WorkspaceId;
+
   /** Display name */
   name: string;
 

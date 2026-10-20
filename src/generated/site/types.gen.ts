@@ -3378,6 +3378,10 @@ export type SiteWorkspaceResource = {
    */
   id: EntityId;
   /**
+   * The Workspace id: its short opaque public address (ADR 0043)
+   */
+  publicId: WorkspaceId;
+  /**
    * Display name
    */
   name: string;
@@ -3457,6 +3461,12 @@ export type SiteWorkspaceResource = {
 export type TimeZoneName = string;
 
 export type Timestamp = string;
+
+/**
+ * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
+ * Workspace's one public address.
+ */
+export type WorkspaceId = string;
 
 /**
  * Page number (1-based)

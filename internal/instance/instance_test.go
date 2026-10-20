@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
 // Workspaces cannot be deleted through the product yet and a fixture Workspace has rows in
@@ -36,7 +37,7 @@ func TestIsOwnerPassesToTheNextOldestWorkspaceWhenTheOldestIsDeleted(t *testing.
 		workspace int64
 	}{{1, 1}, {2, 2}} {
 		require.NoError(t, client.User.Create().SetID(u.id).SetName("u").SetEmail(fmt.Sprintf("u%d@example.test", u.id)).Exec(ctx))
-		require.NoError(t, client.Workspace.Create().SetID(u.workspace).SetName("w").SetSlug(fmt.Sprintf("w%d", u.workspace)).
+		require.NoError(t, client.Workspace.Create().SetID(u.workspace).SetName("w").SetSlug(fmt.Sprintf("w%d", u.workspace)).SetPublicID(workspaceid.New()).
 			SetCollectKey(fmt.Sprintf("c%d", u.workspace)).Exec(ctx))
 		require.NoError(t, client.Scoped(u.workspace).Membership().Create().SetUserID(u.id).SetRole(membership.RoleOwner).Exec(ctx))
 	}

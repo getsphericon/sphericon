@@ -23,6 +23,8 @@ const (
 	FieldName = "name"
 	// FieldSlug holds the string denoting the slug field in the database.
 	FieldSlug = "slug"
+	// FieldPublicID holds the string denoting the public_id field in the database.
+	FieldPublicID = "public_id"
 	// FieldCollectKey holds the string denoting the collect_key field in the database.
 	FieldCollectKey = "collect_key"
 	// FieldRequireConfirmedOptIn holds the string denoting the require_confirmed_opt_in field in the database.
@@ -296,6 +298,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldName,
 	FieldSlug,
+	FieldPublicID,
 	FieldCollectKey,
 	FieldRequireConfirmedOptIn,
 	FieldPostalAddress,
@@ -333,6 +336,8 @@ var (
 	NameValidator func(string) error
 	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
 	SlugValidator func(string) error
+	// PublicIDValidator is a validator for the "public_id" field. It is called by the builders before save.
+	PublicIDValidator func(string) error
 	// CollectKeyValidator is a validator for the "collect_key" field. It is called by the builders before save.
 	CollectKeyValidator func(string) error
 	// DefaultRequireConfirmedOptIn holds the default value on creation for the "require_confirmed_opt_in" field.
@@ -397,6 +402,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // BySlug orders the results by the slug field.
 func BySlug(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSlug, opts...).ToFunc()
+}
+
+// ByPublicID orders the results by the public_id field.
+func ByPublicID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPublicID, opts...).ToFunc()
 }
 
 // ByCollectKey orders the results by the collect_key field.

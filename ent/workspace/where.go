@@ -75,6 +75,11 @@ func Slug(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSlug, v))
 }
 
+// PublicID applies equality check predicate on the "public_id" field. It's identical to PublicIDEQ.
+func PublicID(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldPublicID, v))
+}
+
 // CollectKey applies equality check predicate on the "collect_key" field. It's identical to CollectKeyEQ.
 func CollectKey(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldCollectKey, v))
@@ -348,6 +353,71 @@ func SlugEqualFold(v string) predicate.Workspace {
 // SlugContainsFold applies the ContainsFold predicate on the "slug" field.
 func SlugContainsFold(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldContainsFold(FieldSlug, v))
+}
+
+// PublicIDEQ applies the EQ predicate on the "public_id" field.
+func PublicIDEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldPublicID, v))
+}
+
+// PublicIDNEQ applies the NEQ predicate on the "public_id" field.
+func PublicIDNEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldPublicID, v))
+}
+
+// PublicIDIn applies the In predicate on the "public_id" field.
+func PublicIDIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldPublicID, vs...))
+}
+
+// PublicIDNotIn applies the NotIn predicate on the "public_id" field.
+func PublicIDNotIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldPublicID, vs...))
+}
+
+// PublicIDGT applies the GT predicate on the "public_id" field.
+func PublicIDGT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldPublicID, v))
+}
+
+// PublicIDGTE applies the GTE predicate on the "public_id" field.
+func PublicIDGTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldPublicID, v))
+}
+
+// PublicIDLT applies the LT predicate on the "public_id" field.
+func PublicIDLT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldPublicID, v))
+}
+
+// PublicIDLTE applies the LTE predicate on the "public_id" field.
+func PublicIDLTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldPublicID, v))
+}
+
+// PublicIDContains applies the Contains predicate on the "public_id" field.
+func PublicIDContains(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContains(FieldPublicID, v))
+}
+
+// PublicIDHasPrefix applies the HasPrefix predicate on the "public_id" field.
+func PublicIDHasPrefix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasPrefix(FieldPublicID, v))
+}
+
+// PublicIDHasSuffix applies the HasSuffix predicate on the "public_id" field.
+func PublicIDHasSuffix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasSuffix(FieldPublicID, v))
+}
+
+// PublicIDEqualFold applies the EqualFold predicate on the "public_id" field.
+func PublicIDEqualFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEqualFold(FieldPublicID, v))
+}
+
+// PublicIDContainsFold applies the ContainsFold predicate on the "public_id" field.
+func PublicIDContainsFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContainsFold(FieldPublicID, v))
 }
 
 // CollectKeyEQ applies the EQ predicate on the "collect_key" field.

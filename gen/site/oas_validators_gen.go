@@ -5898,6 +5898,17 @@ func (s *SiteWorkspaceResource) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if err := s.PublicId.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "publicId",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if err := s.Role.Validate(); err != nil {
 			return err
 		}
@@ -5969,6 +5980,26 @@ func (s *SiteWorkspacesUpdateUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (s WorkspaceId) Validate() error {
+	alias := (string)(s)
+	if err := (validate.String{
+		MinLength:     0,
+		MinLengthSet:  false,
+		MaxLength:     0,
+		MaxLengthSet:  false,
+		Email:         false,
+		Hostname:      false,
+		Regex:         regexMap["^[0-9A-Za-z]{8}$"],
+		MinNumeric:    0,
+		MinNumericSet: false,
+		MaxNumeric:    0,
+		MaxNumericSet: false,
+	}).Validate(string(alias)); err != nil {
+		return errors.Wrap(err, "string")
 	}
 	return nil
 }

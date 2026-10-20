@@ -16,3 +16,10 @@ scalar TimeZoneName extends string;
  */
 @format("int64")
 scalar EntityId extends string;
+
+/**
+ * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
+ * Workspace's one public address.
+ */
+@pattern("^[0-9A-Za-z]{8}$")
+scalar WorkspaceId extends string;
