@@ -304,7 +304,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      `reputation.Rates`); and the service endpoints (a Service credential) scope over the one
      Workspace a call names, after its row is loaded, to set, clear and list its Staff holds
      (`Module.SetHold`, `ClearHold`, `ActiveHolds`; the send path and the site API read them
-     through `holds.Active` / `holds.Freezer`, which hold no raw client); the abuse detector
+     through the `holds` module, which hold no raw client); the abuse detector
      (ADR 0026) scopes over the Workspace being judged, after its row is loaded, to read the
      rates (`abuse.Watch`, which the console's `Module.WorkspaceAbuse` and the `/site`
      dashboard's warning also read through the `site.AbuseWatch` seam); and the service usage

@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -148,6 +149,10 @@ type TestEnv struct {
 	Cipher *secrets.Cipher
 	// Integrations is the module the server serves Integrations and their hooks with.
 	Integrations *integrations.Module
+
+	// Holds is the module the sender's freeze check reads, for a test that builds its own
+	// Outbound module.
+	Holds *holds.Holds
 
 	edition *ee.Edition // the EE parts, built like the composition root builds them
 
@@ -339,8 +344,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// The Edition's ent hooks, on the client and on every transaction the bus opens.
 	client.Use(edition.Hooks()...)
 	bus.Use(edition.Hooks()...)
-	// The Staff hold freezer rides the send chokepoint like the app's.
-	outboundOpts := []outbound.Option{outbound.WithFreezers(edition.Freezer()), outbound.WithTrackingDomains(), outbound.WithTestSendBudget(attempts)}
+	outboundOpts := []outbound.Option{outbound.WithTrackingDomains(), outbound.WithTestSendBudget(attempts)}
 	switch {
 	case st.noSystemSender:
 	case st.noSystemFrom:
@@ -348,7 +352,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	default:
 		outboundOpts = append(outboundOpts, outbound.WithSystemSender(systemMailFrom{systemMail}))
 	}
-	sender := outbound.New(bus, resolver, tracker, outboundOpts...)
+	sender := outbound.New(bus, edition.Holds(), resolver, tracker, outboundOpts...)
 	fakeSES := &FakeSES{}
 	catalog := catalogWith(fakeSES)
 	inline := jobs.NewInline(client, sender, systemMail, stubTXT, nil, cipher, catalog, cfg.AppURL)
@@ -423,9 +427,16 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, err, "build internal handler")
 
 	return &TestEnv{
-		Instance: inst, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, now: st.now, sessionTTL: cfg.SessionTTL,
+		Instance: inst, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
 		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}
+}
+
+// CoreHolds is the holds module of an instance that ignores Staff holds (no `staff` license),
+// for a test under testing/synctest: fake time starts in 2000, before the real-clock expiry
+// of the fixture holds, which would read active there.
+func (e *TestEnv) CoreHolds() *holds.Holds {
+	return holds.New(func() bool { return false }, time.Now)
 }
 
 // CapturingSender is a messaging.EmailSender that records sends for assertions.

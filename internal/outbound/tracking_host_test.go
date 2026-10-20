@@ -38,7 +38,7 @@ func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outbound.Module, key, do
 }
 
 func tracked(env *testhelper.TestEnv, opts ...outbound.Option) *outbound.Module {
-	return outbound.New(env.Bus, senders{sender: env.CustomerMail}, tracking.New("test-secret", "http://local"), opts...)
+	return outbound.New(env.Bus, env.Holds, senders{sender: env.CustomerMail}, tracking.New("test-secret", "http://local"), opts...)
 }
 
 func TestServingTrackingDomainCarriesEveryLink(t *testing.T) {

@@ -29,7 +29,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
@@ -119,16 +118,13 @@ func (e *Edition) Service(bus *events.Bus) interface {
 	return staff.NewServiceSurface(e.StaffMembers, bus)
 }
 
-// Freezer is the Staff holds' seat on the send chokepoint (ADR 0009, 0015): any
-// active hold freezes a Workspace's sending, and a lapsed one is ignored at once. It
-// honours holds only with the `staff` license, so an unlicensed instance never
-// freezes on a row it could not have written.
-func (e *Edition) Freezer() outbound.Freezer {
-	return holds.Freezer{Now: e.now, Enabled: e.HoldsHonoured}
-}
+// Holds is the read side of a Workspace's freezes on the send chokepoint (ADR 0009, 0015).
+// It honours Staff holds only with the `staff` license, so an unlicensed instance never
+// freezes on a row it could not have written; deletion and suspension always count.
+func (e *Edition) Holds() *holds.Holds { return holds.New(e.HoldsHonoured, e.now) }
 
 // HoldsHonoured reports whether Staff holds are honoured at all (the `staff`
-// license): the send path's Freezer and every read of a hold shown to a Workspace
+// license): the send path and every read of a hold shown to a Workspace
 // agree on it.
 func (e *Edition) HoldsHonoured() bool { return e.lic.Has(licensekey.FeatureStaff) }
 

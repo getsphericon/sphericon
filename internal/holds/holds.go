@@ -129,23 +129,26 @@ func Read(ctx context.Context, s *ent.Scoped, now time.Time, staffHonoured bool)
 	return Of(ws, staffHonoured), nil
 }
 
-// Freezer answers the send path's "may this Workspace send now" from the standing (it
-// satisfies outbound.Freezer, which the edition's wiring returns it as).
-type Freezer struct {
-	// Now is the clock; nil is time.Now.
-	Now func() time.Time
-	// Enabled reports whether Staff holds are honoured at all (the `staff` license); nil
-	// is always.
-	Enabled func() bool
+// Holds answers the send path's "may this Workspace send now" from the standing. The one
+// thing that varies between editions is whether Staff holds are honoured (the `staff`
+// license); it is the one function the constructor takes.
+type Holds struct {
+	honoured func() bool
+	now      func() time.Time
 }
 
-// Frozen implements outbound.Freezer.
-func (f Freezer) Frozen(ctx context.Context, s *ent.Scoped, _ *ent.Workspace) (string, error) {
-	now := time.Now
-	if f.Now != nil {
-		now = f.Now
-	}
-	st, err := Read(ctx, s, now(), f.Enabled == nil || f.Enabled())
+// New builds the module. honoured reports whether Staff holds count at all (deletion and
+// suspension always do); now is the clock a hold's expiry is read against.
+func New(honoured func() bool, now func() time.Time) *Holds {
+	return &Holds{honoured: honoured, now: now}
+}
+
+// Always is the honoured function of an instance that honours Staff holds.
+func Always() bool { return true }
+
+// Reason is the reason a send is Held for the scope's Workspace, "" when it may send.
+func (h *Holds) Reason(ctx context.Context, s *ent.Scoped) (string, error) {
+	st, err := Read(ctx, s, h.now(), h.honoured())
 	if err != nil {
 		return "", err
 	}

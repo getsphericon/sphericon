@@ -37,7 +37,7 @@ invisible to a self-hosted install.
   only and never touches the usage table, so a closed snapshot outlives the Events it was computed
   from and old invoices stay reproducible by their closed figure.
 - **Unlicensed means invisible.** Without the `staff` license the job does nothing, the hook is
-  not installed (no row is ever written), the Freezer on the send chokepoint never freezes, no
+  not installed (no row is ever written), the send chokepoint never freezes on a Staff hold, no
   listener is bound for the service endpoints and the public port answers 404 for them. Send
   outcomes are identical to a core without any of this.
 

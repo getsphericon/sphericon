@@ -148,3 +148,28 @@ func TestTheSiteViewAndTheSendPathAgree(t *testing.T) {
 	assert.Equal(t, keys(send.Holds()), keys(site.Holds()))
 	assert.Equal(t, []string{"future"}, keys(site.Staff))
 }
+
+// The send path's reason comes from the constructor's one function: with it off, Staff holds
+// are ignored while deletion and suspension still count; deletion is reported first.
+func TestReasonHonoursTheLicenseFunctionAndReportsDeletionFirst(t *testing.T) {
+	w := newWorld(t)
+	w.hold(t, "review", w.now.Add(time.Hour))
+	on := holds.New(holds.Always, func() time.Time { return w.now })
+	off := holds.New(func() bool { return false }, func() time.Time { return w.now })
+	reason := func(h *holds.Holds) string {
+		t.Helper()
+		got, err := h.Reason(w.ctx, w.s)
+		require.NoError(t, err)
+		return got
+	}
+
+	assert.Equal(t, holds.ReasonStaff, reason(on))
+	assert.Empty(t, reason(off))
+
+	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSuspendedAt(w.now).ExecX(w.ctx)
+	assert.Equal(t, holds.ReasonSuspended, reason(off))
+
+	w.env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(w.now).ExecX(w.ctx)
+	assert.Equal(t, holds.ReasonPendingDeletion, reason(on))
+	assert.Equal(t, holds.ReasonPendingDeletion, reason(off))
+}

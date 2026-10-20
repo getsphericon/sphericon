@@ -67,7 +67,7 @@ func TestBroadcastThroughALimitedIntegrationLosesNoRecipient(t *testing.T) {
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
 		now := time.Now()
-		mod := outbound.New(e.Bus, resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
+		mod := outbound.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
@@ -98,7 +98,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		env := testhelper.Setup(t)
 		ctx := context.Background()
 		fs := &fakeSender{}
-		mod := outbound.New(env.Bus, resolvingTo(fs), tracking.New("test-secret", "http://local"))
+		mod := outbound.New(env.Bus, env.CoreHolds(), resolvingTo(fs), tracking.New("test-secret", "http://local"))
 		env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
 		runIDs, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo")
@@ -140,7 +140,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
-		mod := outbound.New(e.Bus, resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
+		mod := outbound.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
 		runIDs, err := jobs.EvaluateTrigger(ctx, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo")
