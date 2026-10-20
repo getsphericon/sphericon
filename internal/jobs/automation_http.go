@@ -28,7 +28,7 @@ type RunHTTPStepArgs struct {
 	Step  int   `json:"step"`
 }
 
-func (RunHTTPStepArgs) Kind() string { return jobkind.HTTPStep }
+func (RunHTTPStepArgs) Kind() string { return jobkind.HTTPStep.Kind }
 
 // InsertOpts puts the call on its own queue with the retry horizon of a hook (HookMaxAttempts).
 func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {

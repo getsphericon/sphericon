@@ -39,7 +39,7 @@ const (
 	WebhookDisableWindow   = 2 * time.Hour
 )
 
-func (DeliverWebhookArgs) Kind() string { return jobkind.DeliverWebhook }
+func (DeliverWebhookArgs) Kind() string { return jobkind.DeliverWebhook.Kind }
 
 type DeliverWebhookWorker struct {
 	river.WorkerDefaults[DeliverWebhookArgs]

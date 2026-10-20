@@ -41,23 +41,23 @@ func cancelInFlight(ctx context.Context, s *ent.Scoped, t *Target, purger events
 	if err := purger.PurgeOutbox(ctx, s.WorkspaceID(), t.ContactID, t.Destinations); err != nil {
 		return err
 	}
-	if err := purger.PurgeJobs(ctx, jobkind.EvaluateTrigger, "contact_id", []int64{t.ContactID}); err != nil {
+	if err := purger.PurgeJobs(ctx, jobkind.EvaluateTrigger, []int64{t.ContactID}); err != nil {
 		return err
 	}
 	endpointIDs, err := s.WebhookEndpoint().Query().IDs(ctx)
 	if err != nil {
 		return err
 	}
-	if err := purger.PurgeWebhookJobs(ctx, jobkind.DeliverWebhook, endpointIDs, t.ContactID, t.Destinations); err != nil {
+	if err := purger.PurgeWebhookJobs(ctx, endpointIDs, t.ContactID, t.Destinations); err != nil {
 		return err
 	}
-	if err := purger.PurgeJobs(ctx, jobkind.RunStep, "run_id", runIDs); err != nil {
+	if err := purger.PurgeJobs(ctx, jobkind.RunStep, runIDs); err != nil {
 		return err
 	}
-	if err := purger.PurgeJobs(ctx, jobkind.HTTPStep, "run_id", runIDs); err != nil {
+	if err := purger.PurgeJobs(ctx, jobkind.HTTPStep, runIDs); err != nil {
 		return err
 	}
-	if err := purger.PurgeJobs(ctx, jobkind.SendRecipient, "recipient_id", recipientIDs); err != nil {
+	if err := purger.PurgeJobs(ctx, jobkind.SendRecipient, recipientIDs); err != nil {
 		return err
 	}
 

@@ -43,7 +43,7 @@ type SendRecipientArgs struct {
 	BroadcastID int64 `json:"broadcast_id"`
 }
 
-func (SendRecipientArgs) Kind() string { return jobkind.SendRecipient }
+func (SendRecipientArgs) Kind() string { return jobkind.SendRecipient.Kind }
 
 // SendBroadcastWorker is the fan-out phase: it runs the module's delivery sequence with a
 // river scheduler, so the send scales across workers instead of running the whole audience

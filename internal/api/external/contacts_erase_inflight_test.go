@@ -119,7 +119,7 @@ func TestExternalContactsEraseClearsQueuedWebhookDeliveries(t *testing.T) {
 	eraseErasable(t, env)
 
 	var left []string
-	for _, args := range env.JobsOf(t, jobkind.DeliverWebhook) {
+	for _, args := range env.JobsOf(t, jobkind.DeliverWebhook.Kind) {
 		left = append(left, fmt.Sprint(args["delivery_id"]))
 	}
 	assert.ElementsMatch(t, []string{"bystander", "nobody", "other-tenant"}, left)
@@ -141,7 +141,7 @@ func TestExternalContactsEraseClearsQueuedHTTPStepCallsAndFailureExcerpts(t *tes
 	eraseErasable(t, env)
 
 	var left []int64
-	for _, args := range env.JobsOf(t, jobkind.HTTPStep) {
+	for _, args := range env.JobsOf(t, jobkind.HTTPStep.Kind) {
 		left = append(left, int64(args["run_id"].(float64)))
 	}
 	assert.ElementsMatch(t, []int64{fixtures.AutomationRunBystanderHTTPFailedID, fixtures.AutomationRunHTTPFailedID}, left)
