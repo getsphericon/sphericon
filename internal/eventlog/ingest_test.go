@@ -3,6 +3,7 @@ package eventlog_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +19,7 @@ func unserializable() map[string]any { return map[string]any{"bad": make(chan in
 
 func TestIngestCarriesTheEmailAndPhoneSnapshot(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, eventlog.New(env.Bus).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
+	require.NoError(t, newModule(env).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
 		{SubjectID: "s-1", Action: "page_view", Email: ptr("nobody@example.com"), Phone: ptr("+15550100")},
 	}))
 
@@ -32,7 +33,7 @@ func TestIngestCarriesTheEmailAndPhoneSnapshot(t *testing.T) {
 func TestIngestIsAtomicAcrossTheBatch(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := eventlog.New(env.Bus).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
+	err := newModule(env).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
 		{SubjectID: "ok", Action: "page_view"},
 		{SubjectID: "bad", Action: "page_view", Properties: unserializable()},
 	})
@@ -43,7 +44,7 @@ func TestIngestIsAtomicAcrossTheBatch(t *testing.T) {
 func TestIngestEachIsolatesItems(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	errs := eventlog.New(env.Bus).IngestEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
+	errs := newModule(env).IngestEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
 		{SubjectID: "s-1", Action: "page_view"},
 		{SubjectID: "  ", Action: "page_view"},
 		{SubjectID: "s-3", Action: ""},
@@ -53,10 +54,11 @@ func TestIngestEachIsolatesItems(t *testing.T) {
 
 	require.Len(t, errs, 5)
 	assert.NoError(t, errs[0])
-	assert.ErrorIs(t, errs[1], eventlog.ErrInvalid, "blank subject id")
-	assert.ErrorIs(t, errs[2], eventlog.ErrInvalid, "blank action")
+	var rejection *eventlog.Rejection
+	assert.ErrorAs(t, errs[1], &rejection, "blank subject id")
+	assert.ErrorAs(t, errs[2], &rejection, "blank action")
 	assert.Error(t, errs[3])
-	assert.NotErrorIs(t, errs[3], eventlog.ErrInvalid)
+	assert.NotErrorAs(t, errs[3], &rejection)
 	assert.NoError(t, errs[4], "an earlier failure does not affect later items")
 
 	got := outboxCollected(t, env)
@@ -67,13 +69,13 @@ func TestIngestEachIsolatesItems(t *testing.T) {
 
 func TestIngestEachWithNoInputs(t *testing.T) {
 	env := testhelper.Setup(t)
-	assert.Empty(t, eventlog.New(env.Bus).IngestEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), nil))
+	assert.Empty(t, newModule(env).IngestEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), nil))
 }
 
 func TestIngestMarksBackfilledEvents(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, eventlog.New(env.Bus).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
-		{SubjectID: "s-1", Action: "purchase", Backfill: true},
+	require.NoError(t, newModule(env).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
+		{SubjectID: "s-1", Action: "purchase", Backfill: true, OccurredAt: time.Now().AddDate(-1, 0, 0)},
 		{SubjectID: "s-2", Action: "purchase"},
 	}))
 
@@ -88,7 +90,7 @@ func TestIngestMarksBackfilledEvents(t *testing.T) {
 func TestIngestSkipsAnEventItAlreadyStored(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	in := eventlog.Input{SubjectID: "s-1", Action: "purchase", ClientEventID: "order-1"}
 
@@ -101,4 +103,54 @@ func TestIngestSkipsAnEventItAlreadyStored(t *testing.T) {
 	got := outboxCollected(t, env)
 	require.Len(t, got, 1, "the resend is not published again")
 	assert.Equal(t, eventlog.DedupKey(fixtures.AcmeID, "order-1"), got[0].DedupID)
+}
+
+func rejected(t *testing.T, err error) string {
+	t.Helper()
+	var rejection *eventlog.Rejection
+	require.ErrorAs(t, err, &rejection)
+	return rejection.Reason
+}
+
+// The system's own actions are never a customer's Event, in any case or spelling.
+func TestIngestRefusesReservedActions(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := newModule(env)
+	for _, action := range []string{"email.opened", " Email.Clicked", "marketing.confirmed", "contact.created"} {
+		err := m.Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{{SubjectID: "s-1", Action: action}})
+		assert.Contains(t, rejected(t, err), "reserved", action)
+	}
+	assert.Empty(t, outboxCollected(t, env))
+}
+
+func TestIngestRefusesALiveEventThatIsHistory(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := newModule(env)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+
+	stale := eventlog.Input{SubjectID: "s-1", Action: "purchase", OccurredAt: time.Now().Add(-liveWindow - time.Hour)}
+	assert.Contains(t, rejected(t, m.Ingest(context.Background(), acme, []eventlog.Input{stale})), "backfill")
+
+	require.NoError(t, m.Ingest(context.Background(), acme, []eventlog.Input{
+		{SubjectID: "s-1", Action: "purchase", OccurredAt: time.Now().Add(-liveWindow + time.Hour)},
+		{SubjectID: "s-2", Action: "purchase"},
+	}), "an event inside the window, or without a time, is live")
+	assert.Len(t, outboxCollected(t, env), 2)
+}
+
+func TestBackfillNeedsATimeThatHasPassed(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := newModule(env)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	ctx := context.Background()
+
+	errs := m.IngestEach(ctx, acme, []eventlog.Input{
+		{SubjectID: "s-1", Action: "purchase", Backfill: true},
+		{SubjectID: "s-2", Action: "purchase", Backfill: true, OccurredAt: time.Now().Add(time.Hour)},
+		{SubjectID: "s-3", Action: "purchase", Backfill: true, OccurredAt: time.Now().Add(-2 * liveWindow)},
+	})
+
+	assert.Contains(t, rejected(t, errs[0]), "needs occurredAt")
+	assert.Contains(t, rejected(t, errs[1]), "future")
+	assert.NoError(t, errs[2], "history older than the live window is exactly what a backfill is for")
 }

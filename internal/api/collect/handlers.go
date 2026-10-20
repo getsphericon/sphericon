@@ -3,10 +3,13 @@ package collect
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"net/http"
 	"time"
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/visitors"
 	"github.com/go-faster/jx"
@@ -61,6 +64,14 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 	})
 
 	if err := visitors.Collect(ctx, h.bus, auth.CollectScoped(ctx), evts); err != nil {
+		var rejection *eventlog.Rejection
+		if errors.As(err, &rejection) {
+			return &collectapi.CollectEventsCreateUnprocessableEntity{
+				Status: collectapi.NewOptInt32(http.StatusUnprocessableEntity),
+				Title:  collectapi.NewOptString(http.StatusText(http.StatusUnprocessableEntity)),
+				Detail: collectapi.NewOptString(rejection.Error()),
+			}, nil
+		}
 		return nil, err
 	}
 	return &collectapi.CollectEventsCreateNoContent{}, nil

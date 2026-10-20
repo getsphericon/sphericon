@@ -133,7 +133,7 @@ func TestExternalEventsCreate(t *testing.T) {
 	c := env.ExternalScoped(t, "events:write")
 	ctx := context.Background()
 
-	occurred := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
+	occurred := time.Now().UTC().Add(-time.Hour).Truncate(time.Second) // inside the live window
 	res, err := c.EventsCreate(ctx, &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{
 			{

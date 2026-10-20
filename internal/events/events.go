@@ -17,6 +17,8 @@ package events
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 )
 
@@ -39,6 +41,18 @@ const (
 	NameMarketingConfirmed = "marketing.confirmed"
 	NameCollected          = "event.collected"
 )
+
+// reservedPrefixes are the namespaces of the actions only the system records: delivery
+// (`email.*`), consent (`marketing.*`) and the Contact lifecycle (`contact.*`). They are
+// evidence (ADR 0013, ADR 0019), so a customer's own Event never carries one.
+var reservedPrefixes = []string{"email.", "marketing.", "contact."}
+
+// ReservedAction reports whether action belongs to the system and is refused from a
+// customer's Event.
+func ReservedAction(action string) bool {
+	a := strings.ToLower(strings.TrimSpace(action))
+	return slices.ContainsFunc(reservedPrefixes, func(prefix string) bool { return strings.HasPrefix(a, prefix) })
+}
 
 // Bounce kinds carried by EmailDeliveryFailure. Only a permanent (hard) bounce
 // suppresses an address; a transient (soft) bounce is temporary.

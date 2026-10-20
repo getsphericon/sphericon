@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/samber/lo"
 )
@@ -91,7 +92,14 @@ func Identify(ctx context.Context, bus *events.Bus, s *ent.Scoped, input Identif
 	})
 }
 
+// Collect refuses the whole batch with an *eventlog.Rejection when an event claims a
+// reserved action: delivery, consent and Contact lifecycle facts are the system's alone.
 func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []CollectEventInput) error {
+	for _, evt := range evts {
+		if events.ReservedAction(evt.Action) {
+			return &eventlog.Rejection{Reason: fmt.Sprintf("action %q is reserved for the system", evt.Action)}
+		}
+	}
 	for _, evt := range evts {
 		visitorID := strings.TrimSpace(evt.VisitorID)
 		dedupID := ""

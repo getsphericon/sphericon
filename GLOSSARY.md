@@ -75,6 +75,20 @@ system-generated actions — so engagement is segmentable through the very same 
 customer-tracked actions, with no parallel event stream.
 _Avoid_: Activity, log entry, signal
 
+**Import**:
+Bringing records from a Workspace's earlier system into the Workspace. Contacts come in by file
+(with a choice of how their consent is treated); Events come in as a **Backfill**. Importing is
+repeatable: sending the same record again changes nothing.
+_Avoid_: Migration, sync
+
+**Backfill**:
+An **Import** of Events: Events that happened before the Workspace came to sphericon, recorded with
+the time they really happened. A backfilled Event is an ordinary Event to segmentation, but it is
+history: no Automation enrolls on it and no webhook endpoint receives it, so loading history never
+sends mail. A live Event that claims to be old is not a Backfill and is refused rather than
+treated as one.
+_Avoid_: Historical import, replay, silent event
+
 **Erasure**:
 Removing a Contact's personal data at the Workspace's request (GDPR Art. 17). It is what deleting
 a Contact _is_ — there is no softer delete that keeps personal data. The Contact, its Visitors,

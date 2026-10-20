@@ -210,10 +210,11 @@ func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.Ups
 // message, anything else (storage) as a generic one so internals do not leak.
 func itemError(err error) string {
 	var conflict *contacts.ConflictError
+	var rejection *eventlog.Rejection
 	switch {
 	case errors.As(err, &conflict):
 		return conflict.Message()
-	case errors.Is(err, contacts.ErrIdentityRequired), errors.Is(err, eventlog.ErrInvalid):
+	case errors.Is(err, contacts.ErrIdentityRequired), errors.As(err, &rejection):
 		return err.Error()
 	default:
 		return "internal error"

@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/eventlog"
@@ -128,7 +129,10 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 	res, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
 		Backfill: externalapi.NewOptBool(true),
 		Events: []externalapi.EventInput{
-			{SubjectId: "s-1", Action: "order_paid", ClientEventId: externalapi.NewOptNilString("order-1")},
+			{
+				SubjectId: "s-1", Action: "order_paid", ClientEventId: externalapi.NewOptNilString("order-1"),
+				OccurredAt: externalapi.NewOptNilTimestamp(externalapi.Timestamp(time.Now().AddDate(-2, 0, 0))),
+			},
 		},
 	})
 	require.NoError(t, err)
@@ -138,4 +142,37 @@ func TestExternalEventsBatchBackfill(t *testing.T) {
 	assert.Equal(t, externalapi.EventBatchStatusAccepted, ok.Results[0].Status)
 
 	assert.Equal(t, 1, env.OutboxCount(t, "event.collected", map[string]any{"backfill": true, "dedupId": eventlog.DedupKey(fixtures.AcmeID, "order-1")}))
+}
+
+// The live path refuses history and the system's own actions; the all-or-nothing endpoint
+// answers 422 with the reason, and the batch reports it per item.
+func TestExternalEventsRefuseHistoryAndReservedActionsOnTheLivePath(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "events:write")
+	old := externalapi.NewOptNilTimestamp(externalapi.Timestamp(time.Now().AddDate(-2, 0, 0)))
+
+	res, err := c.EventsCreate(context.Background(), &externalapi.RecordEventsInput{
+		Events: []externalapi.EventInput{{SubjectId: "s-1", Action: "order_paid", OccurredAt: old}},
+	})
+	require.NoError(t, err)
+	refused, isRefused := res.(*externalapi.EventsCreateUnprocessableEntity)
+	require.Truef(t, isRefused, "got %T", res)
+	assert.Contains(t, refused.Detail.Or(""), "backfill")
+
+	batch, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+		Events: []externalapi.EventInput{
+			{SubjectId: "s-1", Action: "order_paid", OccurredAt: old},
+			{SubjectId: "s-1", Action: "email.opened"},
+			{SubjectId: "s-1", Action: "order_paid"},
+		},
+	})
+	require.NoError(t, err)
+	ok, isOK := batch.(*externalapi.RecordEventsBatchResult)
+	require.Truef(t, isOK, "got %T", batch)
+	require.Len(t, ok.Results, 3)
+	assert.Equal(t, externalapi.EventBatchStatusFailed, ok.Results[0].Status)
+	assert.Contains(t, ok.Results[0].Error.Or(""), "backfill")
+	assert.Equal(t, externalapi.EventBatchStatusFailed, ok.Results[1].Status)
+	assert.Contains(t, ok.Results[1].Error.Or(""), "reserved")
+	assert.Equal(t, externalapi.EventBatchStatusAccepted, ok.Results[2].Status)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func ptr(s string) *string { return &s }
 
 func TestIngestAttachesEventToExistingContactByAlias(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 
 	err := m.Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
 		{SubjectID: "s-1", Action: "page_view", Email: ptr("ALICE@example.com")},
@@ -51,7 +52,7 @@ func TestIngestAttachesEventToExistingContactByAlias(t *testing.T) {
 
 func TestIngestCarriesPropertiesVerbatim(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 
 	require.NoError(t, m.Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
 		{SubjectID: "s", Action: "added_to_cart", Properties: map[string]any{"sku": "A1"}},
@@ -65,7 +66,7 @@ func TestIngestCarriesPropertiesVerbatim(t *testing.T) {
 func TestActionsAreDistinctSortedAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := eventlog.New(env.Bus)
+	m := newModule(env)
 
 	env.DB.Event.Create().SetWorkspaceID(fixtures.AcmeID).SetSubjectID("dup").SetAction("page_view").SaveX(ctx)
 
@@ -85,4 +86,11 @@ func TestActionsAreDistinctSortedAndWorkspaceScoped(t *testing.T) {
 	other, err := m.Actions(ctx, env.DB.Scoped(fixtures.GlobexID))
 	require.NoError(t, err)
 	assert.Equal(t, []string{fixtures.EventGlobexAction}, other)
+}
+
+// liveWindow is the test instance's live window, the production default.
+const liveWindow = 72 * time.Hour
+
+func newModule(env *testhelper.TestEnv) *eventlog.Module {
+	return eventlog.New(env.Bus, liveWindow, time.Now)
 }
