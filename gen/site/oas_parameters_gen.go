@@ -4976,6 +4976,8 @@ type SiteContactsListParams struct {
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
+	// Keeps the contacts whose email address contains this text, ignoring case.
+	Email OptString `json:",omitempty,omitzero"`
 }
 
 func unpackSiteContactsListParams(packed middleware.Parameters) (params SiteContactsListParams) {
@@ -5002,6 +5004,15 @@ func unpackSiteContactsListParams(packed middleware.Parameters) (params SiteCont
 		}
 		if v, ok := packed[key]; ok {
 			params.PageSize = v.(OptInt32)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "email",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Email = v.(OptString)
 		}
 	}
 	return params
@@ -5157,6 +5168,47 @@ func decodeSiteContactsListParams(args [1]string, argsEscaped bool, r *http.Requ
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "pageSize",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: email.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "email",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotEmailVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotEmailVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Email.SetTo(paramsDotEmailVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "email",
 			In:   "query",
 			Err:  err,
 		}

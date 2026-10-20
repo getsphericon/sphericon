@@ -90,3 +90,31 @@ func TestSiteContactsRequireAuth(t *testing.T) {
 	_, err := c.SiteContactsList(context.Background(), siteapi.SiteContactsListParams{})
 	require.Error(t, err)
 }
+
+// The list narrows by a case-insensitive part of the stored email, and never reaches
+// another Workspace's contact (ContactGlobex, pat@globex.test, belongs to Globex).
+func TestSiteContactsListFiltersByEmail(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+
+	emails := func(email string) []string {
+		res, err := c.SiteContactsList(ctx, siteapi.SiteContactsListParams{
+			WorkspaceId: fixtures.AcmePublicID,
+			Email:       siteapi.NewOptString(email),
+		})
+		require.NoError(t, err)
+		listed, ok := res.(*siteapi.SiteContactsListOK)
+		require.Truef(t, ok, "got %T", res)
+		out := make([]string, 0, len(listed.Items))
+		for _, item := range listed.Items {
+			out = append(out, string(item.Email.Or("")))
+		}
+		return out
+	}
+
+	assert.Equal(t, []string{"alice@example.com"}, emails("ALICE@Example"), "a hit, whatever the case")
+	assert.Equal(t, []string{"bob@example.com"}, emails("bob@"), "a part of the address")
+	assert.Empty(t, emails("nobody"), "a miss")
+	assert.Empty(t, emails("pat@globex.test"), "another Workspace's contact is never returned")
+}

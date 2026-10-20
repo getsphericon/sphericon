@@ -7282,6 +7282,10 @@ func (s *Server) handleSiteContactsListRequest(args [1]string, argsEscaped bool,
 					Name: "pageSize",
 					In:   "query",
 				}: params.PageSize,
+				{
+					Name: "email",
+					In:   "query",
+				}: params.Email,
 			},
 			Raw: r,
 		}

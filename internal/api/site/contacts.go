@@ -27,7 +27,7 @@ func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteCont
 		return nil, err
 	}
 
-	page, err := h.contacts.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.contacts.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize), params.Email.Or(""))
 	if err != nil {
 		return nil, err
 	}

@@ -121,13 +121,20 @@ model SiteContactHoldings {
   suppressions: int32;
 }
 
+/** Narrows the Contacts list */
+model SiteContactsListFilter {
+  /** Keeps the contacts whose email address contains this text, ignoring case */
+  @query email?: string;
+}
+
 @tag("Site Contacts")
 interface SiteContacts
   extends WorkspaceCrudUnique<
       SiteContactResource,
       SiteCreateContactInput,
       SiteUpdateContactInput,
-      ForbiddenProblem
+      ForbiddenProblem,
+      SiteContactsListFilter
     > {
   /**
    * Export everything held about one contact as a streamed JSON download.

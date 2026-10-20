@@ -6582,6 +6582,23 @@ func (c *Client) sendSiteContactsList(ctx context.Context, params SiteContactsLi
 			return res, errors.Wrap(err, "encode query")
 		}
 	}
+	{
+		// Encode "email" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "email",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Email.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
 	u.RawQuery = q.Values().Encode()
 
 	stage = "EncodeRequest"

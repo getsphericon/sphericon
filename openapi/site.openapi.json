@@ -3858,6 +3858,9 @@
           },
           {
             "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/SiteContactsListFilter"
           }
         ],
         "responses": {
@@ -7802,6 +7805,16 @@
         "schema": {
           "$ref": "#/components/schemas/WorkspaceId"
         }
+      },
+      "SiteContactsListFilter": {
+        "name": "email",
+        "in": "query",
+        "required": false,
+        "description": "Keeps the contacts whose email address contains this text, ignoring case",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
       },
       "SiteCustomFieldResourceParentKey": {
         "name": "workspaceId",

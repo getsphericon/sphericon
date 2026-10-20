@@ -23,13 +23,14 @@ interface WorkspaceCrud<
   CreateInput,
   UpdateInput,
   WriteConflict = never,
-  DeleteDenied = never
+  DeleteDenied = never,
+  ListFilter extends {} = {}
 > {
   /** List resources for the site UI */
   @listsResource(Resource)
   @get
   @autoRoute
-  list(...ResourceCollectionParameters<Resource>, ...PageQuery):
+  list(...ResourceCollectionParameters<Resource>, ...PageQuery, ...ListFilter):
     | Page<Resource>
     | BadRequestProblem
     | NotFoundProblem
@@ -87,14 +88,16 @@ interface WorkspaceCrudUnique<
   Resource extends {},
   CreateInput,
   UpdateInput,
-  DeleteDenied = never
+  DeleteDenied = never,
+  ListFilter extends {} = {}
 >
   extends WorkspaceCrud<
       Resource,
       CreateInput,
       UpdateInput,
       ConflictProblem,
-      DeleteDenied
+      DeleteDenied,
+      ListFilter
     > {}
 
 /**

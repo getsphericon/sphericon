@@ -1,5 +1,8 @@
-import { Group, Stack, Title, Tooltip } from '@mantine/core'
-import { IconEye, IconPencil } from '@tabler/icons-react'
+import { Group, Stack, TextInput, Title, Tooltip } from '@mantine/core'
+import { useDebouncedCallback } from '@mantine/hooks'
+import { IconEye, IconPencil, IconSearch } from '@tabler/icons-react'
+import { useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
@@ -13,6 +16,12 @@ import { Route as contactsCreateRoute } from '../../routes/workspaces/$workspace
 export function ContactsListPage() {
   const { t } = useTranslation()
   const { workspaceId } = contactsRoute.useParams()
+  const { email } = contactsRoute.useSearch()
+  const navigate = useNavigate({ from: contactsRoute.fullPath })
+  const [search, setSearch] = useState(email ?? '')
+  const applySearch = useDebouncedCallback((value: string) => {
+    void navigate({ search: { email: value.trim() || undefined }, replace: true })
+  }, 300)
 
   return (
     <Stack>
@@ -23,8 +32,26 @@ export function ContactsListPage() {
         </ButtonLink>
       </Group>
 
+      <TextInput
+        value={search}
+        onChange={(event) => {
+          setSearch(event.currentTarget.value)
+          applySearch(event.currentTarget.value)
+        }}
+        placeholder={t(($) => $.contacts.searchPlaceholder)}
+        aria-label={t(($) => $.contacts.searchPlaceholder)}
+        leftSection={<IconSearch size={16} />}
+      />
+
       <PagedTable
-        options={(query) => siteContactsListOptions({ path: { workspaceId }, query })}
+        // A new search starts again from the first page.
+        key={email ?? ''}
+        options={(query) =>
+          siteContactsListOptions({
+            path: { workspaceId },
+            query: email ? { ...query, email } : query,
+          })
+        }
         loadErrorTitle={t(($) => $.alerts.loadErrorTitle)}
         noRecordsText={t(($) => $.contacts.noRecords)}
         emptyState={t(($) => $.contacts.emptyState)}

@@ -1858,6 +1858,11 @@ export const zSiteContactResourceKeyWorkspaceId = zWorkspaceId;
 export const zSiteContactResourceParentKey = zWorkspaceId;
 
 /**
+ * Keeps the contacts whose email address contains this text, ignoring case
+ */
+export const zSiteContactsListFilter = z.string();
+
+/**
  * The Workspace id: its short opaque public address and the route key for nested
  * workspace resources (ADR 0043)
  */
@@ -2545,7 +2550,8 @@ export const zSiteContactsListPath = z.object({
 
 export const zSiteContactsListQuery = z.object({
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25)
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(25),
+  email: z.exactOptional(z.string())
 });
 
 /**

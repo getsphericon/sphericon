@@ -3680,6 +3680,11 @@ export type SiteContactResourceKeyWorkspaceId = WorkspaceId;
 export type SiteContactResourceParentKey = WorkspaceId;
 
 /**
+ * Keeps the contacts whose email address contains this text, ignoring case
+ */
+export type SiteContactsListFilter = string;
+
+/**
  * The Workspace id: its short opaque public address and the route key for nested
  * workspace resources (ADR 0043)
  */
@@ -5939,6 +5944,10 @@ export type SiteContactsListData = {
      * Page size
      */
     pageSize?: number;
+    /**
+     * Keeps the contacts whose email address contains this text, ignoring case
+     */
+    email?: string;
   };
   url: '/workspaces/{workspaceId}/contacts';
 };

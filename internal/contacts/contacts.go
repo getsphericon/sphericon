@@ -408,11 +408,19 @@ func domainError(err error) error {
 	return err
 }
 
-// List returns one page of the Workspace's Contacts, ascending by id.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[*ent.Contact], error) {
+// List returns one page of the Workspace's Contacts, ascending by id. A non-empty
+// emailContains keeps those whose address contains it, ignoring case.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, emailContains string) (pagination.Page[*ent.Contact], error) {
+	query := func() *ent.ContactQuery {
+		q := s.Contact().Query()
+		if emailContains != "" {
+			q = q.Where(contact.EmailContainsFold(emailContains))
+		}
+		return q
+	}
 	return pagination.List(ctx, p,
-		func(ctx context.Context) (int, error) { return s.Contact().Query().Count(ctx) },
+		func(ctx context.Context) (int, error) { return query().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Contact, error) {
-			return s.Contact().Query().Order(ent.Asc(contact.FieldID)).Limit(limit).Offset(offset).All(ctx)
+			return query().Order(ent.Asc(contact.FieldID)).Limit(limit).Offset(offset).All(ctx)
 		})
 }

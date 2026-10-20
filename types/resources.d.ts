@@ -472,6 +472,7 @@ export default interface Resources {
       "eventsTitle": "Events",
       "export": "Export data",
       "noRecords": "No contacts yet",
+      "searchPlaceholder": "Search by email",
       "statusFilter": "Filter by status",
       "updatedAt": "Updated at"
     },
