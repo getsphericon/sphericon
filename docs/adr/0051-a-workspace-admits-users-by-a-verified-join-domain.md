@@ -70,18 +70,16 @@ change. That covers the verify link (including a reset link followed by a still-
 which completes the same registration), a provider sign-in's create, link and take-over, a
 confirmed email change, and an Invitation accepted by a User whose address was not yet proven.
 
-- **Wired now:** the verify link and a reset link that completes a registration, both through
-  `VerifyEmail`.
-- **Wired next:** the provider sign-in, the email change and the Invitation accept, in the ticket
-  that follows. `createFromProvider` and `takeOver` already share the verification transaction and
-  only pass `noJoin` until then.
-- **A reset link followed by an already Verified User** (`updateProfile(..., proven=true)`, which
-  stamps `email_proven_at` on a Verified User whose address was only recorded as verified, because
-  the install had verification off) **is a trigger** by that rule: it stamps from empty and the
-  mailed link is real proof. It is not wired yet. It needs a guard first, because that write
-  overwrites the column unconditionally and the step must know that it stamped from empty; the next
-  ticket adds the guard and the call. A reset link followed by a User whose address was already
-  proven is a plain password change and joins nothing.
+- **Wired:** the verify link and a reset link that completes a registration (`VerifyEmail`), the
+  provider sign-in's create, link and take-over, the confirmed email change, the Invitation accept
+  that proves the address for the first time, and a reset link followed by a Verified User whose
+  address was never proven (`updateProfile(..., proven=true)`). Each calls `applyDomainJoin` on the
+  transaction that stamps the proof. A write that may find the column already set (the provider link, the
+  reset and the Invitation accept) is guarded by `email_proven_at IS NULL` and joins only when its
+  rows-changed count says it stamped from empty; a reset link followed by a User whose address was
+  already proven is a plain password change and joins nothing. A new User from a provider obeys the
+  sign-up gate (a closed Instance stays closed); the Invitation accept does not. The explicit
+  Invitation's Membership is made first, so an `admin` Invitation is never lowered by the join.
 - `RegisterVerified` and `CreateOwner` (an Instance with verification off) stamp only
   `email_verified_at`: nothing is proven, so they never join.
 
