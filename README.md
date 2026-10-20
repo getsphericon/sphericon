@@ -218,9 +218,9 @@ Two options:
 ### Configuration
 
 Configuration is read from the environment (and, if present, `.env` files). Every variable, its
-default and its meaning are listed in [`docs/self-hosting.md`](docs/self-hosting.md), the one
-place to add a new one; it also covers deploying with Docker or the single binary, migrations
-and health checks.
+default and its meaning are listed in [`docs/configuration.md`](docs/configuration.md), the one
+place to add a new one. Deploying with Docker, the single binary or Kubernetes, migrations
+and health checks are in [`docs/self-hosting.md`](docs/self-hosting.md).
 
 ## License
 
