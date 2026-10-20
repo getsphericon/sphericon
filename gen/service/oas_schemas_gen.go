@@ -1273,6 +1273,12 @@ type ServiceWorkspaceResource struct {
 	Name string      `json:"name"`
 	// When the Workspace was created.
 	CreatedAt Timestamp `json:"createdAt"`
+	// When the Workspace was deleted; absent while it is live or after a restore. Its 30-day window runs
+	// from here.
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// When the erasure job removed the Workspace's data; absent until then. An erased Workspace stays in
+	// the feed as a tombstone: its name is blank and it has no owners.
+	ErasedAt OptNilTimestamp `json:"erasedAt"`
 	// Every owner of the Workspace as of this entry.
 	Owners []ServiceWorkspaceOwner `json:"owners"`
 }
@@ -1290,6 +1296,16 @@ func (s *ServiceWorkspaceResource) GetName() string {
 // GetCreatedAt returns the value of CreatedAt.
 func (s *ServiceWorkspaceResource) GetCreatedAt() Timestamp {
 	return s.CreatedAt
+}
+
+// GetDeletedAt returns the value of DeletedAt.
+func (s *ServiceWorkspaceResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
+}
+
+// GetErasedAt returns the value of ErasedAt.
+func (s *ServiceWorkspaceResource) GetErasedAt() OptNilTimestamp {
+	return s.ErasedAt
 }
 
 // GetOwners returns the value of Owners.
@@ -1310,6 +1326,16 @@ func (s *ServiceWorkspaceResource) SetName(val string) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *ServiceWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
+}
+
+// SetDeletedAt sets the value of DeletedAt.
+func (s *ServiceWorkspaceResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
+}
+
+// SetErasedAt sets the value of ErasedAt.
+func (s *ServiceWorkspaceResource) SetErasedAt(val OptNilTimestamp) {
+	s.ErasedAt = val
 }
 
 // SetOwners sets the value of Owners.

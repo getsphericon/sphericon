@@ -10,6 +10,7 @@ import (
 	entmembership "github.com/getsphericon/sphericon/ent/membership"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
 
@@ -225,4 +226,40 @@ func TestAMalformedCursorIsRefused(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.IsType(t, &serviceapi.ServiceWorkspaceFeedListBadRequest{}, res)
+}
+
+func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.T) {
+	h := newHarness(t)
+	c := h.env.ServiceClient(t, primary)
+	acc := accounts.New(h.env.DB, h.env.Bus)
+	actor := events.Actor{Kind: events.ActorUser}
+	initech := h.env.DB.Scoped(fixtures.InitechID)
+	ws, err := initech.Workspace(t.Context())
+	require.NoError(t, err)
+	got, saved := feedFrom(t, c, "")
+	live := entry(t, got, fixtures.InitechPublicID)
+	assert.False(t, live.DeletedAt.IsSet())
+	assert.False(t, live.ErasedAt.IsSet())
+
+	now := time.Now().UTC().Truncate(time.Second)
+	_, err = acc.DeleteWorkspace(t.Context(), initech, actor, ws.Name, now)
+	require.NoError(t, err)
+	got, afterDelete := feedFrom(t, c, saved)
+	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
+	deletedAt, ok := got[0].DeletedAt.Get()
+	require.True(t, ok)
+	assert.WithinDuration(t, now, time.Time(deletedAt), time.Second)
+	assert.False(t, got[0].ErasedAt.IsSet())
+	assert.NotEmpty(t, got[0].Owners)
+
+	// Replaying the cursor returns the same entries.
+	again, replayed := feedFrom(t, c, saved)
+	assert.Equal(t, got, again)
+	assert.Equal(t, afterDelete, replayed)
+
+	_, err = acc.RestoreWorkspace(t.Context(), 5, fixtures.InitechPublicID, actor, now)
+	require.NoError(t, err)
+	got, _ = feedFrom(t, c, afterDelete)
+	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
+	assert.False(t, got[0].DeletedAt.IsSet())
 }

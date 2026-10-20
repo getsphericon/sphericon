@@ -34,6 +34,12 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 			CreatedAt: serviceapi.Timestamp(e.Workspace.CreatedAt),
 			Owners:    make([]serviceapi.ServiceWorkspaceOwner, len(e.Owners)),
 		}
+		if t := e.Workspace.DeletedAt; t != nil {
+			item.DeletedAt = serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*t))
+		}
+		if t := e.Workspace.ErasedAt; t != nil {
+			item.ErasedAt = serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*t))
+		}
 		for j, u := range e.Owners {
 			owner := serviceapi.ServiceWorkspaceOwner{
 				UserId: serviceapi.EntityId(u.ID),

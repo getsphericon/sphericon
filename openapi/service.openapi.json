@@ -1347,6 +1347,26 @@
             ],
             "description": "When the Workspace was created"
           },
+          "deletedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the Workspace was deleted; absent while it is live or after a restore. Its\n30-day window runs from here."
+          },
+          "erasedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the erasure job removed the Workspace's data; absent until then. An erased\nWorkspace stays in the feed as a tombstone: its name is blank and it has no owners."
+          },
           "owners": {
             "type": "array",
             "items": {

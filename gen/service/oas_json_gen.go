@@ -2905,6 +2905,18 @@ func (s *ServiceWorkspaceResource) encodeFields(e *jx.Encoder) {
 		s.CreatedAt.Encode(e)
 	}
 	{
+		if s.DeletedAt.Set {
+			e.FieldStart("deletedAt")
+			s.DeletedAt.Encode(e)
+		}
+	}
+	{
+		if s.ErasedAt.Set {
+			e.FieldStart("erasedAt")
+			s.ErasedAt.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("owners")
 		e.ArrStart()
 		for _, elem := range s.Owners {
@@ -2914,11 +2926,13 @@ func (s *ServiceWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfServiceWorkspaceResource = [4]string{
+var jsonFieldsNameOfServiceWorkspaceResource = [6]string{
 	0: "id",
 	1: "name",
 	2: "createdAt",
-	3: "owners",
+	3: "deletedAt",
+	4: "erasedAt",
+	5: "owners",
 }
 
 // Decode decodes ServiceWorkspaceResource from json.
@@ -2962,8 +2976,28 @@ func (s *ServiceWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
+		case "deletedAt":
+			if err := func() error {
+				s.DeletedAt.Reset()
+				if err := s.DeletedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"deletedAt\"")
+			}
+		case "erasedAt":
+			if err := func() error {
+				s.ErasedAt.Reset()
+				if err := s.ErasedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"erasedAt\"")
+			}
 		case "owners":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				s.Owners = make([]ServiceWorkspaceOwner, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -2990,7 +3024,7 @@ func (s *ServiceWorkspaceResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00100111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
