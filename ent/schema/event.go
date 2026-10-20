@@ -94,6 +94,7 @@ func (Event) Indexes() []ent.Index {
 		index.Fields("workspace_id", "contact_id", "action"),
 		// Backs stitching anonymous events onto a Contact at Identify time.
 		index.Fields("workspace_id", "visitor_id"),
+		index.Fields("contact_id"),
 		// Backs the Events Export stream (ADR 0045): the keyset page over
 		// (updated_at, id) inside one Workspace, so a deep back-fill never scans.
 		index.Fields("workspace_id", "updated_at", "id"),

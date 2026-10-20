@@ -36,6 +36,13 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "apitoken_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{APITokensColumns[10]},
+			},
+		},
 	}
 	// AuditEntriesColumns holds the columns for the "audit_entries" table.
 	AuditEntriesColumns = []*schema.Column{
@@ -142,11 +149,6 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "automation_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[7]},
-			},
-			{
 				Name:    "automation_workspace_id_status_trigger_event",
 				Unique:  false,
 				Columns: []*schema.Column{AutomationsColumns[7], AutomationsColumns[4], AutomationsColumns[5]},
@@ -192,6 +194,11 @@ var (
 				Name:    "automation_runs_automation_id_contact_id",
 				Unique:  true,
 				Columns: []*schema.Column{AutomationRunsColumns[10], AutomationRunsColumns[3]},
+			},
+			{
+				Name:    "automationrun_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationRunsColumns[11]},
 			},
 		},
 	}
@@ -314,9 +321,9 @@ var (
 				Columns: []*schema.Column{BroadcastRecipientsColumns[8], BroadcastRecipientsColumns[3]},
 			},
 			{
-				Name:    "broadcastrecipient_broadcast_id",
+				Name:    "broadcastrecipient_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[8]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[9]},
 			},
 		},
 	}
@@ -435,9 +442,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "custom_fields_key_workspace_id",
+				Name:    "custom_fields_workspace_id_key",
 				Unique:  true,
-				Columns: []*schema.Column{CustomFieldsColumns[3], CustomFieldsColumns[6]},
+				Columns: []*schema.Column{CustomFieldsColumns[6], CustomFieldsColumns[3]},
 			},
 		},
 	}
@@ -566,6 +573,11 @@ var (
 				Columns: []*schema.Column{EventsColumns[12], EventsColumns[4]},
 			},
 			{
+				Name:    "event_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{EventsColumns[11]},
+			},
+			{
 				Name:    "event_workspace_id_updated_at_id",
 				Unique:  false,
 				Columns: []*schema.Column{EventsColumns[12], EventsColumns[2], EventsColumns[0]},
@@ -608,9 +620,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "holds_key_workspace_id",
+				Name:    "holds_workspace_id_key",
 				Unique:  true,
-				Columns: []*schema.Column{HoldsColumns[3], HoldsColumns[9]},
+				Columns: []*schema.Column{HoldsColumns[9], HoldsColumns[3]},
 			},
 		},
 	}
@@ -676,6 +688,11 @@ var (
 					Where: "is_default",
 				},
 			},
+			{
+				Name:    "integration_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{IntegrationsColumns[18]},
+			},
 		},
 	}
 	// InvitationsColumns holds the columns for the "invitations" table.
@@ -716,6 +733,11 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{InvitationsColumns[9], InvitationsColumns[3]},
 			},
+			{
+				Name:    "invitation_invited_by",
+				Unique:  false,
+				Columns: []*schema.Column{InvitationsColumns[8]},
+			},
 		},
 	}
 	// MembershipsColumns holds the columns for the "memberships" table.
@@ -752,6 +774,11 @@ var (
 				Name:    "membership_user_id_workspace_id",
 				Unique:  true,
 				Columns: []*schema.Column{MembershipsColumns[5], MembershipsColumns[6]},
+			},
+			{
+				Name:    "membership_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{MembershipsColumns[6]},
 			},
 		},
 	}
@@ -798,6 +825,13 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "oauthcode_client_id",
+				Unique:  false,
+				Columns: []*schema.Column{OauthCodesColumns[10]},
+			},
+		},
 	}
 	// OauthRefreshTokensColumns holds the columns for the "oauth_refresh_tokens" table.
 	OauthRefreshTokensColumns = []*schema.Column{
@@ -834,6 +868,11 @@ var (
 				Name:    "oauthrefreshtoken_api_token_id",
 				Unique:  false,
 				Columns: []*schema.Column{OauthRefreshTokensColumns[7]},
+			},
+			{
+				Name:    "oauthrefreshtoken_client_id",
+				Unique:  false,
+				Columns: []*schema.Column{OauthRefreshTokensColumns[6]},
 			},
 		},
 	}
@@ -992,6 +1031,13 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "segment_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{SegmentsColumns[5]},
+			},
+		},
 	}
 	// SendLimitersColumns holds the columns for the "send_limiters" table.
 	SendLimitersColumns = []*schema.Column{
@@ -1021,6 +1067,13 @@ var (
 				Columns:    []*schema.Column{SendLimitersColumns[7]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sendlimiter_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{SendLimitersColumns[7]},
 			},
 		},
 	}
@@ -1168,9 +1221,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "tags_name_workspace_id",
+				Name:    "tags_workspace_id_name",
 				Unique:  true,
-				Columns: []*schema.Column{TagsColumns[3], TagsColumns[4]},
+				Columns: []*schema.Column{TagsColumns[4], TagsColumns[3]},
 			},
 		},
 	}
@@ -1225,11 +1278,6 @@ var (
 				Name:    "unsubscribes_ws_channel_dest_source",
 				Unique:  true,
 				Columns: []*schema.Column{UnsubscribesColumns[7], UnsubscribesColumns[3], UnsubscribesColumns[4], UnsubscribesColumns[5]},
-			},
-			{
-				Name:    "unsubscribes_ws_channel_dest",
-				Unique:  false,
-				Columns: []*schema.Column{UnsubscribesColumns[7], UnsubscribesColumns[3], UnsubscribesColumns[4]},
 			},
 		},
 	}
@@ -1358,9 +1406,14 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "visitors_visitor_id_workspace_id",
+				Name:    "visitors_workspace_id_visitor_id",
 				Unique:  true,
-				Columns: []*schema.Column{VisitorsColumns[3], VisitorsColumns[6]},
+				Columns: []*schema.Column{VisitorsColumns[6], VisitorsColumns[3]},
+			},
+			{
+				Name:    "visitor_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{VisitorsColumns[5]},
 			},
 		},
 	}
@@ -1395,11 +1448,6 @@ var (
 			},
 		},
 		Indexes: []*schema.Index{
-			{
-				Name:    "webhookendpoint_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{WebhookEndpointsColumns[13]},
-			},
 			{
 				Name:    "webhookendpoint_workspace_id_enabled",
 				Unique:  false,

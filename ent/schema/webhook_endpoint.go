@@ -77,7 +77,6 @@ func (WebhookEndpoint) Fields() []ent.Field {
 
 func (WebhookEndpoint) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id"),
 		index.Fields("workspace_id", "enabled"),
 	}
 }

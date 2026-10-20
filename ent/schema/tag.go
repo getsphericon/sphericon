@@ -49,6 +49,6 @@ func (Tag) Edges() []ent.Edge {
 
 func (Tag) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("name", "workspace_id").Unique().StorageKey("tags_name_workspace_id"),
+		index.Fields("workspace_id", "name").Unique().StorageKey("tags_workspace_id_name"),
 	}
 }

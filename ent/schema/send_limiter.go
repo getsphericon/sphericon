@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // SendLimiter is the state of one Integration's Send rate limit (ADR 0023): two
@@ -56,5 +57,11 @@ func (SendLimiter) Edges() []ent.Edge {
 			Unique().
 			Required().
 			Immutable(),
+	}
+}
+
+func (SendLimiter) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("workspace_id"),
 	}
 }

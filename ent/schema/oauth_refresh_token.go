@@ -51,6 +51,7 @@ func (OAuthRefreshToken) Indexes() []ent.Index {
 	return []ent.Index{
 		// A refresh prunes the grant's expired rows by its token.
 		index.Fields("api_token_id"),
+		index.Fields("client_id"),
 	}
 }
 

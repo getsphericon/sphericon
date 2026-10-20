@@ -76,6 +76,6 @@ func (BroadcastRecipient) Indexes() []ent.Index {
 		index.Fields("broadcast_id", "contact_id").
 			Unique().
 			StorageKey("broadcast_recipients_broadcast_id_contact_id"),
-		index.Fields("broadcast_id"),
+		index.Fields("workspace_id"),
 	}
 }

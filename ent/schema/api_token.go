@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type ApiToken struct {
@@ -48,5 +49,11 @@ func (ApiToken) Fields() []ent.Field {
 		field.Time("last_used_at").
 			Optional().
 			Nillable(),
+	}
+}
+
+func (ApiToken) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("workspace_id"),
 	}
 }

@@ -116,5 +116,6 @@ func (Integration) Indexes() []ent.Index {
 		index.Fields("workspace_id", "channel").
 			Annotations(entsql.IndexWhere("is_default")).
 			Unique(),
+		index.Fields("workspace_id"),
 	}
 }

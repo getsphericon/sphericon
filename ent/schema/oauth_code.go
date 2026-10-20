@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // OAuthCode is a short-lived, single-use authorization code minted when a user
@@ -61,5 +62,11 @@ func (OAuthCode) Edges() []ent.Edge {
 			Field("client_id").
 			Required().
 			Unique(),
+	}
+}
+
+func (OAuthCode) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("client_id"),
 	}
 }

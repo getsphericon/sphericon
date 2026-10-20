@@ -62,7 +62,6 @@ func (Automation) Edges() []ent.Edge {
 
 func (Automation) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id"),
 		// Trigger lookup: active automations for a given event action.
 		index.Fields("workspace_id", "status", "trigger_event"),
 	}

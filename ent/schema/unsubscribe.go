@@ -63,12 +63,10 @@ func (Unsubscribe) Fields() []ent.Field {
 func (Unsubscribe) Indexes() []ent.Index {
 	return []ent.Index{
 		// One opt-out per (channel, destination, sending source) per workspace;
-		// lets the unsubscribe link upsert idempotently.
+		// lets the unsubscribe link upsert idempotently. Its leading columns also
+		// serve the layered eligibility check and display by (channel, destination).
 		index.Fields("workspace_id", "channel", "destination", "sending_source").
 			Unique().
 			StorageKey("unsubscribes_ws_channel_dest_source"),
-		// Non-unique lookup for the layered eligibility check and display.
-		index.Fields("workspace_id", "channel", "destination").
-			StorageKey("unsubscribes_ws_channel_dest"),
 	}
 }

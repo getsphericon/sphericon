@@ -77,5 +77,6 @@ func (AutomationRun) Indexes() []ent.Index {
 		index.Fields("automation_id", "contact_id").
 			Unique().
 			StorageKey("automation_runs_automation_id_contact_id"),
+		index.Fields("workspace_id"),
 	}
 }

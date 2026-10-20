@@ -50,6 +50,6 @@ func (CustomField) Fields() []ent.Field {
 
 func (CustomField) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("key", "workspace_id").Unique().StorageKey("custom_fields_key_workspace_id"),
+		index.Fields("workspace_id", "key").Unique().StorageKey("custom_fields_workspace_id_key"),
 	}
 }

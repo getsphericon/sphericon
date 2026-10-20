@@ -56,6 +56,7 @@ func (Visitor) Edges() []ent.Edge {
 
 func (Visitor) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("visitor_id", "workspace_id").Unique().StorageKey("visitors_visitor_id_workspace_id"),
+		index.Fields("workspace_id", "visitor_id").Unique().StorageKey("visitors_workspace_id_visitor_id"),
+		index.Fields("contact_id"),
 	}
 }

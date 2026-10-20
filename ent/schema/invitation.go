@@ -67,5 +67,6 @@ func (Invitation) Indexes() []ent.Index {
 		// One live invite per (workspace, email); re-invite updates the row.
 		index.Fields("workspace_id", "email").
 			Unique(),
+		index.Fields("invited_by"),
 	}
 }

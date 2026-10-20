@@ -57,6 +57,6 @@ func (Hold) Fields() []ent.Field {
 
 func (Hold) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("key", "workspace_id").Unique().StorageKey("holds_key_workspace_id"),
+		index.Fields("workspace_id", "key").Unique().StorageKey("holds_workspace_id_key"),
 	}
 }
