@@ -199,6 +199,14 @@ const (
 	ContactNoahEmail = "noah.js@codebasics.dev"
 	// ContactNoahID is from fixtures/contacts.
 	ContactNoahID = 102
+	// ContractTokenID is from fixtures/api_tokens.
+	ContractTokenID = 103
+	// ContractTokenName is from fixtures/api_tokens.
+	ContractTokenName = "Contract fuzzing token"
+	// ContractTokenPrefix is from fixtures/api_tokens.
+	ContractTokenPrefix = "contractfz01"
+	// ContractTokenSecret is from fixtures/api_tokens.
+	ContractTokenSecret = "contract-token-secret"
 	// CustomFieldGlobexID is from fixtures/custom_fields.
 	CustomFieldGlobexID = 900
 	// CustomFieldGlobexKey is from fixtures/custom_fields.

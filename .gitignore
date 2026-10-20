@@ -106,3 +106,6 @@ mise.local.toml
 docs/.vitepress/cache
 docs/.vitepress/dist
 docs/.vitepress/.temp
+
+# Schemathesis (mise run check:contract) caches what it learns about the API here.
+.schemathesis/
