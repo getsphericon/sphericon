@@ -30,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/samber/lo"
 )
 
 // ErrDefaultConflict means another default Integration already exists for the channel.
@@ -340,7 +339,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 			return err
 		}
 		if len(users) > 0 {
-			return &inuse.Error{What: "integration", Users: users}
+			return &inuse.Error{What: inuse.SubjectIntegration, Users: users}
 		}
 		return ts.Integration().DeleteOneID(id).Exec(ctx)
 	})
@@ -359,9 +358,7 @@ func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inus
 	if err != nil {
 		return nil, err
 	}
-	users := lo.Map(live, func(b *ent.Broadcast, _ int) inuse.User {
-		return inuse.User{Kind: inuse.Broadcast, ID: b.ID, Name: b.Name}
-	})
+	users := inuse.Broadcasts(live)
 	if !row.IsDefault || row.Channel != integration.ChannelEmail {
 		return users, nil
 	}

@@ -135,12 +135,13 @@ func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 	err = h.automations.Delete(ctx, ws, id)
+	if refused, ok := inuse.As(err); ok {
+		v := inUseProblem(refused)
+		return &v, nil
+	}
 	switch {
 	case errors.Is(err, automations.ErrNotFound):
 		v := siteapi.SiteAutomationsDeleteNotFound(problem(http.StatusNotFound, "automation not found"))
-		return &v, nil
-	case errors.Is(err, automations.ErrHasEnrollments):
-		v := siteapi.SiteAutomationsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, "an automation with enrollments cannot be deleted; archive it"))
 		return &v, nil
 	case err != nil:
 		return nil, err

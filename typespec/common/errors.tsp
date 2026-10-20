@@ -115,7 +115,8 @@ enum UsedByKind {
   /** A Segment, through a rule that names a Tag */
   segment,
 
-  /** The active Enrollments of an Automation, as one entry carrying their count */
+  /** The Enrollments of an Automation, as one entry carrying their count: the active ones when
+   * the Automation is archived, all of them when it is deleted */
   enrollment,
 }
 
@@ -132,7 +133,7 @@ model UsedBy {
   name: string;
 
   /** How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its active Enrollments. */
+   * Automation (id, name) and counts its Enrollments. */
   count?: int32;
 }
 

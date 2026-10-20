@@ -1044,14 +1044,6 @@ func (s *SiteAutomationsDeleteNotFound) Validate() error {
 	return nil
 }
 
-func (s *SiteAutomationsDeleteUnprocessableEntity) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *SiteAutomationsDryRunHttpStepBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {

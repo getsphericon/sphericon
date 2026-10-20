@@ -1261,6 +1261,18 @@ func encodeAutomationsDeleteResponse(response AutomationsDeleteRes, w http.Respo
 
 		return nil
 
+	case *InUseProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(409)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *AutomationsDeleteUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)

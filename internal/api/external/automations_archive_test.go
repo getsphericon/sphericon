@@ -52,7 +52,10 @@ func TestExternalAutomationsArchiveAndRestore(t *testing.T) {
 
 	del, err := c.AutomationsDelete(ctx, externalapi.AutomationsDeleteParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsDeleteUnprocessableEntity{}, del)
+	refusedDelete, ok := del.(*externalapi.InUseProblemDetails)
+	require.Truef(t, ok, "got %T", del)
+	require.Len(t, refusedDelete.UsedBy, 1)
+	assert.Equal(t, externalapi.UsedByKindEnrollment, refusedDelete.UsedBy[0].Kind)
 
 	back, err := c.AutomationsUnarchive(ctx, externalapi.AutomationsUnarchiveParams{ID: id})
 	require.NoError(t, err)

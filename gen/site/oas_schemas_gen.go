@@ -1157,6 +1157,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 }
 
 func (*InUseProblemDetails) siteAutomationsArchiveRes()   {}
+func (*InUseProblemDetails) siteAutomationsDeleteRes()    {}
 func (*InUseProblemDetails) siteIntegrationsDeleteRes()   {}
 func (*InUseProblemDetails) siteSegmentsDeleteRes()       {}
 func (*InUseProblemDetails) siteSendingDomainsDeleteRes() {}
@@ -6306,10 +6307,6 @@ func (*SiteAutomationsDeleteNoContent) siteAutomationsDeleteRes() {}
 type SiteAutomationsDeleteNotFound ProblemDetails
 
 func (*SiteAutomationsDeleteNotFound) siteAutomationsDeleteRes() {}
-
-type SiteAutomationsDeleteUnprocessableEntity ProblemDetails
-
-func (*SiteAutomationsDeleteUnprocessableEntity) siteAutomationsDeleteRes() {}
 
 type SiteAutomationsDryRunHttpStepBadRequest ProblemDetails
 
@@ -16325,7 +16322,7 @@ type UsedBy struct {
 	// Its name.
 	Name string `json:"name"`
 	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
-	// (id, name) and counts its active Enrollments.
+	// (id, name) and counts its Enrollments.
 	Count OptInt32 `json:"count"`
 }
 

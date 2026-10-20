@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
@@ -67,10 +68,6 @@ var (
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
 	// without a tag name, or an email step whose content cannot render.
 	ErrInvalidStep = errors.New("automations: invalid step")
-
-	// ErrHasEnrollments: the Automation has Enrollments, which are history, so it is archived
-	// rather than deleted (ADR 0049).
-	ErrHasEnrollments = errors.New("automations: automation has enrollments; archive it instead")
 
 	// ErrNoVersion: the Automation has no version yet. Only an Automation made before versions
 	// existed can be in that state, until the backfill job (internal/jobs) has run.
@@ -221,6 +218,29 @@ func Loaded(ctx context.Context, s *ent.Scoped, preds ...predicate.Automation) (
 	return s.Automation().Query().Where(preds...).WithVersions(latest).Order(ent.Asc(automation.FieldID)).All(ctx)
 }
 
+// UsingTag returns the Workspace's Automations, archived ones included, whose current steps
+// apply or remove the Tag by its name, in id order. An archived Automation is restorable, so it
+// still names the Tag (ADR 0049).
+func UsingTag(ctx context.Context, s *ent.Scoped, name string) ([]*ent.Automation, error) {
+	all, err := s.Automation().QueryWithDiscarded().WithVersions(latest).Order(ent.Asc(automation.FieldID)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var using []*ent.Automation
+	for _, a := range all {
+		steps, err := CurrentSteps(a)
+		if err != nil {
+			return nil, err
+		}
+		if slices.ContainsFunc(steps, func(st Step) bool {
+			return (st.Type == StepApplyTag || st.Type == StepRemoveTag) && strings.TrimSpace(st.Tag) == name
+		}) {
+			using = append(using, a)
+		}
+	}
+	return using, nil
+}
+
 // List returns one page of the Workspace's Automations, newest first: the kept ones, or with
 // archived the archived ones.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.Automation], error) {
@@ -320,6 +340,13 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // version; otherwise the steps become a new version and the Enrollments keep the one they began
 // on. Saving steps identical to the latest version's stores nothing.
 func (m *Module) saveSteps(ctx context.Context, s *ent.Scoped, automationID int64, steps []Step) error {
+	// Lock the Automation row for the rest of the transaction: Enroll inserts an Enrollment
+	// that references it, which waits on this lock, so no Enrollment can begin between the
+	// "none stands on this version" check below and the in-place rewrite, and the check sees
+	// every Enrollment that began before the lock was taken.
+	if _, err := s.Automation().QueryWithDiscarded().Where(automation.ID(automationID)).ForUpdate().OnlyID(ctx); err != nil {
+		return notFound(err)
+	}
 	cur, err := s.AutomationVersion().Query().
 		Where(automationversion.AutomationID(automationID)).
 		Order(ent.Desc(automationversion.FieldVersion)).
@@ -360,7 +387,7 @@ func (m *Module) saveSteps(ctx context.Context, s *ent.Scoped, automationID int6
 }
 
 // Delete purges an Automation that has no Enrollments, with its versions (ADR 0049). One with
-// any Enrollment is history and is archived instead: ErrHasEnrollments.
+// any Enrollment is history and is archived instead: an *inuse.Error carrying their count.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	n, err := s.Automation().Purge().Where(automation.ID(id), automation.Not(automation.HasRuns())).Exec(ctx)
 	if err != nil {
@@ -369,10 +396,15 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	if n > 0 {
 		return nil
 	}
-	if _, err := m.Get(ctx, s, id); err != nil {
+	a, err := m.Get(ctx, s, id)
+	if err != nil {
 		return err
 	}
-	return ErrHasEnrollments
+	enrollments, err := s.AutomationRun().Query().Where(automationrun.AutomationID(id)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	return &inuse.Error{What: inuse.SubjectAutomation, Users: []inuse.User{inuse.Enrollments(id, a.Name, enrollments)}}
 }
 
 // Archive discards an Automation (ADR 0049): it leaves the lists and enrolls nobody, and its
@@ -393,7 +425,7 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 		return err
 	}
 	if active > 0 {
-		return &inuse.Error{What: "automation", Users: []inuse.User{{Kind: inuse.Enrollment, ID: id, Name: a.Name, Count: active}}}
+		return &inuse.Error{What: inuse.SubjectAutomation, Users: []inuse.User{inuse.Enrollments(id, a.Name, active)}}
 	}
 	return notFound(s.Automation().Discard(ctx, id))
 }
@@ -419,9 +451,15 @@ func (m *Module) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 	return m.setStatus(ctx, s, id, automation.StatusDraft)
 }
 
+// setStatus changes the status of a kept Automation. An archived one enrolls nobody and is
+// restored before it is switched, so it is as good as absent here: ErrNotFound.
 func (m *Module) setStatus(ctx context.Context, s *ent.Scoped, id int64, status automation.Status) (*ent.Automation, error) {
-	if err := s.Automation().UpdateOneID(id).SetStatus(status).Exec(ctx); err != nil {
-		return nil, notFound(err)
+	n, err := s.Automation().Update().Where(automation.ID(id), automation.DiscardedAtIsNil()).SetStatus(status).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		return nil, ErrNotFound
 	}
 	return m.Get(ctx, s, id)
 }

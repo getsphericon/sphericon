@@ -96,3 +96,18 @@ func TestAnEmptyCohortHasZeroRates(t *testing.T) {
 	assert.Zero(t, other.Email.OpenRate)
 	assert.Zero(t, other.Email.ClickToOpenRate)
 }
+
+// An archived Automation is out of the counts, active or not.
+func TestArchivedAutomationsAreNotCounted(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	before, err := analytics.New().Overview(ctx, acme, analytics.Window30Days)
+	require.NoError(t, err)
+	require.NoError(t, acme.Automation().Discard(ctx, fixtures.AutomationWelcomeSeriesID))
+
+	after, err := analytics.New().Overview(ctx, acme, analytics.Window30Days)
+	require.NoError(t, err)
+	assert.Equal(t, before.Automations.Total-1, after.Automations.Total)
+	assert.Equal(t, before.Automations.Active-1, after.Automations.Active)
+}

@@ -139,11 +139,7 @@ func (s *Module) Delete(ctx context.Context, ws *ent.Scoped, id int64) error {
 		return err
 	}
 	if len(live) > 0 {
-		users := make([]inuse.User, len(live))
-		for i, b := range live {
-			users[i] = inuse.User{Kind: inuse.Broadcast, ID: b.ID, Name: b.Name}
-		}
-		return &inuse.Error{What: "segment", Users: users}
+		return &inuse.Error{What: inuse.SubjectSegment, Users: inuse.Broadcasts(live)}
 	}
 	return ws.Segment().DeleteOneID(id).Exec(ctx)
 }

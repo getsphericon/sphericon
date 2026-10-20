@@ -7,6 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/samber/lo"
+
+	"github.com/getsphericon/sphericon/ent"
 )
 
 // Kind is what a user of a row is.
@@ -20,9 +24,21 @@ const (
 	Automation Kind = "automation"
 	// Segment is a Segment whose rule names the row.
 	Segment Kind = "segment"
-	// Enrollment stands for the active Enrollments of an Automation: one User naming the
+	// Enrollment stands for the Enrollments of an Automation: one User naming the
 	// Automation, with their Count.
 	Enrollment Kind = "enrollment"
+)
+
+// Subject is the row a refused removal was for.
+type Subject string
+
+// The rows a removal can be refused for; the text reads "<subject> is in use by ...".
+const (
+	SubjectSegment       Subject = "segment"
+	SubjectTag           Subject = "tag"
+	SubjectIntegration   Subject = "integration"
+	SubjectSendingDomain Subject = "sending domain"
+	SubjectAutomation    Subject = "automation"
 )
 
 // User is one row that uses the row a removal was refused for.
@@ -30,14 +46,27 @@ type User struct {
 	Kind Kind
 	ID   int64
 	Name string
-	// Count is how many rows the User stands for; zero means one.
+	// Count is how many rows an Enrollment User stands for; every other kind is one row and
+	// leaves it zero.
 	Count int
+}
+
+// Enrollments is the User that stands for count Enrollments of the Automation.
+func Enrollments(automationID int64, name string, count int) User {
+	return User{Kind: Enrollment, ID: automationID, Name: name, Count: count}
+}
+
+// Broadcasts maps Broadcasts to their Users, in the order given.
+func Broadcasts(rows []*ent.Broadcast) []User {
+	return lo.Map(rows, func(b *ent.Broadcast, _ int) User {
+		return User{Kind: Broadcast, ID: b.ID, Name: b.Name}
+	})
 }
 
 // Error is a removal refused because Users still use the row. Callers match it with As.
 type Error struct {
-	// What is the removed row, for the message: "segment".
-	What  string
+	// What is the removed row, for the message.
+	What  Subject
 	Users []User
 }
 
@@ -45,8 +74,8 @@ func (e *Error) Error() string {
 	names := make([]string, len(e.Users))
 	for i, u := range e.Users {
 		names[i] = fmt.Sprintf("%s %q", u.Kind, u.Name)
-		if u.Count > 0 {
-			names[i] = fmt.Sprintf("%d active %ss of %q", u.Count, u.Kind, u.Name)
+		if u.Kind == Enrollment {
+			names[i] = fmt.Sprintf("%d %s of %q", u.Count, lo.Ternary(u.Count == 1, "enrollment", "enrollments"), u.Name)
 		}
 	}
 	return fmt.Sprintf("%s is in use by %s", e.What, strings.Join(names, ", "))

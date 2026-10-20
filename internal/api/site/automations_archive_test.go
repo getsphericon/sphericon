@@ -130,7 +130,7 @@ func TestSiteAutomationsDeleteOnlyPurgesUnenrolled(t *testing.T) {
 	for _, id := range []int64{fixtures.AutomationWelcomeSeriesID, fixtures.AutomationNotifySlackID} {
 		out, err := del(id)
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteAutomationsDeleteUnprocessableEntity{}, out, "automation %d", id)
+		assert.IsType(t, &siteapi.InUseProblemDetails{}, out, "automation %d: its Enrollments are history, so 409", id)
 	}
 
 	missing, err := del(999999)

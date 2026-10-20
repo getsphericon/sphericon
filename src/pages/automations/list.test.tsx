@@ -207,7 +207,5 @@ test('an automation with active enrollments is not archived and their count is s
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
   await screen.getByRole('button', { name: 'Archive' }).click()
 
-  await expect
-    .element(screen.getByText(/3 active enrollments of "Welcome flow"/))
-    .toBeInTheDocument()
+  await expect.element(screen.getByText(/3 enrollments of "Welcome flow"/)).toBeInTheDocument()
 })

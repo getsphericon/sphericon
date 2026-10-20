@@ -9,7 +9,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"slices"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -105,7 +104,7 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, contactID int64, nam
 }
 
 // Delete removes a Tag from the catalogue, and from every Contact that has it, unless a Segment
-// rule or an Automation step names it: then it returns an *inuse.Error naming those Segments and
+// rule or an Automation step names it, an archived Automation's too: then it returns an *inuse.Error naming those Segments and
 // Automations (ADR 0049), because both name the Tag and would silently stop matching or applying.
 // A missing Tag is ErrNotFound.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
@@ -124,23 +123,15 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	for _, seg := range segs {
 		users = append(users, inuse.User{Kind: inuse.Segment, ID: seg.ID, Name: seg.Name})
 	}
-	autos, err := automations.Loaded(ctx, s)
+	autos, err := automations.UsingTag(ctx, s, t.Name)
 	if err != nil {
 		return err
 	}
 	for _, a := range autos {
-		steps, err := automations.CurrentSteps(a)
-		if err != nil {
-			return err
-		}
-		if slices.ContainsFunc(steps, func(st automations.Step) bool {
-			return (st.Type == automations.StepApplyTag || st.Type == automations.StepRemoveTag) && strings.TrimSpace(st.Tag) == t.Name
-		}) {
-			users = append(users, inuse.User{Kind: inuse.Automation, ID: a.ID, Name: a.Name})
-		}
+		users = append(users, inuse.User{Kind: inuse.Automation, ID: a.ID, Name: a.Name})
 	}
 	if len(users) > 0 {
-		return &inuse.Error{What: "tag", Users: users}
+		return &inuse.Error{What: inuse.SubjectTag, Users: users}
 	}
 	return s.Tag().DeleteOneID(id).Exec(ctx)
 }

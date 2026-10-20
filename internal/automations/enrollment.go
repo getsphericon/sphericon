@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
@@ -27,6 +28,13 @@ func Enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (
 		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID)).
 		Exist(ctx)
 	if err != nil || exists {
+		return 0, false, err
+	}
+	// Share-lock the Automation row so a steps save in this transaction's company (it locks the
+	// row exclusively) is either finished before the version is read or waits for this
+	// Enrollment: the Enrollment never begins on a version the save is about to rewrite or
+	// supersede.
+	if _, err := s.Automation().Query().Where(automation.ID(automationID)).ForShare().IDs(ctx); err != nil {
 		return 0, false, err
 	}
 	// The Enrollment begins on the Automation's latest version and stays on it (ADR 0049).

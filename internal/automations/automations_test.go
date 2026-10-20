@@ -210,3 +210,38 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 	assert.Equal(t, "Globex flow", stored.Name)
 	assert.Equal(t, automation.StatusDraft, stored.Status)
 }
+
+// An archived Automation enrolls nobody, so it is neither activated nor deactivated: both are
+// "not found" until it is restored, and its status stays as it was.
+func TestAnArchivedAutomationKeepsItsStatus(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := automations.New(env.Cipher, env.Bus)
+	ctx := context.Background()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	require.NoError(t, m.Archive(ctx, acme, fixtures.AutomationNotifySlackID))
+	before, err := m.Get(ctx, acme, fixtures.AutomationNotifySlackID)
+	require.NoError(t, err)
+
+	_, err = m.Activate(ctx, acme, fixtures.AutomationNotifySlackID)
+	require.ErrorIs(t, err, automations.ErrNotFound)
+	_, err = m.Deactivate(ctx, acme, fixtures.AutomationNotifySlackID)
+	require.ErrorIs(t, err, automations.ErrNotFound)
+
+	after, err := m.Get(ctx, acme, fixtures.AutomationNotifySlackID)
+	require.NoError(t, err)
+	assert.Equal(t, before.Status, after.Status)
+}
+
+// UsingTag names the Automations whose steps apply or remove the Tag, archived ones too:
+// restoring one must not leave it naming a missing Tag.
+func TestUsingTagIncludesArchivedAutomations(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	require.NoError(t, acme.Automation().Discard(ctx, fixtures.AutomationTagOnEngagementID))
+
+	using, err := automations.UsingTag(ctx, acme, fixtures.TagVipName)
+	require.NoError(t, err)
+	names := lo.Map(using, func(a *ent.Automation, _ int) string { return a.Name })
+	assert.Equal(t, []string{fixtures.AutomationTagOnEngagementName}, names)
+}

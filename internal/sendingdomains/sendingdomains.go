@@ -211,7 +211,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 			return err
 		}
 		if len(users) > 0 {
-			return &inuse.Error{What: "sending domain", Users: users}
+			return &inuse.Error{What: inuse.SubjectSendingDomain, Users: users}
 		}
 		return ts.SendingDomain().DeleteOneID(id).Exec(ctx)
 	})
@@ -230,16 +230,14 @@ func (m *Module) liveUsers(ctx context.Context, s *ent.Scoped, domain string) ([
 	if err != nil {
 		return nil, err
 	}
-	var users []inuse.User
-	for _, b := range live {
+	onDomain := lo.Filter(live, func(b *ent.Broadcast, _ int) bool {
 		from := messaging.DomainOf(lo.FromPtr(b.FromEmail))
 		if b.FromEmail == nil || from == "" {
 			from = configured
 		}
-		if from == domain {
-			users = append(users, inuse.User{Kind: inuse.Broadcast, ID: b.ID, Name: b.Name})
-		}
-	}
+		return from == domain
+	})
+	users := inuse.Broadcasts(onDomain)
 	if configured != domain {
 		return users, nil
 	}

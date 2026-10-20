@@ -6004,6 +6004,7 @@ func (s *InUseProblemDetails) SetUsedBy(val []UsedBy) {
 }
 
 func (*InUseProblemDetails) automationsArchiveRes()   {}
+func (*InUseProblemDetails) automationsDeleteRes()    {}
 func (*InUseProblemDetails) integrationsDeleteRes()   {}
 func (*InUseProblemDetails) segmentsDeleteRes()       {}
 func (*InUseProblemDetails) sendingDomainsDeleteRes() {}
@@ -13918,7 +13919,7 @@ type UsedBy struct {
 	// Its name.
 	Name string `json:"name"`
 	// How many rows the entry stands for; absent means one. An `enrollment` entry names the Automation
-	// (id, name) and counts its active Enrollments.
+	// (id, name) and counts its Enrollments.
 	Count OptInt32 `json:"count"`
 }
 

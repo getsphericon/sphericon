@@ -72,6 +72,8 @@
     "segmentDeleteErrorTitle": "Failed to delete segment",
     "segmentLoadErrorTitle": "Failed to load segments",
     "segmentSaveErrorTitle": "Failed to save segment",
+    "tagDeleteErrorTitle": "Failed to delete tag",
+    "tagLoadErrorTitle": "Failed to load tags",
     "templateDeleteErrorTitle": "Failed to delete template",
     "templateLoadErrorTitle": "Failed to load templates",
     "templateSaveErrorTitle": "Failed to save template",
@@ -583,6 +585,7 @@
     "overview": "Overview",
     "segments": "Segments",
     "settings": "Settings",
+    "tags": "Tags",
     "templates": "Templates",
     "transactionalEmails": "Transactional emails"
   },
@@ -622,13 +625,14 @@
     "segmentDeleted": "Segment deleted",
     "segmentUpdated": "Segment updated",
     "successTitle": "Success",
+    "tagDeleted": "Tag deleted",
     "templateCreated": "Template created",
     "templateDeleted": "Template deleted",
     "templateUpdated": "Template updated",
     "testSent": "Test email sent",
-    "usedByEnrollments": "{{count}} active enrollments of \"{{name}}\"",
-    "usedByEnrollments_one": "{{count}} active enrollment of \"{{name}}\"",
-    "usedByEnrollments_other": "{{count}} active enrollments of \"{{name}}\""
+    "usedByEnrollments": "{{count}} enrollments of \"{{name}}\"",
+    "usedByEnrollments_one": "{{count}} enrollment of \"{{name}}\"",
+    "usedByEnrollments_other": "{{count}} enrollments of \"{{name}}\""
   },
   "oauthConsent": {
     "allow": "Allow access",
@@ -1208,6 +1212,11 @@
     "status": "Status",
     "subjectId": "Subject ID",
     "timeZone": "Time zone"
+  },
+  "tags": {
+    "emptyState": "Tags appear here once a contact is tagged.",
+    "nameLabel": "Name",
+    "noRecords": "No tags yet"
   },
   "templates": {
     "addTemplate": "New template",

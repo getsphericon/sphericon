@@ -3833,8 +3833,8 @@ func decodeSiteAutomationsDeleteResponse(resp *http.Response) (res SiteAutomatio
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
-	case 422:
-		// Code 422.
+	case 409:
+		// Code 409.
 		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 		if err != nil {
 			return res, errors.Wrap(err, "parse media type")
@@ -3847,7 +3847,7 @@ func decodeSiteAutomationsDeleteResponse(resp *http.Response) (res SiteAutomatio
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteAutomationsDeleteUnprocessableEntity
+			var response InUseProblemDetails
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

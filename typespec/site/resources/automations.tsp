@@ -162,7 +162,7 @@ interface SiteAutomations
       SiteCreateAutomationInput,
       SiteUpdateAutomationInput,
       never,
-      UnprocessableEntityProblem,
+      InUseProblem,
       SiteAutomationsListFilter
     > {
   /**

@@ -3724,7 +3724,7 @@ export type UsedBy = {
   name: string;
   /**
    * How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its active Enrollments.
+   * Automation (id, name) and counts its Enrollments.
    */
   count?: number;
 };
@@ -5673,9 +5673,11 @@ export type SiteAutomationsDeleteErrors = {
    */
   404: ProblemDetails;
   /**
-   * RFC 7807 validation response
+   * RFC 7807 conflict response for a removal refused because live work still uses the row
+   * (ADR 0049): 409 with `usedBy` naming the users. Every refused removal of a Segment, Tag,
+   * Integration, Sending domain or Automation answers it.
    */
-  422: ProblemDetails;
+  409: InUseProblemDetails;
 };
 
 export type SiteAutomationsDeleteError = SiteAutomationsDeleteErrors[keyof SiteAutomationsDeleteErrors];

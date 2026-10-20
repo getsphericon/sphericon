@@ -285,7 +285,7 @@ export type UsedBy = {
   name: string;
   /**
    * How many rows the entry stands for; absent means one. An `enrollment` entry names the
-   * Automation (id, name) and counts its active Enrollments.
+   * Automation (id, name) and counts its Enrollments.
    */
   count?: number;
 };

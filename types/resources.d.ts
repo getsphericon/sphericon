@@ -74,6 +74,8 @@ export default interface Resources {
       "segmentDeleteErrorTitle": "Failed to delete segment",
       "segmentLoadErrorTitle": "Failed to load segments",
       "segmentSaveErrorTitle": "Failed to save segment",
+      "tagDeleteErrorTitle": "Failed to delete tag",
+      "tagLoadErrorTitle": "Failed to load tags",
       "templateDeleteErrorTitle": "Failed to delete template",
       "templateLoadErrorTitle": "Failed to load templates",
       "templateSaveErrorTitle": "Failed to save template",
@@ -581,6 +583,7 @@ export default interface Resources {
       "overview": "Overview",
       "segments": "Segments",
       "settings": "Settings",
+      "tags": "Tags",
       "templates": "Templates",
       "transactionalEmails": "Transactional emails"
     },
@@ -616,11 +619,12 @@ export default interface Resources {
       "segmentDeleted": "Segment deleted",
       "segmentUpdated": "Segment updated",
       "successTitle": "Success",
+      "tagDeleted": "Tag deleted",
       "templateCreated": "Template created",
       "templateDeleted": "Template deleted",
       "templateUpdated": "Template updated",
       "testSent": "Test email sent",
-      "usedByEnrollments": "{{count}} active enrollments of \"{{name}}\"" | "{{count}} active enrollment of \"{{name}}\"" | "{{count}} active enrollments of \"{{name}}\""
+      "usedByEnrollments": "{{count}} enrollments of \"{{name}}\"" | "{{count}} enrollment of \"{{name}}\"" | "{{count}} enrollments of \"{{name}}\""
     },
     "oauthConsent": {
       "allow": "Allow access",
@@ -1195,6 +1199,11 @@ export default interface Resources {
       "status": "Status",
       "subjectId": "Subject ID",
       "timeZone": "Time zone"
+    },
+    "tags": {
+      "emptyState": "Tags appear here once a contact is tagged.",
+      "nameLabel": "Name",
+      "noRecords": "No tags yet"
     },
     "templates": {
       "addTemplate": "New template",

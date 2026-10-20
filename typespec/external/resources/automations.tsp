@@ -162,7 +162,7 @@ interface Automations
       CreateAutomationInput,
       UpdateAutomationInput,
       never,
-      never,
+      InUseProblem,
       AutomationsListFilter
     > {
   /** Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be restored. Refused with 409 while it has active enrollments (`usedBy` carries their count). */

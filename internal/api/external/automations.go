@@ -119,12 +119,13 @@ func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.Aut
 	}
 	id := int64(params.ID)
 	err := h.automations.Delete(ctx, auth.TokenScoped(ctx), id)
+	if refused, ok := inuse.As(err); ok {
+		res := inUseProblem(refused)
+		return &res, nil
+	}
 	switch {
 	case errors.Is(err, automations.ErrNotFound):
 		res := externalapi.AutomationsDeleteNotFound(problem(http.StatusNotFound, "automation not found"))
-		return &res, nil
-	case errors.Is(err, automations.ErrHasEnrollments):
-		res := externalapi.AutomationsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, "an automation with enrollments cannot be deleted; archive it"))
 		return &res, nil
 	case err != nil:
 		return nil, err
