@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -97,10 +98,9 @@ func TestHealthyInstancePassesEveryCheckThatCanFail(t *testing.T) {
 	in := healthy(t)
 	r := doctor.Run(context.Background(), in)
 
-	for name, status := range statuses(r) {
-		if strings.HasPrefix(name, "dkim ") {
-			continue // the fixture domains are not all published; see the DKIM test
-		}
+	// The fixture domains are not all published, so the DKIM checks have a test of their own.
+	notDKIM := lo.OmitBy(statuses(r), func(name string, _ doctor.Status) bool { return strings.HasPrefix(name, "dkim ") })
+	for name, status := range notDKIM {
 		assert.NotEqual(t, doctor.Fail, status, name)
 	}
 	assert.Equal(t, doctor.Pass, find(t, r, "database").Status)
@@ -247,14 +247,11 @@ func TestDKIMIsCheckedForEverySendingDomain(t *testing.T) {
 	r := doctor.Run(context.Background(), in)
 
 	// The stub publishes every fixture domain's record, so all pass.
-	var dkim int
-	for _, c := range r.Checks {
-		if strings.HasPrefix(c.Name, "dkim ") {
-			dkim++
-			assert.Equal(t, doctor.Pass, c.Status, c.Name)
-		}
+	dkim := lo.Filter(r.Checks, func(c doctor.Check, _ int) bool { return strings.HasPrefix(c.Name, "dkim ") })
+	for _, c := range dkim {
+		assert.Equal(t, doctor.Pass, c.Status, c.Name)
 	}
-	assert.NotZero(t, dkim)
+	assert.NotEmpty(t, dkim)
 
 	in.LookupTXT = func(_ context.Context, name string) ([]string, error) {
 		return nil, &net.DNSError{Err: "no such host", Name: name, IsNotFound: true}

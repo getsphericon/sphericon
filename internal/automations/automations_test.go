@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -119,12 +121,11 @@ func TestListIsNewestFirstWithinTheWorkspace(t *testing.T) {
 	page, err := automations.New(env.Cipher).List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	require.Greater(t, page.TotalItems, 1)
-	for i, a := range page.Items {
+	for _, a := range page.Items {
 		assert.EqualValues(t, fixtures.AcmeID, a.WorkspaceID, "another tenant's automation leaked")
-		if i > 0 {
-			assert.Greater(t, page.Items[i-1].ID, a.ID, "newest first")
-		}
 	}
+	ids := lo.Map(page.Items, func(a *ent.Automation, _ int) int64 { return a.ID })
+	assert.IsDecreasing(t, ids, "newest first")
 }
 
 func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {

@@ -122,40 +122,42 @@ func TestConsentToAWorkspaceTheUserDoesNotBelongToIsRefused(t *testing.T) {
 }
 
 // Approving mints a non-expiring API token, so it takes the role that may create one.
-func TestConsentNeedsARoleThatMayManageTokens(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := t.Context()
-
+func newAdmin(t *testing.T, env *testhelper.TestEnv) string {
+	t.Helper()
 	// Admin has no fixture user (a committed admin would change the exact member
 	// list of the Acme roster), so it is created inline; the member is MemberMary.
 	admin := "admin@acme.test"
-	u, err := env.DB.User.Create().SetName(admin).SetEmail(admin).Save(ctx)
+	u, err := env.DB.User.Create().SetName(admin).SetEmail(admin).Save(t.Context())
 	require.NoError(t, err)
-	_, err = env.DB.Membership.Create().SetUserID(u.ID).SetWorkspaceID(fixtures.AcmeID).SetRole(membership.RoleAdmin).Save(ctx)
+	_, err = env.DB.Membership.Create().SetUserID(u.ID).SetWorkspaceID(fixtures.AcmeID).SetRole(membership.RoleAdmin).Save(t.Context())
+	require.NoError(t, err)
+	return admin
+}
+
+func TestConsentAnAdminMayApprove(t *testing.T) {
+	env := testhelper.Setup(t)
+	admin := newAdmin(t, env)
+	in := approval("contacts:write", false)
+
+	res, err := env.SiteActor(t, admin).SiteOAuthDecide(t.Context(), &in)
+
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteOAuthDecisionResult{}, res)
+}
+
+func TestConsentAMemberIsRefusedAndNoCodeIsIssued(t *testing.T) {
+	env := testhelper.Setup(t)
+	in := approval("contacts:write", false)
+	before, err := env.DB.OAuthCode.Query().Count(t.Context())
 	require.NoError(t, err)
 
-	for email, wantOK := range map[string]bool{
-		admin:                    true,
-		fixtures.MemberMaryEmail: false,
-	} {
-		t.Run(email, func(t *testing.T) {
-			in := approval("contacts:write", false)
-			before, err := env.DB.OAuthCode.Query().Count(ctx)
-			require.NoError(t, err)
+	res, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteOAuthDecide(t.Context(), &in)
 
-			res, err := env.SiteActor(t, email).SiteOAuthDecide(ctx, &in)
-			require.NoError(t, err)
-
-			if wantOK {
-				assert.IsType(t, &siteapi.SiteOAuthDecisionResult{}, res)
-				return
-			}
-			assert.IsType(t, &siteapi.SiteOAuthDecideForbidden{}, res)
-			after, err := env.DB.OAuthCode.Query().Count(ctx)
-			require.NoError(t, err)
-			assert.Equal(t, before, after, "a refused consent issues no code")
-		})
-	}
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteOAuthDecideForbidden{}, res)
+	after, err := env.DB.OAuthCode.Query().Count(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, before, after, "a refused consent issues no code")
 }
 
 func TestTokenEndpointIssuesAnOrdinaryScopedAPIToken(t *testing.T) {

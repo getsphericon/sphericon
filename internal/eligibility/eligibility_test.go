@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -261,25 +262,24 @@ func TestPredicateAndCheckAgree(t *testing.T) {
 		c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail(f.email).Save(ctx)
 		require.NoError(t, err)
 		ids[f.name] = c.ID
-		dest := eligibility.NormalizeDestination(f.email)
-		if f.suppress {
-			_, err = env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-				SetChannel(suppression.ChannelEmail).SetDestination(dest).
-				SetReason(suppression.ReasonBounce).Save(ctx)
-			require.NoError(t, err)
-		}
-		if f.unsub != "" {
-			_, err = env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).
-				SetChannel(unsubscribe.ChannelEmail).SetDestination(dest).
-				SetSendingSource(f.unsub).Save(ctx)
-			require.NoError(t, err)
-		}
-		if f.confirmed {
-			_, err = env.DB.Confirmation.Create().SetWorkspaceID(fixtures.AcmeID).
-				SetChannel(confirmation.ChannelEmail).SetDestination(dest).
-				SetProvenance(confirmation.ProvenanceDoubleOptIn).Save(ctx)
-			require.NoError(t, err)
-		}
+	}
+	for _, f := range lo.Filter(cases, func(f fixture, _ int) bool { return f.suppress }) {
+		_, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
+			SetChannel(suppression.ChannelEmail).SetDestination(eligibility.NormalizeDestination(f.email)).
+			SetReason(suppression.ReasonBounce).Save(ctx)
+		require.NoError(t, err)
+	}
+	for _, f := range lo.Filter(cases, func(f fixture, _ int) bool { return f.unsub != "" }) {
+		_, err := env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).
+			SetChannel(unsubscribe.ChannelEmail).SetDestination(eligibility.NormalizeDestination(f.email)).
+			SetSendingSource(f.unsub).Save(ctx)
+		require.NoError(t, err)
+	}
+	for _, f := range lo.Filter(cases, func(f fixture, _ int) bool { return f.confirmed }) {
+		_, err := env.DB.Confirmation.Create().SetWorkspaceID(fixtures.AcmeID).
+			SetChannel(confirmation.ChannelEmail).SetDestination(eligibility.NormalizeDestination(f.email)).
+			SetProvenance(confirmation.ProvenanceDoubleOptIn).Save(ctx)
+		require.NoError(t, err)
 	}
 
 	for _, requireConfirmed := range []bool{false, true} {

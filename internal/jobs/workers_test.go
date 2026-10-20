@@ -18,6 +18,7 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertest"
 	"github.com/riverqueue/river/rivertype"
+	"github.com/samber/lo"
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -487,13 +488,10 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	}
 
 	// The Audit entry is the system actor's, and is the only one: the counter writes are not audited.
-	var entries []*events.AuditEntry
-	for _, ev := range h.env.OutboxEvents(t, events.NameAuditEntry) {
+	entries := lo.FilterMap(h.env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		a := ev.(*events.AuditEntry)
-		if a.Action == "webhook_endpoint.update" {
-			entries = append(entries, a)
-		}
-	}
+		return a, a.Action == "webhook_endpoint.update"
+	})
 	require.Len(t, entries, 1)
 	assert.Equal(t, events.ActorSystem, entries[0].Actor.Kind)
 	assert.Contains(t, entries[0].Diff, "enabled")

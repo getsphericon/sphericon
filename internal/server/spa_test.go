@@ -1,9 +1,10 @@
 package server
 
 import (
-	"strings"
 	"testing"
 	"testing/fstest"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuildIndexShellInjectsLocale(t *testing.T) {
@@ -16,20 +17,16 @@ func TestBuildIndexShellInjectsLocale(t *testing.T) {
 	shell := buildIndexShell(fs, "en", true)
 	got := string(shell)
 
-	if strings.Contains(got, localeSentinel) {
-		t.Fatalf("sentinel %q was not substituted: %s", localeSentinel, got)
-	}
+	require.NotContainsf(t, got, localeSentinel, "sentinel %q was not substituted: %s", localeSentinel, got)
 	// The value slots become "en", but the window.__APP_LOCALE__ identifier must
 	// survive intact (the sentinel is chosen not to collide with it).
-	if !strings.Contains(got, `lang="en"`) || !strings.Contains(got, `window.__APP_LOCALE__ = 'en'`) {
-		t.Fatalf("locale not injected into both slots: %s", got)
-	}
+	require.Contains(t, got, `lang="en"`, "locale not injected into the lang slot")
+	require.Contains(t, got, `window.__APP_LOCALE__ = 'en'`, "locale not injected into the script slot")
 }
 
 func TestBuildIndexShellMissingFile(t *testing.T) {
-	if shell := buildIndexShell(fstest.MapFS{}, "en", true); shell != nil {
-		t.Fatalf("expected nil shell when index.html is absent, got %q", shell)
-	}
+	shell := buildIndexShell(fstest.MapFS{}, "en", true)
+	require.Nilf(t, shell, "expected nil shell when index.html is absent, got %q", shell)
 }
 
 func TestBuildIndexShellInjectsTheVerificationGate(t *testing.T) {
@@ -42,10 +39,6 @@ func TestBuildIndexShellInjectsTheVerificationGate(t *testing.T) {
 	on := string(buildIndexShell(fs, "en", true))
 	off := string(buildIndexShell(fs, "en", false))
 
-	if !strings.Contains(on, `= 'true' !== 'false'`) {
-		t.Fatalf("gate on not injected: %s", on)
-	}
-	if !strings.Contains(off, `= 'false' !== 'false'`) {
-		t.Fatalf("gate off not injected: %s", off)
-	}
+	require.Contains(t, on, `= 'true' !== 'false'`, "gate on not injected")
+	require.Contains(t, off, `= 'false' !== 'false'`, "gate off not injected")
 }

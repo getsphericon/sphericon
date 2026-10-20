@@ -1,6 +1,7 @@
 package preset_test
 
 import (
+	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"testing"
@@ -28,8 +29,6 @@ func FuzzParseAnswersWithAPresetOrAnError(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		p, err := preset.Parse("fuzz.yaml", data)
 
-		if (p == nil) == (err == nil) {
-			t.Fatalf("Parse(%q) returned preset %v and error %v", data, p, err)
-		}
+		require.NotEqualf(t, p == nil, err == nil, "Parse(%q) returned preset %v and error %v", data, p, err)
 	})
 }

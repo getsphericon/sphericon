@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -87,13 +88,9 @@ func TestTheFeedFromAnEmptyCursorListsEveryWorkspaceWithAllOfItsOwners(t *testin
 	assert.ElementsMatch(t, want, feedSlugs(entries), "every Workspace is in the feed at least once")
 	initech := entry(t, entries, fixtures.InitechSlug)
 	assert.ElementsMatch(t, []int64{5, 6}, ownerIDs(initech), "a co-owned Workspace carries both owners")
+	emails := map[int64]string{5: fixtures.InitechOwnerOlgaEmail, 6: fixtures.InitechCoOwnerOwenEmail}
 	for _, o := range initech.Owners {
-		switch o.UserId {
-		case 5:
-			assert.Equal(t, fixtures.InitechOwnerOlgaEmail, string(o.Email))
-		case 6:
-			assert.Equal(t, fixtures.InitechCoOwnerOwenEmail, string(o.Email))
-		}
+		assert.Equal(t, emails[int64(o.UserId)], string(o.Email))
 	}
 	assert.Equal(t, []int64{1}, ownerIDs(entry(t, entries, fixtures.AcmeSlug)), "only owners, never members")
 }
@@ -187,15 +184,14 @@ func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed
 	require.NoError(t, h.env.DB.User.UpdateOneID(fixtures.InitechOwnerOlgaID).SetEmailVerifiedAt(verifiedAt).Exec(t.Context()))
 	got, saved := feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.InitechSlug}, feedSlugs(got))
-	for _, o := range got[0].Owners {
-		if o.UserId == 5 {
-			at, ok := o.EmailVerifiedAt.Get()
-			require.True(t, ok)
-			assert.WithinDuration(t, verifiedAt, time.Time(at), time.Second)
-		} else {
-			assert.False(t, o.EmailVerifiedAt.IsSet() && !o.EmailVerifiedAt.IsNull(), "the co-owner stays unverified")
-		}
-	}
+	olga, foundOlga := lo.Find(got[0].Owners, func(o serviceapi.ServiceWorkspaceOwner) bool { return o.UserId == 5 })
+	owen, foundOwen := lo.Find(got[0].Owners, func(o serviceapi.ServiceWorkspaceOwner) bool { return o.UserId == 6 })
+	require.True(t, foundOlga)
+	require.True(t, foundOwen)
+	at, verified := olga.EmailVerifiedAt.Get()
+	require.True(t, verified)
+	assert.WithinDuration(t, verifiedAt, time.Time(at), time.Second)
+	assert.False(t, owen.EmailVerifiedAt.IsSet() && !owen.EmailVerifiedAt.IsNull(), "the co-owner stays unverified")
 
 	require.NoError(t, h.env.DB.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("john@acme.test").Exec(t.Context()))
 	got, saved = feedFrom(t, c, saved)

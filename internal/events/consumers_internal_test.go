@@ -58,9 +58,6 @@ func TestEventsReportTheirEnvelopeMetadata(t *testing.T) {
 		assert.EqualValues(t, 7, ev.Workspace(), "%T", ev)
 		assert.Positive(t, ev.EventVersion(), "%T", ev)
 		assert.NotEmpty(t, ev.EventName(), "%T", ev)
-		if withID, ok := ev.(interface{ EventID() string }); ok {
-			_ = withID.EventID()
-		}
 		assert.NotEmpty(t, ev.Project().Action, "%T", ev)
 	}
 }

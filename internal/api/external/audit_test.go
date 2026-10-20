@@ -57,19 +57,18 @@ func TestExternalAuditListPaginatesByCursor(t *testing.T) {
 
 	var seen []int64
 	params := externalapi.AuditEntriesListParams{Limit: externalapi.NewOptInt32(2)}
+	var last *externalapi.AuditEntryList
 	for range 3 {
 		res, err := c.AuditEntriesList(ctx, params)
 		require.NoError(t, err)
-		page := res.(*externalapi.AuditEntryList)
-		for _, e := range page.Items {
+		last = res.(*externalapi.AuditEntryList)
+		for _, e := range last.Items {
 			seen = append(seen, int64(e.ID))
 		}
-		if page.NextCursor.Value == "" {
-			break
-		}
-		params.Cursor = externalapi.NewOptString(page.NextCursor.Value)
+		params.Cursor = externalapi.NewOptString(last.NextCursor.Value)
 	}
 	assert.Equal(t, []int64{6, 5, 4, 3, 1}, seen, "newest first across three pages, the last one short")
+	assert.Empty(t, last.NextCursor.Value, "the third page is the last")
 }
 
 func TestExternalAuditFiltersNarrowTheRead(t *testing.T) {

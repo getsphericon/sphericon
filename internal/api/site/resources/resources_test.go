@@ -3,6 +3,8 @@ package resources
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/getsphericon/sphericon/ent"
 )
 
@@ -31,15 +33,13 @@ func TestBroadcastStatsRates(t *testing.T) {
 		{"failureRate", got.FailureRate, 0.20},           // 20/100
 	}
 	for _, c := range cases {
-		if c.got != c.want {
-			t.Errorf("%s = %v, want %v", c.name, c.got, c.want)
-		}
+		assert.InDeltaf(t, c.want, c.got, 1e-9, "%s = %v, want %v", c.name, c.got, c.want)
 	}
 
 	// Counters pass through unchanged.
-	if got.RecipientsTotal != 100 || got.SentCount != 80 || got.FailedCount != 20 {
-		t.Errorf("counters not copied: %+v", got)
-	}
+	assert.EqualValues(t, 100, got.RecipientsTotal)
+	assert.EqualValues(t, 80, got.SentCount)
+	assert.EqualValues(t, 20, got.FailedCount)
 }
 
 func TestBroadcastStatsZeroDenominators(t *testing.T) {
@@ -54,17 +54,12 @@ func TestBroadcastStatsZeroDenominators(t *testing.T) {
 		"failureRate":     got.FailureRate,
 	}
 	for name, v := range rates {
-		if v != 0 {
-			t.Errorf("%s = %v, want 0", name, v)
-		}
+		assert.InDeltaf(t, 0, v, 1e-9, "%s = %v, want 0", name, v)
 	}
 
 	// Delivered but nobody opened: openRate defined (0), clickToOpenRate guarded (0).
 	got = broadcastStats(ent.Broadcast{RecipientsTotal: 10, SentCount: 10})
-	if got.DeliveryRate != 1 {
-		t.Errorf("deliveryRate = %v, want 1", got.DeliveryRate)
-	}
-	if got.OpenRate != 0 || got.ClickToOpenRate != 0 {
-		t.Errorf("openRate=%v clickToOpenRate=%v, want 0/0", got.OpenRate, got.ClickToOpenRate)
-	}
+	assert.InDeltaf(t, 1, got.DeliveryRate, 1e-9, "deliveryRate = %v, want 1", got.DeliveryRate)
+	assert.InDelta(t, 0, got.OpenRate, 1e-9)
+	assert.InDelta(t, 0, got.ClickToOpenRate, 1e-9)
 }

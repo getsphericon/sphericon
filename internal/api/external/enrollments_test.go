@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -26,13 +27,10 @@ func TestExternalEnrollmentsReadAFailedEnrollment(t *testing.T) {
 	require.NoError(t, err)
 	listed, ok := list.(*externalapi.EnrollmentsListOK)
 	require.Truef(t, ok, "got %T", list)
-	var failed *externalapi.EnrollmentResource
-	for i := range listed.Items {
-		if listed.Items[i].ID == entityIDString(fixtures.AutomationRunHTTPFailedID) {
-			failed = &listed.Items[i]
-		}
-	}
-	require.NotNil(t, failed, "the failed Enrollment is listed")
+	failed, found := lo.Find(listed.Items, func(e externalapi.EnrollmentResource) bool {
+		return e.ID == entityIDString(fixtures.AutomationRunHTTPFailedID)
+	})
+	require.True(t, found, "the failed Enrollment is listed")
 	assert.Equal(t, externalapi.EnrollmentStatusFailed, failed.Status)
 	f, ok := failed.Failure.Get()
 	require.True(t, ok)
