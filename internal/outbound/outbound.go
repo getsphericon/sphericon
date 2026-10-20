@@ -523,8 +523,8 @@ func (m *Module) frozen(ctx context.Context, s *ent.Scoped, ws *ent.Workspace) (
 	// Workspace deletion (ADR 0043) is its own Hold source, not the suspension: restoring
 	// clears it and leaves a suspension in place. Checked first, so a suspended and deleted
 	// Workspace reports the deletion.
-	if deleted := holds.PendingDeletion(ws); len(deleted) > 0 {
-		return deleted[0].ReasonCode, nil
+	if ws.DiscardedAt != nil {
+		return holds.ReasonPendingDeletion, nil
 	}
 	if ws.SuspendedAt != nil {
 		return holds.ReasonSuspended, nil

@@ -239,7 +239,7 @@ func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	assert.Empty(t, env.CustomerMail.Messages())
 
 	// The owner's Hold is the same rule: the send gate's reason and wording.
-	owner := holds.PendingDeletion(env.DB.Workspace.GetX(ctx, fixtures.AcmeID))
+	owner := holds.Of(env.DB.Workspace.GetX(ctx, fixtures.AcmeID), true).Holds()
 	require.Len(t, owner, 1)
 	assert.Equal(t, res.Reason, owner[0].ReasonCode)
 	assert.Equal(t, outbound.Detail(res.Reason), owner[0].Message)

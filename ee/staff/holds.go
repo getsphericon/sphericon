@@ -158,7 +158,11 @@ func (m *Module) ActiveHolds(ctx context.Context, workspaceID string) ([]*ent.Ho
 	if err != nil {
 		return nil, err
 	}
-	return holds.Active(ctx, s, m.now())
+	st, err := holds.Read(ctx, s, m.now(), true)
+	if err != nil {
+		return nil, err
+	}
+	return st.Holds(), nil
 }
 
 // holdScope loads the Workspace row and scopes over it, acting as the credential.
