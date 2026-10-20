@@ -112,14 +112,20 @@ func (in *Inbox) wait(ctx context.Context, m Match, timeout time.Duration) (Mess
 		}
 		select {
 		case <-ctx.Done():
-			held, lerr := in.mp.list(context.WithoutCancel(ctx), 100)
-			if lerr == nil && lastErr != nil {
-				lerr = lastErr
-			}
-			return Message{}, &noMailError{match: m, waited: timeout, inbox: held, listErr: lerr}
+			return Message{}, in.noMail(ctx, m, timeout, lastErr)
 		case <-time.After(in.mp.poll):
 		}
 	}
+}
+
+// noMail is the failure of a wait that found nothing: it looks at what the inbox holds instead,
+// keeping the last lookup error when listing fails too.
+func (in *Inbox) noMail(ctx context.Context, m Match, waited time.Duration, lastErr error) error {
+	held, lerr := in.mp.list(context.WithoutCancel(ctx), 100)
+	if lerr == nil && lastErr != nil {
+		lerr = lastErr
+	}
+	return &noMailError{match: m, waited: waited, inbox: held, listErr: lerr}
 }
 
 // seen reports whether the inbox holds a message matching m, remembering it if so.
