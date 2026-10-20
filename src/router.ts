@@ -14,8 +14,9 @@ export function createAppRouter(queryClient: QueryClient) {
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     // Cross-fade between pages (the browser View Transitions API, wrapped around each navigation).
-    // Off under test: a guard's redirect starts a second transition that skips the first, whose
-    // rejected promise nobody awaits, and vitest fails the run on that unhandled AbortError.
+    // Off under test: a navigation that starts while the previous cross-fade is still animating
+    // skips it, the router drops the transition's `ready` promise, and vitest fails the run on
+    // the unhandled AbortError. Drop this when TanStack/router#8776 is fixed.
     defaultViewTransition: import.meta.env.MODE !== 'test',
   })
 }
