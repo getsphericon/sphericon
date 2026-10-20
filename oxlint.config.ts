@@ -85,6 +85,14 @@ export default defineConfig({
     'eslint/no-restricted-imports': [
       'error',
       {
+        paths: [
+          {
+            name: '@mantine/notifications',
+            importNames: ['notifications', 'notificationsStore'],
+            message:
+              "Toasts live in the NotificationsProvider's own store: call `useNotify()` (src/hooks/useNotify.ts).",
+          },
+        ],
         patterns: [
           {
             group: [

@@ -1,5 +1,4 @@
 import { Alert, Box, Button, Group, Stack, Text, TextInput, Title } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,6 +12,7 @@ import type { SiteContactHoldings } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useContactExport } from '../../hooks/useContactExport.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 
 // The two decisions the lookup drives. Erase is possible exactly while Erasure would find
@@ -44,6 +44,7 @@ function EraseAction({
   held: SiteContactHoldings
 }) {
   const { t } = useTranslation()
+  const notify = useNotify()
   const queryClient = useQueryClient()
   const confirm = useDeleteConfirmation()
   const apiErrorMessage = useApiErrorMessage()
@@ -54,7 +55,7 @@ function EraseAction({
   const erase = useMutation({
     ...siteContactsEraseMutation(),
     onSuccess: async () => {
-      notifications.show({
+      notify({
         color: 'teal',
         title: t(($) => $.notifications.successTitle),
         message: t(($) => $.settings.privacy.erased),
@@ -63,11 +64,11 @@ function EraseAction({
     },
     onError: async (error) => {
       if (hasErrorStatus(error, [404])) {
-        notifications.show({ message: t(($) => $.settings.privacy.nothingFound) })
+        notify({ message: t(($) => $.settings.privacy.nothingFound) })
         await refreshLookup()
         return
       }
-      notifications.show({
+      notify({
         color: 'red',
         title: t(($) => $.alerts.eraseErrorTitle),
         message: apiErrorMessage(

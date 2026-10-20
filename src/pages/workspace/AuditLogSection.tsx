@@ -18,7 +18,6 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
 import { IconChevronDown, IconChevronRight, IconDownload } from '@tabler/icons-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
@@ -33,6 +32,7 @@ import {
   siteAuditSetRetentionMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as teamRoute } from '../../routes/workspaces/$workspaceId/settings/team.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
@@ -261,6 +261,7 @@ function saveCsv(csv: string, filename: string) {
 // matches what the page shows.
 function ExportButton({ workspaceId, filter }: { workspaceId: string; filter: AuditFilter }) {
   const { t } = useTranslation()
+  const notify = useNotify()
   const queryClient = useQueryClient()
   const exportCsv = useMutation({
     mutationFn: () =>
@@ -271,7 +272,7 @@ function ExportButton({ workspaceId, filter }: { workspaceId: string; filter: Au
       }),
     onSuccess: (csv) => saveCsv(csv, `audit-log-${workspaceId}.csv`),
     onError: () =>
-      notifications.show({
+      notify({
         color: 'red',
         message: t(($) => $.settings.auditLog.exportError),
       }),

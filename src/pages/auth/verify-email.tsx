@@ -1,6 +1,5 @@
 import { Button, Card, Group, Loader, PasswordInput, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
@@ -8,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthVerifyEmailMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as verifyEmailRoute } from '../../routes/verify-email.tsx'
@@ -19,6 +19,7 @@ import { getApiErrorMessage, hasErrorStatus } from '../../utils/apiErrors.ts'
 // needed", nothing has changed, and the form here sets the password that goes live.
 export function VerifyEmailPage() {
   const { t } = useTranslation()
+  const notify = useNotify()
   const { token } = verifyEmailRoute.useSearch()
   const navigate = useNavigate()
 
@@ -48,7 +49,7 @@ export function VerifyEmailPage() {
       if (hasErrorStatus(error, [400]) || !needsPassword) {
         return
       }
-      notifications.show({
+      notify({
         color: 'red',
         title: t(($) => $.verifyEmail.errorTitle),
         message: getApiErrorMessage(

@@ -10,7 +10,6 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -26,6 +25,7 @@ import {
 import type { SiteLoginInput, SiteLoginResult } from '../../generated/site/types.gen.ts'
 import { zSiteSigninError } from '../../generated/site/zod.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as forgotPasswordRoute } from '../../routes/forgot-password.tsx'
 import { Route as indexRoute } from '../../routes/index.tsx'
@@ -34,6 +34,7 @@ import { isEmailVerificationRequiredError } from '../../utils/apiErrors.ts'
 
 export function LoginPage() {
   const { t } = useTranslation()
+  const notify = useNotify()
   const navigate = useNavigate()
   const router = useRouter()
   // Set when a guard (e.g. the OAuth consent screen) sent the user here to sign in.
@@ -67,7 +68,7 @@ export function LoginPage() {
   })
 
   const showError = (error: unknown) =>
-    notifications.show({
+    notify({
       color: 'red',
       title: t(($) => $.login.errorTitle),
       message: apiErrorMessage(

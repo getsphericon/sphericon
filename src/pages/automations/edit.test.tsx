@@ -1,4 +1,3 @@
-import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
@@ -239,7 +238,6 @@ function flowNode() {
 }
 
 test('an email step opens its document in the editor from the properties panel', async () => {
-  notifications.clean()
   worker.use(
     handleSiteAutomationsGet({
       body: {
@@ -259,8 +257,6 @@ test('an email step opens its document in the editor from the properties panel',
 })
 
 test('a refused document shows the server reason naming the step', async () => {
-  // The toasts of the tests before are still on screen and cover the Save button.
-  notifications.clean()
   worker.use(
     handleSiteAutomationsGet({ body: STORED }),
     handleSiteAutomationsUpdate(() =>

@@ -1,10 +1,10 @@
-import { notifications } from '@mantine/notifications'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { isForbiddenError } from '../utils/apiErrors.ts'
 import { useApiErrorMessage } from './useApiErrorMessage.ts'
+import { useNotify } from './useNotify.ts'
 
 // Options layered on top of a generated mutation. The three things every CRUD
 // mutation in this app repeats — invalidate the affected list query, toast on
@@ -41,6 +41,7 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const apiErrorMessage = useApiErrorMessage()
+  const notify = useNotify()
 
   return useMutation({
     ...mutation,
@@ -49,7 +50,7 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
         (invalidate ?? []).map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       )
       if (successMessage) {
-        notifications.show({
+        notify({
           color: 'teal',
           title: t(($) => $.notifications.successTitle),
           message: successMessage,
@@ -58,7 +59,7 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
       await onDone?.(data, variables)
     },
     onError: (error) => {
-      notifications.show({
+      notify({
         color: 'red',
         title: errorTitle,
         message:

@@ -1,5 +1,4 @@
 import { Avatar, Group, Menu, Stack, Text, UnstyledButton } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import { IconChevronDown, IconHome, IconLogout } from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useRouteContext } from '@tanstack/react-router'
@@ -7,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 import { NavLinkLink } from '../components/RouterLink.tsx'
 import { staffAuthLogoutMutation } from '../generated/staff/@tanstack/react-query.gen.ts'
+import { useNotify } from '../hooks/useNotify.ts'
 import { DashboardShell } from '../layouts/DashboardShell.tsx'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 import { Route as consoleAuthedRoute } from '../routes/console/_authed/route.tsx'
@@ -32,6 +32,7 @@ function StaffMenu() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const notify = useNotify()
   const { staff } = useRouteContext({ from: consoleAuthedRoute.id })
 
   const logoutMutation = useMutation({
@@ -41,7 +42,7 @@ function StaffMenu() {
       await navigate({ to: consoleLoginRoute.to })
     },
     onError: () =>
-      notifications.show({
+      notify({
         color: 'red',
         title: t(($) => $.console.menu.logoutErrorTitle),
         message: t(($) => $.console.menu.logoutErrorMessage),

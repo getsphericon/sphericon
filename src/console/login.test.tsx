@@ -1,16 +1,11 @@
-import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
-import { afterEach, expect, test } from 'vitest'
+import { expect, test } from 'vitest'
 
 import { handleStaffAuthLogin, handleStaffAuthSecondFactor } from '../generated/staff/msw.gen.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'
 import { ConsoleLoginPage } from './login.tsx'
-
-afterEach(() => {
-  notifications.clean()
-})
 
 const staff = { id: '1', email: 'ops@example.com' }
 

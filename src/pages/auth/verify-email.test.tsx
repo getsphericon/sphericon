@@ -1,6 +1,5 @@
-import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
-import { afterEach, expect, test, vi } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { handleSiteAuthVerifyEmail } from '../../generated/site/msw.gen.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
@@ -14,11 +13,6 @@ import { VerifyEmailPage } from './verify-email.tsx'
 
 const mount = routeMount(verifyEmailRoute)
 const MOUNT = { ...mount, initialPath: `${mount.initialPath}?token=tok-v` }
-
-// Toasts live in a global store and would cover the form's buttons in the next test.
-afterEach(() => {
-  notifications.clean()
-})
 
 async function fillAndSubmit(
   screen: Awaited<ReturnType<typeof renderWithRouter>>['screen'],

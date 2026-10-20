@@ -1,17 +1,18 @@
 import { Button, Group, PasswordInput, Stack, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { siteAuthResetPasswordMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as resetPasswordRoute } from '../../routes/reset-password.tsx'
 import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 
 export function ResetPasswordPage() {
   const { t } = useTranslation()
+  const notify = useNotify()
   const navigate = useNavigate()
   const { token } = resetPasswordRoute.useSearch()
 
@@ -26,7 +27,7 @@ export function ResetPasswordPage() {
   const mutation = useMutation({
     ...siteAuthResetPasswordMutation(),
     onSuccess: () => {
-      notifications.show({
+      notify({
         color: 'teal',
         title: t(($) => $.notifications.successTitle),
         message: t(($) => $.resetPassword.successMessage),
@@ -35,7 +36,7 @@ export function ResetPasswordPage() {
     },
     onError: (error) => {
       form.setValues({ password: '', confirm: '' })
-      notifications.show({
+      notify({
         color: 'red',
         title: t(($) => $.resetPassword.errorTitle),
         message: getApiErrorMessage(

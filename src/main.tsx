@@ -1,12 +1,12 @@
 import { MantineProvider } from '@mantine/core'
 import { ModalsProvider } from '@mantine/modals'
-import { Notifications } from '@mantine/notifications'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { I18nextProvider } from 'react-i18next'
 
+import { NotificationsProvider } from './components/NotificationsProvider.tsx'
 import { editorCssVariablesResolver } from './editorCssVariables.ts'
 import { client } from './generated/site/client.gen.ts'
 import { client as staffClient } from './generated/staff/client.gen.ts'
@@ -41,8 +41,9 @@ function Root() {
           cssVariablesResolver={editorCssVariablesResolver}
         >
           <ModalsProvider>
-            <Notifications position="top-right" layout="stacked" />
-            <RouterProvider router={router} />
+            <NotificationsProvider>
+              <RouterProvider router={router} />
+            </NotificationsProvider>
           </ModalsProvider>
         </MantineProvider>
       </I18nextProvider>

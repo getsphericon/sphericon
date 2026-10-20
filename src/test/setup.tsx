@@ -6,7 +6,6 @@
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '../i18n.ts'
-import { notifications } from '@mantine/notifications'
 import { QueryClient } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import { afterEach, beforeAll, beforeEach } from 'vitest'
@@ -85,8 +84,6 @@ afterEach(async () => {
   worker.use(http.get(FLUSH_PATH, () => new HttpResponse(null)))
   await fetch(FLUSH_PATH)
   await Promise.all(recording.splice(0))
-  // The notification store is module-global: a toast left by this test would cover the next one's buttons.
-  notifications.clean()
   worker.resetHandlers()
   const messages = unhandled.splice(0)
   if (messages.length > 0) {

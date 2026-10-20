@@ -1,6 +1,5 @@
 import { Box, Stack, useComputedColorScheme } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useWorkflowBuilderActions, WorkflowBuilder } from '@workflowbuilder/sdk'
 import type { IntegrationDataFormat, OnSaveExternal } from '@workflowbuilder/sdk'
@@ -14,6 +13,7 @@ import {
   siteAutomationsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 import { AutomationDetailsFields } from './AutomationDetailsFields.tsx'
 import type { AutomationDetailsValues } from './AutomationDetailsFields.tsx'
@@ -59,6 +59,7 @@ function ThemeSync() {
 // trigger and definition together through the generated update mutation.
 export function AutomationBuilder({ workspaceId, automation }: AutomationBuilderProps) {
   const { t } = useTranslation()
+  const notify = useNotify()
   const queryClient = useQueryClient()
   const nodeTypes = useAutomationNodeTypes()
 
@@ -95,7 +96,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     async (data: IntegrationDataFormat) => {
       const { steps, dropped } = graphToSteps({ nodes: data.nodes, edges: data.edges })
       if (dropped > 0) {
-        notifications.show({
+        notify({
           color: 'yellow',
           title: t(($) => $.automations.branchesUnsupportedTitle),
           message: t(($) => $.automations.branchesUnsupported),
@@ -111,14 +112,14 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
             steps,
           },
         })
-        notifications.show({
+        notify({
           color: 'teal',
           title: t(($) => $.notifications.successTitle),
           message: t(($) => $.notifications.automationUpdated),
         })
         return 'success'
       } catch (error) {
-        notifications.show({
+        notify({
           color: 'red',
           title: t(($) => $.alerts.automationSaveErrorTitle),
           message: getApiErrorMessage(
@@ -129,7 +130,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
         return 'error'
       }
     },
-    [workspaceId, automation.id, form, updateMutation, t],
+    [workspaceId, automation.id, form, updateMutation, notify, t],
   )
 
   const integration = useMemo(() => ({ strategy: 'props' as const, onDataSave }), [onDataSave])

@@ -10,7 +10,6 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -24,12 +23,14 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { zSiteSigninError } from '../../generated/site/zod.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as acceptInvitationRoute } from '../../routes/invitations/$token.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
 
 export function AcceptInvitationPage() {
   const { t } = useTranslation()
+  const notify = useNotify()
   const apiErrorMessage = useApiErrorMessage()
   const navigate = useNavigate()
   const { token } = acceptInvitationRoute.useParams()
@@ -57,7 +58,7 @@ export function AcceptInvitationPage() {
     ...sitePublicInvitationsAcceptMutation(),
     onSuccess: (_data, variables) => {
       const joined = Object.keys(variables.body).length === 0
-      notifications.show({
+      notify({
         color: 'teal',
         title: t(($) => $.acceptInvitation.successTitle),
         message: joined
@@ -67,7 +68,7 @@ export function AcceptInvitationPage() {
       void navigate({ to: joined ? indexRoute.to : loginRoute.to })
     },
     onError: (error) => {
-      notifications.show({
+      notify({
         color: 'red',
         title: t(($) => $.acceptInvitation.errorTitle),
         message: apiErrorMessage(

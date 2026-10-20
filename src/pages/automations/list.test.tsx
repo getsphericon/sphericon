@@ -1,6 +1,5 @@
-import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
-import { afterEach, expect, test } from 'vitest'
+import { expect, test } from 'vitest'
 
 import {
   handleSiteAutomationsActivate,
@@ -37,11 +36,6 @@ const NURTURE: SiteAutomationResource = {
   status: 'draft',
   triggerEvent: 'email.opened',
 }
-
-// Toasts live in a global store and would cover the table's buttons in the next test.
-afterEach(() => {
-  notifications.clean()
-})
 
 test('lists automations with their status', async () => {
   worker.use(

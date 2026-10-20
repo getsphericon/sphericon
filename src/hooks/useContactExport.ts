@@ -1,4 +1,3 @@
-import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { parse } from 'content-disposition-header'
 import { saveAs } from 'file-saver'
@@ -7,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { siteContactsExport } from '../generated/site/sdk.gen.ts'
 import type { SiteContactsExportData } from '../generated/site/types.gen.ts'
 import { getApiErrorMessage } from '../utils/apiErrors.ts'
+import { useNotify } from './useNotify.ts'
 
 // The filename the server suggested in Content-Disposition (RFC 6266, `filename*` included).
 function exportFilename(response: Response): string | undefined {
@@ -21,6 +21,7 @@ function exportFilename(response: Response): string | undefined {
 // ContactExportDocument and written out as the saved file.
 export function useContactExport(workspaceId: string) {
   const { t } = useTranslation()
+  const notify = useNotify()
   return useMutation({
     mutationFn: (query: NonNullable<SiteContactsExportData['query']>) =>
       siteContactsExport({ path: { workspaceId }, query, parseAs: 'json', throwOnError: true }),
@@ -30,7 +31,7 @@ export function useContactExport(workspaceId: string) {
         exportFilename(response),
       ),
     onError: (error) =>
-      notifications.show({
+      notify({
         color: 'red',
         title: t(($) => $.alerts.exportErrorTitle),
         message: getApiErrorMessage(

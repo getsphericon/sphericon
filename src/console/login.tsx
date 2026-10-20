@@ -11,7 +11,6 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -23,6 +22,7 @@ import {
 } from '../generated/staff/@tanstack/react-query.gen.ts'
 import type { StaffEnrolment, StaffLoginResult } from '../generated/staff/types.gen.ts'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage.ts'
+import { useNotify } from '../hooks/useNotify.ts'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 
 // What the password step granted: a code to enter, plus the secret to add to an
@@ -34,6 +34,7 @@ interface CodeStep {
 
 export function ConsoleLoginPage() {
   const { t } = useTranslation()
+  const notify = useNotify()
   const navigate = useNavigate()
   const apiErrorMessage = useApiErrorMessage()
 
@@ -42,7 +43,7 @@ export function ConsoleLoginPage() {
   const [step, setStep] = useState<CodeStep | null>(null)
 
   const showError = (error: unknown) => {
-    notifications.show({
+    notify({
       color: 'red',
       title: t(($) => $.console.login.errorTitle),
       message: apiErrorMessage(

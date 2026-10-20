@@ -1,5 +1,4 @@
 import { Avatar, Group, Menu, Text, UnstyledButton } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import {
   IconChevronDown,
   IconExternalLink,
@@ -15,6 +14,7 @@ import {
   siteAuthLogoutMutation,
   siteWorkspacesAccountLinkMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
+import { useNotify } from '../hooks/useNotify.ts'
 import { Route as profileRoute } from '../routes/account/index.tsx'
 import { Route as loginRoute } from '../routes/login.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
@@ -36,6 +36,7 @@ export function UserMenu({
   accountLink?: boolean
 }) {
   const { t } = useTranslation()
+  const notify = useNotify()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -49,7 +50,7 @@ export function UserMenu({
       window.open(target.toString(), '_blank', 'noopener')
     },
     onError: () => {
-      notifications.show({ color: 'red', message: t(($) => $.userMenu.accountErrorTitle) })
+      notify({ color: 'red', message: t(($) => $.userMenu.accountErrorTitle) })
     },
   })
 
@@ -60,7 +61,7 @@ export function UserMenu({
       await navigate({ to: loginRoute.to })
     },
     onError: () => {
-      notifications.show({
+      notify({
         color: 'red',
         title: t(($) => $.userMenu.logoutErrorTitle),
         message: t(($) => $.userMenu.logoutErrorTitle),

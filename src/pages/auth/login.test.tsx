@@ -1,6 +1,5 @@
-import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
-import { afterEach, expect, test } from 'vitest'
+import { expect, test } from 'vitest'
 
 import {
   handleSiteAuthLogin,
@@ -11,11 +10,6 @@ import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { LoginPage } from './login.tsx'
-
-// Toasts live in a global store and would cover the form's buttons in the next test.
-afterEach(() => {
-  notifications.clean()
-})
 
 test('navigates home after a successful login', async () => {
   worker.use(handleSiteAuthLogin({ body: { outcome: 'session' } }))

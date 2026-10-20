@@ -11,7 +11,6 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -21,6 +20,7 @@ import {
   siteOAuthDescribeOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as oauthConsentRoute } from '../../routes/oauth/consent.tsx'
 import { getApiErrorMessage, isForbiddenError } from '../../utils/apiErrors.ts'
 
@@ -54,6 +54,7 @@ export function OAuthConsentPage() {
 // mint a one-time code; the browser is then sent back to the client.
 export function OAuthConsent({ request }: { request: ConsentRequest }) {
   const { t } = useTranslation()
+  const notify = useNotify()
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [allowSend, setAllowSend] = useState(false)
 
@@ -78,7 +79,7 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
       if (isForbiddenError(error)) {
         return
       }
-      notifications.show({
+      notify({
         color: 'red',
         title: t(($) => $.oauthConsent.errorTitle),
         message: getApiErrorMessage(

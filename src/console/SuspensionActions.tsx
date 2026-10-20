@@ -2,7 +2,6 @@ import { Alert, Button, Group, Modal, Stack, Textarea } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
-import { notifications } from '@mantine/notifications'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -14,14 +13,16 @@ import {
   staffWorkspacesUnsuspendMutation,
 } from '../generated/staff/@tanstack/react-query.gen.ts'
 import type { StaffExemptionChange, StaffSuspensionChange } from '../generated/staff/types.gen.ts'
+import { useNotify } from '../hooks/useNotify.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 
 // Both actions answer 200 with whether anything changed, so a no-op says so instead of
 // looking like a success.
 function useChangeNotice(changedMessage: string, unchangedMessage: string) {
   const { t } = useTranslation()
+  const notify = useNotify()
   return (change: StaffSuspensionChange | StaffExemptionChange) => {
-    notifications.show(
+    notify(
       change.changed
         ? {
             color: 'teal',

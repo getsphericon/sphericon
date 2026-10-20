@@ -1,6 +1,5 @@
 import { Button, Card, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,11 +9,13 @@ import { SigninProviders } from '../../components/SigninProviders.tsx'
 import { siteAuthRegisterMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteRegisterInput } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { requiresEmailVerification } from '../../instance.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
 
 export function RegisterPage() {
   const { t } = useTranslation()
+  const notify = useNotify()
   const apiErrorMessage = useApiErrorMessage()
   // With the gate off (ADR 0030) the account is usable at once; with it on, the link
   // to the address proves it, and signs in when followed in this browser.
@@ -46,7 +47,7 @@ export function RegisterPage() {
       }
     },
     onError: (error) => {
-      notifications.show({
+      notify({
         color: 'red',
         title: t(($) => $.registration.errorTitle),
         message: apiErrorMessage(
