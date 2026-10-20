@@ -413,6 +413,7 @@ title="${PR_TITLE:-$(git log -1 --format=%s)}"
 args=(--title "$title" --base "$base")
 go run ./cmd/upgradecheck migrations "${args[@]}"
 go run ./cmd/upgradecheck breaking "${args[@]}" ${PR_BODY_FILE:+--body-file "$PR_BODY_FILE"}
+go run ./cmd/upgradecheck immutable --base "$base" ${PR_BODY_FILE:+--body-file "$PR_BODY_FILE"}
 '''
 
 ["check:env"]

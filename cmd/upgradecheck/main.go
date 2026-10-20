@@ -16,7 +16,8 @@ import (
 
 const usage = `usage:
   upgradecheck breaking   --title T [--body-file F] --base REF
-  upgradecheck migrations --title T --base REF`
+  upgradecheck migrations --title T --base REF
+  upgradecheck immutable  [--body-file F] --base REF`
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -41,6 +42,8 @@ func run(args []string) error {
 		return runBreaking(*title, *bodyFile, *base)
 	case "migrations":
 		return runMigrations(*title, *base)
+	case "immutable":
+		return runImmutable(*bodyFile, *base)
 	default:
 		return errors.New(usage)
 	}

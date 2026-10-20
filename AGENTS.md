@@ -187,6 +187,9 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
   in a transaction of its own), written by `mise run db:river-migration` from the river version in
   `go.mod`; after a river upgrade run it again and `rivermigrate.Validate` in
   `cmd/server/migrate_test.go` tells you when it is due. Do not edit those files by hand.
+- **Migrations are immutable.** `cmd/upgradecheck immutable` (in `check:upgrade`) fails a PR that
+  modifies or deletes a goose `.sql` or Go migration already on `main`, naming each file; only a PR
+  whose body has a line `History-Collapse: <reason>` may rewrite history.
 - **Migration rules (ADR 0033).** Between two Majors a migration only adds (a table, a nullable
   column, an index built `CONCURRENTLY`, a new payload field); a removal or a rename waits for a
   Major (before 1.0 every `0.MINOR` is one). Heavy data work is a river job that runs after the
