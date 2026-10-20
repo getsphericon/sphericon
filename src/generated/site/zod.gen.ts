@@ -284,6 +284,17 @@ export const zSiteConfirmEmailChangeInput = z.object({
 });
 
 /**
+ * What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`.
+ */
+export const zSiteContactLookup = z.object({
+  contactHeld: z.boolean(),
+  events: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  deliveryRecords: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  unsubscribes: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  suppressions: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * Site request body for creating an automation
  */
 export const zSiteCreateAutomationInput = z.object({
@@ -2476,6 +2487,19 @@ export const zSiteContactsCreatePath = z.object({
  */
 export const zSiteContactsCreateResponse = zSiteContactResource;
 
+export const zSiteContactsErasePath = z.object({
+  slug: z.string()
+});
+
+export const zSiteContactsEraseQuery = z.object({
+  email: z.string().max(320)
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteContactsEraseResponse = z.void();
+
 export const zSiteContactsExportPath = z.object({
   slug: z.string()
 });
@@ -2489,6 +2513,19 @@ export const zSiteContactsExportQuery = z.object({
  * Attachment download of everything held about one contact (subject access, GDPR Art. 15/20): the ContactExportDocument JSON, streamed
  */
 export const zSiteContactsExportResponse = zContactExportDocument;
+
+export const zSiteContactsLookupPath = z.object({
+  slug: z.string()
+});
+
+export const zSiteContactsLookupQuery = z.object({
+  email: z.string().max(320)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteContactsLookupResponse = zSiteContactLookup;
 
 export const zSiteTagsListForContactPath = z.object({
   slug: z.string(),

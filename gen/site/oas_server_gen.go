@@ -258,6 +258,15 @@ type Handler interface {
 	//
 	// DELETE /workspaces/{slug}/contacts/{id}
 	SiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) (SiteContactsDeleteRes, error)
+	// SiteContactsErase implements SiteContacts_erase operation.
+	//
+	// Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as deleting a contact:
+	// personal data is removed, delivery records to the address are anonymized (also when no contact holds
+	// it) and opt-outs survive. Answers 404 when neither a contact nor delivery records hold the address.
+	// Owner or admin only.
+	//
+	// DELETE /workspaces/{slug}/contacts/erase
+	SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (SiteContactsEraseRes, error)
 	// SiteContactsExport implements SiteContacts_export operation.
 	//
 	// Export everything held about one contact as a streamed JSON download. Identify the contact by
@@ -277,6 +286,14 @@ type Handler interface {
 	//
 	// GET /workspaces/{slug}/contacts
 	SiteContactsList(ctx context.Context, params SiteContactsListParams) (SiteContactsListRes, error)
+	// SiteContactsLookup implements SiteContacts_lookup operation.
+	//
+	// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
+	// is trimmed and lowercased; an invalid one is rejected. An address nothing holds answers with zeros,
+	// not 404. Owner or admin only.
+	//
+	// GET /workspaces/{slug}/contacts/lookup
+	SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (SiteContactsLookupRes, error)
 	// SiteContactsUpdate implements SiteContacts_update operation.
 	//
 	// Update a resource from the site UI.

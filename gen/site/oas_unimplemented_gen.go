@@ -368,6 +368,18 @@ func (UnimplementedHandler) SiteContactsDelete(ctx context.Context, params SiteC
 	return r, ht.ErrNotImplemented
 }
 
+// SiteContactsErase implements SiteContacts_erase operation.
+//
+// Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as deleting a contact:
+// personal data is removed, delivery records to the address are anonymized (also when no contact holds
+// it) and opt-outs survive. Answers 404 when neither a contact nor delivery records hold the address.
+// Owner or admin only.
+//
+// DELETE /workspaces/{slug}/contacts/erase
+func (UnimplementedHandler) SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (r SiteContactsEraseRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteContactsExport implements SiteContacts_export operation.
 //
 // Export everything held about one contact as a streamed JSON download. Identify the contact by
@@ -393,6 +405,17 @@ func (UnimplementedHandler) SiteContactsGet(ctx context.Context, params SiteCont
 //
 // GET /workspaces/{slug}/contacts
 func (UnimplementedHandler) SiteContactsList(ctx context.Context, params SiteContactsListParams) (r SiteContactsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteContactsLookup implements SiteContacts_lookup operation.
+//
+// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
+// is trimmed and lowercased; an invalid one is rejected. An address nothing holds answers with zeros,
+// not 404. Owner or admin only.
+//
+// GET /workspaces/{slug}/contacts/lookup
+func (UnimplementedHandler) SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (r SiteContactsLookupRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

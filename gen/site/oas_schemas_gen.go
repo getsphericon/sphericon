@@ -6828,6 +6828,74 @@ func (s *SiteConfirmEmailChangeInput) SetToken(val string) {
 	s.Token = val
 }
 
+// What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing
+// held is all zeros and `contactHeld: false`.
+// Ref: #/components/schemas/SiteContactLookup
+type SiteContactLookup struct {
+	// Whether a Contact holds the address.
+	ContactHeld bool `json:"contactHeld"`
+	// Events of the Contact holding the address, or carrying the address.
+	Events int32 `json:"events"`
+	// Delivery records (outbound messages) to the address.
+	DeliveryRecords int32 `json:"deliveryRecords"`
+	// Unsubscribes on the address.
+	Unsubscribes int32 `json:"unsubscribes"`
+	// Suppressions on the address.
+	Suppressions int32 `json:"suppressions"`
+}
+
+// GetContactHeld returns the value of ContactHeld.
+func (s *SiteContactLookup) GetContactHeld() bool {
+	return s.ContactHeld
+}
+
+// GetEvents returns the value of Events.
+func (s *SiteContactLookup) GetEvents() int32 {
+	return s.Events
+}
+
+// GetDeliveryRecords returns the value of DeliveryRecords.
+func (s *SiteContactLookup) GetDeliveryRecords() int32 {
+	return s.DeliveryRecords
+}
+
+// GetUnsubscribes returns the value of Unsubscribes.
+func (s *SiteContactLookup) GetUnsubscribes() int32 {
+	return s.Unsubscribes
+}
+
+// GetSuppressions returns the value of Suppressions.
+func (s *SiteContactLookup) GetSuppressions() int32 {
+	return s.Suppressions
+}
+
+// SetContactHeld sets the value of ContactHeld.
+func (s *SiteContactLookup) SetContactHeld(val bool) {
+	s.ContactHeld = val
+}
+
+// SetEvents sets the value of Events.
+func (s *SiteContactLookup) SetEvents(val int32) {
+	s.Events = val
+}
+
+// SetDeliveryRecords sets the value of DeliveryRecords.
+func (s *SiteContactLookup) SetDeliveryRecords(val int32) {
+	s.DeliveryRecords = val
+}
+
+// SetUnsubscribes sets the value of Unsubscribes.
+func (s *SiteContactLookup) SetUnsubscribes(val int32) {
+	s.Unsubscribes = val
+}
+
+// SetSuppressions sets the value of Suppressions.
+func (s *SiteContactLookup) SetSuppressions(val int32) {
+	s.Suppressions = val
+}
+
+func (*SiteContactLookup) siteContactsLookupRes() {}
+
 // Contact resource used by the site UI.
 // Ref: #/components/schemas/SiteContactResource
 type SiteContactResource struct {
@@ -6998,6 +7066,23 @@ type SiteContactsDeleteNotFound ProblemDetails
 
 func (*SiteContactsDeleteNotFound) siteContactsDeleteRes() {}
 
+type SiteContactsEraseBadRequest ProblemDetails
+
+func (*SiteContactsEraseBadRequest) siteContactsEraseRes() {}
+
+type SiteContactsEraseForbidden ProblemDetails
+
+func (*SiteContactsEraseForbidden) siteContactsEraseRes() {}
+
+// SiteContactsEraseNoContent is response for SiteContactsErase operation.
+type SiteContactsEraseNoContent struct{}
+
+func (*SiteContactsEraseNoContent) siteContactsEraseRes() {}
+
+type SiteContactsEraseNotFound ProblemDetails
+
+func (*SiteContactsEraseNotFound) siteContactsEraseRes() {}
+
 type SiteContactsExportBadRequest ProblemDetails
 
 func (*SiteContactsExportBadRequest) siteContactsExportRes() {}
@@ -7133,6 +7218,18 @@ func (*SiteContactsListOK) siteContactsListRes() {}
 type SiteContactsListUnprocessableEntity ProblemDetails
 
 func (*SiteContactsListUnprocessableEntity) siteContactsListRes() {}
+
+type SiteContactsLookupBadRequest ProblemDetails
+
+func (*SiteContactsLookupBadRequest) siteContactsLookupRes() {}
+
+type SiteContactsLookupForbidden ProblemDetails
+
+func (*SiteContactsLookupForbidden) siteContactsLookupRes() {}
+
+type SiteContactsLookupNotFound ProblemDetails
+
+func (*SiteContactsLookupNotFound) siteContactsLookupRes() {}
 
 type SiteContactsUpdateBadRequest ProblemDetails
 
