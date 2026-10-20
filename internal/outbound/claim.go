@@ -126,11 +126,15 @@ func claimTime() time.Time { return time.Now().Truncate(time.Microsecond) }
 // attempt that outlived its lease and was taken over matches nothing, so it can never
 // record a result, release a claim or delete a row that now belongs to someone else.
 func holds(msg *ent.OutboundMessage) []predicate.OutboundMessage {
-	return []predicate.OutboundMessage{
+	return append([]predicate.OutboundMessage{
 		outboundmessage.ID(msg.ID),
 		outboundmessage.StatusEQ(outboundmessage.StatusPending),
-		outboundmessage.ClaimedAtEQ(msg.ClaimedAt),
-	}
+	}, claimFence(msg)...)
+}
+
+// claimFence is the claim token alone: the status condition of a move comes from the lifecycle.
+func claimFence(msg *ent.OutboundMessage) []predicate.OutboundMessage {
+	return []predicate.OutboundMessage{outboundmessage.ClaimedAtEQ(msg.ClaimedAt)}
 }
 
 // release hands the claim back after a definite provider failure (the call
@@ -147,16 +151,9 @@ func (m *Module) release(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMe
 
 // finish records a final, non-sent status with its reason.
 func (m *Module) finish(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage, status outboundmessage.Status, outcome Outcome, reason string) (Result, error) {
-	n, err := s.OutboundMessage().Update().
-		Where(holds(msg)...).
-		SetStatus(status).
-		SetReason(reason).
-		Save(ctx)
-	if err != nil {
+	// A lost fence means the claim was taken over while we worked.
+	if err := moveOrStale(ctx, s, msg, status, func(u *ent.OutboundMessageScopedUpdate) { u.SetReason(reason) }); err != nil {
 		return Result{}, err
-	}
-	if n == 0 {
-		return Result{}, ErrInProgress // the claim was taken over while we worked
 	}
 	return Result{Outcome: outcome, Reason: reason, MessageID: msg.ID}, nil
 }

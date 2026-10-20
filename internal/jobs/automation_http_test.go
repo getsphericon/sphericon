@@ -285,3 +285,17 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 	next := h.worker(h.rcv.allow).NextRetry(&river.Job[jobs.RunHTTPStepArgs]{JobRow: &rivertype.JobRow{Attempt: 2, AttemptedAt: &h.clock}})
 	assert.Equal(t, jobs.HookNextRetry(h.clock, 2), next)
 }
+
+func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {
+	h := newHTTPStepHarness(t, `{"ok":true}`, true)
+	runID := h.enroll(t, fixtures.ContactAliceID)
+	require.NoError(t, automations.ExitRun(context.Background(), h.DB.Scoped(fixtures.AcmeID), runID))
+
+	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
+
+	assert.Empty(t, h.rcv.received(), "no call after an exit")
+	r := h.run(runID)
+	assert.Equal(t, automationrun.StatusExited, r.status)
+	assert.Equal(t, 0, r.step)
+	assert.Empty(t, h.queued(t))
+}

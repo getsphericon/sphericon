@@ -5,6 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/messaging"
+
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -274,4 +278,101 @@ func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearSuspendedAt().ExecX(ctx)
 	drive(t, env, resolvingTo(fs), runIDs[0])
 	assert.Len(t, fs.sent, 1, "after the unfreeze the step sends")
+}
+
+// An Enrollment exited while a step is in flight stays exited: the late step's own
+// outcome (here a send that can never be composed) finishes quietly instead of
+// overwriting the exit.
+func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetEmail("late@test.dev").SetFirstName("Late").Save(ctx)
+	require.NoError(t, err)
+	a, err := env.DB.Automation.Create().SetWorkspaceID(fixtures.AcmeID).
+		SetName("Broken template").SetTriggerEvent("contact.created").SetStatus(automation.StatusActive).
+		SetDefinition(`[{"type":"email","subject":"{% if x %}open","body":"<p>Hi</p>"}]`).Save(ctx)
+	require.NoError(t, err)
+	runIDs, err := jobs.EvaluateTrigger(ctx, s, c.ID, "contact.created")
+	require.NoError(t, err)
+	require.Len(t, runIDs, 1)
+
+	// The Contact unsubscribes while the step is already running: the provider lookup
+	// is inside the step, after the run was read.
+	resolver := &SendersMock{EmailSenderFunc: func(ctx context.Context, sc *ent.Scoped) (messaging.EmailSender, error) {
+		_, err := automations.Exit(ctx, sc, a.ID, c.ID)
+		require.NoError(t, err)
+		return &fakeSender{}, nil
+	}}
+
+	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolver), runIDs[0])
+	require.NoError(t, err)
+	assert.True(t, res.Done)
+	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runIDs[0]).Status)
+}
+
+// exitedRun enrolls the Contact into the Automation and exits the Enrollment at once, so the step
+// that runs next finds the run already exited.
+func exitedRun(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) int64 {
+	t.Helper()
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	runID, enrolled, err := automations.Enroll(ctx, s, automationID, contactID)
+	require.NoError(t, err)
+	require.True(t, enrolled)
+	require.NoError(t, automations.ExitRun(ctx, s, runID))
+	return runID
+}
+
+func TestStepOnAnExitedRunSendsNothingAndStaysPut(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	fs := &fakeSender{}
+	runID := exitedRun(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
+
+	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(fs)), runID)
+
+	require.NoError(t, err)
+	assert.True(t, res.Done)
+	assert.Empty(t, fs.sent, "nothing is sent after an exit")
+	run := env.DB.AutomationRun.GetX(ctx, runID)
+	assert.Equal(t, automationrun.StatusExited, run.Status)
+	assert.Equal(t, 0, run.CurrentStep)
+}
+
+func TestTagStepOnAnExitedRunChangesNoTagAndDoesNotAdvance(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	before := env.DB.Contact.GetX(ctx, fixtures.ContactBobID).QueryTags().CountX(ctx)
+	runID := exitedRun(t, env, fixtures.AutomationTagOnEngagementID, fixtures.ContactBobID)
+
+	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runID)
+
+	require.NoError(t, err)
+	assert.True(t, res.Done)
+	assert.Equal(t, before, env.DB.Contact.GetX(ctx, fixtures.ContactBobID).QueryTags().CountX(ctx))
+	assert.Equal(t, 0, env.DB.AutomationRun.GetX(ctx, runID).CurrentStep)
+}
+
+func TestWaitStepOnAnExitedRunDoesNotSetResumeAt(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, fixtures.ContactCarolID)
+	require.NoError(t, err)
+	_, err = jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runID) // the email
+	require.NoError(t, err)
+	require.NoError(t, automations.ExitRun(ctx, s, runID))
+
+	res, err := jobs.RunStep(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), runID) // the wait
+
+	require.NoError(t, err)
+	assert.True(t, res.Done)
+	assert.Nil(t, res.ResumeAt)
+	run := env.DB.AutomationRun.GetX(ctx, runID)
+	assert.Equal(t, automationrun.StatusExited, run.Status)
+	assert.Nil(t, run.ResumeAt)
+	assert.Equal(t, 1, run.CurrentStep)
 }

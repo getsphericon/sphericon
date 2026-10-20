@@ -3,6 +3,7 @@ package automations_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -83,6 +85,48 @@ func TestExitRunEndsOneEnrollment(t *testing.T) {
 	assert.Equal(t, automationrun.StatusExited, run.Status)
 }
 
+func TestAnExitedEnrollmentIsNeitherCompletedNorFailed(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	c := newContact(t, s, "late-step@example.com")
+	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	require.NoError(t, err)
+	require.NoError(t, automations.ExitRun(ctx, s, runID))
+
+	require.ErrorIs(t, automations.Complete(ctx, s, runID), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.Fail(ctx, s, runID, automations.Failure{}), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.ExitRun(ctx, s, runID), lifecycle.ErrInvalidTransition)
+	run, err := s.AutomationRun().Get(ctx, runID)
+	require.NoError(t, err)
+	assert.Equal(t, automationrun.StatusExited, run.Status)
+}
+
+func TestFailKeepsTheReasonAndCompleteEndsTheRun(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	failing, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "fail@example.com").ID)
+	require.NoError(t, err)
+	done, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "done@example.com").ID)
+	require.NoError(t, err)
+
+	require.NoError(t, automations.Fail(ctx, s, failing, automations.Failure{
+		Kind: automationrun.FailureKindHTTPStatus, Status: 500, Excerpt: "boom",
+	}))
+	require.NoError(t, automations.Complete(ctx, s, done))
+
+	run, err := s.AutomationRun().Get(ctx, failing)
+	require.NoError(t, err)
+	assert.Equal(t, automationrun.StatusFailed, run.Status)
+	assert.Equal(t, automationrun.FailureKindHTTPStatus, *run.FailureKind)
+	assert.Equal(t, 500, *run.FailureStatus)
+	assert.Equal(t, "boom", *run.FailureExcerpt)
+	run, err = s.AutomationRun().Get(ctx, done)
+	require.NoError(t, err)
+	assert.Equal(t, automationrun.StatusCompleted, run.Status)
+}
+
 func TestEnrollRefusesAContactOrAutomationOfAnotherWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -94,4 +138,45 @@ func TestEnrollRefusesAContactOrAutomationOfAnotherWorkspace(t *testing.T) {
 	require.ErrorIs(t, err, ent.ErrNotInWorkspace, "Globex cannot enroll an Acme Contact")
 	_, _, err = automations.Enroll(ctx, acme, fixtures.AutomationGlobexID, c.ID)
 	assert.ErrorIs(t, err, ent.ErrNotInWorkspace, "Acme cannot enroll into a Globex Automation")
+}
+
+func TestAdvanceMovesOnlyAnActiveEnrollment(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	live, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "adv-live@example.com").ID)
+	require.NoError(t, err)
+	gone, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "adv-gone@example.com").ID)
+	require.NoError(t, err)
+	require.NoError(t, automations.ExitRun(ctx, s, gone))
+	resume := time.Now().Add(time.Hour)
+
+	require.NoError(t, automations.Advance(ctx, s, live, 1, &resume))
+	require.ErrorIs(t, automations.Advance(ctx, s, gone, 1, &resume), lifecycle.ErrInvalidTransition)
+
+	run, err := s.AutomationRun().Get(ctx, live)
+	require.NoError(t, err)
+	assert.Equal(t, 1, run.CurrentStep)
+	require.NotNil(t, run.ResumeAt)
+	run, err = s.AutomationRun().Get(ctx, gone)
+	require.NoError(t, err)
+	assert.Equal(t, 0, run.CurrentStep)
+	assert.Nil(t, run.ResumeAt)
+}
+
+func TestIsActiveReadsTheLifecycle(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, newContact(t, s, "isactive@example.com").ID)
+	require.NoError(t, err)
+
+	ok, err := automations.IsActive(ctx, s, runID)
+	require.NoError(t, err)
+	assert.True(t, ok)
+
+	require.NoError(t, automations.ExitRun(ctx, s, runID))
+	ok, err = automations.IsActive(ctx, s, runID)
+	require.NoError(t, err)
+	assert.False(t, ok)
 }

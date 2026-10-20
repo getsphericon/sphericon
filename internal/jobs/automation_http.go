@@ -55,10 +55,14 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStep
 	if err != nil {
 		return err
 	}
-	if run.Status != automationrun.StatusActive {
+	s := w.ent.Scoped(run.WorkspaceID)
+	// The lifecycle table decides: a job that finds the Enrollment exited makes no call, tags
+	// nothing and queues nothing.
+	if active, err := automations.IsActive(ctx, s, run.ID); err != nil {
+		return err
+	} else if !active {
 		return nil
 	}
-	s := w.ent.Scoped(run.WorkspaceID)
 	switch run.CurrentStep {
 	case job.Args.Step + 1:
 		return w.continueRun(ctx, run, false) // the call was made, the follow-up was not queued
@@ -73,7 +77,7 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStep
 	}
 	steps, err := automations.Decode(a.Definition)
 	if err != nil {
-		return w.fail(ctx, run, failure{kind: automationrun.FailureKindInvalidBody}, river.JobCancel(err))
+		return w.fail(ctx, run, automations.Failure{Kind: automationrun.FailureKindInvalidBody}, river.JobCancel(err))
 	}
 	if run.CurrentStep >= len(steps) || steps[run.CurrentStep].Type != automations.StepHTTP {
 		return nil // the Automation was edited since the job was queued
@@ -94,7 +98,7 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStep
 	body, err := automations.RenderBody(step.Body, c)
 	if err != nil {
 		// A render that is not valid JSON would fail the same way on every attempt.
-		return w.fail(ctx, run, failure{kind: automationrun.FailureKindInvalidBody}, river.JobCancel(err))
+		return w.fail(ctx, run, automations.Failure{Kind: automationrun.FailureKindInvalidBody}, river.JobCancel(err))
 	}
 
 	sendErr := webhook.Post(ctx, w.client, webhook.Call{
@@ -110,9 +114,9 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[RunHTTPStep
 	if !errors.As(sendErr, &delivery) {
 		delivery = &webhook.DeliveryError{Kind: webhook.KindNetwork}
 	}
-	f := failure{kind: automationrun.FailureKind(delivery.Kind), excerpt: delivery.Excerpt}
+	f := automations.Failure{Kind: automationrun.FailureKind(delivery.Kind), Excerpt: delivery.Excerpt}
 	if delivery.Kind == webhook.KindHTTPStatus {
-		f.status = delivery.Status
+		f.Status = delivery.Status
 	}
 	if limited := rateLimit(sendErr); limited != nil {
 		if now.Sub(job.CreatedAt) >= HookRetryHorizon {
@@ -141,8 +145,10 @@ func (w *RunHTTPStepWorker) NextRetry(job *river.Job[RunHTTPStepArgs]) time.Time
 // previous attempt of this job already did.
 func (w *RunHTTPStepWorker) continueRun(ctx context.Context, run *ent.AutomationRun, advance bool) error {
 	if advance {
-		err := w.ent.Scoped(run.WorkspaceID).AutomationRun().UpdateOneID(run.ID).
-			SetCurrentStep(run.CurrentStep + 1).ClearResumeAt().Exec(ctx)
+		err := automations.Advance(ctx, w.ent.Scoped(run.WorkspaceID), run.ID, run.CurrentStep+1, nil)
+		if automations.Stale(err) {
+			return nil // an exit won while the call was in flight: nothing follows it
+		}
 		if err != nil {
 			return err
 		}
@@ -151,24 +157,14 @@ func (w *RunHTTPStepWorker) continueRun(ctx context.Context, run *ent.Automation
 	return err
 }
 
-// failure is what an Enrollment keeps of a failed HTTP step.
-type failure struct {
-	kind    automationrun.FailureKind
-	status  int
-	excerpt string
-}
-
-// fail ends the Enrollment `failed` with the reason and returns result for the job.
-func (w *RunHTTPStepWorker) fail(ctx context.Context, run *ent.AutomationRun, f failure, result error) error {
-	u := w.ent.Scoped(run.WorkspaceID).AutomationRun().UpdateOneID(run.ID).
-		SetStatus(automationrun.StatusFailed).ClearResumeAt().SetFailureKind(f.kind)
-	if f.status != 0 {
-		u.SetFailureStatus(f.status)
+// fail ends the Enrollment `failed` with the reason and returns result for the job. A run
+// that already left `active` (an exit won) stays as it is and the job ends quietly.
+func (w *RunHTTPStepWorker) fail(ctx context.Context, run *ent.AutomationRun, f automations.Failure, result error) error {
+	err := automations.Fail(ctx, w.ent.Scoped(run.WorkspaceID), run.ID, f)
+	if automations.Stale(err) {
+		return nil
 	}
-	if f.excerpt != "" {
-		u.SetFailureExcerpt(f.excerpt)
-	}
-	if err := u.Exec(ctx); err != nil {
+	if err != nil {
 		return err
 	}
 	return result

@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 )
@@ -273,4 +274,96 @@ func TestCheck_servingHostThatStopsAnsweringFallsBackToDNSVerified(t *testing.T)
 	require.Len(t, changes, 1)
 	assert.Equal(t, "serving", changes[0].(*events.TrackingDomainChanged).From)
 	assert.Equal(t, "dns_verified", changes[0].(*events.TrackingDomainChanged).To)
+}
+
+// Two checks of one host read the same row. The one whose answer lands second was judged on
+// a state that is gone: it loses the compare-and-swap, and the row keeps the state the first
+// stored, which a later read agrees with.
+func TestCheck_concurrentChecksEndInAStateALaterReadAgreesWith(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.UmbrellaID)
+
+	read := make(chan struct{})
+	release := make(chan struct{})
+	slow := verifier(t, env, nil) // its DNS answer is gone: a demotion to pending
+	inner := slow.Lookup
+	slow.Lookup = func(ctx context.Context, host string) (string, error) {
+		close(read) // the row is already read when the lookup starts
+		<-release
+		return inner(ctx, host)
+	}
+
+	type outcome struct {
+		state sendingdomain.TrackingState
+		err   error
+	}
+	loser := make(chan outcome)
+	go func() {
+		state, err := slow.Check(ctx, s, fixtures.SendingDomainTrackingDNSVerifiedID)
+		loser <- outcome{state, err}
+	}()
+	<-read
+
+	winner := probing(verifier(t, env, pointingAtEdge(dnsHost)), answering(dnsHost))
+	state, err := winner.Check(ctx, s, fixtures.SendingDomainTrackingDNSVerifiedID)
+	require.NoError(t, err)
+	require.Equal(t, sendingdomain.TrackingStateServing, state)
+
+	close(release)
+	got := <-loser
+	require.ErrorIs(t, got.err, lifecycle.ErrInvalidTransition)
+
+	row, err := s.SendingDomain().Get(ctx, fixtures.SendingDomainTrackingDNSVerifiedID)
+	require.NoError(t, err)
+	assert.Equal(t, sendingdomain.TrackingStateServing, row.TrackingState)
+	assert.Len(t, env.OutboxEvents(t, events.NameTrackingDomainChanged), 1)
+}
+
+// The lifecycle lists six edges: each of the three states moves to both others, and the Check
+// takes every one of them from what DNS and the probe answer.
+func TestCheck_everyEdgeOfTheTrackingLifecycle(t *testing.T) {
+	const (
+		pending  = sendingdomain.TrackingStatePending
+		verified = sendingdomain.TrackingStateDNSVerified
+		serving  = sendingdomain.TrackingStateServing
+		pendHost = "track.pending.umbrella.test"
+		servHost = "track.serving.umbrella.test"
+	)
+	down := probeAnswer{err: errors.New("down")}
+	cases := []struct {
+		name     string
+		id       int64
+		zones    map[string]mockdns.Zone
+		probe    probeAnswer
+		from, to sendingdomain.TrackingState
+	}{
+		{"pending to dns_verified", fixtures.SendingDomainTrackingPendingID, pointingAtEdge(pendHost), down, pending, verified},
+		{"pending to serving", fixtures.SendingDomainTrackingPendingID, pointingAtEdge(pendHost), answering(pendHost), pending, serving},
+		{"dns_verified to pending", fixtures.SendingDomainTrackingDNSVerifiedID, nil, down, verified, pending},
+		{"dns_verified to serving", fixtures.SendingDomainTrackingDNSVerifiedID, pointingAtEdge(dnsHost), answering(dnsHost), verified, serving},
+		{"serving to pending", fixtures.SendingDomainTrackingServingID, nil, down, serving, pending},
+		{"serving to dns_verified", fixtures.SendingDomainTrackingServingID, pointingAtEdge(servHost), down, serving, verified},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := context.Background()
+			s := env.DB.Scoped(fixtures.UmbrellaID)
+
+			state, err := probing(verifier(t, env, c.zones), c.probe).Check(ctx, s, c.id)
+			require.NoError(t, err)
+			assert.Equal(t, c.to, state)
+
+			row, err := s.SendingDomain().Get(ctx, c.id)
+			require.NoError(t, err)
+			assert.Equal(t, c.to, row.TrackingState)
+			assert.True(t, clock.Equal(*row.TrackingStateChangedAt))
+
+			changes := env.OutboxEvents(t, events.NameTrackingDomainChanged)
+			require.Len(t, changes, 1)
+			assert.Equal(t, string(c.from), changes[0].(*events.TrackingDomainChanged).From)
+			assert.Equal(t, string(c.to), changes[0].(*events.TrackingDomainChanged).To)
+		})
+	}
 }

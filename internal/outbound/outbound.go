@@ -30,10 +30,12 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -437,17 +439,20 @@ func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, fromEmail string)
 // final retry is spent), recording cause. It is a no-op for a message that already
 // reached a final status or whose claim another attempt currently holds.
 func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, key string, cause error) error {
-	return s.OutboundMessage().Update().
-		Where(
-			outboundmessage.IdempotencyKey(key),
-			outboundmessage.StatusEQ(outboundmessage.StatusPending),
-			// Never fail a message another attempt is working on: only a claim that
-			// was released (a definite provider failure) or whose lease has expired.
-			outboundmessage.ClaimedAtLT(time.Now().Add(-m.lease)),
-		).
-		SetStatus(outboundmessage.StatusFailed).
-		SetReason(cause.Error()).
-		Exec(ctx)
+	msg, err := m.find(ctx, s, key)
+	if err != nil || msg == nil {
+		return err
+	}
+	// Never fail a message another attempt is working on: only a claim that was released
+	// (a definite provider failure) or whose lease has expired. The fence is the lease, and
+	// the move is a no-op when the message is final or the lease is live.
+	err = move(ctx, s, msg, []predicate.OutboundMessage{
+		outboundmessage.ClaimedAtLT(time.Now().Add(-m.lease)),
+	}, outboundmessage.StatusFailed, func(u *ent.OutboundMessageScopedUpdate) { u.SetReason(cause.Error()) })
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil
+	}
+	return err
 }
 
 // MarkRecipientFailed gives up the pending claim of a Broadcast recipient's send for
@@ -658,25 +663,19 @@ func (m *Module) recordSent(ctx context.Context, s *ent.Scoped, req Request, msg
 	}
 	now := time.Now()
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		upd := ts.OutboundMessage().Update().
-			Where(holds(msg)...).
-			SetStatus(outboundmessage.StatusSent).
-			SetSentAt(now)
-		if g.integration != nil {
-			upd.SetIntegrationID(g.integration.ID)
-		}
-		if receipt.MessageID != "" {
-			upd.SetProviderMessageID(receipt.MessageID)
-		}
-		n, err := upd.Save(ctx)
-		if err != nil {
+		// A lost fence: our claim was taken over while the provider call ran (we outlived
+		// the lease). The taker owns the record; rolling back keeps it, and its
+		// email.sent Event, the only ones.
+		if err := moveOrStale(ctx, ts, msg, outboundmessage.StatusSent, func(upd *ent.OutboundMessageScopedUpdate) {
+			upd.SetSentAt(now)
+			if g.integration != nil {
+				upd.SetIntegrationID(g.integration.ID)
+			}
+			if receipt.MessageID != "" {
+				upd.SetProviderMessageID(receipt.MessageID)
+			}
+		}); err != nil {
 			return err
-		}
-		if n == 0 {
-			// Our claim was taken over while the provider call ran (we outlived the
-			// lease). The taker owns the record; rolling back keeps it, and its
-			// email.sent Event, the only ones.
-			return ErrInProgress
 		}
 		return pub.Publish(ctx, &events.EmailEngagement{
 			Action:            events.NameEmailSent,
