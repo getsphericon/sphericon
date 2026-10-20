@@ -499,10 +499,16 @@ _Avoid_: Account, member, customer, owner
 **Verified email**:
 A User's email address whose control has been proven by following a link sent to it (a verify
 link, an accepted Invitation, or a confirmed email change). Until then the User is an
-**Unverified User**: it holds no session, no Membership, no Workspace and no password. The
-password is set only through a link that proves the address, so whoever proves it is the one who
-sets it.
+**Unverified User**: it holds no session, no Membership and no Workspace, and its password, if
+any, is not yet usable. A password chosen before the address is proven stays only if the link is
+opened in the **Registration browser**; otherwise it is set again through the link, so whoever
+proves the address is the one who sets the password.
 _Avoid_: Confirmed email, activated account
+
+**Registration browser**:
+The browser that submitted a registration. It holds a random value that the verify link also
+carries (hashed), so the link can tell it is being opened where the registration happened.
+_Avoid_: Same device, trusted browser
 
 **Taken address**:
 An email that already belongs to a User. Nobody but its owner may learn that it is taken: a
@@ -512,7 +518,7 @@ _Avoid_: Duplicate email, existing account
 
 **Unverified User**:
 A User whose email is not yet a Verified email: a registration awaiting its verify link. It
-cannot log in, owns nothing and is not attached to any Workspace. A daily job deletes one that
+cannot log in, even with the password it registered with, owns nothing and is not attached to any Workspace. A daily job deletes one that
 holds no Membership once it is older than `SPHERICON_UNVERIFIED_USER_RETENTION_DAYS` (default 7), freeing
 its address; a pending Invitation to that address is kept.
 _Avoid_: Pending account, inactive user
