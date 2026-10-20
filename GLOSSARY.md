@@ -12,6 +12,16 @@ The tenant boundary. Every domain entity belongs to exactly one Workspace, and a
 queries are scoped by it. Owns its own secret key for browser tracking (collect key).
 _Avoid_: Account, tenant, organization, project
 
+**Workspace name**:
+The display title of a Workspace: free text (spaces, any case), changed at will by the Owner
+and Admins. Not unique: two Workspaces, even of one User, may share a name.
+_Avoid_: slug, handle (a Workspace has no human-readable address)
+
+**Workspace id**:
+The short opaque identifier of a Workspace that appears in its URLs and in the API. Assigned
+once at creation and never changed; it is the only address a Workspace has.
+_Avoid_: slug
+
 **Contact**:
 The single record for a person in a workspace — whether fully identified or still anonymous.
 Anchored by a stable internal id, with email, phone, and subject_id (the customer's own user

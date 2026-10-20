@@ -110,12 +110,12 @@ func newFakeInbox(t *testing.T) (*Inbox, *fakeMailpit) {
 	return &Inbox{t: t, mp: mp}, f
 }
 
-func TestWaitTimesOutWithAnInboxListing(t *testing.T) {
+func TestNoMailListsWhatTheInboxHeld(t *testing.T) {
 	t.Parallel()
 	in, f := newFakeInbox(t)
 	f.add(fakeMail{id: "1", to: "other@b.test", subject: "Wrong place"})
 
-	_, err := in.wait(t.Context(), Match{To: "want@b.test"}, 150*time.Millisecond)
+	err := in.noMail(t.Context(), Match{To: "want@b.test"}, time.Minute, nil)
 
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "want@b.test")
@@ -123,11 +123,11 @@ func TestWaitTimesOutWithAnInboxListing(t *testing.T) {
 	assert.ErrorContains(t, err, "Wrong place")
 }
 
-func TestWaitReportsAnEmptyInbox(t *testing.T) {
+func TestNoMailReportsAnEmptyInbox(t *testing.T) {
 	t.Parallel()
 	in, _ := newFakeInbox(t)
 
-	_, err := in.wait(t.Context(), Match{To: "want@b.test"}, 100*time.Millisecond)
+	err := in.noMail(t.Context(), Match{To: "want@b.test"}, time.Minute, nil)
 
 	assert.ErrorContains(t, err, "the inbox is empty")
 }
@@ -154,16 +154,9 @@ func TestWaitMatchesTheSubjectExactly(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "2", msg.ID)
 
-	_, err = in.wait(t.Context(), Match{To: "want@b.test", Subject: "Second issue"}, 100*time.Millisecond)
-	assert.Error(t, err, "a different subject is not a match")
-}
-
-func TestRequireNoneReturnsWhenNothingMatches(t *testing.T) {
-	t.Parallel()
-	in, f := newFakeInbox(t)
-	f.add(fakeMail{id: "1", to: "want@b.test", subject: "Other subject"})
-
-	in.RequireNone(Match{To: "want@b.test", Subject: "Absent"}, 150*time.Millisecond)
+	id, err := in.find(t.Context(), Match{To: "want@b.test", Subject: "Second issue"})
+	require.NoError(t, err)
+	assert.Empty(t, id, "a different subject is not a match")
 }
 
 func TestInboxDeletesEveryObservedMessageOnCleanup(t *testing.T) {
@@ -271,16 +264,4 @@ func TestRememberRecordsAnIDOnce(t *testing.T) {
 	in.cleanup()
 
 	assert.Equal(t, []string{"1"}, f.deletedIDs())
-}
-
-func TestWaitKeepsAGenuineHTTPTimeoutInTheDiagnostic(t *testing.T) {
-	t.Parallel()
-	in, f := newFakeInbox(t)
-	f.hangSearch.Store(true)
-	in.mp.hc.Timeout = 30 * time.Millisecond
-
-	_, err := in.wait(t.Context(), Match{To: "want@b.test"}, 300*time.Millisecond)
-
-	require.Error(t, err)
-	assert.ErrorContains(t, err, "Client.Timeout", "the request timeout is not the wait's own deadline")
 }

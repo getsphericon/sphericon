@@ -50,6 +50,12 @@ The rules a change is reviewed against. How the repo is built, run and generated
   code: they pass or fail with the load of the host and prove nothing about the code. A guard whose
   decision is real logic (when does a run of polls count as growth) is a small pure type tested on
   its inputs; the clock, the heap and the timer feeding it are not tested.
+- **Pure logic gets property tests.** A function or small type that decides something from its
+  inputs alone (a delay, a normalization, a counter of polls) is tested with `pgregory.net/rapid`:
+  state the property that must hold for every input (bounds, idempotence, monotonicity, agreement
+  with a simple model) and let the library search for a counterexample. Examples next to them stay
+  for the cases that document a business rule. A counterexample rapid saves under `testdata/rapid`
+  is committed as a regression.
 - **No tests of built-in behaviour.** A test exercises sphericon's own code. One whose only subject is a
   Mantine component, the standard library or another dependency (a copy button showing "Copied", a
   library's defaults or retries) is deleted, and none is added.
