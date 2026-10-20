@@ -1,11 +1,8 @@
 package external_test
 
 import (
-	"bytes"
 	"context"
 	"crypto/ed25519"
-	"encoding/json"
-	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,40 +10,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/exportstream"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// readExportAudit reads one page of the Audit stream and checks every line against the
-// TypeSpec row schema.
 func readExportAudit(t *testing.T, c *externalapi.Client, cursor string, limit int32) exportPage {
 	t.Helper()
-	params := externalapi.ExportAuditParams{}
-	if cursor != "" {
-		params.Cursor = externalapi.NewOptString(cursor)
-	}
-	if limit > 0 {
-		params.Limit = externalapi.NewOptInt32(limit)
-	}
-	res, err := c.ExportAudit(context.Background(), params)
-	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.ExportAuditOKHeaders)
-	require.Truef(t, isOK, "got %T", res)
-	body, err := io.ReadAll(ok.Response)
-	require.NoError(t, err)
-
-	page := exportPage{cursor: ok.XNextCursor}
-	for line := range bytes.SplitSeq(bytes.TrimSuffix(body, []byte("\n")), []byte("\n")) {
-		if len(line) == 0 {
-			continue
-		}
-		require.NoError(t, exportstream.ValidateRow(exportstream.AuditSchema, line), string(line))
-		var row map[string]any
-		require.NoError(t, json.Unmarshal(line, &row))
-		page.rows = append(page.rows, row)
-	}
-	return page
+	return readExportStream(t, c, auditStream, cursor, limit)
 }
 
 func TestExportAuditReadsOldestFirst(t *testing.T) {

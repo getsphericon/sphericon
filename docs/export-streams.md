@@ -81,13 +81,21 @@ Erasures stream, and you delete the same rows from your copy. Match on any of th
 - `contact_id` on Events, Contacts and Outbound messages;
 - `subject_id` on Events, when it is not empty (anonymous Events have an empty `subject_id`);
 - `visitor_ids` on the `visitor_id` of Events;
-- `email_sha256`, the SHA-256 as lowercase hex of the lowercased address, and `phone_sha256`, the
+- `email_hash`, the SHA-256 as lowercase hex of the lowercased address, and `phone_hash`, the
   SHA-256 of the phone number as stored.
 
 An Erasure that named only an address, or an anonymous Visitor with no Contact, has no
 `contact_id`, an empty `subject_id` and no visitor ids: an address-only Erasure carries **hashes
 only**. The address and the phone themselves are never in the stream, so hash the values in your
 own copy the same way to find the rows (`lower(hex(SHA256(lower(email))))` in ClickHouse).
+
+- The phone is hashed exactly as the Contact stores it, with no normalization: hash your copy's
+  phone string unchanged.
+- A visitor-only Erasure (an anonymous Visitor with no Contact) has a `null` `email_hash`: match
+  it on `visitor_ids`.
+- Match Events on `contact_id`, `subject_id` and `visitor_ids`, not on the hashes: an Event's own
+  `email` or `phone` snapshot can differ from the Contact's current value, and Erasure finds
+  Events by Contact and Visitor. Use the hashes on Contacts and Outbound messages.
 
 Erasure rows are kept for the instance's Event retention window
 (`SPHERICON_EVENTS_RETENTION_DAYS`, 400 days by default), and for good when retention is off.
@@ -170,17 +178,17 @@ never a subject or a body.
 
 A row is written once and never changes.
 
-| Column         | Type             | Meaning                                                                                                                            |
-| -------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `id`           | id               | Unique identifier                                                                                                                  |
-| `contact_id`   | id or `null`     | The erased Contact; `null` when the Erasure named an address or an anonymous Visitor with no Contact                               |
-| `subject_id`   | string           | The customer's own id for the person (the Contact's `subject_id`, or its Sphericon id when it had none); empty when there was none |
-| `visitor_ids`  | array of string  | The anonymous devices erased with the Contact                                                                                      |
-| `email_sha256` | string or `null` | SHA-256, lowercase hex, of the lowercased email address                                                                            |
-| `phone_sha256` | string or `null` | SHA-256, lowercase hex, of the phone number                                                                                        |
-| `erased_at`    | time             | When the Erasure happened                                                                                                          |
-| `created_at`   | time             | Creation timestamp                                                                                                                 |
-| `updated_at`   | time             | Last change timestamp: the cursor column and the version of the row                                                                |
+| Column        | Type             | Meaning                                                                                                                            |
+| ------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | id               | Unique identifier                                                                                                                  |
+| `contact_id`  | id or `null`     | The erased Contact; `null` when the Erasure named an address or an anonymous Visitor with no Contact                               |
+| `subject_id`  | string           | The customer's own id for the person (the Contact's `subject_id`, or its Sphericon id when it had none); empty when there was none |
+| `visitor_ids` | array of string  | The anonymous devices erased with the Contact                                                                                      |
+| `email_hash`  | string or `null` | SHA-256, lowercase hex, of the lowercased email address                                                                            |
+| `phone_hash`  | string or `null` | SHA-256, lowercase hex, of the phone number                                                                                        |
+| `erased_at`   | time             | When the Erasure happened                                                                                                          |
+| `created_at`  | time             | Creation timestamp                                                                                                                 |
+| `updated_at`  | time             | Last change timestamp: the cursor column and the version of the row                                                                |
 
 ### Audit
 
@@ -288,8 +296,8 @@ CREATE TABLE sphericon.erasures
     contact_id   Nullable(UInt64),
     subject_id   String,
     visitor_ids  Array(String),
-    email_sha256 Nullable(String),
-    phone_sha256 Nullable(String),
+    email_hash Nullable(String),
+    phone_hash Nullable(String),
     erased_at    DateTime64(6, 'UTC'),
     created_at   DateTime64(6, 'UTC'),
     updated_at   DateTime64(6, 'UTC')
@@ -409,16 +417,14 @@ it is safe to run again. Note the `subject_id != ''` guard: anonymous Events hav
 DELETE FROM sphericon.events WHERE
     contact_id IN (SELECT contact_id FROM sphericon.erasures FINAL WHERE contact_id IS NOT NULL)
     OR (subject_id != '' AND subject_id IN (SELECT subject_id FROM sphericon.erasures FINAL))
-    OR visitor_id IN (SELECT arrayJoin(visitor_ids) FROM sphericon.erasures FINAL)
-    OR lower(hex(SHA256(lower(email)))) IN (SELECT email_sha256 FROM sphericon.erasures FINAL WHERE email_sha256 IS NOT NULL)
-    OR lower(hex(SHA256(phone))) IN (SELECT phone_sha256 FROM sphericon.erasures FINAL WHERE phone_sha256 IS NOT NULL);
+    OR visitor_id IN (SELECT arrayJoin(visitor_ids) FROM sphericon.erasures FINAL);
 
 DELETE FROM sphericon.contacts WHERE
     id IN (SELECT contact_id FROM sphericon.erasures FINAL WHERE contact_id IS NOT NULL)
-    OR lower(hex(SHA256(lower(email)))) IN (SELECT email_sha256 FROM sphericon.erasures FINAL WHERE email_sha256 IS NOT NULL)
-    OR lower(hex(SHA256(phone))) IN (SELECT phone_sha256 FROM sphericon.erasures FINAL WHERE phone_sha256 IS NOT NULL);
+    OR lower(hex(SHA256(lower(email)))) IN (SELECT email_hash FROM sphericon.erasures FINAL WHERE email_hash IS NOT NULL)
+    OR lower(hex(SHA256(phone))) IN (SELECT phone_hash FROM sphericon.erasures FINAL WHERE phone_hash IS NOT NULL);
 
 DELETE FROM sphericon.messages WHERE
     contact_id IN (SELECT contact_id FROM sphericon.erasures FINAL WHERE contact_id IS NOT NULL)
-    OR lower(hex(SHA256(lower(destination)))) IN (SELECT email_sha256 FROM sphericon.erasures FINAL WHERE email_sha256 IS NOT NULL);
+    OR lower(hex(SHA256(lower(destination)))) IN (SELECT email_hash FROM sphericon.erasures FINAL WHERE email_hash IS NOT NULL);
 ```

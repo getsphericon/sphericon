@@ -37,11 +37,24 @@ func acmeHas(t *testing.T, env *testhelper.TestEnv, id int64) bool {
 	return exists
 }
 
+// fixtureErasedAt is when the fixtures' old Erasure happened. The fixtures are dated relative to
+// the moment they load, so a test names its clock relative to that row instead of the wall clock.
+func fixtureErasedAt(t *testing.T, env *testhelper.TestEnv) time.Time {
+	t.Helper()
+	old, err := env.DB.Scoped(fixtures.AcmeID).Erasure().Get(t.Context(), fixtures.AcmeOldErasureID)
+	require.NoError(t, err)
+	return old.ErasedAt
+}
+
 func TestPruneRemovesErasuresOlderThanTheEventRetentionWindow(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := licenseFor(t, licensekey.FeatureExport)
 
-	removed, err := export.Prune(t.Context(), env.DB, lic, window, time.Now())
+	// The old row is 500 days old and the recent one 3: a clock 401 days after the old row's
+	// Erasure puts the old one just past the window and the recent one well inside it.
+	now := fixtureErasedAt(t, env).Add(window + 24*time.Hour)
+
+	removed, err := export.Prune(t.Context(), env.DB, lic, window, now)
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, removed)
@@ -53,7 +66,9 @@ func TestPruneKeepsEveryErasureWhenRetentionIsOff(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := licenseFor(t, licensekey.FeatureExport)
 
-	removed, err := export.Prune(t.Context(), env.DB, lic, 0, time.Now().AddDate(10, 0, 0))
+	now := fixtureErasedAt(t, env).AddDate(10, 0, 0)
+
+	removed, err := export.Prune(t.Context(), env.DB, lic, 0, now)
 
 	require.NoError(t, err)
 	assert.Zero(t, removed)
@@ -63,7 +78,9 @@ func TestPruneKeepsEveryErasureWhenRetentionIsOff(t *testing.T) {
 func TestPruneWithoutTheExportLicenseRemovesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	removed, err := export.Prune(t.Context(), env.DB, licenseFor(t, licensekey.FeatureAudit), window, time.Now())
+	now := fixtureErasedAt(t, env).Add(window + 24*time.Hour)
+
+	removed, err := export.Prune(t.Context(), env.DB, licenseFor(t, licensekey.FeatureAudit), window, now)
 
 	require.NoError(t, err)
 	assert.Zero(t, removed)

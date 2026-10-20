@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strconv"
 	"testing"
@@ -62,35 +63,121 @@ func (p exportPage) row(id int64) map[string]any {
 	return nil
 }
 
-// readExport reads one page of the Events stream and checks every line against the
+// exportParams are the query parameters of one read; zero values are left unset.
+type exportParams struct {
+	cursor string
+	limit  int32
+}
+
+func (p exportParams) optCursor() externalapi.OptString {
+	if p.cursor == "" {
+		return externalapi.OptString{}
+	}
+	return externalapi.NewOptString(p.cursor)
+}
+
+func (p exportParams) optLimit() externalapi.OptInt32 {
+	if p.limit <= 0 {
+		return externalapi.OptInt32{}
+	}
+	return externalapi.NewOptInt32(p.limit)
+}
+
+// exportStream is one Export stream as the tests drive it: the TypeSpec row schema its lines
+// are checked against, the Workspace whose fixtures give it rows, and one call of its
+// operation that answers the raw response, and the body and next cursor when it is the 200.
+type exportStream struct {
+	name        string
+	schema      string
+	workspaceID int64
+	call        func(ctx context.Context, c *externalapi.Client, p exportParams) (res any, body io.Reader, next string)
+}
+
+var (
+	eventsStream = exportStream{"events", exportstream.EventsSchema, fixtures.InitechID,
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+			res, err := c.ExportEvents(ctx, externalapi.ExportEventsParams{Cursor: p.optCursor(), Limit: p.optLimit()})
+			if err != nil {
+				panic(err)
+			}
+			if ok, isOK := res.(*externalapi.ExportEventsOKHeaders); isOK {
+				return res, ok.Response, ok.XNextCursor
+			}
+			return res, nil, ""
+		}}
+	messagesStream = exportStream{"messages", exportstream.MessagesSchema, fixtures.InitechID,
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+			res, err := c.ExportMessages(ctx, externalapi.ExportMessagesParams{Cursor: p.optCursor(), Limit: p.optLimit()})
+			if err != nil {
+				panic(err)
+			}
+			if ok, isOK := res.(*externalapi.ExportMessagesOKHeaders); isOK {
+				return res, ok.Response, ok.XNextCursor
+			}
+			return res, nil, ""
+		}}
+	contactsStream = exportStream{"contacts", exportstream.ContactsSchema, fixtures.InitechID,
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+			res, err := c.ExportContacts(ctx, externalapi.ExportContactsParams{Cursor: p.optCursor(), Limit: p.optLimit()})
+			if err != nil {
+				panic(err)
+			}
+			if ok, isOK := res.(*externalapi.ExportContactsOKHeaders); isOK {
+				return res, ok.Response, ok.XNextCursor
+			}
+			return res, nil, ""
+		}}
+	auditStream = exportStream{"audit", exportstream.AuditSchema, fixtures.GlobexID,
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+			res, err := c.ExportAudit(ctx, externalapi.ExportAuditParams{Cursor: p.optCursor(), Limit: p.optLimit()})
+			if err != nil {
+				panic(err)
+			}
+			if ok, isOK := res.(*externalapi.ExportAuditOKHeaders); isOK {
+				return res, ok.Response, ok.XNextCursor
+			}
+			return res, nil, ""
+		}}
+	erasuresStream = exportStream{"erasures", exportstream.ErasuresSchema, fixtures.AcmeID,
+		func(ctx context.Context, c *externalapi.Client, p exportParams) (any, io.Reader, string) {
+			res, err := c.ExportErasures(ctx, externalapi.ExportErasuresParams{Cursor: p.optCursor(), Limit: p.optLimit()})
+			if err != nil {
+				panic(err)
+			}
+			if ok, isOK := res.(*externalapi.ExportErasuresOKHeaders); isOK {
+				return res, ok.Response, ok.XNextCursor
+			}
+			return res, nil, ""
+		}}
+
+	allExportStreams = []exportStream{eventsStream, messagesStream, contactsStream, auditStream, erasuresStream}
+)
+
+// readExportStream reads one page of a stream, requires the 200, and checks every line against the
 // TypeSpec row schema, so a stream that drifts from its contract fails every test here.
-func readExportEvents(t *testing.T, c *externalapi.Client, cursor string, limit int32) exportPage {
+func readExportStream(t *testing.T, c *externalapi.Client, stream exportStream, cursor string, limit int32) exportPage {
 	t.Helper()
-	params := externalapi.ExportEventsParams{}
-	if cursor != "" {
-		params.Cursor = externalapi.NewOptString(cursor)
-	}
-	if limit > 0 {
-		params.Limit = externalapi.NewOptInt32(limit)
-	}
-	res, err := c.ExportEvents(context.Background(), params)
-	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.ExportEventsOKHeaders)
-	require.Truef(t, isOK, "got %T", res)
-	body, err := io.ReadAll(ok.Response)
+	res, body, next := stream.call(context.Background(), c, exportParams{cursor: cursor, limit: limit})
+	require.NotNilf(t, body, "%s: got %T", stream.name, res)
+	raw, err := io.ReadAll(body)
 	require.NoError(t, err)
 
-	page := exportPage{cursor: ok.XNextCursor}
-	for line := range bytes.SplitSeq(bytes.TrimSuffix(body, []byte("\n")), []byte("\n")) {
+	page := exportPage{cursor: next}
+	for line := range bytes.SplitSeq(bytes.TrimSuffix(raw, []byte("\n")), []byte("\n")) {
 		if len(line) == 0 {
 			continue
 		}
-		require.NoError(t, exportstream.ValidateRow(exportstream.EventsSchema, line), string(line))
+		require.NoError(t, exportstream.ValidateRow(stream.schema, line), string(line))
 		var row map[string]any
 		require.NoError(t, json.Unmarshal(line, &row))
 		page.rows = append(page.rows, row)
 	}
 	return page
+}
+
+func readExportEvents(t *testing.T, c *externalapi.Client, cursor string, limit int32) exportPage {
+	t.Helper()
+	return readExportStream(t, c, eventsStream, cursor, limit)
 }
 
 func exportClient(t *testing.T, env *testhelper.TestEnv, workspaceID int64) *externalapi.Client {
@@ -114,17 +201,6 @@ func TestExportEventsReadsTheWholeHistoryFromAnEmptyCursor(t *testing.T) {
 	require.NotNil(t, anonymous)
 	assert.Nil(t, anonymous["contact_id"])
 	assert.Equal(t, "vis-erasable-laptop", anonymous["visitor_id"])
-}
-
-func TestExportEventsEmptyPageReturnsTheSameCursor(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := exportClient(t, env, fixtures.InitechID)
-	first := readExportEvents(t, c, "", 0)
-
-	caughtUp := readExportEvents(t, c, first.cursor, 0)
-
-	assert.Empty(t, caughtUp.rows)
-	assert.Equal(t, first.cursor, caughtUp.cursor)
 }
 
 func TestExportEventsPagingLosesNothingAcrossEqualUpdatedAt(t *testing.T) {
@@ -204,29 +280,6 @@ func TestExportEventsNeverReadsAnotherWorkspace(t *testing.T) {
 	assert.Nil(t, globex.row(fixtures.EventErasableCustomID))
 }
 
-func TestExportEventsOfASuspendedWorkspaceStillRead(t *testing.T) {
-	env := testhelper.Setup(t)
-	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.InitechID, suspension.CLI, "abuse")
-	require.NoError(t, err)
-
-	page := readExportEvents(t, exportClient(t, env, fixtures.InitechID), "", 0)
-
-	assert.NotEmpty(t, page.rows)
-}
-
-func TestExportEventsOfADeletedWorkspaceDoNotAuthenticate(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	c := exportClient(t, env, fixtures.InitechID)
-	readExportEvents(t, c, "", 0)
-	env.DB.Workspace.UpdateOneID(fixtures.InitechID).SetDeletedAt(time.Now()).ExecX(ctx)
-
-	res, err := c.ExportEvents(ctx, externalapi.ExportEventsParams{})
-
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ExportEventsUnauthorized{}, res)
-}
-
 func TestExportEventsRefuseAMalformedCursor(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := exportClient(t, env, fixtures.InitechID)
@@ -237,4 +290,51 @@ func TestExportEventsRefuseAMalformedCursor(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.ExportEventsBadRequest{}, res)
+}
+
+func TestEveryExportStreamAnEmptyPageReturnsTheSameCursor(t *testing.T) {
+	for _, stream := range allExportStreams {
+		t.Run(stream.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			c := exportClient(t, env, stream.workspaceID)
+			first := readExportStream(t, c, stream, "", 0)
+			require.NotEmpty(t, first.rows, "the fixtures give the stream rows")
+
+			caughtUp := readExportStream(t, c, stream, first.cursor, 0)
+
+			assert.Empty(t, caughtUp.rows)
+			assert.Equal(t, first.cursor, caughtUp.cursor)
+		})
+	}
+}
+
+func TestEveryExportStreamOfASuspendedWorkspaceStillReads(t *testing.T) {
+	for _, stream := range allExportStreams {
+		t.Run(stream.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, stream.workspaceID, suspension.CLI, "abuse")
+			require.NoError(t, err)
+
+			page := readExportStream(t, exportClient(t, env, stream.workspaceID), stream, "", 0)
+
+			assert.NotEmpty(t, page.rows)
+		})
+	}
+}
+
+func TestEveryExportStreamOfADeletedWorkspaceDoesNotAuthenticate(t *testing.T) {
+	for _, stream := range allExportStreams {
+		t.Run(stream.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := context.Background()
+			c := exportClient(t, env, stream.workspaceID)
+			readExportStream(t, c, stream, "", 0)
+			env.DB.Workspace.UpdateOneID(stream.workspaceID).SetDeletedAt(time.Now()).ExecX(ctx)
+
+			res, body, _ := stream.call(ctx, c, exportParams{})
+
+			assert.Nil(t, body)
+			assert.Contains(t, fmt.Sprintf("%T", res), "Unauthorized")
+		})
+	}
 }

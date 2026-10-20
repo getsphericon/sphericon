@@ -1,10 +1,7 @@
 package external_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,37 +9,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/exportstream"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// readExportMessages reads one page of the Outbound messages stream and checks every line
-// against the TypeSpec row schema.
 func readExportMessages(t *testing.T, c *externalapi.Client, cursor string) exportPage {
 	t.Helper()
-	params := externalapi.ExportMessagesParams{}
-	if cursor != "" {
-		params.Cursor = externalapi.NewOptString(cursor)
-	}
-	res, err := c.ExportMessages(context.Background(), params)
-	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.ExportMessagesOKHeaders)
-	require.Truef(t, isOK, "got %T", res)
-	body, err := io.ReadAll(ok.Response)
-	require.NoError(t, err)
-
-	page := exportPage{cursor: ok.XNextCursor}
-	for line := range bytes.SplitSeq(bytes.TrimSuffix(body, []byte("\n")), []byte("\n")) {
-		if len(line) == 0 {
-			continue
-		}
-		require.NoError(t, exportstream.ValidateRow(exportstream.MessagesSchema, line), string(line))
-		var row map[string]any
-		require.NoError(t, json.Unmarshal(line, &row))
-		page.rows = append(page.rows, row)
-	}
-	return page
+	return readExportStream(t, c, messagesStream, cursor, 0)
 }
 
 func TestExportMessagesReadsDeliveryMetadataWithoutContent(t *testing.T) {

@@ -1,12 +1,10 @@
 package external_test
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,37 +13,13 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/exportstream"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// readExportErasures reads one page of the Erasures stream and checks every line against
-// the TypeSpec row schema.
 func readExportErasures(t *testing.T, c *externalapi.Client, cursor string) exportPage {
 	t.Helper()
-	params := externalapi.ExportErasuresParams{}
-	if cursor != "" {
-		params.Cursor = externalapi.NewOptString(cursor)
-	}
-	res, err := c.ExportErasures(context.Background(), params)
-	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.ExportErasuresOKHeaders)
-	require.Truef(t, isOK, "got %T", res)
-	body, err := io.ReadAll(ok.Response)
-	require.NoError(t, err)
-
-	page := exportPage{cursor: ok.XNextCursor}
-	for line := range bytes.SplitSeq(bytes.TrimSuffix(body, []byte("\n")), []byte("\n")) {
-		if len(line) == 0 {
-			continue
-		}
-		require.NoError(t, exportstream.ValidateRow(exportstream.ErasuresSchema, line), string(line))
-		var row map[string]any
-		require.NoError(t, json.Unmarshal(line, &row))
-		page.rows = append(page.rows, row)
-	}
-	return page
+	return readExportStream(t, c, erasuresStream, cursor, 0)
 }
 
 // hexSHA256 is the documented hash of a key: lowercase hex of SHA-256.
@@ -57,7 +31,7 @@ func hexSHA256(s string) string {
 // rowWithEmailHash finds the row that matched on an address, by its hash.
 func rowWithEmailHash(p exportPage, address string) map[string]any {
 	for _, r := range p.rows {
-		if r["email_sha256"] == hexSHA256(address) {
+		if r["email_hash"] == hexSHA256(address) {
 			return r
 		}
 	}
@@ -76,7 +50,7 @@ func TestExportErasuresAnnouncesAnErasureByContact(t *testing.T) {
 	assert.Equal(t, "300", row["contact_id"])
 	assert.Equal(t, "user-erin-300", row["subject_id"])
 	assert.Equal(t, []any{"vis-erasable-laptop"}, row["visitor_ids"])
-	assert.Equal(t, hexSHA256("+15550100300"), row["phone_sha256"])
+	assert.Equal(t, hexSHA256("+15550100300"), row["phone_hash"])
 	assert.NotEmpty(t, row["erased_at"])
 }
 
@@ -110,7 +84,7 @@ func TestExportErasuresAnnouncesAnErasureByAddressAlone(t *testing.T) {
 	row := rowWithEmailHash(page, fixtures.OutboundMessageStrangerDestination)
 	require.NotNil(t, row, "an address that matched no Contact still yields a row")
 	assert.Nil(t, row["contact_id"])
-	assert.Nil(t, row["phone_sha256"])
+	assert.Nil(t, row["phone_hash"])
 	assert.Empty(t, row["subject_id"], "the address is not echoed as a subject id")
 	assert.Equal(t, []any{}, row["visitor_ids"])
 }
@@ -210,16 +184,4 @@ func TestExportErasuresNeverReadAnotherWorkspace(t *testing.T) {
 	require.Len(t, globex.rows, 1)
 	assert.Equal(t, "900", globex.rows[0]["id"])
 	assert.Nil(t, acme.row(900), "Acme never sees Globex's row")
-}
-
-func TestExportErasuresReadFromACursorAndReturnTheSameCursorWhenCaughtUp(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := exportClient(t, env, fixtures.AcmeID)
-	first := readExportErasures(t, c, "")
-	require.NotEmpty(t, first.rows, "the fixtures hold Acme's Erasures")
-
-	caughtUp := readExportErasures(t, c, first.cursor)
-
-	assert.Empty(t, caughtUp.rows)
-	assert.Equal(t, first.cursor, caughtUp.cursor)
 }
