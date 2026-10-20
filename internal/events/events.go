@@ -18,10 +18,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/getsphericon/sphericon/internal/suppression"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // TopicDomainEvents is the single watermill topic all domain events flow through.
@@ -38,8 +39,8 @@ const (
 	NameEmailOpened        = "email.opened"
 	NameEmailClicked       = "email.clicked"
 	NameEmailUnsubscribed  = "email.unsubscribed"
-	NameEmailBounced       = "email.bounced"
-	NameEmailComplained    = "email.complained"
+	NameEmailBounced       = suppression.EventBounced
+	NameEmailComplained    = suppression.EventComplained
 	NameMarketingConfirmed = "marketing.confirmed"
 	NameCollected          = "event.collected"
 )
@@ -90,11 +91,11 @@ func CheckAction(action string) error {
 	return nil
 }
 
-// Bounce kinds carried by EmailDeliveryFailure. Only a permanent (hard) bounce
-// suppresses an address (the suppression module's rule); a transient (soft) bounce is temporary.
+// Bounce kinds carried by EmailDeliveryFailure; what each means for Suppression is the
+// suppression module's rule.
 const (
 	BounceKindPermanent = suppression.BounceKindPermanent
-	BounceKindTransient = "transient"
+	BounceKindTransient = suppression.BounceKindTransient
 )
 
 // Envelope is the generic bus message. It carries transport metadata plus the

@@ -1,6 +1,7 @@
 package suppression_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +21,7 @@ func TestAddNormalizesAndSuppressesInEligibility(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppression.Add(ctx, s, suppression.Entry{Destination: "  Blocked@Example.COM ", Reason: entsuppression.ReasonManual})
+	got, err := suppression.AddManual(ctx, s, "  Blocked@Example.COM ")
 	require.NoError(t, err)
 	assert.Equal(t, "blocked@example.com", got.Destination)
 	assert.Equal(t, entsuppression.ReasonManual, got.Reason)
@@ -36,7 +37,7 @@ func TestAddIsIdempotentAndKeepsTheFirstReason(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppression.Add(ctx, s, suppression.Entry{Destination: fixtures.SuppressionGhostBounceDestination, Reason: entsuppression.ReasonManual})
+	got, err := suppression.AddManual(ctx, s, fixtures.SuppressionGhostBounceDestination)
 	require.NoError(t, err)
 	assert.Equal(t, entsuppression.ReasonBounce, got.Reason)
 	assert.Equal(t, int64(fixtures.SuppressionGhostBounceID), int64(got.ID))
@@ -44,7 +45,7 @@ func TestAddIsIdempotentAndKeepsTheFirstReason(t *testing.T) {
 
 func TestAddRefusesABlankDestination(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suppression.Add(t.Context(), env.DB.Scoped(fixtures.AcmeID), suppression.Entry{Destination: "   ", Reason: entsuppression.ReasonManual})
+	err := suppression.Add(t.Context(), env.DB.Scoped(fixtures.AcmeID), suppression.Entry{Destination: "   ", Reason: entsuppression.ReasonManual})
 	assert.ErrorIs(t, err, suppression.ErrDestinationEmpty)
 }
 
@@ -52,7 +53,7 @@ func TestAddIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	got, err := suppression.Add(ctx, env.DB.Scoped(fixtures.GlobexID), suppression.Entry{Destination: fixtures.ContactAliceEmail, Reason: entsuppression.ReasonManual})
+	got, err := suppression.AddManual(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceEmail)
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.GlobexID), got.WorkspaceID)
 
@@ -82,7 +83,7 @@ func TestRemoveDeletesAndReportsAMissingRow(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	added, err := suppression.Add(ctx, s, suppression.Entry{Destination: "gone@example.com", Reason: entsuppression.ReasonManual})
+	added, err := suppression.AddManual(ctx, s, "gone@example.com")
 	require.NoError(t, err)
 	require.NoError(t, suppression.Remove(ctx, s, added.ID))
 
@@ -90,25 +91,33 @@ func TestRemoveDeletesAndReportsAMissingRow(t *testing.T) {
 	assert.ErrorIs(t, err, suppression.ErrNotFound)
 }
 
-func TestNormalizeDestinationIsIdempotentAndFoldsCase(t *testing.T) {
-	rapid.Check(t, func(t *rapid.T) {
-		raw := rapid.String().Draw(t, "raw")
-		once := suppression.NormalizeDestination(raw)
-		assert.Equal(t, once, suppression.NormalizeDestination(once))
-		assert.Equal(t, once, suppression.NormalizeDestination("  "+raw+"\t"))
-	})
+func TestNormalizeDestinationTrimsAndLowerCases(t *testing.T) {
 	assert.Equal(t, "a@x.com", suppression.NormalizeDestination(" A@X.com "))
 }
 
-func TestForBounceSuppressesOnlyAPermanentBounce(t *testing.T) {
-	hard, ok := suppression.ForBounce("permanent")
+func TestNormalizeDestinationProperties(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		raw := rapid.String().Draw(t, "raw")
+		once := suppression.NormalizeDestination(raw)
+		assert.Equal(t, once, suppression.NormalizeDestination(once), "idempotent")
+		assert.Equal(t, strings.ToLower(once), once, "no lower-case form left")
+		assert.Equal(t, strings.TrimSpace(once), once, "trimmed")
+	})
+}
+
+func TestForEventSuppressesAComplaintAndAPermanentBounceOnly(t *testing.T) {
+	complaint, ok := suppression.ForEvent(suppression.EventComplained, "")
+	assert.True(t, ok)
+	assert.Equal(t, entsuppression.ReasonComplaint, complaint)
+
+	hard, ok := suppression.ForEvent(suppression.EventBounced, suppression.BounceKindPermanent)
 	assert.True(t, ok)
 	assert.Equal(t, entsuppression.ReasonBounce, hard)
 
-	_, soft := suppression.ForBounce("transient")
+	_, soft := suppression.ForEvent(suppression.EventBounced, suppression.BounceKindTransient)
 	assert.False(t, soft)
-	_, unknown := suppression.ForBounce("")
-	assert.False(t, unknown)
+	_, other := suppression.ForEvent("email.opened", "")
+	assert.False(t, other)
 }
 
 func TestDetachContactKeepsTheSuppressionRefusingTheAddress(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/suppression"
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -24,54 +24,77 @@ var (
 
 // NormalizeDestination is the single definition of "normalized destination":
 // lower-cased and trimmed. Suppression and Unsubscribe rows store destinations this
-// way, and every lookup must apply it so the point-lookup path (eligibility.Check) and
-// the batch SQL path (Predicate, which folds case via lower()) agree.
+// way, and every lookup must apply it so the readers of those rows agree on one form.
 func NormalizeDestination(dest string) string {
 	return strings.ToLower(strings.TrimSpace(dest))
 }
 
-// BounceKindPermanent is the kind of a hard bounce, the only one that suppresses.
-const BounceKindPermanent = "permanent"
+// Bounce kinds. Only a permanent (hard) bounce suppresses; a transient (soft) one, such
+// as a full mailbox, is temporary.
+const (
+	BounceKindPermanent = "permanent"
+	BounceKindTransient = "transient"
+)
 
-// ForBounce is the rule that decides a bounce is permanent: only a hard bounce
-// suppresses, with the bounce reason; a soft bounce (a full mailbox) never does.
-func ForBounce(kind string) (suppression.Reason, bool) {
-	if kind == BounceKindPermanent {
-		return suppression.ReasonBounce, true
+// Names of the delivery events that can suppress; the bus's event names are these.
+const (
+	EventBounced    = "email.bounced"
+	EventComplained = "email.complained"
+)
+
+// ForEvent is the rule that decides whether a delivery event suppresses its address, and
+// why: a complaint always does, a bounce only when permanent (bounceKind), anything else
+// never. Unsubscribe is not a Suppression (ADR 0001).
+func ForEvent(name, bounceKind string) (entsuppression.Reason, bool) {
+	switch name {
+	case EventComplained:
+		return entsuppression.ReasonComplaint, true
+	case EventBounced:
+		if bounceKind == BounceKindPermanent {
+			return entsuppression.ReasonBounce, true
+		}
+		return "", false
+	default:
+		return "", false
 	}
-	return "", false
 }
 
 // Entry is one Suppression to add. ContactID is the Contact the destination belongs
 // to, when known (display only); zero means none.
 type Entry struct {
 	Destination string
-	Reason      suppression.Reason
+	Reason      entsuppression.Reason
 	ContactID   int64
 }
 
-// Add suppresses an email destination in the scoped Workspace. It is idempotent per
-// (channel, destination): an existing entry, with its reason, is returned unchanged.
-func Add(ctx context.Context, s *ent.Scoped, e Entry) (*ent.Suppression, error) {
+// Add suppresses an email destination in the scoped Workspace with one insert. It is
+// idempotent per (channel, destination): an existing entry keeps its reason.
+func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 	dest := NormalizeDestination(e.Destination)
 	if dest == "" {
-		return nil, ErrDestinationEmpty
+		return ErrDestinationEmpty
 	}
 	create := s.Suppression().Create().
-		SetChannel(suppression.ChannelEmail).
+		SetChannel(entsuppression.ChannelEmail).
 		SetDestination(dest).
 		SetReason(e.Reason)
 	if e.ContactID != 0 {
 		create.SetContactID(e.ContactID)
 	}
-	if err := create.
-		OnConflictColumns(suppression.FieldWorkspaceID, suppression.FieldChannel, suppression.FieldDestination).
+	return create.
+		OnConflictColumns(entsuppression.FieldWorkspaceID, entsuppression.FieldChannel, entsuppression.FieldDestination).
 		Ignore().
-		Exec(ctx); err != nil {
+		Exec(ctx)
+}
+
+// AddManual is Add with the manual reason (an Owner's or an API caller's request), and
+// returns the entry, the existing one when the destination was already suppressed.
+func AddManual(ctx context.Context, s *ent.Scoped, destination string) (*ent.Suppression, error) {
+	if err := Add(ctx, s, Entry{Destination: destination, Reason: entsuppression.ReasonManual}); err != nil {
 		return nil, err
 	}
 	return s.Suppression().Query().
-		Where(suppression.ChannelEQ(suppression.ChannelEmail), suppression.DestinationEQ(dest)).
+		Where(entsuppression.ChannelEQ(entsuppression.ChannelEmail), entsuppression.DestinationEQ(NormalizeDestination(destination))).
 		Only(ctx)
 }
 
@@ -81,7 +104,7 @@ func List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.P
 		func(ctx context.Context) (int, error) { return s.Suppression().Query().Count(ctx) },
 		func(ctx context.Context, limit, offset int) ([]*ent.Suppression, error) {
 			return s.Suppression().Query().
-				Order(ent.Desc(suppression.FieldID)).
+				Order(ent.Desc(entsuppression.FieldID)).
 				Limit(limit).
 				Offset(offset).
 				All(ctx)
@@ -100,6 +123,6 @@ func Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 // DetachContact clears the Contact reference of every Suppression naming it, for the
 // Contact's Erasure: the rows are keyed by destination and keep refusing the address.
 func DetachContact(ctx context.Context, s *ent.Scoped, contactID int64) error {
-	_, err := s.Suppression().Update().Where(suppression.ContactID(contactID)).ClearContactID().Save(ctx)
+	_, err := s.Suppression().Update().Where(entsuppression.ContactID(contactID)).ClearContactID().Save(ctx)
 	return err
 }

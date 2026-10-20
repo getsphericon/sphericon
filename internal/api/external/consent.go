@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/consent"
@@ -25,7 +24,7 @@ func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.Crea
 	}
 	s := auth.TokenScoped(ctx)
 
-	created, err := suppression.Add(ctx, s, suppression.Entry{Destination: string(req.Destination), Reason: entsuppression.ReasonManual})
+	created, err := suppression.AddManual(ctx, s, string(req.Destination))
 	if errors.Is(err, suppression.ErrDestinationEmpty) {
 		res := externalapi.SuppressionsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, "destination must not be empty"))
 		return &res, nil

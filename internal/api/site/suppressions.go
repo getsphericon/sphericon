@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
-	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -27,10 +26,9 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 	if err != nil {
 		return nil, err
 	}
-	items := page.Items
 
-	resources := make([]siteapi.SiteSuppressionResource, len(items))
-	for i, item := range items {
+	resources := make([]siteapi.SiteSuppressionResource, len(page.Items))
+	for i, item := range page.Items {
 		resources[i] = mapper.SuppressionToResource(item)
 	}
 	return &siteapi.SiteSuppressionsListOK{
@@ -52,7 +50,7 @@ func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.Site
 		return nil, err
 	}
 
-	created, err := suppression.Add(ctx, s, suppression.Entry{Destination: req.Destination, Reason: entsuppression.ReasonManual})
+	created, err := suppression.AddManual(ctx, s, req.Destination)
 	if errors.Is(err, suppression.ErrDestinationEmpty) {
 		v := siteapi.SiteSuppressionsCreateUnprocessableEntity(problemWithErrors(http.StatusUnprocessableEntity, i18n.T("errors.destination_invalid", nil), map[string][]string{
 			"destination": {i18n.T("errors.must_not_be_empty", nil)},

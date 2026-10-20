@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
-	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
@@ -134,22 +133,6 @@ func (c Consumer) Handler() message.NoPublishHandlerFunc {
 	}
 }
 
-// suppressionReason maps a projected event to the suppression reason it implies, or
-// false for events that don't suppress. A complaint always does; whether a bounce does
-// is the suppression module's rule. Unsubscribe is NOT a suppression: it writes a
-// per-source Unsubscribe row instead (ADR 0001).
-func suppressionReason(p Projection) (entsuppression.Reason, bool) {
-	switch p.Action {
-	case NameEmailComplained:
-		return entsuppression.ReasonComplaint, true
-	case NameEmailBounced:
-		kind, _ := p.Properties["bounceKind"].(string)
-		return suppression.ForBounce(kind)
-	default:
-		return "", false
-	}
-}
-
 // suppressionConsumer adds the event's address to the workspace suppression list
 // when the action implies it (hard bounce, complaint).
 func suppressionConsumer(client *ent.Client) message.NoPublishHandlerFunc {
@@ -173,17 +156,19 @@ func Suppress(ctx context.Context, client *ent.Client, env Envelope) error {
 		return err
 	}
 	p := ev.Project()
-	reason, ok := suppressionReason(p)
+	kind, _ := p.Properties["bounceKind"].(string)
+	reason, ok := suppression.ForEvent(p.Action, kind)
 	if !ok {
-		return nil
-	}
-	if suppression.NormalizeDestination(p.Email) == "" {
 		return nil
 	}
 	// The Workspace comes from the event envelope: a consumer has no membership or
 	// api token, so this is a scope source outside the site/external/job list.
 	s := client.Scoped(env.WorkspaceID)
-	if _, err := suppression.Add(ctx, s, suppression.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID}); err != nil {
+	err = suppression.Add(ctx, s, suppression.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
+	if errors.Is(err, suppression.ErrDestinationEmpty) {
+		return nil
+	}
+	if err != nil {
 		return fmt.Errorf("suppress %q: %w", p.Email, err)
 	}
 	return nil
