@@ -16,3 +16,14 @@ func Storage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[State] {
 }
 
 func Machine(s lifecycle.Storage[State]) *stateless.StateMachine { return machine(s) }
+
+// WithBatch returns a module that removes at most n rows per transaction, so a test exercises
+// the batch loop on small fixtures.
+func WithBatch(m *Module, n int) *Module {
+	c := *m
+	c.batch = n
+	return &c
+}
+
+// EraseStepCount is how many entities the erase removes, for the coverage test.
+func EraseStepCount() int { return len(eraseSteps) }

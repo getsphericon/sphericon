@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"log/slog"
 	"time"
 
@@ -108,9 +109,6 @@ func NewVerifyTrackingDomainWorker(client *ent.Client, sender messaging.EmailSen
 	return &VerifyTrackingDomainWorker{ent: client, sender: sender, tracking: tracking}
 }
 
-func NewEraseWorkspacesWorker(client *ent.Client, bus *events.Bus, now func() time.Time, batch int) *EraseWorkspacesWorker {
-	return &EraseWorkspacesWorker{ent: client, bus: bus, now: now, batch: batch}
+func NewEraseWorkspacesWorker(deletion *workspacedeletion.Module, now func() time.Time) *EraseWorkspacesWorker {
+	return &EraseWorkspacesWorker{deletion: deletion, now: now}
 }
-
-// ErasureStepCount is how many entities the erasure job removes, for a coverage test.
-func ErasureStepCount() int { return len(erasureSteps) }

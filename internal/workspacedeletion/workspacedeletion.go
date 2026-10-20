@@ -8,7 +8,8 @@
 // part of the update's condition, so the database decides a race with the erase job.
 //
 // The package takes the raw client: it lists Workspaces that have no scope yet (the Owners'
-// deleted Workspaces, the ones whose window has passed) and writes the row the cycle moves.
+// deleted Workspaces, the ones whose window has passed), opens a transaction per erase step
+// and writes the row the cycle moves.
 // It imports neither holds nor Outbound; holds and the site read the window from here.
 package workspacedeletion
 
@@ -63,11 +64,12 @@ const (
 type Module struct {
 	client *ent.Client
 	bus    *events.Bus
+	batch  int
 }
 
 // New returns the module.
 func New(client *ent.Client, bus *events.Bus) *Module {
-	return &Module{client: client, bus: bus}
+	return &Module{client: client, bus: bus, batch: eraseBatch}
 }
 
 // pending is a Workspace deleted and not yet erased, whatever the window says.

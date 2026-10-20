@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 // webhookDeliveryTimeout bounds a single outbound webhook request.
@@ -114,7 +115,7 @@ func NewClient(pool *pgxpool.Pool, entClient *ent.Client, mod *outbound.Module, 
 	river.AddWorker(workers, &PruneOutboxWorker{ent: entClient, floor: retention.OutboxFloor})
 	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
 	river.AddWorker(workers, &PruneUnverifiedUsersWorker{ent: entClient, retention: retention.UnverifiedUsers})
-	river.AddWorker(workers, &EraseWorkspacesWorker{ent: entClient, bus: bus, now: time.Now, batch: workspaceErasureBatch})
+	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
 
 	var extraPeriodic []*river.PeriodicJob
 	for _, e := range ext {
