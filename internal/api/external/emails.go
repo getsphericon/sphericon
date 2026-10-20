@@ -7,9 +7,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/oklog/ulid/v2"
-
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/contacts"
@@ -68,21 +65,15 @@ func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransact
 	}
 
 	// A client key makes the send idempotent; without one every call is its own send.
-	key := "transactional:auto:" + ulid.Make().String()
-	if k, ok := params.IdempotencyKey.Get(); ok && k != "" {
-		key = "transactional:" + k
-	}
-
-	res, err := h.outbound.Send(ctx, auth.TokenScoped(ctx), outbound.Request{
-		Kind:        outboundmessage.KindTransactional,
-		Key:         key,
+	res, err := h.outbound.Send(ctx, auth.TokenScoped(ctx), outbound.Transactional(outbound.TransactionalMessage{
+		ClientKey:   params.IdempotencyKey.Or(""),
 		Destination: dest,
 		ContactID:   contactID,
+		TemplateID:  templateID,
 		Subject:     tmpl.Subject,
 		Body:        tmpl.Body,
 		Variables:   vars,
-		Ref:         outbound.Ref{TemplateID: templateID},
-	})
+	}))
 	if errors.Is(err, outbound.ErrInProgress) {
 		r := externalapi.EmailsSendConflict(problem(http.StatusConflict, "a send with this Idempotency-Key is already in progress"))
 		return &r, nil

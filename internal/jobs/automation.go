@@ -3,7 +3,6 @@ package jobs
 import (
 	"context"
 	"fmt"
-	"math/rand/v2"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -12,9 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/tags"
@@ -213,20 +210,16 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 			return StepResult{Done: true}, nil
 		}
 		step := run.CurrentStep
-		res, err := mod.Send(ctx, scoped, outbound.Request{
-			Kind:        outboundmessage.KindAutomation,
-			Key:         fmt.Sprintf("automation:%d:%d", run.ID, step),
-			Destination: *c.Email,
-			Contact:     c,
-			// Each Automation is its own unsubscribe Sending source; the unsubscribe
-			// click exits this enrollment (ADR 0001).
-			Source:  eligibility.AutomationSource(a.ID),
-			Subject: s.Subject,
-			Body:    s.Body,
-			Ref:     outbound.Ref{AutomationID: a.ID, AutomationRunID: run.ID, AutomationStep: &step},
-		})
+		res, err := mod.Send(ctx, scoped, outbound.AutomationStep(a, run, step, c, s.Subject, s.Body))
 		if err != nil {
 			return StepResult{}, err // retryable: the worker's retry replays the same key
+		}
+		// A Hold or a Deferral waits, unchanged, and asks again later (an Automation step
+		// cannot snooze, so it reschedules itself).
+		retry := res.Retry(0)
+		if retry.Wanted {
+			resume := time.Now().Add(retry.After)
+			return StepResult{ResumeAt: &resume}, nil
 		}
 		switch res.Outcome {
 		case outbound.Sent:
@@ -242,17 +235,9 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 			// silently keeps walking steps while skipping every email.
 			_ = automations.ExitRun(ctx, scoped, run.ID)
 			return StepResult{Done: true}, nil
-		case outbound.Failed:
+		default: // outbound.Failed
 			_, _ = scoped.AutomationRun().UpdateOneID(run.ID).SetStatus(automationrun.StatusFailed).Save(ctx)
 			return StepResult{}, fmt.Errorf("email step %d: %s", step, res.Reason)
-		case outbound.Deferral:
-			// The Integration is busy: the enrollment waits, unchanged, for the limit's wait
-			// (an Automation step cannot snooze, so it reschedules itself like a Hold).
-			resume := time.Now().Add(deferralDelay(res.Wait, 0, rand.Float64()))
-			return StepResult{ResumeAt: &resume}, nil
-		default: // outbound.Held: the enrollment waits, unchanged, and asks again later
-			resume := time.Now().Add(holdRetryDelay)
-			return StepResult{ResumeAt: &resume}, nil
 		}
 
 	default:

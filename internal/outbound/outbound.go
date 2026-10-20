@@ -450,6 +450,12 @@ func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, key string, caus
 		Exec(ctx)
 }
 
+// MarkRecipientFailed gives up the pending claim of a Broadcast recipient's send for
+// good, recording cause (see MarkFailed).
+func (m *Module) MarkRecipientFailed(ctx context.Context, s *ent.Scoped, recipientID int64, cause error) error {
+	return m.MarkFailed(ctx, s, broadcastRecipientKey(recipientID), cause)
+}
+
 // workspace loads the Workspace row the scoped client is confined to.
 func (m *Module) workspace(ctx context.Context, s *ent.Scoped) (*ent.Workspace, error) {
 	ws, err := s.Workspace(ctx)

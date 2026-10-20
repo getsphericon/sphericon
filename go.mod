@@ -46,6 +46,7 @@ require (
 	github.com/pressly/goose/v3 v3.29.0
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/common v0.72.1
+	github.com/qmuntal/stateless v1.8.0
 	github.com/realclientip/realclientip-go v1.0.0
 	github.com/riverqueue/river v0.49.0
 	github.com/riverqueue/river/riverdriver v0.49.0

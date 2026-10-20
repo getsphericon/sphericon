@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -14,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
@@ -377,23 +375,7 @@ func SendToRecipient(ctx context.Context, client *ent.Client, mod *outbound.Modu
 		return nil
 	}
 
-	req := outbound.Request{
-		Kind:        outboundmessage.KindBroadcast,
-		Key:         recipientKey(rec.ID),
-		Destination: *c.Email,
-		Contact:     c,
-		Source:      eligibility.SourceBroadcasts,
-		Subject:     b.Subject,
-		Body:        b.Body,
-		TrackID:     rec.ID,
-		Ref:         outbound.Ref{BroadcastID: b.ID, BroadcastRecipient: rec.ID},
-	}
-	if b.FromEmail != nil {
-		req.FromEmail = *b.FromEmail
-	}
-	if b.FromName != nil {
-		req.FromName = *b.FromName
-	}
+	req := outbound.BroadcastRecipient(b, rec, c)
 
 	res, err := mod.Send(ctx, s, req)
 	if err != nil {
@@ -403,47 +385,51 @@ func SendToRecipient(ctx context.Context, client *ent.Client, mod *outbound.Modu
 	if res.MessageID != 0 {
 		upd.SetOutboundMessageID(res.MessageID)
 	}
+	retry := res.Retry(0)
+	if retry.Wanted {
+		return deferRecipient(ctx, s, upd, b, rec, res)
+	}
 	switch res.Outcome {
 	case outbound.Sent:
 		setBroadcastHold(ctx, s, b.ID, "") // a send went through: the hold, if any, has lifted
 		err = upd.SetStatus(broadcastrecipient.StatusSent).SetSentAt(time.Now()).Exec(ctx)
 	case outbound.Skipped:
 		err = upd.SetStatus(broadcastrecipient.StatusSkipped).SetError(res.Reason).Exec(ctx)
-	case outbound.Failed:
+	default: // outbound.Failed
 		err = upd.SetStatus(broadcastrecipient.StatusFailed).SetError(res.Reason).Exec(ctx)
-	case outbound.Deferral:
-		// The Integration is busy, not blocked: the Broadcast stays sending with no hold
-		// reason and this recipient stays pending, retried after the wait.
-		now := time.Now()
-		ahead, cerr := s.BroadcastRecipient().Query().
-			Where(
-				broadcastrecipient.BroadcastID(rec.BroadcastID),
-				broadcastrecipient.StatusEQ(broadcastrecipient.StatusPending),
-				broadcastrecipient.IDLT(rec.ID),
-				// Only the awake ones queue for a token; a recipient asleep on its own
-				// Deferral is not ahead of this one yet.
-				broadcastrecipient.Or(
-					broadcastrecipient.DeferredUntilIsNil(),
-					broadcastrecipient.DeferredUntilLTE(now),
-				),
-			).Count(ctx)
-		if cerr != nil {
-			ahead = 0 // the estimate only spreads retries; never fail the send over it
-		}
-		delay := deferralDelay(res.Wait, ahead, rand.Float64())
-		// Best effort, like the count: it only sharpens later jobs' backlog.
-		_ = upd.SetDeferredUntil(now.Add(delay)).Exec(ctx)
-		return &DeferredError{Wait: res.Wait, Backlog: ahead, Delay: delay}
-	default: // outbound.Held
-		setBroadcastHold(ctx, s, b.ID, res.Reason)
-		return &HeldError{Reason: res.Reason}
 	}
 	return err
 }
 
-// recipientKey is the Outbound send idempotency key of one broadcast recipient.
-func recipientKey(recipientID int64) string {
-	return fmt.Sprintf("broadcast:%d", recipientID)
+// deferRecipient is the recipient's turn when Outbound send wants a retry (a Hold or a
+// Deferral): nothing was consumed, so the job snoozes by the Outbound retry policy.
+func deferRecipient(ctx context.Context, s *ent.Scoped, upd *ent.BroadcastRecipientScopedUpdateOne, b *ent.Broadcast, rec *ent.BroadcastRecipient, res outbound.Result) error {
+	if res.Outcome == outbound.Held {
+		setBroadcastHold(ctx, s, b.ID, res.Reason)
+		return &HeldError{Reason: res.Reason}
+	}
+	// The Integration is busy, not blocked: the Broadcast stays sending with no hold
+	// reason and this recipient stays pending, retried after the wait.
+	now := time.Now()
+	ahead, cerr := s.BroadcastRecipient().Query().
+		Where(
+			broadcastrecipient.BroadcastID(rec.BroadcastID),
+			broadcastrecipient.StatusEQ(broadcastrecipient.StatusPending),
+			broadcastrecipient.IDLT(rec.ID),
+			// Only the awake ones queue for a token; a recipient asleep on its own
+			// Deferral is not ahead of this one yet.
+			broadcastrecipient.Or(
+				broadcastrecipient.DeferredUntilIsNil(),
+				broadcastrecipient.DeferredUntilLTE(now),
+			),
+		).Count(ctx)
+	if cerr != nil {
+		ahead = 0 // the estimate only spreads retries; never fail the send over it
+	}
+	retry := res.Retry(ahead)
+	// Best effort, like the count: it only sharpens later jobs' backlog.
+	_ = upd.SetDeferredUntil(now.Add(retry.After)).Exec(ctx)
+	return &DeferredError{Delay: retry.After}
 }
 
 // markRecipientFailed records a terminal delivery failure on a recipient row and
@@ -454,7 +440,7 @@ func markRecipientFailed(ctx context.Context, client *ent.Client, mod *outbound.
 		return err
 	}
 	s := client.Scoped(rec.WorkspaceID)
-	_ = mod.MarkFailed(ctx, s, recipientKey(recipientID), cause)
+	_ = mod.MarkRecipientFailed(ctx, s, recipientID, cause)
 	return s.BroadcastRecipient().UpdateOneID(rec.ID).
 		SetStatus(broadcastrecipient.StatusFailed).
 		SetError(cause.Error()).
