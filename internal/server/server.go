@@ -138,7 +138,14 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// Order (ADR 0025): recoverer, requestID, CORS, client address, rate limit,
 	// timeout. CORS precedes the limiter so a 429 still reaches the browser; guard
 	// sits inside CORS so preflights are answered before the check.
-	return chi.Chain(recoverer, requestID, corsMiddleware(cfg.CORSOrigins), clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard).Handler(trackingHostGate(cfg, client, mux, trackingH)), nil
+	outer := chi.Middlewares{recoverer, requestID, corsMiddleware(cfg.CORSOrigins)}
+	if !cfg.AutoMigrate {
+		// The start guard (ADR 0033) ran once; a database reset or restored under the running
+		// process is caught here.
+		outer = append(outer, SchemaGuard(dbpkg.NewSchemaWatch(db)))
+	}
+	inner := chi.Middlewares{clientip.Middleware, limiter.Middleware, middleware.Timeout(30 * time.Second), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
+	return chi.Chain(append(outer, inner...)...).Handler(trackingHostGate(cfg, client, mux, trackingH)), nil
 }
 
 // NewExternalAPI builds the external API (/api) ogen server: Bearer API-token
@@ -306,6 +313,35 @@ func writeCodedProblem(w http.ResponseWriter, status int, code, detail string) {
 // chi's Recoverer answers a bare 500 (we render RFC 7807 and log through slog),
 // and chi's RequestID generates host-counter ids from a package-level generator
 // that cannot be replaced (we keep ULIDs and tag logging.FromContext).
+
+// PendingMigrations is what SchemaGuard asks: how many migrations the database has not run.
+type PendingMigrations interface {
+	Pending(ctx context.Context) (int, error)
+}
+
+// SchemaGuard answers 503 with a problem that names the migrate command while the database
+// lacks migrations this binary needs, instead of letting every query fail with a bare 500.
+// The probe paths pass: /healthz is liveness only, and /readyz reports on the database itself.
+// A failed lookup lets the request through: an unreachable database fails it on its own.
+func SchemaGuard(watch PendingMigrations) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			pending, err := watch.Pending(r.Context())
+			if err != nil || pending == 0 {
+				next.ServeHTTP(w, r)
+				return
+			}
+			w.Header().Set("Retry-After", "5")
+			writeProblem(w, http.StatusServiceUnavailable, fmt.Sprintf(
+				"The database is %d migration(s) behind this build. Run `sphericon migrate` (in development `mise run db:migrate`), then reload.",
+				pending))
+		})
+	}
+}
 
 func recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -39,7 +39,9 @@ research behind them is `docs/research/self-hoster-upgrade-prior-art.md`.
   migrates if `SPHERICON_DB_AUTO_MIGRATE` is on, otherwise refuses and names `sphericon migrate`.
   Inside a Major it does the same for migrations the database has not run: a binary's queries name
   the columns its own migrations add, so without auto-migrate it refuses and names `sphericon
-  migrate` rather than start and answer with a bare 500.
+  migrate` rather than start and answer with a bare 500. A running process rechecks on its
+  requests (cached for seconds) and answers `503` with a problem naming the command while
+  migrations are missing, which covers a database reset or restored under it; the probes pass.
   It does not refuse merely because the database's Major is higher: the last release of a Major
   is exactly the floor of the next, so it starts on the next Major's schema and an interrupted
   Upgrade leaves the Instance running. A release inside a Major runs on the schema of any other
