@@ -35,6 +35,47 @@ func (s store) Lookup(ctx context.Context, address string) (login.Account[*ent.U
 	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: secondfactor.Active(u)}, true, nil
 }
 
+// resetFailing is a throttle whose success reset is broken.
+type resetFailing struct{ login.Throttle }
+
+func (resetFailing) RecordSuccess(context.Context, string) error { return errCounter }
+
+// factor is the adapter's second-step side: challenges are "challenge-<user id>", the
+// code "123456" is right any number of times and "recovery" is spent on first use.
+type factor struct {
+	db        *ent.Client
+	spent     bool
+	moved     bool
+	verifyHit int
+}
+
+func (f *factor) Parse(ctx context.Context, token string) (login.Pending[*ent.User], error) {
+	id, ok := strings.CutPrefix(token, "challenge-")
+	n, err := strconv.ParseInt(id, 10, 64)
+	if !ok || err != nil {
+		return login.Pending[*ent.User]{}, login.ErrChallengeInvalid
+	}
+	u, err := f.db.User.Get(ctx, n)
+	if err != nil {
+		return login.Pending[*ent.User]{}, login.ErrChallengeInvalid
+	}
+	return login.Pending[*ent.User]{Principal: u, Address: u.Email, Method: "password"}, nil
+}
+
+func (f *factor) Verify(_ context.Context, _ login.Pending[*ent.User], code string) error {
+	f.verifyHit++
+	switch {
+	case f.moved:
+		return login.ErrChallengeInvalid
+	case code == "123456":
+		return nil
+	case code == "recovery" && !f.spent:
+		f.spent = true
+		return nil
+	}
+	return login.ErrInvalidCode
+}
+
 // failingCounter is a throttle whose failure counter is broken.
 type failingCounter struct{ login.Throttle }
 
@@ -43,6 +84,7 @@ var errCounter = errors.New("counter down")
 func (failingCounter) RecordFailure(context.Context, string) error { return errCounter }
 
 type rig struct {
+	factor *factor
 	module *login.Module[*ent.User]
 	login  login.Throttle
 	staff  login.Throttle
@@ -66,8 +108,17 @@ func newRig(t *testing.T, opts ...func(*login.Config[*ent.User])) rig {
 	for _, o := range opts {
 		o(&cfg)
 	}
+	r.factor = &factor{db: env.DB}
+	cfg.Parse, cfg.Verify = r.factor.Parse, r.factor.Verify
 	r.module = login.New(cfg)
 	return r
+}
+
+func (r rig) second(t *testing.T, challenge, code string) login.Result[*ent.User] {
+	t.Helper()
+	res, err := r.module.SecondFactor(t.Context(), challenge, code)
+	require.NoError(t, err)
+	return res
 }
 
 func (r rig) password(t *testing.T, address, password string) login.Result[*ent.User] {
@@ -161,6 +212,65 @@ func TestUserAndStaffCountersAreSeparate(t *testing.T) {
 		require.NoError(t, r.staff.RecordFailure(t.Context(), fixtures.OwnerJohnEmail))
 	}
 	assert.Equal(t, login.Authenticated, r.password(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword).Outcome)
+}
+
+var samChallenge = "challenge-" + strconv.Itoa(fixtures.SecondFactorSamID)
+
+func TestABadChallengeIsRefusedWithoutCountingAFailure(t *testing.T) {
+	r := newRig(t)
+	for range 3 {
+		assert.Equal(t, login.InvalidChallenge, r.second(t, "forged", "123456").Outcome)
+	}
+	assert.Zero(t, delayOf(t, r.login, fixtures.SecondFactorSamEmail))
+	assert.Zero(t, r.factor.verifyHit, "a bad challenge never reaches the code check")
+}
+
+func TestAChallengeThatMovedIsRefusedWithoutCountingAFailure(t *testing.T) {
+	r := newRig(t)
+	r.factor.moved = true
+	for range 3 {
+		assert.Equal(t, login.InvalidChallenge, r.second(t, samChallenge, "123456").Outcome)
+	}
+	assert.Zero(t, delayOf(t, r.login, fixtures.SecondFactorSamEmail))
+}
+
+func TestAWrongCodeCountsAgainstTheBudgetOfAWrongPassword(t *testing.T) {
+	r := newRig(t)
+	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.SecondFactorSamEmail, "wrong").Outcome)
+	assert.Equal(t, login.InvalidCode, r.second(t, samChallenge, "000000").Outcome)
+	// One password failure and one code failure reach the threshold of two.
+	assert.Equal(t, login.Throttled, r.second(t, samChallenge, "123456").Outcome, "a correct code does not skip the delay")
+	assert.Equal(t, login.Throttled, r.password(t, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword).Outcome)
+}
+
+func TestARecoveryCodeIsSpentOnce(t *testing.T) {
+	r := newRig(t)
+	assert.Equal(t, login.Authenticated, r.second(t, samChallenge, "recovery").Outcome)
+	assert.Equal(t, login.InvalidCode, r.second(t, samChallenge, "recovery").Outcome)
+}
+
+func TestAGoodCodeAuthenticatesAndResetsTheCounter(t *testing.T) {
+	r := newRig(t)
+	require.Equal(t, login.InvalidCode, r.second(t, samChallenge, "000000").Outcome)
+	res := r.second(t, samChallenge, "123456")
+	require.Equal(t, login.Authenticated, res.Outcome)
+	assert.Equal(t, int64(fixtures.SecondFactorSamID), res.Principal.ID)
+	assert.Equal(t, "password", res.Method)
+
+	require.Equal(t, login.InvalidCode, r.second(t, samChallenge, "000000").Outcome)
+	assert.Equal(t, login.InvalidCode, r.second(t, samChallenge, "000000").Outcome, "the count restarted at the success")
+}
+
+func TestAFailingCounterResetAfterACommittedSecondFactorStillAuthenticates(t *testing.T) {
+	r := newRig(t, func(c *login.Config[*ent.User]) { c.Throttle = resetFailing{c.Throttle} })
+	assert.Equal(t, login.Authenticated, r.second(t, samChallenge, "123456").Outcome)
+}
+
+func TestAnErrorFromRecordingACodeFailureRefusesTheAttempt(t *testing.T) {
+	r := newRig(t, func(c *login.Config[*ent.User]) { c.Throttle = failingCounter{c.Throttle} })
+	res, err := r.module.SecondFactor(t.Context(), samChallenge, "000000")
+	require.ErrorIs(t, err, errCounter)
+	assert.NotEqual(t, login.Authenticated, res.Outcome)
 }
 
 func TestTheModuleImportsNoDatabaseClient(t *testing.T) {

@@ -22,6 +22,7 @@ package login
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -48,7 +49,35 @@ const (
 	// Authenticated: the password is right and nothing else is needed. The counter is
 	// reset; the adapter issues the session.
 	Authenticated
+	// InvalidChallenge (second step): the challenge is forged, expired, spent, moved or
+	// its account is gone. It has no trusted address, so nothing is counted.
+	InvalidChallenge
+	// InvalidCode (second step): the code is wrong. The failure is counted against the
+	// same budget as a wrong password.
+	InvalidCode
 )
+
+var (
+	// ErrChallengeInvalid is what an adapter's Parse and Verify return for a challenge
+	// that no longer stands (forged, expired, spent, moved, factor gone).
+	ErrChallengeInvalid = errors.New("login: challenge invalid")
+	// ErrInvalidCode is what an adapter's Verify returns for a wrong code.
+	ErrInvalidCode = errors.New("login: invalid code")
+)
+
+// Pending is a challenge the adapter parsed: the account it was minted for, the address
+// that counts the second step's failures and what the session needs to know.
+type Pending[P any] struct {
+	Principal P
+	// Address is the account's throttle key (normalized again by the module).
+	Address string
+	// Method names how the first step proved the person; ProviderLoginAt is the time of
+	// a provider login the challenge follows (zero for a password login).
+	Method          string
+	ProviderLoginAt time.Time
+	// Binding is the adapter's own single-use proof, handed back to Verify.
+	Binding string
+}
 
 // Result is the one answer of the password step. Principal is set for Gated,
 // SecondFactor and Authenticated.
@@ -62,6 +91,10 @@ type Result[P any] struct {
 	Now   time.Time
 	// Challenge is the second step's token, for a SecondFactor result.
 	Challenge string
+	// Method and ProviderLoginAt come from the challenge, for the second step's
+	// Authenticated result.
+	Method          string
+	ProviderLoginAt time.Time
 }
 
 // Throttle is the failure counter of one login surface (a User's, or a Staff member's:
@@ -98,6 +131,13 @@ type Config[P any] struct {
 	Gate func(P) bool
 	// Challenge mints the second step's token for an account with a second factor.
 	Challenge func(ctx context.Context, principal P) (string, error)
+	// Parse turns a challenge token into its Pending, or returns ErrChallengeInvalid.
+	Parse func(ctx context.Context, token string) (Pending[P], error)
+	// Verify checks a code for a Pending under the adapter's lock (a TOTP code, or a
+	// recovery code, which it spends). It returns ErrInvalidCode for a wrong code and
+	// ErrChallengeInvalid when the challenge stopped standing (the factor is gone, or a
+	// racing second step moved it first).
+	Verify func(ctx context.Context, p Pending[P], code string) error
 }
 
 // Module is the password step.
@@ -145,6 +185,48 @@ func (m *Module[P]) Password(ctx context.Context, address, password string) (Res
 		slog.ErrorContext(ctx, "login: counter not reset", "error", err)
 	}
 	return Result[P]{Outcome: Authenticated, Principal: acc.Principal}, nil
+}
+
+// SecondFactor runs the second step for a challenge and a code as typed. Order: a bad
+// challenge is refused without counting; the throttle is consulted before the code, so
+// a correct code is refused while the delay runs; a wrong code counts against the same
+// budget as a wrong password (a counting error refuses the attempt); a committed second
+// factor resets the counter, and a reset that fails is logged, not fatal.
+func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (Result[P], error) {
+	p, err := m.cfg.Parse(ctx, challenge)
+	if errors.Is(err, ErrChallengeInvalid) {
+		return Result[P]{Outcome: InvalidChallenge}, nil
+	}
+	if err != nil {
+		return Result[P]{}, err
+	}
+	address := accounts.NormalizeEmail(p.Address)
+
+	wait, err := m.cfg.Throttle.Delay(ctx, address)
+	if err != nil {
+		return Result[P]{}, err
+	}
+	if wait > 0 {
+		return Result[P]{Outcome: Throttled, Wait: wait, Limit: m.cfg.Throttle.Limit(), Now: m.cfg.Throttle.Now()}, nil
+	}
+
+	switch err := m.cfg.Verify(ctx, p, code); {
+	case errors.Is(err, ErrInvalidCode):
+		if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {
+			return Result[P]{}, err
+		}
+		return Result[P]{Outcome: InvalidCode}, nil
+	case errors.Is(err, ErrChallengeInvalid):
+		return Result[P]{Outcome: InvalidChallenge}, nil
+	case err != nil:
+		return Result[P]{}, err
+	}
+	if err := m.cfg.Throttle.RecordSuccess(ctx, address); err != nil {
+		// The second factor is committed (a code is spent); a counter that did not reset
+		// must not cost the sign-in.
+		slog.ErrorContext(ctx, "login: counter not reset", "error", err)
+	}
+	return Result[P]{Outcome: Authenticated, Principal: p.Principal, Method: p.Method, ProviderLoginAt: p.ProviderLoginAt}, nil
 }
 
 // verify checks the password; an empty hash (no account, or no password) is checked

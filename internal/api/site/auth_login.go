@@ -62,6 +62,8 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 			SetCookie: siteapi.NewOptString(cookie.String()),
 			Response:  siteapi.SiteLoginResult{Outcome: siteapi.SiteLoginOutcomeSession},
 		}, nil
+	case login.InvalidChallenge, login.InvalidCode:
+		// Second-step outcomes: the password step never returns them.
 	}
 	return nil, fmt.Errorf("login: unhandled outcome %d", res.Outcome)
 }
@@ -88,27 +90,13 @@ func (h *Handlers) newLogin() *login.Module[*ent.User] {
 		Challenge: func(ctx context.Context, u *ent.User) (string, error) {
 			return h.mintLoginChallenge(ctx, u, accounts.LoginPassword, time.Time{})
 		},
+		Parse:  h.parseLoginChallenge,
+		Verify: h.verifyLoginCode,
 	}
 	if h.requireVerification {
 		cfg.Gate = func(u *ent.User) bool { return u.EmailVerifiedAt == nil }
 	}
 	return login.New(cfg)
-}
-
-// startSession ends a successful login: it resets the address's counter, issues
-// the session cookie and records `user.login`.
-func (h *Handlers) startSession(ctx context.Context, u *ent.User, method string, providerLoginAt time.Time) (*siteapi.SiteLoginResultHeaders, error) {
-	if err := h.attempts.RecordSuccess(ctx, accounts.KindLogin, u.Email); err != nil {
-		return nil, err
-	}
-	cookie, err := h.issueSession(ctx, u, method, providerLoginAt)
-	if err != nil {
-		return nil, err
-	}
-	return &siteapi.SiteLoginResultHeaders{
-		SetCookie: siteapi.NewOptString(cookie.String()),
-		Response:  siteapi.SiteLoginResult{Outcome: siteapi.SiteLoginOutcomeSession},
-	}, nil
 }
 
 // issueSession is the one place a successful sign-in, by password or by a Sign-in provider,
