@@ -13,11 +13,15 @@ import (
 	"testing"
 	"time"
 
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/doctor"
@@ -302,8 +306,11 @@ func TestRedactorHidesEverySecretInBothFormats(t *testing.T) {
 
 func TestADeletedWorkspaceIsLeftOutOfTheWorkspaceChecks(t *testing.T) {
 	in := healthy(t)
-	in.Ent.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(time.Now()).ExecX(context.Background())
-	in.Ent.Workspace.UpdateOneID(fixtures.InitechID).SetDeletedAt(time.Now()).ExecX(context.Background())
+	// The plain client refuses a feed change outside a transaction, so the deletion goes
+	// through an unguarded client on the same database.
+	raw := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, in.DB)))
+	raw.Workspace.Update().Where(workspace.IDIn(fixtures.AcmeID, fixtures.InitechID)).
+		SetDeletedAt(time.Now()).ExecX(context.Background())
 
 	r := doctor.Run(context.Background(), in)
 
