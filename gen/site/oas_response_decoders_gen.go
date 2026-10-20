@@ -6952,7 +6952,7 @@ func decodeSiteContactsLookupResponse(resp *http.Response) (res SiteContactsLook
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteContactLookup
+			var response SiteContactHoldings
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

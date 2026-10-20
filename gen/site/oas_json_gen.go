@@ -12159,14 +12159,14 @@ func (s *SiteConfirmEmailChangeInput) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *SiteContactLookup) Encode(e *jx.Encoder) {
+func (s *SiteContactHoldings) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *SiteContactLookup) encodeFields(e *jx.Encoder) {
+func (s *SiteContactHoldings) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("contactHeld")
 		e.Bool(s.ContactHeld)
@@ -12189,7 +12189,7 @@ func (s *SiteContactLookup) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteContactLookup = [5]string{
+var jsonFieldsNameOfSiteContactHoldings = [5]string{
 	0: "contactHeld",
 	1: "events",
 	2: "deliveryRecords",
@@ -12197,10 +12197,10 @@ var jsonFieldsNameOfSiteContactLookup = [5]string{
 	4: "suppressions",
 }
 
-// Decode decodes SiteContactLookup from json.
-func (s *SiteContactLookup) Decode(d *jx.Decoder) error {
+// Decode decodes SiteContactHoldings from json.
+func (s *SiteContactHoldings) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode SiteContactLookup to nil")
+		return errors.New("invalid: unable to decode SiteContactHoldings to nil")
 	}
 	var requiredBitSet [1]uint8
 
@@ -12271,7 +12271,7 @@ func (s *SiteContactLookup) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode SiteContactLookup")
+		return errors.Wrap(err, "decode SiteContactHoldings")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
@@ -12288,8 +12288,8 @@ func (s *SiteContactLookup) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfSiteContactLookup) {
-					name = jsonFieldsNameOfSiteContactLookup[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfSiteContactHoldings) {
+					name = jsonFieldsNameOfSiteContactHoldings[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -12310,14 +12310,14 @@ func (s *SiteContactLookup) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *SiteContactLookup) MarshalJSON() ([]byte, error) {
+func (s *SiteContactHoldings) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SiteContactLookup) UnmarshalJSON(data []byte) error {
+func (s *SiteContactHoldings) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

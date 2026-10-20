@@ -6830,8 +6830,8 @@ func (s *SiteConfirmEmailChangeInput) SetToken(val string) {
 
 // What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing
 // held is all zeros and `contactHeld: false`.
-// Ref: #/components/schemas/SiteContactLookup
-type SiteContactLookup struct {
+// Ref: #/components/schemas/SiteContactHoldings
+type SiteContactHoldings struct {
 	// Whether a Contact holds the address.
 	ContactHeld bool `json:"contactHeld"`
 	// Events of the Contact holding the address, or carrying the address.
@@ -6845,56 +6845,56 @@ type SiteContactLookup struct {
 }
 
 // GetContactHeld returns the value of ContactHeld.
-func (s *SiteContactLookup) GetContactHeld() bool {
+func (s *SiteContactHoldings) GetContactHeld() bool {
 	return s.ContactHeld
 }
 
 // GetEvents returns the value of Events.
-func (s *SiteContactLookup) GetEvents() int32 {
+func (s *SiteContactHoldings) GetEvents() int32 {
 	return s.Events
 }
 
 // GetDeliveryRecords returns the value of DeliveryRecords.
-func (s *SiteContactLookup) GetDeliveryRecords() int32 {
+func (s *SiteContactHoldings) GetDeliveryRecords() int32 {
 	return s.DeliveryRecords
 }
 
 // GetUnsubscribes returns the value of Unsubscribes.
-func (s *SiteContactLookup) GetUnsubscribes() int32 {
+func (s *SiteContactHoldings) GetUnsubscribes() int32 {
 	return s.Unsubscribes
 }
 
 // GetSuppressions returns the value of Suppressions.
-func (s *SiteContactLookup) GetSuppressions() int32 {
+func (s *SiteContactHoldings) GetSuppressions() int32 {
 	return s.Suppressions
 }
 
 // SetContactHeld sets the value of ContactHeld.
-func (s *SiteContactLookup) SetContactHeld(val bool) {
+func (s *SiteContactHoldings) SetContactHeld(val bool) {
 	s.ContactHeld = val
 }
 
 // SetEvents sets the value of Events.
-func (s *SiteContactLookup) SetEvents(val int32) {
+func (s *SiteContactHoldings) SetEvents(val int32) {
 	s.Events = val
 }
 
 // SetDeliveryRecords sets the value of DeliveryRecords.
-func (s *SiteContactLookup) SetDeliveryRecords(val int32) {
+func (s *SiteContactHoldings) SetDeliveryRecords(val int32) {
 	s.DeliveryRecords = val
 }
 
 // SetUnsubscribes sets the value of Unsubscribes.
-func (s *SiteContactLookup) SetUnsubscribes(val int32) {
+func (s *SiteContactHoldings) SetUnsubscribes(val int32) {
 	s.Unsubscribes = val
 }
 
 // SetSuppressions sets the value of Suppressions.
-func (s *SiteContactLookup) SetSuppressions(val int32) {
+func (s *SiteContactHoldings) SetSuppressions(val int32) {
 	s.Suppressions = val
 }
 
-func (*SiteContactLookup) siteContactsLookupRes() {}
+func (*SiteContactHoldings) siteContactsLookupRes() {}
 
 // Contact resource used by the site UI.
 // Ref: #/components/schemas/SiteContactResource

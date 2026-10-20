@@ -1235,7 +1235,7 @@ export type SiteConfirmEmailChangeInput = {
 /**
  * What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`.
  */
-export type SiteContactLookup = {
+export type SiteContactHoldings = {
   /**
    * Whether a Contact holds the address
    */
@@ -5981,7 +5981,7 @@ export type SiteContactsLookupResponses = {
   /**
    * The request has succeeded.
    */
-  200: SiteContactLookup;
+  200: SiteContactHoldings;
 };
 
 export type SiteContactsLookupResponse = SiteContactsLookupResponses[keyof SiteContactsLookupResponses];
