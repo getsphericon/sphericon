@@ -942,6 +942,11 @@ checksum = "sha256:9964ed64ec9a387391eb4cc006ad5c531154821aef29b793e02c448de4686
 url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_windows_amd64.exe"
 url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251671"
 
+[[tools."github:mokevnin/schemalens"]]
+version = "0.1.0"
+backend = "github:mokevnin/schemalens"
+specifiers = ["0.1.0"]
+
 [[tools."github:sbdchd/squawk"]]
 version = "2.70.0"
 backend = "github:sbdchd/squawk"

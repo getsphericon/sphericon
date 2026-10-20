@@ -444,6 +444,12 @@ run = [
 description = "golangci-lint (incl. the gofmt formatter) and go.mod tidiness"
 run = ["mise/scripts/heavy.sh golangci-lint run --allow-serial-runners ./...", "go mod tidy -diff"]
 
+["check:schema"]
+description = "schemalens: the ent schema and the migrated database agree, and the database passes its rules"
+depends = ["db:migrate"]
+env = { SCHEMALENS_VERSION = "0.1.0" }
+run = "mise/scripts/schemalens.sh"
+
 ["check:vulns"]
 description = "No call to a known-vulnerable dependency or stdlib function (network: the vulnerability database). Not part of check: a new advisory fails it with no change on our side, so the nightly workflow runs it"
 run = "go tool govulncheck ./..."

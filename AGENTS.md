@@ -168,6 +168,12 @@ floor in `.testcoverage.yml` is raised when coverage rises, never lowered. A new
 `check:vulns` with no change on our side, so it is deliberately not part of `check`: put a check
 there when its result does not depend on the diff under review.
 
+Schema consistency: `mise run check:schema` runs [schemalens](https://github.com/mokevnin/schemalens)
+(pinned in `.mise.toml`, its ent adapter fetched into the user cache by `mise/scripts/schemalens.sh`)
+against the migrated dev database and compares it with the ent schema. Each finding carries a `fix`
+for the ent schema: apply it, `mise run db:generate`, re-run. An exclusion needs a `reason` and the
+user's say-so. It is not yet part of `check`: the existing findings are being triaged.
+
 Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are in `CODING_STANDARDS.md`.
 
 ## Database & migrations
