@@ -86,7 +86,9 @@ func ConsumerGroups() []string {
 // extra are consumers owned outside core (the Enterprise audit subscriber, ee/): each
 // gets its own consumer group like the built-in ones, and its group is listed in
 // ConsumerGroups so the outbox prune waits for it.
-func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client, enroller Enroller, dispatcher WebhookDispatcher, extra ...Consumer) error {
+//
+// opts tune every subscriber it builds (see SubscribeOption).
+func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client, enroller Enroller, dispatcher WebhookDispatcher, extra []Consumer, opts ...SubscribeOption) error {
 	handlers := map[string]struct {
 		name    string
 		handler message.NoPublishHandlerFunc
@@ -98,14 +100,14 @@ func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client,
 	}
 	for _, group := range coreGroups() {
 		h := handlers[group]
-		sub, err := NewSubscriber(db, group)
+		sub, err := NewSubscriber(db, group, opts...)
 		if err != nil {
 			return fmt.Errorf("%s subscriber: %w", group, err)
 		}
 		router.AddConsumerHandler(h.name, TopicDomainEvents, sub, h.handler)
 	}
 	for _, c := range extra {
-		sub, err := NewSubscriber(db, c.Name)
+		sub, err := NewSubscriber(db, c.Name, opts...)
 		if err != nil {
 			return fmt.Errorf("%s subscriber: %w", c.Name, err)
 		}
@@ -297,13 +299,28 @@ func automationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 // NewSubscriber builds a watermill-sql subscriber for the outbox topic under a
 // dedicated consumer group (its own offset cursor). InitializeSchema is false: the
 // migrations create the message + offsets tables.
-func NewSubscriber(db *sql.DB, consumerGroup string) (message.Subscriber, error) {
-	return watermillsql.NewSubscriber(watermillsql.BeginnerFromStdSQL(db), watermillsql.SubscriberConfig{
+func NewSubscriber(db *sql.DB, consumerGroup string, opts ...SubscribeOption) (message.Subscriber, error) {
+	cfg := watermillsql.SubscriberConfig{
 		SchemaAdapter:    outboxSchema,
 		OffsetsAdapter:   outboxOffsets,
 		InitializeSchema: false,
 		ConsumerGroup:    consumerGroup,
-	}, watermill.NewSlogLogger(slog.Default()))
+	}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	return watermillsql.NewSubscriber(watermillsql.BeginnerFromStdSQL(db), cfg, watermill.NewSlogLogger(slog.Default()))
+}
+
+// SubscribeOption adjusts a subscriber's watermill configuration. Production uses none:
+// the default schema adapter only delivers a row once every transaction that began before
+// it has finished (see testhelper.PrivateOutbox for the one reason to change that).
+type SubscribeOption func(*watermillsql.SubscriberConfig)
+
+// WithSchemaAdapter replaces the adapter that builds the subscriber's select query. The
+// adapter must keep the outbox table layout of the producer.
+func WithSchemaAdapter(a watermillsql.SchemaAdapter) SubscribeOption {
+	return func(cfg *watermillsql.SubscriberConfig) { cfg.SchemaAdapter = a }
 }
 
 func persistConsumer(client *ent.Client) message.NoPublishHandlerFunc {

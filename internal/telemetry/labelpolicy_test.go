@@ -97,7 +97,7 @@ func runHandledDomainEvent(t *testing.T, srvAddr, contactEmail string) {
 	router, err := events.NewRouter()
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = router.Close() })
-	sub, err := events.NewSubscriber(sqlDB, "label-policy")
+	sub, err := events.NewSubscriber(sqlDB, "label-policy", testhelper.PrivateOutbox())
 	require.NoError(t, err)
 	handled := make(chan struct{}, 1)
 	router.AddConsumerHandler("label_policy", events.TopicDomainEvents, sub, func(msg *message.Message) error {

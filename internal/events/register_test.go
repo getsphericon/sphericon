@@ -32,7 +32,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	t.Cleanup(func() { _ = router.Close() })
 	enroller := &EnrollerMock{OnEventFunc: func(context.Context, int64, int64, string) error { return nil }}
 	dispatcher := &WebhookDispatcherMock{DispatchFunc: func(context.Context, *ent.Scoped, string, string, []byte) error { return nil }}
-	require.NoError(t, events.RegisterSubscribers(router, sqlDB, client, enroller, dispatcher))
+	require.NoError(t, events.RegisterSubscribers(router, sqlDB, client, enroller, dispatcher, nil, testhelper.PrivateOutbox()))
 
 	runCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)

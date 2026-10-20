@@ -7,6 +7,7 @@ import (
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -21,13 +22,13 @@ import (
 // writes no ent rows (no FK setup, no fixture-count interference). The database is
 // the test's own, so what it commits is dropped with it.
 func TestDomainEventsRouterDelivery(t *testing.T) {
-	db := testhelper.RealDB(t)
+	sqlDB := testhelper.RealDB(t)
 	ctx := context.Background()
 
 	router, err := events.NewRouter()
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = router.Close() })
-	sub, err := events.NewSubscriber(db, "capture")
+	sub, err := events.NewSubscriber(sqlDB, "capture", testhelper.PrivateOutbox())
 	require.NoError(t, err)
 
 	got := make(chan events.Envelope, 1)
@@ -49,7 +50,7 @@ func TestDomainEventsRouterDelivery(t *testing.T) {
 	go func() { _ = router.Run(runCtx) }()
 	<-router.Running()
 
-	bus := events.New(db)
+	bus := events.New(sqlDB)
 	require.NoError(t, bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 7, Email: "e2e@example.com"})
 	}))
@@ -60,4 +61,44 @@ func TestDomainEventsRouterDelivery(t *testing.T) {
 	assert.Equal(t, events.NameContactCreated, env.Name)
 	assert.EqualValues(t, fixtures.AcmeID, env.WorkspaceID)
 	assert.Equal(t, "e2e@example.com", ev.Project().Subject)
+}
+
+// A transaction left open in another database of the shared test server must not hold
+// back delivery in this one: the default watermill horizon (pg_snapshot_xmin) is
+// cluster-wide, which made the router tests wait on whatever else was running.
+func TestDeliveryIgnoresTransactionsOfOtherDatabases(t *testing.T) {
+	ctx := context.Background()
+	other := db.NewEntClient(testhelper.RealDB(t))
+	tx, err := other.Tx(ctx)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tx.Rollback() })
+	_, err = tx.Client().Scoped(fixtures.AcmeID).Tag().Create().SetName("held-open").Save(ctx)
+	require.NoError(t, err)
+
+	sqlDB := testhelper.RealDB(t)
+	router, err := events.NewRouter()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = router.Close() })
+	sub, err := events.NewSubscriber(sqlDB, "capture", testhelper.PrivateOutbox())
+	require.NoError(t, err)
+	got := make(chan events.Envelope, 1)
+	router.AddConsumerHandler("capture", events.TopicDomainEvents, sub, func(msg *message.Message) error {
+		var env events.Envelope
+		if err := json.Unmarshal(msg.Payload, &env); err != nil {
+			return err
+		}
+		got <- env
+		return nil
+	})
+	runCtx, cancel := context.WithCancel(ctx)
+	t.Cleanup(cancel)
+	go func() { _ = router.Run(runCtx) }()
+	<-router.Running()
+
+	require.NoError(t, events.New(sqlDB).WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
+		return pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 7, Email: "other-db@example.com"})
+	}))
+
+	env := testhelper.Receive(t, got, "a transaction of another database held back delivery")
+	assert.Equal(t, events.NameContactCreated, env.Name)
 }
