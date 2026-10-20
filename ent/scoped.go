@@ -6865,6 +6865,18 @@ func (x *BroadcastRecipientScopedCreate) SetNillableClickedAt(v *time.Time) *Bro
 	return x
 }
 
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (x *BroadcastRecipientScopedCreate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedCreate {
+	x.b.SetUnsubscribedAt(v)
+	return x
+}
+
+// SetNillableUnsubscribedAt sets the "unsubscribed_at" field if the given value is not nil.
+func (x *BroadcastRecipientScopedCreate) SetNillableUnsubscribedAt(v *time.Time) *BroadcastRecipientScopedCreate {
+	x.b.SetNillableUnsubscribedAt(v)
+	return x
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *BroadcastRecipientScopedCreate) SetBroadcast(v *Broadcast) *BroadcastRecipientScopedCreate {
 	x.b.SetBroadcast(v)
@@ -7093,6 +7105,24 @@ func (u *BroadcastRecipientScopedUpsert) UpdateClickedAt() *BroadcastRecipientSc
 // ClearClickedAt clears the value of the "clicked_at" field.
 func (u *BroadcastRecipientScopedUpsert) ClearClickedAt() *BroadcastRecipientScopedUpsert {
 	u.u.SetNull(broadcastrecipient.FieldClickedAt)
+	return u
+}
+
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (u *BroadcastRecipientScopedUpsert) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpsert {
+	u.u.Set(broadcastrecipient.FieldUnsubscribedAt, v)
+	return u
+}
+
+// UpdateUnsubscribedAt sets the "unsubscribed_at" field to the value that was provided on create.
+func (u *BroadcastRecipientScopedUpsert) UpdateUnsubscribedAt() *BroadcastRecipientScopedUpsert {
+	u.u.SetExcluded(broadcastrecipient.FieldUnsubscribedAt)
+	return u
+}
+
+// ClearUnsubscribedAt clears the value of the "unsubscribed_at" field.
+func (u *BroadcastRecipientScopedUpsert) ClearUnsubscribedAt() *BroadcastRecipientScopedUpsert {
+	u.u.SetNull(broadcastrecipient.FieldUnsubscribedAt)
 	return u
 }
 
@@ -7399,6 +7429,24 @@ func (x *BroadcastRecipientScopedUpdateOne) ClearClickedAt() *BroadcastRecipient
 	return x
 }
 
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (x *BroadcastRecipientScopedUpdateOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpdateOne {
+	x.b.SetUnsubscribedAt(v)
+	return x
+}
+
+// SetNillableUnsubscribedAt sets the "unsubscribed_at" field if the given value is not nil.
+func (x *BroadcastRecipientScopedUpdateOne) SetNillableUnsubscribedAt(v *time.Time) *BroadcastRecipientScopedUpdateOne {
+	x.b.SetNillableUnsubscribedAt(v)
+	return x
+}
+
+// ClearUnsubscribedAt clears the value of the "unsubscribed_at" field.
+func (x *BroadcastRecipientScopedUpdateOne) ClearUnsubscribedAt() *BroadcastRecipientScopedUpdateOne {
+	x.b.ClearUnsubscribedAt()
+	return x
+}
+
 // SetBroadcast sets the "broadcast" edge to the Broadcast entity.
 func (x *BroadcastRecipientScopedUpdateOne) SetBroadcast(v *Broadcast) *BroadcastRecipientScopedUpdateOne {
 	x.b.SetBroadcast(v)
@@ -7645,6 +7693,24 @@ func (x *BroadcastRecipientScopedUpdate) SetNillableClickedAt(v *time.Time) *Bro
 // ClearClickedAt clears the value of the "clicked_at" field.
 func (x *BroadcastRecipientScopedUpdate) ClearClickedAt() *BroadcastRecipientScopedUpdate {
 	x.b.ClearClickedAt()
+	return x
+}
+
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (x *BroadcastRecipientScopedUpdate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpdate {
+	x.b.SetUnsubscribedAt(v)
+	return x
+}
+
+// SetNillableUnsubscribedAt sets the "unsubscribed_at" field if the given value is not nil.
+func (x *BroadcastRecipientScopedUpdate) SetNillableUnsubscribedAt(v *time.Time) *BroadcastRecipientScopedUpdate {
+	x.b.SetNillableUnsubscribedAt(v)
+	return x
+}
+
+// ClearUnsubscribedAt clears the value of the "unsubscribed_at" field.
+func (x *BroadcastRecipientScopedUpdate) ClearUnsubscribedAt() *BroadcastRecipientScopedUpdate {
+	x.b.ClearUnsubscribedAt()
 	return x
 }
 

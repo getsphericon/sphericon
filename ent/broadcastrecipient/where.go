@@ -110,6 +110,11 @@ func ClickedAt(v time.Time) predicate.BroadcastRecipient {
 	return predicate.BroadcastRecipient(sql.FieldEQ(FieldClickedAt, v))
 }
 
+// UnsubscribedAt applies equality check predicate on the "unsubscribed_at" field. It's identical to UnsubscribedAtEQ.
+func UnsubscribedAt(v time.Time) predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldEQ(FieldUnsubscribedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.BroadcastRecipient {
 	return predicate.BroadcastRecipient(sql.FieldEQ(FieldCreatedAt, v))
@@ -623,6 +628,56 @@ func ClickedAtIsNil() predicate.BroadcastRecipient {
 // ClickedAtNotNil applies the NotNil predicate on the "clicked_at" field.
 func ClickedAtNotNil() predicate.BroadcastRecipient {
 	return predicate.BroadcastRecipient(sql.FieldNotNull(FieldClickedAt))
+}
+
+// UnsubscribedAtEQ applies the EQ predicate on the "unsubscribed_at" field.
+func UnsubscribedAtEQ(v time.Time) predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldEQ(FieldUnsubscribedAt, v))
+}
+
+// UnsubscribedAtNEQ applies the NEQ predicate on the "unsubscribed_at" field.
+func UnsubscribedAtNEQ(v time.Time) predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldNEQ(FieldUnsubscribedAt, v))
+}
+
+// UnsubscribedAtIn applies the In predicate on the "unsubscribed_at" field.
+func UnsubscribedAtIn(vs ...time.Time) predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldIn(FieldUnsubscribedAt, vs...))
+}
+
+// UnsubscribedAtNotIn applies the NotIn predicate on the "unsubscribed_at" field.
+func UnsubscribedAtNotIn(vs ...time.Time) predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldNotIn(FieldUnsubscribedAt, vs...))
+}
+
+// UnsubscribedAtGT applies the GT predicate on the "unsubscribed_at" field.
+func UnsubscribedAtGT(v time.Time) predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldGT(FieldUnsubscribedAt, v))
+}
+
+// UnsubscribedAtGTE applies the GTE predicate on the "unsubscribed_at" field.
+func UnsubscribedAtGTE(v time.Time) predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldGTE(FieldUnsubscribedAt, v))
+}
+
+// UnsubscribedAtLT applies the LT predicate on the "unsubscribed_at" field.
+func UnsubscribedAtLT(v time.Time) predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldLT(FieldUnsubscribedAt, v))
+}
+
+// UnsubscribedAtLTE applies the LTE predicate on the "unsubscribed_at" field.
+func UnsubscribedAtLTE(v time.Time) predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldLTE(FieldUnsubscribedAt, v))
+}
+
+// UnsubscribedAtIsNil applies the IsNil predicate on the "unsubscribed_at" field.
+func UnsubscribedAtIsNil() predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldIsNull(FieldUnsubscribedAt))
+}
+
+// UnsubscribedAtNotNil applies the NotNil predicate on the "unsubscribed_at" field.
+func UnsubscribedAtNotNil() predicate.BroadcastRecipient {
+	return predicate.BroadcastRecipient(sql.FieldNotNull(FieldUnsubscribedAt))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

@@ -233,6 +233,26 @@ func (_u *BroadcastRecipientUpdate) ClearClickedAt() *BroadcastRecipientUpdate {
 	return _u
 }
 
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (_u *BroadcastRecipientUpdate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpdate {
+	_u.mutation.SetUnsubscribedAt(v)
+	return _u
+}
+
+// SetNillableUnsubscribedAt sets the "unsubscribed_at" field if the given value is not nil.
+func (_u *BroadcastRecipientUpdate) SetNillableUnsubscribedAt(v *time.Time) *BroadcastRecipientUpdate {
+	if v != nil {
+		_u.SetUnsubscribedAt(*v)
+	}
+	return _u
+}
+
+// ClearUnsubscribedAt clears the value of the "unsubscribed_at" field.
+func (_u *BroadcastRecipientUpdate) ClearUnsubscribedAt() *BroadcastRecipientUpdate {
+	_u.mutation.ClearUnsubscribedAt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *BroadcastRecipientUpdate) SetWorkspace(v *Workspace) *BroadcastRecipientUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -383,6 +403,12 @@ func (_u *BroadcastRecipientUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if _u.mutation.ClickedAtCleared() {
 		_spec.ClearField(broadcastrecipient.FieldClickedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UnsubscribedAt(); ok {
+		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)
+	}
+	if _u.mutation.UnsubscribedAtCleared() {
+		_spec.ClearField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -666,6 +692,26 @@ func (_u *BroadcastRecipientUpdateOne) ClearClickedAt() *BroadcastRecipientUpdat
 	return _u
 }
 
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (_u *BroadcastRecipientUpdateOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpdateOne {
+	_u.mutation.SetUnsubscribedAt(v)
+	return _u
+}
+
+// SetNillableUnsubscribedAt sets the "unsubscribed_at" field if the given value is not nil.
+func (_u *BroadcastRecipientUpdateOne) SetNillableUnsubscribedAt(v *time.Time) *BroadcastRecipientUpdateOne {
+	if v != nil {
+		_u.SetUnsubscribedAt(*v)
+	}
+	return _u
+}
+
+// ClearUnsubscribedAt clears the value of the "unsubscribed_at" field.
+func (_u *BroadcastRecipientUpdateOne) ClearUnsubscribedAt() *BroadcastRecipientUpdateOne {
+	_u.mutation.ClearUnsubscribedAt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *BroadcastRecipientUpdateOne) SetWorkspace(v *Workspace) *BroadcastRecipientUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -846,6 +892,12 @@ func (_u *BroadcastRecipientUpdateOne) sqlSave(ctx context.Context) (_node *Broa
 	}
 	if _u.mutation.ClickedAtCleared() {
 		_spec.ClearField(broadcastrecipient.FieldClickedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UnsubscribedAt(); ok {
+		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)
+	}
+	if _u.mutation.UnsubscribedAtCleared() {
+		_spec.ClearField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

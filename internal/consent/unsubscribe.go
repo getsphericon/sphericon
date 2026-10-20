@@ -5,8 +5,10 @@ package consent
 
 import (
 	"context"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -71,6 +73,19 @@ func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.Uns
 		if target.BroadcastID != 0 {
 			if _, err := sc.Broadcast().UpdateOneID(target.BroadcastID).AddUnsubscribedCount(1).Save(ctx); err != nil {
 				return err
+			}
+			// The same fact on the recipient, set once like opened_at and clicked_at.
+			if target.ContactID != 0 {
+				if _, err := sc.BroadcastRecipient().Update().
+					Where(
+						broadcastrecipient.BroadcastID(target.BroadcastID),
+						broadcastrecipient.ContactID(target.ContactID),
+						broadcastrecipient.UnsubscribedAtIsNil(),
+					).
+					SetUnsubscribedAt(time.Now()).
+					Save(ctx); err != nil {
+					return err
+				}
 			}
 		}
 		// Automation: unsubscribing from an automation also exits its active

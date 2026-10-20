@@ -176,6 +176,20 @@ func (_c *BroadcastRecipientCreate) SetNillableClickedAt(v *time.Time) *Broadcas
 	return _c
 }
 
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (_c *BroadcastRecipientCreate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientCreate {
+	_c.mutation.SetUnsubscribedAt(v)
+	return _c
+}
+
+// SetNillableUnsubscribedAt sets the "unsubscribed_at" field if the given value is not nil.
+func (_c *BroadcastRecipientCreate) SetNillableUnsubscribedAt(v *time.Time) *BroadcastRecipientCreate {
+	if v != nil {
+		_c.SetUnsubscribedAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *BroadcastRecipientCreate) SetID(v int64) *BroadcastRecipientCreate {
 	_c.mutation.SetID(v)
@@ -341,6 +355,10 @@ func (_c *BroadcastRecipientCreate) createSpec() (*BroadcastRecipient, *sqlgraph
 	if value, ok := _c.mutation.ClickedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldClickedAt, field.TypeTime, value)
 		_node.ClickedAt = &value
+	}
+	if value, ok := _c.mutation.UnsubscribedAt(); ok {
+		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)
+		_node.UnsubscribedAt = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -614,6 +632,24 @@ func (u *BroadcastRecipientUpsert) ClearClickedAt() *BroadcastRecipientUpsert {
 	return u
 }
 
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (u *BroadcastRecipientUpsert) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpsert {
+	u.Set(broadcastrecipient.FieldUnsubscribedAt, v)
+	return u
+}
+
+// UpdateUnsubscribedAt sets the "unsubscribed_at" field to the value that was provided on create.
+func (u *BroadcastRecipientUpsert) UpdateUnsubscribedAt() *BroadcastRecipientUpsert {
+	u.SetExcluded(broadcastrecipient.FieldUnsubscribedAt)
+	return u
+}
+
+// ClearUnsubscribedAt clears the value of the "unsubscribed_at" field.
+func (u *BroadcastRecipientUpsert) ClearUnsubscribedAt() *BroadcastRecipientUpsert {
+	u.SetNull(broadcastrecipient.FieldUnsubscribedAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -879,6 +915,27 @@ func (u *BroadcastRecipientUpsertOne) UpdateClickedAt() *BroadcastRecipientUpser
 func (u *BroadcastRecipientUpsertOne) ClearClickedAt() *BroadcastRecipientUpsertOne {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearClickedAt()
+	})
+}
+
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (u *BroadcastRecipientUpsertOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpsertOne {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.SetUnsubscribedAt(v)
+	})
+}
+
+// UpdateUnsubscribedAt sets the "unsubscribed_at" field to the value that was provided on create.
+func (u *BroadcastRecipientUpsertOne) UpdateUnsubscribedAt() *BroadcastRecipientUpsertOne {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.UpdateUnsubscribedAt()
+	})
+}
+
+// ClearUnsubscribedAt clears the value of the "unsubscribed_at" field.
+func (u *BroadcastRecipientUpsertOne) ClearUnsubscribedAt() *BroadcastRecipientUpsertOne {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.ClearUnsubscribedAt()
 	})
 }
 
@@ -1313,6 +1370,27 @@ func (u *BroadcastRecipientUpsertBulk) UpdateClickedAt() *BroadcastRecipientUpse
 func (u *BroadcastRecipientUpsertBulk) ClearClickedAt() *BroadcastRecipientUpsertBulk {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearClickedAt()
+	})
+}
+
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (u *BroadcastRecipientUpsertBulk) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpsertBulk {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.SetUnsubscribedAt(v)
+	})
+}
+
+// UpdateUnsubscribedAt sets the "unsubscribed_at" field to the value that was provided on create.
+func (u *BroadcastRecipientUpsertBulk) UpdateUnsubscribedAt() *BroadcastRecipientUpsertBulk {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.UpdateUnsubscribedAt()
+	})
+}
+
+// ClearUnsubscribedAt clears the value of the "unsubscribed_at" field.
+func (u *BroadcastRecipientUpsertBulk) ClearUnsubscribedAt() *BroadcastRecipientUpsertBulk {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.ClearUnsubscribedAt()
 	})
 }
 

@@ -66,6 +66,11 @@ func (BroadcastRecipient) Fields() []ent.Field {
 		field.Time("clicked_at").
 			Optional().
 			Nillable(),
+		// When this recipient unsubscribed from the Broadcast's email: set once, like
+		// opened_at and clicked_at, so the Broadcast's unsubscribes are a count of these.
+		field.Time("unsubscribed_at").
+			Optional().
+			Nillable(),
 	}
 }
 

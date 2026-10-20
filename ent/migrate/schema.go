@@ -295,6 +295,7 @@ var (
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "opened_at", Type: field.TypeTime, Nullable: true},
 		{Name: "clicked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "unsubscribed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -306,13 +307,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_recipients_broadcasts_recipients",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[11]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[12]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "broadcast_recipients_workspaces_broadcast_recipients",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[12]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[13]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -321,17 +322,17 @@ var (
 			{
 				Name:    "broadcast_recipients_broadcast_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[11], BroadcastRecipientsColumns[3]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[12], BroadcastRecipientsColumns[3]},
 			},
 			{
 				Name:    "broadcastrecipient_broadcast_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[11]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[12]},
 			},
 			{
 				Name:    "broadcastrecipient_workspace_id_sent_at",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[12], BroadcastRecipientsColumns[8]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[13], BroadcastRecipientsColumns[8]},
 			},
 		},
 	}
@@ -917,6 +918,19 @@ var (
 				Name:    "outboundmessage_workspace_id_updated_at_id",
 				Unique:  false,
 				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
+			},
+			{
+				Name:    "outboundmessage_workspace_id_broadcast_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[23], OutboundMessagesColumns[15], OutboundMessagesColumns[11]},
+			},
+			{
+				Name:    "outbound_messages_broadcast_recipient_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[16]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "broadcast_recipient_id IS NOT NULL",
+				},
 			},
 		},
 	}

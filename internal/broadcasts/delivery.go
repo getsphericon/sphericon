@@ -121,9 +121,7 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	// Guard: the audience filters EmailNotNil, but a contact could lose its email
 	// between plan and send. Terminal: the row can never send.
 	if c.Email == nil {
-		return moveRecipient(ctx, s, rec.ID, recipientFailed, func(u *ent.BroadcastRecipientScopedUpdate) {
-			u.SetError("contact has no email")
-		})
+		return d.fail(ctx, s, rec, errNoEmail)
 	}
 
 	res, err := d.out.Send(ctx, s, outbound.BroadcastRecipient(b, rec, c))
@@ -133,10 +131,29 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	if retry := res.Retry(0); retry.Wanted {
 		return d.retryLater(ctx, s, b, rec, res)
 	}
+	return d.apply(ctx, s, rec, res)
+}
+
+// errNoEmail is the reason of a recipient whose Contact has no address to send to.
+var errNoEmail = errors.New("contact has no email")
+
+// fail ends a recipient's send as Failed with cause: Outbound send records the one message,
+// and the recipient follows what that message says (a send that already went out stays sent).
+// outbound.ErrInProgress is a live claim: the caller waits and asks again.
+func (d *Delivery) fail(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, cause error) error {
+	res, err := d.out.FailRecipient(ctx, s, rec, cause)
+	if err != nil {
+		return err
+	}
+	return d.apply(ctx, s, rec, res)
+}
+
+// apply maps a decided Outbound outcome onto the recipient.
+func (d *Delivery) apply(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, res outbound.Result) error {
 	switch res.Outcome {
 	case outbound.Sent:
 		// A send went through: the hold, if any, has lifted.
-		if err := setHold(ctx, s, b.ID, ""); err != nil {
+		if err := setHold(ctx, s, rec.BroadcastID, ""); err != nil {
 			return err
 		}
 		return moveRecipient(ctx, s, rec.ID, recipientSent, func(u *ent.BroadcastRecipientScopedUpdate) {
@@ -202,9 +219,12 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 }
 
 // GiveUp records the terminal failure of a recipient whose last attempt failed with cause:
-// the Outbound claim is given up, the recipient fails with the cause as its reason, and the
-// Broadcast settles if none is left pending. A recipient already decided is
-// lifecycle.ErrInvalidTransition and keeps its status.
+// Outbound send ends its message as Failed with the cause as its reason (a send that already
+// reached the provider stays sent), and the Broadcast settles if none is left pending. A
+// recipient already decided is lifecycle.ErrInvalidTransition and keeps its status.
+//
+// outbound.ErrInProgress means another attempt still holds a live claim and may yet reach the
+// provider: nothing is failed, and the adapter waits out the lease and gives up again.
 func (d *Delivery) GiveUp(ctx context.Context, s *ent.Scoped, recipientID int64, cause error) error {
 	rec, err := s.BroadcastRecipient().Get(ctx, recipientID)
 	if ent.IsNotFound(err) {
@@ -213,10 +233,7 @@ func (d *Delivery) GiveUp(ctx context.Context, s *ent.Scoped, recipientID int64,
 	if err != nil {
 		return err
 	}
-	_ = d.out.MarkRecipientFailed(ctx, s, recipientID, cause)
-	if err := moveRecipient(ctx, s, rec.ID, recipientFailed, func(u *ent.BroadcastRecipientScopedUpdate) {
-		u.SetError(cause.Error())
-	}); err != nil {
+	if err := d.fail(ctx, s, rec, cause); err != nil {
 		return err
 	}
 	return Finalize(ctx, s, rec.BroadcastID)

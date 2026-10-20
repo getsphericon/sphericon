@@ -137,6 +137,12 @@ func (w *SendRecipientWorker) Work(ctx context.Context, job *river.Job[SendRecip
 	// with it, so the job is not silently lost.
 	if job.Attempt >= job.MaxAttempts {
 		if gerr := w.del.GiveUp(ctx, s, job.Args.RecipientID, err); gerr != nil {
+			if errors.Is(gerr, outbound.ErrInProgress) {
+				// Another attempt holds a live claim and may still reach the provider, so
+				// nothing is failed yet. A snooze spends no attempt: the job runs again once
+				// the lease is out, and gives up (or replays the recorded send) then.
+				return river.JobSnooze(inProgressRetryDelay)
+			}
 			return errors.Join(err, gerr)
 		}
 	}
@@ -203,6 +209,9 @@ func (i inlineSends) Schedule(ctx context.Context, _ int64, sends []broadcasts.S
 			// path has no retry runtime: a failed send is terminal, so give the recipient up
 			// at once (a bad recipient must not abort the batch).
 			if gerr := i.del.GiveUp(ctx, i.s, send.RecipientID, serr); gerr != nil {
+				if errors.Is(gerr, outbound.ErrInProgress) {
+					return gerr // a live claim: stop and leave the rest pending, like a hold
+				}
 				return errors.Join(serr, gerr)
 			}
 		}

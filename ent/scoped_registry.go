@@ -502,6 +502,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.ClickedAt != nil {
 					b.SetClickedAt(*src.ClickedAt)
 				}
+				if src.UnsubscribedAt != nil {
+					b.SetUnsubscribedAt(*src.UnsubscribedAt)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

@@ -451,10 +451,60 @@ func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, key string, caus
 	return err
 }
 
-// MarkRecipientFailed gives up the pending claim of a Broadcast recipient's send for
-// good, recording cause (see MarkFailed).
-func (m *Module) MarkRecipientFailed(ctx context.Context, s *ent.Scoped, recipientID int64, cause error) error {
-	return m.MarkFailed(ctx, s, broadcastRecipientKey(recipientID), cause)
+// FailRecipient ends a Broadcast recipient's send as Failed with cause, for a recipient that
+// can never go out: its Contact has no address, or its last attempt failed. Every recipient
+// ends with exactly one Outbound message (ADR 0015), so this records one even when no attempt
+// ever claimed the key. It is idempotent: a message already final is replayed, not rewritten
+// (a send that reached the provider stays Sent).
+//
+// A live claim is another attempt that may still reach the provider, so nothing is failed and
+// the error is ErrInProgress: the caller waits out the lease and asks again.
+func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, cause error) (Result, error) {
+	key := broadcastRecipientKey(rec.ID)
+	msg, err := m.find(ctx, s, key)
+	if err != nil {
+		return Result{}, err
+	}
+	if msg == nil {
+		create := s.OutboundMessage().Create().
+			SetKind(outboundmessage.KindBroadcast).
+			SetIdempotencyKey(key).
+			SetSendingSource(eligibility.SourceBroadcasts).
+			SetBroadcastID(rec.BroadcastID).
+			SetBroadcastRecipientID(rec.ID).
+			SetStatus(outboundmessage.StatusFailed).
+			SetReason(cause.Error())
+		if rec.ContactID != 0 {
+			create.SetContactID(rec.ContactID)
+		}
+		created, err := create.Save(ctx)
+		if err == nil {
+			return Result{Outcome: Failed, Reason: cause.Error(), MessageID: created.ID}, nil
+		}
+		if !ent.IsConstraintError(err) {
+			return Result{}, err
+		}
+		// Lost the insert race to an attempt's claim: judge that row like any other.
+		if msg, err = m.find(ctx, s, key); err != nil || msg == nil {
+			return Result{}, err
+		}
+	}
+	if msg.Status != outboundmessage.StatusPending {
+		return replayResult(msg), nil
+	}
+	if time.Since(msg.ClaimedAt) < m.lease {
+		return Result{}, ErrInProgress
+	}
+	err = move(ctx, s, msg, []predicate.OutboundMessage{
+		outboundmessage.ClaimedAtLT(time.Now().Add(-m.lease)),
+	}, outboundmessage.StatusFailed, func(u *ent.OutboundMessageScopedUpdate) { u.SetReason(cause.Error()) })
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return Result{}, ErrInProgress // the claim moved under us: look again later
+	}
+	if err != nil {
+		return Result{}, err
+	}
+	return Result{Outcome: Failed, Reason: cause.Error(), MessageID: msg.ID}, nil
 }
 
 // workspace loads the Workspace row the scoped client is confined to.

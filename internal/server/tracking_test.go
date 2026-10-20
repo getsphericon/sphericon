@@ -248,10 +248,13 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.Code)
 	assert.True(t, optedOut(), "POST writes a broadcasts-scoped opt-out")
 	assert.Equal(t, 1, env.DB.Broadcast.GetX(ctx, b.ID).UnsubscribedCount)
+	unsubscribedAt := env.DB.BroadcastRecipient.GetX(ctx, rec.ID).UnsubscribedAt
+	require.NotNil(t, unsubscribedAt, "the recipient records the unsubscribe")
 
 	// A repeated POST (mailbox retry / double click) must not double-count.
 	post(uPath)
 	assert.Equal(t, 1, env.DB.Broadcast.GetX(ctx, b.ID).UnsubscribedCount)
+	assert.True(t, unsubscribedAt.Equal(*env.DB.BroadcastRecipient.GetX(ctx, rec.ID).UnsubscribedAt), "set once")
 
 	// Each endpoint published an engagement event onto the transactional outbox.
 	// The persist + automations subscribers consume these (the router isn't run

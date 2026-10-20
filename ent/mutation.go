@@ -8318,6 +8318,7 @@ type BroadcastRecipientMutation struct {
 	sent_at                *time.Time
 	opened_at              *time.Time
 	clicked_at             *time.Time
+	unsubscribed_at        *time.Time
 	clearedFields          map[string]struct{}
 	workspace              *int64
 	clearedworkspace       bool
@@ -8997,6 +8998,55 @@ func (m *BroadcastRecipientMutation) ResetClickedAt() {
 	delete(m.clearedFields, broadcastrecipient.FieldClickedAt)
 }
 
+// SetUnsubscribedAt sets the "unsubscribed_at" field.
+func (m *BroadcastRecipientMutation) SetUnsubscribedAt(t time.Time) {
+	m.unsubscribed_at = &t
+}
+
+// UnsubscribedAt returns the value of the "unsubscribed_at" field in the mutation.
+func (m *BroadcastRecipientMutation) UnsubscribedAt() (r time.Time, exists bool) {
+	v := m.unsubscribed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnsubscribedAt returns the old "unsubscribed_at" field's value of the BroadcastRecipient entity.
+// If the BroadcastRecipient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastRecipientMutation) OldUnsubscribedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnsubscribedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnsubscribedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnsubscribedAt: %w", err)
+	}
+	return oldValue.UnsubscribedAt, nil
+}
+
+// ClearUnsubscribedAt clears the value of the "unsubscribed_at" field.
+func (m *BroadcastRecipientMutation) ClearUnsubscribedAt() {
+	m.unsubscribed_at = nil
+	m.clearedFields[broadcastrecipient.FieldUnsubscribedAt] = struct{}{}
+}
+
+// UnsubscribedAtCleared returns if the "unsubscribed_at" field was cleared in this mutation.
+func (m *BroadcastRecipientMutation) UnsubscribedAtCleared() bool {
+	_, ok := m.clearedFields[broadcastrecipient.FieldUnsubscribedAt]
+	return ok
+}
+
+// ResetUnsubscribedAt resets all changes to the "unsubscribed_at" field.
+func (m *BroadcastRecipientMutation) ResetUnsubscribedAt() {
+	m.unsubscribed_at = nil
+	delete(m.clearedFields, broadcastrecipient.FieldUnsubscribedAt)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *BroadcastRecipientMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -9085,7 +9135,7 @@ func (m *BroadcastRecipientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastRecipientMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, broadcastrecipient.FieldCreatedAt)
 	}
@@ -9122,6 +9172,9 @@ func (m *BroadcastRecipientMutation) Fields() []string {
 	if m.clicked_at != nil {
 		fields = append(fields, broadcastrecipient.FieldClickedAt)
 	}
+	if m.unsubscribed_at != nil {
+		fields = append(fields, broadcastrecipient.FieldUnsubscribedAt)
+	}
 	return fields
 }
 
@@ -9154,6 +9207,8 @@ func (m *BroadcastRecipientMutation) Field(name string) (ent.Value, bool) {
 		return m.OpenedAt()
 	case broadcastrecipient.FieldClickedAt:
 		return m.ClickedAt()
+	case broadcastrecipient.FieldUnsubscribedAt:
+		return m.UnsubscribedAt()
 	}
 	return nil, false
 }
@@ -9187,6 +9242,8 @@ func (m *BroadcastRecipientMutation) OldField(ctx context.Context, name string) 
 		return m.OldOpenedAt(ctx)
 	case broadcastrecipient.FieldClickedAt:
 		return m.OldClickedAt(ctx)
+	case broadcastrecipient.FieldUnsubscribedAt:
+		return m.OldUnsubscribedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown BroadcastRecipient field %s", name)
 }
@@ -9280,6 +9337,13 @@ func (m *BroadcastRecipientMutation) SetField(name string, value ent.Value) erro
 		}
 		m.SetClickedAt(v)
 		return nil
+	case broadcastrecipient.FieldUnsubscribedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnsubscribedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BroadcastRecipient field %s", name)
 }
@@ -9358,6 +9422,9 @@ func (m *BroadcastRecipientMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcastrecipient.FieldClickedAt) {
 		fields = append(fields, broadcastrecipient.FieldClickedAt)
 	}
+	if m.FieldCleared(broadcastrecipient.FieldUnsubscribedAt) {
+		fields = append(fields, broadcastrecipient.FieldUnsubscribedAt)
+	}
 	return fields
 }
 
@@ -9392,6 +9459,9 @@ func (m *BroadcastRecipientMutation) ClearField(name string) error {
 		return nil
 	case broadcastrecipient.FieldClickedAt:
 		m.ClearClickedAt()
+		return nil
+	case broadcastrecipient.FieldUnsubscribedAt:
+		m.ClearUnsubscribedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown BroadcastRecipient nullable field %s", name)
@@ -9436,6 +9506,9 @@ func (m *BroadcastRecipientMutation) ResetField(name string) error {
 		return nil
 	case broadcastrecipient.FieldClickedAt:
 		m.ResetClickedAt()
+		return nil
+	case broadcastrecipient.FieldUnsubscribedAt:
+		m.ResetUnsubscribedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown BroadcastRecipient field %s", name)

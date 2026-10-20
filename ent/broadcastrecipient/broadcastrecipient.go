@@ -39,6 +39,8 @@ const (
 	FieldOpenedAt = "opened_at"
 	// FieldClickedAt holds the string denoting the clicked_at field in the database.
 	FieldClickedAt = "clicked_at"
+	// FieldUnsubscribedAt holds the string denoting the unsubscribed_at field in the database.
+	FieldUnsubscribedAt = "unsubscribed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeBroadcast holds the string denoting the broadcast edge name in mutations.
@@ -76,6 +78,7 @@ var Columns = []string{
 	FieldSentAt,
 	FieldOpenedAt,
 	FieldClickedAt,
+	FieldUnsubscribedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -191,6 +194,11 @@ func ByOpenedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByClickedAt orders the results by the clicked_at field.
 func ByClickedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClickedAt, opts...).ToFunc()
+}
+
+// ByUnsubscribedAt orders the results by the unsubscribed_at field.
+func ByUnsubscribedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnsubscribedAt, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

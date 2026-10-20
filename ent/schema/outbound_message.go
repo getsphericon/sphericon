@@ -132,5 +132,12 @@ func (OutboundMessage) Indexes() []ent.Index {
 		index.Fields("workspace_id", "sending_domain", "created_at"),
 		// The Outbound messages Export stream's cursor (ADR 0045).
 		index.Fields("workspace_id", "updated_at", "id"),
+		// A Broadcast's delivery figures: its messages grouped by status (ADR 0015).
+		index.Fields("workspace_id", "broadcast_id", "status"),
+		// A Broadcast recipient's message: one per recipient, so "is this recipient still
+		// pending" is an indexed lookup. Only Broadcast sends carry the column.
+		index.Fields("broadcast_recipient_id").
+			StorageKey("outbound_messages_broadcast_recipient_id").
+			Annotations(entsql.IndexWhere("broadcast_recipient_id IS NOT NULL")),
 	}
 }

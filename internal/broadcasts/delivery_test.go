@@ -3,7 +3,9 @@ package broadcasts_test
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -90,6 +92,25 @@ func (d *delivery) broadcastRow() *ent.Broadcast {
 	return d.env.DB.Broadcast.GetX(d.ctx, fixtures.BroadcastSendingID)
 }
 
+// messageOf is the one Outbound message of a recipient's send.
+func (d *delivery) messageOf(recipientID int64) *ent.OutboundMessage {
+	return d.env.DB.OutboundMessage.Query().
+		Where(outboundmessage.BroadcastRecipientID(recipientID)).OnlyX(d.ctx)
+}
+
+// claim leaves a pending Outbound message on the recipient's key, claimed `age` ago: another
+// attempt's claim, live while younger than the lease.
+func (d *delivery) claim(recipientID int64, age time.Duration) {
+	d.env.DB.OutboundMessage.Create().
+		SetWorkspaceID(fixtures.AcmeID).
+		SetKind(outboundmessage.KindBroadcast).
+		SetIdempotencyKey("broadcast:" + strconv.FormatInt(recipientID, 10)).
+		SetBroadcastID(fixtures.BroadcastSendingID).
+		SetBroadcastRecipientID(recipientID).
+		SetClaimedAt(time.Now().Add(-age)).
+		ExecX(d.ctx)
+}
+
 func TestSentRecipientIsRecordedAndSettlesTheBroadcast(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
@@ -131,6 +152,11 @@ func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
 	assert.Equal(t, "contact has no email", *rec.Error)
 	assert.Equal(t, 1, d.broadcastRow().FailedCount)
 	assert.Empty(t, d.box.sent)
+
+	msg := d.messageOf(id)
+	assert.Equal(t, outboundmessage.StatusFailed, msg.Status, "every recipient ends with exactly one message")
+	assert.Equal(t, "contact has no email", *msg.Reason)
+	assert.EqualValues(t, fixtures.BroadcastSendingID, *msg.BroadcastID)
 }
 
 func TestSuppressedRecipientIsSkippedNotFailed(t *testing.T) {
@@ -224,6 +250,55 @@ func TestGiveUpFailsTheRecipientWithTheCauseAndSettlesTheBroadcast(t *testing.T)
 	b := d.broadcastRow()
 	assert.Equal(t, broadcast.StatusSent, b.Status)
 	assert.Equal(t, 1, b.FailedCount)
+
+	msg := d.messageOf(id)
+	assert.Equal(t, outboundmessage.StatusFailed, msg.Status, "a give-up before any claim still records the one message")
+	assert.Equal(t, "smtp unavailable", *msg.Reason)
+}
+
+// A live claim is another attempt that may still reach the provider: giving up fails nothing,
+// so the recipient is not left failed while its mail goes out, and the adapter can ask again.
+func TestGiveUpWaitsOutALiveClaim(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+	d.claim(id, 0)
+
+	err := d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable"))
+
+	require.ErrorIs(t, err, outbound.ErrInProgress)
+	assert.Equal(t, broadcastrecipient.StatusPending, d.recipientRow(id).Status)
+	assert.Equal(t, outboundmessage.StatusPending, d.messageOf(id).Status)
+	assert.Equal(t, broadcast.StatusSending, d.broadcastRow().Status)
+}
+
+func TestGiveUpFailsAnExpiredClaim(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+	d.claim(id, time.Hour)
+
+	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("smtp unavailable")))
+
+	assert.Equal(t, broadcastrecipient.StatusFailed, d.recipientRow(id).Status)
+	assert.Equal(t, outboundmessage.StatusFailed, d.messageOf(id).Status)
+}
+
+// A send that reached the provider but whose recipient write was lost is sent, whatever the
+// retries that followed said: the recipient follows its message.
+func TestGiveUpAfterTheMailLeftKeepsTheRecipientSent(t *testing.T) {
+	d := newDelivery(t)
+	id := d.recipient(fixtures.ContactAliceID)
+	b := d.broadcastRow()
+	rec := d.recipientRow(id)
+	c := d.env.DB.Contact.GetX(d.ctx, fixtures.ContactAliceID)
+	res, err := d.out.Send(d.ctx, d.s, outbound.BroadcastRecipient(b, rec, c))
+	require.NoError(t, err)
+	require.Equal(t, outbound.Sent, res.Outcome)
+
+	require.NoError(t, d.del.GiveUp(d.ctx, d.s, id, errors.New("late failure")))
+
+	assert.Equal(t, broadcastrecipient.StatusSent, d.recipientRow(id).Status)
+	assert.Equal(t, outboundmessage.StatusSent, d.messageOf(id).Status)
+	assert.Len(t, d.box.sent, 1)
 }
 
 func TestOnlyAPendingRecipientCanLeavePending(t *testing.T) {
