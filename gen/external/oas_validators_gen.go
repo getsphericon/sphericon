@@ -2546,6 +2546,30 @@ func (s *ExportEventsUnauthorized) Validate() error {
 	return nil
 }
 
+func (s *ExportMessagesBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ExportMessagesNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ExportMessagesUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s IntegrationChannel) Validate() error {
 	switch s {
 	case "email":

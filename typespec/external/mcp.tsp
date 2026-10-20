@@ -23,6 +23,7 @@ namespace Sphericon;
 // An Export stream is a bulk feed, never an agent capability (ADR 0016, ADR 0045).
 @@extension(Export.events, "x-mcp", #{ hidden: true });
 @@extension(Export.contacts, "x-mcp", #{ hidden: true });
+@@extension(Export.messages, "x-mcp", #{ hidden: true });
 
 // Names in sphericon vocabulary where the default would read poorly.
 @@extension(Auth.meGet, "x-mcp", #{ name: "whoami" });

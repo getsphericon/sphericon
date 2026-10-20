@@ -424,6 +424,16 @@ func (UnimplementedHandler) ExportEvents(ctx context.Context, params ExportEvent
 	return r, ht.ErrNotImplemented
 }
 
+// ExportMessages implements Export_messages operation.
+//
+// Read the Workspace's Outbound messages, oldest change first (Enterprise; needs the `export:read`
+// scope). Each line of the body is an `ExportMessageRow`; every key is always present.
+//
+// GET /export/messages
+func (UnimplementedHandler) ExportMessages(ctx context.Context, params ExportMessagesParams) (r ExportMessagesRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // IntegrationsCreate implements Integrations_create operation.
 //
 // Create a resource.
