@@ -173,7 +173,7 @@ func TestDeletionIsReportedBeforeSuspensionAndStaffHolds(t *testing.T) {
 	assert.Equal(t, holds.ReasonSuspended, res.Reason)
 
 	liftHold(t, env, time.Now().Add(time.Hour))
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(time.Now()).ExecX(ctx)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
 	res, err = m.Send(ctx, s, transactional("tx:both", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, holds.ReasonPendingDeletion, res.Reason)
@@ -199,7 +199,7 @@ func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *tes
 	require.NoError(t, err)
 	assert.Equal(t, holds.ReasonSuspended, res.Reason)
 
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDeletedAt(time.Now()).ExecX(ctx)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
 	res, err = m.Send(ctx, s, transactional("tx:core-del", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, holds.ReasonPendingDeletion, res.Reason)
