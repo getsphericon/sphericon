@@ -95,7 +95,7 @@ func TestGenuineProviderFailureStillFailsTheMessage(t *testing.T) {
 		require.Error(t, err, "a real failure is still an error, not a Deferral")
 
 		testhelper.Elapse(time.Millisecond)
-		require.NoError(t, m.MarkFailed(ctx, acme(env), "bc:perm", err))
+		require.NoError(t, m.MarkFailed(ctx, acme(env), marketing(t, env, "bc:perm", fixtures.ContactAliceID), err))
 		assert.Equal(t, outboundmessage.StatusFailed, byKey(t, env, "bc:perm").Status)
 	})
 }

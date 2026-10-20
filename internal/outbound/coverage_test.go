@@ -228,7 +228,7 @@ func TestWithLeaseControlsWhenAClaimCanBeTakenOver(t *testing.T) {
 	assert.Empty(t, env.CustomerMail.Messages())
 
 	// MarkFailed honours the same lease: it leaves a claim someone may still be working on.
-	require.NoError(t, newModule(env, outbound.WithLease(time.Hour)).MarkFailed(ctx, env.DB.Scoped(fixtures.AcmeID), staleClaimKey, errors.New("gave up")))
+	require.NoError(t, newModule(env, outbound.WithLease(time.Hour)).MarkFailed(ctx, env.DB.Scoped(fixtures.AcmeID), req, errors.New("gave up")))
 	assert.Equal(t, outboundmessage.StatusPending, byKey(t, env, staleClaimKey).Status)
 
 	res, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)

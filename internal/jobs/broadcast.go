@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
@@ -377,23 +376,7 @@ func SendToRecipient(ctx context.Context, client *ent.Client, mod *outbound.Modu
 		return nil
 	}
 
-	req := outbound.Request{
-		Kind:        outboundmessage.KindBroadcast,
-		Key:         recipientKey(rec.ID),
-		Destination: *c.Email,
-		Contact:     c,
-		Source:      eligibility.SourceBroadcasts,
-		Subject:     b.Subject,
-		Body:        b.Body,
-		TrackID:     rec.ID,
-		Ref:         outbound.Ref{BroadcastID: b.ID, BroadcastRecipient: rec.ID},
-	}
-	if b.FromEmail != nil {
-		req.FromEmail = *b.FromEmail
-	}
-	if b.FromName != nil {
-		req.FromName = *b.FromName
-	}
+	req := outbound.BroadcastRecipient(b, rec, c)
 
 	res, err := mod.Send(ctx, s, req)
 	if err != nil {
@@ -441,11 +424,6 @@ func SendToRecipient(ctx context.Context, client *ent.Client, mod *outbound.Modu
 	return err
 }
 
-// recipientKey is the Outbound send idempotency key of one broadcast recipient.
-func recipientKey(recipientID int64) string {
-	return fmt.Sprintf("broadcast:%d", recipientID)
-}
-
 // markRecipientFailed records a terminal delivery failure on a recipient row and
 // gives up the Outbound claim so a stale pending message does not linger.
 func markRecipientFailed(ctx context.Context, client *ent.Client, mod *outbound.Module, recipientID int64, cause error) error {
@@ -454,7 +432,7 @@ func markRecipientFailed(ctx context.Context, client *ent.Client, mod *outbound.
 		return err
 	}
 	s := client.Scoped(rec.WorkspaceID)
-	_ = mod.MarkFailed(ctx, s, recipientKey(recipientID), cause)
+	_ = mod.MarkRecipientFailed(ctx, s, recipientID, cause)
 	return s.BroadcastRecipient().UpdateOneID(rec.ID).
 		SetStatus(broadcastrecipient.StatusFailed).
 		SetError(cause.Error()).

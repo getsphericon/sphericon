@@ -12,9 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/tags"
@@ -213,18 +211,7 @@ func RunStep(ctx context.Context, client *ent.Client, mod *outbound.Module, runI
 			return StepResult{Done: true}, nil
 		}
 		step := run.CurrentStep
-		res, err := mod.Send(ctx, scoped, outbound.Request{
-			Kind:        outboundmessage.KindAutomation,
-			Key:         fmt.Sprintf("automation:%d:%d", run.ID, step),
-			Destination: *c.Email,
-			Contact:     c,
-			// Each Automation is its own unsubscribe Sending source; the unsubscribe
-			// click exits this enrollment (ADR 0001).
-			Source:  eligibility.AutomationSource(a.ID),
-			Subject: s.Subject,
-			Body:    s.Body,
-			Ref:     outbound.Ref{AutomationID: a.ID, AutomationRunID: run.ID, AutomationStep: &step},
-		})
+		res, err := mod.Send(ctx, scoped, outbound.AutomationStep(a, run, step, c, s.Subject, s.Body))
 		if err != nil {
 			return StepResult{}, err // retryable: the worker's retry replays the same key
 		}

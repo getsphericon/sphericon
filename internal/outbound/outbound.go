@@ -436,10 +436,10 @@ func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, fromEmail string)
 // MarkFailed gives up on a pending claim for good (a queue worker calls it when the
 // final retry is spent), recording cause. It is a no-op for a message that already
 // reached a final status or whose claim another attempt currently holds.
-func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, key string, cause error) error {
+func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, req Request, cause error) error {
 	return s.OutboundMessage().Update().
 		Where(
-			outboundmessage.IdempotencyKey(key),
+			outboundmessage.IdempotencyKey(req.Key),
 			outboundmessage.StatusEQ(outboundmessage.StatusPending),
 			// Never fail a message another attempt is working on: only a claim that
 			// was released (a definite provider failure) or whose lease has expired.
