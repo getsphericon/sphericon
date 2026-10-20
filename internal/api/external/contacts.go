@@ -23,7 +23,7 @@ func (h *Handlers) ContactsList(ctx context.Context, params externalapi.Contacts
 		return &res, nil
 	}
 
-	page, err := h.contacts.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), "")
+	page, err := h.contacts.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), contacts.Filter{})
 	if err != nil {
 		return nil, err
 	}

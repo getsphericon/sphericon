@@ -19,6 +19,15 @@ export function ContactsListPage() {
   const { email } = contactsRoute.useSearch()
   const navigate = useNavigate({ from: contactsRoute.fullPath })
   const [search, setSearch] = useState(email ?? '')
+  // Back/forward or a link changes the URL search: the field follows it, unless it already
+  // shows that search (typing trims before it navigates).
+  const [seenEmail, setSeenEmail] = useState(email)
+  if (email !== seenEmail) {
+    setSeenEmail(email)
+    if (search.trim() !== (email ?? '')) {
+      setSearch(email ?? '')
+    }
+  }
   const applySearch = useDebouncedCallback((value: string) => {
     void navigate({ search: { email: value.trim() || undefined }, replace: true })
   }, 300)

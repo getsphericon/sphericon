@@ -408,13 +408,18 @@ func domainError(err error) error {
 	return err
 }
 
-// List returns one page of the Workspace's Contacts, ascending by id. A non-empty
-// emailContains keeps those whose address contains it, ignoring case.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, emailContains string) (pagination.Page[*ent.Contact], error) {
+// Filter narrows a list of Contacts; the zero value keeps them all.
+type Filter struct {
+	// EmailContains keeps the Contacts whose address contains it, ignoring case.
+	EmailContains string
+}
+
+// List returns one page of the Workspace's Contacts, ascending by id, narrowed by f.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f Filter) (pagination.Page[*ent.Contact], error) {
 	query := func() *ent.ContactQuery {
 		q := s.Contact().Query()
-		if emailContains != "" {
-			q = q.Where(contact.EmailContainsFold(emailContains))
+		if f.EmailContains != "" {
+			q = q.Where(contact.EmailContainsFold(f.EmailContains))
 		}
 		return q
 	}
