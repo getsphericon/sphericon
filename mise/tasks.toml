@@ -204,7 +204,7 @@ run = 'eval "set -- $usage_go_test_args"; mise/scripts/heavy.sh go test ${CI:+-s
 ["test:race"]
 description = "Go tests under the race detector, two packages at a time (the JavaScript runtime is several times slower with it, so this runs nightly, not per pull request)"
 depends = ["db:up"]
-env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}" }
+env = { SPHERICON_ENV = "test", DATABASE_URL = "{{env.TEST_DB_URL}}", CGO_ENABLED = "1" }
 run = "mise/scripts/heavy.sh go test -race -shuffle=on -p 2 ./..."
 
 ["test:mutation"]
