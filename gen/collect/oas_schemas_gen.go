@@ -715,6 +715,52 @@ func (o OptProblemCode) Or(d ProblemCode) ProblemCode {
 	return d
 }
 
+// NewOptProblemDebug returns new OptProblemDebug with value set to v.
+func NewOptProblemDebug(v ProblemDebug) OptProblemDebug {
+	return OptProblemDebug{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptProblemDebug is optional ProblemDebug.
+type OptProblemDebug struct {
+	Value ProblemDebug
+	Set   bool
+}
+
+// IsSet returns true if OptProblemDebug was set.
+func (o OptProblemDebug) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptProblemDebug) Reset() {
+	var v ProblemDebug
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptProblemDebug) SetTo(v ProblemDebug) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptProblemDebug) Get() (v ProblemDebug, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptProblemDebug) Or(d ProblemDebug) ProblemDebug {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptProblemDetailsErrors returns new OptProblemDetailsErrors with value set to v.
 func NewOptProblemDetailsErrors(v ProblemDetailsErrors) OptProblemDetailsErrors {
 	return OptProblemDetailsErrors{
@@ -903,6 +949,72 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 	}
 }
 
+// What a development server adds to a 500 so the page can show the fault; a production Instance never
+// sends it.
+// Ref: #/components/schemas/ProblemDebug
+type ProblemDebug struct {
+	// The error that failed the request, or the panic value.
+	Error string `json:"error"`
+	// The goroutine stack of a panic; absent for an error a handler returned.
+	Stack OptString `json:"stack"`
+	// The request id the server log carries for this request.
+	RequestId OptString `json:"requestId"`
+	// The HTTP method of the failed request.
+	Method string `json:"method"`
+	// The path of the failed request.
+	Path string `json:"path"`
+}
+
+// GetError returns the value of Error.
+func (s *ProblemDebug) GetError() string {
+	return s.Error
+}
+
+// GetStack returns the value of Stack.
+func (s *ProblemDebug) GetStack() OptString {
+	return s.Stack
+}
+
+// GetRequestId returns the value of RequestId.
+func (s *ProblemDebug) GetRequestId() OptString {
+	return s.RequestId
+}
+
+// GetMethod returns the value of Method.
+func (s *ProblemDebug) GetMethod() string {
+	return s.Method
+}
+
+// GetPath returns the value of Path.
+func (s *ProblemDebug) GetPath() string {
+	return s.Path
+}
+
+// SetError sets the value of Error.
+func (s *ProblemDebug) SetError(val string) {
+	s.Error = val
+}
+
+// SetStack sets the value of Stack.
+func (s *ProblemDebug) SetStack(val OptString) {
+	s.Stack = val
+}
+
+// SetRequestId sets the value of RequestId.
+func (s *ProblemDebug) SetRequestId(val OptString) {
+	s.RequestId = val
+}
+
+// SetMethod sets the value of Method.
+func (s *ProblemDebug) SetMethod(val string) {
+	s.Method = val
+}
+
+// SetPath sets the value of Path.
+func (s *ProblemDebug) SetPath(val string) {
+	s.Path = val
+}
+
 // RFC 7807 Problem Details.
 // Ref: #/components/schemas/ProblemDetails
 type ProblemDetails struct {
@@ -926,6 +1038,8 @@ type ProblemDetails struct {
 	Fields OptProblemDetailsFields `json:"fields"`
 	// Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait.
 	RetryAfter OptInt32 `json:"retryAfter"`
+	// Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`).
+	Debug OptProblemDebug `json:"debug"`
 }
 
 // GetCode returns the value of Code.
@@ -978,6 +1092,11 @@ func (s *ProblemDetails) GetRetryAfter() OptInt32 {
 	return s.RetryAfter
 }
 
+// GetDebug returns the value of Debug.
+func (s *ProblemDetails) GetDebug() OptProblemDebug {
+	return s.Debug
+}
+
 // SetCode sets the value of Code.
 func (s *ProblemDetails) SetCode(val OptProblemCode) {
 	s.Code = val
@@ -1026,6 +1145,11 @@ func (s *ProblemDetails) SetFields(val OptProblemDetailsFields) {
 // SetRetryAfter sets the value of RetryAfter.
 func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 	s.RetryAfter = val
+}
+
+// SetDebug sets the value of Debug.
+func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
+	s.Debug = val
 }
 
 // Validation errors grouped by field.

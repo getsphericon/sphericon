@@ -67,6 +67,33 @@ export const ProblemCode = {
 export type ProblemCode = typeof ProblemCode[keyof typeof ProblemCode];
 
 /**
+ * What a development server adds to a 500 so the page can show the fault; a production
+ * Instance never sends it
+ */
+export type ProblemDebug = {
+  /**
+   * The error that failed the request, or the panic value
+   */
+  error: string;
+  /**
+   * The goroutine stack of a panic; absent for an error a handler returned
+   */
+  stack?: string;
+  /**
+   * The request id the server log carries for this request
+   */
+  requestId?: string;
+  /**
+   * The HTTP method of the failed request
+   */
+  method: string;
+  /**
+   * The path of the failed request
+   */
+  path: string;
+};
+
+/**
  * RFC 7807 Problem Details
  */
 export type ProblemDetails = {
@@ -114,6 +141,10 @@ export type ProblemDetails = {
    * Seconds to wait before retrying; set on a 429 so a client that only sees the body can show the wait
    */
   retryAfter?: number;
+  /**
+   * Why a 500 happened, sent only by a development server (`SPHERICON_ENV=development`)
+   */
+  debug?: ProblemDebug;
 };
 
 /**

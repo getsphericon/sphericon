@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -210,4 +211,34 @@ func TestCrossOriginGuardTrustsAppAndAllowlistedOrigins(t *testing.T) {
 
 	_, err = crossOriginGuard("not a url", nil)
 	assert.Error(t, err)
+}
+
+func TestDevelopmentServerShowsTheFaultOfAPanic(t *testing.T) {
+	h := devDebug(recoverer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") })))
+	rec := do(t, h, http.MethodGet, "/x", nil)
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	var body struct {
+		Debug problemDebug `json:"debug"`
+	}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.Equal(t, "boom", body.Debug.Error)
+	assert.Contains(t, body.Debug.Stack, "TestDevelopmentServerShowsTheFaultOfAPanic")
+	assert.Equal(t, http.MethodGet, body.Debug.Method)
+	assert.Equal(t, "/x", body.Debug.Path)
+}
+
+func TestDevelopmentServerShowsTheCauseOfAReturnedError(t *testing.T) {
+	h := devDebug(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		problemErrorHandler(r.Context(), w, r, errors.New("db password is hunter2"))
+	}))
+	rec := do(t, h, http.MethodPost, "/x", nil)
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	assert.Contains(t, rec.Body.String(), `"error":"db password is hunter2"`)
+}
+
+func TestAPanicOfAProductionServerCarriesNoDebugBlock(t *testing.T) {
+	h := recoverer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") }))
+	rec := do(t, h, http.MethodGet, "/x", nil)
+	assert.NotContains(t, rec.Body.String(), "debug")
+	assert.NotContains(t, rec.Body.String(), "boom")
 }

@@ -52,6 +52,18 @@ export const zProblemCode = z.enum([
 ]);
 
 /**
+ * What a development server adds to a 500 so the page can show the fault; a production
+ * Instance never sends it
+ */
+export const zProblemDebug = z.object({
+  error: z.string(),
+  stack: z.exactOptional(z.string()),
+  requestId: z.exactOptional(z.string()),
+  method: z.string(),
+  path: z.string()
+});
+
+/**
  * RFC 7807 Problem Details
  */
 export const zProblemDetails = z.object({
@@ -64,7 +76,8 @@ export const zProblemDetails = z.object({
   errors: z.exactOptional(z.record(z.string(), z.array(z.string()))),
   form: z.exactOptional(z.string()),
   fields: z.exactOptional(z.record(z.string(), z.string())),
-  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+  retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  debug: z.exactOptional(zProblemDebug)
 });
 
 /**
