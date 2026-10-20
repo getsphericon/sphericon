@@ -2179,9 +2179,9 @@ export type SiteOAuthDecisionInput = {
    */
   scope?: string;
   /**
-   * Workspace slug the token will belong to
+   * Id of the Workspace the token will belong to
    */
-  workspaceSlug: string;
+  workspaceId: WorkspaceId;
   /**
    * true to approve, false to deny
    */

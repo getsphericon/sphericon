@@ -36,7 +36,7 @@ model UsageFigure {
 /** The figures of one Workspace for one Usage period */
 model WorkspaceUsageResource {
   /** The Workspace */
-  workspaceId: EntityId;
+  workspaceId: WorkspaceId;
 
   /** The Usage period: the calendar month in UTC, as YYYY-MM */
   period: string;
@@ -74,7 +74,7 @@ namespace ServiceWorkspaceUsage {
    * in-flight sends as their own figure) for the open period, Usage snapshots (final) for a closed one.
    * Never a recount on read. */
   @get
-  op get(@path workspaceId: EntityId, ...UsagePeriodQuery):
+  op get(@path workspaceId: WorkspaceId, ...UsagePeriodQuery):
     | WorkspaceUsageResource
     | BadRequestProblem
     | UnauthorizedProblem

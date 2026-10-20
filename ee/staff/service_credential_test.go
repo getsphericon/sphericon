@@ -351,7 +351,7 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 	assert.Equal(t, strconv.Itoa(fixtures.ServiceCredentialPrimaryID), *stored.ActorID)
 
 	console, _ := h.staffSession(t)
-	page := h.auditPage(t, console, fixtures.AcmeID, staffapi.StaffWorkspaceAuditListParams{})
+	page := h.auditPage(t, console, fixtures.AcmePublicID, staffapi.StaffWorkspaceAuditListParams{})
 	var shown *staffapi.StaffAuditEntryResource
 	for _, e := range page.Items {
 		if e.Target.Name.Value == "attributed-tag" {

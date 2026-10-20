@@ -27,7 +27,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
 // smtpSink is a minimal SMTP server that records the RCPT of every accepted message,
@@ -256,15 +255,15 @@ func TestStopShutsDownTheMetricsServer(t *testing.T) {
 
 // ownedWorkspace creates a workspace with one owner on the test's own database (the
 // app connects outside the txdb harness).
-func ownedWorkspace(t *testing.T, a *App, slug, ownerEmail string) {
+func ownedWorkspace(t *testing.T, a *App, publicID, ownerEmail string) {
 	t.Helper()
 	ctx := context.Background()
 	database, err := invokeSQL(a)
 	require.NoError(t, err)
 	// The Workspace feed takes a position only inside a transaction.
 	require.NoError(t, events.New(database).WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		ws := tx.Workspace.Create().SetName("App Test").SetSlug(slug).SetPublicID(workspaceid.New()).
-			SetCollectKey("ck_" + slug).SaveX(ctx)
+		ws := tx.Workspace.Create().SetName("App Test").SetSlug(strings.ToLower(publicID)).SetPublicID(publicID).
+			SetCollectKey("ck_" + publicID).SaveX(ctx)
 		u := tx.User.Create().SetName("Owner").SetEmail(ownerEmail).SaveX(ctx)
 		tx.Membership.Create().SetUserID(u.ID).SetWorkspaceID(ws.ID).SetRole(membership.RoleOwner).ExecX(ctx)
 		return nil
@@ -281,15 +280,15 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
-	ownedWorkspace(t, a, "app-suspend-test", "owner@app-suspend.test")
+	ownedWorkspace(t, a, "AppSusp1", "owner@app-suspend.test")
 	ctx := context.Background()
 	client, err := invokeEnt(a)
 	require.NoError(t, err)
 	state := func() *ent.Workspace {
-		return client.Workspace.Query().Where(workspace.Slug("app-suspend-test")).OnlyX(ctx)
+		return client.Workspace.Query().Where(workspace.PublicID("AppSusp1")).OnlyX(ctx)
 	}
 
-	changed, err := a.SuspendWorkspace(ctx, "app-suspend-test", suspension.StaffMember("op-42"), "complaint rate")
+	changed, err := a.SuspendWorkspace(ctx, "AppSusp1", suspension.StaffMember("op-42"), "complaint rate")
 	require.NoError(t, err)
 	assert.True(t, changed)
 	ws := state()
@@ -300,18 +299,18 @@ func TestSuspendAndUnsuspendWorkspace(t *testing.T) {
 	assert.Len(t, sink.recipients(), 1, "the owner is told")
 	assert.Contains(t, sink.recipients()[0], "owner@app-suspend.test")
 
-	changed, err = a.SuspendWorkspace(ctx, "app-suspend-test", suspension.CLI, "again")
+	changed, err = a.SuspendWorkspace(ctx, "AppSusp1", suspension.CLI, "again")
 	require.NoError(t, err)
 	assert.False(t, changed, "already suspended: nothing changes")
 	assert.Len(t, sink.recipients(), 1, "and the owner is not told twice")
 	assert.Equal(t, "complaint rate", *state().SuspensionReason)
 
-	changed, err = a.UnsuspendWorkspace(ctx, "app-suspend-test", suspension.CLI)
+	changed, err = a.UnsuspendWorkspace(ctx, "AppSusp1", suspension.CLI)
 	require.NoError(t, err)
 	assert.True(t, changed)
 	assert.Nil(t, state().SuspendedAt)
 
-	changed, err = a.UnsuspendWorkspace(ctx, "app-suspend-test", suspension.CLI)
+	changed, err = a.UnsuspendWorkspace(ctx, "AppSusp1", suspension.CLI)
 	require.NoError(t, err)
 	assert.False(t, changed)
 }
@@ -328,16 +327,16 @@ func TestSuspendWorkspaceKeepsTheSuspensionWhenTheNoticeFails(t *testing.T) {
 	a, err := NewCommandApp("test")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
-	ownedWorkspace(t, a, "app-suspend-fail-test", "owner@app-suspend-fail.test")
+	ownedWorkspace(t, a, "AppSusp2", "owner@app-suspend-fail.test")
 	ctx := context.Background()
 
-	changed, err := a.SuspendWorkspace(ctx, "app-suspend-fail-test", suspension.CLI, "abuse")
+	changed, err := a.SuspendWorkspace(ctx, "AppSusp2", suspension.CLI, "abuse")
 	assert.True(t, changed)
 	assert.ErrorContains(t, err, "workspace suspended, but the owner notice could not be sent")
 
 	client, cerr := invokeEnt(a)
 	require.NoError(t, cerr)
-	assert.NotNil(t, client.Workspace.Query().Where(workspace.Slug("app-suspend-fail-test")).OnlyX(ctx).SuspendedAt)
+	assert.NotNil(t, client.Workspace.Query().Where(workspace.PublicID("AppSusp2")).OnlyX(ctx).SuspendedAt)
 }
 
 func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
@@ -347,13 +346,13 @@ func TestSuspendAndUnsuspendRejectBadInput(t *testing.T) {
 	t.Cleanup(func() { _ = a.Shutdown(context.Background()) })
 	ctx := context.Background()
 
-	_, err = a.SuspendWorkspace(ctx, "no-such-workspace", suspension.CLI, "why")
-	assert.ErrorContains(t, err, `workspace "no-such-workspace"`)
-	_, err = a.UnsuspendWorkspace(ctx, "no-such-workspace", suspension.CLI)
-	assert.ErrorContains(t, err, `workspace "no-such-workspace"`)
+	_, err = a.SuspendWorkspace(ctx, "NoSuchId", suspension.CLI, "why")
+	assert.ErrorContains(t, err, `workspace "NoSuchId"`)
+	_, err = a.UnsuspendWorkspace(ctx, "NoSuchId", suspension.CLI)
+	assert.ErrorContains(t, err, `workspace "NoSuchId"`)
 
-	ownedWorkspace(t, a, "app-suspend-input-test", "owner@app-suspend-input.test")
-	changed, err := a.SuspendWorkspace(ctx, "app-suspend-input-test", suspension.Actor{}, "reason")
+	ownedWorkspace(t, a, "AppSusp3", "owner@app-suspend-input.test")
+	changed, err := a.SuspendWorkspace(ctx, "AppSusp3", suspension.Actor{}, "reason")
 	assert.False(t, changed)
 	assert.ErrorContains(t, err, "an actor is required")
 }

@@ -537,20 +537,6 @@ export const zSiteOAuthAuthorizationRequest = z.object({
 });
 
 /**
- * The user's decision on an authorization request
- */
-export const zSiteOAuthDecisionInput = z.object({
-  clientId: z.string(),
-  redirectUri: z.string(),
-  state: z.exactOptional(z.string()),
-  codeChallenge: z.string(),
-  scope: z.exactOptional(z.string()),
-  workspaceSlug: z.string(),
-  approve: z.boolean(),
-  allowSend: z.exactOptional(z.boolean())
-});
-
-/**
  * Where to send the user's browser next (back to the client, with a code or an error)
  */
 export const zSiteOAuthDecisionResult = z.object({
@@ -1611,6 +1597,20 @@ export const zSiteWorkspaceHold = z.object({
  * Workspace's one public address.
  */
 export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
+
+/**
+ * The user's decision on an authorization request
+ */
+export const zSiteOAuthDecisionInput = z.object({
+  clientId: z.string(),
+  redirectUri: z.string(),
+  state: z.exactOptional(z.string()),
+  codeChallenge: z.string(),
+  scope: z.exactOptional(z.string()),
+  workspaceId: zWorkspaceId,
+  approve: z.boolean(),
+  allowSend: z.exactOptional(z.boolean())
+});
 
 /**
  * Workspace the current user belongs to

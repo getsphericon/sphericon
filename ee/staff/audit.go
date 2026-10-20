@@ -18,7 +18,7 @@ import (
 // the Audit log is one of its cards (ADR 0026). The separate `audit` license decides
 // whether entries are recorded at all (the subscriber discards them without it), so an
 // instance with `staff` but no `audit` simply shows an empty log.
-func (m *Module) AuditEntries(ctx context.Context, workspaceID, cursor int64, limit int) ([]*ent.AuditEntry, int64, error) {
+func (m *Module) AuditEntries(ctx context.Context, workspaceID string, cursor int64, limit int) ([]*ent.AuditEntry, int64, error) {
 	if err := m.licensed(); err != nil {
 		return nil, 0, err
 	}

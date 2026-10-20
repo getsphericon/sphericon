@@ -22077,8 +22077,8 @@ func (s *SiteOAuthDecisionInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		e.FieldStart("workspaceSlug")
-		e.Str(s.WorkspaceSlug)
+		e.FieldStart("workspaceId")
+		s.WorkspaceId.Encode(e)
 	}
 	{
 		e.FieldStart("approve")
@@ -22098,7 +22098,7 @@ var jsonFieldsNameOfSiteOAuthDecisionInput = [8]string{
 	2: "state",
 	3: "codeChallenge",
 	4: "scope",
-	5: "workspaceSlug",
+	5: "workspaceId",
 	6: "approve",
 	7: "allowSend",
 }
@@ -22168,17 +22168,15 @@ func (s *SiteOAuthDecisionInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"scope\"")
 			}
-		case "workspaceSlug":
+		case "workspaceId":
 			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
-				v, err := d.Str()
-				s.WorkspaceSlug = string(v)
-				if err != nil {
+				if err := s.WorkspaceId.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"workspaceSlug\"")
+				return errors.Wrap(err, "decode field \"workspaceId\"")
 			}
 		case "approve":
 			requiredBitSet[0] |= 1 << 6

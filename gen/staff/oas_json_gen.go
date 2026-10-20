@@ -4010,10 +4010,6 @@ func (s *StaffWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
 		s.ID.Encode(e)
 	}
 	{
-		e.FieldStart("slug")
-		e.Str(s.Slug)
-	}
-	{
 		e.FieldStart("name")
 		e.Str(s.Name)
 	}
@@ -4053,17 +4049,16 @@ func (s *StaffWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfStaffWorkspaceDetailResource = [10]string{
+var jsonFieldsNameOfStaffWorkspaceDetailResource = [9]string{
 	0: "id",
-	1: "slug",
-	2: "name",
-	3: "createdAt",
-	4: "suspension",
-	5: "exempt",
-	6: "warned",
-	7: "holds",
-	8: "deliverability",
-	9: "abuse",
+	1: "name",
+	2: "createdAt",
+	3: "suspension",
+	4: "exempt",
+	5: "warned",
+	6: "holds",
+	7: "deliverability",
+	8: "abuse",
 }
 
 // Decode decodes StaffWorkspaceDetailResource from json.
@@ -4085,20 +4080,8 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "slug":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Str()
-				s.Slug = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"slug\"")
-			}
 		case "name":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.Name = string(v)
@@ -4110,7 +4093,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -4130,7 +4113,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"suspension\"")
 			}
 		case "exempt":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Bool()
 				s.Exempt = bool(v)
@@ -4142,7 +4125,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"exempt\"")
 			}
 		case "warned":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Bool()
 				s.Warned = bool(v)
@@ -4154,7 +4137,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"warned\"")
 			}
 		case "holds":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				s.Holds = make([]StaffHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -4172,7 +4155,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"holds\"")
 			}
 		case "deliverability":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.Deliverability.Decode(d); err != nil {
 					return err
@@ -4182,7 +4165,7 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"deliverability\"")
 			}
 		case "abuse":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.Abuse.Decode(d); err != nil {
 					return err
@@ -4201,8 +4184,8 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b11101111,
-		0b00000011,
+		0b11110111,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -4262,10 +4245,6 @@ func (s *StaffWorkspaceResource) encodeFields(e *jx.Encoder) {
 		s.ID.Encode(e)
 	}
 	{
-		e.FieldStart("slug")
-		e.Str(s.Slug)
-	}
-	{
 		e.FieldStart("name")
 		e.Str(s.Name)
 	}
@@ -4289,14 +4268,13 @@ func (s *StaffWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfStaffWorkspaceResource = [7]string{
+var jsonFieldsNameOfStaffWorkspaceResource = [6]string{
 	0: "id",
-	1: "slug",
-	2: "name",
-	3: "createdAt",
-	4: "suspension",
-	5: "exempt",
-	6: "warned",
+	1: "name",
+	2: "createdAt",
+	3: "suspension",
+	4: "exempt",
+	5: "warned",
 }
 
 // Decode decodes StaffWorkspaceResource from json.
@@ -4318,20 +4296,8 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "slug":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Str()
-				s.Slug = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"slug\"")
-			}
 		case "name":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Str()
 				s.Name = string(v)
@@ -4343,7 +4309,7 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -4363,7 +4329,7 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"suspension\"")
 			}
 		case "exempt":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := d.Bool()
 				s.Exempt = bool(v)
@@ -4375,7 +4341,7 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"exempt\"")
 			}
 		case "warned":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Bool()
 				s.Warned = bool(v)
@@ -4396,7 +4362,7 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01101111,
+		0b00110111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -5070,6 +5036,46 @@ func (s Timestamp) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *Timestamp) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WorkspaceId as json.
+func (s WorkspaceId) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes WorkspaceId from json.
+func (s *WorkspaceId) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WorkspaceId to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = WorkspaceId(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WorkspaceId) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WorkspaceId) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

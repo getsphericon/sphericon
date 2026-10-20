@@ -16,7 +16,7 @@ import (
 
 // ServiceHoldsClearParams is parameters of ServiceHolds_clear operation.
 type ServiceHoldsClearParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 	Key         string
 }
 
@@ -26,7 +26,7 @@ func unpackServiceHoldsClearParams(packed middleware.Parameters) (params Service
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -58,14 +58,14 @@ func decodeServiceHoldsClearParams(args [2]string, argsEscaped bool, r *http.Req
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -75,7 +75,15 @@ func decodeServiceHoldsClearParams(args [2]string, argsEscaped bool, r *http.Req
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err
@@ -141,7 +149,7 @@ func decodeServiceHoldsClearParams(args [2]string, argsEscaped bool, r *http.Req
 
 // ServiceHoldsListParams is parameters of ServiceHolds_list operation.
 type ServiceHoldsListParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 }
 
 func unpackServiceHoldsListParams(packed middleware.Parameters) (params ServiceHoldsListParams) {
@@ -150,7 +158,7 @@ func unpackServiceHoldsListParams(packed middleware.Parameters) (params ServiceH
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
@@ -175,14 +183,14 @@ func decodeServiceHoldsListParams(args [1]string, argsEscaped bool, r *http.Requ
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -192,7 +200,15 @@ func decodeServiceHoldsListParams(args [1]string, argsEscaped bool, r *http.Requ
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err
@@ -213,7 +229,7 @@ func decodeServiceHoldsListParams(args [1]string, argsEscaped bool, r *http.Requ
 
 // ServiceHoldsSetParams is parameters of ServiceHolds_set operation.
 type ServiceHoldsSetParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 	Key         string
 }
 
@@ -223,7 +239,7 @@ func unpackServiceHoldsSetParams(packed middleware.Parameters) (params ServiceHo
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -255,14 +271,14 @@ func decodeServiceHoldsSetParams(args [2]string, argsEscaped bool, r *http.Reque
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -272,7 +288,15 @@ func decodeServiceHoldsSetParams(args [2]string, argsEscaped bool, r *http.Reque
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err
@@ -828,7 +852,7 @@ func decodeServiceWorkspaceFeedListParams(args [0]string, argsEscaped bool, r *h
 
 // ServiceWorkspaceUsageGetParams is parameters of ServiceWorkspaceUsage_get operation.
 type ServiceWorkspaceUsageGetParams struct {
-	WorkspaceId EntityId
+	WorkspaceId WorkspaceId
 	// The Usage period as YYYY-MM (UTC); the current one when absent.
 	Period OptString `json:",omitempty,omitzero"`
 }
@@ -839,7 +863,7 @@ func unpackServiceWorkspaceUsageGetParams(packed middleware.Parameters) (params 
 			Name: "workspaceId",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(EntityId)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -874,14 +898,14 @@ func decodeServiceWorkspaceUsageGetParams(args [1]string, argsEscaped bool, r *h
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal int64
+				var paramsDotWorkspaceIdVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToStringInt64(val)
+					c, err := conv.ToString(val)
 					if err != nil {
 						return err
 					}
@@ -891,7 +915,15 @@ func decodeServiceWorkspaceUsageGetParams(args [1]string, argsEscaped bool, r *h
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = EntityId(paramsDotWorkspaceIdVal)
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
 				return nil
 			}(); err != nil {
 				return err

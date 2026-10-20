@@ -17,10 +17,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func readWorkspaceUsage(t *testing.T, c *serviceapi.Client, id int64, period serviceapi.OptString) *serviceapi.WorkspaceUsageResource {
+func readWorkspaceUsage(t *testing.T, c *serviceapi.Client, id string, period serviceapi.OptString) *serviceapi.WorkspaceUsageResource {
 	t.Helper()
 	res, err := c.ServiceWorkspaceUsageGet(t.Context(), serviceapi.ServiceWorkspaceUsageGetParams{
-		WorkspaceId: serviceapi.EntityId(id), Period: period,
+		WorkspaceId: serviceapi.WorkspaceId(id), Period: period,
 	})
 	require.NoError(t, err)
 	got, ok := res.(*serviceapi.WorkspaceUsageResource)
@@ -43,7 +43,7 @@ func TestAServiceReadsOneWorkspacesLiveUsageWithItsInFlightSends(t *testing.T) {
 	h := newHarness(t)
 	now := time.Now().UTC()
 	h.env.RefreshUsage(t, now)
-	first := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), 1, serviceapi.OptString{})
+	first := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), fixtures.AcmePublicID, serviceapi.OptString{})
 	before := figureOf(t, first, serviceapi.UsageMetricEmailsSent)
 	inFlightBefore := figureOf(t, first, serviceapi.UsageMetricInFlightSends)
 
@@ -52,9 +52,9 @@ func TestAServiceReadsOneWorkspacesLiveUsageWithItsInFlightSends(t *testing.T) {
 		SetStatus(outboundmessage.StatusPending).SetClaimedAt(now).Exec(t.Context()))
 	h.env.RefreshUsage(t, now)
 
-	got := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), 1, serviceapi.OptString{})
+	got := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), fixtures.AcmePublicID, serviceapi.OptString{})
 	assert.Equal(t, usage.PeriodOf(now).Format("2006-01"), got.Period)
-	assert.Equal(t, serviceapi.EntityId(1), got.WorkspaceId)
+	assert.Equal(t, serviceapi.WorkspaceId(fixtures.AcmePublicID), got.WorkspaceId)
 	sent := figureOf(t, got, serviceapi.UsageMetricEmailsSent)
 	assert.False(t, sent.Final)
 	assert.WithinDuration(t, now, time.Time(sent.ComputedAt), time.Minute)
@@ -67,7 +67,7 @@ func TestAServiceReadsOneWorkspacesClosedPeriodAsFinalSnapshots(t *testing.T) {
 	h := newHarness(t)
 	h.env.RefreshUsage(t, time.Date(2027, time.February, 3, 0, 0, 0, 0, time.UTC))
 
-	got := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), 1, serviceapi.NewOptString("2027-01"))
+	got := readWorkspaceUsage(t, h.env.ServiceClient(t, primary), fixtures.AcmePublicID, serviceapi.NewOptString("2027-01"))
 
 	assert.Equal(t, "2027-01", got.Period)
 	require.NotEmpty(t, got.Figures)
@@ -79,7 +79,7 @@ func TestAServiceReadsOneWorkspacesClosedPeriodAsFinalSnapshots(t *testing.T) {
 func TestReadingTheUsageOfAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := h.env.ServiceClient(t, primary).ServiceWorkspaceUsageGet(t.Context(), serviceapi.ServiceWorkspaceUsageGetParams{WorkspaceId: 999999})
+	res, err := h.env.ServiceClient(t, primary).ServiceWorkspaceUsageGet(t.Context(), serviceapi.ServiceWorkspaceUsageGetParams{WorkspaceId: "NoSuchId"})
 	require.NoError(t, err)
 	assert.IsType(t, &serviceapi.ServiceWorkspaceUsageGetNotFound{}, res)
 }
@@ -94,7 +94,7 @@ func TestReadingOneWorkspacesUsageNeedsTheReadUsageScope(t *testing.T) {
 	h.env.Internal.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 
-	assert.NotNil(t, readWorkspaceUsage(t, h.env.ServiceClient(t, readOnly), 1, serviceapi.OptString{}))
+	assert.NotNil(t, readWorkspaceUsage(t, h.env.ServiceClient(t, readOnly), fixtures.AcmePublicID, serviceapi.OptString{}))
 }
 
 func TestWithoutALicenseTheWorkspaceUsageRouteIsNotServed(t *testing.T) {

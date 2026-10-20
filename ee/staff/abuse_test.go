@@ -20,9 +20,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func (h *harness) setExempt(t *testing.T, c *staffapi.Client, id int64, exempt bool) *staffapi.StaffExemptionChange {
+func (h *harness) setExempt(t *testing.T, c *staffapi.Client, id string, exempt bool) *staffapi.StaffExemptionChange {
 	t.Helper()
-	wid := staffapi.EntityId(id)
+	wid := staffapi.WorkspaceId(id)
 	var res any
 	var err error
 	if exempt {
@@ -40,9 +40,9 @@ func TestAnStaffExemptsAndUnexemptsAWorkspaceAndBothAreAudited(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	exempted := h.setExempt(t, c, fixtures.AcmeID, true)
-	again := h.setExempt(t, c, fixtures.AcmeID, true)
-	lifted := h.setExempt(t, c, fixtures.AcmeID, false)
+	exempted := h.setExempt(t, c, fixtures.AcmePublicID, true)
+	again := h.setExempt(t, c, fixtures.AcmePublicID, true)
+	lifted := h.setExempt(t, c, fixtures.AcmePublicID, false)
 	h.env.DeliverToEE(t)
 
 	assert.True(t, exempted.Changed)
@@ -62,7 +62,7 @@ func TestExemptingAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res, err := c.StaffWorkspacesExempt(t.Context(), staffapi.StaffWorkspacesExemptParams{WorkspaceId: 999999})
+	res, err := c.StaffWorkspacesExempt(t.Context(), staffapi.StaffWorkspacesExemptParams{WorkspaceId: "NoSuchId"})
 
 	require.NoError(t, err)
 	assert.IsType(t, &staffapi.StaffWorkspacesExemptNotFound{}, res)
@@ -72,8 +72,8 @@ func TestAnExemptWorkspaceStaysListedAndCanStillBeSuspendedByHand(t *testing.T) 
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Slug: staffapi.NewOptString(fixtures.KramericaSlug)})
-	res := h.suspend(t, c, fixtures.KramericaID, "verified abuse")
+	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Search: staffapi.NewOptString(fixtures.KramericaPublicID)})
+	res := h.suspend(t, c, fixtures.KramericaPublicID, "verified abuse")
 
 	require.Len(t, page.Items, 1)
 	assert.True(t, page.Items[0].Exempt)
@@ -85,12 +85,12 @@ func TestAnExemptWorkspaceStaysListedAndCanStillBeSuspendedByHand(t *testing.T) 
 func TestUnsuspendingFromTheConsoleRecordsTheClearance(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	before := h.getWorkspace(t, c, int64(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
+	before := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffapi.StaffWorkspaceDetailResource)
 	require.False(t, before.Abuse.ClearedAt.Set)
 
-	h.unsuspend(t, c, fixtures.HooliID)
+	h.unsuspend(t, c, fixtures.HooliPublicID)
 
-	after := h.getWorkspace(t, c, int64(fixtures.HooliID)).(*staffapi.StaffWorkspaceDetailResource)
+	after := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffapi.StaffWorkspaceDetailResource)
 	require.True(t, after.Abuse.ClearedAt.Set)
 	assert.WithinDuration(t, time.Now(), time.Time(after.Abuse.ClearedAt.Value), time.Minute)
 }
@@ -105,8 +105,8 @@ func TestTheListSurfacesWarnedAndSystemFrozenWorkspaces(t *testing.T) {
 	frozen := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewSystemFrozen)})
 	warned := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewWarned)})
 
-	assert.Equal(t, []string{"vandelay"}, slugs(frozen.Items), "Hooli was suspended by a StaffMember, not the system")
-	assert.Equal(t, []string{"globex"}, slugs(warned.Items))
+	assert.Equal(t, []string{"Vandelay"}, names(frozen.Items), "Hooli was suspended by a StaffMember, not the system")
+	assert.Equal(t, []string{"Globex"}, names(warned.Items))
 	assert.True(t, warned.Items[0].Warned)
 }
 
@@ -116,7 +116,7 @@ func TestTheDetailShowsTheDetectorsStandingAndLastNotices(t *testing.T) {
 	notified := time.Now().Add(-time.Hour)
 	h.env.DB.Workspace.UpdateOneID(fixtures.SoylentID).SetAbuseWarningNotifiedAt(notified).ExecX(t.Context())
 
-	detail := h.getWorkspace(t, c, int64(fixtures.SoylentID)).(*staffapi.StaffWorkspaceDetailResource)
+	detail := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffapi.StaffWorkspaceDetailResource)
 
 	require.True(t, detail.Abuse.Warning.Set, "its rates are over the limits")
 	assert.Equal(t, "mail.soylent.test", detail.Abuse.Warning.Value.Domain)
@@ -128,9 +128,9 @@ func TestTheDetailShowsTheDetectorsStandingAndLastNotices(t *testing.T) {
 func TestAnExemptWorkspaceHasNoWarningButKeepsItsRates(t *testing.T) {
 	h := newHarness(t, testhelper.WithStaffVolumeFloor(8))
 	c, _ := h.staffSession(t)
-	h.setExempt(t, c, fixtures.SoylentID, true)
+	h.setExempt(t, c, fixtures.SoylentPublicID, true)
 
-	detail := h.getWorkspace(t, c, int64(fixtures.SoylentID)).(*staffapi.StaffWorkspaceDetailResource)
+	detail := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffapi.StaffWorkspaceDetailResource)
 
 	assert.False(t, detail.Abuse.Warning.Set)
 	assert.True(t, detail.Abuse.Exempt)

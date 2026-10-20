@@ -10261,8 +10261,8 @@ type SiteOAuthDecisionInput struct {
 	CodeChallenge string `json:"codeChallenge"`
 	// Space-delimited scopes from the authorization request.
 	Scope OptString `json:"scope"`
-	// Workspace slug the token will belong to.
-	WorkspaceSlug string `json:"workspaceSlug"`
+	// Id of the Workspace the token will belong to.
+	WorkspaceId WorkspaceId `json:"workspaceId"`
 	// True to approve, false to deny.
 	Approve bool `json:"approve"`
 	// Opt in to the requested send-class scopes (default: not granted).
@@ -10294,9 +10294,9 @@ func (s *SiteOAuthDecisionInput) GetScope() OptString {
 	return s.Scope
 }
 
-// GetWorkspaceSlug returns the value of WorkspaceSlug.
-func (s *SiteOAuthDecisionInput) GetWorkspaceSlug() string {
-	return s.WorkspaceSlug
+// GetWorkspaceId returns the value of WorkspaceId.
+func (s *SiteOAuthDecisionInput) GetWorkspaceId() WorkspaceId {
+	return s.WorkspaceId
 }
 
 // GetApprove returns the value of Approve.
@@ -10334,9 +10334,9 @@ func (s *SiteOAuthDecisionInput) SetScope(val OptString) {
 	s.Scope = val
 }
 
-// SetWorkspaceSlug sets the value of WorkspaceSlug.
-func (s *SiteOAuthDecisionInput) SetWorkspaceSlug(val string) {
-	s.WorkspaceSlug = val
+// SetWorkspaceId sets the value of WorkspaceId.
+func (s *SiteOAuthDecisionInput) SetWorkspaceId(val WorkspaceId) {
+	s.WorkspaceId = val
 }
 
 // SetApprove sets the value of Approve.

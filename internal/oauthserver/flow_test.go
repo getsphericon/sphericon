@@ -43,7 +43,7 @@ func approval(scope string, allowSend bool) siteapi.SiteOAuthDecisionInput {
 		State:         siteapi.NewOptString("xyz"),
 		CodeChallenge: oauth2.S256ChallengeFromVerifier(verifier),
 		Scope:         siteapi.NewOptString(scope),
-		WorkspaceSlug: fixtures.AcmeSlug,
+		WorkspaceId:   fixtures.AcmePublicID,
 		Approve:       true,
 		AllowSend:     siteapi.NewOptBool(allowSend),
 	}
@@ -114,7 +114,7 @@ func TestDenyingConsentSendsAccessDeniedBack(t *testing.T) {
 func TestConsentToAWorkspaceTheUserDoesNotBelongToIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	in := approval("", false)
-	in.WorkspaceSlug = "someone-elses"
+	in.WorkspaceId = "Someone1"
 
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDecide(t.Context(), &in)
 	require.NoError(t, err)
@@ -339,7 +339,7 @@ func TestStandardMCPClientConnectsThroughOAuth(t *testing.T) {
 				State:         siteapi.NewOptString(q.Get("state")),
 				CodeChallenge: q.Get("code_challenge"),
 				Scope:         siteapi.NewOptString(q.Get("scope")),
-				WorkspaceSlug: fixtures.AcmeSlug,
+				WorkspaceId:   fixtures.AcmePublicID,
 				Approve:       true,
 			})
 			if err != nil {

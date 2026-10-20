@@ -15,8 +15,7 @@ const HOME = routeMount(consoleHomeRoute)
 
 function workspace(over: Partial<StaffWorkspaceResource> = {}): StaffWorkspaceResource {
   return {
-    id: '1',
-    slug: 'acme',
+    id: 'AcmeWs01',
     name: 'Acme',
     createdAt: '2026-01-01T00:00:00Z',
     exempt: false,
@@ -39,8 +38,7 @@ test('lists workspaces with their suspension state', async () => {
       body: page([
         workspace(),
         workspace({
-          id: '5',
-          slug: 'hooli',
+          id: 'HooliWs5',
           name: 'Hooli',
           suspension: {
             at: '2026-02-01T00:00:00Z',
@@ -53,33 +51,33 @@ test('lists workspaces with their suspension state', async () => {
   )
   const { screen } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
 
-  await expect.element(screen.getByText('acme', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('hooli', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('AcmeWs01', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('HooliWs5', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Suspended', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Active', { exact: true })).toBeInTheDocument()
 })
 
-test('searching sends the slug to the API', async () => {
-  const slugs: (string | null)[] = []
+test('searching sends the text to the API as id or name', async () => {
+  const searches: (string | null)[] = []
   worker.use(
     handleStaffWorkspacesList(({ request }) => {
-      slugs.push(new URL(request.url).searchParams.get('slug'))
+      searches.push(new URL(request.url).searchParams.get('search'))
       return HttpResponse.json(page([workspace()]))
     }),
   )
   const { screen } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
 
-  await screen.getByLabelText('Search by slug').fill('hoo')
+  await screen.getByLabelText('Search by id or name').fill('hoo')
 
-  await expect.poll(() => slugs).toContain('hoo')
+  await expect.poll(() => searches).toContain('hoo')
 })
 
 test('a warned and an exempt workspace say so next to their state', async () => {
   worker.use(
     handleStaffWorkspacesList({
       body: page([
-        workspace({ id: '2', slug: 'globex', name: 'Globex', warned: true }),
-        workspace({ id: '8', slug: 'kramerica', name: 'Kramerica', exempt: true }),
+        workspace({ id: 'GlobxWs2', name: 'Globex', warned: true }),
+        workspace({ id: 'KramrWs8', name: 'Kramerica', exempt: true }),
       ]),
     }),
   )
@@ -107,14 +105,14 @@ test('choosing a review state sends it to the API', async () => {
 })
 
 test('opening a row navigates to the workspace', async () => {
-  worker.use(handleStaffWorkspacesList({ body: page([workspace({ id: '7' })]) }))
+  worker.use(handleStaffWorkspacesList({ body: page([workspace({ id: 'Seven007' })]) }))
   const { screen, navigate } = await renderWithRouter(<ConsoleWorkspacesPage />, HOME)
 
-  await screen.getByText('acme', { exact: true }).click()
+  await screen.getByText('Seven007', { exact: true }).click()
 
   await expect
     .poll(() => navigate.mock.calls[0]?.[0])
-    .toMatchObject({ to: consoleWorkspaceRoute.to, params: { workspaceId: '7' } })
+    .toMatchObject({ to: consoleWorkspaceRoute.to, params: { workspaceId: 'Seven007' } })
 })
 
 test('a failed load shows the error', async () => {

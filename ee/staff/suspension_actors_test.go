@@ -22,8 +22,8 @@ import (
 func TestTheStoredAuditRowsKeepTheStaffIdWhileTheCustomerSeesStaff(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	h.suspend(t, c, fixtures.AcmeID, "abuse report")
-	h.unsuspend(t, c, fixtures.AcmeID)
+	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
+	h.unsuspend(t, c, fixtures.AcmePublicID)
 	h.env.DeliverToEE(t)
 
 	stored := h.env.DB.Scoped(fixtures.AcmeID).AuditEntry().Query().
@@ -71,7 +71,7 @@ func TestTheConsoleShowsSystemAndCLISuspensionsWithoutAnActorId(t *testing.T) {
 			c, _ := h.staffSession(t)
 			h.suspendAs(t, tc.by)
 
-			acme, ok := h.getWorkspace(t, c, int64(fixtures.AcmeID)).(*staffapi.StaffWorkspaceDetailResource)
+			acme, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffapi.StaffWorkspaceDetailResource)
 			require.True(t, ok)
 			require.True(t, acme.Suspension.Set)
 			assert.Equal(t, tc.kind, acme.Suspension.Value.Actor.Kind)

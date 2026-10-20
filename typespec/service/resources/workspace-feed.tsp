@@ -16,10 +16,9 @@ model ServiceWorkspaceOwner {
 
 /** A Workspace with all of its owners, as the feed reports it */
 model ServiceWorkspaceResource {
-  /** Unique identifier */
-  id: EntityId;
+  /** The Workspace id: its short opaque public address (ADR 0043) */
+  id: WorkspaceId;
 
-  slug: string;
   name: string;
 
   /** When the Workspace was created */

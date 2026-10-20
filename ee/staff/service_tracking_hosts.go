@@ -28,10 +28,18 @@ func (h *ServiceHandlers) ServiceTrackingHostFeedList(ctx context.Context, param
 		NextCursor: page.NextCursor,
 		HasMore:    page.HasMore,
 	}
+	ids := make([]int64, len(page.Entries))
+	for i, e := range page.Entries {
+		ids[i] = e.WorkspaceID
+	}
+	publicIDs, err := h.module.publicIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	for i, e := range page.Entries {
 		out.Items[i] = serviceapi.ServiceTrackingHostChange{
 			Host:        sendingdomains.TrackingHost(e.Domain),
-			WorkspaceId: serviceapi.EntityId(e.WorkspaceID),
+			WorkspaceId: serviceapi.WorkspaceId(publicIDs[e.WorkspaceID]),
 			State:       serviceapi.ServiceTrackingHostState(e.State),
 			ChangedAt:   serviceapi.Timestamp(e.CreatedAt),
 		}

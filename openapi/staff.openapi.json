@@ -260,13 +260,13 @@
     "/workspaces": {
       "get": {
         "operationId": "StaffWorkspaces_list",
-        "description": "List all Workspaces, newest first, optionally narrowed by a slug search",
+        "description": "List all Workspaces, newest first, optionally narrowed by an id or name search",
         "parameters": [
           {
             "$ref": "#/components/parameters/StaffWorkspaceSearch.review"
           },
           {
-            "$ref": "#/components/parameters/StaffWorkspaceSearch.slug"
+            "$ref": "#/components/parameters/StaffWorkspaceSearch.search"
           },
           {
             "$ref": "#/components/parameters/PageQuery.page"
@@ -341,7 +341,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -390,7 +390,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -471,7 +471,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -520,7 +520,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -589,7 +589,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -638,7 +638,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/EntityId"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -719,11 +719,11 @@
         },
         "explode": false
       },
-      "StaffWorkspaceSearch.slug": {
-        "name": "slug",
+      "StaffWorkspaceSearch.search": {
+        "name": "search",
         "in": "query",
         "required": false,
-        "description": "Only Workspaces whose slug contains this text (case-insensitive)",
+        "description": "Only Workspaces whose id or name contains this text; the name matches case-insensitively,\nthe id exactly",
         "schema": {
           "type": "string"
         },
@@ -1373,7 +1373,6 @@
         "type": "object",
         "required": [
           "id",
-          "slug",
           "name",
           "createdAt",
           "exempt",
@@ -1386,13 +1385,10 @@
           "id": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EntityId"
+                "$ref": "#/components/schemas/WorkspaceId"
               }
             ],
-            "description": "Unique identifier"
-          },
-          "slug": {
-            "type": "string"
+            "description": "The Workspace id: its short opaque public address (ADR 0043)"
           },
           "name": {
             "type": "string"
@@ -1441,18 +1437,15 @@
       },
       "StaffWorkspaceResource": {
         "type": "object",
-        "required": ["id", "slug", "name", "createdAt", "exempt", "warned"],
+        "required": ["id", "name", "createdAt", "exempt", "warned"],
         "properties": {
           "id": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EntityId"
+                "$ref": "#/components/schemas/WorkspaceId"
               }
             ],
-            "description": "Unique identifier"
-          },
-          "slug": {
-            "type": "string"
+            "description": "The Workspace id: its short opaque public address (ADR 0043)"
           },
           "name": {
             "type": "string"

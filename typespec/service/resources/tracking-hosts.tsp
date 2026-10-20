@@ -21,7 +21,7 @@ model ServiceTrackingHostChange {
   host: string;
 
   /** The Workspace that held the host at this change */
-  workspaceId: EntityId;
+  workspaceId: WorkspaceId;
 
   /** What the host became; `removed` is the explicit report that it left the verified
    * states. Entries of one host arrive in the order they happened, so the last one read

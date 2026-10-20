@@ -1241,7 +1241,7 @@ func (s *Server) handleStaffWorkspacesGetRequest(args [1]string, argsEscaped boo
 
 // handleStaffWorkspacesListRequest handles StaffWorkspaces_list operation.
 //
-// List all Workspaces, newest first, optionally narrowed by a slug search.
+// List all Workspaces, newest first, optionally narrowed by an id or name search.
 //
 // GET /workspaces
 func (s *Server) handleStaffWorkspacesListRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -1387,9 +1387,9 @@ func (s *Server) handleStaffWorkspacesListRequest(args [0]string, argsEscaped bo
 					In:   "query",
 				}: params.Review,
 				{
-					Name: "slug",
+					Name: "search",
 					In:   "query",
-				}: params.Slug,
+				}: params.Search,
 				{
 					Name: "page",
 					In:   "query",

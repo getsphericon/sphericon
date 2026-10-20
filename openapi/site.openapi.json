@@ -10620,7 +10620,7 @@
       },
       "SiteOAuthDecisionInput": {
         "type": "object",
-        "required": ["clientId", "redirectUri", "codeChallenge", "workspaceSlug", "approve"],
+        "required": ["clientId", "redirectUri", "codeChallenge", "workspaceId", "approve"],
         "properties": {
           "clientId": {
             "type": "string"
@@ -10640,9 +10640,13 @@
             "type": "string",
             "description": "Space-delimited scopes from the authorization request"
           },
-          "workspaceSlug": {
-            "type": "string",
-            "description": "Workspace slug the token will belong to"
+          "workspaceId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceId"
+              }
+            ],
+            "description": "Id of the Workspace the token will belong to"
           },
           "approve": {
             "type": "boolean",
