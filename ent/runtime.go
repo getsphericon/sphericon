@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/instancestate"
@@ -378,6 +379,29 @@ func init() {
 	emailtemplateDescBody := emailtemplateFields[3].Descriptor()
 	// emailtemplate.DefaultBody holds the default value on creation for the body field.
 	emailtemplate.DefaultBody = emailtemplateDescBody.Default.(string)
+	erasureMixin := schema.Erasure{}.Mixin()
+	erasureMixinFields0 := erasureMixin[0].Fields()
+	_ = erasureMixinFields0
+	erasureFields := schema.Erasure{}.Fields()
+	_ = erasureFields
+	// erasureDescCreatedAt is the schema descriptor for created_at field.
+	erasureDescCreatedAt := erasureMixinFields0[0].Descriptor()
+	// erasure.DefaultCreatedAt holds the default value on creation for the created_at field.
+	erasure.DefaultCreatedAt = erasureDescCreatedAt.Default.(func() time.Time)
+	// erasureDescUpdatedAt is the schema descriptor for updated_at field.
+	erasureDescUpdatedAt := erasureMixinFields0[1].Descriptor()
+	// erasure.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	erasure.DefaultUpdatedAt = erasureDescUpdatedAt.Default.(func() time.Time)
+	// erasure.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	erasure.UpdateDefaultUpdatedAt = erasureDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// erasureDescErasureKey is the schema descriptor for erasure_key field.
+	erasureDescErasureKey := erasureFields[1].Descriptor()
+	// erasure.ErasureKeyValidator is a validator for the "erasure_key" field. It is called by the builders before save.
+	erasure.ErasureKeyValidator = erasureDescErasureKey.Validators[0].(func(string) error)
+	// erasureDescSubjectID is the schema descriptor for subject_id field.
+	erasureDescSubjectID := erasureFields[3].Descriptor()
+	// erasure.DefaultSubjectID holds the default value on creation for the subject_id field.
+	erasure.DefaultSubjectID = erasureDescSubjectID.Default.(string)
 	eventMixin := schema.Event{}.Mixin()
 	eventMixinFields0 := eventMixin[0].Fields()
 	_ = eventMixinFields0

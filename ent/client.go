@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/instancestate"
@@ -88,6 +89,8 @@ type Client struct {
 	CustomField *CustomFieldClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
 	EmailTemplate *EmailTemplateClient
+	// Erasure is the client for interacting with the Erasure builders.
+	Erasure *ErasureClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
 	// Hold is the client for interacting with the Hold builders.
@@ -167,6 +170,7 @@ func (c *Client) init() {
 	c.Contact = NewContactClient(c.config)
 	c.CustomField = NewCustomFieldClient(c.config)
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
+	c.Erasure = NewErasureClient(c.config)
 	c.Event = NewEventClient(c.config)
 	c.Hold = NewHoldClient(c.config)
 	c.InstanceState = NewInstanceStateClient(c.config)
@@ -299,6 +303,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Contact:            NewContactClient(cfg),
 		CustomField:        NewCustomFieldClient(cfg),
 		EmailTemplate:      NewEmailTemplateClient(cfg),
+		Erasure:            NewErasureClient(cfg),
 		Event:              NewEventClient(cfg),
 		Hold:               NewHoldClient(cfg),
 		InstanceState:      NewInstanceStateClient(cfg),
@@ -358,6 +363,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Contact:            NewContactClient(cfg),
 		CustomField:        NewCustomFieldClient(cfg),
 		EmailTemplate:      NewEmailTemplateClient(cfg),
+		Erasure:            NewErasureClient(cfg),
 		Event:              NewEventClient(cfg),
 		Hold:               NewHoldClient(cfg),
 		InstanceState:      NewInstanceStateClient(cfg),
@@ -417,7 +423,7 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.BrandKit, c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact,
-		c.CustomField, c.EmailTemplate, c.Event, c.Hold, c.InstanceState,
+		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.Hold, c.InstanceState,
 		c.Integration, c.Invitation, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
 		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
@@ -434,7 +440,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.BrandKit, c.Broadcast, c.BroadcastRecipient, c.Confirmation, c.Contact,
-		c.CustomField, c.EmailTemplate, c.Event, c.Hold, c.InstanceState,
+		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.Hold, c.InstanceState,
 		c.Integration, c.Invitation, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
 		c.RecoveryCode, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
@@ -472,6 +478,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CustomField.mutate(ctx, m)
 	case *EmailTemplateMutation:
 		return c.EmailTemplate.mutate(ctx, m)
+	case *ErasureMutation:
+		return c.Erasure.mutate(ctx, m)
 	case *EventMutation:
 		return c.Event.mutate(ctx, m)
 	case *HoldMutation:
@@ -2414,6 +2422,155 @@ func (c *EmailTemplateClient) mutate(ctx context.Context, m *EmailTemplateMutati
 		return (&EmailTemplateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown EmailTemplate mutation op: %q", m.Op())
+	}
+}
+
+// ErasureClient is a client for the Erasure schema.
+type ErasureClient struct {
+	config
+}
+
+// NewErasureClient returns a client for the Erasure from the given config.
+func NewErasureClient(c config) *ErasureClient {
+	return &ErasureClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `erasure.Hooks(f(g(h())))`.
+func (c *ErasureClient) Use(hooks ...Hook) {
+	c.hooks.Erasure = append(c.hooks.Erasure, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `erasure.Intercept(f(g(h())))`.
+func (c *ErasureClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Erasure = append(c.inters.Erasure, interceptors...)
+}
+
+// Create returns a builder for creating a Erasure entity.
+func (c *ErasureClient) Create() *ErasureCreate {
+	mutation := newErasureMutation(c.config, OpCreate)
+	return &ErasureCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Erasure entities.
+func (c *ErasureClient) CreateBulk(builders ...*ErasureCreate) *ErasureCreateBulk {
+	return &ErasureCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ErasureClient) MapCreateBulk(slice any, setFunc func(*ErasureCreate, int)) *ErasureCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ErasureCreateBulk{err: fmt.Errorf("calling to ErasureClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ErasureCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ErasureCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Erasure.
+func (c *ErasureClient) Update() *ErasureUpdate {
+	mutation := newErasureMutation(c.config, OpUpdate)
+	return &ErasureUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ErasureClient) UpdateOne(_m *Erasure) *ErasureUpdateOne {
+	mutation := newErasureMutation(c.config, OpUpdateOne, withErasure(_m))
+	return &ErasureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ErasureClient) UpdateOneID(id int64) *ErasureUpdateOne {
+	mutation := newErasureMutation(c.config, OpUpdateOne, withErasureID(id))
+	return &ErasureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Erasure.
+func (c *ErasureClient) Delete() *ErasureDelete {
+	mutation := newErasureMutation(c.config, OpDelete)
+	return &ErasureDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ErasureClient) DeleteOne(_m *Erasure) *ErasureDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ErasureClient) DeleteOneID(id int64) *ErasureDeleteOne {
+	builder := c.Delete().Where(erasure.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ErasureDeleteOne{builder}
+}
+
+// Query returns a query builder for Erasure.
+func (c *ErasureClient) Query() *ErasureQuery {
+	return &ErasureQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeErasure},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Erasure entity by its id.
+func (c *ErasureClient) Get(ctx context.Context, id int64) (*Erasure, error) {
+	return c.Query().Where(erasure.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ErasureClient) GetX(ctx context.Context, id int64) *Erasure {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a Erasure.
+func (c *ErasureClient) QueryWorkspace(_m *Erasure) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(erasure.Table, erasure.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, erasure.WorkspaceTable, erasure.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ErasureClient) Hooks() []Hook {
+	return c.hooks.Erasure
+}
+
+// Interceptors returns the client interceptors.
+func (c *ErasureClient) Interceptors() []Interceptor {
+	return c.inters.Erasure
+}
+
+func (c *ErasureClient) mutate(ctx context.Context, m *ErasureMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ErasureCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ErasureUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ErasureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ErasureDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Erasure mutation op: %q", m.Op())
 	}
 }
 
@@ -7012,6 +7169,22 @@ func (c *WorkspaceClient) QueryAuditEntries(_m *Workspace) *AuditEntryQuery {
 	return query
 }
 
+// QueryErasures queries the erasures edge of a Workspace.
+func (c *WorkspaceClient) QueryErasures(_m *Workspace) *ErasureQuery {
+	query := (&ErasureClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(erasure.Table, erasure.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ErasuresTable, workspace.ErasuresColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryUsages queries the usages edge of a Workspace.
 func (c *WorkspaceClient) QueryUsages(_m *Workspace) *UsageQuery {
 	query := (&UsageClient{config: c.config}).Query()
@@ -7058,20 +7231,22 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, BrandKit,
 		Broadcast, BroadcastRecipient, Confirmation, Contact, CustomField,
-		EmailTemplate, Event, Hold, InstanceState, Integration, Invitation, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage,
-		OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
-		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
-		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Hook
+		EmailTemplate, Erasure, Event, Hold, InstanceState, Integration, Invitation,
+		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage,
+		OutboxMessage, OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter,
+		SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, Visitor, WebhookEndpoint,
+		Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, BrandKit,
 		Broadcast, BroadcastRecipient, Confirmation, Contact, CustomField,
-		EmailTemplate, Event, Hold, InstanceState, Integration, Invitation, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage,
-		OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter, SendingDomain,
-		ServiceCredential, StaffMember, Suppression, Tag, TrackingHostChange,
-		Unsubscribe, Usage, User, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		EmailTemplate, Erasure, Event, Hold, InstanceState, Integration, Invitation,
+		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, OutboundMessage,
+		OutboxMessage, OutboxOffset, RecoveryCode, SchemaState, Segment, SendLimiter,
+		SendingDomain, ServiceCredential, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, Visitor, WebhookEndpoint,
+		Workspace []ent.Interceptor
 	}
 )
 

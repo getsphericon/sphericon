@@ -73,6 +73,8 @@ func (m *Module) Apply(ctx context.Context, s *ent.Scoped, contactID int64, name
 	if err != nil {
 		return nil, err
 	}
+	// An update by id moves the Contact's updated_at (TimeMixin's UpdateDefault) in the
+	// same transaction as the join row, so the Contacts Export stream re-delivers it.
 	if err := events.Unaudited(s).Contact().UpdateOneID(contactID).AddTagIDs(t.ID).Exec(ctx); err != nil {
 		return nil, err
 	}
@@ -92,6 +94,7 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, contactID int64, nam
 	if err != nil {
 		return err
 	}
+	// Same touch of updated_at as Apply, in the same transaction as the join row.
 	return events.Unaudited(s).Contact().UpdateOneID(contactID).RemoveTagIDs(t.ID).Exec(ctx)
 }
 
