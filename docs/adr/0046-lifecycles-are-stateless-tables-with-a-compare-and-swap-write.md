@@ -65,7 +65,10 @@ domain's `tracking_state` is written from a row that was read earlier.
   `failed`, which is the regression this ADR set out to fix.
 - **Revert** (scheduled or sending back to draft) exists for the case where the job cannot be
   enqueued after the claim.
-- **Known window.** A queued plan job checks that its Broadcast is due, then plans. An unschedule
-  that lands between the two moves the Broadcast to `draft`, and the plan, legal from `draft` for
-  direct callers, claims it. Closing it needs the job to carry the state it was enqueued for;
-  the window is a few statements wide and left open.
+- **Queued jobs resume, they do not plan.** A job is enqueued after the claim (`Send` moves to
+  `sending`, `Schedule` to `scheduled`), so the worker runs the sequence with the `resume`
+  trigger, legal from `scheduled` and, as a convergent re-run, from `sending`, never from `draft`.
+  An unschedule that lands after the job's `Due` check therefore cannot be undone by the plan:
+  its compare-and-swap loses and the job ends as stale. `Due` stays as the cheap check of the
+  usual case. A reschedule that lands in the same few statements is not closed: the job would
+  plan the Broadcast ahead of its new time.

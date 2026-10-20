@@ -71,7 +71,9 @@ func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[SendBroad
 	if due, err := broadcasts.Due(ctx, s, job.Args.BroadcastID, job.Args.ScheduledAt); err != nil || !due {
 		return err // not due: unscheduled (back to draft) after this job was queued
 	}
-	err = w.del.Run(ctx, s, job.Args.BroadcastID, riverSends{river.ClientFromContext[pgx.Tx](ctx)}, time.Now())
+	// RunClaimed refuses a Broadcast unscheduled after the check above: Due is the shortcut
+	// of the usual case, the claim inside the plan decides the race.
+	err = w.del.RunClaimed(ctx, s, job.Args.BroadcastID, riverSends{river.ClientFromContext[pgx.Tx](ctx)}, time.Now())
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return nil // stale: the Broadcast is past its plan (sent or failed), nothing to retry
 	}

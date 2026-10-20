@@ -509,3 +509,29 @@ func TestSpreadIsMonotonicAndOneStepApart(t *testing.T) {
 		}
 	})
 }
+
+// A queued job runs only a Broadcast that was claimed for it (scheduled or sending). One
+// that an unschedule returned to draft after the job's Due check must stay a draft: the
+// plan of a direct caller may claim a draft, the plan of a queued job may not.
+func TestQueuedRunRefusesADraftUnscheduledAfterItsDueCheck(t *testing.T) {
+	d := newDelivery(t)
+
+	err := d.del.RunClaimed(d.ctx, d.s, fixtures.BroadcastDraftID, &recordingScheduler{}, fixedNow)
+
+	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
+	status := d.env.DB.Broadcast.GetX(d.ctx, fixtures.BroadcastDraftID).Status
+	assert.Equal(t, broadcast.StatusDraft, status)
+	assert.Zero(t, d.recipientCount(fixtures.BroadcastDraftID))
+}
+
+func TestQueuedRunPlansAScheduledBroadcast(t *testing.T) {
+	d := newDelivery(t)
+
+	sched := &recordingScheduler{}
+	err := d.del.RunClaimed(d.ctx, d.s, fixtures.BroadcastScheduledID, sched, fixedNow)
+
+	require.NoError(t, err)
+	status := d.env.DB.Broadcast.GetX(d.ctx, fixtures.BroadcastScheduledID).Status
+	assert.Equal(t, broadcast.StatusSending, status)
+	assert.NotEmpty(t, sched.sends)
+}

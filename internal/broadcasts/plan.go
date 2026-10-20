@@ -57,7 +57,18 @@ func failPlan(ctx context.Context, s *ent.Scoped, id int64, cause error) error {
 // settles the Broadcast and schedules nothing. Eligibility is still checked per message at
 // send time, so an unsubscribe or Suppression that lands after planning is honoured.
 func (d *Delivery) Run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, now time.Time) error {
-	ids, err := d.Plan(ctx, s, id)
+	return d.run(ctx, s, id, sched, now, triggerPlan)
+}
+
+// RunClaimed is Run for a job queued after the Broadcast was claimed (Send or Schedule): it
+// refuses a draft with lifecycle.ErrInvalidTransition, so an unschedule that lands after
+// Due has answered is not undone by the plan.
+func (d *Delivery) RunClaimed(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, now time.Time) error {
+	return d.run(ctx, s, id, sched, now, triggerResume)
+}
+
+func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, now time.Time, t trigger) error {
+	ids, err := d.plan(ctx, s, id, t)
 	if errors.Is(err, ErrPlanFailed) {
 		return nil // the Broadcast failed once, recorded as such: a retry would only fail again
 	}
@@ -105,9 +116,13 @@ func Due(ctx context.Context, s *ent.Scoped, id int64, jobScheduledAt *time.Time
 // any row exists; a template that cannot render, or a broken segment, fails the Broadcast
 // once, before any recipient row exists. An empty audience settles the Broadcast.
 func (d *Delivery) Plan(ctx context.Context, s *ent.Scoped, id int64) ([]int64, error) {
+	return d.plan(ctx, s, id, triggerPlan)
+}
+
+func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger) ([]int64, error) {
 	// A sent or failed Broadcast is past its plan: a late or retried job is refused here,
 	// before a Hold reason is recorded on it.
-	if err := canBegin(ctx, s, id); err != nil {
+	if err := canBegin(ctx, s, id, t); err != nil {
 		return nil, err
 	}
 	b, err := s.Broadcast().Get(ctx, id)
@@ -136,7 +151,7 @@ func (d *Delivery) Plan(ctx context.Context, s *ent.Scoped, id int64) ([]int64, 
 
 	// The move wins the compare-and-swap before the hold is cleared, so a stale plan never
 	// touches a Broadcast it lost.
-	if err := begin(ctx, s, b.ID); err != nil {
+	if err := begin(ctx, s, b.ID, t); err != nil {
 		return nil, err
 	}
 	if err := setHold(ctx, s, b.ID, ""); err != nil {
