@@ -561,6 +561,20 @@ A human who authenticates (email + password). A User reaches Workspaces through 
 each carrying a Role — a Workspace is never owned by a single User directly.
 _Avoid_: Account, member, customer, owner
 
+**Leaving**:
+A User's own removal of their Membership in one Workspace, with no action by an Owner. The last
+Owner cannot leave: another Member must become Owner first, or the Workspace is deleted. A User
+left with no Workspace is taken to create one.
+_Avoid_: Quit, unjoin, self-removal (removal is what an Owner does to another Member)
+
+**User deletion**:
+A User's own immediate and irreversible removal of themself: their Memberships, Linked
+identities, Second factor and Recovery codes go, every session ends, and the address can register
+again as a new User where registration is open. Refused while the User is the only Owner of any Workspace. Invitations the
+User sent stay valid without a sender; Audit entries that name the User keep the id and the name
+snapshot. It never touches a Contact or a Staff member (a Contact has its own Erasure).
+_Avoid_: Account deletion, closing an account, deactivation, Erasure (that is a Contact's)
+
 **Verified email**:
 A User's email address whose control has been proven by following a link sent to it (a verify
 link, an accepted Invitation, or a confirmed email change). Until then the User is an
