@@ -3,7 +3,7 @@ package instance
 import (
 	"context"
 	"fmt"
-	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"runtime"
 	"slices"
 	"time"
@@ -88,11 +88,11 @@ func BuildReport(ctx context.Context, client *ent.Client, host Host, now time.Ti
 	}
 	since := now.Add(-reportWindow)
 	var q reportQueries
-	workspaces := q.count(client.Workspace.Query().Where(workspace.DiscardedAtIsNil()).Count(ctx))
+	workspaces := q.count(client.Workspace.Query().Where(accounts.Live()).Count(ctx))
 	// Erasure deletes the Contact row (GLOSSARY: there is no softer delete), so an erased
 	// Contact is already gone, and those of a Workspace in its deletion window are left out; anonymous tracker Contacts have no email and are left out.
 	contacts := q.count(client.Contact.Query().
-		Where(contact.EmailNotNil(), contact.EmailNEQ(""), contact.HasWorkspaceWith(workspace.DiscardedAtIsNil())).Count(ctx))
+		Where(contact.EmailNotNil(), contact.EmailNEQ(""), contact.HasWorkspaceWith(accounts.Live())).Count(ctx))
 	emails := q.count(client.OutboundMessage.Query().
 		Where(outboundmessage.StatusEQ(outboundmessage.StatusSent), outboundmessage.SentAtGTE(since)).Count(ctx))
 	broadcasts := q.exists(client.Broadcast.Query().

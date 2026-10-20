@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 )
@@ -131,7 +131,7 @@ func verifiedTrackingHost(ctx context.Context, client *ent.Client, host string) 
 		return 0, false, nil
 	}
 	row, err := client.SendingDomain.Query().
-		Where(sendingdomain.Domain(domain), sendingdomain.HasWorkspaceWith(workspace.DiscardedAtIsNil()), sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
+		Where(sendingdomain.Domain(domain), sendingdomain.HasWorkspaceWith(accounts.Live()), sendingdomain.TrackingStateIn(sendingdomain.TrackingStateDNSVerified, sendingdomain.TrackingStateServing)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return 0, false, nil

@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
+	"github.com/getsphericon/sphericon/internal/accounts"
 )
 
 // stateID is the id of the one Instance state row.
@@ -149,7 +150,7 @@ func (m *Module) Report(ctx context.Context) (telemetryapi.TelemetryReport, erro
 // oldest when that one is deleted, every Owner when there are several, and a transfer
 // follows the role. These Owners alone decide about the Instance.
 func (m *Module) IsOwner(ctx context.Context, userID int64) (bool, error) {
-	oldest, err := m.ent.Workspace.Query().Where(workspace.DiscardedAtIsNil()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
+	oldest, err := m.ent.Workspace.Query().Where(accounts.Live()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
 	if ent.IsNotFound(err) {
 		return false, nil
 	}

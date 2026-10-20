@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 )
 
 // Contacts is the peak number of identified Contacts reached during the Usage period:
@@ -145,7 +146,7 @@ func raise(ctx context.Context, c *ent.Client, now time.Time, workspaceIDs ...in
 	period := PeriodOf(now)
 	for _, id := range workspaceIDs {
 		// A Workspace in its deletion window, or erased, is no longer measured.
-		live, err := c.Workspace.Query().Where(entworkspace.ID(id), entworkspace.DiscardedAtIsNil()).Exist(ctx)
+		live, err := c.Workspace.Query().Where(entworkspace.ID(id), accounts.Live()).Exist(ctx)
 		if err != nil {
 			return fmt.Errorf("load workspace: %w", err)
 		}

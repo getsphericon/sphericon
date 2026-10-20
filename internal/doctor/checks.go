@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	appdb "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
@@ -220,7 +220,7 @@ func checkDKIM(ctx context.Context, r *Report, in Input) {
 		r.add("dkim", Fail, "not checked: the database is unreachable", "Fix the database check above first.")
 		return
 	}
-	domains, err := in.Ent.SendingDomain.Query().Where(sendingdomain.HasWorkspaceWith(workspace.DiscardedAtIsNil())).Order(ent.Asc(sendingdomain.FieldID)).All(ctx)
+	domains, err := in.Ent.SendingDomain.Query().Where(sendingdomain.HasWorkspaceWith(accounts.Live())).Order(ent.Asc(sendingdomain.FieldID)).All(ctx)
 	if err != nil {
 		r.add("dkim", Fail, "cannot list the Sending domains: "+err.Error(), "Fix the database check above first.")
 		return
@@ -260,7 +260,7 @@ func checkMailOrigin(ctx context.Context, r *Report, in Input) {
 	}
 	origins, err := in.Ent.OutboundMessage.Query().
 		Where(outboundmessage.AppOriginNotNil(), outboundmessage.StatusEQ(outboundmessage.StatusSent),
-			outboundmessage.HasWorkspaceWith(workspace.DiscardedAtIsNil())).
+			outboundmessage.HasWorkspaceWith(accounts.Live())).
 		Order(ent.Desc(outboundmessage.FieldID)).
 		Limit(recentMail).
 		Select(outboundmessage.FieldAppOrigin).
