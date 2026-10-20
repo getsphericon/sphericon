@@ -120,5 +120,6 @@ namespace AuditEntries {
     | AuditEntryList
     | BadRequestProblem
     | UnauthorizedProblem
+    | TooManyRequestsProblem
     | PaymentRequiredProblem;
 }

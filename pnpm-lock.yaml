@@ -98,6 +98,9 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^21.2.3
         version: 21.2.3
+      '@commitlint/types':
+        specifier: ^21.2.3
+        version: 21.2.3
       '@hey-api/openapi-ts':
         specifier: 0.0.0-next-20260930190945
         version: 0.0.0-next-20260930190945(magicast@0.5.5)

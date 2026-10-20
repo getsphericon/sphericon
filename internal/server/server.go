@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"runtime/debug"
@@ -137,7 +138,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	// Order (ADR 0025): recoverer, requestID, CORS, client address, rate limit,
 	// timeout. CORS precedes the limiter so a 429 still reaches the browser; guard
 	// sits inside CORS so preflights are answered before the check.
-	return chi.Chain(recoverer, requestID, corsMiddleware(cfg.CORSOrigins), clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), collectEventLimit(cfg.BodyLimits.CollectEvent), guard).Handler(trackingHostGate(cfg, client, mux, trackingH)), nil
+	return chi.Chain(recoverer, requestID, corsMiddleware(cfg.CORSOrigins), clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard).Handler(trackingHostGate(cfg, client, mux, trackingH)), nil
 }
 
 // NewExternalAPI builds the external API (/api) ogen server: Bearer API-token
@@ -192,7 +193,7 @@ func NewInternal(cfg *config.Config, client *ent.Client, surface ServiceSurface)
 		mux.Handle(paths.Service+"/", srv)
 	}
 	limiter := ratelimit.New(cfg.RateLimits)
-	return chi.Chain(recoverer, requestID, clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits)).Handler(mux), nil
+	return chi.Chain(recoverer, requestID, clientip.Middleware, limiter.Middleware, middleware.Timeout(30*time.Second), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 
 // collectRetryAfter is the Retry-After (seconds) of a /collect 503: long enough for a
@@ -216,8 +217,9 @@ func collectErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 
 // problemErrorHandler renders ogen errors as RFC 7807 application/problem+json.
 // A reference id from another Workspace (the scoped client's ErrNotInWorkspace,
-// ADR 0017) is a client error, so it is a 422 and never a 500.
-func problemErrorHandler(_ context.Context, w http.ResponseWriter, _ *http.Request, err error) {
+// ADR 0017) and a value an ent validator refuses are client errors, so they are a 422 and never
+// a 500.
+func problemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 	// A rate limit rejection already set its headers on the shared writer and was
 	// counted and logged where it was decided (ratelimit.LimitedError).
 	if _, ok := errors.AsType[*ratelimit.LimitedError](err); ok {
@@ -241,6 +243,7 @@ func problemErrorHandler(_ context.Context, w http.ResponseWriter, _ *http.Reque
 	code := http.StatusInternalServerError
 	var oe ogenerrors.Error
 	var tooBig *http.MaxBytesError
+	var invalid *ent.ValidationError
 	switch {
 	case errors.As(err, &tooBig):
 		code = http.StatusRequestEntityTooLarge
@@ -248,6 +251,14 @@ func problemErrorHandler(_ context.Context, w http.ResponseWriter, _ *http.Reque
 		code = oe.Code()
 	case errors.Is(err, ent.ErrNotInWorkspace):
 		code = http.StatusUnprocessableEntity
+	case errors.As(err, &invalid):
+		// A value the schema's validators refuse (an empty name, a too long label) is the
+		// client's to fix, never a server fault.
+		code = http.StatusUnprocessableEntity
+	}
+	// The client is told nothing about a server fault, so the log is the only place it shows.
+	if code >= http.StatusInternalServerError {
+		slog.ErrorContext(ctx, "request failed", "method", r.Method, "path", r.URL.Path, "error", err)
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(code)

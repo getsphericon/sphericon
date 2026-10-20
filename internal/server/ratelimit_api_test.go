@@ -147,6 +147,9 @@ func TestFailedBearerAuthenticationsArePerIPLimitedAndSuccessesAreNotCounted(t *
 	rec := getAPI(t, env, badBearer, from(guesserAddr))
 	require.Equal(t, http.StatusTooManyRequests, rec.Code)
 	assert.NotEmpty(t, rec.Header().Get("Retry-After"))
+	assert.NotEmpty(t, rec.Header().Get("X-RateLimit-Limit"), "the contract requires the whole header set on a 429")
+	assert.NotEmpty(t, rec.Header().Get("X-RateLimit-Remaining"))
+	assert.NotEmpty(t, rec.Header().Get("X-RateLimit-Reset"))
 
 	// The guesser is cut off even with a good token; another address is not.
 	assert.Equal(t, http.StatusTooManyRequests, getAPI(t, env, anchorBearer(), from(guesserAddr)).Code)

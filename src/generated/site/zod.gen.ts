@@ -13,7 +13,9 @@ export const zEmailAddress = z.email().max(320);
 /**
  * A primary key, written as a decimal string so JavaScript never rounds it. The format
  * makes the Go servers parse it into an int64: a malformed id is refused as a 400 before
- * a handler runs.
+ * a handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can
+ * tell a malformed id from a valid one without trying it. Eighteen digits is the most a key
+ * reaches, so every id the schema admits fits an int64.
  */
 export const zEntityId = z.string().regex(/^[0-9]+$/);
 
@@ -286,7 +288,7 @@ export const zSiteConfirmEmailChangeInput = z.object({
 /**
  * What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`.
  */
-export const zSiteContactLookup = z.object({
+export const zSiteContactHoldings = z.object({
   contactHeld: z.boolean(),
   events: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   deliveryRecords: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -2525,7 +2527,7 @@ export const zSiteContactsLookupQuery = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteContactsLookupResponse = zSiteContactLookup;
+export const zSiteContactsLookupResponse = zSiteContactHoldings;
 
 export const zSiteTagsListForContactPath = z.object({
   slug: z.string(),

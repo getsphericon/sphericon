@@ -1217,6 +1217,10 @@ type AutomationsActivateUnprocessableEntity ProblemDetails
 
 func (*AutomationsActivateUnprocessableEntity) automationsActivateRes() {}
 
+type AutomationsCreateBadRequest ProblemDetails
+
+func (*AutomationsCreateBadRequest) automationsCreateRes() {}
+
 type AutomationsCreateUnauthorized ProblemDetails
 
 func (*AutomationsCreateUnauthorized) automationsCreateRes() {}
@@ -1940,6 +1944,10 @@ func (s *BroadcastStatus) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type BroadcastsCreateBadRequest ProblemDetails
+
+func (*BroadcastsCreateBadRequest) broadcastsCreateRes() {}
 
 type BroadcastsCreateUnauthorized ProblemDetails
 
@@ -3393,6 +3401,10 @@ func (s *ContactResourceCustomFields) init() ContactResourceCustomFields {
 	return m
 }
 
+type ContactsBatchUpsertBadRequest ProblemDetails
+
+func (*ContactsBatchUpsertBadRequest) contactsBatchUpsertRes() {}
+
 type ContactsBatchUpsertUnauthorized ProblemDetails
 
 func (*ContactsBatchUpsertUnauthorized) contactsBatchUpsertRes() {}
@@ -3400,6 +3412,10 @@ func (*ContactsBatchUpsertUnauthorized) contactsBatchUpsertRes() {}
 type ContactsBatchUpsertUnprocessableEntity ProblemDetails
 
 func (*ContactsBatchUpsertUnprocessableEntity) contactsBatchUpsertRes() {}
+
+type ContactsCreateBadRequest ProblemDetails
+
+func (*ContactsCreateBadRequest) contactsCreateRes() {}
 
 type ContactsCreateConflict ProblemDetails
 
@@ -4587,6 +4603,10 @@ func (*DryRunHttpStepResult) automationsDryRunHttpStepRes() {}
 
 type EmailAddress string
 
+type EmailLintLintBadRequest ProblemDetails
+
+func (*EmailLintLintBadRequest) emailLintLintRes() {}
+
 type EmailLintLintUnauthorized ProblemDetails
 
 func (*EmailLintLintUnauthorized) emailLintLintRes() {}
@@ -4803,6 +4823,10 @@ func (s *EmailSchemaTypeAttrs) init() EmailSchemaTypeAttrs {
 	}
 	return m
 }
+
+type EmailsSendBadRequest ProblemDetails
+
+func (*EmailsSendBadRequest) emailsSendRes() {}
 
 type EmailsSendConflict ProblemDetails
 
@@ -5475,6 +5499,10 @@ func (s *EventInputProperties) init() EventInputProperties {
 	return m
 }
 
+type EventsBatchSubmitBadRequest ProblemDetails
+
+func (*EventsBatchSubmitBadRequest) eventsBatchSubmitRes() {}
+
 type EventsBatchSubmitUnauthorized ProblemDetails
 
 func (*EventsBatchSubmitUnauthorized) eventsBatchSubmitRes() {}
@@ -5482,6 +5510,10 @@ func (*EventsBatchSubmitUnauthorized) eventsBatchSubmitRes() {}
 type EventsBatchSubmitUnprocessableEntity ProblemDetails
 
 func (*EventsBatchSubmitUnprocessableEntity) eventsBatchSubmitRes() {}
+
+type EventsCreateBadRequest ProblemDetails
+
+func (*EventsCreateBadRequest) eventsCreateRes() {}
 
 // EventsCreateNoContent is response for EventsCreate operation.
 type EventsCreateNoContent struct{}
@@ -6236,6 +6268,10 @@ func (s *IntegrationResourceParams) init() IntegrationResourceParams {
 	}
 	return m
 }
+
+type IntegrationsCreateBadRequest ProblemDetails
+
+func (*IntegrationsCreateBadRequest) integrationsCreateRes() {}
 
 type IntegrationsCreateConflict ProblemDetails
 
@@ -9766,6 +9802,7 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
+func (*ProblemDetailsHeaders) auditEntriesListRes()          {}
 func (*ProblemDetailsHeaders) authMeGetRes()                 {}
 func (*ProblemDetailsHeaders) authTokensBootstrapRes()       {}
 func (*ProblemDetailsHeaders) authTokensCreateRes()          {}
@@ -9793,6 +9830,8 @@ func (*ProblemDetailsHeaders) broadcastsUpdateRes()          {}
 func (*ProblemDetailsHeaders) contactsBatchUpsertRes()       {}
 func (*ProblemDetailsHeaders) contactsCreateRes()            {}
 func (*ProblemDetailsHeaders) contactsDeleteRes()            {}
+func (*ProblemDetailsHeaders) contactsEraseByRes()           {}
+func (*ProblemDetailsHeaders) contactsExportRes()            {}
 func (*ProblemDetailsHeaders) contactsGetRes()               {}
 func (*ProblemDetailsHeaders) contactsListRes()              {}
 func (*ProblemDetailsHeaders) contactsUpdateRes()            {}
@@ -10440,6 +10479,10 @@ func NewSegmentRuleGroupSegmentRuleNodeSum(v SegmentRuleGroup) SegmentRuleNodeSu
 	s.SetSegmentRuleGroup(v)
 	return s
 }
+
+type SegmentsCreateBadRequest ProblemDetails
+
+func (*SegmentsCreateBadRequest) segmentsCreateRes() {}
 
 type SegmentsCreateUnauthorized ProblemDetails
 
@@ -11147,6 +11190,10 @@ func (*SendingDomainResource) sendingDomainsCreateRes() {}
 func (*SendingDomainResource) sendingDomainsGetRes()    {}
 func (*SendingDomainResource) sendingDomainsUpdateRes() {}
 func (*SendingDomainResource) sendingDomainsVerifyRes() {}
+
+type SendingDomainsCreateBadRequest ProblemDetails
+
+func (*SendingDomainsCreateBadRequest) sendingDomainsCreateRes() {}
 
 type SendingDomainsCreateConflict ProblemDetails
 
@@ -11870,6 +11917,10 @@ func (s *SuppressionResource) SetCreatedAt(val Timestamp) {
 
 func (*SuppressionResource) suppressionsCreateRes() {}
 
+type SuppressionsCreateBadRequest ProblemDetails
+
+func (*SuppressionsCreateBadRequest) suppressionsCreateRes() {}
+
 type SuppressionsCreateUnauthorized ProblemDetails
 
 func (*SuppressionsCreateUnauthorized) suppressionsCreateRes() {}
@@ -12231,6 +12282,10 @@ func (s *TemplateResourceDoc) init() TemplateResourceDoc {
 	}
 	return m
 }
+
+type TemplatesCreateBadRequest ProblemDetails
+
+func (*TemplatesCreateBadRequest) templatesCreateRes() {}
 
 type TemplatesCreateUnauthorized ProblemDetails
 
@@ -12716,6 +12771,10 @@ func (s *UnsubscribeResource) SetCreatedAt(val Timestamp) {
 }
 
 func (*UnsubscribeResource) unsubscribesCreateRes() {}
+
+type UnsubscribesCreateBadRequest ProblemDetails
+
+func (*UnsubscribesCreateBadRequest) unsubscribesCreateRes() {}
 
 type UnsubscribesCreateUnauthorized ProblemDetails
 
@@ -13694,6 +13753,10 @@ func (s *WebhookTestResult) SetKind(val OptWebhookErrorKind) {
 }
 
 func (*WebhookTestResult) webhooksTestRes() {}
+
+type WebhooksCreateBadRequest ProblemDetails
+
+func (*WebhooksCreateBadRequest) webhooksCreateRes() {}
 
 type WebhooksCreateUnauthorized ProblemDetails
 

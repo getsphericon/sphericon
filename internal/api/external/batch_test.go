@@ -68,8 +68,9 @@ func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {
 	for i := range tooMany {
 		tooMany[i] = externalapi.UpsertContactInput{SubjectId: externalapi.NewOptNilString("limit")}
 	}
-	_, err := writer.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: tooMany})
-	require.Error(t, err, "more than 1000 items is rejected as a whole")
+	rejected, err := writer.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: tooMany})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.ContactsBatchUpsertBadRequest{}, rejected, "more than 1000 items is rejected as a whole")
 
 	reader := env.ExternalScoped(t, "contacts:read")
 	res, err := reader.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{

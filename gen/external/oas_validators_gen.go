@@ -538,6 +538,14 @@ func (s *AutomationsActivateUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *AutomationsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -863,6 +871,14 @@ func (s BroadcastStatus) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
+}
+
+func (s *BroadcastsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *BroadcastsCreateUnauthorized) Validate() error {
@@ -1374,6 +1390,14 @@ func (s *ContactResource) Validate() error {
 	return nil
 }
 
+func (s *ContactsBatchUpsertBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ContactsBatchUpsertUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1383,6 +1407,14 @@ func (s *ContactsBatchUpsertUnauthorized) Validate() error {
 }
 
 func (s *ContactsBatchUpsertUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ContactsCreateBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2070,6 +2102,14 @@ func (s EmailAddress) Validate() error {
 	return nil
 }
 
+func (s *EmailLintLintBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *EmailLintLintUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2105,6 +2145,14 @@ func (s *EmailSchemaResult) Validate() error {
 	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *EmailsSendBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -2466,6 +2514,14 @@ func (s *EventInput) Validate() error {
 	return nil
 }
 
+func (s *EventsBatchSubmitBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *EventsBatchSubmitUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2475,6 +2531,14 @@ func (s *EventsBatchSubmitUnauthorized) Validate() error {
 }
 
 func (s *EventsBatchSubmitUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *EventsCreateBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2783,6 +2847,14 @@ func (s *IntegrationResource) Validate() error {
 	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *IntegrationsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -3680,6 +3752,14 @@ func (s SegmentRuleNodeSum) Validate() error {
 	}
 }
 
+func (s *SegmentsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SegmentsCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4185,6 +4265,14 @@ func (s *SendingDomainResource) Validate() error {
 	return nil
 }
 
+func (s *SendingDomainsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SendingDomainsCreateConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4601,6 +4689,14 @@ func (s *SuppressionResource) Validate() error {
 	return nil
 }
 
+func (s *SuppressionsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SuppressionsCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4768,6 +4864,14 @@ func (s *TagsRemoveNotFound) Validate() error {
 }
 
 func (s *TagsRemoveUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TemplatesCreateBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5041,6 +5145,14 @@ func (s TransactionalSendStatus) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
+}
+
+func (s *UnsubscribesCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *UnsubscribesCreateUnauthorized) Validate() error {
@@ -5504,6 +5616,14 @@ func (s *WebhookTestResult) Validate() error {
 	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WebhooksCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
 	}
 	return nil
 }

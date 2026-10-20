@@ -2377,7 +2377,7 @@ func encodeSiteContactsListResponse(response SiteContactsListRes, w http.Respons
 
 func encodeSiteContactsLookupResponse(response SiteContactsLookupRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *SiteContactLookup:
+	case *SiteContactHoldings:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 

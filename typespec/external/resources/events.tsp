@@ -98,6 +98,7 @@ namespace Events {
     | NoContentResponse
     | UnauthorizedProblem
     | TooManyRequestsProblem
+    | BadRequestProblem
     | UnprocessableEntityProblem;
 }
 
@@ -124,5 +125,6 @@ namespace EventsBatch {
     | RecordEventsBatchResult
     | UnauthorizedProblem
     | TooManyRequestsProblem
+    | BadRequestProblem
     | UnprocessableEntityProblem;
 }

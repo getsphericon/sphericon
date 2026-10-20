@@ -9,7 +9,7 @@ import {
   siteContactsLookupOptions,
   siteContactsLookupQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteContactLookup } from '../../generated/site/types.gen.ts'
+import type { SiteContactHoldings } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useContactExport } from '../../hooks/useContactExport.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
@@ -18,11 +18,11 @@ import { hasErrorStatus } from '../../utils/apiErrors.ts'
 // The two decisions the lookup drives. Erase is possible exactly while Erasure would find
 // something: a Contact or delivery records hold the address (kept opt-outs alone do not
 // count). Nothing is held when every count is zero and no Contact exists.
-function canErase(held: SiteContactLookup): boolean {
+function canErase(held: SiteContactHoldings): boolean {
   return held.contactHeld || held.deliveryRecords > 0
 }
 
-function holdsNothing(held: SiteContactLookup): boolean {
+function holdsNothing(held: SiteContactHoldings): boolean {
   return (
     !held.contactHeld &&
     held.events === 0 &&
@@ -41,7 +41,7 @@ function EraseAction({
 }: {
   slug: string
   email: string
-  held: SiteContactLookup
+  held: SiteContactHoldings
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -109,7 +109,7 @@ function LookupResult({
 }: {
   slug: string
   email: string
-  held: SiteContactLookup
+  held: SiteContactHoldings
 }) {
   const { t } = useTranslation()
   const exportMutation = useContactExport(slug)

@@ -5,9 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/erasure"
 )
@@ -17,26 +15,22 @@ import (
 // deleting a Contact. Not-found means neither a Contact nor delivery records hold the
 // address.
 func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteContactsEraseParams) (siteapi.SiteContactsEraseRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.Slug)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteContactsEraseNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
+	scoped, refusal, err := h.privacyScope(ctx, params.Slug, params.Email)
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanErase(role) {
-		v := siteapi.SiteContactsEraseForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
-	}
-
-	_, err = erasure.NormalizeEmail(params.Email)
-	if errors.Is(err, erasure.ErrInvalidEmail) {
-		v := siteapi.SiteContactsEraseBadRequest(problem(http.StatusBadRequest, "invalid email address"))
-		return &v, nil
-	}
-	if err != nil {
-		return nil, err
+	if refusal != nil {
+		switch refusal.Status.Value {
+		case http.StatusNotFound:
+			v := siteapi.SiteContactsEraseNotFound(*refusal)
+			return &v, nil
+		case http.StatusForbidden:
+			v := siteapi.SiteContactsEraseForbidden(*refusal)
+			return &v, nil
+		default:
+			v := siteapi.SiteContactsEraseBadRequest(*refusal)
+			return &v, nil
+		}
 	}
 
 	err = h.erasure.Erase(ctx, scoped, erasure.ByEmail(params.Email),
