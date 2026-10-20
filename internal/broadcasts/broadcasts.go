@@ -6,8 +6,9 @@
 //
 // Every Broadcast status write goes through the transition table in status.go (ADR 0046):
 // a stateless table with a compare-and-swap write, so an illegal move is
-// lifecycle.ErrInvalidTransition. What happens after "sending" (recipients, delivery) is
-// the job worker's business, via Outbound send (ADR 0015).
+// lifecycle.ErrInvalidTransition. Delivery owns the rest of the lifecycle: plan, pace, send
+// one recipient through Outbound send (ADR 0015), give up, finalize. Queue adapters (river,
+// inline) only implement its Scheduler seam and decide how to retry.
 package broadcasts
 
 import (

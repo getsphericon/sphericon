@@ -70,7 +70,7 @@ func TestBroadcastThroughALimitedIntegrationLosesNoRecipient(t *testing.T) {
 		mod := outbound.New(e.Bus, resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
 
-		ids, err := jobs.PlanBroadcast(ctx, e.DB, mod, fixtures.BroadcastDraftID)
+		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 		require.NoError(t, err)
 		require.Greater(t, len(ids), 2, "the fixture audience must outgrow one second of capacity")
 		w := jobs.NewSendRecipientWorker(e.DB, mod)
@@ -150,7 +150,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 		require.Nil(t, res.ResumeAt, "the first send takes the only token")
 		require.Len(t, e.sender.sent, 1)
 
-		ids, err := jobs.PlanBroadcast(ctx, e.DB, mod, fixtures.BroadcastDraftID)
+		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 		require.NoError(t, err)
 		w := jobs.NewSendRecipientWorker(e.DB, mod)
 		err = w.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID}))

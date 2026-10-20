@@ -662,7 +662,7 @@ func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
 	mod := newMod(e.TestEnv, resolvingTo(e.sender))
-	ids, err := jobs.PlanBroadcast(ctx, e.DB, mod, fixtures.BroadcastDraftID)
+	ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	require.NotEmpty(t, ids)
 

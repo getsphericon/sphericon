@@ -48,13 +48,13 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 	fs := &fakeSender{}
 	mod := heldMod(env, clock, resolvingTo(fs))
 
-	ids, err := jobs.PlanBroadcast(ctx, env.DB, mod, fixtures.BroadcastDraftID)
+	ids, err := planAudience(ctx, env.DB, mod, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(ids), 2)
-	require.NoError(t, jobs.SendToRecipient(ctx, env.DB, mod, ids[0]))
+	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
 
 	setHold(t, env, "k1", clock.t.Add(time.Hour))
-	err = jobs.SendToRecipient(ctx, env.DB, mod, ids[1])
+	err = deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
 	assert.Equal(t, outbound.HoldStaff, held.Reason)
@@ -62,7 +62,7 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 	assert.Len(t, fs.sent, 1)
 
 	clock.t = clock.t.Add(2 * time.Hour)
-	require.NoError(t, jobs.SendToRecipient(ctx, env.DB, mod, ids[1]), "the retry goes through with no one clearing anything")
+	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[1]), "the retry goes through with no one clearing anything")
 	assert.Equal(t, broadcastrecipient.StatusSent, env.DB.BroadcastRecipient.GetX(ctx, ids[1]).Status)
 	assert.Len(t, fs.sent, 2)
 }

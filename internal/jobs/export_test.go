@@ -79,7 +79,7 @@ func NewRunHTTPStepWorker(client *ent.Client, mod *automations.Module, doer webh
 }
 
 func NewSendBroadcastWorker(client *ent.Client, mod *outbound.Module) *SendBroadcastWorker {
-	return &SendBroadcastWorker{ent: client, mod: mod}
+	return &SendBroadcastWorker{ent: client, del: broadcasts.NewDelivery(mod)}
 }
 
 func NewSendRecipientWorker(client *ent.Client, mod *outbound.Module) *SendRecipientWorker {

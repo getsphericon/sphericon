@@ -39,84 +39,6 @@ func (e *riverEnv) planBroadcast(t *testing.T, id int64) {
 	require.NoError(t, w.Work(e.workCtx(), job(jobs.SendBroadcastArgs{BroadcastID: id})))
 }
 
-// A Broadcast through an Integration limited to 2 per second is planned at one over the
-// rate: recipient jobs are spread 500ms apart from now, and the last scheduled time is
-// recorded for the ETA.
-func TestPlannerSpreadsRecipientJobsAtTheEffectiveRate(t *testing.T) {
-	e := newRiverEnv(t)
-	ctx := e.workCtx()
-	e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
-
-	before := time.Now()
-	e.planBroadcast(t, fixtures.BroadcastDraftID)
-
-	times := e.recipientJobTimes(t)
-	require.Greater(t, len(times), 2)
-	assert.WithinDuration(t, before, times[0], 5*time.Second, "starts now")
-	for i := 1; i < len(times); i++ {
-		assert.InDelta(t, 500*time.Millisecond, times[i].Sub(times[i-1]), float64(5*time.Millisecond), "one over the rate")
-	}
-	b := e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
-	require.NotNil(t, b.LastScheduledAt)
-	assert.WithinDuration(t, times[len(times)-1], *b.LastScheduledAt, time.Millisecond)
-	assert.Equal(t, broadcast.StatusSending, b.Status, "pacing adds no status")
-}
-
-// A ceiling discovered from the provider paces a Broadcast just like a manual one: the
-// effective rate is the lower of the two (ADR 0023).
-func TestPlannerPacesByTheProviderDiscoveredRate(t *testing.T) {
-	e := newRiverEnv(t)
-	ctx := e.workCtx()
-	e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetProviderMaxPerSecond(4).SetMaxPerSecond(100).ExecX(ctx)
-
-	e.planBroadcast(t, fixtures.BroadcastDraftID)
-
-	times := e.recipientJobTimes(t)
-	require.Greater(t, len(times), 2)
-	assert.InDelta(t, 250*time.Millisecond, times[1].Sub(times[0]), float64(5*time.Millisecond), "one over the provider's 4 per second")
-	assert.NotNil(t, e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).LastScheduledAt)
-}
-
-// A Broadcast scheduled for later starts pacing at its scheduled time, not at now.
-func TestPlannerStartsAtTheScheduledTimeWhenLater(t *testing.T) {
-	e := newRiverEnv(t)
-	ctx := e.workCtx()
-	e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerDay(86400).ExecX(ctx)
-	start := time.Now().Add(2 * time.Hour).Truncate(time.Microsecond)
-	e.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetScheduledAt(start).ExecX(ctx)
-
-	e.planBroadcast(t, fixtures.BroadcastDraftID)
-
-	times := e.recipientJobTimes(t)
-	require.Greater(t, len(times), 2)
-	assert.WithinDuration(t, start, times[0], time.Millisecond)
-	assert.InDelta(t, time.Second, times[1].Sub(times[0]), float64(5*time.Millisecond), "86400 a day is one a second")
-}
-
-// With no limit the Broadcast is planned as before: every job at once, no pacing recorded.
-func TestPlannerLeavesAnUnlimitedBroadcastUnpaced(t *testing.T) {
-	e := newRiverEnv(t)
-	ctx := e.workCtx()
-
-	e.planBroadcast(t, fixtures.BroadcastDraftID)
-
-	times := e.recipientJobTimes(t)
-	require.Greater(t, len(times), 2)
-	assert.Less(t, times[len(times)-1].Sub(times[0]), time.Second)
-	assert.Nil(t, e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).LastScheduledAt)
-}
-
-// Another Workspace's limit never paces this one: the ceiling lives on the Integration.
-func TestAnotherWorkspacesLimitDoesNotPaceThisBroadcast(t *testing.T) {
-	e := newRiverEnv(t)
-	ctx := e.workCtx()
-	e.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexID).SetMaxPerSecond(1).ExecX(ctx)
-
-	times, err := jobs.PaceRecipients(ctx, e.DB, fixtures.BroadcastDraftID, 50, time.Now())
-	require.NoError(t, err)
-	assert.Nil(t, times)
-}
-
 // Pacing only decides when a job runs: an unsubscribe or Suppression that lands after
 // planning is honoured when the job runs, and the recipient is skipped, never mailed.
 func TestSuppressionDuringPacingIsHonouredAtSendTime(t *testing.T) {
@@ -189,4 +111,19 @@ func TestDeferralBacklogIgnoresRecipientsAsleepOnTheirOwnDeferral(t *testing.T) 
 	// Recipient 1 is pending with a lower id but asleep: nobody is ahead, so the delay is
 	// about the wait (about a second) plus jitter, not the two tokens' worth it would be.
 	assert.LessOrEqual(t, snooze.Duration, 1300*time.Millisecond)
+}
+
+// The river adapter inserts each recipient job at the time the module computed for it.
+func TestRiverAdapterSchedulesRecipientJobsAtTheModulesTimes(t *testing.T) {
+	e := newRiverEnv(t)
+	ctx := e.workCtx()
+	e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
+
+	e.planBroadcast(t, fixtures.BroadcastDraftID)
+
+	times := e.recipientJobTimes(t)
+	require.Greater(t, len(times), 2)
+	for i := 1; i < len(times); i++ {
+		assert.InDelta(t, 500*time.Millisecond, times[i].Sub(times[i-1]), float64(5*time.Millisecond), "one over the rate")
+	}
 }

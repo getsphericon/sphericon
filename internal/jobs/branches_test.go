@@ -11,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -143,27 +142,6 @@ func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 	ids, err := jobs.EvaluateTrigger(ctx, env.DB.Scoped(fixtures.AcmeID), c.ID, "trigger.match")
 	require.NoError(t, err)
 	assert.Len(t, ids, 1)
-}
-
-func TestPlanBroadcastFailsOnABrokenSegment(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("segment of another workspace", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentGlobexID).ExecX(ctx)
-		_, err := jobs.PlanBroadcast(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), fixtures.BroadcastDraftID)
-		require.Error(t, err)
-		assert.Equal(t, broadcast.StatusFailed, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
-	})
-
-	t.Run("segment with an undecodable definition", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetDefinition("{not json").ExecX(ctx)
-		env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentProPlanID).ExecX(ctx)
-		_, err := jobs.PlanBroadcast(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{})), fixtures.BroadcastDraftID)
-		require.Error(t, err)
-		assert.Equal(t, broadcast.StatusFailed, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
-	})
 }
 
 // A failing platform sender surfaces from the owner notifications (the caller logs

@@ -2,14 +2,11 @@ package broadcasts
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
 // Progress is how far a sending Broadcast has got (ADR 0023). A Broadcast stays
@@ -48,14 +45,11 @@ func ProgressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.T
 		p.EstimatedCompletion = b.LastScheduledAt
 		return p, nil
 	}
-	integ, err := messaging.DefaultEmailIntegration(ctx, s)
-	if errors.Is(err, messaging.ErrNoProvider) {
-		return p, nil
-	}
+	step, err := interval(ctx, s)
 	if err != nil {
 		return nil, err
 	}
-	if step := sendlimit.EffectiveOf(integ).Limits().Interval(); step > 0 {
+	if step > 0 {
 		eta := now.Add(time.Duration(pending) * step)
 		p.EstimatedCompletion = &eta
 	}
