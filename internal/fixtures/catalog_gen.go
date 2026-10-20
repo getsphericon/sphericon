@@ -319,6 +319,16 @@ const (
 	CustomFieldGlobexKey = "globex_only"
 	// CustomFieldGlobexName is from fixtures/custom_fields.
 	CustomFieldGlobexName = "Globex only"
+	// CyberdyneCollectKey is from fixtures/workspaces.
+	CyberdyneCollectKey = "omck_test_cyberdyne_collect_key"
+	// CyberdyneID is from fixtures/workspaces.
+	CyberdyneID = 13
+	// CyberdyneName is from fixtures/workspaces.
+	CyberdyneName = "Cyberdyne"
+	// CyberdynePruMembershipID is from fixtures/memberships.
+	CyberdynePruMembershipID = 22
+	// CyberdynePublicID is from fixtures/workspaces.
+	CyberdynePublicID = "CyberW13"
 	// DeletedWorkspaceOwnerDanEmail is from fixtures/users.
 	DeletedWorkspaceOwnerDanEmail = "dan@bluth.test"
 	// DeletedWorkspaceOwnerDanID is from fixtures/users.
@@ -793,6 +803,12 @@ const (
 	PiedPiperName = "Pied Piper"
 	// PiedPiperPublicID is from fixtures/workspaces.
 	PiedPiperPublicID = "PiperW10"
+	// ProviderOnlyOwnerPruEmail is from fixtures/users.
+	ProviderOnlyOwnerPruEmail = "pru@cyberdyne.test"
+	// ProviderOnlyOwnerPruID is from fixtures/users.
+	ProviderOnlyOwnerPruID = 24
+	// ProviderOnlyOwnerPruName is from fixtures/users.
+	ProviderOnlyOwnerPruName = "Pru"
 	// ProviderOnlyPaxEmail is from fixtures/users.
 	ProviderOnlyPaxEmail = "pax@hooli.test"
 	// ProviderOnlyPaxID is from fixtures/users.
@@ -807,6 +823,12 @@ const (
 	ProviderOnlyPiaID = 22
 	// ProviderOnlyPiaName is from fixtures/users.
 	ProviderOnlyPiaName = "Pia"
+	// PruGoogleIdentityID is from fixtures/user_identities.
+	PruGoogleIdentityID = 5
+	// PruGoogleIdentityProvider is from fixtures/user_identities.
+	PruGoogleIdentityProvider = "google"
+	// PruGoogleIdentitySubject is from fixtures/user_identities.
+	PruGoogleIdentitySubject = "google-subject-of-pru"
 	// SamGoogleIdentityID is from fixtures/user_identities.
 	SamGoogleIdentityID = 2
 	// SamGoogleIdentityProvider is from fixtures/user_identities.

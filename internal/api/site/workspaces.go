@@ -229,8 +229,9 @@ func workspaceNotFoundProblem() siteapi.ProblemDetails {
 
 // deletedWorkspaceResource is a Workspace in its deletion window with the date its data
 // will be erased.
-func deletedWorkspaceResource(w *ent.Workspace) siteapi.SiteDeletedWorkspaceResource {
+func deletedWorkspaceResource(w *ent.Workspace, onlyOwner bool) siteapi.SiteDeletedWorkspaceResource {
 	return siteapi.SiteDeletedWorkspaceResource{
+		OnlyOwner:   onlyOwner,
 		ID:          siteapi.WorkspaceId(w.PublicID),
 		Name:        w.Name,
 		DiscardedAt: siteapi.Timestamp(*w.DiscardedAt),
@@ -248,8 +249,12 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
+	sole, err := h.deletion.SoleOwned(ctx, lo.Map(items, func(m *ent.Membership, _ int) int64 { return m.WorkspaceID }))
+	if err != nil {
+		return nil, err
+	}
 	return lo.Map(items, func(m *ent.Membership, _ int) siteapi.SiteDeletedWorkspaceResource {
-		return deletedWorkspaceResource(m.Edges.Workspace)
+		return deletedWorkspaceResource(m.Edges.Workspace, sole[m.WorkspaceID])
 	}), nil
 }
 
@@ -279,7 +284,11 @@ func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDe
 	if err != nil {
 		return nil, err
 	}
-	r := deletedWorkspaceResource(w)
+	sole, err := h.deletion.SoleOwned(ctx, []int64{w.ID})
+	if err != nil {
+		return nil, err
+	}
+	r := deletedWorkspaceResource(w, sole[w.ID])
 	return &r, nil
 }
 
@@ -294,7 +303,11 @@ func (h *Handlers) SiteWorkspacesLeave(ctx context.Context, params siteapi.SiteW
 	if err != nil {
 		return nil, err
 	}
-	err = h.accounts.Leave(ctx, s, auth.GetSiteAuth(ctx).UserID)
+	userID, err := sessionUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = h.accounts.Leave(ctx, s, userID)
 	if errors.Is(err, accounts.ErrLastOwner) {
 		v := siteapi.SiteWorkspacesLeaveUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity,

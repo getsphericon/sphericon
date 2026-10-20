@@ -22,6 +22,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/qmuntal/stateless"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -206,6 +207,19 @@ func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*e
 		WithWorkspace().
 		Order(membership.ByWorkspaceField(workspace.FieldDiscardedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
 		All(ctx)
+}
+
+// SoleOwned says which of the Workspaces workspaceIDs have exactly one Owner. Asked of the
+// Workspaces a User owns, it names the ones that have no other Owner to restore them.
+func (m *Module) SoleOwned(ctx context.Context, workspaceIDs []int64) (map[int64]bool, error) {
+	owners, err := m.client.Membership.Query().
+		Where(membership.WorkspaceIDIn(workspaceIDs...), membership.RoleEQ(membership.RoleOwner)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	perWorkspace := lo.CountValues(lo.Map(owners, func(o *ent.Membership, _ int) int64 { return o.WorkspaceID }))
+	return lo.MapValues(perWorkspace, func(n int, _ int64) bool { return n == 1 }), nil
 }
 
 // Restore ends the deletion of the Workspace publicID for a User: it clears discarded_at, which

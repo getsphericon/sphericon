@@ -107,13 +107,13 @@ func TestReplayingACursorReturnsTheSameEntriesAndTheCursorOnlyMovesWhenSaved(t *
 	again := feedPage(t, c, "", 2)
 	assert.Equal(t, first, again, "a page read twice from the same cursor is the same page")
 
-	rest := feedPage(t, c, first.NextCursor, 10)
+	rest := feedPage(t, c, first.NextCursor, 50)
 	assert.False(t, rest.HasMore)
 	assert.NotEmpty(t, rest.Items)
-	assert.Equal(t, rest, feedPage(t, c, first.NextCursor, 10), "and so is the page after a saved cursor")
+	assert.Equal(t, rest, feedPage(t, c, first.NextCursor, 50), "and so is the page after a saved cursor")
 
 	end := rest.NextCursor
-	empty := feedPage(t, c, end, 10)
+	empty := feedPage(t, c, end, 50)
 	assert.Empty(t, empty.Items, "nothing changed since the saved cursor")
 	assert.Equal(t, end, empty.NextCursor, "an empty page keeps the cursor")
 }

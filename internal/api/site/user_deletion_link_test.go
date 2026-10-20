@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/pquerna/otp/totp"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/config"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -145,4 +147,42 @@ func TestAUserWithAPasswordGetsNoLink(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteDeleteUserProblemDetails{}, res)
 	assert.Empty(t, env.SystemMail.Messages())
+}
+
+func TestWrongCodesOfAProviderOnlyUserAreThrottledOnTheLoginBudget(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithRateLimits(config.RateLimits{LoginFailures: 3}))
+	pax := env.SiteActor(t, fixtures.ProviderOnlyPaxEmail)
+	token := requestLink(t, env, pax, fixtures.ProviderOnlyPaxEmail)
+	input := func(code string) *siteapi.SiteDeleteUserInput {
+		return &siteapi.SiteDeleteUserInput{
+			Email: fixtures.ProviderOnlyPaxEmail, Token: siteapi.NewOptString(token), Code: siteapi.NewOptString(code),
+		}
+	}
+
+	for range 3 {
+		wrong := deleteUser(t, pax, input("000000"))
+		require.IsType(t, &siteapi.SiteUserDeleteUserForbidden{}, wrong)
+	}
+	right, err := totp.GenerateCode(fixtures.ProviderOnlyPaxTotpSecret, time.Now())
+	require.NoError(t, err)
+
+	res := deleteUser(t, pax, input(right))
+
+	assert.IsType(t, &siteapi.ProblemDetailsHeaders{}, res, "three wrong codes took the delay, even the right code waits")
+	assert.True(t, userExists(t, env, fixtures.ProviderOnlyPaxEmail))
+}
+
+func TestAProviderOnlySoleOwnerOfALiveWorkspaceIsRefusedEvenWithTheLink(t *testing.T) {
+	env := testhelper.Setup(t)
+	pru := env.SiteActor(t, fixtures.ProviderOnlyOwnerPruEmail)
+	token := requestLink(t, env, pru, fixtures.ProviderOnlyOwnerPruEmail)
+
+	res := deleteUser(t, pru, &siteapi.SiteDeleteUserInput{Email: fixtures.ProviderOnlyOwnerPruEmail, Token: siteapi.NewOptString(token)})
+
+	refused, ok := res.(*siteapi.SiteDeleteUserProblemDetails)
+	require.Truef(t, ok, "got %T", res)
+	listed := lo.Map(refused.Workspaces, func(w siteapi.SiteSoleOwnedWorkspace, _ int) string { return w.Name })
+	assert.Equal(t, []string{fixtures.CyberdyneName}, listed)
+	assert.True(t, userExists(t, env, fixtures.ProviderOnlyOwnerPruEmail))
+	assert.Equal(t, []siteapi.WorkspaceId{fixtures.CyberdynePublicID}, workspaceIDs(t, pru))
 }

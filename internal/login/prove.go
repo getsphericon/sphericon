@@ -50,6 +50,14 @@ func (m *Module[P]) Prove(ctx context.Context, address, passwordHash, password s
 	return ProofResult{Proof: ProofWrong}, nil
 }
 
+// Throttled consults the address's delay without proving anything, for a profile action
+// whose proof is not the password (a mailed link) but which then takes a second-step code
+// the caller counts with CountFailure: while the delay runs a code is not even checked, so
+// the code cannot be guessed past the budget. It is the same throttle Prove consults first.
+func (m *Module[P]) Throttled(ctx context.Context, address string) (delay Delay, throttled bool, err error) {
+	return m.throttle(ctx, accounts.NormalizeEmail(address))
+}
+
 // CountFailure counts one wrong second-step code of an already proven password on the
 // address's budget, the same budget a wrong password feeds (a profile action that asks for
 // the password and then a code, such as User deletion).

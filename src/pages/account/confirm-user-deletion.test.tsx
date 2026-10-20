@@ -6,6 +6,7 @@ import {
   handleSiteUserDeleteUser,
   handleSiteWorkspacesListDeleted,
 } from '../../generated/site/msw.gen.ts'
+import type { SiteDeletedWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { Route as deleteRoute } from '../../routes/account/delete.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -16,7 +17,15 @@ import { ConfirmUserDeletionPage } from './confirm-user-deletion.tsx'
 const mount = routeMount(deleteRoute)
 const linked = { ...mount, initialPath: `${mount.initialPath}?token=link-token` }
 
-function serve(bodies: unknown[], enabled: boolean) {
+const waiting: SiteDeletedWorkspaceResource = {
+  id: 'BluthW12',
+  name: 'Bluth',
+  discardedAt: '2026-01-01T00:00:00Z',
+  eraseAt: '2026-01-31T00:00:00Z',
+  onlyOwner: true,
+}
+
+function serve(bodies: unknown[], enabled: boolean, deleted: SiteDeletedWorkspaceResource[] = []) {
   worker.use(
     handleSiteSecondFactorGetStatus(() =>
       HttpResponse.json({
@@ -27,7 +36,7 @@ function serve(bodies: unknown[], enabled: boolean) {
         providerLoginFresh: false,
       }),
     ),
-    handleSiteWorkspacesListDeleted(() => HttpResponse.json([])),
+    handleSiteWorkspacesListDeleted(() => HttpResponse.json(deleted)),
     handleSiteUserDeleteUser(async ({ request }) => {
       bodies.push(await request.clone().json())
       return new Response(null, { status: 204 })
@@ -61,4 +70,12 @@ test('a user with a second factor also sends a code', async () => {
   await expect
     .poll(() => bodies)
     .toEqual([{ email: 'info@getsphericon.com', token: 'link-token', code: '123456' }])
+})
+
+test('only a workspace the user solely owns is named in the no-restore warning', async () => {
+  serve([], false, [waiting, { ...waiting, id: 'DundrW13', name: 'Dunder', onlyOwner: false }])
+  const { screen } = await renderWithRouter(<ConfirmUserDeletionPage />, linked)
+
+  await expect.element(screen.getByText(/once you are gone: Bluth\./)).toBeInTheDocument()
+  await expect.element(screen.getByText(/Dunder/)).not.toBeInTheDocument()
 })

@@ -17,6 +17,7 @@ import type {
   SiteMembershipResource,
   SiteMembershipRole,
 } from '../../generated/site/types.gen.ts'
+import { Route as indexRoute } from '../../routes/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -209,12 +210,14 @@ test('leaves the workspace after confirmation', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
+  const { screen, navigate } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Leave workspace' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Leave' }).click()
 
   await expect.poll(() => left).toBe(true)
+  // The index route picks the next Workspace, or the create screen when none is left.
+  await expect.poll(() => navigate).toHaveBeenCalledWith({ to: indexRoute.to })
 })
 
 test('keeps the workspace and says why when the only owner tries to leave', async () => {

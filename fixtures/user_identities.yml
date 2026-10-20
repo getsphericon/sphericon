@@ -26,3 +26,9 @@
   subject: google-subject-of-pax
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+- id: 5 # fixture: PruGoogleIdentity
+  user_id: 24
+  provider: google
+  subject: google-subject-of-pru
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

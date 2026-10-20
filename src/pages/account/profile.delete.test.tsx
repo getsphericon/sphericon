@@ -41,6 +41,14 @@ const waiting: SiteDeletedWorkspaceResource = {
   name: 'Bluth',
   discardedAt: '2026-01-01T00:00:00Z',
   eraseAt: '2026-01-31T00:00:00Z',
+  onlyOwner: true,
+}
+
+const shared: SiteDeletedWorkspaceResource = {
+  ...waiting,
+  id: 'DundrW13',
+  name: 'Dunder',
+  onlyOwner: false,
 }
 
 // Serves the profile page's reads and records every body the deletion receives.
@@ -99,6 +107,23 @@ test('a user with a second factor also sends a code', async () => {
 
 test('a workspace waiting for erasure is named with the no-restore warning', async () => {
   serve([], {}, [waiting])(noContent)
+  const { screen } = await renderWithRouter(<ProfilePage />)
+
+  await expect
+    .element(screen.getByText(/can no longer be restored once you are gone: Bluth/))
+    .toBeInTheDocument()
+})
+
+test('a waiting workspace with another owner is not named in the warning', async () => {
+  serve([], {}, [waiting, shared])(noContent)
+  const { screen } = await renderWithRouter(<ProfilePage />)
+
+  await expect.element(screen.getByText(/once you are gone: Bluth\./)).toBeInTheDocument()
+  await expect.element(screen.getByText(/Dunder/)).not.toBeInTheDocument()
+})
+
+test('a user with no password sees the no-restore warning before asking for the link', async () => {
+  serve([], { passwordSet: false }, [waiting])(noContent)
   const { screen } = await renderWithRouter(<ProfilePage />)
 
   await expect

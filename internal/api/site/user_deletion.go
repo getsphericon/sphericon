@@ -25,20 +25,15 @@ import (
 // accounts operation does the rest in one transaction; this handler authenticates, proves
 // and maps the outcomes.
 func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDeleteUserInput) (siteapi.SiteUserDeleteUserRes, error) {
-	userID, err := sessionUserID(ctx)
+	u, mismatch, err := h.deletionSubject(ctx, string(req.Email))
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.User(ctx, userID)
-	if err != nil {
-		return nil, err
+	if mismatch != nil {
+		return mismatch, nil
 	}
-	if !strings.EqualFold(strings.TrimSpace(string(req.Email)), u.Email) {
-		msg := i18n.T("errors.delete_user_email_mismatch", nil)
-		v := deleteUserProblem(msg, map[string][]string{"email": {msg}}, nil)
-		return &v, nil
-	}
-	if u.PasswordHash != "" {
+	hadPassword := u.PasswordHash != ""
+	if hadPassword {
 		proved, err := h.proveCurrentPassword(ctx, u, req.CurrentPassword.Or(""))
 		if err != nil {
 			return nil, err
@@ -47,21 +42,38 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 			v := siteapi.SiteUserDeleteUserForbidden(passwordIncorrectProblem())
 			return &v, nil
 		}
-	} else if !h.holdsDeletionLink(req.Token.Or(""), u) {
-		// A User with no password proves the mailbox instead: the link is bound to this
-		// User, so an expired, used or foreign one (a new User on the same address) is dead.
-		v := siteapi.SiteUserDeleteUserBadRequest(problem(http.StatusBadRequest, i18n.T("errors.confirm_link_invalid", nil)))
-		return &v, nil
+	} else {
+		// A User with no password proves the mailbox instead, and nothing in that proof
+		// feeds the Login throttle: consult it here, before the link or any code is
+		// checked, so the code cannot be guessed past the budget (ADR 0025).
+		delay, throttled, err := h.login.Throttled(ctx, u.Email)
+		if err != nil {
+			return nil, err
+		}
+		if throttled {
+			return nil, loginDelayError(ctx, delay)
+		}
+		if !h.holdsDeletionLink(req.Token.Or(""), u) {
+			// The link is bound to this User, so an expired, used or foreign one (a new
+			// User on the same address) is dead.
+			v := siteapi.SiteUserDeleteUserBadRequest(problem(http.StatusBadRequest, i18n.T("errors.confirm_link_invalid", nil)))
+			return &v, nil
+		}
 	}
 
 	confirm := func(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User) error {
+		// The proof above was read before the transaction: a password set or removed since
+		// then makes it the wrong proof for this User.
+		if (locked.PasswordHash != "") != hadPassword {
+			return errProofStale
+		}
 		if !secondfactor.Active(locked) {
 			return nil
 		}
 		_, err := h.secondFactor.VerifyIn(ctx, tx, pub, locked, req.Code.Or(""))
 		return err
 	}
-	deleted, err := h.accounts.DeleteUser(ctx, userID, confirm)
+	deleted, err := h.accounts.DeleteUser(ctx, u.ID, confirm)
 	var sole *accounts.SoleOwnerError
 	switch {
 	case errors.As(err, &sole):
@@ -70,6 +82,9 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 			return siteapi.SiteSoleOwnedWorkspace{ID: siteapi.WorkspaceId(w.PublicID), Name: w.Name}
 		})
 		v := deleteUserProblem(msg, nil, listed)
+		return &v, nil
+	case errors.Is(err, errProofStale):
+		v := deleteUserProblem(i18n.T("errors.delete_user_proof_stale", nil), nil, nil)
 		return &v, nil
 	case errors.Is(err, secondfactor.ErrInvalidCode):
 		// The wrong code is counted like a wrong password (ADR 0025).
@@ -92,18 +107,12 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 // token is bound to the User and their session epoch, not to the address, and works once (the
 // deletion removes the User it names).
 func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.SiteDeleteUserLinkInput) (siteapi.SiteUserDeleteUserLinkRes, error) {
-	userID, err := sessionUserID(ctx)
+	u, mismatch, err := h.deletionSubject(ctx, string(req.Email))
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.User(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	if !strings.EqualFold(strings.TrimSpace(string(req.Email)), u.Email) {
-		msg := i18n.T("errors.delete_user_email_mismatch", nil)
-		v := deleteUserProblem(msg, map[string][]string{"email": {msg}}, nil)
-		return &v, nil
+	if mismatch != nil {
+		return mismatch, nil
 	}
 	if u.PasswordHash != "" {
 		v := deleteUserProblem(i18n.T("errors.delete_user_use_password", nil), nil, nil)
@@ -121,6 +130,30 @@ func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.Site
 	}
 	_ = h.sysmail.EnqueueUserDeletionLink(ctx, u.Email, token, granted)
 	return &siteapi.SiteUserDeleteUserLinkAccepted{}, nil
+}
+
+// errProofStale is the refusal of a deletion whose proof no longer fits the User: the User's
+// password was set or removed between the proof and the transaction that locked the row.
+var errProofStale = errors.New("the deletion proof no longer fits the user")
+
+// deletionSubject is the start of both deletion operations: the User of the session and the
+// check that the typed email is theirs. A mismatch is the 422 to answer with, nil when the
+// email is the User's own.
+func (h *Handlers) deletionSubject(ctx context.Context, typedEmail string) (*ent.User, *siteapi.SiteDeleteUserProblemDetails, error) {
+	userID, err := sessionUserID(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	u, err := h.accounts.User(ctx, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !strings.EqualFold(strings.TrimSpace(typedEmail), u.Email) {
+		msg := i18n.T("errors.delete_user_email_mismatch", nil)
+		v := deleteUserProblem(msg, map[string][]string{"email": {msg}}, nil)
+		return u, &v, nil
+	}
+	return u, nil, nil
 }
 
 // deleteUserLinkTTL is how long the mailed deletion link lives.

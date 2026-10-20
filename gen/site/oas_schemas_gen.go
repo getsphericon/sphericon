@@ -9025,6 +9025,9 @@ type SiteDeletedWorkspaceResource struct {
 	DiscardedAt Timestamp `json:"discardedAt"`
 	// When its data will be erased: 30 days after it was deleted.
 	EraseAt Timestamp `json:"eraseAt"`
+	// Whether the caller is its only Owner: it then has no one to restore it once the caller's User is
+	// deleted (ADR 0050).
+	OnlyOwner bool `json:"onlyOwner"`
 }
 
 // GetID returns the value of ID.
@@ -9047,6 +9050,11 @@ func (s *SiteDeletedWorkspaceResource) GetEraseAt() Timestamp {
 	return s.EraseAt
 }
 
+// GetOnlyOwner returns the value of OnlyOwner.
+func (s *SiteDeletedWorkspaceResource) GetOnlyOwner() bool {
+	return s.OnlyOwner
+}
+
 // SetID sets the value of ID.
 func (s *SiteDeletedWorkspaceResource) SetID(val WorkspaceId) {
 	s.ID = val
@@ -9065,6 +9073,11 @@ func (s *SiteDeletedWorkspaceResource) SetDiscardedAt(val Timestamp) {
 // SetEraseAt sets the value of EraseAt.
 func (s *SiteDeletedWorkspaceResource) SetEraseAt(val Timestamp) {
 	s.EraseAt = val
+}
+
+// SetOnlyOwner sets the value of OnlyOwner.
+func (s *SiteDeletedWorkspaceResource) SetOnlyOwner(val bool) {
+	s.OnlyOwner = val
 }
 
 func (*SiteDeletedWorkspaceResource) siteWorkspacesDeleteRes() {}

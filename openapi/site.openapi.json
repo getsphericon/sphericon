@@ -11447,7 +11447,7 @@
       },
       "SiteDeletedWorkspaceResource": {
         "type": "object",
-        "required": ["id", "name", "discardedAt", "eraseAt"],
+        "required": ["id", "name", "discardedAt", "eraseAt", "onlyOwner"],
         "properties": {
           "id": {
             "allOf": [
@@ -11476,6 +11476,10 @@
               }
             ],
             "description": "When its data will be erased: 30 days after it was deleted"
+          },
+          "onlyOwner": {
+            "type": "boolean",
+            "description": "Whether the caller is its only Owner: it then has no one to restore it once the\ncaller's User is deleted (ADR 0050)"
           }
         },
         "description": "A Workspace in its deletion window, as an Owner of it sees it (ADR 0043): frozen and\nhidden, restorable until its data is erased."

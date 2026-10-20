@@ -183,3 +183,11 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
+# Pru signs in only through a Sign-in provider and is the only Owner of Cyberdyne, a live
+# Workspace: the mailed link does not get around the sole-Owner refusal.
+- id: 24 # fixture: ProviderOnlyOwnerPru
+  name: Pru
+  email: pru@cyberdyne.test
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'

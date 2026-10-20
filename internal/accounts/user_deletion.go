@@ -3,6 +3,7 @@ package accounts
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/samber/lo"
@@ -34,19 +35,21 @@ func (e *SoleOwnerError) Unwrap() error { return ErrLastOwner }
 // transaction, and returns the deleted User (its name and address, for the mail that tells
 // the owner of the mailbox). The caller has proven who is asking; confirm runs inside the
 // transaction, after the refusal check and before anything is removed, with the User's row
-// locked, so a second-factor code is spent only if the deletion commits (nil confirms
-// nothing).
+// locked and freshly read, so a second-factor code is spent only if the deletion commits
+// (nil confirms nothing) and the caller can check that what its proof assumed still holds.
 //
 // The transaction locks the User row, then the Owner rows of every Workspace the User
 // belongs to, in ascending Workspace id order, so two co-Owners deleting at once serialize
-// on the Workspace and cannot deadlock: the later one reads the earlier one's outcome. It
-// refuses with a *SoleOwnerError (an ErrLastOwner) while the User is the only Owner of a
-// Workspace that is not in its deletion window (ADR 0043); a sole-owned Workspace in the
-// window does not block and is erased on schedule. Every Membership then goes through its
-// Workspace's scope with the User as actor of a `membership.delete` Audit entry (Audit
-// entries that name the User are never rewritten), and the User row is deleted: Linked
-// identities and Recovery codes follow by cascade, an Invitation the User sent keeps its
-// place with no sender. Sessions need nothing: the security handler finds no User.
+// on the Workspace and cannot deadlock: the later one reads the earlier one's outcome. Only
+// then does it read the User's Memberships and Roles that the decision rests on, so a
+// concurrent change cannot leave them stale. It refuses with a *SoleOwnerError (an
+// ErrLastOwner) while the User is the only Owner of a Workspace that is not in its deletion
+// window (ADR 0043); a sole-owned Workspace in the window does not block and is erased on
+// schedule. Every Membership then goes through its Workspace's scope with the User as actor
+// of a `membership.delete` Audit entry (Audit entries that name the User are never
+// rewritten), and the User row is deleted: Linked identities and Recovery codes follow by
+// cascade, an Invitation the User sent keeps its place with no sender. Sessions need
+// nothing: the security handler finds no User.
 func (a *Accounts) DeleteUser(ctx context.Context, userID int64, confirm func(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) error) (*ent.User, error) {
 	var deleted *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
@@ -54,17 +57,11 @@ func (a *Accounts) DeleteUser(ctx context.Context, userID int64, confirm func(ct
 		if err != nil {
 			return err
 		}
-		memberships, err := tx.Membership.Query().
-			Where(membership.UserID(userID)).
-			Order(ent.Asc(membership.FieldWorkspaceID)).
-			All(ctx)
+		memberships, owners, err := membershipsUnderOwnerLocks(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
-		soleOwned, err := lockOwners(ctx, tx, memberships)
-		if err != nil {
-			return err
-		}
+		soleOwned := soleOwnedWorkspaces(memberships, owners)
 		live, err := tx.Workspace.Query().Where(workspace.IDIn(soleOwned...), Live()).Order(ent.Asc(workspace.FieldID)).All(ctx)
 		if err != nil {
 			return err
@@ -77,13 +74,15 @@ func (a *Accounts) DeleteUser(ctx context.Context, userID int64, confirm func(ct
 				return err
 			}
 		}
-		sole := make(map[int64]bool, len(soleOwned))
-		for _, id := range soleOwned {
-			sole[id] = true
-		}
 		for _, m := range memberships {
+			ts := tx.Scoped(m.WorkspaceID)
 			// Only a sole-owned Workspace still standing here is in its deletion window.
-			if err := leaveIn(ctx, tx.Scoped(m.WorkspaceID), pub, userID, sole[m.WorkspaceID]); err != nil {
+			if slices.Contains(soleOwned, m.WorkspaceID) {
+				err = leaveDoomedWorkspaceIn(ctx, ts, pub, userID)
+			} else {
+				err = LeaveIn(ctx, ts, pub, userID)
+			}
+			if err != nil {
 				return err
 			}
 		}
@@ -96,22 +95,63 @@ func (a *Accounts) DeleteUser(ctx context.Context, userID int64, confirm func(ct
 	return deleted, err
 }
 
-// lockOwners locks the Owner rows of the Workspace of every Membership, in the order given
-// (ascending Workspace id), and returns the ids of the Workspaces whose only Owner is the
-// Membership's own.
-func lockOwners(ctx context.Context, tx *ent.Client, memberships []*ent.Membership) ([]int64, error) {
+// membershipsUnderOwnerLocks returns the User's Memberships in ascending Workspace id order,
+// read after the Owner rows of each of their Workspaces are locked, with the Owner Membership
+// ids of each Workspace as read under that lock. The Workspaces are known from a first read;
+// the Memberships that count are read again once the locks are held, so a Role change or a
+// removal that committed meanwhile is seen. A Workspace the second read adds (the User
+// joined it meanwhile) is locked too, out of order, which can at worst deadlock and abort
+// with a database error, never read stale.
+func membershipsUnderOwnerLocks(ctx context.Context, tx *ent.Client, userID int64) ([]*ent.Membership, map[int64][]int64, error) {
+	read := func() ([]*ent.Membership, error) {
+		return tx.Membership.Query().
+			Where(membership.UserID(userID)).
+			Order(ent.Asc(membership.FieldWorkspaceID)).
+			All(ctx)
+	}
+	owners := map[int64][]int64{}
+	lock := func(memberships []*ent.Membership) error {
+		for _, m := range memberships {
+			if _, locked := owners[m.WorkspaceID]; locked {
+				continue
+			}
+			ids, err := tx.Scoped(m.WorkspaceID).Membership().Query().
+				Where(membership.RoleEQ(membership.RoleOwner)).
+				ForUpdate().
+				IDs(ctx)
+			if err != nil {
+				return err
+			}
+			owners[m.WorkspaceID] = ids
+		}
+		return nil
+	}
+
+	first, err := read()
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := lock(first); err != nil {
+		return nil, nil, err
+	}
+	memberships, err := read()
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := lock(memberships); err != nil {
+		return nil, nil, err
+	}
+	return memberships, owners, nil
+}
+
+// soleOwnedWorkspaces returns the ids of the Workspaces whose only Owner is the Membership's
+// own.
+func soleOwnedWorkspaces(memberships []*ent.Membership, owners map[int64][]int64) []int64 {
 	var sole []int64
 	for _, m := range memberships {
-		owners, err := tx.Scoped(m.WorkspaceID).Membership().Query().
-			Where(membership.RoleEQ(membership.RoleOwner)).
-			ForUpdate().
-			IDs(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if m.Role == membership.RoleOwner && len(owners) == 1 {
+		if m.Role == membership.RoleOwner && len(owners[m.WorkspaceID]) == 1 {
 			sole = append(sole, m.WorkspaceID)
 		}
 	}
-	return sole, nil
+	return sole
 }

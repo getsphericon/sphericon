@@ -1763,7 +1763,8 @@ export const zSiteDeletedWorkspaceResource = z.object({
   id: zWorkspaceId,
   name: z.string(),
   discardedAt: zTimestamp,
-  eraseAt: zTimestamp
+  eraseAt: zTimestamp,
+  onlyOwner: z.boolean()
 });
 
 /**

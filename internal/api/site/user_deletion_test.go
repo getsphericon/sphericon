@@ -229,6 +229,29 @@ func TestAnInvitationSentByTheDeletedUserStaysValidWithoutASenderAndCanBeRevoked
 	assert.IsType(t, &siteapi.SiteInvitationsDeleteNoContent{}, revoked)
 }
 
+func TestAContactAndAStaffMemberWithTheUsersAddressAreUntouched(t *testing.T) {
+	env := testhelper.Setup(t)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	// John is no longer Acme's only Owner, so his deletion goes through.
+	require.NoError(t, acme.Membership().Create().SetUserID(fixtures.OutsiderOscarID).SetRole(membership.RoleOwner).Exec(t.Context()))
+	contact, err := acme.Contact().Create().SetEmail(fixtures.OwnerJohnEmail).SetFirstName("Johnny").Save(t.Context())
+	require.NoError(t, err)
+	staffBefore := env.DB.StaffMember.GetX(t.Context(), fixtures.StaffAlsoCustomerID)
+
+	res := deleteUser(t, env.SiteActor(t, fixtures.OwnerJohnEmail), &siteapi.SiteDeleteUserInput{
+		Email: fixtures.OwnerJohnEmail, CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword),
+	})
+	require.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, res)
+
+	contactAfter, err := acme.Contact().Get(t.Context(), contact.ID)
+	require.NoError(t, err)
+	assert.Equal(t, new("Johnny"), contactAfter.FirstName)
+	staffAfter := env.DB.StaffMember.GetX(t.Context(), fixtures.StaffAlsoCustomerID)
+	assert.Equal(t, staffBefore.Email, staffAfter.Email)
+	assert.Equal(t, staffBefore.PasswordHash, staffAfter.PasswordHash)
+	assert.Equal(t, staffBefore.TotpSecretEncrypted, staffAfter.TotpSecretEncrypted)
+}
+
 func TestAuditEntriesOfTheDeletedUserKeepTheirIdAndName(t *testing.T) {
 	env := testhelper.Setup(t)
 	deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{

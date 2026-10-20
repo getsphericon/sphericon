@@ -137,6 +137,10 @@ model SiteDeletedWorkspaceResource {
 
   /** When its data will be erased: 30 days after it was deleted */
   eraseAt: Timestamp;
+
+  /** Whether the caller is its only Owner: it then has no one to restore it once the
+   * caller's User is deleted (ADR 0050) */
+  onlyOwner: boolean;
 }
 
 /** Switch the Two-factor requirement on or off */

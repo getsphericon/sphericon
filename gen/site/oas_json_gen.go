@@ -18227,13 +18227,18 @@ func (s *SiteDeletedWorkspaceResource) encodeFields(e *jx.Encoder) {
 		e.FieldStart("eraseAt")
 		s.EraseAt.Encode(e)
 	}
+	{
+		e.FieldStart("onlyOwner")
+		e.Bool(s.OnlyOwner)
+	}
 }
 
-var jsonFieldsNameOfSiteDeletedWorkspaceResource = [4]string{
+var jsonFieldsNameOfSiteDeletedWorkspaceResource = [5]string{
 	0: "id",
 	1: "name",
 	2: "discardedAt",
 	3: "eraseAt",
+	4: "onlyOwner",
 }
 
 // Decode decodes SiteDeletedWorkspaceResource from json.
@@ -18287,6 +18292,18 @@ func (s *SiteDeletedWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"eraseAt\"")
 			}
+		case "onlyOwner":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.OnlyOwner = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"onlyOwner\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -18297,7 +18314,7 @@ func (s *SiteDeletedWorkspaceResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

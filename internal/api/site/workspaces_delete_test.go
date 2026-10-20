@@ -90,12 +90,24 @@ func TestDeletedWorkspaceIsHiddenFromEveryMemberAndListedForOwners(t *testing.T)
 		require.Len(t, got, 1, email)
 		assert.Equal(t, "Initech", got[0].Name)
 		assert.Equal(t, time.Time(got[0].DiscardedAt).Add(workspacedeletion.DeletionWindow), time.Time(got[0].EraseAt))
+		assert.False(t, got[0].OnlyOwner, "Initech has two Owners, either can restore it: "+email)
 	}
 	for _, email := range []string{fixtures.InitechAdminAdaEmail, fixtures.InitechMemberMaxEmail, fixtures.OwnerJohnEmail} {
 		got, err := env.SiteActor(t, email).SiteWorkspacesListDeleted(ctx)
 		require.NoError(t, err)
 		assert.Empty(t, got, email)
 	}
+}
+
+func TestADeletedWorkspaceOfItsOnlyOwnerSaysSo(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	got, err := env.SiteActor(t, fixtures.DeletedWorkspaceOwnerDanEmail).SiteWorkspacesListDeleted(t.Context())
+
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	assert.Equal(t, fixtures.BluthName, got[0].Name)
+	assert.True(t, got[0].OnlyOwner)
 }
 
 func TestDeletingOneWorkspaceLeavesTheOthers(t *testing.T) {

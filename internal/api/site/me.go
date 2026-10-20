@@ -191,7 +191,12 @@ func (h *Handlers) proveCurrentPassword(ctx context.Context, u *ent.User, passwo
 		return false, err
 	}
 	if res.Proof == login.ProofThrottled {
-		return false, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
+		return false, loginDelayError(ctx, res.Delay)
 	}
 	return res.Proof == login.ProofHolds, nil
+}
+
+// loginDelayError is the 429 rejection of a running Login throttle delay.
+func loginDelayError(ctx context.Context, d login.Delay) error {
+	return ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, d.Limit, d.Wait, d.Now)
 }

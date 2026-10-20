@@ -129,6 +129,7 @@ const deletedInitech = {
   name: 'Initech',
   discardedAt: '2026-02-01T00:00:00Z',
   eraseAt: '2026-03-03T00:00:00Z',
+  onlyOwner: false,
 }
 
 test('lists the deleted workspaces with their erase date and restores one', async () => {

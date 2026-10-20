@@ -76,6 +76,7 @@ test('an owner deletes the workspace only after typing its name', async () => {
         name: workspace.name,
         discardedAt: '2026-02-01T00:00:00Z',
         eraseAt: '2026-03-03T00:00:00Z',
+        onlyOwner: false,
       })
     }),
   )

@@ -291,7 +291,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      `workspacedeletion.Module.EraseDue`, which lists the due Workspaces with the raw client and
      scopes each erase step's transaction (`tx.Scoped(id)`) to the Workspace it is erasing;
   5. transactions: `events.Bus.WithinScopedTx`, and `tx.Scoped(...)` inside
-     `accounts.AcceptInvitation`, re-scope a transaction's client to the same Workspace;
+     `accounts.AcceptInvitation`, re-scope a transaction's client to the same Workspace; and
+     `accounts.DeleteUser` (User deletion, ADR 0050) scopes its one transaction in turn to each
+     Workspace the User belongs to (`tx.Scoped(m.WorkspaceID)`, from the User's own Memberships),
+     to lock the Owner rows and remove the Membership;
   6. the Workspace comes from a secret rather than a login: the ingest hook
      `POST /hooks/{key}` (`internal/server/hooks.go`, ADR 0037), where the key belongs to one
      Integration, so the hook resolves the Integration by key with the raw client and then

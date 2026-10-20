@@ -144,22 +144,34 @@ func (a *Accounts) Leave(ctx context.Context, s *ent.Scoped, userID int64) error
 // A User with no Membership in the Workspace is an ent NotFound error. User deletion
 // (ADR 0050) calls it once per Workspace in its own transaction.
 func LeaveIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64) error {
-	return leaveIn(ctx, ts, pub, userID, false)
-}
-
-// leaveIn is LeaveIn; withLastOwner lets the only Owner go too, for User deletion of a
-// Workspace that is in its deletion window (ADR 0050): nobody is left to hand it to.
-func leaveIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64, withLastOwner bool) error {
-	target, owners, err := lockedTarget(ctx, ts, membership.UserID(userID))
+	target, owners, actor, err := lockedSelf(ctx, ts, userID)
 	if err != nil {
 		return err
 	}
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(userID, 10), Name: target.Edges.User.Name}
-	if withLastOwner {
-		return deleteLocked(ctx, ts, pub, actor, target)
-	}
 	// The caller is the member themself: their own Role is the caller's Role.
 	return removeLocked(ctx, ts, pub, actor, target.Role, target, owners)
+}
+
+// leaveDoomedWorkspaceIn removes User userID's own Membership like LeaveIn but lets the only
+// Owner go too, for User deletion of a Workspace that is in its deletion window (ADR 0050):
+// nobody is left to hand it to, and the Workspace is erased on schedule.
+func leaveDoomedWorkspaceIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64) error {
+	target, _, actor, err := lockedSelf(ctx, ts, userID)
+	if err != nil {
+		return err
+	}
+	return deleteLocked(ctx, ts, pub, actor, target)
+}
+
+// lockedSelf locks the Workspace's Owner rows, then loads User userID's own Membership with
+// its User, the count of Owners, and the User as the actor of the Audit entry.
+func lockedSelf(ctx context.Context, ts *ent.Scoped, userID int64) (*ent.Membership, int, events.Actor, error) {
+	target, owners, err := lockedTarget(ctx, ts, membership.UserID(userID))
+	if err != nil {
+		return nil, 0, events.Actor{}, err
+	}
+	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(userID, 10), Name: target.Edges.User.Name}
+	return target, owners, actor, nil
 }
 
 // removeLocked applies the Owner invariants to removing target (whose Workspace's owner

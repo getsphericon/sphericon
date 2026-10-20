@@ -103,3 +103,11 @@
   discarded_at: '{{daysAgo 5}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Thirteenth tenant (Cyberdyne) - live; Pru is its only Owner and signs in only through a
+# Sign-in provider, so her User deletion is refused as any sole Owner's is (ADR 0050).
+- id: 13 # fixture: Cyberdyne
+  name: Cyberdyne
+  public_id: CyberW13
+  collect_key: omck_test_cyberdyne_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
