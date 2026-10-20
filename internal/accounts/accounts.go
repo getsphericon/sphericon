@@ -253,7 +253,7 @@ func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name strin
 				return err
 			}
 			actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
-			return events.RecordAudit(ctx, pub, workspaceAudit(ws, actor, events.ActionWorkspaceCreate, nil))
+			return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceCreate, nil))
 		})
 		if db.IsUniqueViolation(err) {
 			continue // drew a taken id; the next attempt retries
@@ -791,17 +791,3 @@ func WorkspaceIDByPublicID(ctx context.Context, client *ent.Client, publicID str
 // deleted Workspace (its Members' scope, the lists, the Instance-wide readers) uses it, so
 // "live" is stated once.
 func Live() predicate.Workspace { return workspace.DeletedAtIsNil() }
-
-// workspaceAudit is the Audit entry of creating a Workspace:
-// the Workspace is its own target.
-func workspaceAudit(ws *ent.Workspace, actor events.Actor, action string, diff map[string]any) *events.AuditEntry {
-	return &events.AuditEntry{
-		WorkspaceID: ws.ID,
-		Actor:       actor,
-		Action:      action,
-		TargetType:  workspace.Label,
-		TargetID:    strconv.FormatInt(ws.ID, 10),
-		TargetName:  ws.Name,
-		Diff:        diff,
-	}
-}

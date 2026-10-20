@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"log/slog"
 	"time"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/webhook"
+	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 // Worker constructors for the external jobs_test package: Work is exercised

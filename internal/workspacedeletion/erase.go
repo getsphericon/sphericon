@@ -76,6 +76,10 @@ func (m *Module) EraseDue(ctx context.Context, now time.Time) (int, error) {
 	return erased, errors.Join(errs...)
 }
 
+// eraseWorkspace removes the Workspace's rows, then writes the tombstone. The tombstone's
+// compare-and-swap cannot lose after the steps in practice: Due selects only rows past the
+// window and Restore is refused once the window has passed, so nothing moves a listed row
+// back to active. If it did, the stale move is finished as ErrInvalidTransition (EraseDue).
 func (m *Module) eraseWorkspace(ctx context.Context, id int64, now time.Time) error {
 	// Rerun every step until a whole pass finds nothing to remove: a row written while
 	// another kind was being deleted is then removed too, before the tombstone is made.

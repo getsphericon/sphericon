@@ -10,14 +10,14 @@
 // The package takes the raw client: it lists Workspaces that have no scope yet (the Owners'
 // deleted Workspaces, the ones whose window has passed), opens a transaction per erase step
 // and writes the row the cycle moves.
-// It imports neither holds nor Outbound; holds and the site read the window from here.
+// It imports neither the holds package nor the outbound package (ent's outboundmessage entity
+// is only a row the erase removes); holds and the site read the window from here.
 package workspacedeletion
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -161,20 +161,6 @@ func machine(s lifecycle.Storage[State]) *stateless.StateMachine {
 	return sm
 }
 
-// workspaceAudit is the Audit entry of a Workspace deletion action: the Workspace is its
-// own target.
-func workspaceAudit(ws *ent.Workspace, actor events.Actor, action string, diff map[string]any) *events.AuditEntry {
-	return &events.AuditEntry{
-		WorkspaceID: ws.ID,
-		Actor:       actor,
-		Action:      action,
-		TargetType:  workspace.Label,
-		TargetID:    strconv.FormatInt(ws.ID, 10),
-		TargetName:  ws.Name,
-		Diff:        diff,
-	}
-}
-
 // deletedDiff is the audit diff of the Workspace's deleted state changing.
 func deletedDiff(from, to bool) map[string]any {
 	return map[string]any{"deleted": map[string]any{"from": from, "to": to}}
@@ -205,7 +191,7 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		if deleted, err = tx.Workspace.Get(ctx, ws.ID); err != nil {
 			return err
 		}
-		return events.RecordAudit(ctx, pub, workspaceAudit(ws, actor, events.ActionWorkspaceDelete, deletedDiff(false, true)))
+		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceDelete, deletedDiff(false, true)))
 	})
 	return deleted, err
 }
@@ -228,6 +214,9 @@ func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*e
 // already erased is lifecycle.ErrInvalidTransition. Recorded as `workspace.restore` in the
 // same transaction. The returned Membership carries its User and the restored Workspace.
 func (m *Module) Restore(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Membership, error) {
+	// An erased Workspace has no Memberships left (the erase removes them), so the lookup
+	// below finds nothing and the API answers 404: no one can be authorized to restore it.
+	// lifecycle.ErrInvalidTransition from an erased row is only reachable through the machine.
 	mem, err := m.client.Membership.Query().
 		Where(membership.UserID(userID), membership.RoleEQ(membership.RoleOwner),
 			membership.HasWorkspaceWith(workspace.PublicID(publicID), workspace.DeletedAtNotNil())).
@@ -245,7 +234,7 @@ func (m *Module) Restore(ctx context.Context, userID int64, publicID string, act
 			return err
 		}
 		mem.Edges.Workspace = ws
-		return events.RecordAudit(ctx, pub, workspaceAudit(ws, actor, events.ActionWorkspaceRestore, deletedDiff(true, false)))
+		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceRestore, deletedDiff(true, false)))
 	})
 	if err != nil {
 		return nil, err

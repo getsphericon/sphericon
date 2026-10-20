@@ -69,13 +69,30 @@ func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
 	assert.NotNil(t, initech(t, env).DeletedAt, "a Workspace past its window stays deleted")
 }
 
-func TestRestoreAfterErasureIsRefused(t *testing.T) {
+// An erased Workspace has no Memberships left, so the real Restore finds no Owner: the API
+// answers 404, as for any Workspace the caller cannot see.
+func TestRestoreAfterErasureFindsNoOwner(t *testing.T) {
+	env, m := setup(t)
+	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
+	_, err := m.EraseDue(t.Context(), now)
+	require.NoError(t, err)
+
+	err = restore(t, m)
+
+	assert.True(t, ent.IsNotFound(err), "got %v", err)
+	assert.NotNil(t, initech(t, env).ErasedAt)
+}
+
+// The machine itself refuses a restore of an erased row, whatever the caller could see.
+func TestTheMachineRefusesRestoringAnErasedWorkspace(t *testing.T) {
 	env, m := setup(t)
 	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
 	require.NoError(t, erase(t, env, m))
+	machine := workspacedeletion.Machine(workspacedeletion.Storage(env.DB, fixtures.InitechID, now))
 
-	require.ErrorIs(t, restore(t, m), lifecycle.ErrInvalidTransition)
+	err := machine.FireCtx(t.Context(), workspacedeletion.TriggerRestore)
 
+	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	got := initech(t, env)
 	assert.NotNil(t, got.DeletedAt)
 	assert.NotNil(t, got.ErasedAt)
@@ -155,11 +172,10 @@ func TestARestoreRacingAnEraseHasOneWinner(t *testing.T) {
 	cases := []struct {
 		name          string
 		first, second workspacedeletion.Trigger
-		restored      bool
-		erased        bool
+		want          workspacedeletion.State
 	}{
-		{"restore first", workspacedeletion.TriggerRestore, workspacedeletion.TriggerErase, true, false},
-		{"erase first", workspacedeletion.TriggerErase, workspacedeletion.TriggerRestore, false, true},
+		{"restore first", workspacedeletion.TriggerRestore, workspacedeletion.TriggerErase, workspacedeletion.StateActive},
+		{"erase first", workspacedeletion.TriggerErase, workspacedeletion.TriggerRestore, workspacedeletion.StateErased},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -171,9 +187,8 @@ func TestARestoreRacingAnEraseHasOneWinner(t *testing.T) {
 			require.NoError(t, first.FireCtx(t.Context(), c.first))
 			require.ErrorIs(t, second.FireCtx(t.Context(), c.second), lifecycle.ErrInvalidTransition)
 
-			got := initech(t, env)
-			assert.Equal(t, c.restored, got.DeletedAt == nil, "restored")
-			assert.Equal(t, c.erased, got.ErasedAt != nil, "erased")
+			got := workspacedeletion.StateOf(initech(t, env))
+			assert.Equal(t, c.want, got)
 		})
 	}
 }

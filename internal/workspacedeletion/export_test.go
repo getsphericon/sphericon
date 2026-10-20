@@ -25,5 +25,5 @@ func WithBatch(m *Module, n int) *Module {
 	return &c
 }
 
-// EraseStepCount is how many entities the erase removes, for the coverage test.
-func EraseStepCount() int { return len(eraseSteps) }
+// StateOf is the cycle state a Workspace row is in.
+func StateOf(ws *ent.Workspace) State { return stateOf(ws) }

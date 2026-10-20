@@ -2,9 +2,11 @@ package events
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/clientip"
 	"github.com/getsphericon/sphericon/internal/logging"
 )
@@ -139,6 +141,20 @@ type AuditEntry struct {
 	RequestID   string         `json:"requestId,omitempty"`
 	IP          string         `json:"ip,omitempty"`
 	UserAgent   string         `json:"userAgent,omitempty"`
+}
+
+// WorkspaceAudit is the Audit entry of an action on a Workspace itself: the Workspace is
+// its own target.
+func WorkspaceAudit(ws *ent.Workspace, actor Actor, action string, diff map[string]any) *AuditEntry {
+	return &AuditEntry{
+		WorkspaceID: ws.ID,
+		Actor:       actor,
+		Action:      action,
+		TargetType:  workspace.Label,
+		TargetID:    strconv.FormatInt(ws.ID, 10),
+		TargetName:  ws.Name,
+		Diff:        diff,
+	}
 }
 
 func (*AuditEntry) EventName() string  { return NameAuditEntry }

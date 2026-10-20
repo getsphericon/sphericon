@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
+	"github.com/ogen-go/ogen/validate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -156,7 +158,9 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 	env.DB.Workspace.UpdateOneID(fixtures.InitechID).
 		SetDeletedAt(time.Now().Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(ctx)
 	_, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
-	require.ErrorContains(t, err, "409", "a Workspace past its window is a conflict")
+	var unexpected *validate.UnexpectedStatusCodeError
+	require.ErrorAs(t, err, &unexpected)
+	assert.Equal(t, http.StatusConflict, unexpected.StatusCode, "a Workspace past its window is a conflict")
 	deleted, err := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesListDeleted(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, deleted)
