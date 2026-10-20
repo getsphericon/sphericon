@@ -4,9 +4,9 @@ import { useDeleteConfirmation } from './useDeleteConfirmation.tsx'
 import { useResourceMutation } from './useResourceMutation.ts'
 
 interface DeleteResourceOptions<TData, TError, TCtx> {
-  // The generated delete mutation, called with { path: { slug, id } }.
-  mutation: UseMutationOptions<TData, TError, { path: { slug: string; id: string } }, TCtx>
-  slug: string
+  // The generated delete mutation, called with { path: { workspaceId, id } }.
+  mutation: UseMutationOptions<TData, TError, { path: { workspaceId: string; id: string } }, TCtx>
+  workspaceId: string
   listQueryKey: QueryKey
   successMessage: string
   errorTitle: string
@@ -16,7 +16,7 @@ interface DeleteResourceOptions<TData, TError, TCtx> {
 // repeats. Returns the handler a row's delete button calls.
 export function useDeleteResource<TData, TError, TCtx>({
   mutation,
-  slug,
+  workspaceId,
   listQueryKey,
   successMessage,
   errorTitle,
@@ -31,6 +31,6 @@ export function useDeleteResource<TData, TError, TCtx>({
 
   return (id: string) => {
     deletion.reset()
-    confirmDelete({ onConfirm: () => deletion.mutate({ path: { slug, id } }) })
+    confirmDelete({ onConfirm: () => deletion.mutate({ path: { workspaceId, id } }) })
   }
 }

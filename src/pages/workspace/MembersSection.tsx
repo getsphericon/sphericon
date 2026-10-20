@@ -45,7 +45,7 @@ import { formatDate } from '../../utils/datetime.ts'
 const MEMBER_ROLES: SiteMembershipRole[] = ['owner', 'admin', 'member']
 const INVITABLE_ROLES: SiteInvitableRole[] = ['admin', 'member']
 
-export function MembersSection({ slug }: { slug: string }) {
+export function MembersSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmRemove = useDeleteConfirmation()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
@@ -54,14 +54,14 @@ export function MembersSection({ slug }: { slug: string }) {
     close()
     setInviteUrl(null)
   }
-  const role = useCurrentRole(slug)
+  const role = useCurrentRole(workspaceId)
   const me = useQuery(siteUserGetMeOptions())
   const canManageMembers = canManage(role)
 
-  const membersKey = siteMembershipsListQueryKey({ path: { slug } })
-  const invitesKey = siteInvitationsListQueryKey({ path: { slug } })
-  const membersQuery = useQuery(siteMembershipsListOptions({ path: { slug } }))
-  const invitesQuery = useQuery(siteInvitationsListOptions({ path: { slug } }))
+  const membersKey = siteMembershipsListQueryKey({ path: { workspaceId } })
+  const invitesKey = siteInvitationsListQueryKey({ path: { workspaceId } })
+  const membersQuery = useQuery(siteMembershipsListOptions({ path: { workspaceId } }))
+  const invitesQuery = useQuery(siteInvitationsListOptions({ path: { workspaceId } }))
 
   const form = useForm<{ email: string; role: SiteInvitableRole }>({
     initialValues: { email: '', role: 'member' },
@@ -106,21 +106,21 @@ export function MembersSection({ slug }: { slug: string }) {
       title: t(($) => $.settings.members.resetSecondFactorConfirmTitle),
       description: t(($) => $.settings.members.resetSecondFactorConfirmDescription),
       confirmLabel: t(($) => $.settings.members.resetSecondFactorConfirm),
-      onConfirm: () => resetMutation.mutate({ path: { slug, id } }),
+      onConfirm: () => resetMutation.mutate({ path: { workspaceId, id } }),
     })
 
   const onRemove = (id: string) =>
     confirmRemove({
       title: t(($) => $.settings.members.removeConfirmTitle),
       description: t(($) => $.settings.members.removeConfirmDescription),
-      onConfirm: () => removeMutation.mutate({ path: { slug, id } }),
+      onConfirm: () => removeMutation.mutate({ path: { workspaceId, id } }),
     })
 
   const onRevoke = (id: string) =>
     confirmRemove({
       title: t(($) => $.settings.members.revokeConfirmTitle),
       description: t(($) => $.settings.members.revokeConfirmDescription),
-      onConfirm: () => revokeMutation.mutate({ path: { slug, id } }),
+      onConfirm: () => revokeMutation.mutate({ path: { workspaceId, id } }),
     })
 
   return (
@@ -173,7 +173,7 @@ export function MembersSection({ slug }: { slug: string }) {
                     onChange={(value) => {
                       if (value && value !== record.role) {
                         roleMutation.mutate({
-                          path: { slug, id: record.id },
+                          path: { workspaceId, id: record.id },
                           body: { role: value },
                         })
                       }
@@ -259,7 +259,7 @@ export function MembersSection({ slug }: { slug: string }) {
           <form
             onSubmit={form.onSubmit((values) =>
               inviteMutation.mutate({
-                path: { slug },
+                path: { workspaceId },
                 body: { email: values.email.trim(), role: values.role },
               }),
             )}

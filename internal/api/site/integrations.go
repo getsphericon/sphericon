@@ -22,7 +22,7 @@ const errIntegrationsForbidden = "only owners and admins can manage integrations
 // SiteIntegrationsList returns the workspace's sending-provider integrations
 // with secrets redacted.
 func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.SiteIntegrationsListParams) (siteapi.SiteIntegrationsListRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := problem(http.StatusNotFound, "workspace not found")
 		return &v, nil
@@ -56,7 +56,7 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.Site
 // SiteIntegrationsCreate stores a new provider integration; credentials are
 // encrypted at rest and never returned. Owners and admins only.
 func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.SiteCreateIntegrationInput, params siteapi.SiteIntegrationsCreateParams) (siteapi.SiteIntegrationsCreateRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -109,7 +109,7 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 
 // SiteIntegrationsGet returns one integration with secrets redacted.
 func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteIntegrationsGetParams) (siteapi.SiteIntegrationsGetRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -140,7 +140,7 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 // keep the stored secret rather than clearing it, since secrets are never echoed
 // back on read — so a partial edit cannot accidentally wipe a credential.
 func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.SiteUpdateIntegrationInput, params siteapi.SiteIntegrationsUpdateParams) (siteapi.SiteIntegrationsUpdateRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -203,7 +203,7 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 // SiteIntegrationsRegenerateKey gives the integration a new hook key; the old hook URL
 // stops working at once. Owners and admins only.
 func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params siteapi.SiteIntegrationsRegenerateKeyParams) (siteapi.SiteIntegrationsRegenerateKeyRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -246,7 +246,7 @@ func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResou
 
 // SiteIntegrationsDelete removes an integration.
 func (h *Handlers) SiteIntegrationsDelete(ctx context.Context, params siteapi.SiteIntegrationsDeleteParams) (siteapi.SiteIntegrationsDeleteRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteIntegrationsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

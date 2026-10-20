@@ -645,7 +645,7 @@ export const siteWorkspacesUpdate = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}',
+  url: '/workspaces/{workspaceId}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -668,7 +668,7 @@ export const siteWorkspacesAccountLink = <ThrowOnError extends boolean = false>(
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/account-link',
+  url: '/workspaces/{workspaceId}/account-link',
   ...options
 });
 
@@ -686,7 +686,7 @@ export const siteAnalyticsOverview = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/analytics/overview',
+  url: '/workspaces/{workspaceId}/analytics/overview',
   ...options
 });
 
@@ -704,7 +704,7 @@ export const siteAuditList = <ThrowOnError extends boolean = false>(options: Opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/audit-entries',
+  url: '/workspaces/{workspaceId}/audit-entries',
   ...options
 });
 
@@ -722,7 +722,7 @@ export const siteAuditExport = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/audit-entries/export',
+  url: '/workspaces/{workspaceId}/audit-entries/export',
   ...options
 });
 
@@ -740,7 +740,7 @@ export const siteAuditGetRetention = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/audit-entries/retention',
+  url: '/workspaces/{workspaceId}/audit-entries/retention',
   ...options
 });
 
@@ -758,7 +758,7 @@ export const siteAuditSetRetention = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/audit-entries/retention',
+  url: '/workspaces/{workspaceId}/audit-entries/retention',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -780,7 +780,7 @@ export const siteAutomationsList = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations',
+  url: '/workspaces/{workspaceId}/automations',
   ...options
 });
 
@@ -798,7 +798,7 @@ export const siteAutomationsCreate = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations',
+  url: '/workspaces/{workspaceId}/automations',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -820,7 +820,7 @@ export const siteAutomationsDryRunHttpStep = <ThrowOnError extends boolean = fal
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/dry-run-http-step',
+  url: '/workspaces/{workspaceId}/automations/dry-run-http-step',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -842,7 +842,7 @@ export const siteEnrollmentsList = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{automationId}/enrollments',
+  url: '/workspaces/{workspaceId}/automations/{automationId}/enrollments',
   ...options
 });
 
@@ -860,7 +860,7 @@ export const siteEnrollmentsGet = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}',
+  url: '/workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}',
   ...options
 });
 
@@ -878,7 +878,7 @@ export const siteAutomationsDelete = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}',
+  url: '/workspaces/{workspaceId}/automations/{id}',
   ...options
 });
 
@@ -896,7 +896,7 @@ export const siteAutomationsGet = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}',
+  url: '/workspaces/{workspaceId}/automations/{id}',
   ...options
 });
 
@@ -914,7 +914,7 @@ export const siteAutomationsUpdate = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}',
+  url: '/workspaces/{workspaceId}/automations/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -936,7 +936,7 @@ export const siteAutomationsActivate = <ThrowOnError extends boolean = false>(op
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}/activate',
+  url: '/workspaces/{workspaceId}/automations/{id}/activate',
   ...options
 });
 
@@ -954,7 +954,7 @@ export const siteAutomationsDeactivate = <ThrowOnError extends boolean = false>(
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/automations/{id}/deactivate',
+  url: '/workspaces/{workspaceId}/automations/{id}/deactivate',
   ...options
 });
 
@@ -972,7 +972,7 @@ export const siteBrandKitGet = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/brand-kit',
+  url: '/workspaces/{workspaceId}/brand-kit',
   ...options
 });
 
@@ -993,7 +993,7 @@ export const siteBrandKitSave = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/brand-kit',
+  url: '/workspaces/{workspaceId}/brand-kit',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1017,7 +1017,7 @@ export const siteBrandKitRecreateStarterTemplates = <ThrowOnError extends boolea
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/brand-kit/starter-templates',
+  url: '/workspaces/{workspaceId}/brand-kit/starter-templates',
   ...options
 });
 
@@ -1035,7 +1035,7 @@ export const siteBroadcastsList = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts',
+  url: '/workspaces/{workspaceId}/broadcasts',
   ...options
 });
 
@@ -1053,7 +1053,7 @@ export const siteBroadcastsCreate = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts',
+  url: '/workspaces/{workspaceId}/broadcasts',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1075,7 +1075,7 @@ export const siteBroadcastsDelete = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}',
   ...options
 });
 
@@ -1093,7 +1093,7 @@ export const siteBroadcastsGet = <ThrowOnError extends boolean = false>(options:
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}',
   ...options
 });
 
@@ -1111,7 +1111,7 @@ export const siteBroadcastsUpdate = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1133,7 +1133,7 @@ export const siteBroadcastsSchedule = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}/schedule',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}/schedule',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1155,7 +1155,7 @@ export const siteBroadcastsSend = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}/send',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}/send',
   ...options
 });
 
@@ -1175,7 +1175,7 @@ export const siteBroadcastsTestSend = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/broadcasts/{id}/test-send',
+  url: '/workspaces/{workspaceId}/broadcasts/{id}/test-send',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1197,7 +1197,7 @@ export const siteContactsList = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts',
+  url: '/workspaces/{workspaceId}/contacts',
   ...options
 });
 
@@ -1215,7 +1215,7 @@ export const siteContactsCreate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts',
+  url: '/workspaces/{workspaceId}/contacts',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1239,7 +1239,7 @@ export const siteContactsExport = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/export',
+  url: '/workspaces/{workspaceId}/contacts/export',
   ...options
 });
 
@@ -1257,7 +1257,7 @@ export const siteTagsListForContact = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{contactId}/tags',
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/tags',
   ...options
 });
 
@@ -1275,7 +1275,7 @@ export const siteTagsApply = <ThrowOnError extends boolean = false>(options: Opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{contactId}/tags',
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/tags',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1297,7 +1297,7 @@ export const siteTagsRemove = <ThrowOnError extends boolean = false>(options: Op
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{contactId}/tags/{name}',
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/tags/{name}',
   ...options
 });
 
@@ -1315,7 +1315,7 @@ export const siteContactsDelete = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{id}',
+  url: '/workspaces/{workspaceId}/contacts/{id}',
   ...options
 });
 
@@ -1333,7 +1333,7 @@ export const siteContactsGet = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{id}',
+  url: '/workspaces/{workspaceId}/contacts/{id}',
   ...options
 });
 
@@ -1351,7 +1351,7 @@ export const siteContactsUpdate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/contacts/{id}',
+  url: '/workspaces/{workspaceId}/contacts/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1373,7 +1373,7 @@ export const siteCustomFieldsList = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/custom-fields',
+  url: '/workspaces/{workspaceId}/custom-fields',
   ...options
 });
 
@@ -1391,7 +1391,7 @@ export const siteEventsList = <ThrowOnError extends boolean = false>(options: Op
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/events',
+  url: '/workspaces/{workspaceId}/events',
   ...options
 });
 
@@ -1409,7 +1409,7 @@ export const siteEventsActions = <ThrowOnError extends boolean = false>(options:
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/events/actions',
+  url: '/workspaces/{workspaceId}/events/actions',
   ...options
 });
 
@@ -1427,7 +1427,7 @@ export const siteIntegrationsList = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations',
+  url: '/workspaces/{workspaceId}/integrations',
   ...options
 });
 
@@ -1445,7 +1445,7 @@ export const siteIntegrationsCreate = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations',
+  url: '/workspaces/{workspaceId}/integrations',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1467,7 +1467,7 @@ export const siteIntegrationsDelete = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations/{id}',
+  url: '/workspaces/{workspaceId}/integrations/{id}',
   ...options
 });
 
@@ -1485,7 +1485,7 @@ export const siteIntegrationsGet = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations/{id}',
+  url: '/workspaces/{workspaceId}/integrations/{id}',
   ...options
 });
 
@@ -1503,7 +1503,7 @@ export const siteIntegrationsUpdate = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations/{id}',
+  url: '/workspaces/{workspaceId}/integrations/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1525,7 +1525,7 @@ export const siteIntegrationsRegenerateKey = <ThrowOnError extends boolean = fal
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/integrations/{id}/regenerate-key',
+  url: '/workspaces/{workspaceId}/integrations/{id}/regenerate-key',
   ...options
 });
 
@@ -1543,7 +1543,7 @@ export const siteInvitationsList = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/invitations',
+  url: '/workspaces/{workspaceId}/invitations',
   ...options
 });
 
@@ -1561,7 +1561,7 @@ export const siteInvitationsCreate = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/invitations',
+  url: '/workspaces/{workspaceId}/invitations',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1583,7 +1583,7 @@ export const siteInvitationsDelete = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/invitations/{id}',
+  url: '/workspaces/{workspaceId}/invitations/{id}',
   ...options
 });
 
@@ -1601,7 +1601,7 @@ export const siteMembershipsList = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/memberships',
+  url: '/workspaces/{workspaceId}/memberships',
   ...options
 });
 
@@ -1619,7 +1619,7 @@ export const siteMembershipsDelete = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/memberships/{id}',
+  url: '/workspaces/{workspaceId}/memberships/{id}',
   ...options
 });
 
@@ -1637,7 +1637,7 @@ export const siteMembershipsUpdate = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/memberships/{id}',
+  url: '/workspaces/{workspaceId}/memberships/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1662,7 +1662,7 @@ export const siteMembershipsResetSecondFactor = <ThrowOnError extends boolean = 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/memberships/{id}/reset-second-factor',
+  url: '/workspaces/{workspaceId}/memberships/{id}/reset-second-factor',
   ...options
 });
 
@@ -1682,7 +1682,7 @@ export const siteWorkspacesSetSecondFactorRequirement = <ThrowOnError extends bo
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/second-factor-requirement',
+  url: '/workspaces/{workspaceId}/second-factor-requirement',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1704,7 +1704,7 @@ export const siteSegmentsList = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments',
+  url: '/workspaces/{workspaceId}/segments',
   ...options
 });
 
@@ -1722,7 +1722,7 @@ export const siteSegmentsCreate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments',
+  url: '/workspaces/{workspaceId}/segments',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1744,7 +1744,7 @@ export const siteSegmentsPreview = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments/preview',
+  url: '/workspaces/{workspaceId}/segments/preview',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1766,7 +1766,7 @@ export const siteSegmentsDelete = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments/{id}',
+  url: '/workspaces/{workspaceId}/segments/{id}',
   ...options
 });
 
@@ -1784,7 +1784,7 @@ export const siteSegmentsGet = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments/{id}',
+  url: '/workspaces/{workspaceId}/segments/{id}',
   ...options
 });
 
@@ -1802,7 +1802,7 @@ export const siteSegmentsUpdate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/segments/{id}',
+  url: '/workspaces/{workspaceId}/segments/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1824,7 +1824,7 @@ export const siteSendingDomainsList = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains',
+  url: '/workspaces/{workspaceId}/sending-domains',
   ...options
 });
 
@@ -1842,7 +1842,7 @@ export const siteSendingDomainsCreate = <ThrowOnError extends boolean = false>(o
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains',
+  url: '/workspaces/{workspaceId}/sending-domains',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1864,7 +1864,7 @@ export const siteSendingDomainsDelete = <ThrowOnError extends boolean = false>(o
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains/{id}',
+  url: '/workspaces/{workspaceId}/sending-domains/{id}',
   ...options
 });
 
@@ -1882,7 +1882,7 @@ export const siteSendingDomainsGet = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains/{id}',
+  url: '/workspaces/{workspaceId}/sending-domains/{id}',
   ...options
 });
 
@@ -1900,7 +1900,7 @@ export const siteSendingDomainsVerify = <ThrowOnError extends boolean = false>(o
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/sending-domains/{id}/verify',
+  url: '/workspaces/{workspaceId}/sending-domains/{id}/verify',
   ...options
 });
 
@@ -1918,7 +1918,7 @@ export const siteSetupChecklistGet = <ThrowOnError extends boolean = false>(opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/setup-checklist',
+  url: '/workspaces/{workspaceId}/setup-checklist',
   ...options
 });
 
@@ -1936,7 +1936,7 @@ export const siteSuppressionsList = <ThrowOnError extends boolean = false>(optio
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/suppressions',
+  url: '/workspaces/{workspaceId}/suppressions',
   ...options
 });
 
@@ -1954,7 +1954,7 @@ export const siteSuppressionsCreate = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/suppressions',
+  url: '/workspaces/{workspaceId}/suppressions',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -1976,7 +1976,7 @@ export const siteSuppressionsDelete = <ThrowOnError extends boolean = false>(opt
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/suppressions/{id}',
+  url: '/workspaces/{workspaceId}/suppressions/{id}',
   ...options
 });
 
@@ -1994,7 +1994,7 @@ export const siteTagsList = <ThrowOnError extends boolean = false>(options: Opti
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/tags',
+  url: '/workspaces/{workspaceId}/tags',
   ...options
 });
 
@@ -2012,7 +2012,7 @@ export const siteTemplatesList = <ThrowOnError extends boolean = false>(options:
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates',
+  url: '/workspaces/{workspaceId}/templates',
   ...options
 });
 
@@ -2030,7 +2030,7 @@ export const siteTemplatesCreate = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates',
+  url: '/workspaces/{workspaceId}/templates',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2052,7 +2052,7 @@ export const siteTemplatesDelete = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates/{id}',
+  url: '/workspaces/{workspaceId}/templates/{id}',
   ...options
 });
 
@@ -2070,7 +2070,7 @@ export const siteTemplatesGet = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates/{id}',
+  url: '/workspaces/{workspaceId}/templates/{id}',
   ...options
 });
 
@@ -2088,7 +2088,7 @@ export const siteTemplatesUpdate = <ThrowOnError extends boolean = false>(option
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/templates/{id}',
+  url: '/workspaces/{workspaceId}/templates/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2110,7 +2110,7 @@ export const siteTokensList = <ThrowOnError extends boolean = false>(options: Op
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/tokens',
+  url: '/workspaces/{workspaceId}/tokens',
   ...options
 });
 
@@ -2128,7 +2128,7 @@ export const siteTokensCreate = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/tokens',
+  url: '/workspaces/{workspaceId}/tokens',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2150,7 +2150,7 @@ export const siteTokensDelete = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/tokens/{id}',
+  url: '/workspaces/{workspaceId}/tokens/{id}',
   ...options
 });
 
@@ -2168,7 +2168,7 @@ export const siteTransactionalEmailsList = <ThrowOnError extends boolean = false
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/transactional-emails',
+  url: '/workspaces/{workspaceId}/transactional-emails',
   ...options
 });
 
@@ -2186,7 +2186,7 @@ export const siteWebhooksList = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks',
+  url: '/workspaces/{workspaceId}/webhooks',
   ...options
 });
 
@@ -2204,7 +2204,7 @@ export const siteWebhooksCreate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks',
+  url: '/workspaces/{workspaceId}/webhooks',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2226,7 +2226,7 @@ export const siteWebhooksDelete = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}',
+  url: '/workspaces/{workspaceId}/webhooks/{id}',
   ...options
 });
 
@@ -2244,7 +2244,7 @@ export const siteWebhooksGet = <ThrowOnError extends boolean = false>(options: O
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}',
+  url: '/workspaces/{workspaceId}/webhooks/{id}',
   ...options
 });
 
@@ -2262,7 +2262,7 @@ export const siteWebhooksUpdate = <ThrowOnError extends boolean = false>(options
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}',
+  url: '/workspaces/{workspaceId}/webhooks/{id}',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -2284,7 +2284,7 @@ export const siteWebhooksRegenerateSecret = <ThrowOnError extends boolean = fals
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}/regenerate-secret',
+  url: '/workspaces/{workspaceId}/webhooks/{id}/regenerate-secret',
   ...options
 });
 
@@ -2302,7 +2302,7 @@ export const siteWebhooksTest = <ThrowOnError extends boolean = false>(options: 
       name: 'JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{slug}/webhooks/{id}/test',
+  url: '/workspaces/{workspaceId}/webhooks/{id}/test',
   ...options,
   headers: {
     'Content-Type': 'application/json',

@@ -126,7 +126,7 @@ func TestTheVerifyLinkSetsThePasswordCreatesTheWorkspaceAndAllowsLogin(t *testin
 	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "personal", spaces[0].Slug)
+	assert.Regexp(t, "^[0-9A-Za-z]{8}$", spaces[0].ID)
 	assert.Equal(t, "Personal", spaces[0].Name)
 }
 
@@ -170,7 +170,7 @@ func TestVerifyingIsRecordedInTheNewWorkspacesAuditLog(t *testing.T) {
 	env := testhelper.Setup(t)
 	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1")
 
-	got := entriesNamed(t, env, "grace@example.com", "personal", events.ActionUserEmailVerify)
+	got := entriesNamed(t, env, "grace@example.com", firstWorkspaceID(t, env, "grace@example.com"), events.ActionUserEmailVerify)
 
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
@@ -214,10 +214,10 @@ func TestWithTheGateOffRegisteringCreatesAVerifiedUserWithAWorkspaceAndSignInWor
 	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "personal", spaces[0].Slug)
+	assert.Regexp(t, "^[0-9A-Za-z]{8}$", spaces[0].ID)
 	assert.Equal(t, "Personal", spaces[0].Name)
 
-	got := entriesNamed(t, env, "grace@example.com", "personal", events.ActionUserEmailVerify)
+	got := entriesNamed(t, env, "grace@example.com", firstWorkspaceID(t, env, "grace@example.com"), events.ActionUserEmailVerify)
 	assert.Len(t, got, 1)
 }
 
@@ -282,7 +282,7 @@ func TestPasswordResetProvesTheAddressOfAnUnverifiedUser(t *testing.T) {
 	spaces, err := env.SiteWithToken(t, sessionCookie(rec.Result()).Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
 	require.Len(t, spaces, 1)
-	assert.Equal(t, "personal", spaces[0].Slug)
+	assert.Regexp(t, "^[0-9A-Za-z]{8}$", spaces[0].ID)
 	assert.Equal(t, "Personal", spaces[0].Name)
 }
 
@@ -477,4 +477,13 @@ func TestVerifyingAnEmailCreatesAWorkspaceNamedPersonalOwnedByTheUser(t *testing
 		assert.Equal(t, entmembership.RoleOwner, ms[0].Role)
 		assert.Equal(t, "Personal", ms[0].Edges.Workspace.Name)
 	}
+}
+
+// firstWorkspaceID is the id of the one Workspace the User has, as their own list shows it.
+func firstWorkspaceID(t *testing.T, env *testhelper.TestEnv, email string) siteapi.WorkspaceId {
+	t.Helper()
+	spaces, err := env.SiteActor(t, email).SiteWorkspacesList(t.Context())
+	require.NoError(t, err)
+	require.Len(t, spaces, 1)
+	return spaces[0].ID
 }

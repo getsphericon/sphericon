@@ -82,7 +82,7 @@ func TestTheSecondStepWithATOTPCodeStartsASessionAndIsAudited(t *testing.T) {
 	require.NotNil(t, cookie)
 	assert.Equal(t, http.StatusOK, workspacesStatus(t, s.env, cookie.Value), "the cookie authorizes /site")
 
-	assert.Len(t, entriesNamed(t, s.env, fixtures.OwnerJaneEmail, fixtures.GlobexSlug, events.ActionUserLogin), 1)
+	assert.Len(t, entriesNamed(t, s.env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserLogin), 1)
 }
 
 func TestTheSecondStepRejectsAWrongCodeWithoutASession(t *testing.T) {
@@ -108,7 +108,7 @@ func TestARecoveryCodeWorksOnceAndIsAudited(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, s.secondStep(t, s.challenge(t), fixtures.SecondFactorSamRecoveryCode).Code)
 	assert.Equal(t, http.StatusUnauthorized, s.secondStep(t, s.challenge(t), fixtures.SecondFactorSamSpentRecoveryCode).Code)
 
-	assert.Len(t, entriesNamed(t, s.env, fixtures.OwnerJaneEmail, fixtures.GlobexSlug, events.ActionUserRecoveryCodeUse), 1)
+	assert.Len(t, entriesNamed(t, s.env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserRecoveryCodeUse), 1)
 }
 
 func TestAnExpiredChallengeIsRejected(t *testing.T) {
@@ -145,5 +145,5 @@ func TestUsersWithoutASecondFactorKeepTheOneStepLogin(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.JSONEq(t, `{"outcome":"session"}`, rec.Body.String())
 	assert.NotNil(t, sessionCookie(rec.Result()))
-	assert.Len(t, entriesNamed(t, s.env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserLogin), 1)
+	assert.Len(t, entriesNamed(t, s.env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserLogin), 1)
 }

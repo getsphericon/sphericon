@@ -2,7 +2,7 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { handleSiteSegmentsDelete, handleSiteSegmentsList } from '../../generated/site/msw.gen.ts'
-import { Route as segmentsRoute } from '../../routes/workspaces/$slug/segments/index.tsx'
+import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -10,8 +10,8 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { SegmentsListPage } from './list.tsx'
 
-const SLUG = { slug: 'test' }
-const LIST_ROUTE = routeMount(segmentsRoute, SLUG)
+const WORKSPACE_ID = { workspaceId: 'TestWs01' }
+const LIST_ROUTE = routeMount(segmentsRoute, WORKSPACE_ID)
 
 const VIPS = { id: '1', name: 'VIP customers', ...TIMESTAMPS }
 const TRIAL = { id: '2', name: 'Trial users', ...TIMESTAMPS }
@@ -48,7 +48,7 @@ test('Add segment links to the create page', async () => {
 
   await expect
     .element(screen.getByRole('link', { name: 'Add segment' }))
-    .toHaveAttribute('href', '/workspaces/test/segments/new')
+    .toHaveAttribute('href', '/workspaces/TestWs01/segments/new')
 })
 
 test('Edit links to the segment edit page', async () => {
@@ -59,7 +59,7 @@ test('Edit links to the segment edit page', async () => {
 
   await expect
     .element(screen.getByRole('link', { name: 'Edit' }))
-    .toHaveAttribute('href', '/workspaces/test/segments/1/edit')
+    .toHaveAttribute('href', '/workspaces/TestWs01/segments/1/edit')
 })
 
 test('deleting a segment asks for confirmation, deletes it and refreshes the list', async () => {

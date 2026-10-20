@@ -35,14 +35,14 @@ func TestSiteInvitationsCreateAndList(t *testing.T) {
 
 	res, err := c.SiteInvitationsCreate(ctx,
 		&siteapi.SiteCreateInvitationInput{Email: "newbie@acme.test", Role: siteapi.SiteInvitableRoleMember},
-		siteapi.SiteInvitationsCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	created, ok := res.(*siteapi.SiteCreateInvitationResponse)
 	require.Truef(t, ok, "got %T", res)
 	assert.Contains(t, created.InviteUrl, "/invitations/", "copy-link is returned")
 	assert.Equal(t, siteapi.EmailAddress("newbie@acme.test"), created.Resource.Email)
 
-	list, err := c.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{Slug: fixtures.AcmeSlug})
+	list, err := c.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	items, ok := list.(*siteapi.SiteInvitationsListOKApplicationJSON)
 	require.Truef(t, ok, "got %T", list)
@@ -59,7 +59,7 @@ func TestSiteInvitationsForbiddenForMember(t *testing.T) {
 
 	res, err := c.SiteInvitationsCreate(context.Background(),
 		&siteapi.SiteCreateInvitationInput{Email: "x@acme.test", Role: siteapi.SiteInvitableRoleMember},
-		siteapi.SiteInvitationsCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsCreateForbidden{}, res)
 }
@@ -91,7 +91,7 @@ func TestSiteInvitationAcceptNewUser(t *testing.T) {
 	assert.Equal(t, membership.RoleMember, m.Role)
 
 	// The invite is consumed — no longer pending.
-	list, err := c.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{Slug: fixtures.AcmeSlug})
+	list, err := c.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	items := list.(*siteapi.SiteInvitationsListOKApplicationJSON)
 	for _, inv := range *items {
@@ -110,7 +110,7 @@ func TestSiteInvitationAcceptExistingUser(t *testing.T) {
 
 	res, err := c.SiteInvitationsCreate(ctx,
 		&siteapi.SiteCreateInvitationInput{Email: fixtures.OutsiderOscarEmail, Role: siteapi.SiteInvitableRoleAdmin},
-		siteapi.SiteInvitationsCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	created := res.(*siteapi.SiteCreateInvitationResponse)
 	token := created.InviteUrl[strings.LastIndex(created.InviteUrl, "/")+1:]
@@ -143,7 +143,7 @@ func TestSiteMembershipsList(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	list, err := c.SiteMembershipsList(context.Background(), siteapi.SiteMembershipsListParams{Slug: fixtures.AcmeSlug})
+	list, err := c.SiteMembershipsList(context.Background(), siteapi.SiteMembershipsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	items, ok := list.(*siteapi.SiteMembershipsListOKApplicationJSON)
 	require.Truef(t, ok, "got %T", list)
@@ -163,13 +163,13 @@ func TestSiteMembershipsLastOwnerGuard(t *testing.T) {
 	ctx := context.Background()
 
 	// the Acme owner membership is the sole owner (fixture).
-	del, err := c.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.AcmeOwnerMembershipID)})
+	del, err := c.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsDeleteUnprocessableEntity{}, del)
 
 	upd, err := c.SiteMembershipsUpdate(ctx,
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
-		siteapi.SiteMembershipsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.AcmeOwnerMembershipID)})
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateUnprocessableEntity{}, upd)
 }
@@ -183,7 +183,7 @@ func TestSiteMembershipsRoleManagement(t *testing.T) {
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	forbidden, err := member.SiteMembershipsUpdate(ctx,
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleAdmin},
-		siteapi.SiteMembershipsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(memberID)})
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(memberID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateForbidden{}, forbidden)
 
@@ -191,7 +191,7 @@ func TestSiteMembershipsRoleManagement(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	upd, err := owner.SiteMembershipsUpdate(ctx,
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleAdmin},
-		siteapi.SiteMembershipsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(memberID)})
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(memberID)})
 	require.NoError(t, err)
 	got, ok := upd.(*siteapi.SiteMembershipResource)
 	require.Truef(t, ok, "got %T", upd)
@@ -211,19 +211,19 @@ func TestSiteMembershipsAdminCannotTouchOwner(t *testing.T) {
 	// Admin can promote an ordinary member.
 	upd, err := admin.SiteMembershipsUpdate(ctx,
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleAdmin},
-		siteapi.SiteMembershipsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(targetID)})
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(targetID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipResource{}, upd)
 
 	// Admin cannot demote the owner (the owner membership)...
 	demote, err := admin.SiteMembershipsUpdate(ctx,
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
-		siteapi.SiteMembershipsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.AcmeOwnerMembershipID)})
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateForbidden{}, demote)
 
 	// ...nor remove them.
-	del, err := admin.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.AcmeOwnerMembershipID)})
+	del, err := admin.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsDeleteForbidden{}, del)
 }

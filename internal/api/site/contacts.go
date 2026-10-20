@@ -18,7 +18,7 @@ import (
 )
 
 func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (siteapi.SiteContactsListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteContactsListNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -44,7 +44,7 @@ func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteCont
 }
 
 func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCreateContactInput, params siteapi.SiteContactsCreateParams) (siteapi.SiteContactsCreateRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteContactsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -67,7 +67,7 @@ func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCrea
 }
 
 func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteContactsGetParams) (siteapi.SiteContactsGetRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteContactsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -90,7 +90,7 @@ func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteConta
 }
 
 func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpdateContactInput, params siteapi.SiteContactsUpdateParams) (siteapi.SiteContactsUpdateRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteContactsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -119,7 +119,7 @@ func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpda
 
 // SiteContactsDelete is Erasure (ADR 0021): irreversible, so owner or admin only.
 func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteContactsDeleteParams) (siteapi.SiteContactsDeleteRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.Slug)
+	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteContactsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

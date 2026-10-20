@@ -30,7 +30,7 @@ func membershipResource(m *ent.Membership) siteapi.SiteMembershipResource {
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.
 func (h *Handlers) SiteMembershipsList(ctx context.Context, params siteapi.SiteMembershipsListParams) (siteapi.SiteMembershipsListRes, error) {
-	s, _, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, _, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := problem(http.StatusNotFound, "workspace not found")
 		return &v, nil
@@ -57,7 +57,7 @@ func (h *Handlers) SiteMembershipsList(ctx context.Context, params siteapi.SiteM
 // SiteMembershipsUpdate changes a member's role. Owner/admin only; only an owner
 // may grant the owner role, and the last owner can never be demoted.
 func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteUpdateMembershipInput, params siteapi.SiteMembershipsUpdateParams) (siteapi.SiteMembershipsUpdateRes, error) {
-	s, callerRole, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteMembershipsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -97,7 +97,7 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 // SiteMembershipsDelete removes a member. Owner/admin only; the last owner cannot
 // be removed.
 func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.SiteMembershipsDeleteParams) (siteapi.SiteMembershipsDeleteRes, error) {
-	s, callerRole, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteMembershipsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -139,7 +139,7 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 // someone else's, so nothing is reissued. A member resets nobody, and nobody resets
 // their own here (disabling takes a password and a code).
 func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params siteapi.SiteMembershipsResetSecondFactorParams) (siteapi.SiteMembershipsResetSecondFactorRes, error) {
-	s, callerRole, err := h.scopedWithRoleFor(ctx, params.Slug)
+	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteMembershipsResetSecondFactorNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

@@ -27,18 +27,13 @@ model SiteWorkspaceHold {
 @resource("workspaces")
 @segment("workspaces")
 model SiteWorkspaceResource {
-  /** Unique identifier */
-  id: EntityId;
-
-  /** The Workspace id: its short opaque public address (ADR 0043) */
-  publicId: WorkspaceId;
+  /** The Workspace id: its short opaque public address and the route key for nested
+   * workspace resources (ADR 0043) */
+  @key("workspaceId")
+  id: WorkspaceId;
 
   /** Display name */
   name: string;
-
-  /** URL-safe unique slug; the route key for nested workspace resources */
-  @key("slug")
-  slug: string;
 
   /** Per-workspace collect write-key (x-collect-key) for the tracking snippet */
   collectKey: string;
@@ -110,8 +105,7 @@ model SiteAccountLinkResource {
   expiresAt: Timestamp;
 }
 
-/** Update a workspace. The slug is immutable (it is the route key and globally
- * unique); the display name and the CAN-SPAM postal address can change. */
+/** Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change. */
 model SiteUpdateWorkspaceInput {
   /** New display name */
   name: string;
@@ -139,27 +133,27 @@ namespace SiteWorkspaces {
 
   /** Rename a workspace owned by the authenticated user */
   @put
-  @route("/{slug}")
-  op update(@path slug: string, @body body: SiteUpdateWorkspaceInput):
-    | SiteWorkspaceResource
-    | NotFoundProblem
-    | UnprocessableEntityProblem;
+  @route("/{workspaceId}")
+  op update(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteUpdateWorkspaceInput,
+  ): SiteWorkspaceResource | NotFoundProblem | UnprocessableEntityProblem;
 
   /** Switch the Two-factor requirement on or off (owner and admin only). Switching
    * it on while it is already on keeps the original start, so no one's grace
    * restarts. A change is recorded as an Audit entry. */
   @put
-  @route("/{slug}/second-factor-requirement")
+  @route("/{workspaceId}/second-factor-requirement")
   op setSecondFactorRequirement(
-    @path slug: string,
+    @path workspaceId: WorkspaceId,
     @body body: SiteSecondFactorRequirementInput,
   ): SiteWorkspaceResource | ForbiddenProblem | NotFoundProblem;
 
   /** Mint an Account link token (Owner only). Answers 404 when the installation has no
    * Account link configured. */
   @post
-  @route("/{slug}/account-link")
-  op accountLink(@path slug: string):
+  @route("/{workspaceId}/account-link")
+  op accountLink(@path workspaceId: WorkspaceId):
     | SiteAccountLinkResource
     | ForbiddenProblem
     | NotFoundProblem;

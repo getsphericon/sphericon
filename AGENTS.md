@@ -251,7 +251,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   `client.Scoped(<int64>)`. Tests use `env.DB.Scoped(fixtures.AcmeID)`.
 - **`*ent.Scoped` is built only in a closed list of places:**
   1. site: `accounts.Accounts.Scope`, behind `Handlers.scopedFor` / `scopedWithRoleFor`
-     (`internal/api/site/handlers.go`), from the user's Membership on `/w/{slug}`;
+     (`internal/api/site/handlers.go`), from the user's Membership on `/w/{id}`;
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
      in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;

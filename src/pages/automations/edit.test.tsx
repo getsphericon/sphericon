@@ -9,14 +9,14 @@ import {
   handleSiteEnrollmentsList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
-import { Route as automationsEditRoute } from '../../routes/workspaces/$slug/automations/$automationId/edit.tsx'
+import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { AutomationEditPage } from './edit.tsx'
 
-const EDIT_ROUTE = routeMount(automationsEditRoute, { slug: 'test', automationId: '5' })
+const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
 const NOW = '2026-01-01T00:00:00Z'
 
 // The page also asks for the failed Enrollments: none unless a test says otherwise.

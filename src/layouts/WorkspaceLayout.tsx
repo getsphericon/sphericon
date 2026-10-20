@@ -18,32 +18,32 @@ import { UpdateBanner } from '../components/UpdateBanner.tsx'
 import { UserMenu } from '../components/UserMenu.tsx'
 import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceHold, SiteWorkspaceResource } from '../generated/site/types.gen.ts'
-import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
-import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
-import { Route as settingsRoute } from '../routes/workspaces/$slug/settings/route.tsx'
+import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/route.tsx'
 import { isSecondFactorRequiredError } from '../utils/apiErrors.ts'
 import { DashboardShell } from './DashboardShell.tsx'
 
 // WorkspaceSwitcher changes the active workspace by navigating to its
-// /w/{slug} route.
+// /w/{workspaceId} route.
 function WorkspaceSwitcher({
-  slug,
+  workspaceId,
   workspaces,
 }: {
-  slug: string
+  workspaceId: string
   workspaces: SiteWorkspaceResource[]
 }) {
   const navigate = useNavigate()
-  const data = workspaces.map((w) => ({ value: w.slug, label: w.name }))
+  const data = workspaces.map((w) => ({ value: w.id, label: w.name }))
 
   return (
     <Select
       data={data}
-      value={slug}
+      value={workspaceId}
       allowDeselect={false}
       onChange={(value) => {
-        if (value && value !== slug) {
-          void navigate({ to: overviewRoute.to, params: { slug: value } })
+        if (value && value !== workspaceId) {
+          void navigate({ to: overviewRoute.to, params: { workspaceId: value } })
         }
       }}
       w={{ base: 140, sm: 220 }}
@@ -142,19 +142,19 @@ function HoldBanner({
 // the server's word that the grace is over, even when this browser's clock says
 // otherwise. A reload of the list after the refusal (the requirement was turned off,
 // or the User enrolled) lifts it; a page still refused refuses again.
-function useSecondFactorRefused(slug: string, listedAt: number) {
+function useSecondFactorRefused(workspaceId: string, listedAt: number) {
   const queryCache = useQueryClient().getQueryCache()
-  const [refused, setRefused] = useState<{ slug: string; at: number }>()
+  const [refused, setRefused] = useState<{ workspaceId: string; at: number }>()
   useEffect(
     () =>
       queryCache.subscribe((event) => {
         if (event.type === 'updated' && isSecondFactorRequiredError(event.query.state.error)) {
-          setRefused({ slug, at: event.query.state.errorUpdatedAt })
+          setRefused({ workspaceId, at: event.query.state.errorUpdatedAt })
         }
       }),
-    [queryCache, slug],
+    [queryCache, workspaceId],
   )
-  return refused?.slug === slug && refused.at >= listedAt
+  return refused?.workspaceId === workspaceId && refused.at >= listedAt
 }
 
 // WorkspaceLayout is the shell for workspace-scoped pages (overview, contacts,
@@ -162,24 +162,30 @@ function useSecondFactorRefused(slug: string, listedAt: number) {
 // requirement it shows the grace banner, and once the grace is over it replaces
 // the page with the screen that leads to enrollment.
 export function WorkspaceLayout() {
-  const { slug } = workspaceRoute.useParams()
+  const { workspaceId } = workspaceRoute.useParams()
   // The settings area swaps the workspace sidebar for its own.
   const inSettings = Boolean(
-    useMatchRoute()({ to: settingsRoute.to, params: { slug }, fuzzy: true }),
+    useMatchRoute()({ to: settingsRoute.to, params: { workspaceId }, fuzzy: true }),
   )
   const workspacesQuery = useQuery(siteWorkspacesListOptions())
   const workspaces = workspacesQuery.data ?? []
-  const current = workspaces.find((w) => w.slug === slug)
+  const current = workspaces.find((w) => w.id === workspaceId)
   const holds = current?.holds ?? []
   const billingHolds = holds.filter((hold) => hold.billing)
   const otherHolds = holds.filter((hold) => !hold.billing)
   const [now] = useState(() => Date.now())
-  const refused = useSecondFactorRefused(slug, workspacesQuery.dataUpdatedAt)
+  const refused = useSecondFactorRefused(workspaceId, workspacesQuery.dataUpdatedAt)
   const standing = refused ? { kind: 'blocked' as const } : secondFactorStanding(current, now)
 
   return (
     <DashboardShell
-      sidebar={inSettings ? <SettingsNavbar slug={slug} /> : <AppNavbar slug={slug} />}
+      sidebar={
+        inSettings ? (
+          <SettingsNavbar workspaceId={workspaceId} />
+        ) : (
+          <AppNavbar workspaceId={workspaceId} />
+        )
+      }
       banner={
         <>
           <LicenseBanner />
@@ -215,8 +221,11 @@ export function WorkspaceLayout() {
       }
       headerRight={
         <Group gap="sm">
-          <WorkspaceSwitcher slug={slug} workspaces={workspaces} />
-          <UserMenu slug={slug} accountLink={current?.accountLinkAvailable ?? false} />
+          <WorkspaceSwitcher workspaceId={workspaceId} workspaces={workspaces} />
+          <UserMenu
+            workspaceId={workspaceId}
+            accountLink={current?.accountLinkAvailable ?? false}
+          />
         </Group>
       }
     />

@@ -2,14 +2,17 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { handleSiteBroadcastsGet } from '../../generated/site/msw.gen.ts'
-import { Route as broadcastsReportRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/report.tsx'
+import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { BroadcastReportPage } from './report.tsx'
 
-const REPORT_ROUTE = routeMount(broadcastsReportRoute, { slug: 'test', broadcastId: '5' })
+const REPORT_ROUTE = routeMount(broadcastsReportRoute, {
+  workspaceId: 'TestWs01',
+  broadcastId: '5',
+})
 
 const STATS = {
   recipientsTotal: 200,

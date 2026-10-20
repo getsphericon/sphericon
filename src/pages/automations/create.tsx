@@ -9,9 +9,9 @@ import {
   siteAutomationsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { Route as automationsEditRoute } from '../../routes/workspaces/$slug/automations/$automationId/edit.tsx'
-import { Route as automationsRoute } from '../../routes/workspaces/$slug/automations/index.tsx'
-import { Route as automationsCreateRoute } from '../../routes/workspaces/$slug/automations/new.tsx'
+import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
+import { Route as automationsCreateRoute } from '../../routes/workspaces/$workspaceId/automations/new.tsx'
 import { AutomationDetailsFields } from './AutomationDetailsFields.tsx'
 import type { AutomationDetailsValues } from './AutomationDetailsFields.tsx'
 
@@ -20,7 +20,7 @@ import type { AutomationDetailsValues } from './AutomationDetailsFields.tsx'
 export function AutomationCreatePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { slug } = automationsCreateRoute.useParams()
+  const { workspaceId } = automationsCreateRoute.useParams()
 
   const form = useForm<AutomationDetailsValues>({
     initialValues: { name: '', triggerEvent: 'contact.created' },
@@ -28,11 +28,11 @@ export function AutomationCreatePage() {
 
   const createMutation = useResourceMutation({
     mutation: siteAutomationsCreateMutation(),
-    invalidate: [siteAutomationsListQueryKey({ path: { slug } })],
+    invalidate: [siteAutomationsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.notifications.automationCreated),
     errorTitle: t(($) => $.alerts.automationSaveErrorTitle),
     onDone: (created) =>
-      navigate({ to: automationsEditRoute.to, params: { slug, automationId: created.id } }),
+      navigate({ to: automationsEditRoute.to, params: { workspaceId, automationId: created.id } }),
   })
 
   return (
@@ -41,7 +41,7 @@ export function AutomationCreatePage() {
       <form
         onSubmit={form.onSubmit((values) =>
           createMutation.mutate({
-            path: { slug },
+            path: { workspaceId },
             body: { name: values.name.trim(), triggerEvent: values.triggerEvent },
           }),
         )}
@@ -49,7 +49,7 @@ export function AutomationCreatePage() {
         <Stack>
           <AutomationDetailsFields form={form} />
           <Group justify="flex-end">
-            <ButtonLink variant="default" to={automationsRoute.to} params={{ slug }}>
+            <ButtonLink variant="default" to={automationsRoute.to} params={{ workspaceId }}>
               {t(($) => $.actions.cancel)}
             </ButtonLink>
             <Button type="submit" loading={createMutation.isPending}>

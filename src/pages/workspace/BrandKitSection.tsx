@@ -53,11 +53,11 @@ function valuesOf(kit: SiteBrandKitResource): SiteSaveBrandKitInput {
 // BrandKitForm is split out so the form seeds its values from the loaded Brand kit without an
 // effect; the section re-keys it when a save changes the kit.
 function BrandKitForm({
-  slug,
+  workspaceId,
   kit,
   canChange,
 }: {
-  slug: string
+  workspaceId: string
   kit: SiteBrandKitResource
   canChange: boolean
 }) {
@@ -68,8 +68,8 @@ function BrandKitForm({
     mutation: siteBrandKitSaveMutation(),
     // The first save also creates the starter Templates.
     invalidate: [
-      siteBrandKitGetQueryKey({ path: { slug } }),
-      siteTemplatesListQueryKey({ path: { slug } }),
+      siteBrandKitGetQueryKey({ path: { workspaceId } }),
+      siteTemplatesListQueryKey({ path: { workspaceId } }),
     ],
     successMessage: t(($) => $.brandKit.saved),
     errorTitle: t(($) => $.brandKit.errorTitle),
@@ -77,7 +77,7 @@ function BrandKitForm({
   })
   const recreateMutation = useResourceMutation({
     mutation: siteBrandKitRecreateStarterTemplatesMutation(),
-    invalidate: [siteTemplatesListQueryKey({ path: { slug } })],
+    invalidate: [siteTemplatesListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.brandKit.recreated),
     errorTitle: t(($) => $.brandKit.recreateErrorTitle),
     forbiddenMessage: t(($) => $.brandKit.forbidden),
@@ -91,7 +91,7 @@ function BrandKitForm({
         cancel: t(($) => $.actions.cancel),
         confirm: t(($) => $.brandKit.recreateConfirm),
       },
-      onConfirm: () => recreateMutation.mutate({ path: { slug } }),
+      onConfirm: () => recreateMutation.mutate({ path: { workspaceId } }),
     })
   }
 
@@ -99,7 +99,7 @@ function BrandKitForm({
     <form
       onSubmit={form.onSubmit((values) =>
         saveMutation.mutate({
-          path: { slug },
+          path: { workspaceId },
           body: {
             ...values,
             logoUrl: values.logoUrl.trim(),
@@ -208,8 +208,8 @@ function BrandKitForm({
 // changes no message already written.
 export function BrandKitSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const { t } = useTranslation()
-  const { slug } = workspace
-  const kitQuery = useQuery(siteBrandKitGetOptions({ path: { slug } }))
+  const workspaceId = workspace.id
+  const kitQuery = useQuery(siteBrandKitGetOptions({ path: { workspaceId } }))
 
   return (
     <Card withBorder>
@@ -228,7 +228,7 @@ export function BrandKitSection({ workspace }: { workspace: SiteWorkspaceResourc
       {kitQuery.data ? (
         <BrandKitForm
           key={kitQuery.data.updatedAt ?? 'unsaved'}
-          slug={slug}
+          workspaceId={workspaceId}
           kit={kitQuery.data}
           canChange={canManageBrandKit(workspace.role)}
         />

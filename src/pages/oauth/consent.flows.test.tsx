@@ -19,11 +19,9 @@ const request = {
   scope: 'contacts:read',
 }
 
-const workspace = (slug: string, name: string) => ({
-  id: slug,
+const workspace = (id: string, name: string) => ({
+  id,
   name,
-  slug,
-  publicId: 'AcmeWs01',
   collectKey: 'omck',
   postalAddress: '',
   accountLinkAvailable: false,
@@ -53,18 +51,21 @@ function serve(
 }
 
 test('the decision targets the workspace the user picked', async () => {
-  const slugs: string[] = []
-  serve([workspace('acme', 'Acme'), workspace('beta', 'Beta')], async ({ request: req }) => {
-    slugs.push((await req.json()).workspaceSlug)
-    return HttpResponse.json({ redirectUrl: '#done' })
-  })
+  const ids: string[] = []
+  serve(
+    [workspace('AcmeWs01', 'Acme'), workspace('BetaWs02', 'Beta')],
+    async ({ request: req }) => {
+      ids.push((await req.json()).workspaceSlug)
+      return HttpResponse.json({ redirectUrl: '#done' })
+    },
+  )
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await screen.getByRole('combobox', { name: 'Workspace' }).click()
   await screen.getByRole('option', { name: 'Beta' }).click()
   await screen.getByRole('button', { name: 'Allow access' }).click()
 
-  await expect.poll(() => slugs).toEqual(['beta'])
+  await expect.poll(() => ids).toEqual(['BetaWs02'])
 })
 
 test('without a workspace the user cannot approve or deny', async () => {
@@ -82,7 +83,7 @@ test('without a workspace the user cannot approve or deny', async () => {
 })
 
 test('an unexpected failure is toasted with the API detail', async () => {
-  serve([workspace('acme', 'Acme')], () => problem(500, { detail: 'the code store is down' }))
+  serve([workspace('AcmeWs01', 'Acme')], () => problem(500, { detail: 'the code store is down' }))
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await screen.getByRole('button', { name: 'Allow access' }).click()

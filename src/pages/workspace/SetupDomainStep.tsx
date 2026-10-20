@@ -13,16 +13,16 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 // SetupDomainStep is the body of a pending Sending domain step: the DKIM record the person
 // must publish, with a copy button, and a "check now" action that runs the existing domain
 // verification and refreshes the checklist so the step turns done without a reload.
-export function SetupDomainStep({ slug }: { slug: string }) {
+export function SetupDomainStep({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const domainsQuery = useQuery(siteSendingDomainsListOptions({ path: { slug } }))
+  const domainsQuery = useQuery(siteSendingDomainsListOptions({ path: { workspaceId } }))
   const waiting = domainsQuery.data?.items.find((d) => !d.verified)
 
   const checkNow = useResourceMutation({
     mutation: siteSendingDomainsVerifyMutation(),
     invalidate: [
-      siteSendingDomainsListQueryKey({ path: { slug } }),
-      siteSetupChecklistGetQueryKey({ path: { slug } }),
+      siteSendingDomainsListQueryKey({ path: { workspaceId } }),
+      siteSetupChecklistGetQueryKey({ path: { workspaceId } }),
     ],
     errorTitle: t(($) => $.setupChecklist.checkError),
   })
@@ -65,7 +65,7 @@ export function SetupDomainStep({ slug }: { slug: string }) {
           size="compact-sm"
           variant="light"
           loading={checkNow.isPending}
-          onClick={() => checkNow.mutate({ path: { slug, id: waiting.id } })}
+          onClick={() => checkNow.mutate({ path: { workspaceId, id: waiting.id } })}
         >
           {t(($) => $.setupChecklist.checkNow)}
         </Button>

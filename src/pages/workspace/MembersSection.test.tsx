@@ -21,7 +21,7 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { MembersSection } from './MembersSection.tsx'
 
-const SLUG = 'test'
+const WORKSPACE_ID = 'TestWs01'
 
 const member: SiteMembershipResource = {
   id: '1',
@@ -54,7 +54,7 @@ const invites = (items: SiteInvitationResource[]) => handleSiteInvitationsList({
 
 test('lists members and pending invitations', async () => {
   worker.use(...members(), invites([invitation]))
-  const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('ann@example.com')).toBeInTheDocument()
   await screen.getByRole('tab', { name: /Pending invitations/ }).click()
@@ -74,7 +74,7 @@ test('invites a member and reveals the invite link', async () => {
       )
     }),
   )
-  const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Invite' }).click()
   const dialog = screen.getByRole('dialog')
@@ -100,7 +100,7 @@ test('revokes an invitation after confirmation', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('tab', { name: /Pending invitations/ }).click()
   await screen.getByRole('button', { name: 'More actions' }).click()
@@ -120,7 +120,7 @@ test('removes a member after confirmation', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Remove' }).click()
@@ -139,7 +139,7 @@ test('changes a member role', async () => {
       return HttpResponse.json({ ...member, role: 'admin' })
     }),
   )
-  const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('combobox').first().click()
   await screen.getByRole('option', { name: 'admin' }).first().click()
@@ -153,7 +153,7 @@ test('shows an error alert when members fail to load', async () => {
     handleSiteMembershipsList(() => problem(500, { detail: 'boom' })),
     invites([]),
   )
-  const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Failed to load members').first()).toBeInTheDocument()
 })
@@ -179,7 +179,7 @@ test('an owner resets a member Second factor after confirmation', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).last().click()
   await screen.getByRole('menuitem', { name: 'Reset 2FA' }).click()
@@ -190,7 +190,7 @@ test('an owner resets a member Second factor after confirmation', async () => {
 
 test('a member is not offered a Second factor reset', async () => {
   worker.use(...teamWithSam('member'))
-  const { screen } = await renderWithRouter(<MembersSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<MembersSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('sam@example.com')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'More actions' }).last().click()

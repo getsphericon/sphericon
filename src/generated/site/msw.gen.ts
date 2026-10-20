@@ -842,14 +842,14 @@ export type HandleSiteWorkspacesUpdateResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}` operation.
  */
 export function handleSiteWorkspacesUpdate(response?: HandleSiteWorkspacesUpdateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteWorkspacesUpdateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
-  }, SiteWorkspacesUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug`, info => {
+    workspaceId: string;
+  }, SiteWorkspacesUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -873,14 +873,14 @@ export type HandleSiteWorkspacesAccountLinkResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/account-link` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/account-link` operation.
  */
 export function handleSiteWorkspacesAccountLink(response?: HandleSiteWorkspacesAccountLinkResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/account-link`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/account-link`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -904,14 +904,14 @@ export type HandleSiteAnalyticsOverviewResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/analytics/overview` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/analytics/overview` operation.
  */
 export function handleSiteAnalyticsOverview(response?: HandleSiteAnalyticsOverviewResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/analytics/overview`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/analytics/overview`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -935,14 +935,14 @@ export type HandleSiteAuditListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/audit-entries` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/audit-entries` operation.
  */
 export function handleSiteAuditList(response?: HandleSiteAuditListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/audit-entries`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/audit-entries`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -966,14 +966,14 @@ export type HandleSiteAuditExportResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/audit-entries/export` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/audit-entries/export` operation.
  */
 export function handleSiteAuditExport(response?: HandleSiteAuditExportResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/audit-entries/export`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/audit-entries/export`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -997,14 +997,14 @@ export type HandleSiteAuditGetRetentionResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/audit-entries/retention` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/audit-entries/retention` operation.
  */
 export function handleSiteAuditGetRetention(response?: HandleSiteAuditGetRetentionResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/audit-entries/retention`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/audit-entries/retention`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1028,14 +1028,14 @@ export type HandleSiteAuditSetRetentionResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/audit-entries/retention` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/audit-entries/retention` operation.
  */
 export function handleSiteAuditSetRetention(response?: HandleSiteAuditSetRetentionResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteAuditSetRetentionData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
-  }, SiteAuditSetRetentionData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/audit-entries/retention`, info => {
+    workspaceId: string;
+  }, SiteAuditSetRetentionData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/audit-entries/retention`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1059,14 +1059,14 @@ export type HandleSiteAutomationsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/automations` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/automations` operation.
  */
 export function handleSiteAutomationsList(response?: HandleSiteAutomationsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1090,14 +1090,14 @@ export type HandleSiteAutomationsCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/automations` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/automations` operation.
  */
 export function handleSiteAutomationsCreate(response?: HandleSiteAutomationsCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteAutomationsCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteAutomationsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations`, info => {
+    workspaceId: string;
+  }, SiteAutomationsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1121,14 +1121,14 @@ export type HandleSiteAutomationsDryRunHttpStepResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/automations/dry-run-http-step` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/automations/dry-run-http-step` operation.
  */
 export function handleSiteAutomationsDryRunHttpStep(response?: HandleSiteAutomationsDryRunHttpStepResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteAutomationsDryRunHttpStepData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteAutomationsDryRunHttpStepData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations/dry-run-http-step`, info => {
+    workspaceId: string;
+  }, SiteAutomationsDryRunHttpStepData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations/dry-run-http-step`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1152,16 +1152,16 @@ export type HandleSiteEnrollmentsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/automations/{automationId}/enrollments` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/automations/{automationId}/enrollments` operation.
  */
 export function handleSiteEnrollmentsList(response?: HandleSiteEnrollmentsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   automationId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     automationId: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations/:automationId/enrollments`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations/:automationId/enrollments`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1185,18 +1185,18 @@ export type HandleSiteEnrollmentsGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}` operation.
  */
 export function handleSiteEnrollmentsGet(response?: HandleSiteEnrollmentsGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   automationId: string;
   enrollmentId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     automationId: string;
     enrollmentId: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations/:automationId/enrollments/:enrollmentId`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations/:automationId/enrollments/:enrollmentId`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1220,16 +1220,16 @@ export type HandleSiteAutomationsDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/automations/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/automations/{id}` operation.
  */
 export function handleSiteAutomationsDelete(response?: HandleSiteAutomationsDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1253,16 +1253,16 @@ export type HandleSiteAutomationsGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/automations/{id}` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/automations/{id}` operation.
  */
 export function handleSiteAutomationsGet(response?: HandleSiteAutomationsGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1286,16 +1286,16 @@ export type HandleSiteAutomationsUpdateResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/automations/{id}` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/automations/{id}` operation.
  */
 export function handleSiteAutomationsUpdate(response?: HandleSiteAutomationsUpdateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteAutomationsUpdateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteAutomationsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations/:id`, info => {
+  }, SiteAutomationsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1319,16 +1319,16 @@ export type HandleSiteAutomationsActivateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/automations/{id}/activate` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/automations/{id}/activate` operation.
  */
 export function handleSiteAutomationsActivate(response?: HandleSiteAutomationsActivateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations/:id/activate`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations/:id/activate`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1352,16 +1352,16 @@ export type HandleSiteAutomationsDeactivateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/automations/{id}/deactivate` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/automations/{id}/deactivate` operation.
  */
 export function handleSiteAutomationsDeactivate(response?: HandleSiteAutomationsDeactivateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/automations/:id/deactivate`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/automations/:id/deactivate`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1385,14 +1385,14 @@ export type HandleSiteBrandKitGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/brand-kit` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/brand-kit` operation.
  */
 export function handleSiteBrandKitGet(response?: HandleSiteBrandKitGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/brand-kit`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/brand-kit`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1416,14 +1416,14 @@ export type HandleSiteBrandKitSaveResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/brand-kit` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/brand-kit` operation.
  */
 export function handleSiteBrandKitSave(response?: HandleSiteBrandKitSaveResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteBrandKitSaveData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
-  }, SiteBrandKitSaveData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/brand-kit`, info => {
+    workspaceId: string;
+  }, SiteBrandKitSaveData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/brand-kit`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1447,14 +1447,14 @@ export type HandleSiteBrandKitRecreateStarterTemplatesResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/brand-kit/starter-templates` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/brand-kit/starter-templates` operation.
  */
 export function handleSiteBrandKitRecreateStarterTemplates(response?: HandleSiteBrandKitRecreateStarterTemplatesResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/brand-kit/starter-templates`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/brand-kit/starter-templates`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1478,14 +1478,14 @@ export type HandleSiteBroadcastsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/broadcasts` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/broadcasts` operation.
  */
 export function handleSiteBroadcastsList(response?: HandleSiteBroadcastsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/broadcasts`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/broadcasts`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1509,14 +1509,14 @@ export type HandleSiteBroadcastsCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/broadcasts` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/broadcasts` operation.
  */
 export function handleSiteBroadcastsCreate(response?: HandleSiteBroadcastsCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteBroadcastsCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteBroadcastsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/broadcasts`, info => {
+    workspaceId: string;
+  }, SiteBroadcastsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/broadcasts`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1540,16 +1540,16 @@ export type HandleSiteBroadcastsDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/broadcasts/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/broadcasts/{id}` operation.
  */
 export function handleSiteBroadcastsDelete(response?: HandleSiteBroadcastsDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/broadcasts/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/broadcasts/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1573,16 +1573,16 @@ export type HandleSiteBroadcastsGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/broadcasts/{id}` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/broadcasts/{id}` operation.
  */
 export function handleSiteBroadcastsGet(response?: HandleSiteBroadcastsGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/broadcasts/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/broadcasts/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1606,16 +1606,16 @@ export type HandleSiteBroadcastsUpdateResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/broadcasts/{id}` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/broadcasts/{id}` operation.
  */
 export function handleSiteBroadcastsUpdate(response?: HandleSiteBroadcastsUpdateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteBroadcastsUpdateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteBroadcastsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/broadcasts/:id`, info => {
+  }, SiteBroadcastsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/broadcasts/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1639,16 +1639,16 @@ export type HandleSiteBroadcastsScheduleResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/broadcasts/{id}/schedule` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/broadcasts/{id}/schedule` operation.
  */
 export function handleSiteBroadcastsSchedule(response?: HandleSiteBroadcastsScheduleResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteBroadcastsScheduleData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteBroadcastsScheduleData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/broadcasts/:id/schedule`, info => {
+  }, SiteBroadcastsScheduleData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/broadcasts/:id/schedule`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1672,16 +1672,16 @@ export type HandleSiteBroadcastsSendResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/broadcasts/{id}/send` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/broadcasts/{id}/send` operation.
  */
 export function handleSiteBroadcastsSend(response?: HandleSiteBroadcastsSendResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/broadcasts/:id/send`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/broadcasts/:id/send`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1705,16 +1705,16 @@ export type HandleSiteBroadcastsTestSendResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/broadcasts/{id}/test-send` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/broadcasts/{id}/test-send` operation.
  */
 export function handleSiteBroadcastsTestSend(response?: HandleSiteBroadcastsTestSendResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteBroadcastsTestSendData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteBroadcastsTestSendData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/broadcasts/:id/test-send`, info => {
+  }, SiteBroadcastsTestSendData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/broadcasts/:id/test-send`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1738,14 +1738,14 @@ export type HandleSiteContactsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/contacts` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/contacts` operation.
  */
 export function handleSiteContactsList(response?: HandleSiteContactsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/contacts`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1769,14 +1769,14 @@ export type HandleSiteContactsCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/contacts` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/contacts` operation.
  */
 export function handleSiteContactsCreate(response?: HandleSiteContactsCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteContactsCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteContactsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/contacts`, info => {
+    workspaceId: string;
+  }, SiteContactsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1800,14 +1800,14 @@ export type HandleSiteContactsExportResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/contacts/export` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/contacts/export` operation.
  */
 export function handleSiteContactsExport(response?: HandleSiteContactsExportResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/contacts/export`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/export`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1831,16 +1831,16 @@ export type HandleSiteTagsListForContactResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/contacts/{contactId}/tags` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/contacts/{contactId}/tags` operation.
  */
 export function handleSiteTagsListForContact(response?: HandleSiteTagsListForContactResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   contactId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     contactId: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/contacts/:contactId/tags`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/:contactId/tags`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1864,16 +1864,16 @@ export type HandleSiteTagsApplyResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/contacts/{contactId}/tags` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/contacts/{contactId}/tags` operation.
  */
 export function handleSiteTagsApply(response?: HandleSiteTagsApplyResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   contactId: string;
 }, SiteTagsApplyData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     contactId: string;
-  }, SiteTagsApplyData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/contacts/:contactId/tags`, info => {
+  }, SiteTagsApplyData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/:contactId/tags`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1897,18 +1897,18 @@ export type HandleSiteTagsRemoveResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/contacts/{contactId}/tags/{name}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/contacts/{contactId}/tags/{name}` operation.
  */
 export function handleSiteTagsRemove(response?: HandleSiteTagsRemoveResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   contactId: string;
   name: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     contactId: string;
     name: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/contacts/:contactId/tags/:name`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/:contactId/tags/:name`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1932,16 +1932,16 @@ export type HandleSiteContactsDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/contacts/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/contacts/{id}` operation.
  */
 export function handleSiteContactsDelete(response?: HandleSiteContactsDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/contacts/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1965,16 +1965,16 @@ export type HandleSiteContactsGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/contacts/{id}` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/contacts/{id}` operation.
  */
 export function handleSiteContactsGet(response?: HandleSiteContactsGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/contacts/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -1998,16 +1998,16 @@ export type HandleSiteContactsUpdateResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/contacts/{id}` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/contacts/{id}` operation.
  */
 export function handleSiteContactsUpdate(response?: HandleSiteContactsUpdateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteContactsUpdateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteContactsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/contacts/:id`, info => {
+  }, SiteContactsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/contacts/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2031,14 +2031,14 @@ export type HandleSiteCustomFieldsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/custom-fields` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/custom-fields` operation.
  */
 export function handleSiteCustomFieldsList(response?: HandleSiteCustomFieldsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/custom-fields`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/custom-fields`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2062,14 +2062,14 @@ export type HandleSiteEventsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/events` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/events` operation.
  */
 export function handleSiteEventsList(response?: HandleSiteEventsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/events`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/events`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2093,14 +2093,14 @@ export type HandleSiteEventsActionsResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/events/actions` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/events/actions` operation.
  */
 export function handleSiteEventsActions(response?: HandleSiteEventsActionsResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/events/actions`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/events/actions`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2124,14 +2124,14 @@ export type HandleSiteIntegrationsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/integrations` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/integrations` operation.
  */
 export function handleSiteIntegrationsList(response?: HandleSiteIntegrationsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/integrations`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/integrations`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2155,14 +2155,14 @@ export type HandleSiteIntegrationsCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/integrations` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/integrations` operation.
  */
 export function handleSiteIntegrationsCreate(response?: HandleSiteIntegrationsCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteIntegrationsCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteIntegrationsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/integrations`, info => {
+    workspaceId: string;
+  }, SiteIntegrationsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/integrations`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2186,16 +2186,16 @@ export type HandleSiteIntegrationsDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/integrations/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/integrations/{id}` operation.
  */
 export function handleSiteIntegrationsDelete(response?: HandleSiteIntegrationsDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/integrations/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/integrations/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2219,16 +2219,16 @@ export type HandleSiteIntegrationsGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/integrations/{id}` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/integrations/{id}` operation.
  */
 export function handleSiteIntegrationsGet(response?: HandleSiteIntegrationsGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/integrations/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/integrations/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2252,16 +2252,16 @@ export type HandleSiteIntegrationsUpdateResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/integrations/{id}` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/integrations/{id}` operation.
  */
 export function handleSiteIntegrationsUpdate(response?: HandleSiteIntegrationsUpdateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteIntegrationsUpdateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteIntegrationsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/integrations/:id`, info => {
+  }, SiteIntegrationsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/integrations/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2285,16 +2285,16 @@ export type HandleSiteIntegrationsRegenerateKeyResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/integrations/{id}/regenerate-key` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key` operation.
  */
 export function handleSiteIntegrationsRegenerateKey(response?: HandleSiteIntegrationsRegenerateKeyResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/integrations/:id/regenerate-key`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/integrations/:id/regenerate-key`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2318,14 +2318,14 @@ export type HandleSiteInvitationsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/invitations` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/invitations` operation.
  */
 export function handleSiteInvitationsList(response?: HandleSiteInvitationsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/invitations`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/invitations`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2349,14 +2349,14 @@ export type HandleSiteInvitationsCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/invitations` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/invitations` operation.
  */
 export function handleSiteInvitationsCreate(response?: HandleSiteInvitationsCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteInvitationsCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteInvitationsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/invitations`, info => {
+    workspaceId: string;
+  }, SiteInvitationsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/invitations`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2380,16 +2380,16 @@ export type HandleSiteInvitationsDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/invitations/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/invitations/{id}` operation.
  */
 export function handleSiteInvitationsDelete(response?: HandleSiteInvitationsDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/invitations/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/invitations/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2413,14 +2413,14 @@ export type HandleSiteMembershipsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/memberships` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/memberships` operation.
  */
 export function handleSiteMembershipsList(response?: HandleSiteMembershipsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/memberships`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/memberships`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2444,16 +2444,16 @@ export type HandleSiteMembershipsDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/memberships/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/memberships/{id}` operation.
  */
 export function handleSiteMembershipsDelete(response?: HandleSiteMembershipsDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/memberships/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/memberships/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2477,16 +2477,16 @@ export type HandleSiteMembershipsUpdateResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/memberships/{id}` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/memberships/{id}` operation.
  */
 export function handleSiteMembershipsUpdate(response?: HandleSiteMembershipsUpdateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteMembershipsUpdateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteMembershipsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/memberships/:id`, info => {
+  }, SiteMembershipsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/memberships/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2510,16 +2510,16 @@ export type HandleSiteMembershipsResetSecondFactorResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/memberships/{id}/reset-second-factor` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/memberships/{id}/reset-second-factor` operation.
  */
 export function handleSiteMembershipsResetSecondFactor(response?: HandleSiteMembershipsResetSecondFactorResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/memberships/:id/reset-second-factor`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/memberships/:id/reset-second-factor`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2543,14 +2543,14 @@ export type HandleSiteWorkspacesSetSecondFactorRequirementResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/second-factor-requirement` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/second-factor-requirement` operation.
  */
 export function handleSiteWorkspacesSetSecondFactorRequirement(response?: HandleSiteWorkspacesSetSecondFactorRequirementResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteWorkspacesSetSecondFactorRequirementData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
-  }, SiteWorkspacesSetSecondFactorRequirementData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/second-factor-requirement`, info => {
+    workspaceId: string;
+  }, SiteWorkspacesSetSecondFactorRequirementData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/second-factor-requirement`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2574,14 +2574,14 @@ export type HandleSiteSegmentsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/segments` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/segments` operation.
  */
 export function handleSiteSegmentsList(response?: HandleSiteSegmentsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/segments`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/segments`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2605,14 +2605,14 @@ export type HandleSiteSegmentsCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/segments` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/segments` operation.
  */
 export function handleSiteSegmentsCreate(response?: HandleSiteSegmentsCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteSegmentsCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteSegmentsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/segments`, info => {
+    workspaceId: string;
+  }, SiteSegmentsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/segments`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2636,14 +2636,14 @@ export type HandleSiteSegmentsPreviewResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/segments/preview` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/segments/preview` operation.
  */
 export function handleSiteSegmentsPreview(response?: HandleSiteSegmentsPreviewResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteSegmentsPreviewData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteSegmentsPreviewData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/segments/preview`, info => {
+    workspaceId: string;
+  }, SiteSegmentsPreviewData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/segments/preview`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2667,16 +2667,16 @@ export type HandleSiteSegmentsDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/segments/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/segments/{id}` operation.
  */
 export function handleSiteSegmentsDelete(response?: HandleSiteSegmentsDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/segments/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/segments/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2700,16 +2700,16 @@ export type HandleSiteSegmentsGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/segments/{id}` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/segments/{id}` operation.
  */
 export function handleSiteSegmentsGet(response?: HandleSiteSegmentsGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/segments/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/segments/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2733,16 +2733,16 @@ export type HandleSiteSegmentsUpdateResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/segments/{id}` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/segments/{id}` operation.
  */
 export function handleSiteSegmentsUpdate(response?: HandleSiteSegmentsUpdateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteSegmentsUpdateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteSegmentsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/segments/:id`, info => {
+  }, SiteSegmentsUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/segments/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2766,14 +2766,14 @@ export type HandleSiteSendingDomainsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/sending-domains` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/sending-domains` operation.
  */
 export function handleSiteSendingDomainsList(response?: HandleSiteSendingDomainsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/sending-domains`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/sending-domains`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2797,14 +2797,14 @@ export type HandleSiteSendingDomainsCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/sending-domains` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/sending-domains` operation.
  */
 export function handleSiteSendingDomainsCreate(response?: HandleSiteSendingDomainsCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteSendingDomainsCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteSendingDomainsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/sending-domains`, info => {
+    workspaceId: string;
+  }, SiteSendingDomainsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/sending-domains`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2828,16 +2828,16 @@ export type HandleSiteSendingDomainsDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/sending-domains/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/sending-domains/{id}` operation.
  */
 export function handleSiteSendingDomainsDelete(response?: HandleSiteSendingDomainsDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/sending-domains/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/sending-domains/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2861,16 +2861,16 @@ export type HandleSiteSendingDomainsGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/sending-domains/{id}` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/sending-domains/{id}` operation.
  */
 export function handleSiteSendingDomainsGet(response?: HandleSiteSendingDomainsGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/sending-domains/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/sending-domains/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2894,16 +2894,16 @@ export type HandleSiteSendingDomainsVerifyResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/sending-domains/{id}/verify` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/sending-domains/{id}/verify` operation.
  */
 export function handleSiteSendingDomainsVerify(response?: HandleSiteSendingDomainsVerifyResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/sending-domains/:id/verify`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/sending-domains/:id/verify`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2927,14 +2927,14 @@ export type HandleSiteSetupChecklistGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/setup-checklist` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/setup-checklist` operation.
  */
 export function handleSiteSetupChecklistGet(response?: HandleSiteSetupChecklistGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/setup-checklist`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/setup-checklist`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2958,14 +2958,14 @@ export type HandleSiteSuppressionsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/suppressions` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/suppressions` operation.
  */
 export function handleSiteSuppressionsList(response?: HandleSiteSuppressionsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/suppressions`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/suppressions`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -2989,14 +2989,14 @@ export type HandleSiteSuppressionsCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/suppressions` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/suppressions` operation.
  */
 export function handleSiteSuppressionsCreate(response?: HandleSiteSuppressionsCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteSuppressionsCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteSuppressionsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/suppressions`, info => {
+    workspaceId: string;
+  }, SiteSuppressionsCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/suppressions`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3020,16 +3020,16 @@ export type HandleSiteSuppressionsDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/suppressions/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/suppressions/{id}` operation.
  */
 export function handleSiteSuppressionsDelete(response?: HandleSiteSuppressionsDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/suppressions/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/suppressions/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3053,14 +3053,14 @@ export type HandleSiteTagsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/tags` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/tags` operation.
  */
 export function handleSiteTagsList(response?: HandleSiteTagsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/tags`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/tags`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3084,14 +3084,14 @@ export type HandleSiteTemplatesListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/templates` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/templates` operation.
  */
 export function handleSiteTemplatesList(response?: HandleSiteTemplatesListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/templates`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/templates`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3115,14 +3115,14 @@ export type HandleSiteTemplatesCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/templates` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/templates` operation.
  */
 export function handleSiteTemplatesCreate(response?: HandleSiteTemplatesCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteTemplatesCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteTemplatesCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/templates`, info => {
+    workspaceId: string;
+  }, SiteTemplatesCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/templates`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3146,16 +3146,16 @@ export type HandleSiteTemplatesDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/templates/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/templates/{id}` operation.
  */
 export function handleSiteTemplatesDelete(response?: HandleSiteTemplatesDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/templates/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/templates/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3179,16 +3179,16 @@ export type HandleSiteTemplatesGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/templates/{id}` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/templates/{id}` operation.
  */
 export function handleSiteTemplatesGet(response?: HandleSiteTemplatesGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/templates/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/templates/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3212,16 +3212,16 @@ export type HandleSiteTemplatesUpdateResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/templates/{id}` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/templates/{id}` operation.
  */
 export function handleSiteTemplatesUpdate(response?: HandleSiteTemplatesUpdateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteTemplatesUpdateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteTemplatesUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/templates/:id`, info => {
+  }, SiteTemplatesUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/templates/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3245,14 +3245,14 @@ export type HandleSiteTokensListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/tokens` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/tokens` operation.
  */
 export function handleSiteTokensList(response?: HandleSiteTokensListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/tokens`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/tokens`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3276,14 +3276,14 @@ export type HandleSiteTokensCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/tokens` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/tokens` operation.
  */
 export function handleSiteTokensCreate(response?: HandleSiteTokensCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteTokensCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteTokensCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/tokens`, info => {
+    workspaceId: string;
+  }, SiteTokensCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/tokens`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3307,16 +3307,16 @@ export type HandleSiteTokensDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/tokens/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/tokens/{id}` operation.
  */
 export function handleSiteTokensDelete(response?: HandleSiteTokensDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/tokens/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/tokens/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3340,14 +3340,14 @@ export type HandleSiteTransactionalEmailsListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/transactional-emails` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/transactional-emails` operation.
  */
 export function handleSiteTransactionalEmailsList(response?: HandleSiteTransactionalEmailsListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/transactional-emails`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/transactional-emails`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3371,14 +3371,14 @@ export type HandleSiteWebhooksListResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/webhooks` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/webhooks` operation.
  */
 export function handleSiteWebhooksList(response?: HandleSiteWebhooksListResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/webhooks`, info => {
+    workspaceId: string;
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/webhooks`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3402,14 +3402,14 @@ export type HandleSiteWebhooksCreateResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/webhooks` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/webhooks` operation.
  */
 export function handleSiteWebhooksCreate(response?: HandleSiteWebhooksCreateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
 }, SiteWebhooksCreateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
-  }, SiteWebhooksCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/webhooks`, info => {
+    workspaceId: string;
+  }, SiteWebhooksCreateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/webhooks`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3433,16 +3433,16 @@ export type HandleSiteWebhooksDeleteResponse = {
 };
 
 /**
- * Handler for the `DELETE /workspaces/{slug}/webhooks/{id}` operation.
+ * Handler for the `DELETE /workspaces/{workspaceId}/webhooks/{id}` operation.
  */
 export function handleSiteWebhooksDelete(response?: HandleSiteWebhooksDeleteResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.delete<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/webhooks/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/webhooks/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3466,16 +3466,16 @@ export type HandleSiteWebhooksGetResponse = {
 };
 
 /**
- * Handler for the `GET /workspaces/{slug}/webhooks/{id}` operation.
+ * Handler for the `GET /workspaces/{workspaceId}/webhooks/{id}` operation.
  */
 export function handleSiteWebhooksGet(response?: HandleSiteWebhooksGetResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/webhooks/:id`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/webhooks/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3499,16 +3499,16 @@ export type HandleSiteWebhooksUpdateResponse = {
 };
 
 /**
- * Handler for the `PUT /workspaces/{slug}/webhooks/{id}` operation.
+ * Handler for the `PUT /workspaces/{workspaceId}/webhooks/{id}` operation.
  */
 export function handleSiteWebhooksUpdate(response?: HandleSiteWebhooksUpdateResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteWebhooksUpdateData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.put<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteWebhooksUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/webhooks/:id`, info => {
+  }, SiteWebhooksUpdateData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/webhooks/:id`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3532,16 +3532,16 @@ export type HandleSiteWebhooksRegenerateSecretResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/webhooks/{id}/regenerate-secret` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/webhooks/{id}/regenerate-secret` operation.
  */
 export function handleSiteWebhooksRegenerateSecret(response?: HandleSiteWebhooksRegenerateSecretResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:slug/webhooks/:id/regenerate-secret`, info => {
+  }, never>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/webhooks/:id/regenerate-secret`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3565,16 +3565,16 @@ export type HandleSiteWebhooksTestResponse = {
 };
 
 /**
- * Handler for the `POST /workspaces/{slug}/webhooks/{id}/test` operation.
+ * Handler for the `POST /workspaces/{workspaceId}/webhooks/{id}/test` operation.
  */
 export function handleSiteWebhooksTest(response?: HandleSiteWebhooksTestResponse | HttpResponseResolver<{
-  slug: string;
+  workspaceId: string;
   id: string;
 }, SiteWebhooksTestData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<{
-    slug: string;
+    workspaceId: string;
     id: string;
-  }, SiteWebhooksTestData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:slug/webhooks/:id/test`, info => {
+  }, SiteWebhooksTestData['body']>(`${options?.baseUrl ?? '*'}/workspaces/:workspaceId/webhooks/:id/test`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -3714,347 +3714,347 @@ export type MswHandlerFactories = {
    */
   siteWorkspacesList: typeof handleSiteWorkspacesList;
   /**
-   * Handler for the `PUT /workspaces/{slug}` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}` operation.
    */
   siteWorkspacesUpdate: typeof handleSiteWorkspacesUpdate;
   /**
-   * Handler for the `POST /workspaces/{slug}/account-link` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/account-link` operation.
    */
   siteWorkspacesAccountLink: typeof handleSiteWorkspacesAccountLink;
   /**
-   * Handler for the `GET /workspaces/{slug}/analytics/overview` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/analytics/overview` operation.
    */
   siteAnalyticsOverview: typeof handleSiteAnalyticsOverview;
   /**
-   * Handler for the `GET /workspaces/{slug}/audit-entries` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/audit-entries` operation.
    */
   siteAuditList: typeof handleSiteAuditList;
   /**
-   * Handler for the `GET /workspaces/{slug}/audit-entries/export` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/audit-entries/export` operation.
    */
   siteAuditExport: typeof handleSiteAuditExport;
   /**
-   * Handler for the `GET /workspaces/{slug}/audit-entries/retention` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/audit-entries/retention` operation.
    */
   siteAuditGetRetention: typeof handleSiteAuditGetRetention;
   /**
-   * Handler for the `PUT /workspaces/{slug}/audit-entries/retention` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/audit-entries/retention` operation.
    */
   siteAuditSetRetention: typeof handleSiteAuditSetRetention;
   /**
-   * Handler for the `GET /workspaces/{slug}/automations` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/automations` operation.
    */
   siteAutomationsList: typeof handleSiteAutomationsList;
   /**
-   * Handler for the `POST /workspaces/{slug}/automations` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/automations` operation.
    */
   siteAutomationsCreate: typeof handleSiteAutomationsCreate;
   /**
-   * Handler for the `POST /workspaces/{slug}/automations/dry-run-http-step` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/automations/dry-run-http-step` operation.
    */
   siteAutomationsDryRunHttpStep: typeof handleSiteAutomationsDryRunHttpStep;
   /**
-   * Handler for the `GET /workspaces/{slug}/automations/{automationId}/enrollments` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/automations/{automationId}/enrollments` operation.
    */
   siteEnrollmentsList: typeof handleSiteEnrollmentsList;
   /**
-   * Handler for the `GET /workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}` operation.
    */
   siteEnrollmentsGet: typeof handleSiteEnrollmentsGet;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/automations/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/automations/{id}` operation.
    */
   siteAutomationsDelete: typeof handleSiteAutomationsDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/automations/{id}` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/automations/{id}` operation.
    */
   siteAutomationsGet: typeof handleSiteAutomationsGet;
   /**
-   * Handler for the `PUT /workspaces/{slug}/automations/{id}` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/automations/{id}` operation.
    */
   siteAutomationsUpdate: typeof handleSiteAutomationsUpdate;
   /**
-   * Handler for the `POST /workspaces/{slug}/automations/{id}/activate` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/automations/{id}/activate` operation.
    */
   siteAutomationsActivate: typeof handleSiteAutomationsActivate;
   /**
-   * Handler for the `POST /workspaces/{slug}/automations/{id}/deactivate` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/automations/{id}/deactivate` operation.
    */
   siteAutomationsDeactivate: typeof handleSiteAutomationsDeactivate;
   /**
-   * Handler for the `GET /workspaces/{slug}/brand-kit` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/brand-kit` operation.
    */
   siteBrandKitGet: typeof handleSiteBrandKitGet;
   /**
-   * Handler for the `PUT /workspaces/{slug}/brand-kit` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/brand-kit` operation.
    */
   siteBrandKitSave: typeof handleSiteBrandKitSave;
   /**
-   * Handler for the `POST /workspaces/{slug}/brand-kit/starter-templates` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/brand-kit/starter-templates` operation.
    */
   siteBrandKitRecreateStarterTemplates: typeof handleSiteBrandKitRecreateStarterTemplates;
   /**
-   * Handler for the `GET /workspaces/{slug}/broadcasts` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/broadcasts` operation.
    */
   siteBroadcastsList: typeof handleSiteBroadcastsList;
   /**
-   * Handler for the `POST /workspaces/{slug}/broadcasts` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/broadcasts` operation.
    */
   siteBroadcastsCreate: typeof handleSiteBroadcastsCreate;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/broadcasts/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/broadcasts/{id}` operation.
    */
   siteBroadcastsDelete: typeof handleSiteBroadcastsDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/broadcasts/{id}` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/broadcasts/{id}` operation.
    */
   siteBroadcastsGet: typeof handleSiteBroadcastsGet;
   /**
-   * Handler for the `PUT /workspaces/{slug}/broadcasts/{id}` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/broadcasts/{id}` operation.
    */
   siteBroadcastsUpdate: typeof handleSiteBroadcastsUpdate;
   /**
-   * Handler for the `POST /workspaces/{slug}/broadcasts/{id}/schedule` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/broadcasts/{id}/schedule` operation.
    */
   siteBroadcastsSchedule: typeof handleSiteBroadcastsSchedule;
   /**
-   * Handler for the `POST /workspaces/{slug}/broadcasts/{id}/send` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/broadcasts/{id}/send` operation.
    */
   siteBroadcastsSend: typeof handleSiteBroadcastsSend;
   /**
-   * Handler for the `POST /workspaces/{slug}/broadcasts/{id}/test-send` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/broadcasts/{id}/test-send` operation.
    */
   siteBroadcastsTestSend: typeof handleSiteBroadcastsTestSend;
   /**
-   * Handler for the `GET /workspaces/{slug}/contacts` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/contacts` operation.
    */
   siteContactsList: typeof handleSiteContactsList;
   /**
-   * Handler for the `POST /workspaces/{slug}/contacts` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/contacts` operation.
    */
   siteContactsCreate: typeof handleSiteContactsCreate;
   /**
-   * Handler for the `POST /workspaces/{slug}/contacts/export` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/contacts/export` operation.
    */
   siteContactsExport: typeof handleSiteContactsExport;
   /**
-   * Handler for the `GET /workspaces/{slug}/contacts/{contactId}/tags` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/contacts/{contactId}/tags` operation.
    */
   siteTagsListForContact: typeof handleSiteTagsListForContact;
   /**
-   * Handler for the `POST /workspaces/{slug}/contacts/{contactId}/tags` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/contacts/{contactId}/tags` operation.
    */
   siteTagsApply: typeof handleSiteTagsApply;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/contacts/{contactId}/tags/{name}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/contacts/{contactId}/tags/{name}` operation.
    */
   siteTagsRemove: typeof handleSiteTagsRemove;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/contacts/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/contacts/{id}` operation.
    */
   siteContactsDelete: typeof handleSiteContactsDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/contacts/{id}` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/contacts/{id}` operation.
    */
   siteContactsGet: typeof handleSiteContactsGet;
   /**
-   * Handler for the `PUT /workspaces/{slug}/contacts/{id}` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/contacts/{id}` operation.
    */
   siteContactsUpdate: typeof handleSiteContactsUpdate;
   /**
-   * Handler for the `GET /workspaces/{slug}/custom-fields` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/custom-fields` operation.
    */
   siteCustomFieldsList: typeof handleSiteCustomFieldsList;
   /**
-   * Handler for the `GET /workspaces/{slug}/events` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/events` operation.
    */
   siteEventsList: typeof handleSiteEventsList;
   /**
-   * Handler for the `GET /workspaces/{slug}/events/actions` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/events/actions` operation.
    */
   siteEventsActions: typeof handleSiteEventsActions;
   /**
-   * Handler for the `GET /workspaces/{slug}/integrations` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/integrations` operation.
    */
   siteIntegrationsList: typeof handleSiteIntegrationsList;
   /**
-   * Handler for the `POST /workspaces/{slug}/integrations` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/integrations` operation.
    */
   siteIntegrationsCreate: typeof handleSiteIntegrationsCreate;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/integrations/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/integrations/{id}` operation.
    */
   siteIntegrationsDelete: typeof handleSiteIntegrationsDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/integrations/{id}` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/integrations/{id}` operation.
    */
   siteIntegrationsGet: typeof handleSiteIntegrationsGet;
   /**
-   * Handler for the `PUT /workspaces/{slug}/integrations/{id}` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/integrations/{id}` operation.
    */
   siteIntegrationsUpdate: typeof handleSiteIntegrationsUpdate;
   /**
-   * Handler for the `POST /workspaces/{slug}/integrations/{id}/regenerate-key` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/integrations/{id}/regenerate-key` operation.
    */
   siteIntegrationsRegenerateKey: typeof handleSiteIntegrationsRegenerateKey;
   /**
-   * Handler for the `GET /workspaces/{slug}/invitations` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/invitations` operation.
    */
   siteInvitationsList: typeof handleSiteInvitationsList;
   /**
-   * Handler for the `POST /workspaces/{slug}/invitations` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/invitations` operation.
    */
   siteInvitationsCreate: typeof handleSiteInvitationsCreate;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/invitations/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/invitations/{id}` operation.
    */
   siteInvitationsDelete: typeof handleSiteInvitationsDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/memberships` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/memberships` operation.
    */
   siteMembershipsList: typeof handleSiteMembershipsList;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/memberships/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/memberships/{id}` operation.
    */
   siteMembershipsDelete: typeof handleSiteMembershipsDelete;
   /**
-   * Handler for the `PUT /workspaces/{slug}/memberships/{id}` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/memberships/{id}` operation.
    */
   siteMembershipsUpdate: typeof handleSiteMembershipsUpdate;
   /**
-   * Handler for the `POST /workspaces/{slug}/memberships/{id}/reset-second-factor` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/memberships/{id}/reset-second-factor` operation.
    */
   siteMembershipsResetSecondFactor: typeof handleSiteMembershipsResetSecondFactor;
   /**
-   * Handler for the `PUT /workspaces/{slug}/second-factor-requirement` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/second-factor-requirement` operation.
    */
   siteWorkspacesSetSecondFactorRequirement: typeof handleSiteWorkspacesSetSecondFactorRequirement;
   /**
-   * Handler for the `GET /workspaces/{slug}/segments` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/segments` operation.
    */
   siteSegmentsList: typeof handleSiteSegmentsList;
   /**
-   * Handler for the `POST /workspaces/{slug}/segments` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/segments` operation.
    */
   siteSegmentsCreate: typeof handleSiteSegmentsCreate;
   /**
-   * Handler for the `POST /workspaces/{slug}/segments/preview` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/segments/preview` operation.
    */
   siteSegmentsPreview: typeof handleSiteSegmentsPreview;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/segments/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/segments/{id}` operation.
    */
   siteSegmentsDelete: typeof handleSiteSegmentsDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/segments/{id}` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/segments/{id}` operation.
    */
   siteSegmentsGet: typeof handleSiteSegmentsGet;
   /**
-   * Handler for the `PUT /workspaces/{slug}/segments/{id}` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/segments/{id}` operation.
    */
   siteSegmentsUpdate: typeof handleSiteSegmentsUpdate;
   /**
-   * Handler for the `GET /workspaces/{slug}/sending-domains` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/sending-domains` operation.
    */
   siteSendingDomainsList: typeof handleSiteSendingDomainsList;
   /**
-   * Handler for the `POST /workspaces/{slug}/sending-domains` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/sending-domains` operation.
    */
   siteSendingDomainsCreate: typeof handleSiteSendingDomainsCreate;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/sending-domains/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/sending-domains/{id}` operation.
    */
   siteSendingDomainsDelete: typeof handleSiteSendingDomainsDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/sending-domains/{id}` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/sending-domains/{id}` operation.
    */
   siteSendingDomainsGet: typeof handleSiteSendingDomainsGet;
   /**
-   * Handler for the `POST /workspaces/{slug}/sending-domains/{id}/verify` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/sending-domains/{id}/verify` operation.
    */
   siteSendingDomainsVerify: typeof handleSiteSendingDomainsVerify;
   /**
-   * Handler for the `GET /workspaces/{slug}/setup-checklist` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/setup-checklist` operation.
    */
   siteSetupChecklistGet: typeof handleSiteSetupChecklistGet;
   /**
-   * Handler for the `GET /workspaces/{slug}/suppressions` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/suppressions` operation.
    */
   siteSuppressionsList: typeof handleSiteSuppressionsList;
   /**
-   * Handler for the `POST /workspaces/{slug}/suppressions` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/suppressions` operation.
    */
   siteSuppressionsCreate: typeof handleSiteSuppressionsCreate;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/suppressions/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/suppressions/{id}` operation.
    */
   siteSuppressionsDelete: typeof handleSiteSuppressionsDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/tags` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/tags` operation.
    */
   siteTagsList: typeof handleSiteTagsList;
   /**
-   * Handler for the `GET /workspaces/{slug}/templates` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/templates` operation.
    */
   siteTemplatesList: typeof handleSiteTemplatesList;
   /**
-   * Handler for the `POST /workspaces/{slug}/templates` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/templates` operation.
    */
   siteTemplatesCreate: typeof handleSiteTemplatesCreate;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/templates/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/templates/{id}` operation.
    */
   siteTemplatesDelete: typeof handleSiteTemplatesDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/templates/{id}` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/templates/{id}` operation.
    */
   siteTemplatesGet: typeof handleSiteTemplatesGet;
   /**
-   * Handler for the `PUT /workspaces/{slug}/templates/{id}` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/templates/{id}` operation.
    */
   siteTemplatesUpdate: typeof handleSiteTemplatesUpdate;
   /**
-   * Handler for the `GET /workspaces/{slug}/tokens` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/tokens` operation.
    */
   siteTokensList: typeof handleSiteTokensList;
   /**
-   * Handler for the `POST /workspaces/{slug}/tokens` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/tokens` operation.
    */
   siteTokensCreate: typeof handleSiteTokensCreate;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/tokens/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/tokens/{id}` operation.
    */
   siteTokensDelete: typeof handleSiteTokensDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/transactional-emails` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/transactional-emails` operation.
    */
   siteTransactionalEmailsList: typeof handleSiteTransactionalEmailsList;
   /**
-   * Handler for the `GET /workspaces/{slug}/webhooks` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/webhooks` operation.
    */
   siteWebhooksList: typeof handleSiteWebhooksList;
   /**
-   * Handler for the `POST /workspaces/{slug}/webhooks` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/webhooks` operation.
    */
   siteWebhooksCreate: typeof handleSiteWebhooksCreate;
   /**
-   * Handler for the `DELETE /workspaces/{slug}/webhooks/{id}` operation.
+   * Handler for the `DELETE /workspaces/{workspaceId}/webhooks/{id}` operation.
    */
   siteWebhooksDelete: typeof handleSiteWebhooksDelete;
   /**
-   * Handler for the `GET /workspaces/{slug}/webhooks/{id}` operation.
+   * Handler for the `GET /workspaces/{workspaceId}/webhooks/{id}` operation.
    */
   siteWebhooksGet: typeof handleSiteWebhooksGet;
   /**
-   * Handler for the `PUT /workspaces/{slug}/webhooks/{id}` operation.
+   * Handler for the `PUT /workspaces/{workspaceId}/webhooks/{id}` operation.
    */
   siteWebhooksUpdate: typeof handleSiteWebhooksUpdate;
   /**
-   * Handler for the `POST /workspaces/{slug}/webhooks/{id}/regenerate-secret` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/webhooks/{id}/regenerate-secret` operation.
    */
   siteWebhooksRegenerateSecret: typeof handleSiteWebhooksRegenerateSecret;
   /**
-   * Handler for the `POST /workspaces/{slug}/webhooks/{id}/test` operation.
+   * Handler for the `POST /workspaces/{workspaceId}/webhooks/{id}/test` operation.
    */
   siteWebhooksTest: typeof handleSiteWebhooksTest;
 };

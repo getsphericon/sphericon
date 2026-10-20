@@ -33,7 +33,7 @@ func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"preview-pro"}]}`
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
 		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, def)),
-	}, siteapi.SiteSegmentsPreviewParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
 	require.Truef(t, ok, "got %T", out)
@@ -56,7 +56,7 @@ func TestSiteSegmentsPreviewEventCondition(t *testing.T) {
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:signed_up","operator":"performed","value":"30"}]}`
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
 		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, def)),
-	}, siteapi.SiteSegmentsPreviewParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res, ok := out.(*siteapi.SitePreviewSegmentResult)
 	require.Truef(t, ok, "got %T", out)
@@ -70,7 +70,7 @@ func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
 
 	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
 		Definition: siteapi.NewOptSiteSegmentRuleGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)),
-	}, siteapi.SiteSegmentsPreviewParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsPreviewUnprocessableEntity{}, out)
 }
@@ -83,7 +83,7 @@ func TestSiteSegmentsCreateRejectsInvalidRuleDefinition(t *testing.T) {
 	out, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
 		Name:       "Bad rule",
 		Definition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`),
-	}, siteapi.SiteSegmentsCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, out)
 }
@@ -97,12 +97,12 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	// Create rejects a bad definition.
 	created, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
 		Name: "Bad", Definition: bad,
-	}, siteapi.SiteSegmentsCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, created)
 
 	updated, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Definition: siteapi.NewOptSiteSegmentRuleGroup(bad)},
-		siteapi.SiteSegmentsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.SegmentActiveID)})
+		siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSegmentsUpdateUnprocessableEntity{}, updated)
 }
@@ -127,7 +127,7 @@ func (r rawBody) Do(req *http.Request) (*http.Response, error) {
 func TestSiteSegmentsUpdateContractRejectsNullDefinition(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	params := siteapi.SiteSegmentsUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.SegmentActiveID)}
+	params := siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)}
 	reader := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	before, err := reader.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams(params))
 	require.NoError(t, err)

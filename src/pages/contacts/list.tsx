@@ -10,19 +10,19 @@ import {
   siteContactsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
-import { Route as contactsEditRoute } from '../../routes/workspaces/$slug/contacts/$contactId/edit.tsx'
-import { Route as contactsDetailRoute } from '../../routes/workspaces/$slug/contacts/$contactId/index.tsx'
-import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
-import { Route as contactsCreateRoute } from '../../routes/workspaces/$slug/contacts/new.tsx'
+import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
+import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
+import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
+import { Route as contactsCreateRoute } from '../../routes/workspaces/$workspaceId/contacts/new.tsx'
 
 export function ContactsListPage() {
   const { t } = useTranslation()
-  const { slug } = contactsRoute.useParams()
+  const { workspaceId } = contactsRoute.useParams()
 
   const deleteContact = useDeleteResource({
     mutation: siteContactsDeleteMutation(),
-    slug,
-    listQueryKey: siteContactsListQueryKey({ path: { slug } }),
+    workspaceId,
+    listQueryKey: siteContactsListQueryKey({ path: { workspaceId } }),
     successMessage: t(($) => $.notifications.contactDeleted),
     errorTitle: t(($) => $.alerts.deleteErrorTitle),
   })
@@ -31,13 +31,13 @@ export function ContactsListPage() {
     <Stack>
       <Group justify="space-between" align="center">
         <Title order={2}>{t(($) => $.nav.contacts)}</Title>
-        <ButtonLink to={contactsCreateRoute.to} params={{ slug }}>
+        <ButtonLink to={contactsCreateRoute.to} params={{ workspaceId }}>
           {t(($) => $.contacts.addContact)}
         </ButtonLink>
       </Group>
 
       <PagedTable
-        options={(query) => siteContactsListOptions({ path: { slug }, query })}
+        options={(query) => siteContactsListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.loadErrorTitle)}
         noRecordsText={t(($) => $.contacts.noRecords)}
         emptyState={t(($) => $.contacts.emptyState)}
@@ -55,7 +55,7 @@ export function ContactsListPage() {
                   <ActionIconLink
                     variant="light"
                     to={contactsDetailRoute.to}
-                    params={{ slug, contactId: record.id }}
+                    params={{ workspaceId, contactId: record.id }}
                     aria-label={t(($) => $.actions.view)}
                   >
                     <IconEye size={16} />
@@ -65,7 +65,7 @@ export function ContactsListPage() {
                   <ActionIconLink
                     variant="light"
                     to={contactsEditRoute.to}
-                    params={{ slug, contactId: record.id }}
+                    params={{ workspaceId, contactId: record.id }}
                     aria-label={t(($) => $.actions.edit)}
                   >
                     <IconPencil size={16} />

@@ -8,7 +8,7 @@ import {
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
-import { Route as generalRoute } from '../../../routes/workspaces/$slug/settings/index.tsx'
+import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { BrandKitSection } from '../BrandKitSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
@@ -32,7 +32,7 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
       <form
         onSubmit={form.onSubmit((values) =>
           updateMutation.mutate({
-            path: { slug: workspace.slug },
+            path: { workspaceId: workspace.id },
             body: { name: values.name.trim(), postalAddress: values.postalAddress.trim() },
           }),
         )}
@@ -64,10 +64,10 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 
 export function GeneralPage() {
   const { t } = useTranslation()
-  const { slug } = generalRoute.useParams()
+  const { workspaceId } = generalRoute.useParams()
 
   return (
-    <SettingsFrame slug={slug} title={t(($) => $.settings.nav.general)}>
+    <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.general)}>
       {(workspace) => (
         <Stack>
           <GeneralSection workspace={workspace} />

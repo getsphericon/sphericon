@@ -12,14 +12,14 @@ import { fromLimit, SendLimitFields, toLimit, useSendLimitValidators } from './S
 import type { SendLimitValues } from './SendLimitFields.tsx'
 
 interface SendLimitModalProps {
-  slug: string
+  workspaceId: string
   integration: SiteIntegrationResource | null
   onClose: () => void
 }
 
 // Edits an Integration's two manual Send rate limits. Only the limits are sent, so the
 // stored credentials are untouched; a blank input clears that limit.
-export function SendLimitModal({ slug, integration, onClose }: SendLimitModalProps) {
+export function SendLimitModal({ workspaceId, integration, onClose }: SendLimitModalProps) {
   const { t } = useTranslation()
   return (
     <Modal
@@ -30,7 +30,7 @@ export function SendLimitModal({ slug, integration, onClose }: SendLimitModalPro
       {integration ? (
         <SendLimitForm
           key={integration.id}
-          slug={slug}
+          workspaceId={workspaceId}
           integration={integration}
           onClose={onClose}
         />
@@ -40,12 +40,12 @@ export function SendLimitModal({ slug, integration, onClose }: SendLimitModalPro
 }
 
 interface SendLimitFormProps {
-  slug: string
+  workspaceId: string
   integration: SiteIntegrationResource
   onClose: () => void
 }
 
-function SendLimitForm({ slug, integration, onClose }: SendLimitFormProps) {
+function SendLimitForm({ workspaceId, integration, onClose }: SendLimitFormProps) {
   const { t } = useTranslation()
   const validate = useSendLimitValidators()
 
@@ -59,7 +59,7 @@ function SendLimitForm({ slug, integration, onClose }: SendLimitFormProps) {
 
   const updateMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
-    invalidate: [siteIntegrationsListQueryKey({ path: { slug } })],
+    invalidate: [siteIntegrationsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.settings.integrations.limits.saved),
     errorTitle: t(($) => $.settings.integrations.limits.saveError),
     onDone: onClose,
@@ -69,7 +69,7 @@ function SendLimitForm({ slug, integration, onClose }: SendLimitFormProps) {
     <form
       onSubmit={form.onSubmit((values) =>
         updateMutation.mutate({
-          path: { slug, id: integration.id },
+          path: { workspaceId, id: integration.id },
           body: {
             maxPerSecond: toLimit(values.maxPerSecond),
             maxPerDay: toLimit(values.maxPerDay),

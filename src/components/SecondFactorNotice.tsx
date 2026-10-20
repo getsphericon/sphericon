@@ -53,7 +53,7 @@ export function SecondFactorGraceBanner({ endsAt }: { endsAt: string }) {
 export function SecondFactorBlocked({
   workspace,
 }: {
-  workspace: Pick<SiteWorkspaceResource, 'slug' | 'role' | 'secondFactorRequiredAt'> | undefined
+  workspace: Pick<SiteWorkspaceResource, 'id' | 'role' | 'secondFactorRequiredAt'> | undefined
 }) {
   const { t } = useTranslation()
   return (
@@ -65,14 +65,14 @@ export function SecondFactorBlocked({
           <ButtonLink to={securityRoute.to}>{t(($) => $.secondFactorRequirement.setUp)}</ButtonLink>
         </Group>
         {workspace?.secondFactorRequiredAt && canManage(workspace.role) ? (
-          <TurnRequirementOff slug={workspace.slug} />
+          <TurnRequirementOff workspaceId={workspace.id} />
         ) : null}
       </Stack>
     </Card>
   )
 }
 
-function TurnRequirementOff({ slug }: { slug: string }) {
+function TurnRequirementOff({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const mutation = useSetSecondFactorRequirement()
   return (
@@ -84,7 +84,7 @@ function TurnRequirementOff({ slug }: { slug: string }) {
           variant="light"
           color="red"
           loading={mutation.isPending}
-          onClick={() => mutation.mutate({ path: { slug }, body: { required: false } })}
+          onClick={() => mutation.mutate({ path: { workspaceId }, body: { required: false } })}
         >
           {t(($) => $.secondFactorRequirement.turnOff)}
         </Button>

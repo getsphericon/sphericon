@@ -30,7 +30,7 @@ func TestSPAFileHandler(t *testing.T) {
 	assert.Equal(t, "console.log(1)", rec.Body.String())
 
 	// "/", index.html, a deep link and a directory all return the locale-injected shell.
-	for _, p := range []string{"/", "/index.html", "/workspaces/acme/contacts", "/assets"} {
+	for _, p := range []string{"/", "/index.html", "/workspaces/AcmeWs01/contacts", "/assets"} {
 		rec = serveSPA(t, h, p)
 		require.Equal(t, http.StatusOK, rec.Code, p)
 		assert.Equal(t, `<html lang="en"></html>`, rec.Body.String(), p)

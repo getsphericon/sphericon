@@ -362,7 +362,7 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 	assert.Equal(t, staffapi.StaffAuditActorKindService, shown.Actor.Kind)
 	assert.Equal(t, fixtures.ServiceCredentialPrimaryName, shown.Actor.Name.Value)
 
-	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{Slug: fixtures.AcmeSlug})
+	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	customerPage, ok := res.(*siteapi.SiteAuditEntryList)
 	require.Truef(t, ok, "got %T", res)

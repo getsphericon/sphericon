@@ -5,20 +5,19 @@ import {
   handleSiteWorkspacesList,
   handleSiteWorkspacesUpdate,
 } from '../../../generated/site/msw.gen.ts'
-import { Route as generalRoute } from '../../../routes/workspaces/$slug/settings/index.tsx'
+import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
 import { GeneralPage } from './general.tsx'
 
-const GENERAL_ROUTE = routeMount(generalRoute, { slug: 'test' })
+const GENERAL_ROUTE = routeMount(generalRoute, { workspaceId: 'TestWs01' })
 
 const workspace = {
-  id: '1',
+  id: 'TestWs01',
   name: 'Acme',
-  slug: 'test',
-  publicId: 'AcmeWs01',
+
   collectKey: 'omck_test_key',
   postalAddress: '',
   accountLinkAvailable: false,

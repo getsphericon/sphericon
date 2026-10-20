@@ -20,11 +20,11 @@ func TestSiteMalformedIDIsABadRequest(t *testing.T) {
 	for _, bad := range []string{"abc", "99999999999999999999", "1.5"} {
 		c := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.RewriteURL("123456789", bad))
 
-		inPath, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{Slug: fixtures.AcmeSlug, ID: 123456789})
+		inPath, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 123456789})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteContactsGetBadRequest{}, inPath, bad)
 
-		_, err = c.SiteEventsList(ctx, siteapi.SiteEventsListParams{Slug: fixtures.AcmeSlug, ContactId: siteapi.NewOptEntityId(123456789)})
+		_, err = c.SiteEventsList(ctx, siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.NewOptEntityId(123456789)})
 		assert.Error(t, err, "a malformed contactId query is refused: %s", bad)
 	}
 }

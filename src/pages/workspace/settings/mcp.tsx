@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
-import { Route as developersRoute } from '../../../routes/workspaces/$slug/settings/developers.tsx'
-import { Route as mcpRoute } from '../../../routes/workspaces/$slug/settings/mcp.tsx'
+import { Route as developersRoute } from '../../../routes/workspaces/$workspaceId/settings/developers.tsx'
+import { Route as mcpRoute } from '../../../routes/workspaces/$workspaceId/settings/mcp.tsx'
 import { DOCS_URL } from '../../../utils/docs.ts'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
@@ -47,7 +47,7 @@ function McpSection({ workspace }: { workspace: SiteWorkspaceResource }) {
       />
       <Text size="sm" mt="md">
         {t(($) => $.settings.mcp.tokenNote)}{' '}
-        <AnchorLink to={developersRoute.to} params={{ slug: workspace.slug }} size="sm">
+        <AnchorLink to={developersRoute.to} params={{ workspaceId: workspace.id }} size="sm">
           {t(($) => $.settings.mcp.apiKeysLink)}
         </AnchorLink>
       </Text>
@@ -64,10 +64,10 @@ function McpSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 
 export function McpPage() {
   const { t } = useTranslation()
-  const { slug } = mcpRoute.useParams()
+  const { workspaceId } = mcpRoute.useParams()
 
   return (
-    <SettingsFrame slug={slug} title={t(($) => $.settings.nav.mcp)}>
+    <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.mcp)}>
       {(workspace) => (
         <Stack>
           <McpSection workspace={workspace} />

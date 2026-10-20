@@ -36,8 +36,8 @@ func TestSiteContactsExportIsOpenToAnyMember(t *testing.T) {
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 
 	res, err := member.SiteContactsExport(context.Background(), siteapi.SiteContactsExportParams{
-		Slug: fixtures.AcmeSlug,
-		ID:   siteapi.NewOptEntityId(siteapi.EntityId(800)),
+		WorkspaceId: fixtures.AcmePublicID,
+		ID:          siteapi.NewOptEntityId(siteapi.EntityId(800)),
 	})
 	require.NoError(t, err)
 	doc := readSiteExport(t, res)
@@ -52,8 +52,8 @@ func TestSiteContactsExportByEmail(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	res, err := owner.SiteContactsExport(context.Background(), siteapi.SiteContactsExportParams{
-		Slug:  fixtures.AcmeSlug,
-		Email: siteapi.NewOptEmailAddress(fixtures.ContactExportSubjectEmail),
+		WorkspaceId: fixtures.AcmePublicID,
+		Email:       siteapi.NewOptEmailAddress(fixtures.ContactExportSubjectEmail),
 	})
 	require.NoError(t, err)
 	doc := readSiteExport(t, res)
@@ -69,8 +69,8 @@ func TestSiteContactsExportStaysInsideTheWorkspace(t *testing.T) {
 	// A foreign Contact is not found through the caller's own Workspace.
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	res, err := owner.SiteContactsExport(ctx, siteapi.SiteContactsExportParams{
-		Slug: fixtures.AcmeSlug,
-		ID:   siteapi.NewOptEntityId(siteapi.EntityId(900)),
+		WorkspaceId: fixtures.AcmePublicID,
+		ID:          siteapi.NewOptEntityId(siteapi.EntityId(900)),
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsExportNotFound{}, res)
@@ -78,8 +78,8 @@ func TestSiteContactsExportStaysInsideTheWorkspace(t *testing.T) {
 	// A non-member cannot address the Workspace at all.
 	outsider := env.SiteActor(t, fixtures.OutsiderOscarEmail)
 	res, err = outsider.SiteContactsExport(ctx, siteapi.SiteContactsExportParams{
-		Slug: fixtures.AcmeSlug,
-		ID:   siteapi.NewOptEntityId(siteapi.EntityId(800)),
+		WorkspaceId: fixtures.AcmePublicID,
+		ID:          siteapi.NewOptEntityId(siteapi.EntityId(800)),
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteContactsExportNotFound{}, res)

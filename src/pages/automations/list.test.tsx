@@ -9,14 +9,14 @@ import {
   handleSiteAutomationsList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
-import { Route as automationsRoute } from '../../routes/workspaces/$slug/automations/index.tsx'
+import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { AutomationsListPage } from './list.tsx'
 
-const LIST_ROUTE = routeMount(automationsRoute, { slug: 'test' })
+const LIST_ROUTE = routeMount(automationsRoute, { workspaceId: 'TestWs01' })
 const NOW = '2026-01-01T00:00:00Z'
 
 const WELCOME: SiteAutomationResource = {
@@ -82,10 +82,10 @@ test('New automation and Edit link to the create and edit pages', async () => {
 
   await expect
     .element(screen.getByRole('link', { name: 'New automation' }))
-    .toHaveAttribute('href', '/workspaces/test/automations/new')
+    .toHaveAttribute('href', '/workspaces/TestWs01/automations/new')
   await expect
     .element(screen.getByRole('link', { name: 'Edit' }))
-    .toHaveAttribute('href', '/workspaces/test/automations/1/edit')
+    .toHaveAttribute('href', '/workspaces/TestWs01/automations/1/edit')
 })
 
 test('activating a draft automation calls the API and refreshes the list', async () => {

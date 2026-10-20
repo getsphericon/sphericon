@@ -19,7 +19,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	body := `{"text":"{{ first_name }}"}`
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
@@ -30,7 +30,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 			Headers: []siteapi.SiteAutomationHttpHeader{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
 			Secret:  siteapi.NewOptString("whsec_topsecret"),
 		}},
-	}, siteapi.SiteAutomationsCreateParams{Slug: slug})
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", created)
@@ -48,7 +48,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	// Editing the body and resending only the step id keeps the stored secrets.
 	step.Body = siteapi.NewOptString(`{"text":"edited"}`)
 	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Steps: []siteapi.SiteAutomationStep{step}},
-		siteapi.SiteAutomationsUpdateParams{Slug: slug, ID: res.ID})
+		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", updated)
@@ -98,7 +98,7 @@ func TestSiteHTTPStepDryRunRendersForAContactWithoutCalling(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	params := siteapi.SiteAutomationsDryRunHttpStepParams{Slug: fixtures.AcmeSlug}
+	params := siteapi.SiteAutomationsDryRunHttpStepParams{WorkspaceId: fixtures.AcmePublicID}
 	contact := siteapi.EntityId(fixtures.ContactAliceID)
 
 	ok, err := c.SiteAutomationsDryRunHttpStep(ctx, &siteapi.SiteDryRunHttpStepInput{Body: `{"name":"{{ first_name }}"}`, ContactId: contact}, params)
@@ -124,7 +124,7 @@ func TestSiteHTTPStepRefusedAtSaveIsUnprocessable(t *testing.T) {
 			Type: siteapi.SiteAutomationStepTypeHTTP, URL: siteapi.NewOptString("https://hooks.example.com/x"),
 			Body: siteapi.NewOptString(`{"a": {{ nope }}}`),
 		}},
-	}, siteapi.SiteAutomationsCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteAutomationsCreateUnprocessableEntity), res)
 }

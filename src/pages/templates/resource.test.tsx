@@ -12,25 +12,25 @@ import {
   handleSiteTemplatesList,
   handleSiteTemplatesUpdate,
 } from '../../generated/site/msw.gen.ts'
-import { Route as templatesEditRoute } from '../../routes/workspaces/$slug/templates/$templateId/edit.tsx'
-import { Route as templatesCreateRoute } from '../../routes/workspaces/$slug/templates/new.tsx'
+import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
+import { Route as templatesCreateRoute } from '../../routes/workspaces/$workspaceId/templates/new.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { TemplateCreatePage, TemplateEditPage } from './resource.tsx'
 
-const CREATE_ROUTE = routeMount(templatesCreateRoute, { slug: 'test' })
+const CREATE_ROUTE = routeMount(templatesCreateRoute, { workspaceId: 'TestWs01' })
 
-const EDIT_ROUTE = routeMount(templatesEditRoute, { slug: 'test', templateId: '7' })
+const EDIT_ROUTE = routeMount(templatesEditRoute, { workspaceId: 'TestWs01', templateId: '7' })
 
 function ListProbe() {
-  useQuery(siteTemplatesListOptions({ path: { slug: 'test' } }))
+  useQuery(siteTemplatesListOptions({ path: { workspaceId: 'TestWs01' } }))
   return null
 }
 
 function DetailProbe() {
-  useQuery(siteTemplatesGetOptions({ path: { slug: 'test', id: '7' } }))
+  useQuery(siteTemplatesGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
   return null
 }
 
@@ -66,7 +66,7 @@ test('creating a template sends the filled keys, refreshes the list and opens th
   await expect.poll(() => listFetches).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { slug: 'test', templateId: '42' },
+    params: { workspaceId: 'TestWs01', templateId: '42' },
   })
 })
 

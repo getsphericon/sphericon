@@ -1882,17 +1882,17 @@
         "tags": ["Site Workspaces"]
       }
     },
-    "/workspaces/{slug}": {
+    "/workspaces/{workspaceId}": {
       "put": {
         "operationId": "SiteWorkspaces_update",
         "description": "Rename a workspace owned by the authenticated user",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -1941,17 +1941,17 @@
         }
       }
     },
-    "/workspaces/{slug}/account-link": {
+    "/workspaces/{workspaceId}/account-link": {
       "post": {
         "operationId": "SiteWorkspaces_accountLink",
         "description": "Mint an Account link token (Owner only). Answers 404 when the installation has no\nAccount link configured.",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -1990,17 +1990,17 @@
         "tags": ["Site Workspaces"]
       }
     },
-    "/workspaces/{slug}/analytics/overview": {
+    "/workspaces/{workspaceId}/analytics/overview": {
       "get": {
         "operationId": "SiteAnalytics_overview",
         "description": "Aggregate metrics for the workspace dashboard",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -2039,17 +2039,17 @@
         "tags": ["Site Analytics"]
       }
     },
-    "/workspaces/{slug}/audit-entries": {
+    "/workspaces/{workspaceId}/audit-entries": {
       "get": {
         "operationId": "SiteAudit_list",
         "description": "List the workspace's Audit log, newest first (Enterprise; owner and admin only)",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -2157,17 +2157,17 @@
         "tags": ["Site Audit"]
       }
     },
-    "/workspaces/{slug}/audit-entries/export": {
+    "/workspaces/{workspaceId}/audit-entries/export": {
       "get": {
         "operationId": "SiteAudit_export",
         "description": "Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise; owner and admin only)",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -2251,17 +2251,17 @@
         "tags": ["Site Audit"]
       }
     },
-    "/workspaces/{slug}/audit-entries/retention": {
+    "/workspaces/{workspaceId}/audit-entries/retention": {
       "get": {
         "operationId": "SiteAudit_getRetention",
         "description": "Read the Audit log retention window (Enterprise; owner and admin only)",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -2314,11 +2314,11 @@
         "description": "Set or clear the Audit log retention window; recorded as an Audit entry (Enterprise; owner and admin only)",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -2387,7 +2387,7 @@
         }
       }
     },
-    "/workspaces/{slug}/automations": {
+    "/workspaces/{workspaceId}/automations": {
       "get": {
         "operationId": "SiteAutomations_list",
         "description": "List resources for the site UI",
@@ -2530,7 +2530,7 @@
         }
       }
     },
-    "/workspaces/{slug}/automations/dry-run-http-step": {
+    "/workspaces/{workspaceId}/automations/dry-run-http-step": {
       "post": {
         "operationId": "SiteAutomations_dryRunHttpStep",
         "description": "Render an HTTP step's body for a Contact and validate it, calling nothing",
@@ -2594,17 +2594,17 @@
         }
       }
     },
-    "/workspaces/{slug}/automations/{automationId}/enrollments": {
+    "/workspaces/{workspaceId}/automations/{automationId}/enrollments": {
       "get": {
         "operationId": "SiteEnrollments_list",
         "description": "List an Automation's Enrollments, newest first",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -2698,17 +2698,17 @@
         "tags": ["Site Automations"]
       }
     },
-    "/workspaces/{slug}/automations/{automationId}/enrollments/{enrollmentId}": {
+    "/workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}": {
       "get": {
         "operationId": "SiteEnrollments_get",
         "description": "Get one Enrollment of an Automation",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -2763,13 +2763,13 @@
         "tags": ["Site Automations"]
       }
     },
-    "/workspaces/{slug}/automations/{id}": {
+    "/workspaces/{workspaceId}/automations/{id}": {
       "get": {
         "operationId": "SiteAutomations_get",
         "description": "Get a resource by ID for the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
@@ -2814,7 +2814,7 @@
         "description": "Update a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
@@ -2879,7 +2879,7 @@
         "description": "Delete a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
@@ -2913,13 +2913,13 @@
         "tags": ["Site Automations"]
       }
     },
-    "/workspaces/{slug}/automations/{id}/activate": {
+    "/workspaces/{workspaceId}/automations/{id}/activate": {
       "post": {
         "operationId": "SiteAutomations_activate",
         "description": "Activate an automation (starts enrolling contacts)",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
@@ -2970,13 +2970,13 @@
         "tags": ["Site Automations"]
       }
     },
-    "/workspaces/{slug}/automations/{id}/deactivate": {
+    "/workspaces/{workspaceId}/automations/{id}/deactivate": {
       "post": {
         "operationId": "SiteAutomations_deactivate",
         "description": "Deactivate an automation (stops new enrollments)",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
@@ -3017,17 +3017,17 @@
         "tags": ["Site Automations"]
       }
     },
-    "/workspaces/{slug}/brand-kit": {
+    "/workspaces/{workspaceId}/brand-kit": {
       "get": {
         "operationId": "SiteBrandKit_get",
         "description": "Read the Brand kit. Every member may read it.",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -3060,11 +3060,11 @@
         "description": "Save the Brand kit (owner only). The first save also creates the starter\nTemplates (a welcome, a receipt, a digest and a one-button message) in its brand; a later\nsave creates none and changes no message already written. A change is recorded as an Audit\nentry.",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -3123,17 +3123,17 @@
         }
       }
     },
-    "/workspaces/{slug}/brand-kit/starter-templates": {
+    "/workspaces/{workspaceId}/brand-kit/starter-templates": {
       "post": {
         "operationId": "SiteBrandKit_recreateStarterTemplates",
         "description": "Create the starter Templates again from the saved Brand kit (owner only). It adds\nnew Templates and never touches one that exists or a message already written. Answers 422\nuntil the Brand kit has been saved.",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -3185,7 +3185,7 @@
         "tags": ["Site Brand Kit"]
       }
     },
-    "/workspaces/{slug}/broadcasts": {
+    "/workspaces/{workspaceId}/broadcasts": {
       "get": {
         "operationId": "SiteBroadcasts_list",
         "description": "List resources for the site UI",
@@ -3328,13 +3328,13 @@
         }
       }
     },
-    "/workspaces/{slug}/broadcasts/{id}": {
+    "/workspaces/{workspaceId}/broadcasts/{id}": {
       "get": {
         "operationId": "SiteBroadcasts_get",
         "description": "Get a resource by ID for the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.slug"
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
@@ -3379,7 +3379,7 @@
         "description": "Update a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.slug"
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
@@ -3444,7 +3444,7 @@
         "description": "Delete a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.slug"
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
@@ -3478,13 +3478,13 @@
         "tags": ["Site Broadcasts"]
       }
     },
-    "/workspaces/{slug}/broadcasts/{id}/schedule": {
+    "/workspaces/{workspaceId}/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "SiteBroadcasts_schedule",
         "description": "Schedule a broadcast to send at a future time",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.slug"
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
@@ -3545,13 +3545,13 @@
         }
       }
     },
-    "/workspaces/{slug}/broadcasts/{id}/send": {
+    "/workspaces/{workspaceId}/broadcasts/{id}/send": {
       "post": {
         "operationId": "SiteBroadcasts_send",
         "description": "Send a broadcast immediately",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.slug"
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
@@ -3602,13 +3602,13 @@
         "tags": ["Site Broadcasts"]
       }
     },
-    "/workspaces/{slug}/broadcasts/{id}/test-send": {
+    "/workspaces/{workspaceId}/broadcasts/{id}/test-send": {
       "post": {
         "operationId": "SiteBroadcasts_testSend",
         "description": "Send a one-off rendered preview to a single address. While the Workspace has no verified\nSending domain it goes from the System sender and only to the asking User's own address\n(ADR 0041): another address is refused with 422, the System sender's caps answer 429.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteBroadcastResourceKey.slug"
+            "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.id"
@@ -3713,7 +3713,7 @@
         }
       }
     },
-    "/workspaces/{slug}/contacts": {
+    "/workspaces/{workspaceId}/contacts": {
       "get": {
         "operationId": "SiteContacts_list",
         "description": "List resources for the site UI",
@@ -3866,7 +3866,7 @@
         }
       }
     },
-    "/workspaces/{slug}/contacts/export": {
+    "/workspaces/{workspaceId}/contacts/export": {
       "post": {
         "operationId": "SiteContacts_export",
         "description": "Export everything held about one contact as a streamed JSON download.\nIdentify the contact by exactly one of `id` or `email`. Available to any\nWorkspace member (contact read access).",
@@ -3944,17 +3944,17 @@
         "tags": ["Site Contacts"]
       }
     },
-    "/workspaces/{slug}/contacts/{contactId}/tags": {
+    "/workspaces/{workspaceId}/contacts/{contactId}/tags": {
       "get": {
         "operationId": "SiteTags_listForContact",
         "description": "List the tags a contact has",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -4052,11 +4052,11 @@
         "description": "Apply a tag to a contact, creating the tag on first use. Idempotent.",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -4123,17 +4123,17 @@
         }
       }
     },
-    "/workspaces/{slug}/contacts/{contactId}/tags/{name}": {
+    "/workspaces/{workspaceId}/contacts/{contactId}/tags/{name}": {
       "delete": {
         "operationId": "SiteTags_remove",
         "description": "Remove a tag from a contact. Idempotent; the tag stays in the catalogue.",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -4181,13 +4181,13 @@
         "tags": ["Site Tags"]
       }
     },
-    "/workspaces/{slug}/contacts/{id}": {
+    "/workspaces/{workspaceId}/contacts/{id}": {
       "get": {
         "operationId": "SiteContacts_get",
         "description": "Get a resource by ID for the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteContactResourceKey.slug"
+            "$ref": "#/components/parameters/SiteContactResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteContactResourceKey.id"
@@ -4232,7 +4232,7 @@
         "description": "Update a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteContactResourceKey.slug"
+            "$ref": "#/components/parameters/SiteContactResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteContactResourceKey.id"
@@ -4307,7 +4307,7 @@
         "description": "Erase a contact (GDPR Art. 17): its personal data is removed, delivery records are anonymized and its opt-outs survive. Owner or admin only.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteContactResourceKey.slug"
+            "$ref": "#/components/parameters/SiteContactResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteContactResourceKey.id"
@@ -4351,7 +4351,7 @@
         "tags": ["Site Contacts"]
       }
     },
-    "/workspaces/{slug}/custom-fields": {
+    "/workspaces/{workspaceId}/custom-fields": {
       "get": {
         "operationId": "SiteCustomFields_list",
         "description": "List the workspace's custom field definitions",
@@ -4426,7 +4426,7 @@
         "tags": ["Site Custom Fields"]
       }
     },
-    "/workspaces/{slug}/events": {
+    "/workspaces/{workspaceId}/events": {
       "get": {
         "operationId": "SiteEvents_list",
         "description": "List events for the site UI (most recent first)",
@@ -4527,7 +4527,7 @@
         "tags": ["Site Events"]
       }
     },
-    "/workspaces/{slug}/events/actions": {
+    "/workspaces/{workspaceId}/events/actions": {
       "get": {
         "operationId": "SiteEvents_actions",
         "description": "Distinct event actions in the workspace, sorted — powers the segment builder",
@@ -4561,7 +4561,7 @@
         "tags": ["Site Events"]
       }
     },
-    "/workspaces/{slug}/integrations": {
+    "/workspaces/{workspaceId}/integrations": {
       "get": {
         "operationId": "SiteIntegrations_list",
         "description": "List the workspace's sending-provider integrations",
@@ -4670,13 +4670,13 @@
         }
       }
     },
-    "/workspaces/{slug}/integrations/{id}": {
+    "/workspaces/{workspaceId}/integrations/{id}": {
       "get": {
         "operationId": "SiteIntegrations_get",
         "description": "Get an integration by id",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteIntegrationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.id"
@@ -4721,7 +4721,7 @@
         "description": "Update an integration. Owners and admins only.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteIntegrationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.id"
@@ -4806,7 +4806,7 @@
         "description": "Delete an integration. Owners and admins only.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteIntegrationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.id"
@@ -4850,13 +4850,13 @@
         "tags": ["Site Integrations"]
       }
     },
-    "/workspaces/{slug}/integrations/{id}/regenerate-key": {
+    "/workspaces/{workspaceId}/integrations/{id}/regenerate-key": {
       "post": {
         "operationId": "SiteIntegrations_regenerateKey",
         "description": "Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteIntegrationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteIntegrationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteIntegrationResourceKey.id"
@@ -4907,7 +4907,7 @@
         "tags": ["Site Integrations"]
       }
     },
-    "/workspaces/{slug}/invitations": {
+    "/workspaces/{workspaceId}/invitations": {
       "get": {
         "operationId": "SiteInvitations_list",
         "description": "List pending (unaccepted) invitations for the workspace",
@@ -5016,13 +5016,13 @@
         }
       }
     },
-    "/workspaces/{slug}/invitations/{id}": {
+    "/workspaces/{workspaceId}/invitations/{id}": {
       "delete": {
         "operationId": "SiteInvitations_delete",
         "description": "Revoke a pending invitation",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteInvitationResourceKey.slug"
+            "$ref": "#/components/parameters/SiteInvitationResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteInvitationResourceKey.id"
@@ -5056,7 +5056,7 @@
         "tags": ["Site Invitations"]
       }
     },
-    "/workspaces/{slug}/memberships": {
+    "/workspaces/{workspaceId}/memberships": {
       "get": {
         "operationId": "SiteMemberships_list",
         "description": "List the workspace's members",
@@ -5093,13 +5093,13 @@
         "tags": ["Site Memberships"]
       }
     },
-    "/workspaces/{slug}/memberships/{id}": {
+    "/workspaces/{workspaceId}/memberships/{id}": {
       "put": {
         "operationId": "SiteMemberships_update",
         "description": "Change a member's role (owner/admin only; owner-only to grant owner)",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteMembershipResourceKey.slug"
+            "$ref": "#/components/parameters/SiteMembershipResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteMembershipResourceKey.id"
@@ -5164,7 +5164,7 @@
         "description": "Remove a member (owner/admin only; the last owner cannot be removed)",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteMembershipResourceKey.slug"
+            "$ref": "#/components/parameters/SiteMembershipResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteMembershipResourceKey.id"
@@ -5208,13 +5208,13 @@
         "tags": ["Site Memberships"]
       }
     },
-    "/workspaces/{slug}/memberships/{id}/reset-second-factor": {
+    "/workspaces/{workspaceId}/memberships/{id}/reset-second-factor": {
       "post": {
         "operationId": "SiteMemberships_resetSecondFactor",
         "description": "Reset the member's Second factor (owner/admin only; owner-only for an owner):\nclears the factor and its Recovery codes and ends every session of theirs. The\nacting session is untouched. 422 when the member has no Second factor or is the\ncaller (who disables their own with a password and a code).",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteMembershipResourceKey.slug"
+            "$ref": "#/components/parameters/SiteMembershipResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteMembershipResourceKey.id"
@@ -5258,17 +5258,17 @@
         "tags": ["Site Memberships"]
       }
     },
-    "/workspaces/{slug}/second-factor-requirement": {
+    "/workspaces/{workspaceId}/second-factor-requirement": {
       "put": {
         "operationId": "SiteWorkspaces_setSecondFactorRequirement",
         "description": "Switch the Two-factor requirement on or off (owner and admin only). Switching\nit on while it is already on keeps the original start, so no one's grace\nrestarts. A change is recorded as an Audit entry.",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -5317,7 +5317,7 @@
         }
       }
     },
-    "/workspaces/{slug}/segments": {
+    "/workspaces/{workspaceId}/segments": {
       "get": {
         "operationId": "SiteSegments_list",
         "description": "List resources for the site UI",
@@ -5460,7 +5460,7 @@
         }
       }
     },
-    "/workspaces/{slug}/segments/preview": {
+    "/workspaces/{workspaceId}/segments/preview": {
       "post": {
         "operationId": "SiteSegments_preview",
         "description": "Preview how many active contacts match a rule definition",
@@ -5524,13 +5524,13 @@
         }
       }
     },
-    "/workspaces/{slug}/segments/{id}": {
+    "/workspaces/{workspaceId}/segments/{id}": {
       "get": {
         "operationId": "SiteSegments_get",
         "description": "Get a resource by ID for the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteSegmentResourceKey.slug"
+            "$ref": "#/components/parameters/SiteSegmentResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteSegmentResourceKey.id"
@@ -5575,7 +5575,7 @@
         "description": "Update a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteSegmentResourceKey.slug"
+            "$ref": "#/components/parameters/SiteSegmentResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteSegmentResourceKey.id"
@@ -5640,7 +5640,7 @@
         "description": "Delete a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteSegmentResourceKey.slug"
+            "$ref": "#/components/parameters/SiteSegmentResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteSegmentResourceKey.id"
@@ -5674,7 +5674,7 @@
         "tags": ["Site Segments"]
       }
     },
-    "/workspaces/{slug}/sending-domains": {
+    "/workspaces/{workspaceId}/sending-domains": {
       "get": {
         "operationId": "SiteSendingDomains_list",
         "description": "List sending domains for the site UI",
@@ -5827,13 +5827,13 @@
         }
       }
     },
-    "/workspaces/{slug}/sending-domains/{id}": {
+    "/workspaces/{workspaceId}/sending-domains/{id}": {
       "get": {
         "operationId": "SiteSendingDomains_get",
         "description": "Get a sending domain by ID for the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteSendingDomainResourceKey.slug"
+            "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteSendingDomainResourceKey.id"
@@ -5878,7 +5878,7 @@
         "description": "Delete a sending domain",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteSendingDomainResourceKey.slug"
+            "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteSendingDomainResourceKey.id"
@@ -5912,13 +5912,13 @@
         "tags": ["Site Sending Domains"]
       }
     },
-    "/workspaces/{slug}/sending-domains/{id}/verify": {
+    "/workspaces/{workspaceId}/sending-domains/{id}/verify": {
       "post": {
         "operationId": "SiteSendingDomains_verify",
         "description": "Trigger an immediate DKIM re-check (fire-and-forget)",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteSendingDomainResourceKey.slug"
+            "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteSendingDomainResourceKey.id"
@@ -5952,17 +5952,17 @@
         "tags": ["Site Sending Domains"]
       }
     },
-    "/workspaces/{slug}/setup-checklist": {
+    "/workspaces/{workspaceId}/setup-checklist": {
       "get": {
         "operationId": "SiteSetupChecklist_get",
         "description": "The Workspace's Setup checklist",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           }
         ],
@@ -5991,7 +5991,7 @@
         "tags": ["Site Setup Checklist"]
       }
     },
-    "/workspaces/{slug}/suppressions": {
+    "/workspaces/{workspaceId}/suppressions": {
       "post": {
         "operationId": "SiteSuppressions_create",
         "description": "Manually suppress an address (reason = manual; idempotent per address)",
@@ -6134,13 +6134,13 @@
         "tags": ["Site Suppressions"]
       }
     },
-    "/workspaces/{slug}/suppressions/{id}": {
+    "/workspaces/{workspaceId}/suppressions/{id}": {
       "delete": {
         "operationId": "SiteSuppressions_delete",
         "description": "Remove an address from the suppression list",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteSuppressionResourceKey.slug"
+            "$ref": "#/components/parameters/SiteSuppressionResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteSuppressionResourceKey.id"
@@ -6174,17 +6174,17 @@
         "tags": ["Site Suppressions"]
       }
     },
-    "/workspaces/{slug}/tags": {
+    "/workspaces/{workspaceId}/tags": {
       "get": {
         "operationId": "SiteTags_list",
         "description": "List the workspace's tags (feeds the segment builder)",
         "parameters": [
           {
-            "name": "slug",
+            "name": "workspaceId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "$ref": "#/components/schemas/WorkspaceId"
             }
           },
           {
@@ -6270,7 +6270,7 @@
         "tags": ["Site Tags"]
       }
     },
-    "/workspaces/{slug}/templates": {
+    "/workspaces/{workspaceId}/templates": {
       "get": {
         "operationId": "SiteTemplates_list",
         "description": "List resources for the site UI",
@@ -6413,13 +6413,13 @@
         }
       }
     },
-    "/workspaces/{slug}/templates/{id}": {
+    "/workspaces/{workspaceId}/templates/{id}": {
       "get": {
         "operationId": "SiteTemplates_get",
         "description": "Get a resource by ID for the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteEmailTemplateResourceKey.slug"
+            "$ref": "#/components/parameters/SiteEmailTemplateResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteEmailTemplateResourceKey.id"
@@ -6464,7 +6464,7 @@
         "description": "Update a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteEmailTemplateResourceKey.slug"
+            "$ref": "#/components/parameters/SiteEmailTemplateResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteEmailTemplateResourceKey.id"
@@ -6529,7 +6529,7 @@
         "description": "Delete a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteEmailTemplateResourceKey.slug"
+            "$ref": "#/components/parameters/SiteEmailTemplateResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteEmailTemplateResourceKey.id"
@@ -6563,7 +6563,7 @@
         "tags": ["Site Templates"]
       }
     },
-    "/workspaces/{slug}/tokens": {
+    "/workspaces/{workspaceId}/tokens": {
       "get": {
         "operationId": "SiteTokens_list",
         "description": "List the workspace's API tokens, revoked ones included (marked by `revokedAt`)",
@@ -6662,13 +6662,13 @@
         }
       }
     },
-    "/workspaces/{slug}/tokens/{id}": {
+    "/workspaces/{workspaceId}/tokens/{id}": {
       "delete": {
         "operationId": "SiteTokens_delete",
         "description": "Revoke an API token. Owners and admins only.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteApiTokenResourceKey.slug"
+            "$ref": "#/components/parameters/SiteApiTokenResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteApiTokenResourceKey.id"
@@ -6712,7 +6712,7 @@
         "tags": ["Site Tokens"]
       }
     },
-    "/workspaces/{slug}/transactional-emails": {
+    "/workspaces/{workspaceId}/transactional-emails": {
       "get": {
         "operationId": "SiteTransactionalEmails_list",
         "description": "List transactional sends, most recent first",
@@ -6803,7 +6803,7 @@
         "tags": ["Site Transactional Emails"]
       }
     },
-    "/workspaces/{slug}/webhooks": {
+    "/workspaces/{workspaceId}/webhooks": {
       "get": {
         "operationId": "SiteWebhooks_list",
         "description": "List resources for the site UI",
@@ -6946,13 +6946,13 @@
         }
       }
     },
-    "/workspaces/{slug}/webhooks/{id}": {
+    "/workspaces/{workspaceId}/webhooks/{id}": {
       "get": {
         "operationId": "SiteWebhooks_get",
         "description": "Get a resource by ID for the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.slug"
+            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.id"
@@ -6997,7 +6997,7 @@
         "description": "Update a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.slug"
+            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.id"
@@ -7062,7 +7062,7 @@
         "description": "Delete a resource from the site UI",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.slug"
+            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.id"
@@ -7096,13 +7096,13 @@
         "tags": ["Site Webhooks"]
       }
     },
-    "/workspaces/{slug}/webhooks/{id}/regenerate-secret": {
+    "/workspaces/{workspaceId}/webhooks/{id}/regenerate-secret": {
       "post": {
         "operationId": "SiteWebhooks_regenerateSecret",
         "description": "Replace the signing secret. The old one stops verifying at once; the new one is in the response.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.slug"
+            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.id"
@@ -7143,13 +7143,13 @@
         "tags": ["Site Webhooks"]
       }
     },
-    "/workspaces/{slug}/webhooks/{id}/test": {
+    "/workspaces/{workspaceId}/webhooks/{id}/test": {
       "post": {
         "operationId": "SiteWebhooks_test",
         "description": "Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer",
         "parameters": [
           {
-            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.slug"
+            "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.workspaceId"
           },
           {
             "$ref": "#/components/parameters/SiteWebhookEndpointResourceKey.id"
@@ -7251,22 +7251,22 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteApiTokenResourceKey.slug": {
-        "name": "slug",
+      "SiteApiTokenResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteApiTokenResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteAuditFilter.action": {
@@ -7368,22 +7368,22 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteAutomationResourceKey.slug": {
-        "name": "slug",
+      "SiteAutomationResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteAutomationResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteBroadcastResourceKey.id": {
@@ -7395,22 +7395,22 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteBroadcastResourceKey.slug": {
-        "name": "slug",
+      "SiteBroadcastResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteBroadcastResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteContactResourceKey.id": {
@@ -7422,31 +7422,31 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteContactResourceKey.slug": {
-        "name": "slug",
+      "SiteContactResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteContactResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteCustomFieldResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteEmailTemplateResourceKey.id": {
@@ -7458,31 +7458,31 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteEmailTemplateResourceKey.slug": {
-        "name": "slug",
+      "SiteEmailTemplateResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteEmailTemplateResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteEventResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteIntegrationResourceKey.id": {
@@ -7494,22 +7494,22 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteIntegrationResourceKey.slug": {
-        "name": "slug",
+      "SiteIntegrationResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteIntegrationResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteInvitationResourceKey.id": {
@@ -7521,22 +7521,22 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteInvitationResourceKey.slug": {
-        "name": "slug",
+      "SiteInvitationResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteInvitationResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteMembershipResourceKey.id": {
@@ -7548,22 +7548,22 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteMembershipResourceKey.slug": {
-        "name": "slug",
+      "SiteMembershipResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteMembershipResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteSegmentResourceKey.id": {
@@ -7575,22 +7575,22 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteSegmentResourceKey.slug": {
-        "name": "slug",
+      "SiteSegmentResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteSegmentResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteSendingDomainResourceKey.id": {
@@ -7602,22 +7602,22 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteSendingDomainResourceKey.slug": {
-        "name": "slug",
+      "SiteSendingDomainResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteSendingDomainResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteSuppressionResourceKey.id": {
@@ -7629,31 +7629,31 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteSuppressionResourceKey.slug": {
-        "name": "slug",
+      "SiteSuppressionResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteSuppressionResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteTransactionalEmailResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteWebhookEndpointResourceKey.id": {
@@ -7665,22 +7665,22 @@
           "$ref": "#/components/schemas/EntityId"
         }
       },
-      "SiteWebhookEndpointResourceKey.slug": {
-        "name": "slug",
+      "SiteWebhookEndpointResourceKey.workspaceId": {
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       },
       "SiteWebhookEndpointResourceParentKey": {
-        "name": "slug",
+        "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "URL-safe unique slug; the route key for nested workspace resources",
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
         "schema": {
-          "type": "string"
+          "$ref": "#/components/schemas/WorkspaceId"
         }
       }
     },
@@ -11985,7 +11985,7 @@
             "description": "Physical postal address for the marketing email footer (CAN-SPAM). Omit to\nleave it unchanged; send an empty string to clear it."
           }
         },
-        "description": "Update a workspace. The slug is immutable (it is the route key and globally\nunique); the display name and the CAN-SPAM postal address can change."
+        "description": "Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change."
       },
       "SiteUserResource": {
         "type": "object",
@@ -12215,9 +12215,7 @@
         "type": "object",
         "required": [
           "id",
-          "publicId",
           "name",
-          "slug",
           "collectKey",
           "postalAddress",
           "role",
@@ -12230,26 +12228,14 @@
           "id": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "description": "Unique identifier"
-          },
-          "publicId": {
-            "allOf": [
-              {
                 "$ref": "#/components/schemas/WorkspaceId"
               }
             ],
-            "description": "The Workspace id: its short opaque public address (ADR 0043)"
+            "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)"
           },
           "name": {
             "type": "string",
             "description": "Display name"
-          },
-          "slug": {
-            "type": "string",
-            "description": "URL-safe unique slug; the route key for nested workspace resources"
           },
           "collectKey": {
             "type": "string",

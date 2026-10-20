@@ -6,14 +6,14 @@ import {
   handleSiteSegmentsList,
   handleSiteTemplatesList,
 } from '../../generated/site/msw.gen.ts'
-import { Route as broadcastsRoute } from '../../routes/workspaces/$slug/broadcasts/index.tsx'
-import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$slug/broadcasts/new.tsx'
+import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
+import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { BroadcastCreatePage } from './resource.tsx'
 
-const mount = routeMount(broadcastsCreateRoute, { slug: 'test' })
+const mount = routeMount(broadcastsCreateRoute, { workspaceId: 'TestWs01' })
 
 const DOC = {
   type: 'doc',
@@ -101,5 +101,5 @@ test('Cancel links back to the broadcasts list of the current workspace', async 
 
   await expect
     .element(screen.getByRole('link', { name: 'Cancel' }))
-    .toHaveAttribute('href', routeMount(broadcastsRoute, { slug: 'test' }).initialPath)
+    .toHaveAttribute('href', routeMount(broadcastsRoute, { workspaceId: 'TestWs01' }).initialPath)
 })

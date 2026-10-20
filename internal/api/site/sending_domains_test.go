@@ -17,17 +17,17 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	// Invalid domain is rejected.
 	bad, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "not a domain"},
-		siteapi.SiteSendingDomainsCreateParams{Slug: slug})
+		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsCreateUnprocessableEntity{}, bad)
 
 	// Create mints a keypair and returns the DNS records to publish.
 	created, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "Marketing.Example.COM"},
-		siteapi.SiteSendingDomainsCreateParams{Slug: slug})
+		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "got %T", created)
@@ -54,28 +54,28 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 
 	// Adding the same domain again conflicts.
 	dup, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "marketing.example.com"},
-		siteapi.SiteSendingDomainsCreateParams{Slug: slug})
+		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsCreateConflict{}, dup)
 
 	// Fetch it back by id.
-	got, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{Slug: slug, ID: res.ID})
+	got, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	gotRes, ok := got.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Verify enqueues the DKIM re-check (inline: NXDOMAIN stub → stays unverified).
-	ver, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{Slug: slug, ID: res.ID})
+	ver, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsVerifyNoContent{}, ver)
 
 	// Delete; a fetch by id then resolves to 404.
-	del, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{Slug: slug, ID: res.ID})
+	del, err := c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsDeleteNoContent{}, del)
 
-	gone, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{Slug: slug, ID: res.ID})
+	gone, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsGetNotFound{}, gone)
 }
@@ -85,7 +85,7 @@ func TestSiteSendingDomainsListScopedToWorkspace(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	list, err := c.SiteSendingDomainsList(ctx, siteapi.SiteSendingDomainsListParams{Slug: fixtures.AcmeSlug})
+	list, err := c.SiteSendingDomainsList(ctx, siteapi.SiteSendingDomainsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	page, ok := list.(*siteapi.SiteSendingDomainsListOK)
 	require.Truef(t, ok, "got %T", list)
@@ -107,7 +107,7 @@ func TestSiteSendingDomainsRequireMembership(t *testing.T) {
 	// A real, authenticated user with no membership on acme must get 404 — never
 	// another tenant's sending domains.
 	c := env.SiteActor(t, fixtures.OutsiderOscarEmail)
-	res, err := c.SiteSendingDomainsList(ctx, siteapi.SiteSendingDomainsListParams{Slug: fixtures.AcmeSlug})
+	res, err := c.SiteSendingDomainsList(ctx, siteapi.SiteSendingDomainsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsListNotFound{}, res)
 }

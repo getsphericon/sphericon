@@ -14,7 +14,7 @@ import (
 )
 
 func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteEnrollmentsListParams) (siteapi.SiteEnrollmentsListRes, error) {
-	ws, err := h.scopedFor(ctx, params.Slug)
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteEnrollmentsListNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -44,7 +44,7 @@ func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteE
 }
 
 func (h *Handlers) SiteEnrollmentsGet(ctx context.Context, params siteapi.SiteEnrollmentsGetParams) (siteapi.SiteEnrollmentsGetRes, error) {
-	ws, err := h.scopedFor(ctx, params.Slug)
+	ws, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteEnrollmentsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

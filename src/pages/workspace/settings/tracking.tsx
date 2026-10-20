@@ -4,18 +4,18 @@ import { useTranslation } from 'react-i18next'
 
 import { AnchorLink } from '../../../components/RouterLink.tsx'
 import { siteEventsListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
-import { Route as activityRoute } from '../../../routes/workspaces/$slug/activity.tsx'
-import { Route as trackingRoute } from '../../../routes/workspaces/$slug/settings/tracking.tsx'
+import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
+import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
 // InstallStatus polls the events feed and tells the user whether their tracker
 // is connected yet. Accurate only because the dashboard no longer self-tracks
 // into the workspace (see App.tsx) — every event here comes from their own site.
-function InstallStatus({ slug }: { slug: string }) {
+function InstallStatus({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const statusQuery = useQuery({
     ...siteEventsListOptions({
-      path: { slug },
+      path: { workspaceId },
       query: { page: 1, pageSize: 1 },
     }),
     refetchInterval: 5000,
@@ -36,7 +36,7 @@ function InstallStatus({ slug }: { slug: string }) {
           {t(($) => $.settings.installStatusWaiting)}
         </Badge>
       )}
-      <AnchorLink to={activityRoute.to} params={{ slug }} size="sm">
+      <AnchorLink to={activityRoute.to} params={{ workspaceId }} size="sm">
         {t(($) => $.settings.viewActivity)}
       </AnchorLink>
     </Group>
@@ -78,7 +78,7 @@ function TestEvent({ collectKey }: { collectKey: string }) {
 
 // TrackingSection shows the embed snippet customers paste into their site. The
 // host is derived from the current origin; the collect key identifies the workspace.
-function TrackingSection({ collectKey, slug }: { collectKey: string; slug: string }) {
+function TrackingSection({ collectKey, workspaceId }: { collectKey: string; workspaceId: string }) {
   const { t } = useTranslation()
   const origin = window.location.origin
   const snippet = `<script async src="${origin}/t.js" data-collect-key="${collectKey}" data-collect-url="${origin}"></script>`
@@ -99,20 +99,20 @@ function TrackingSection({ collectKey, slug }: { collectKey: string; slug: strin
           </Button>
         )}
       </CopyButton>
-      <InstallStatus slug={slug} />
+      <InstallStatus workspaceId={workspaceId} />
     </Box>
   )
 }
 
 export function TrackingPage() {
   const { t } = useTranslation()
-  const { slug } = trackingRoute.useParams()
+  const { workspaceId } = trackingRoute.useParams()
 
   return (
-    <SettingsFrame slug={slug} title={t(($) => $.settings.nav.tracking)}>
+    <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.tracking)}>
       {(workspace) => (
         <Stack>
-          <TrackingSection collectKey={workspace.collectKey} slug={workspace.slug} />
+          <TrackingSection collectKey={workspace.collectKey} workspaceId={workspace.id} />
           <TestEvent collectKey={workspace.collectKey} />
         </Stack>
       )}

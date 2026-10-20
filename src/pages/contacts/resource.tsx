@@ -8,7 +8,7 @@ import {
 import { zSiteUpdateContactInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
-import { Route as contactsEditRoute } from '../../routes/workspaces/$slug/contacts/$contactId/edit.tsx'
+import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { ContactForm } from './ContactForm.tsx'
 
 // Contact custom fields are not edited here, so they never round-trip into the payload.
@@ -41,9 +41,9 @@ const contactResource = defineResource({
     loadErrorTitle: t(($) => $.alerts.loadErrorTitle),
     saveErrorTitle: t(($) => $.alerts.saveErrorTitle),
   }),
-  editTarget: (created, { slug }) => ({
+  editTarget: (created, { workspaceId }) => ({
     to: contactsEditRoute.to,
-    params: { slug, contactId: created.id },
+    params: { workspaceId, contactId: created.id },
   }),
 })
 

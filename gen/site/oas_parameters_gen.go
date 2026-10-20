@@ -17,7 +17,7 @@ import (
 
 // SiteAnalyticsOverviewParams is parameters of SiteAnalytics_overview operation.
 type SiteAnalyticsOverviewParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 	// Window to aggregate over (defaults to 30d).
 	Range OptSiteAnalyticsRange `json:",omitempty,omitzero"`
 }
@@ -25,10 +25,10 @@ type SiteAnalyticsOverviewParams struct {
 func unpackSiteAnalyticsOverviewParams(packed middleware.Parameters) (params SiteAnalyticsOverviewParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -44,7 +44,7 @@ func unpackSiteAnalyticsOverviewParams(packed middleware.Parameters) (params Sit
 
 func decodeSiteAnalyticsOverviewParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAnalyticsOverviewParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -56,24 +56,39 @@ func decodeSiteAnalyticsOverviewParams(args [1]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -84,7 +99,7 @@ func decodeSiteAnalyticsOverviewParams(args [1]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -150,7 +165,7 @@ func decodeSiteAnalyticsOverviewParams(args [1]string, argsEscaped bool, r *http
 
 // SiteAuditExportParams is parameters of SiteAudit_export operation.
 type SiteAuditExportParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 	// Only entries at or after this time.
 	From OptTimestamp `json:",omitempty,omitzero"`
 	// Only entries strictly before this time.
@@ -175,10 +190,10 @@ type SiteAuditExportParams struct {
 func unpackSiteAuditExportParams(packed middleware.Parameters) (params SiteAuditExportParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -266,7 +281,7 @@ func unpackSiteAuditExportParams(packed middleware.Parameters) (params SiteAudit
 
 func decodeSiteAuditExportParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAuditExportParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -278,24 +293,39 @@ func decodeSiteAuditExportParams(args [1]string, argsEscaped bool, r *http.Reque
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -306,7 +336,7 @@ func decodeSiteAuditExportParams(args [1]string, argsEscaped bool, r *http.Reque
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -714,22 +744,22 @@ func decodeSiteAuditExportParams(args [1]string, argsEscaped bool, r *http.Reque
 
 // SiteAuditGetRetentionParams is parameters of SiteAudit_getRetention operation.
 type SiteAuditGetRetentionParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteAuditGetRetentionParams(packed middleware.Parameters) (params SiteAuditGetRetentionParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteAuditGetRetentionParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAuditGetRetentionParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -741,24 +771,39 @@ func decodeSiteAuditGetRetentionParams(args [1]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -769,7 +814,7 @@ func decodeSiteAuditGetRetentionParams(args [1]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -779,7 +824,7 @@ func decodeSiteAuditGetRetentionParams(args [1]string, argsEscaped bool, r *http
 
 // SiteAuditListParams is parameters of SiteAudit_list operation.
 type SiteAuditListParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 	// Only entries at or after this time.
 	From OptTimestamp `json:",omitempty,omitzero"`
 	// Only entries strictly before this time.
@@ -808,10 +853,10 @@ type SiteAuditListParams struct {
 func unpackSiteAuditListParams(packed middleware.Parameters) (params SiteAuditListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -917,7 +962,7 @@ func unpackSiteAuditListParams(packed middleware.Parameters) (params SiteAuditLi
 
 func decodeSiteAuditListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAuditListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -929,24 +974,39 @@ func decodeSiteAuditListParams(args [1]string, argsEscaped bool, r *http.Request
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -957,7 +1017,7 @@ func decodeSiteAuditListParams(args [1]string, argsEscaped bool, r *http.Request
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -1452,22 +1512,22 @@ func decodeSiteAuditListParams(args [1]string, argsEscaped bool, r *http.Request
 
 // SiteAuditSetRetentionParams is parameters of SiteAudit_setRetention operation.
 type SiteAuditSetRetentionParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteAuditSetRetentionParams(packed middleware.Parameters) (params SiteAuditSetRetentionParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteAuditSetRetentionParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAuditSetRetentionParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -1479,24 +1539,39 @@ func decodeSiteAuditSetRetentionParams(args [1]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -1507,7 +1582,7 @@ func decodeSiteAuditSetRetentionParams(args [1]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -1580,8 +1655,9 @@ func decodeSiteAuthConfirmEmailChangeParams(args [0]string, argsEscaped bool, r 
 
 // SiteAutomationsActivateParams is parameters of SiteAutomations_activate operation.
 type SiteAutomationsActivateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -1589,10 +1665,10 @@ type SiteAutomationsActivateParams struct {
 func unpackSiteAutomationsActivateParams(packed middleware.Parameters) (params SiteAutomationsActivateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -1605,7 +1681,7 @@ func unpackSiteAutomationsActivateParams(packed middleware.Parameters) (params S
 }
 
 func decodeSiteAutomationsActivateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteAutomationsActivateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -1617,24 +1693,39 @@ func decodeSiteAutomationsActivateParams(args [2]string, argsEscaped bool, r *ht
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -1645,7 +1736,7 @@ func decodeSiteAutomationsActivateParams(args [2]string, argsEscaped bool, r *ht
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -1707,23 +1798,24 @@ func decodeSiteAutomationsActivateParams(args [2]string, argsEscaped bool, r *ht
 
 // SiteAutomationsCreateParams is parameters of SiteAutomations_create operation.
 type SiteAutomationsCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteAutomationsCreateParams(packed middleware.Parameters) (params SiteAutomationsCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteAutomationsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAutomationsCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -1735,24 +1827,39 @@ func decodeSiteAutomationsCreateParams(args [1]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -1763,7 +1870,7 @@ func decodeSiteAutomationsCreateParams(args [1]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -1773,8 +1880,9 @@ func decodeSiteAutomationsCreateParams(args [1]string, argsEscaped bool, r *http
 
 // SiteAutomationsDeactivateParams is parameters of SiteAutomations_deactivate operation.
 type SiteAutomationsDeactivateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -1782,10 +1890,10 @@ type SiteAutomationsDeactivateParams struct {
 func unpackSiteAutomationsDeactivateParams(packed middleware.Parameters) (params SiteAutomationsDeactivateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -1798,7 +1906,7 @@ func unpackSiteAutomationsDeactivateParams(packed middleware.Parameters) (params
 }
 
 func decodeSiteAutomationsDeactivateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteAutomationsDeactivateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -1810,24 +1918,39 @@ func decodeSiteAutomationsDeactivateParams(args [2]string, argsEscaped bool, r *
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -1838,7 +1961,7 @@ func decodeSiteAutomationsDeactivateParams(args [2]string, argsEscaped bool, r *
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -1900,8 +2023,9 @@ func decodeSiteAutomationsDeactivateParams(args [2]string, argsEscaped bool, r *
 
 // SiteAutomationsDeleteParams is parameters of SiteAutomations_delete operation.
 type SiteAutomationsDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -1909,10 +2033,10 @@ type SiteAutomationsDeleteParams struct {
 func unpackSiteAutomationsDeleteParams(packed middleware.Parameters) (params SiteAutomationsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -1925,7 +2049,7 @@ func unpackSiteAutomationsDeleteParams(packed middleware.Parameters) (params Sit
 }
 
 func decodeSiteAutomationsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteAutomationsDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -1937,24 +2061,39 @@ func decodeSiteAutomationsDeleteParams(args [2]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -1965,7 +2104,7 @@ func decodeSiteAutomationsDeleteParams(args [2]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2027,23 +2166,24 @@ func decodeSiteAutomationsDeleteParams(args [2]string, argsEscaped bool, r *http
 
 // SiteAutomationsDryRunHttpStepParams is parameters of SiteAutomations_dryRunHttpStep operation.
 type SiteAutomationsDryRunHttpStepParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteAutomationsDryRunHttpStepParams(packed middleware.Parameters) (params SiteAutomationsDryRunHttpStepParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteAutomationsDryRunHttpStepParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAutomationsDryRunHttpStepParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2055,24 +2195,39 @@ func decodeSiteAutomationsDryRunHttpStepParams(args [1]string, argsEscaped bool,
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2083,7 +2238,7 @@ func decodeSiteAutomationsDryRunHttpStepParams(args [1]string, argsEscaped bool,
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2093,8 +2248,9 @@ func decodeSiteAutomationsDryRunHttpStepParams(args [1]string, argsEscaped bool,
 
 // SiteAutomationsGetParams is parameters of SiteAutomations_get operation.
 type SiteAutomationsGetParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -2102,10 +2258,10 @@ type SiteAutomationsGetParams struct {
 func unpackSiteAutomationsGetParams(packed middleware.Parameters) (params SiteAutomationsGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -2118,7 +2274,7 @@ func unpackSiteAutomationsGetParams(packed middleware.Parameters) (params SiteAu
 }
 
 func decodeSiteAutomationsGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteAutomationsGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2130,24 +2286,39 @@ func decodeSiteAutomationsGetParams(args [2]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2158,7 +2329,7 @@ func decodeSiteAutomationsGetParams(args [2]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2220,8 +2391,9 @@ func decodeSiteAutomationsGetParams(args [2]string, argsEscaped bool, r *http.Re
 
 // SiteAutomationsListParams is parameters of SiteAutomations_list operation.
 type SiteAutomationsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -2231,10 +2403,10 @@ type SiteAutomationsListParams struct {
 func unpackSiteAutomationsListParams(packed middleware.Parameters) (params SiteAutomationsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -2259,7 +2431,7 @@ func unpackSiteAutomationsListParams(packed middleware.Parameters) (params SiteA
 
 func decodeSiteAutomationsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAutomationsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2271,24 +2443,39 @@ func decodeSiteAutomationsListParams(args [1]string, argsEscaped bool, r *http.R
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2299,7 +2486,7 @@ func decodeSiteAutomationsListParams(args [1]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2401,8 +2588,9 @@ func decodeSiteAutomationsListParams(args [1]string, argsEscaped bool, r *http.R
 
 // SiteAutomationsUpdateParams is parameters of SiteAutomations_update operation.
 type SiteAutomationsUpdateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -2410,10 +2598,10 @@ type SiteAutomationsUpdateParams struct {
 func unpackSiteAutomationsUpdateParams(packed middleware.Parameters) (params SiteAutomationsUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -2426,7 +2614,7 @@ func unpackSiteAutomationsUpdateParams(packed middleware.Parameters) (params Sit
 }
 
 func decodeSiteAutomationsUpdateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteAutomationsUpdateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2438,24 +2626,39 @@ func decodeSiteAutomationsUpdateParams(args [2]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2466,7 +2669,7 @@ func decodeSiteAutomationsUpdateParams(args [2]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2528,22 +2731,22 @@ func decodeSiteAutomationsUpdateParams(args [2]string, argsEscaped bool, r *http
 
 // SiteBrandKitGetParams is parameters of SiteBrandKit_get operation.
 type SiteBrandKitGetParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteBrandKitGetParams(packed middleware.Parameters) (params SiteBrandKitGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteBrandKitGetParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteBrandKitGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2555,24 +2758,39 @@ func decodeSiteBrandKitGetParams(args [1]string, argsEscaped bool, r *http.Reque
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2583,7 +2801,7 @@ func decodeSiteBrandKitGetParams(args [1]string, argsEscaped bool, r *http.Reque
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2593,22 +2811,22 @@ func decodeSiteBrandKitGetParams(args [1]string, argsEscaped bool, r *http.Reque
 
 // SiteBrandKitRecreateStarterTemplatesParams is parameters of SiteBrandKit_recreateStarterTemplates operation.
 type SiteBrandKitRecreateStarterTemplatesParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteBrandKitRecreateStarterTemplatesParams(packed middleware.Parameters) (params SiteBrandKitRecreateStarterTemplatesParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteBrandKitRecreateStarterTemplatesParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteBrandKitRecreateStarterTemplatesParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2620,24 +2838,39 @@ func decodeSiteBrandKitRecreateStarterTemplatesParams(args [1]string, argsEscape
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2648,7 +2881,7 @@ func decodeSiteBrandKitRecreateStarterTemplatesParams(args [1]string, argsEscape
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2658,22 +2891,22 @@ func decodeSiteBrandKitRecreateStarterTemplatesParams(args [1]string, argsEscape
 
 // SiteBrandKitSaveParams is parameters of SiteBrandKit_save operation.
 type SiteBrandKitSaveParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteBrandKitSaveParams(packed middleware.Parameters) (params SiteBrandKitSaveParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteBrandKitSaveParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteBrandKitSaveParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2685,24 +2918,39 @@ func decodeSiteBrandKitSaveParams(args [1]string, argsEscaped bool, r *http.Requ
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2713,7 +2961,7 @@ func decodeSiteBrandKitSaveParams(args [1]string, argsEscaped bool, r *http.Requ
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2723,23 +2971,24 @@ func decodeSiteBrandKitSaveParams(args [1]string, argsEscaped bool, r *http.Requ
 
 // SiteBroadcastsCreateParams is parameters of SiteBroadcasts_create operation.
 type SiteBroadcastsCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteBroadcastsCreateParams(packed middleware.Parameters) (params SiteBroadcastsCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteBroadcastsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2751,24 +3000,39 @@ func decodeSiteBroadcastsCreateParams(args [1]string, argsEscaped bool, r *http.
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2779,7 +3043,7 @@ func decodeSiteBroadcastsCreateParams(args [1]string, argsEscaped bool, r *http.
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2789,8 +3053,9 @@ func decodeSiteBroadcastsCreateParams(args [1]string, argsEscaped bool, r *http.
 
 // SiteBroadcastsDeleteParams is parameters of SiteBroadcasts_delete operation.
 type SiteBroadcastsDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -2798,10 +3063,10 @@ type SiteBroadcastsDeleteParams struct {
 func unpackSiteBroadcastsDeleteParams(packed middleware.Parameters) (params SiteBroadcastsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -2814,7 +3079,7 @@ func unpackSiteBroadcastsDeleteParams(packed middleware.Parameters) (params Site
 }
 
 func decodeSiteBroadcastsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2826,24 +3091,39 @@ func decodeSiteBroadcastsDeleteParams(args [2]string, argsEscaped bool, r *http.
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2854,7 +3134,7 @@ func decodeSiteBroadcastsDeleteParams(args [2]string, argsEscaped bool, r *http.
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -2916,8 +3196,9 @@ func decodeSiteBroadcastsDeleteParams(args [2]string, argsEscaped bool, r *http.
 
 // SiteBroadcastsGetParams is parameters of SiteBroadcasts_get operation.
 type SiteBroadcastsGetParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -2925,10 +3206,10 @@ type SiteBroadcastsGetParams struct {
 func unpackSiteBroadcastsGetParams(packed middleware.Parameters) (params SiteBroadcastsGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -2941,7 +3222,7 @@ func unpackSiteBroadcastsGetParams(packed middleware.Parameters) (params SiteBro
 }
 
 func decodeSiteBroadcastsGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -2953,24 +3234,39 @@ func decodeSiteBroadcastsGetParams(args [2]string, argsEscaped bool, r *http.Req
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -2981,7 +3277,7 @@ func decodeSiteBroadcastsGetParams(args [2]string, argsEscaped bool, r *http.Req
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -3043,8 +3339,9 @@ func decodeSiteBroadcastsGetParams(args [2]string, argsEscaped bool, r *http.Req
 
 // SiteBroadcastsListParams is parameters of SiteBroadcasts_list operation.
 type SiteBroadcastsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -3054,10 +3351,10 @@ type SiteBroadcastsListParams struct {
 func unpackSiteBroadcastsListParams(packed middleware.Parameters) (params SiteBroadcastsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -3082,7 +3379,7 @@ func unpackSiteBroadcastsListParams(packed middleware.Parameters) (params SiteBr
 
 func decodeSiteBroadcastsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -3094,24 +3391,39 @@ func decodeSiteBroadcastsListParams(args [1]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -3122,7 +3434,7 @@ func decodeSiteBroadcastsListParams(args [1]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -3224,8 +3536,9 @@ func decodeSiteBroadcastsListParams(args [1]string, argsEscaped bool, r *http.Re
 
 // SiteBroadcastsScheduleParams is parameters of SiteBroadcasts_schedule operation.
 type SiteBroadcastsScheduleParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -3233,10 +3546,10 @@ type SiteBroadcastsScheduleParams struct {
 func unpackSiteBroadcastsScheduleParams(packed middleware.Parameters) (params SiteBroadcastsScheduleParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -3249,7 +3562,7 @@ func unpackSiteBroadcastsScheduleParams(packed middleware.Parameters) (params Si
 }
 
 func decodeSiteBroadcastsScheduleParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsScheduleParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -3261,24 +3574,39 @@ func decodeSiteBroadcastsScheduleParams(args [2]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -3289,7 +3617,7 @@ func decodeSiteBroadcastsScheduleParams(args [2]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -3351,8 +3679,9 @@ func decodeSiteBroadcastsScheduleParams(args [2]string, argsEscaped bool, r *htt
 
 // SiteBroadcastsSendParams is parameters of SiteBroadcasts_send operation.
 type SiteBroadcastsSendParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -3360,10 +3689,10 @@ type SiteBroadcastsSendParams struct {
 func unpackSiteBroadcastsSendParams(packed middleware.Parameters) (params SiteBroadcastsSendParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -3376,7 +3705,7 @@ func unpackSiteBroadcastsSendParams(packed middleware.Parameters) (params SiteBr
 }
 
 func decodeSiteBroadcastsSendParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsSendParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -3388,24 +3717,39 @@ func decodeSiteBroadcastsSendParams(args [2]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -3416,7 +3760,7 @@ func decodeSiteBroadcastsSendParams(args [2]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -3478,8 +3822,9 @@ func decodeSiteBroadcastsSendParams(args [2]string, argsEscaped bool, r *http.Re
 
 // SiteBroadcastsTestSendParams is parameters of SiteBroadcasts_testSend operation.
 type SiteBroadcastsTestSendParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -3487,10 +3832,10 @@ type SiteBroadcastsTestSendParams struct {
 func unpackSiteBroadcastsTestSendParams(packed middleware.Parameters) (params SiteBroadcastsTestSendParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -3503,7 +3848,7 @@ func unpackSiteBroadcastsTestSendParams(packed middleware.Parameters) (params Si
 }
 
 func decodeSiteBroadcastsTestSendParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsTestSendParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -3515,24 +3860,39 @@ func decodeSiteBroadcastsTestSendParams(args [2]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -3543,7 +3903,7 @@ func decodeSiteBroadcastsTestSendParams(args [2]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -3605,8 +3965,9 @@ func decodeSiteBroadcastsTestSendParams(args [2]string, argsEscaped bool, r *htt
 
 // SiteBroadcastsUpdateParams is parameters of SiteBroadcasts_update operation.
 type SiteBroadcastsUpdateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -3614,10 +3975,10 @@ type SiteBroadcastsUpdateParams struct {
 func unpackSiteBroadcastsUpdateParams(packed middleware.Parameters) (params SiteBroadcastsUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -3630,7 +3991,7 @@ func unpackSiteBroadcastsUpdateParams(packed middleware.Parameters) (params Site
 }
 
 func decodeSiteBroadcastsUpdateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteBroadcastsUpdateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -3642,24 +4003,39 @@ func decodeSiteBroadcastsUpdateParams(args [2]string, argsEscaped bool, r *http.
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -3670,7 +4046,7 @@ func decodeSiteBroadcastsUpdateParams(args [2]string, argsEscaped bool, r *http.
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -3732,23 +4108,24 @@ func decodeSiteBroadcastsUpdateParams(args [2]string, argsEscaped bool, r *http.
 
 // SiteContactsCreateParams is parameters of SiteContacts_create operation.
 type SiteContactsCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteContactsCreateParams(packed middleware.Parameters) (params SiteContactsCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteContactsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteContactsCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -3760,24 +4137,39 @@ func decodeSiteContactsCreateParams(args [1]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -3788,7 +4180,7 @@ func decodeSiteContactsCreateParams(args [1]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -3798,8 +4190,9 @@ func decodeSiteContactsCreateParams(args [1]string, argsEscaped bool, r *http.Re
 
 // SiteContactsDeleteParams is parameters of SiteContacts_delete operation.
 type SiteContactsDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -3807,10 +4200,10 @@ type SiteContactsDeleteParams struct {
 func unpackSiteContactsDeleteParams(packed middleware.Parameters) (params SiteContactsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -3823,7 +4216,7 @@ func unpackSiteContactsDeleteParams(packed middleware.Parameters) (params SiteCo
 }
 
 func decodeSiteContactsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteContactsDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -3835,24 +4228,39 @@ func decodeSiteContactsDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -3863,7 +4271,7 @@ func decodeSiteContactsDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -3925,8 +4333,9 @@ func decodeSiteContactsDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 
 // SiteContactsExportParams is parameters of SiteContacts_export operation.
 type SiteContactsExportParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// The contact's id.
 	ID OptEntityId `json:",omitempty,omitzero"`
 	// The contact's email address.
@@ -3936,10 +4345,10 @@ type SiteContactsExportParams struct {
 func unpackSiteContactsExportParams(packed middleware.Parameters) (params SiteContactsExportParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -3964,7 +4373,7 @@ func unpackSiteContactsExportParams(packed middleware.Parameters) (params SiteCo
 
 func decodeSiteContactsExportParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteContactsExportParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -3976,24 +4385,39 @@ func decodeSiteContactsExportParams(args [1]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -4004,7 +4428,7 @@ func decodeSiteContactsExportParams(args [1]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -4125,8 +4549,9 @@ func decodeSiteContactsExportParams(args [1]string, argsEscaped bool, r *http.Re
 
 // SiteContactsGetParams is parameters of SiteContacts_get operation.
 type SiteContactsGetParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -4134,10 +4559,10 @@ type SiteContactsGetParams struct {
 func unpackSiteContactsGetParams(packed middleware.Parameters) (params SiteContactsGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -4150,7 +4575,7 @@ func unpackSiteContactsGetParams(packed middleware.Parameters) (params SiteConta
 }
 
 func decodeSiteContactsGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteContactsGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -4162,24 +4587,39 @@ func decodeSiteContactsGetParams(args [2]string, argsEscaped bool, r *http.Reque
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -4190,7 +4630,7 @@ func decodeSiteContactsGetParams(args [2]string, argsEscaped bool, r *http.Reque
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -4252,8 +4692,9 @@ func decodeSiteContactsGetParams(args [2]string, argsEscaped bool, r *http.Reque
 
 // SiteContactsListParams is parameters of SiteContacts_list operation.
 type SiteContactsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -4263,10 +4704,10 @@ type SiteContactsListParams struct {
 func unpackSiteContactsListParams(packed middleware.Parameters) (params SiteContactsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -4291,7 +4732,7 @@ func unpackSiteContactsListParams(packed middleware.Parameters) (params SiteCont
 
 func decodeSiteContactsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteContactsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -4303,24 +4744,39 @@ func decodeSiteContactsListParams(args [1]string, argsEscaped bool, r *http.Requ
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -4331,7 +4787,7 @@ func decodeSiteContactsListParams(args [1]string, argsEscaped bool, r *http.Requ
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -4433,8 +4889,9 @@ func decodeSiteContactsListParams(args [1]string, argsEscaped bool, r *http.Requ
 
 // SiteContactsUpdateParams is parameters of SiteContacts_update operation.
 type SiteContactsUpdateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -4442,10 +4899,10 @@ type SiteContactsUpdateParams struct {
 func unpackSiteContactsUpdateParams(packed middleware.Parameters) (params SiteContactsUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -4458,7 +4915,7 @@ func unpackSiteContactsUpdateParams(packed middleware.Parameters) (params SiteCo
 }
 
 func decodeSiteContactsUpdateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteContactsUpdateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -4470,24 +4927,39 @@ func decodeSiteContactsUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -4498,7 +4970,7 @@ func decodeSiteContactsUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -4560,23 +5032,24 @@ func decodeSiteContactsUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 
 // SiteCustomFieldsListParams is parameters of SiteCustomFields_list operation.
 type SiteCustomFieldsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteCustomFieldsListParams(packed middleware.Parameters) (params SiteCustomFieldsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteCustomFieldsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteCustomFieldsListParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -4588,24 +5061,39 @@ func decodeSiteCustomFieldsListParams(args [1]string, argsEscaped bool, r *http.
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -4616,7 +5104,7 @@ func decodeSiteCustomFieldsListParams(args [1]string, argsEscaped bool, r *http.
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -4626,7 +5114,7 @@ func decodeSiteCustomFieldsListParams(args [1]string, argsEscaped bool, r *http.
 
 // SiteEnrollmentsGetParams is parameters of SiteEnrollments_get operation.
 type SiteEnrollmentsGetParams struct {
-	Slug         string
+	WorkspaceId  WorkspaceId
 	AutomationId EntityId
 	EnrollmentId EntityId
 }
@@ -4634,10 +5122,10 @@ type SiteEnrollmentsGetParams struct {
 func unpackSiteEnrollmentsGetParams(packed middleware.Parameters) (params SiteEnrollmentsGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -4657,7 +5145,7 @@ func unpackSiteEnrollmentsGetParams(packed middleware.Parameters) (params SiteEn
 }
 
 func decodeSiteEnrollmentsGetParams(args [3]string, argsEscaped bool, r *http.Request) (params SiteEnrollmentsGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -4669,24 +5157,39 @@ func decodeSiteEnrollmentsGetParams(args [3]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -4697,7 +5200,7 @@ func decodeSiteEnrollmentsGetParams(args [3]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -4811,7 +5314,7 @@ func decodeSiteEnrollmentsGetParams(args [3]string, argsEscaped bool, r *http.Re
 
 // SiteEnrollmentsListParams is parameters of SiteEnrollments_list operation.
 type SiteEnrollmentsListParams struct {
-	Slug         string
+	WorkspaceId  WorkspaceId
 	AutomationId EntityId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
@@ -4824,10 +5327,10 @@ type SiteEnrollmentsListParams struct {
 func unpackSiteEnrollmentsListParams(packed middleware.Parameters) (params SiteEnrollmentsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -4868,7 +5371,7 @@ func unpackSiteEnrollmentsListParams(packed middleware.Parameters) (params SiteE
 
 func decodeSiteEnrollmentsListParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteEnrollmentsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -4880,24 +5383,39 @@ func decodeSiteEnrollmentsListParams(args [2]string, argsEscaped bool, r *http.R
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -4908,7 +5426,7 @@ func decodeSiteEnrollmentsListParams(args [2]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -5118,23 +5636,24 @@ func decodeSiteEnrollmentsListParams(args [2]string, argsEscaped bool, r *http.R
 
 // SiteEventsActionsParams is parameters of SiteEvents_actions operation.
 type SiteEventsActionsParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteEventsActionsParams(packed middleware.Parameters) (params SiteEventsActionsParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteEventsActionsParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteEventsActionsParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -5146,24 +5665,39 @@ func decodeSiteEventsActionsParams(args [1]string, argsEscaped bool, r *http.Req
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -5174,7 +5708,7 @@ func decodeSiteEventsActionsParams(args [1]string, argsEscaped bool, r *http.Req
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -5184,8 +5718,9 @@ func decodeSiteEventsActionsParams(args [1]string, argsEscaped bool, r *http.Req
 
 // SiteEventsListParams is parameters of SiteEvents_list operation.
 type SiteEventsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -5201,10 +5736,10 @@ type SiteEventsListParams struct {
 func unpackSiteEventsListParams(packed middleware.Parameters) (params SiteEventsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -5256,7 +5791,7 @@ func unpackSiteEventsListParams(packed middleware.Parameters) (params SiteEvents
 
 func decodeSiteEventsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteEventsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -5268,24 +5803,39 @@ func decodeSiteEventsListParams(args [1]string, argsEscaped bool, r *http.Reques
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -5296,7 +5846,7 @@ func decodeSiteEventsListParams(args [1]string, argsEscaped bool, r *http.Reques
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -5528,23 +6078,24 @@ func decodeSiteEventsListParams(args [1]string, argsEscaped bool, r *http.Reques
 
 // SiteIntegrationsCreateParams is parameters of SiteIntegrations_create operation.
 type SiteIntegrationsCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteIntegrationsCreateParams(packed middleware.Parameters) (params SiteIntegrationsCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteIntegrationsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -5556,24 +6107,39 @@ func decodeSiteIntegrationsCreateParams(args [1]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -5584,7 +6150,7 @@ func decodeSiteIntegrationsCreateParams(args [1]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -5594,8 +6160,9 @@ func decodeSiteIntegrationsCreateParams(args [1]string, argsEscaped bool, r *htt
 
 // SiteIntegrationsDeleteParams is parameters of SiteIntegrations_delete operation.
 type SiteIntegrationsDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -5603,10 +6170,10 @@ type SiteIntegrationsDeleteParams struct {
 func unpackSiteIntegrationsDeleteParams(packed middleware.Parameters) (params SiteIntegrationsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -5619,7 +6186,7 @@ func unpackSiteIntegrationsDeleteParams(packed middleware.Parameters) (params Si
 }
 
 func decodeSiteIntegrationsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -5631,24 +6198,39 @@ func decodeSiteIntegrationsDeleteParams(args [2]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -5659,7 +6241,7 @@ func decodeSiteIntegrationsDeleteParams(args [2]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -5721,8 +6303,9 @@ func decodeSiteIntegrationsDeleteParams(args [2]string, argsEscaped bool, r *htt
 
 // SiteIntegrationsGetParams is parameters of SiteIntegrations_get operation.
 type SiteIntegrationsGetParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -5730,10 +6313,10 @@ type SiteIntegrationsGetParams struct {
 func unpackSiteIntegrationsGetParams(packed middleware.Parameters) (params SiteIntegrationsGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -5746,7 +6329,7 @@ func unpackSiteIntegrationsGetParams(packed middleware.Parameters) (params SiteI
 }
 
 func decodeSiteIntegrationsGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -5758,24 +6341,39 @@ func decodeSiteIntegrationsGetParams(args [2]string, argsEscaped bool, r *http.R
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -5786,7 +6384,7 @@ func decodeSiteIntegrationsGetParams(args [2]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -5848,23 +6446,24 @@ func decodeSiteIntegrationsGetParams(args [2]string, argsEscaped bool, r *http.R
 
 // SiteIntegrationsListParams is parameters of SiteIntegrations_list operation.
 type SiteIntegrationsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteIntegrationsListParams(packed middleware.Parameters) (params SiteIntegrationsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteIntegrationsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsListParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -5876,24 +6475,39 @@ func decodeSiteIntegrationsListParams(args [1]string, argsEscaped bool, r *http.
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -5904,7 +6518,7 @@ func decodeSiteIntegrationsListParams(args [1]string, argsEscaped bool, r *http.
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -5914,8 +6528,9 @@ func decodeSiteIntegrationsListParams(args [1]string, argsEscaped bool, r *http.
 
 // SiteIntegrationsRegenerateKeyParams is parameters of SiteIntegrations_regenerateKey operation.
 type SiteIntegrationsRegenerateKeyParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -5923,10 +6538,10 @@ type SiteIntegrationsRegenerateKeyParams struct {
 func unpackSiteIntegrationsRegenerateKeyParams(packed middleware.Parameters) (params SiteIntegrationsRegenerateKeyParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -5939,7 +6554,7 @@ func unpackSiteIntegrationsRegenerateKeyParams(packed middleware.Parameters) (pa
 }
 
 func decodeSiteIntegrationsRegenerateKeyParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsRegenerateKeyParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -5951,24 +6566,39 @@ func decodeSiteIntegrationsRegenerateKeyParams(args [2]string, argsEscaped bool,
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -5979,7 +6609,7 @@ func decodeSiteIntegrationsRegenerateKeyParams(args [2]string, argsEscaped bool,
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -6041,8 +6671,9 @@ func decodeSiteIntegrationsRegenerateKeyParams(args [2]string, argsEscaped bool,
 
 // SiteIntegrationsUpdateParams is parameters of SiteIntegrations_update operation.
 type SiteIntegrationsUpdateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -6050,10 +6681,10 @@ type SiteIntegrationsUpdateParams struct {
 func unpackSiteIntegrationsUpdateParams(packed middleware.Parameters) (params SiteIntegrationsUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -6066,7 +6697,7 @@ func unpackSiteIntegrationsUpdateParams(packed middleware.Parameters) (params Si
 }
 
 func decodeSiteIntegrationsUpdateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteIntegrationsUpdateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -6078,24 +6709,39 @@ func decodeSiteIntegrationsUpdateParams(args [2]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -6106,7 +6752,7 @@ func decodeSiteIntegrationsUpdateParams(args [2]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -6168,23 +6814,24 @@ func decodeSiteIntegrationsUpdateParams(args [2]string, argsEscaped bool, r *htt
 
 // SiteInvitationsCreateParams is parameters of SiteInvitations_create operation.
 type SiteInvitationsCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteInvitationsCreateParams(packed middleware.Parameters) (params SiteInvitationsCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteInvitationsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteInvitationsCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -6196,24 +6843,39 @@ func decodeSiteInvitationsCreateParams(args [1]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -6224,7 +6886,7 @@ func decodeSiteInvitationsCreateParams(args [1]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -6234,8 +6896,9 @@ func decodeSiteInvitationsCreateParams(args [1]string, argsEscaped bool, r *http
 
 // SiteInvitationsDeleteParams is parameters of SiteInvitations_delete operation.
 type SiteInvitationsDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -6243,10 +6906,10 @@ type SiteInvitationsDeleteParams struct {
 func unpackSiteInvitationsDeleteParams(packed middleware.Parameters) (params SiteInvitationsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -6259,7 +6922,7 @@ func unpackSiteInvitationsDeleteParams(packed middleware.Parameters) (params Sit
 }
 
 func decodeSiteInvitationsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteInvitationsDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -6271,24 +6934,39 @@ func decodeSiteInvitationsDeleteParams(args [2]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -6299,7 +6977,7 @@ func decodeSiteInvitationsDeleteParams(args [2]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -6361,23 +7039,24 @@ func decodeSiteInvitationsDeleteParams(args [2]string, argsEscaped bool, r *http
 
 // SiteInvitationsListParams is parameters of SiteInvitations_list operation.
 type SiteInvitationsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteInvitationsListParams(packed middleware.Parameters) (params SiteInvitationsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteInvitationsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteInvitationsListParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -6389,24 +7068,39 @@ func decodeSiteInvitationsListParams(args [1]string, argsEscaped bool, r *http.R
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -6417,7 +7111,7 @@ func decodeSiteInvitationsListParams(args [1]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -6427,8 +7121,9 @@ func decodeSiteInvitationsListParams(args [1]string, argsEscaped bool, r *http.R
 
 // SiteMembershipsDeleteParams is parameters of SiteMemberships_delete operation.
 type SiteMembershipsDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -6436,10 +7131,10 @@ type SiteMembershipsDeleteParams struct {
 func unpackSiteMembershipsDeleteParams(packed middleware.Parameters) (params SiteMembershipsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -6452,7 +7147,7 @@ func unpackSiteMembershipsDeleteParams(packed middleware.Parameters) (params Sit
 }
 
 func decodeSiteMembershipsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteMembershipsDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -6464,24 +7159,39 @@ func decodeSiteMembershipsDeleteParams(args [2]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -6492,7 +7202,7 @@ func decodeSiteMembershipsDeleteParams(args [2]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -6554,23 +7264,24 @@ func decodeSiteMembershipsDeleteParams(args [2]string, argsEscaped bool, r *http
 
 // SiteMembershipsListParams is parameters of SiteMemberships_list operation.
 type SiteMembershipsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteMembershipsListParams(packed middleware.Parameters) (params SiteMembershipsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteMembershipsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteMembershipsListParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -6582,24 +7293,39 @@ func decodeSiteMembershipsListParams(args [1]string, argsEscaped bool, r *http.R
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -6610,7 +7336,7 @@ func decodeSiteMembershipsListParams(args [1]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -6620,8 +7346,9 @@ func decodeSiteMembershipsListParams(args [1]string, argsEscaped bool, r *http.R
 
 // SiteMembershipsResetSecondFactorParams is parameters of SiteMemberships_resetSecondFactor operation.
 type SiteMembershipsResetSecondFactorParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -6629,10 +7356,10 @@ type SiteMembershipsResetSecondFactorParams struct {
 func unpackSiteMembershipsResetSecondFactorParams(packed middleware.Parameters) (params SiteMembershipsResetSecondFactorParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -6645,7 +7372,7 @@ func unpackSiteMembershipsResetSecondFactorParams(packed middleware.Parameters) 
 }
 
 func decodeSiteMembershipsResetSecondFactorParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteMembershipsResetSecondFactorParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -6657,24 +7384,39 @@ func decodeSiteMembershipsResetSecondFactorParams(args [2]string, argsEscaped bo
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -6685,7 +7427,7 @@ func decodeSiteMembershipsResetSecondFactorParams(args [2]string, argsEscaped bo
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -6747,8 +7489,9 @@ func decodeSiteMembershipsResetSecondFactorParams(args [2]string, argsEscaped bo
 
 // SiteMembershipsUpdateParams is parameters of SiteMemberships_update operation.
 type SiteMembershipsUpdateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -6756,10 +7499,10 @@ type SiteMembershipsUpdateParams struct {
 func unpackSiteMembershipsUpdateParams(packed middleware.Parameters) (params SiteMembershipsUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -6772,7 +7515,7 @@ func unpackSiteMembershipsUpdateParams(packed middleware.Parameters) (params Sit
 }
 
 func decodeSiteMembershipsUpdateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteMembershipsUpdateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -6784,24 +7527,39 @@ func decodeSiteMembershipsUpdateParams(args [2]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -6812,7 +7570,7 @@ func decodeSiteMembershipsUpdateParams(args [2]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -7286,23 +8044,24 @@ func decodeSitePublicUnsubscribesPerformParams(args [1]string, argsEscaped bool,
 
 // SiteSegmentsCreateParams is parameters of SiteSegments_create operation.
 type SiteSegmentsCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteSegmentsCreateParams(packed middleware.Parameters) (params SiteSegmentsCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteSegmentsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSegmentsCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -7314,24 +8073,39 @@ func decodeSiteSegmentsCreateParams(args [1]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -7342,7 +8116,7 @@ func decodeSiteSegmentsCreateParams(args [1]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -7352,8 +8126,9 @@ func decodeSiteSegmentsCreateParams(args [1]string, argsEscaped bool, r *http.Re
 
 // SiteSegmentsDeleteParams is parameters of SiteSegments_delete operation.
 type SiteSegmentsDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -7361,10 +8136,10 @@ type SiteSegmentsDeleteParams struct {
 func unpackSiteSegmentsDeleteParams(packed middleware.Parameters) (params SiteSegmentsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -7377,7 +8152,7 @@ func unpackSiteSegmentsDeleteParams(packed middleware.Parameters) (params SiteSe
 }
 
 func decodeSiteSegmentsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSegmentsDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -7389,24 +8164,39 @@ func decodeSiteSegmentsDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -7417,7 +8207,7 @@ func decodeSiteSegmentsDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -7479,8 +8269,9 @@ func decodeSiteSegmentsDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 
 // SiteSegmentsGetParams is parameters of SiteSegments_get operation.
 type SiteSegmentsGetParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -7488,10 +8279,10 @@ type SiteSegmentsGetParams struct {
 func unpackSiteSegmentsGetParams(packed middleware.Parameters) (params SiteSegmentsGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -7504,7 +8295,7 @@ func unpackSiteSegmentsGetParams(packed middleware.Parameters) (params SiteSegme
 }
 
 func decodeSiteSegmentsGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSegmentsGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -7516,24 +8307,39 @@ func decodeSiteSegmentsGetParams(args [2]string, argsEscaped bool, r *http.Reque
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -7544,7 +8350,7 @@ func decodeSiteSegmentsGetParams(args [2]string, argsEscaped bool, r *http.Reque
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -7606,8 +8412,9 @@ func decodeSiteSegmentsGetParams(args [2]string, argsEscaped bool, r *http.Reque
 
 // SiteSegmentsListParams is parameters of SiteSegments_list operation.
 type SiteSegmentsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -7617,10 +8424,10 @@ type SiteSegmentsListParams struct {
 func unpackSiteSegmentsListParams(packed middleware.Parameters) (params SiteSegmentsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -7645,7 +8452,7 @@ func unpackSiteSegmentsListParams(packed middleware.Parameters) (params SiteSegm
 
 func decodeSiteSegmentsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSegmentsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -7657,24 +8464,39 @@ func decodeSiteSegmentsListParams(args [1]string, argsEscaped bool, r *http.Requ
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -7685,7 +8507,7 @@ func decodeSiteSegmentsListParams(args [1]string, argsEscaped bool, r *http.Requ
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -7787,23 +8609,24 @@ func decodeSiteSegmentsListParams(args [1]string, argsEscaped bool, r *http.Requ
 
 // SiteSegmentsPreviewParams is parameters of SiteSegments_preview operation.
 type SiteSegmentsPreviewParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteSegmentsPreviewParams(packed middleware.Parameters) (params SiteSegmentsPreviewParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteSegmentsPreviewParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSegmentsPreviewParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -7815,24 +8638,39 @@ func decodeSiteSegmentsPreviewParams(args [1]string, argsEscaped bool, r *http.R
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -7843,7 +8681,7 @@ func decodeSiteSegmentsPreviewParams(args [1]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -7853,8 +8691,9 @@ func decodeSiteSegmentsPreviewParams(args [1]string, argsEscaped bool, r *http.R
 
 // SiteSegmentsUpdateParams is parameters of SiteSegments_update operation.
 type SiteSegmentsUpdateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -7862,10 +8701,10 @@ type SiteSegmentsUpdateParams struct {
 func unpackSiteSegmentsUpdateParams(packed middleware.Parameters) (params SiteSegmentsUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -7878,7 +8717,7 @@ func unpackSiteSegmentsUpdateParams(packed middleware.Parameters) (params SiteSe
 }
 
 func decodeSiteSegmentsUpdateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSegmentsUpdateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -7890,24 +8729,39 @@ func decodeSiteSegmentsUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -7918,7 +8772,7 @@ func decodeSiteSegmentsUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -7980,23 +8834,24 @@ func decodeSiteSegmentsUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 
 // SiteSendingDomainsCreateParams is parameters of SiteSendingDomains_create operation.
 type SiteSendingDomainsCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteSendingDomainsCreateParams(packed middleware.Parameters) (params SiteSendingDomainsCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteSendingDomainsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -8008,24 +8863,39 @@ func decodeSiteSendingDomainsCreateParams(args [1]string, argsEscaped bool, r *h
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -8036,7 +8906,7 @@ func decodeSiteSendingDomainsCreateParams(args [1]string, argsEscaped bool, r *h
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -8046,8 +8916,9 @@ func decodeSiteSendingDomainsCreateParams(args [1]string, argsEscaped bool, r *h
 
 // SiteSendingDomainsDeleteParams is parameters of SiteSendingDomains_delete operation.
 type SiteSendingDomainsDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -8055,10 +8926,10 @@ type SiteSendingDomainsDeleteParams struct {
 func unpackSiteSendingDomainsDeleteParams(packed middleware.Parameters) (params SiteSendingDomainsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -8071,7 +8942,7 @@ func unpackSiteSendingDomainsDeleteParams(packed middleware.Parameters) (params 
 }
 
 func decodeSiteSendingDomainsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -8083,24 +8954,39 @@ func decodeSiteSendingDomainsDeleteParams(args [2]string, argsEscaped bool, r *h
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -8111,7 +8997,7 @@ func decodeSiteSendingDomainsDeleteParams(args [2]string, argsEscaped bool, r *h
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -8173,8 +9059,9 @@ func decodeSiteSendingDomainsDeleteParams(args [2]string, argsEscaped bool, r *h
 
 // SiteSendingDomainsGetParams is parameters of SiteSendingDomains_get operation.
 type SiteSendingDomainsGetParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -8182,10 +9069,10 @@ type SiteSendingDomainsGetParams struct {
 func unpackSiteSendingDomainsGetParams(packed middleware.Parameters) (params SiteSendingDomainsGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -8198,7 +9085,7 @@ func unpackSiteSendingDomainsGetParams(packed middleware.Parameters) (params Sit
 }
 
 func decodeSiteSendingDomainsGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -8210,24 +9097,39 @@ func decodeSiteSendingDomainsGetParams(args [2]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -8238,7 +9140,7 @@ func decodeSiteSendingDomainsGetParams(args [2]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -8300,8 +9202,9 @@ func decodeSiteSendingDomainsGetParams(args [2]string, argsEscaped bool, r *http
 
 // SiteSendingDomainsListParams is parameters of SiteSendingDomains_list operation.
 type SiteSendingDomainsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -8311,10 +9214,10 @@ type SiteSendingDomainsListParams struct {
 func unpackSiteSendingDomainsListParams(packed middleware.Parameters) (params SiteSendingDomainsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -8339,7 +9242,7 @@ func unpackSiteSendingDomainsListParams(packed middleware.Parameters) (params Si
 
 func decodeSiteSendingDomainsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -8351,24 +9254,39 @@ func decodeSiteSendingDomainsListParams(args [1]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -8379,7 +9297,7 @@ func decodeSiteSendingDomainsListParams(args [1]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -8481,8 +9399,9 @@ func decodeSiteSendingDomainsListParams(args [1]string, argsEscaped bool, r *htt
 
 // SiteSendingDomainsVerifyParams is parameters of SiteSendingDomains_verify operation.
 type SiteSendingDomainsVerifyParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -8490,10 +9409,10 @@ type SiteSendingDomainsVerifyParams struct {
 func unpackSiteSendingDomainsVerifyParams(packed middleware.Parameters) (params SiteSendingDomainsVerifyParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -8506,7 +9425,7 @@ func unpackSiteSendingDomainsVerifyParams(packed middleware.Parameters) (params 
 }
 
 func decodeSiteSendingDomainsVerifyParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSendingDomainsVerifyParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -8518,24 +9437,39 @@ func decodeSiteSendingDomainsVerifyParams(args [2]string, argsEscaped bool, r *h
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -8546,7 +9480,7 @@ func decodeSiteSendingDomainsVerifyParams(args [2]string, argsEscaped bool, r *h
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -8608,22 +9542,22 @@ func decodeSiteSendingDomainsVerifyParams(args [2]string, argsEscaped bool, r *h
 
 // SiteSetupChecklistGetParams is parameters of SiteSetupChecklist_get operation.
 type SiteSetupChecklistGetParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteSetupChecklistGetParams(packed middleware.Parameters) (params SiteSetupChecklistGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteSetupChecklistGetParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSetupChecklistGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -8635,24 +9569,39 @@ func decodeSiteSetupChecklistGetParams(args [1]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -8663,7 +9612,7 @@ func decodeSiteSetupChecklistGetParams(args [1]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -8673,23 +9622,24 @@ func decodeSiteSetupChecklistGetParams(args [1]string, argsEscaped bool, r *http
 
 // SiteSuppressionsCreateParams is parameters of SiteSuppressions_create operation.
 type SiteSuppressionsCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteSuppressionsCreateParams(packed middleware.Parameters) (params SiteSuppressionsCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteSuppressionsCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSuppressionsCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -8701,24 +9651,39 @@ func decodeSiteSuppressionsCreateParams(args [1]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -8729,7 +9694,7 @@ func decodeSiteSuppressionsCreateParams(args [1]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -8739,8 +9704,9 @@ func decodeSiteSuppressionsCreateParams(args [1]string, argsEscaped bool, r *htt
 
 // SiteSuppressionsDeleteParams is parameters of SiteSuppressions_delete operation.
 type SiteSuppressionsDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -8748,10 +9714,10 @@ type SiteSuppressionsDeleteParams struct {
 func unpackSiteSuppressionsDeleteParams(packed middleware.Parameters) (params SiteSuppressionsDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -8764,7 +9730,7 @@ func unpackSiteSuppressionsDeleteParams(packed middleware.Parameters) (params Si
 }
 
 func decodeSiteSuppressionsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteSuppressionsDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -8776,24 +9742,39 @@ func decodeSiteSuppressionsDeleteParams(args [2]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -8804,7 +9785,7 @@ func decodeSiteSuppressionsDeleteParams(args [2]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -8866,8 +9847,9 @@ func decodeSiteSuppressionsDeleteParams(args [2]string, argsEscaped bool, r *htt
 
 // SiteSuppressionsListParams is parameters of SiteSuppressions_list operation.
 type SiteSuppressionsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -8877,10 +9859,10 @@ type SiteSuppressionsListParams struct {
 func unpackSiteSuppressionsListParams(packed middleware.Parameters) (params SiteSuppressionsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -8905,7 +9887,7 @@ func unpackSiteSuppressionsListParams(packed middleware.Parameters) (params Site
 
 func decodeSiteSuppressionsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteSuppressionsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -8917,24 +9899,39 @@ func decodeSiteSuppressionsListParams(args [1]string, argsEscaped bool, r *http.
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -8945,7 +9942,7 @@ func decodeSiteSuppressionsListParams(args [1]string, argsEscaped bool, r *http.
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -9047,17 +10044,17 @@ func decodeSiteSuppressionsListParams(args [1]string, argsEscaped bool, r *http.
 
 // SiteTagsApplyParams is parameters of SiteTags_apply operation.
 type SiteTagsApplyParams struct {
-	Slug      string
-	ContactId EntityId
+	WorkspaceId WorkspaceId
+	ContactId   EntityId
 }
 
 func unpackSiteTagsApplyParams(packed middleware.Parameters) (params SiteTagsApplyParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -9070,7 +10067,7 @@ func unpackSiteTagsApplyParams(packed middleware.Parameters) (params SiteTagsApp
 }
 
 func decodeSiteTagsApplyParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteTagsApplyParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -9082,24 +10079,39 @@ func decodeSiteTagsApplyParams(args [2]string, argsEscaped bool, r *http.Request
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -9110,7 +10122,7 @@ func decodeSiteTagsApplyParams(args [2]string, argsEscaped bool, r *http.Request
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -9172,7 +10184,7 @@ func decodeSiteTagsApplyParams(args [2]string, argsEscaped bool, r *http.Request
 
 // SiteTagsListParams is parameters of SiteTags_list operation.
 type SiteTagsListParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -9182,10 +10194,10 @@ type SiteTagsListParams struct {
 func unpackSiteTagsListParams(packed middleware.Parameters) (params SiteTagsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -9210,7 +10222,7 @@ func unpackSiteTagsListParams(packed middleware.Parameters) (params SiteTagsList
 
 func decodeSiteTagsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteTagsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -9222,24 +10234,39 @@ func decodeSiteTagsListParams(args [1]string, argsEscaped bool, r *http.Request)
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -9250,7 +10277,7 @@ func decodeSiteTagsListParams(args [1]string, argsEscaped bool, r *http.Request)
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -9352,8 +10379,8 @@ func decodeSiteTagsListParams(args [1]string, argsEscaped bool, r *http.Request)
 
 // SiteTagsListForContactParams is parameters of SiteTags_listForContact operation.
 type SiteTagsListForContactParams struct {
-	Slug      string
-	ContactId EntityId
+	WorkspaceId WorkspaceId
+	ContactId   EntityId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -9363,10 +10390,10 @@ type SiteTagsListForContactParams struct {
 func unpackSiteTagsListForContactParams(packed middleware.Parameters) (params SiteTagsListForContactParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -9398,7 +10425,7 @@ func unpackSiteTagsListForContactParams(packed middleware.Parameters) (params Si
 
 func decodeSiteTagsListForContactParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteTagsListForContactParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -9410,24 +10437,39 @@ func decodeSiteTagsListForContactParams(args [2]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -9438,7 +10480,7 @@ func decodeSiteTagsListForContactParams(args [2]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -9592,18 +10634,18 @@ func decodeSiteTagsListForContactParams(args [2]string, argsEscaped bool, r *htt
 
 // SiteTagsRemoveParams is parameters of SiteTags_remove operation.
 type SiteTagsRemoveParams struct {
-	Slug      string
-	ContactId EntityId
-	Name      string
+	WorkspaceId WorkspaceId
+	ContactId   EntityId
+	Name        string
 }
 
 func unpackSiteTagsRemoveParams(packed middleware.Parameters) (params SiteTagsRemoveParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -9623,7 +10665,7 @@ func unpackSiteTagsRemoveParams(packed middleware.Parameters) (params SiteTagsRe
 }
 
 func decodeSiteTagsRemoveParams(args [3]string, argsEscaped bool, r *http.Request) (params SiteTagsRemoveParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -9635,24 +10677,39 @@ func decodeSiteTagsRemoveParams(args [3]string, argsEscaped bool, r *http.Reques
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -9663,7 +10720,7 @@ func decodeSiteTagsRemoveParams(args [3]string, argsEscaped bool, r *http.Reques
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -9770,23 +10827,24 @@ func decodeSiteTagsRemoveParams(args [3]string, argsEscaped bool, r *http.Reques
 
 // SiteTemplatesCreateParams is parameters of SiteTemplates_create operation.
 type SiteTemplatesCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteTemplatesCreateParams(packed middleware.Parameters) (params SiteTemplatesCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteTemplatesCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteTemplatesCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -9798,24 +10856,39 @@ func decodeSiteTemplatesCreateParams(args [1]string, argsEscaped bool, r *http.R
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -9826,7 +10899,7 @@ func decodeSiteTemplatesCreateParams(args [1]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -9836,8 +10909,9 @@ func decodeSiteTemplatesCreateParams(args [1]string, argsEscaped bool, r *http.R
 
 // SiteTemplatesDeleteParams is parameters of SiteTemplates_delete operation.
 type SiteTemplatesDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -9845,10 +10919,10 @@ type SiteTemplatesDeleteParams struct {
 func unpackSiteTemplatesDeleteParams(packed middleware.Parameters) (params SiteTemplatesDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -9861,7 +10935,7 @@ func unpackSiteTemplatesDeleteParams(packed middleware.Parameters) (params SiteT
 }
 
 func decodeSiteTemplatesDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteTemplatesDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -9873,24 +10947,39 @@ func decodeSiteTemplatesDeleteParams(args [2]string, argsEscaped bool, r *http.R
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -9901,7 +10990,7 @@ func decodeSiteTemplatesDeleteParams(args [2]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -9963,8 +11052,9 @@ func decodeSiteTemplatesDeleteParams(args [2]string, argsEscaped bool, r *http.R
 
 // SiteTemplatesGetParams is parameters of SiteTemplates_get operation.
 type SiteTemplatesGetParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -9972,10 +11062,10 @@ type SiteTemplatesGetParams struct {
 func unpackSiteTemplatesGetParams(packed middleware.Parameters) (params SiteTemplatesGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -9988,7 +11078,7 @@ func unpackSiteTemplatesGetParams(packed middleware.Parameters) (params SiteTemp
 }
 
 func decodeSiteTemplatesGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteTemplatesGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -10000,24 +11090,39 @@ func decodeSiteTemplatesGetParams(args [2]string, argsEscaped bool, r *http.Requ
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -10028,7 +11133,7 @@ func decodeSiteTemplatesGetParams(args [2]string, argsEscaped bool, r *http.Requ
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -10090,8 +11195,9 @@ func decodeSiteTemplatesGetParams(args [2]string, argsEscaped bool, r *http.Requ
 
 // SiteTemplatesListParams is parameters of SiteTemplates_list operation.
 type SiteTemplatesListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -10101,10 +11207,10 @@ type SiteTemplatesListParams struct {
 func unpackSiteTemplatesListParams(packed middleware.Parameters) (params SiteTemplatesListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -10129,7 +11235,7 @@ func unpackSiteTemplatesListParams(packed middleware.Parameters) (params SiteTem
 
 func decodeSiteTemplatesListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteTemplatesListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -10141,24 +11247,39 @@ func decodeSiteTemplatesListParams(args [1]string, argsEscaped bool, r *http.Req
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -10169,7 +11290,7 @@ func decodeSiteTemplatesListParams(args [1]string, argsEscaped bool, r *http.Req
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -10271,8 +11392,9 @@ func decodeSiteTemplatesListParams(args [1]string, argsEscaped bool, r *http.Req
 
 // SiteTemplatesUpdateParams is parameters of SiteTemplates_update operation.
 type SiteTemplatesUpdateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -10280,10 +11402,10 @@ type SiteTemplatesUpdateParams struct {
 func unpackSiteTemplatesUpdateParams(packed middleware.Parameters) (params SiteTemplatesUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -10296,7 +11418,7 @@ func unpackSiteTemplatesUpdateParams(packed middleware.Parameters) (params SiteT
 }
 
 func decodeSiteTemplatesUpdateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteTemplatesUpdateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -10308,24 +11430,39 @@ func decodeSiteTemplatesUpdateParams(args [2]string, argsEscaped bool, r *http.R
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -10336,7 +11473,7 @@ func decodeSiteTemplatesUpdateParams(args [2]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -10398,23 +11535,24 @@ func decodeSiteTemplatesUpdateParams(args [2]string, argsEscaped bool, r *http.R
 
 // SiteTokensCreateParams is parameters of SiteTokens_create operation.
 type SiteTokensCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteTokensCreateParams(packed middleware.Parameters) (params SiteTokensCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteTokensCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteTokensCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -10426,24 +11564,39 @@ func decodeSiteTokensCreateParams(args [1]string, argsEscaped bool, r *http.Requ
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -10454,7 +11607,7 @@ func decodeSiteTokensCreateParams(args [1]string, argsEscaped bool, r *http.Requ
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -10464,8 +11617,9 @@ func decodeSiteTokensCreateParams(args [1]string, argsEscaped bool, r *http.Requ
 
 // SiteTokensDeleteParams is parameters of SiteTokens_delete operation.
 type SiteTokensDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -10473,10 +11627,10 @@ type SiteTokensDeleteParams struct {
 func unpackSiteTokensDeleteParams(packed middleware.Parameters) (params SiteTokensDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -10489,7 +11643,7 @@ func unpackSiteTokensDeleteParams(packed middleware.Parameters) (params SiteToke
 }
 
 func decodeSiteTokensDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteTokensDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -10501,24 +11655,39 @@ func decodeSiteTokensDeleteParams(args [2]string, argsEscaped bool, r *http.Requ
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -10529,7 +11698,7 @@ func decodeSiteTokensDeleteParams(args [2]string, argsEscaped bool, r *http.Requ
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -10591,23 +11760,24 @@ func decodeSiteTokensDeleteParams(args [2]string, argsEscaped bool, r *http.Requ
 
 // SiteTokensListParams is parameters of SiteTokens_list operation.
 type SiteTokensListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteTokensListParams(packed middleware.Parameters) (params SiteTokensListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteTokensListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteTokensListParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -10619,24 +11789,39 @@ func decodeSiteTokensListParams(args [1]string, argsEscaped bool, r *http.Reques
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -10647,7 +11832,7 @@ func decodeSiteTokensListParams(args [1]string, argsEscaped bool, r *http.Reques
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -10657,8 +11842,9 @@ func decodeSiteTokensListParams(args [1]string, argsEscaped bool, r *http.Reques
 
 // SiteTransactionalEmailsListParams is parameters of SiteTransactionalEmails_list operation.
 type SiteTransactionalEmailsListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -10668,10 +11854,10 @@ type SiteTransactionalEmailsListParams struct {
 func unpackSiteTransactionalEmailsListParams(packed middleware.Parameters) (params SiteTransactionalEmailsListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -10696,7 +11882,7 @@ func unpackSiteTransactionalEmailsListParams(packed middleware.Parameters) (para
 
 func decodeSiteTransactionalEmailsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteTransactionalEmailsListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -10708,24 +11894,39 @@ func decodeSiteTransactionalEmailsListParams(args [1]string, argsEscaped bool, r
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -10736,7 +11937,7 @@ func decodeSiteTransactionalEmailsListParams(args [1]string, argsEscaped bool, r
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -10838,23 +12039,24 @@ func decodeSiteTransactionalEmailsListParams(args [1]string, argsEscaped bool, r
 
 // SiteWebhooksCreateParams is parameters of SiteWebhooks_create operation.
 type SiteWebhooksCreateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteWebhooksCreateParams(packed middleware.Parameters) (params SiteWebhooksCreateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteWebhooksCreateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWebhooksCreateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -10866,24 +12068,39 @@ func decodeSiteWebhooksCreateParams(args [1]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -10894,7 +12111,7 @@ func decodeSiteWebhooksCreateParams(args [1]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -10904,8 +12121,9 @@ func decodeSiteWebhooksCreateParams(args [1]string, argsEscaped bool, r *http.Re
 
 // SiteWebhooksDeleteParams is parameters of SiteWebhooks_delete operation.
 type SiteWebhooksDeleteParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -10913,10 +12131,10 @@ type SiteWebhooksDeleteParams struct {
 func unpackSiteWebhooksDeleteParams(packed middleware.Parameters) (params SiteWebhooksDeleteParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -10929,7 +12147,7 @@ func unpackSiteWebhooksDeleteParams(packed middleware.Parameters) (params SiteWe
 }
 
 func decodeSiteWebhooksDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteWebhooksDeleteParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -10941,24 +12159,39 @@ func decodeSiteWebhooksDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -10969,7 +12202,7 @@ func decodeSiteWebhooksDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -11031,8 +12264,9 @@ func decodeSiteWebhooksDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 
 // SiteWebhooksGetParams is parameters of SiteWebhooks_get operation.
 type SiteWebhooksGetParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -11040,10 +12274,10 @@ type SiteWebhooksGetParams struct {
 func unpackSiteWebhooksGetParams(packed middleware.Parameters) (params SiteWebhooksGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -11056,7 +12290,7 @@ func unpackSiteWebhooksGetParams(packed middleware.Parameters) (params SiteWebho
 }
 
 func decodeSiteWebhooksGetParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteWebhooksGetParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -11068,24 +12302,39 @@ func decodeSiteWebhooksGetParams(args [2]string, argsEscaped bool, r *http.Reque
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -11096,7 +12345,7 @@ func decodeSiteWebhooksGetParams(args [2]string, argsEscaped bool, r *http.Reque
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -11158,8 +12407,9 @@ func decodeSiteWebhooksGetParams(args [2]string, argsEscaped bool, r *http.Reque
 
 // SiteWebhooksListParams is parameters of SiteWebhooks_list operation.
 type SiteWebhooksListParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Page number (1-based).
 	Page OptInt32 `json:",omitempty,omitzero"`
 	// Page size.
@@ -11169,10 +12419,10 @@ type SiteWebhooksListParams struct {
 func unpackSiteWebhooksListParams(packed middleware.Parameters) (params SiteWebhooksListParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -11197,7 +12447,7 @@ func unpackSiteWebhooksListParams(packed middleware.Parameters) (params SiteWebh
 
 func decodeSiteWebhooksListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWebhooksListParams, _ error) {
 	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -11209,24 +12459,39 @@ func decodeSiteWebhooksListParams(args [1]string, argsEscaped bool, r *http.Requ
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -11237,7 +12502,7 @@ func decodeSiteWebhooksListParams(args [1]string, argsEscaped bool, r *http.Requ
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -11339,8 +12604,9 @@ func decodeSiteWebhooksListParams(args [1]string, argsEscaped bool, r *http.Requ
 
 // SiteWebhooksRegenerateSecretParams is parameters of SiteWebhooks_regenerateSecret operation.
 type SiteWebhooksRegenerateSecretParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -11348,10 +12614,10 @@ type SiteWebhooksRegenerateSecretParams struct {
 func unpackSiteWebhooksRegenerateSecretParams(packed middleware.Parameters) (params SiteWebhooksRegenerateSecretParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -11364,7 +12630,7 @@ func unpackSiteWebhooksRegenerateSecretParams(packed middleware.Parameters) (par
 }
 
 func decodeSiteWebhooksRegenerateSecretParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteWebhooksRegenerateSecretParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -11376,24 +12642,39 @@ func decodeSiteWebhooksRegenerateSecretParams(args [2]string, argsEscaped bool, 
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -11404,7 +12685,7 @@ func decodeSiteWebhooksRegenerateSecretParams(args [2]string, argsEscaped bool, 
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -11466,8 +12747,9 @@ func decodeSiteWebhooksRegenerateSecretParams(args [2]string, argsEscaped bool, 
 
 // SiteWebhooksTestParams is parameters of SiteWebhooks_test operation.
 type SiteWebhooksTestParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -11475,10 +12757,10 @@ type SiteWebhooksTestParams struct {
 func unpackSiteWebhooksTestParams(packed middleware.Parameters) (params SiteWebhooksTestParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -11491,7 +12773,7 @@ func unpackSiteWebhooksTestParams(packed middleware.Parameters) (params SiteWebh
 }
 
 func decodeSiteWebhooksTestParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteWebhooksTestParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -11503,24 +12785,39 @@ func decodeSiteWebhooksTestParams(args [2]string, argsEscaped bool, r *http.Requ
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -11531,7 +12828,7 @@ func decodeSiteWebhooksTestParams(args [2]string, argsEscaped bool, r *http.Requ
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -11593,8 +12890,9 @@ func decodeSiteWebhooksTestParams(args [2]string, argsEscaped bool, r *http.Requ
 
 // SiteWebhooksUpdateParams is parameters of SiteWebhooks_update operation.
 type SiteWebhooksUpdateParams struct {
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
 	// Unique identifier.
 	ID EntityId
 }
@@ -11602,10 +12900,10 @@ type SiteWebhooksUpdateParams struct {
 func unpackSiteWebhooksUpdateParams(packed middleware.Parameters) (params SiteWebhooksUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -11618,7 +12916,7 @@ func unpackSiteWebhooksUpdateParams(packed middleware.Parameters) (params SiteWe
 }
 
 func decodeSiteWebhooksUpdateParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteWebhooksUpdateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -11630,24 +12928,39 @@ func decodeSiteWebhooksUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -11658,7 +12971,7 @@ func decodeSiteWebhooksUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -11720,22 +13033,22 @@ func decodeSiteWebhooksUpdateParams(args [2]string, argsEscaped bool, r *http.Re
 
 // SiteWorkspacesAccountLinkParams is parameters of SiteWorkspaces_accountLink operation.
 type SiteWorkspacesAccountLinkParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteWorkspacesAccountLinkParams(packed middleware.Parameters) (params SiteWorkspacesAccountLinkParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteWorkspacesAccountLinkParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesAccountLinkParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -11747,24 +13060,39 @@ func decodeSiteWorkspacesAccountLinkParams(args [1]string, argsEscaped bool, r *
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -11775,7 +13103,7 @@ func decodeSiteWorkspacesAccountLinkParams(args [1]string, argsEscaped bool, r *
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -11785,22 +13113,22 @@ func decodeSiteWorkspacesAccountLinkParams(args [1]string, argsEscaped bool, r *
 
 // SiteWorkspacesSetSecondFactorRequirementParams is parameters of SiteWorkspaces_setSecondFactorRequirement operation.
 type SiteWorkspacesSetSecondFactorRequirementParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteWorkspacesSetSecondFactorRequirementParams(packed middleware.Parameters) (params SiteWorkspacesSetSecondFactorRequirementParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteWorkspacesSetSecondFactorRequirementParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesSetSecondFactorRequirementParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -11812,24 +13140,39 @@ func decodeSiteWorkspacesSetSecondFactorRequirementParams(args [1]string, argsEs
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -11840,7 +13183,7 @@ func decodeSiteWorkspacesSetSecondFactorRequirementParams(args [1]string, argsEs
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}
@@ -11850,22 +13193,22 @@ func decodeSiteWorkspacesSetSecondFactorRequirementParams(args [1]string, argsEs
 
 // SiteWorkspacesUpdateParams is parameters of SiteWorkspaces_update operation.
 type SiteWorkspacesUpdateParams struct {
-	Slug string
+	WorkspaceId WorkspaceId
 }
 
 func unpackSiteWorkspacesUpdateParams(packed middleware.Parameters) (params SiteWorkspacesUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 		}
-		params.Slug = packed[key].(string)
+		params.WorkspaceId = packed[key].(WorkspaceId)
 	}
 	return params
 }
 
 func decodeSiteWorkspacesUpdateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesUpdateParams, _ error) {
-	// Decode path: slug.
+	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -11877,24 +13220,39 @@ func decodeSiteWorkspacesUpdateParams(args [1]string, argsEscaped bool, r *http.
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "slug",
+				Param:   "workspaceId",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
 					return err
 				}
-
-				params.Slug = c
 				return nil
 			}(); err != nil {
 				return err
@@ -11905,7 +13263,7 @@ func decodeSiteWorkspacesUpdateParams(args [1]string, argsEscaped bool, r *http.
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "slug",
+			Name: "workspaceId",
 			In:   "path",
 			Err:  err,
 		}

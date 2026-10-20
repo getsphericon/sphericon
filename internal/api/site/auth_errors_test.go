@@ -30,7 +30,7 @@ func signer(t *testing.T) *authtoken.Signer {
 }
 
 // Verifying an address creates a Workspace named "Personal" for each User: the name is not
-// unique, so the slug it derives gets a numeric suffix on the second one.
+// unique, so the workspaceID it derives gets a numeric suffix on the second one.
 func TestSiteAuthVerifyNamesEveryFirstWorkspacePersonalWithAUniqueSlug(t *testing.T) {
 	env := testhelper.Setup(t)
 

@@ -19,30 +19,30 @@ func TestSiteMembershipsErrorBranches(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	ctx := context.Background()
-	acme, foreign := fixtures.AcmeSlug, fixtures.GlobexSlug
+	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	memberID := idStr(fixtures.AcmeMemberMembershipID)
 	ownerID := idStr(fixtures.AcmeOwnerMembershipID)
 	role := &siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleAdmin}
 
-	// List: foreign slug is a 404, a plain member may list, anonymous is rejected.
-	nf, err := owner.SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{Slug: foreign})
+	// List: foreign workspaceID is a 404, a plain member may list, anonymous is rejected.
+	nf, err := owner.SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.ProblemDetails{}, nf)
-	listed, err := member.SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{Slug: acme})
+	listed, err := member.SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsListOKApplicationJSON{}, listed)
-	_, err = env.SiteAnonymous(t).SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{Slug: acme})
+	_, err = env.SiteAnonymous(t).SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{WorkspaceId: acme})
 	require.Error(t, err)
 
 	// Update.
-	u1, err := owner.SiteMembershipsUpdate(ctx, role, siteapi.SiteMembershipsUpdateParams{Slug: foreign, ID: memberID})
+	u1, err := owner.SiteMembershipsUpdate(ctx, role, siteapi.SiteMembershipsUpdateParams{WorkspaceId: foreign, ID: memberID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateNotFound{}, u1)
-	u3, err := owner.SiteMembershipsUpdate(ctx, role, siteapi.SiteMembershipsUpdateParams{Slug: acme, ID: idStr(99999)})
+	u3, err := owner.SiteMembershipsUpdate(ctx, role, siteapi.SiteMembershipsUpdateParams{WorkspaceId: acme, ID: idStr(99999)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateNotFound{}, u3)
 	// A Globex membership is invisible through Acme.
-	u4, err := owner.SiteMembershipsUpdate(ctx, role, siteapi.SiteMembershipsUpdateParams{Slug: acme, ID: idStr(fixtures.GlobexOwnerMembershipID)})
+	u4, err := owner.SiteMembershipsUpdate(ctx, role, siteapi.SiteMembershipsUpdateParams{WorkspaceId: acme, ID: idStr(fixtures.GlobexOwnerMembershipID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateNotFound{}, u4)
 
@@ -50,7 +50,7 @@ func TestSiteMembershipsErrorBranches(t *testing.T) {
 	addMember(t, env, "boss@acme.test", membership.RoleAdmin)
 	admin := env.SiteActor(t, "boss@acme.test")
 	u5, err := admin.SiteMembershipsUpdate(ctx, &siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleOwner},
-		siteapi.SiteMembershipsUpdateParams{Slug: acme, ID: memberID})
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: acme, ID: memberID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsUpdateForbidden{}, u5)
 	stored, err := env.DB.Membership.Get(ctx, fixtures.AcmeMemberMembershipID)
@@ -58,21 +58,21 @@ func TestSiteMembershipsErrorBranches(t *testing.T) {
 	assert.Equal(t, membership.RoleMember, stored.Role)
 
 	// Delete.
-	d1, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: foreign, ID: memberID})
+	d1, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: foreign, ID: memberID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsDeleteNotFound{}, d1)
-	d2, err := member.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: acme, ID: memberID})
+	d2, err := member.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: acme, ID: memberID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsDeleteForbidden{}, d2)
-	d4, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: acme, ID: idStr(99999)})
+	d4, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: acme, ID: idStr(99999)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsDeleteNotFound{}, d4)
-	d5, err := admin.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: acme, ID: ownerID})
+	d5, err := admin.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: acme, ID: ownerID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsDeleteForbidden{}, d5)
 
 	// The owner removes the plain member for real.
-	d6, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{Slug: acme, ID: memberID})
+	d6, err := owner.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: acme, ID: memberID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsDeleteNoContent{}, d6)
 	exists, err := env.DB.Membership.Query().Where(membership.ID(fixtures.AcmeMemberMembershipID)).Exist(ctx)
@@ -85,32 +85,32 @@ func TestSiteInvitationsErrorBranches(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	ctx := context.Background()
-	acme, foreign := fixtures.AcmeSlug, fixtures.GlobexSlug
+	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	in := func(email string) *siteapi.SiteCreateInvitationInput {
 		return &siteapi.SiteCreateInvitationInput{Email: siteapi.EmailAddress(email), Role: siteapi.SiteInvitableRoleMember}
 	}
 
 	// List: scoped and authenticated; any member may read it.
-	nf, err := owner.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{Slug: foreign})
+	nf, err := owner.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.ProblemDetails{}, nf)
-	ok, err := member.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{Slug: acme})
+	ok, err := member.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsListOKApplicationJSON{}, ok)
 
-	// Create: foreign slug 404; an existing member is a conflict.
-	c1, err := owner.SiteInvitationsCreate(ctx, in("x@acme.test"), siteapi.SiteInvitationsCreateParams{Slug: foreign})
+	// Create: foreign workspaceID 404; an existing member is a conflict.
+	c1, err := owner.SiteInvitationsCreate(ctx, in("x@acme.test"), siteapi.SiteInvitationsCreateParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsCreateNotFound{}, c1)
-	c2, err := owner.SiteInvitationsCreate(ctx, in(fixtures.MemberMaryEmail), siteapi.SiteInvitationsCreateParams{Slug: acme})
+	c2, err := owner.SiteInvitationsCreate(ctx, in(fixtures.MemberMaryEmail), siteapi.SiteInvitationsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsCreateConflict{}, c2)
 
 	// Re-inviting the same address reissues the invitation instead of duplicating it.
-	first, err := owner.SiteInvitationsCreate(ctx, in("twice@acme.test"), siteapi.SiteInvitationsCreateParams{Slug: acme})
+	first, err := owner.SiteInvitationsCreate(ctx, in("twice@acme.test"), siteapi.SiteInvitationsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	second, err := owner.SiteInvitationsCreate(ctx, &siteapi.SiteCreateInvitationInput{Email: "twice@acme.test", Role: siteapi.SiteInvitableRoleAdmin},
-		siteapi.SiteInvitationsCreateParams{Slug: acme})
+		siteapi.SiteInvitationsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	r1, r2 := first.(*siteapi.SiteCreateInvitationResponse), second.(*siteapi.SiteCreateInvitationResponse)
 	assert.Equal(t, r1.Resource.ID, r2.Resource.ID)
@@ -122,13 +122,13 @@ func TestSiteInvitationsErrorBranches(t *testing.T) {
 
 	// Delete: foreign, forbidden, bad id, unknown, success.
 	id := r1.Resource.ID
-	d1, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{Slug: foreign, ID: id})
+	d1, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{WorkspaceId: foreign, ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsDeleteNotFound{}, d1)
-	d3, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{Slug: acme, ID: idStr(99999)})
+	d3, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{WorkspaceId: acme, ID: idStr(99999)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsDeleteNotFound{}, d3)
-	d4, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{Slug: acme, ID: id})
+	d4, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{WorkspaceId: acme, ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsDeleteNoContent{}, d4)
 	left, err := env.DB.Invitation.Query().Where(invitation.Email("twice@acme.test")).Exist(ctx)

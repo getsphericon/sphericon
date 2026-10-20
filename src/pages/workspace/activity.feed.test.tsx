@@ -2,15 +2,15 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import { handleSiteEventsList } from '../../generated/site/msw.gen.ts'
-import { Route as activityRoute } from '../../routes/workspaces/$slug/activity.tsx'
+import { Route as activityRoute } from '../../routes/workspaces/$workspaceId/activity.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { ActivityPage } from './activity.tsx'
 
-const SLUG = 'test'
-const mount = routeMount(activityRoute, { slug: SLUG })
+const WORKSPACE_ID = 'TestWs01'
+const mount = routeMount(activityRoute, { workspaceId: WORKSPACE_ID })
 
 const event = (id: string, over: Record<string, unknown> = {}) => ({
   id,

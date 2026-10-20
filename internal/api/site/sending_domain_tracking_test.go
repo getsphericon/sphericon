@@ -23,7 +23,7 @@ func TestSiteSendingDomainShowsTheTrackingRecordPending(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	res, err := c.SiteSendingDomainsCreate(context.Background(), &siteapi.SiteCreateSendingDomainInput{Domain: "marketing.example.com"},
-		siteapi.SiteSendingDomainsCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	created, ok := res.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "got %T", res)
@@ -50,7 +50,7 @@ func TestSiteSendingDomainShowsTheTrackingState(t *testing.T) {
 		SetTrackingCheckedAt(checked).
 		SetTrackingStateChangedAt(changed).Exec(ctx))
 
-	res, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{Slug: fixtures.AcmeSlug, ID: fixtures.SendingDomainVerifiedID})
+	res, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.SendingDomainVerifiedID})
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "got %T", res)
@@ -68,7 +68,7 @@ func TestSiteSendingDomainShowsWhyTheTrackingHostIsHeldBack(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	params := siteapi.SiteSendingDomainsGetParams{Slug: fixtures.AcmeSlug, ID: fixtures.SendingDomainVerifiedID}
+	params := siteapi.SiteSendingDomainsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.SendingDomainVerifiedID}
 	reason := func() siteapi.OptSiteTrackingReason {
 		res, err := c.SiteSendingDomainsGet(ctx, params)
 		require.NoError(t, err)
@@ -93,7 +93,7 @@ func TestSiteSendingDomainHasNoTrackingRecordWithoutATarget(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.TrackingCNAMETarget = "" }))
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteSendingDomainsGet(context.Background(), siteapi.SiteSendingDomainsGetParams{Slug: fixtures.AcmeSlug, ID: fixtures.SendingDomainVerifiedID})
+	res, err := c.SiteSendingDomainsGet(context.Background(), siteapi.SiteSendingDomainsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.SendingDomainVerifiedID})
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteSendingDomainResource)
 	require.Truef(t, ok, "got %T", res)

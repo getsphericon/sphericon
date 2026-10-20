@@ -15,7 +15,7 @@ import (
 )
 
 func (h *Handlers) SiteTagsList(ctx context.Context, params siteapi.SiteTagsListParams) (siteapi.SiteTagsListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteTagsListNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -39,7 +39,7 @@ func (h *Handlers) SiteTagsList(ctx context.Context, params siteapi.SiteTagsList
 }
 
 func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.SiteTagsListForContactParams) (siteapi.SiteTagsListForContactRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteTagsListForContactNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -68,7 +68,7 @@ func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.Si
 }
 
 func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.SiteApplyTagInput, params siteapi.SiteTagsApplyParams) (siteapi.SiteTagsApplyRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteTagsApplyNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -95,7 +95,7 @@ func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.SiteApplyTagI
 }
 
 func (h *Handlers) SiteTagsRemove(ctx context.Context, params siteapi.SiteTagsRemoveParams) (siteapi.SiteTagsRemoveRes, error) {
-	scoped, err := h.scopedFor(ctx, params.Slug)
+	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteTagsRemoveNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

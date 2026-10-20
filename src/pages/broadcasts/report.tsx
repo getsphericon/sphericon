@@ -7,7 +7,7 @@ import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import { siteBroadcastsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastStats, SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
-import { Route as broadcastsReportRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/report.tsx'
+import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { BroadcastHoldAlert } from './BroadcastHold.tsx'
 import { BroadcastProgress } from './BroadcastProgress.tsx'
 
@@ -43,9 +43,9 @@ function rateEntries(t: TFunction, stats: SiteBroadcastStats): { label: string; 
 
 export function BroadcastReportPage() {
   const { t } = useTranslation()
-  const { slug, broadcastId } = broadcastsReportRoute.useParams()
+  const { workspaceId, broadcastId } = broadcastsReportRoute.useParams()
 
-  const getQuery = useQuery(siteBroadcastsGetOptions({ path: { slug, id: broadcastId } }))
+  const getQuery = useQuery(siteBroadcastsGetOptions({ path: { workspaceId, id: broadcastId } }))
 
   if (getQuery.isLoading) {
     return <Loader />

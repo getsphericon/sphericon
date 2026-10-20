@@ -31,7 +31,7 @@ import builderStyles from '@workflowbuilder/sdk/style.css?inline'
 const jsonForm = { renderers: [messageRenderer] }
 
 interface AutomationBuilderProps {
-  slug: string
+  workspaceId: string
   automation: SiteAutomationResource
 }
 
@@ -57,7 +57,7 @@ function ThemeSync() {
 // Mantine chrome above the canvas; the SDK's Save (top bar) drives onDataSave,
 // which converts the graph to the linear []step definition and persists name,
 // trigger and definition together through the generated update mutation.
-export function AutomationBuilder({ slug, automation }: AutomationBuilderProps) {
+export function AutomationBuilder({ workspaceId, automation }: AutomationBuilderProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const nodeTypes = useAutomationNodeTypes()
@@ -83,10 +83,10 @@ export function AutomationBuilder({ slug, automation }: AutomationBuilderProps) 
     ...siteAutomationsUpdateMutation(),
     onSuccess: async (updated) => {
       await queryClient.invalidateQueries({
-        queryKey: siteAutomationsListQueryKey({ path: { slug } }),
+        queryKey: siteAutomationsListQueryKey({ path: { workspaceId } }),
       })
       await queryClient.invalidateQueries({
-        queryKey: siteAutomationsGetQueryKey({ path: { slug, id: updated.id } }),
+        queryKey: siteAutomationsGetQueryKey({ path: { workspaceId, id: updated.id } }),
       })
     },
   })
@@ -104,7 +104,7 @@ export function AutomationBuilder({ slug, automation }: AutomationBuilderProps) 
       const values = form.getValues()
       try {
         await updateMutation.mutateAsync({
-          path: { slug, id: automation.id },
+          path: { workspaceId, id: automation.id },
           body: {
             name: values.name.trim(),
             triggerEvent: values.triggerEvent,
@@ -129,7 +129,7 @@ export function AutomationBuilder({ slug, automation }: AutomationBuilderProps) 
         return 'error'
       }
     },
-    [slug, automation.id, form, updateMutation, t],
+    [workspaceId, automation.id, form, updateMutation, t],
   )
 
   const integration = useMemo(() => ({ strategy: 'props' as const, onDataSave }), [onDataSave])

@@ -19,11 +19,11 @@ func TestSiteSanitizesBodiesOnSave(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
 		Name: "Hostile", Body: siteapi.NewOptString(hostileBody),
-	}, siteapi.SiteTemplatesCreateParams{Slug: slug})
+	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	tpl, ok := created.(*siteapi.SiteEmailTemplateResource)
 	require.Truef(t, ok, "got %T", created)
@@ -31,7 +31,7 @@ func TestSiteSanitizesBodiesOnSave(t *testing.T) {
 
 	updated, err := c.SiteTemplatesUpdate(ctx, &siteapi.SiteUpdateEmailTemplateInput{
 		Body: siteapi.NewOptString(`<img src="x" onerror="alert(1)">{{ first_name }}`),
-	}, siteapi.SiteTemplatesUpdateParams{Slug: slug, ID: tpl.ID})
+	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: tpl.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteEmailTemplateResource)
 	require.Truef(t, ok, "got %T", updated)
@@ -40,7 +40,7 @@ func TestSiteSanitizesBodiesOnSave(t *testing.T) {
 
 	bc, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
 		Name: "Hostile", Body: siteapi.NewOptString(hostileBody),
-	}, siteapi.SiteBroadcastsCreateParams{Slug: slug})
+	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	created2, ok := bc.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", bc)
@@ -48,7 +48,7 @@ func TestSiteSanitizesBodiesOnSave(t *testing.T) {
 
 	bu, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
 		Body: siteapi.NewOptString(hostileBody),
-	}, siteapi.SiteBroadcastsUpdateParams{Slug: slug, ID: fixtures.BroadcastDraftID})
+	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
 	updated2, ok := bu.(*siteapi.SiteBroadcastResource)
 	require.Truef(t, ok, "got %T", bu)

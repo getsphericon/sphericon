@@ -5898,13 +5898,13 @@ func (s *SiteWorkspaceResource) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.PublicId.Validate(); err != nil {
+		if err := s.ID.Validate(); err != nil {
 			return err
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "publicId",
+			Name:  "id",
 			Error: err,
 		})
 	}

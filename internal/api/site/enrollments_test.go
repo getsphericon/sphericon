@@ -18,7 +18,7 @@ func TestSiteEnrollmentsShowWhyAnEnrollmentFailed(t *testing.T) {
 	ctx := context.Background()
 
 	list, err := c.SiteEnrollmentsList(ctx, siteapi.SiteEnrollmentsListParams{
-		Slug:         fixtures.AcmeSlug,
+		WorkspaceId:  fixtures.AcmePublicID,
 		AutomationId: siteapi.EntityId(fixtures.AutomationNotifySlackID),
 		Status:       siteapi.NewOptSiteEnrollmentStatus(siteapi.SiteEnrollmentStatusFailed),
 	})
@@ -40,7 +40,7 @@ func TestSiteEnrollmentsShowWhyAnEnrollmentFailed(t *testing.T) {
 	assert.True(t, found)
 
 	got, err := c.SiteEnrollmentsGet(ctx, siteapi.SiteEnrollmentsGetParams{
-		Slug:         fixtures.AcmeSlug,
+		WorkspaceId:  fixtures.AcmePublicID,
 		AutomationId: siteapi.EntityId(fixtures.AutomationNotifySlackID),
 		EnrollmentId: siteapi.EntityId(fixtures.AutomationRunHTTPFailedID),
 	})
@@ -48,7 +48,7 @@ func TestSiteEnrollmentsShowWhyAnEnrollmentFailed(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteEnrollmentResource{}, got)
 
 	foreign, err := c.SiteEnrollmentsList(ctx, siteapi.SiteEnrollmentsListParams{
-		Slug: fixtures.AcmeSlug, AutomationId: siteapi.EntityId(fixtures.AutomationGlobexID),
+		WorkspaceId: fixtures.AcmePublicID, AutomationId: siteapi.EntityId(fixtures.AutomationGlobexID),
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteEnrollmentsListNotFound{}, foreign)

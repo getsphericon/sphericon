@@ -21,7 +21,7 @@ import {
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
-import { Route as overviewRoute } from '../../routes/workspaces/$slug/index.tsx'
+import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { formatPercent } from '../../utils/percent.ts'
 import { SetupChecklist } from './SetupChecklist.tsx'
 
@@ -32,11 +32,11 @@ const RANGES: SiteAnalyticsRange[] = ['7d', '30d', '90d']
 // finished) sits on top of the KPI cards and charts.
 export function OverviewPage() {
   const { t } = useTranslation()
-  const { slug } = overviewRoute.useParams()
+  const { workspaceId } = overviewRoute.useParams()
 
   const workspacesQuery = useQuery(siteWorkspacesListOptions())
-  const workspace = workspacesQuery.data?.find((w) => w.slug === slug)
-  const checklistQuery = useQuery(siteSetupChecklistGetOptions({ path: { slug } }))
+  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
+  const checklistQuery = useQuery(siteSetupChecklistGetOptions({ path: { workspaceId } }))
   const checklist = checklistQuery.data
   const showChecklist = checklist !== undefined && !checklist.complete
   // The checklist alone, no analytics, until the first email is sent.
@@ -56,21 +56,21 @@ export function OverviewPage() {
         />
       )}
 
-      {showChecklist && <SetupChecklist slug={slug} checklist={checklist} />}
+      {showChecklist && <SetupChecklist workspaceId={workspaceId} checklist={checklist} />}
 
-      {showAnalytics && <AnalyticsOverview slug={slug} />}
+      {showAnalytics && <AnalyticsOverview workspaceId={workspaceId} />}
     </Stack>
   )
 }
 
 // AnalyticsOverview is the range-scoped part of the dashboard; mounting it is what requests
 // the analytics, so the checklist-only Overview never does.
-function AnalyticsOverview({ slug }: { slug: string }) {
+function AnalyticsOverview({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const [range, setRange] = useState<SiteAnalyticsRange>('30d')
 
   const analyticsQuery = useQuery(
-    siteAnalyticsOverviewOptions({ path: { slug }, query: { range } }),
+    siteAnalyticsOverviewOptions({ path: { workspaceId }, query: { range } }),
   )
 
   const abuseWarning = analyticsQuery.data?.abuseWarning

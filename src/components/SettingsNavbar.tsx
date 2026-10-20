@@ -10,19 +10,19 @@ import {
 } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
-import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
-import { Route as developersRoute } from '../routes/workspaces/$slug/settings/developers.tsx'
-import { Route as generalRoute } from '../routes/workspaces/$slug/settings/index.tsx'
-import { Route as mcpRoute } from '../routes/workspaces/$slug/settings/mcp.tsx'
-import { Route as sendingRoute } from '../routes/workspaces/$slug/settings/sending.tsx'
-import { Route as teamRoute } from '../routes/workspaces/$slug/settings/team.tsx'
-import { Route as trackingRoute } from '../routes/workspaces/$slug/settings/tracking.tsx'
+import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as developersRoute } from '../routes/workspaces/$workspaceId/settings/developers.tsx'
+import { Route as generalRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { Route as mcpRoute } from '../routes/workspaces/$workspaceId/settings/mcp.tsx'
+import { Route as sendingRoute } from '../routes/workspaces/$workspaceId/settings/sending.tsx'
+import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
+import { Route as trackingRoute } from '../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { NavLinkLink } from './RouterLink.tsx'
 
 // SettingsNavbar is the sidebar of the workspace settings area: a way back to the
 // workspace plus one link per settings page. General is the area's index, so it is
 // current only on itself.
-export function SettingsNavbar({ slug }: { slug: string }) {
+export function SettingsNavbar({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
 
   const pages = [
@@ -68,7 +68,7 @@ export function SettingsNavbar({ slug }: { slug: string }) {
     <Stack gap="xs">
       <NavLinkLink
         to={overviewRoute.to}
-        params={{ slug }}
+        params={{ workspaceId }}
         label={t(($) => $.settings.backToWorkspace)}
         leftSection={<IconArrowLeft size={18} />}
         activeOptions={{ exact: true }}
@@ -77,7 +77,7 @@ export function SettingsNavbar({ slug }: { slug: string }) {
         <NavLinkLink
           key={route.to}
           to={route.to}
-          params={{ slug }}
+          params={{ workspaceId }}
           label={label}
           leftSection={icon}
           activeOptions={{ exact }}

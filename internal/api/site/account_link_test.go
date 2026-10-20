@@ -84,7 +84,7 @@ func publishedKeys(t *testing.T, env *testhelper.TestEnv) receiver {
 
 func mintAccountLink(t *testing.T, env *testhelper.TestEnv, email string) siteapi.SiteWorkspacesAccountLinkRes {
 	t.Helper()
-	res, err := env.SiteActor(t, email).SiteWorkspacesAccountLink(t.Context(), siteapi.SiteWorkspacesAccountLinkParams{Slug: fixtures.AcmeSlug})
+	res, err := env.SiteActor(t, email).SiteWorkspacesAccountLink(t.Context(), siteapi.SiteWorkspacesAccountLinkParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	return res
 }
@@ -122,15 +122,15 @@ func TestAccountLinkIsForTheOwnerOnly(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteWorkspacesAccountLinkForbidden{}, mintAccountLink(t, env, fixtures.MemberMaryEmail))
 	assert.IsType(t, &siteapi.SiteWorkspacesAccountLinkNotFound{}, mintAccountLink(t, env, fixtures.OutsiderOscarEmail))
 
-	assert.True(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug).AccountLinkAvailable)
-	assert.False(t, workspaceOf(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmeSlug).AccountLinkAvailable)
+	assert.True(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).AccountLinkAvailable)
+	assert.False(t, workspaceOf(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID).AccountLinkAvailable)
 }
 
 func TestAccountLinkIsAbsentWhenNotConfigured(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	assert.IsType(t, &siteapi.SiteWorkspacesAccountLinkNotFound{}, mintAccountLink(t, env, fixtures.OwnerJohnEmail))
-	assert.False(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug).AccountLinkAvailable)
+	assert.False(t, workspaceOf(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).AccountLinkAvailable)
 
 	rec := httptest.NewRecorder()
 	env.Server.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/.well-known/jwks.json", nil))

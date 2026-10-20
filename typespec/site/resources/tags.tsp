@@ -21,13 +21,13 @@ model SiteApplyTagInput {
   name: string;
 }
 
-@route("/workspaces/{slug}")
+@route("/workspaces/{workspaceId}")
 @tag("Site Tags")
 namespace SiteTags {
   /** List the workspace's tags (feeds the segment builder) */
   @route("/tags")
   @get
-  op list(@path slug: string, ...PageQuery):
+  op list(@path workspaceId: WorkspaceId, ...PageQuery):
     | Page<SiteTagResource>
     | BadRequestProblem
     | NotFoundProblem
@@ -37,7 +37,7 @@ namespace SiteTags {
   @route("/contacts/{contactId}/tags")
   @get
   op listForContact(
-    @path slug: string,
+    @path workspaceId: WorkspaceId,
     @path contactId: EntityId,
     ...PageQuery,
   ):
@@ -50,7 +50,7 @@ namespace SiteTags {
   @route("/contacts/{contactId}/tags")
   @post
   op apply(
-    @path slug: string,
+    @path workspaceId: WorkspaceId,
     @path contactId: EntityId,
     @body body: SiteApplyTagInput,
   ):
@@ -62,8 +62,9 @@ namespace SiteTags {
   /** Remove a tag from a contact. Idempotent; the tag stays in the catalogue. */
   @route("/contacts/{contactId}/tags/{name}")
   @delete
-  op remove(@path slug: string, @path contactId: EntityId, @path name: string):
-    | NoContentResponse
-    | BadRequestProblem
-    | NotFoundProblem;
+  op remove(
+    @path workspaceId: WorkspaceId,
+    @path contactId: EntityId,
+    @path name: string,
+  ): NoContentResponse | BadRequestProblem | NotFoundProblem;
 }

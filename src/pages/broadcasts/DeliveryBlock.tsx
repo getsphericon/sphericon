@@ -12,26 +12,26 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { Route as broadcastsReportRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/report.tsx'
-import { Route as workspaceRoute } from '../../routes/workspaces/$slug/route.tsx'
+import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
+import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 
 // Send now, schedule and test send for a loaded Broadcast. Sending and scheduling are only
 // possible for drafts; test send works for any status.
 export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { slug } = workspaceRoute.useParams()
+  const { workspaceId } = workspaceRoute.useParams()
   const [scheduledAt, setScheduledAt] = useState('')
   const [testEmail, setTestEmail] = useState('')
 
-  const path = { slug, id: broadcast.id }
+  const path = { workspaceId, id: broadcast.id }
   const isDraft = broadcast.status === 'draft'
   const invalidate = [
-    siteBroadcastsListQueryKey({ path: { slug } }),
+    siteBroadcastsListQueryKey({ path: { workspaceId } }),
     siteBroadcastsGetQueryKey({ path }),
   ]
   const toReport = () =>
-    navigate({ to: broadcastsReportRoute.to, params: { slug, broadcastId: broadcast.id } })
+    navigate({ to: broadcastsReportRoute.to, params: { workspaceId, broadcastId: broadcast.id } })
 
   const sendMutation = useResourceMutation({
     mutation: siteBroadcastsSendMutation(),

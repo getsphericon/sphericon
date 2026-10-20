@@ -108,7 +108,7 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
   }
 
   const info = describe.data
-  const options = (workspaces.data ?? []).map((w) => ({ value: w.slug, label: w.name }))
+  const options = (workspaces.data ?? []).map((w) => ({ value: w.id, label: w.name }))
   const selected = workspaceSlug ?? options[0]?.value ?? null
 
   const submit = (approve: boolean) => {

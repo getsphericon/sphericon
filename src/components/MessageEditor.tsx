@@ -4,7 +4,7 @@ import { lazy, Suspense, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { siteBrandKitGetOptions } from '../generated/site/@tanstack/react-query.gen.ts'
-import { Route as workspaceRoute } from '../routes/workspaces/$slug/route.tsx'
+import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import { brandTheme } from '../utils/brandTheme.ts'
 import type { MessageDoc } from '../utils/messageDoc.ts'
 
@@ -41,10 +41,13 @@ export function MessageEditor({
   const { t } = useTranslation()
   const [asSource] = useState(() => doc === null && body !== '')
   const [initial] = useState(doc)
-  const { slug } = workspaceRoute.useParams()
+  const { workspaceId } = workspaceRoute.useParams()
   // Only a new message is authored in the Brand kit's palette.
   const isNew = !asSource && initial === null
-  const brandKit = useQuery({ ...siteBrandKitGetOptions({ path: { slug } }), enabled: isNew })
+  const brandKit = useQuery({
+    ...siteBrandKitGetOptions({ path: { workspaceId } }),
+    enabled: isNew,
+  })
 
   if (asSource) {
     return (

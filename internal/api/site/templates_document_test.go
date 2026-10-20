@@ -28,13 +28,13 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
 		Name:    "Authored",
 		Subject: siteapi.NewOptString("Hi {{ first_name }}"),
 		Doc:     siteapi.NewOptSiteCreateEmailTemplateInputDoc(paragraphDoc("Hello {{ first_name }}")),
-	}, siteapi.SiteTemplatesCreateParams{Slug: slug})
+	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteEmailTemplateResource)
 	require.Truef(t, ok, "got %T", created)
@@ -52,7 +52,7 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	// Saving another document rebuilds the body.
 	updated, err := c.SiteTemplatesUpdate(ctx, &siteapi.SiteUpdateEmailTemplateInput{
 		Doc: siteapi.NewOptSiteUpdateEmailTemplateInputDoc(paragraphDoc("Second")),
-	}, siteapi.SiteTemplatesUpdateParams{Slug: slug, ID: res.ID})
+	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteEmailTemplateResource)
 	require.Truef(t, ok, "got %T", updated)
@@ -61,13 +61,13 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 
 	// A subject-only write leaves the document alone.
 	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.SiteUpdateEmailTemplateInput{Subject: siteapi.NewOptString("New subject")},
-		siteapi.SiteTemplatesUpdateParams{Slug: slug, ID: res.ID})
+		siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	assert.NotEmpty(t, env.DB.EmailTemplate.GetX(ctx, int64(res.ID)).Doc)
 
 	// A body-only write clears the document and its editor version.
 	cleared, err := c.SiteTemplatesUpdate(ctx, &siteapi.SiteUpdateEmailTemplateInput{Body: siteapi.NewOptString("<p>Plain</p>")},
-		siteapi.SiteTemplatesUpdateParams{Slug: slug, ID: res.ID})
+		siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	clr, ok := cleared.(*siteapi.SiteEmailTemplateResource)
 	require.Truef(t, ok, "got %T", cleared)
@@ -85,7 +85,7 @@ func TestSiteTemplatesWithoutADocumentStayHTMLOnly(t *testing.T) {
 
 	created, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
 		Name: "Html", Body: siteapi.NewOptString("<p>Hi</p>"),
-	}, siteapi.SiteTemplatesCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteEmailTemplateResource)
 	require.Truef(t, ok, "got %T", created)
@@ -99,7 +99,7 @@ func TestSiteTemplatesRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	slug := fixtures.AcmeSlug
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 	welcome := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
 
@@ -109,7 +109,7 @@ func TestSiteTemplatesRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	}
 	created, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
 		Name: "Bad", Doc: siteapi.NewOptSiteCreateEmailTemplateInputDoc(badLevel),
-	}, siteapi.SiteTemplatesCreateParams{Slug: slug})
+	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refused, ok := created.(*siteapi.SiteTemplatesCreateUnprocessableEntity)
 	require.Truef(t, ok, "got %T", created)
@@ -119,7 +119,7 @@ func TestSiteTemplatesRefuseADocumentThatCannotBeRendered(t *testing.T) {
 	notADoc := map[string]jx.Raw{"type": jx.Raw(`"nope"`)}
 	updated, err := c.SiteTemplatesUpdate(ctx, &siteapi.SiteUpdateEmailTemplateInput{
 		Name: siteapi.NewOptString("Renamed"), Doc: siteapi.NewOptSiteUpdateEmailTemplateInputDoc(notADoc),
-	}, siteapi.SiteTemplatesUpdateParams{Slug: slug, ID: idStr(fixtures.TemplateWelcomeID)})
+	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.TemplateWelcomeID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTemplatesUpdateUnprocessableEntity{}, updated)
 	after := env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID)
@@ -134,7 +134,7 @@ func TestSiteTemplatesRefuseABodyAndADocumentTogether(t *testing.T) {
 	created, err := c.SiteTemplatesCreate(context.Background(), &siteapi.SiteCreateEmailTemplateInput{
 		Name: "Both", Body: siteapi.NewOptString("<p>x</p>"),
 		Doc: siteapi.NewOptSiteCreateEmailTemplateInputDoc(paragraphDoc("x")),
-	}, siteapi.SiteTemplatesCreateParams{Slug: fixtures.AcmeSlug})
+	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTemplatesCreateUnprocessableEntity{}, created)
 }

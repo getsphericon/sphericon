@@ -36,9 +36,9 @@ func TestSiteBrandKitFirstSaveIsAtomicWithItsStarterTemplates(t *testing.T) {
 	})
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 
-	_, err := c.SiteBrandKitSave(ctx, brandKitInput(), siteapi.SiteBrandKitSaveParams{Slug: fixtures.VandelaySlug})
+	_, err := c.SiteBrandKitSave(ctx, brandKitInput(), siteapi.SiteBrandKitSaveParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.Error(t, err)
 
-	assert.False(t, getBrandKit(t, c, fixtures.VandelaySlug).Saved, "no Brand kit without its starters")
+	assert.False(t, getBrandKit(t, c, fixtures.VandelayPublicID).Saved, "no Brand kit without its starters")
 	assert.Equal(t, before, s.EmailTemplate().Query().CountX(ctx), "no starter Template without the Brand kit")
 }

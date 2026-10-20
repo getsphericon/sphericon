@@ -20,7 +20,7 @@ func TestSiteSendingDomainsCreateNormalizesAndValidatesNames(t *testing.T) {
 	ctx := context.Background()
 	create := func(domain string) siteapi.SiteSendingDomainsCreateRes {
 		res, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: domain},
-			siteapi.SiteSendingDomainsCreateParams{Slug: fixtures.AcmeSlug})
+			siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
 		return res
 	}

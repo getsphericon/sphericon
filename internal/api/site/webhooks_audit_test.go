@@ -19,7 +19,7 @@ func TestWebhookEndpointSelectsAuditEntryOnlyUnderLicense(t *testing.T) {
 	create := func(env *testhelper.TestEnv) siteapi.SiteWebhooksCreateRes {
 		res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksCreate(ctx,
 			&siteapi.SiteCreateWebhookEndpointInput{URL: "https://x.test/audit", EventTypes: []string{"audit.entry"}},
-			siteapi.SiteWebhooksCreateParams{Slug: fixtures.AcmeSlug})
+			siteapi.SiteWebhooksCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
 		return res
 	}
@@ -30,7 +30,7 @@ func TestWebhookEndpointSelectsAuditEntryOnlyUnderLicense(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksUpdate(ctx,
 		&siteapi.SiteUpdateWebhookEndpointInput{EventTypes: []string{"audit.entry"}},
-		siteapi.SiteWebhooksUpdateParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.WebhookCodebasicsID)})
+		siteapi.SiteWebhooksUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksUpdateUnprocessableEntity), res)
 }

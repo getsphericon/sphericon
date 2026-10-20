@@ -43,16 +43,16 @@ const PAGE_SIZE = 20
 // complaints land here automatically; destinations can also be added manually.
 // The send path skips every destination listed here. (Unsubscribes are a
 // separate, per-source opt-out, not a suppression.)
-export function SuppressionsSection({ slug }: { slug: string }) {
+export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
   const [page, pageHandlers] = useCounter(1, { min: 1 })
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
 
-  const queryKey = siteSuppressionsListQueryKey({ path: { slug } })
+  const queryKey = siteSuppressionsListQueryKey({ path: { workspaceId } })
   const suppressionsQuery = useQuery(
     siteSuppressionsListOptions({
-      path: { slug },
+      path: { workspaceId },
       query: { page, pageSize: PAGE_SIZE },
     }),
   )
@@ -79,7 +79,7 @@ export function SuppressionsSection({ slug }: { slug: string }) {
   const onDelete = (id: string) =>
     confirmDelete({
       title: t(($) => $.settings.suppressions.deleteConfirmTitle),
-      onConfirm: () => deleteMutation.mutate({ path: { slug, id } }),
+      onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
     })
 
   const records = suppressionsQuery.data?.items ?? []
@@ -144,7 +144,7 @@ export function SuppressionsSection({ slug }: { slug: string }) {
         <form
           onSubmit={form.onSubmit((values) =>
             createMutation.mutate({
-              path: { slug },
+              path: { workspaceId },
               body: { destination: values.destination.trim() },
             }),
           )}

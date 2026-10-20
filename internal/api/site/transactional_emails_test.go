@@ -37,7 +37,7 @@ func TestSiteTransactionalEmailsList(t *testing.T) {
 	seedTransactional(t, env.DB, fixtures.GlobexID, "leak@example.com", outboundmessage.StatusSent)
 
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	res, err := c.SiteTransactionalEmailsList(ctx, siteapi.SiteTransactionalEmailsListParams{Slug: fixtures.AcmeSlug})
+	res, err := c.SiteTransactionalEmailsList(ctx, siteapi.SiteTransactionalEmailsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
 	page, ok := res.(*siteapi.SiteTransactionalEmailsListOK)
@@ -53,6 +53,6 @@ func TestSiteTransactionalEmailsRequireAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteAnonymous(t)
 
-	_, err := c.SiteTransactionalEmailsList(context.Background(), siteapi.SiteTransactionalEmailsListParams{Slug: fixtures.AcmeSlug})
+	_, err := c.SiteTransactionalEmailsList(context.Background(), siteapi.SiteTransactionalEmailsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.Error(t, err)
 }

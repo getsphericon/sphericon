@@ -12,21 +12,21 @@ import {
 } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
-import { Route as activityRoute } from '../routes/workspaces/$slug/activity.tsx'
-import { Route as automationsRoute } from '../routes/workspaces/$slug/automations/index.tsx'
-import { Route as broadcastsRoute } from '../routes/workspaces/$slug/broadcasts/index.tsx'
-import { Route as contactsRoute } from '../routes/workspaces/$slug/contacts/index.tsx'
-import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
-import { Route as segmentsRoute } from '../routes/workspaces/$slug/segments/index.tsx'
-import { Route as settingsRoute } from '../routes/workspaces/$slug/settings/index.tsx'
-import { Route as templatesRoute } from '../routes/workspaces/$slug/templates/index.tsx'
-import { Route as transactionalEmailsRoute } from '../routes/workspaces/$slug/transactional-emails/index.tsx'
+import { Route as activityRoute } from '../routes/workspaces/$workspaceId/activity.tsx'
+import { Route as automationsRoute } from '../routes/workspaces/$workspaceId/automations/index.tsx'
+import { Route as broadcastsRoute } from '../routes/workspaces/$workspaceId/broadcasts/index.tsx'
+import { Route as contactsRoute } from '../routes/workspaces/$workspaceId/contacts/index.tsx'
+import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as segmentsRoute } from '../routes/workspaces/$workspaceId/segments/index.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { Route as templatesRoute } from '../routes/workspaces/$workspaceId/templates/index.tsx'
+import { Route as transactionalEmailsRoute } from '../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { NavLinkLink } from './RouterLink.tsx'
 
 // AppNavbar renders the workspace-scoped sidebar: one link per section, active on the
 // section's route or anything under it (the overview only on itself). The router's own active
 // state drives the highlight: Mantine styles `aria-current="page"`, which the router sets.
-export function AppNavbar({ slug }: { slug: string }) {
+export function AppNavbar({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
 
   const sections = [
@@ -92,7 +92,7 @@ export function AppNavbar({ slug }: { slug: string }) {
         <NavLinkLink
           key={route.to}
           to={route.to}
-          params={{ slug }}
+          params={{ workspaceId }}
           label={label}
           leftSection={icon}
           activeOptions={{ exact }}

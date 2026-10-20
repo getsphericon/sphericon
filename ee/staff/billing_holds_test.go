@@ -45,7 +45,7 @@ func TestTheConsoleAndTheOwnerTellABillingHoldFromAnotherHold(t *testing.T) {
 	require.NoError(t, err)
 	var checked bool
 	for _, w := range list {
-		if w.Slug != fixtures.AcmeSlug {
+		if w.ID != fixtures.AcmePublicID {
 			continue
 		}
 		checked = true
@@ -83,7 +83,7 @@ func TestABillingHoldInTheAuditLogIsBillingActivityUnderTheCredential(t *testing
 	require.Len(t, consoleOther, 1)
 	assert.False(t, consoleOther[0].Billing)
 
-	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{Slug: fixtures.AcmeSlug})
+	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	var seen int
 	for _, e := range res.(*siteapi.SiteAuditEntryList).Items {

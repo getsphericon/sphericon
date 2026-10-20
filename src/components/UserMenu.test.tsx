@@ -3,7 +3,7 @@ import { expect, test, vi } from 'vitest'
 
 import { handleSiteAuthLogout, handleSiteWorkspacesAccountLink } from '../generated/site/msw.gen.ts'
 import { Route as profileRoute } from '../routes/account/index.tsx'
-import { Route as settingsRoute } from '../routes/workspaces/$slug/settings/index.tsx'
+import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { worker } from '../test/worker.ts'
@@ -17,7 +17,7 @@ test('logout calls the site logout operation and navigates to login', async () =
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen, navigate } = await renderWithRouter(<UserMenu slug="acme" />)
+  const { screen, navigate } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
 
   await screen.getByRole('button').click()
   await screen.getByText('Sign out').click()
@@ -35,7 +35,7 @@ test('shows workspace settings only when a workspace is active', async () => {
 })
 
 test('profile item links to the profile page', async () => {
-  const { screen } = await renderWithRouter(<UserMenu slug="acme" />)
+  const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
   await screen.getByRole('button').click()
 
   await expect
@@ -43,18 +43,18 @@ test('profile item links to the profile page', async () => {
     .toHaveAttribute('href', routeMount(profileRoute).initialPath)
 })
 
-test('workspace settings item links with the active slug', async () => {
-  const { screen } = await renderWithRouter(<UserMenu slug="acme" />)
+test('workspace settings item links with the active workspaceId', async () => {
+  const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
   await screen.getByRole('button').click()
 
   await expect
     .element(screen.getByRole('menuitem', { name: 'Workspace settings' }))
-    .toHaveAttribute('href', routeMount(settingsRoute, { slug: 'acme' }).initialPath)
+    .toHaveAttribute('href', routeMount(settingsRoute, { workspaceId: 'AcmeWs01' }).initialPath)
 })
 
 test('a failed logout shows an error and stays put', async () => {
   worker.use(handleSiteAuthLogout(() => HttpResponse.error()))
-  const { screen, navigate } = await renderWithRouter(<UserMenu slug="acme" />)
+  const { screen, navigate } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
   await screen.getByRole('button').click()
   await screen.getByText('Sign out').click()
 
@@ -70,7 +70,7 @@ test('shows the label and its initial in the avatar when given', async () => {
 })
 
 test('the account link item is absent unless the workspace offers it', async () => {
-  const { screen } = await renderWithRouter(<UserMenu slug="acme" />)
+  const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" />)
   await screen.getByRole('button', { expanded: false }).click()
 
   await expect.element(screen.getByText('Profile')).toBeInTheDocument()
@@ -80,7 +80,7 @@ test('the account link item is absent unless the workspace offers it', async () 
 test('a failed account link shows an error and opens nothing', async () => {
   worker.use(handleSiteWorkspacesAccountLink(() => HttpResponse.error()))
   const open = vi.spyOn(window, 'open').mockReturnValue(null)
-  const { screen } = await renderWithRouter(<UserMenu slug="acme" accountLink />)
+  const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" accountLink />)
   await screen.getByRole('button', { expanded: false }).click()
   await screen.getByText('Account', { exact: true }).click()
 
@@ -100,7 +100,7 @@ test('the account link item opens the external page with the token', async () =>
     }),
   )
   const open = vi.spyOn(window, 'open').mockReturnValue(null)
-  const { screen } = await renderWithRouter(<UserMenu slug="acme" accountLink />)
+  const { screen } = await renderWithRouter(<UserMenu workspaceId="AcmeWs01" accountLink />)
   await screen.getByRole('button', { expanded: false }).click()
   await screen.getByText('Account', { exact: true }).click()
 

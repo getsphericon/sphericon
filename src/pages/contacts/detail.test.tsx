@@ -21,8 +21,8 @@ import type {
   SiteMembershipResource,
   SiteMembershipRole,
 } from '../../generated/site/types.gen.ts'
-import { Route as contactsDetailRoute } from '../../routes/workspaces/$slug/contacts/$contactId/index.tsx'
-import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
+import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
+import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithProviders } from '../../test/renderWithProviders.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -38,7 +38,7 @@ vi.mock('file-saver', () => ({
   },
 }))
 
-const DETAIL_ROUTE = routeMount(contactsDetailRoute, { slug: 'test', contactId: '9' })
+const DETAIL_ROUTE = routeMount(contactsDetailRoute, { workspaceId: 'TestWs01', contactId: '9' })
 const NOW = '2026-01-01T00:00:00Z'
 
 const ADA: SiteContactResource = {
@@ -167,7 +167,7 @@ test('moving to another contact resets the events page to the first', async () =
 
   await router.navigate({
     to: contactsDetailRoute.to,
-    params: { slug: 'test', contactId: '10' },
+    params: { workspaceId: 'TestWs01', contactId: '10' },
   })
 
   await expect
@@ -224,7 +224,7 @@ test('an admin erases a contact only after confirming the irreversible action', 
   await expect.poll(() => erased).toEqual(['9'])
   await expect
     .poll(() => navigate.mock.calls.at(-1)?.[0])
-    .toMatchObject({ to: contactsRoute.to, params: { slug: 'test' } })
+    .toMatchObject({ to: contactsRoute.to, params: { workspaceId: 'TestWs01' } })
 })
 
 test('exporting a contact saves the document under the filename the server suggested', async () => {

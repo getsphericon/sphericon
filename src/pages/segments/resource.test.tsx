@@ -15,8 +15,8 @@ import {
   handleSiteSegmentsUpdate,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSegmentRuleGroup } from '../../generated/site/types.gen.ts'
-import { Route as segmentsEditRoute } from '../../routes/workspaces/$slug/segments/$segmentId/edit.tsx'
-import { Route as segmentsCreateRoute } from '../../routes/workspaces/$slug/segments/new.tsx'
+import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
+import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
 import { page } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -30,19 +30,19 @@ const RULE: SiteSegmentRuleGroup = {
   rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
 }
 
-const CREATE_ROUTE = routeMount(segmentsCreateRoute, { slug: 'test' })
+const CREATE_ROUTE = routeMount(segmentsCreateRoute, { workspaceId: 'TestWs01' })
 
-const EDIT_ROUTE = routeMount(segmentsEditRoute, { slug: 'test', segmentId: '7' })
+const EDIT_ROUTE = routeMount(segmentsEditRoute, { workspaceId: 'TestWs01', segmentId: '7' })
 
 // Stands in for the segments list screen: an active list query, so invalidation after a save
 // is observable as a refetch.
 function ListProbe() {
-  useQuery(siteSegmentsListOptions({ path: { slug: 'test' } }))
+  useQuery(siteSegmentsListOptions({ path: { workspaceId: 'TestWs01' } }))
   return null
 }
 
 function DetailProbe() {
-  useQuery(siteSegmentsGetOptions({ path: { slug: 'test', id: '7' } }))
+  useQuery(siteSegmentsGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
   return null
 }
 
@@ -91,7 +91,7 @@ test('creating a segment sends name and a rule, refreshes the list and opens the
   await expect.poll(() => listFetches).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { slug: 'test', segmentId: '42' },
+    params: { workspaceId: 'TestWs01', segmentId: '42' },
   })
 })
 

@@ -1,12 +1,12 @@
 import { expect, test } from 'vitest'
 
-import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
-import { Route as developersRoute } from '../routes/workspaces/$slug/settings/developers.tsx'
-import { Route as generalRoute } from '../routes/workspaces/$slug/settings/index.tsx'
-import { Route as mcpRoute } from '../routes/workspaces/$slug/settings/mcp.tsx'
-import { Route as sendingRoute } from '../routes/workspaces/$slug/settings/sending.tsx'
-import { Route as teamRoute } from '../routes/workspaces/$slug/settings/team.tsx'
-import { Route as trackingRoute } from '../routes/workspaces/$slug/settings/tracking.tsx'
+import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
+import { Route as developersRoute } from '../routes/workspaces/$workspaceId/settings/developers.tsx'
+import { Route as generalRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { Route as mcpRoute } from '../routes/workspaces/$workspaceId/settings/mcp.tsx'
+import { Route as sendingRoute } from '../routes/workspaces/$workspaceId/settings/sending.tsx'
+import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
+import { Route as trackingRoute } from '../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { SettingsNavbar } from './SettingsNavbar.tsx'
@@ -22,17 +22,17 @@ const LINKS = [
 ] as const
 
 test.each(LINKS)('%s links to its workspace-scoped route', async (label, target) => {
-  const { screen } = await renderWithRouter(<SettingsNavbar slug="acme" />)
+  const { screen } = await renderWithRouter(<SettingsNavbar workspaceId="AcmeWs01" />)
 
   await expect
     .element(screen.getByRole('link', { name: label, exact: true }))
-    .toHaveAttribute('href', routeMount(target, { slug: 'acme' }).initialPath)
+    .toHaveAttribute('href', routeMount(target, { workspaceId: 'AcmeWs01' }).initialPath)
 })
 
 test('General is not current on a page under settings', async () => {
   const { screen } = await renderWithRouter(
-    <SettingsNavbar slug="acme" />,
-    routeMount(teamRoute, { slug: 'acme' }),
+    <SettingsNavbar workspaceId="AcmeWs01" />,
+    routeMount(teamRoute, { workspaceId: 'AcmeWs01' }),
   )
 
   await expect

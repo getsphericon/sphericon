@@ -118,14 +118,14 @@ model SiteAnalyticsOverview {
 
 // Not a CRUD resource — a single workspace-scoped aggregate with no key, so it
 // keeps an explicit nested route rather than @parentResource/@autoRoute.
-@route("/workspaces/{slug}/analytics")
+@route("/workspaces/{workspaceId}/analytics")
 @tag("Site Analytics")
 namespace SiteAnalytics {
   /** Aggregate metrics for the workspace dashboard */
   @get
   @route("/overview")
   op overview(
-    @path slug: string,
+    @path workspaceId: WorkspaceId,
 
     /** Window to aggregate over (defaults to 30d) */
     @query range?: SiteAnalyticsRange,

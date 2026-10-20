@@ -994,8 +994,7 @@ export const zSiteUpdateWebhookEndpointInput = z.object({
 });
 
 /**
- * Update a workspace. The slug is immutable (it is the route key and globally
- * unique); the display name and the CAN-SPAM postal address can change.
+ * Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change.
  */
 export const zSiteUpdateWorkspaceInput = z.object({
   name: z.string(),
@@ -1616,10 +1615,8 @@ export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
  * Workspace the current user belongs to
  */
 export const zSiteWorkspaceResource = z.object({
-  id: zEntityId,
-  publicId: zWorkspaceId,
+  id: zWorkspaceId,
   name: z.string(),
-  slug: z.string(),
   collectKey: z.string(),
   postalAddress: z.string(),
   role: zSiteMembershipRole,
@@ -1704,14 +1701,16 @@ export const zPageQueryPageSize = z.int().min(-2147483648, { error: 'Invalid val
 export const zSiteApiTokenResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteApiTokenResourceKeySlug = z.string();
+export const zSiteApiTokenResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteApiTokenResourceParentKey = z.string();
+export const zSiteApiTokenResourceParentKey = zWorkspaceId;
 
 /**
  * Only entries with exactly this action, e.g. membership.update
@@ -1764,14 +1763,16 @@ export const zSiteAuditFilterTo = zTimestamp;
 export const zSiteAutomationResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteAutomationResourceKeySlug = z.string();
+export const zSiteAutomationResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteAutomationResourceParentKey = z.string();
+export const zSiteAutomationResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1779,14 +1780,16 @@ export const zSiteAutomationResourceParentKey = z.string();
 export const zSiteBroadcastResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteBroadcastResourceKeySlug = z.string();
+export const zSiteBroadcastResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteBroadcastResourceParentKey = z.string();
+export const zSiteBroadcastResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1794,19 +1797,22 @@ export const zSiteBroadcastResourceParentKey = z.string();
 export const zSiteContactResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteContactResourceKeySlug = z.string();
+export const zSiteContactResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteContactResourceParentKey = z.string();
+export const zSiteContactResourceParentKey = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteCustomFieldResourceParentKey = z.string();
+export const zSiteCustomFieldResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1814,19 +1820,22 @@ export const zSiteCustomFieldResourceParentKey = z.string();
 export const zSiteEmailTemplateResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteEmailTemplateResourceKeySlug = z.string();
+export const zSiteEmailTemplateResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteEmailTemplateResourceParentKey = z.string();
+export const zSiteEmailTemplateResourceParentKey = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteEventResourceParentKey = z.string();
+export const zSiteEventResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1834,14 +1843,16 @@ export const zSiteEventResourceParentKey = z.string();
 export const zSiteIntegrationResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteIntegrationResourceKeySlug = z.string();
+export const zSiteIntegrationResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteIntegrationResourceParentKey = z.string();
+export const zSiteIntegrationResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1849,14 +1860,16 @@ export const zSiteIntegrationResourceParentKey = z.string();
 export const zSiteInvitationResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteInvitationResourceKeySlug = z.string();
+export const zSiteInvitationResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteInvitationResourceParentKey = z.string();
+export const zSiteInvitationResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1864,14 +1877,16 @@ export const zSiteInvitationResourceParentKey = z.string();
 export const zSiteMembershipResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteMembershipResourceKeySlug = z.string();
+export const zSiteMembershipResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteMembershipResourceParentKey = z.string();
+export const zSiteMembershipResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1879,14 +1894,16 @@ export const zSiteMembershipResourceParentKey = z.string();
 export const zSiteSegmentResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteSegmentResourceKeySlug = z.string();
+export const zSiteSegmentResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteSegmentResourceParentKey = z.string();
+export const zSiteSegmentResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1894,14 +1911,16 @@ export const zSiteSegmentResourceParentKey = z.string();
 export const zSiteSendingDomainResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteSendingDomainResourceKeySlug = z.string();
+export const zSiteSendingDomainResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteSendingDomainResourceParentKey = z.string();
+export const zSiteSendingDomainResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1909,19 +1928,22 @@ export const zSiteSendingDomainResourceParentKey = z.string();
 export const zSiteSuppressionResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteSuppressionResourceKeySlug = z.string();
+export const zSiteSuppressionResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteSuppressionResourceParentKey = z.string();
+export const zSiteSuppressionResourceParentKey = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteTransactionalEmailResourceParentKey = z.string();
+export const zSiteTransactionalEmailResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -1929,14 +1951,16 @@ export const zSiteTransactionalEmailResourceParentKey = z.string();
 export const zSiteWebhookEndpointResourceKeyId = zEntityId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteWebhookEndpointResourceKeySlug = z.string();
+export const zSiteWebhookEndpointResourceKeyWorkspaceId = zWorkspaceId;
 
 /**
- * URL-safe unique slug; the route key for nested workspace resources
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
  */
-export const zSiteWebhookEndpointResourceParentKey = z.string();
+export const zSiteWebhookEndpointResourceParentKey = zWorkspaceId;
 
 export const zSiteAuthConfirmEmailChangeBody = zSiteConfirmEmailChangeInput;
 
@@ -2107,7 +2131,7 @@ export const zSiteWorkspacesListResponse = z.array(zSiteWorkspaceResource);
 export const zSiteWorkspacesUpdateBody = zSiteUpdateWorkspaceInput;
 
 export const zSiteWorkspacesUpdatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2116,7 +2140,7 @@ export const zSiteWorkspacesUpdatePath = z.object({
 export const zSiteWorkspacesUpdateResponse = zSiteWorkspaceResource;
 
 export const zSiteWorkspacesAccountLinkPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2125,7 +2149,7 @@ export const zSiteWorkspacesAccountLinkPath = z.object({
 export const zSiteWorkspacesAccountLinkResponse = zSiteAccountLinkResource;
 
 export const zSiteAnalyticsOverviewPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteAnalyticsOverviewQuery = z.object({
@@ -2138,7 +2162,7 @@ export const zSiteAnalyticsOverviewQuery = z.object({
 export const zSiteAnalyticsOverviewResponse = zSiteAnalyticsOverview;
 
 export const zSiteAuditListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteAuditListQuery = z.object({
@@ -2161,7 +2185,7 @@ export const zSiteAuditListQuery = z.object({
 export const zSiteAuditListResponse = zSiteAuditEntryList;
 
 export const zSiteAuditExportPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteAuditExportQuery = z.object({
@@ -2182,7 +2206,7 @@ export const zSiteAuditExportQuery = z.object({
 export const zSiteAuditExportResponse = z.string();
 
 export const zSiteAuditGetRetentionPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2193,7 +2217,7 @@ export const zSiteAuditGetRetentionResponse = zSiteAuditRetention;
 export const zSiteAuditSetRetentionBody = zSiteAuditRetention;
 
 export const zSiteAuditSetRetentionPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2202,7 +2226,7 @@ export const zSiteAuditSetRetentionPath = z.object({
 export const zSiteAuditSetRetentionResponse = zSiteAuditRetention;
 
 export const zSiteAutomationsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteAutomationsListQuery = z.object({
@@ -2224,7 +2248,7 @@ export const zSiteAutomationsListResponse = z.object({
 export const zSiteAutomationsCreateBody = zSiteCreateAutomationInput;
 
 export const zSiteAutomationsCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2235,7 +2259,7 @@ export const zSiteAutomationsCreateResponse = zSiteAutomationResource;
 export const zSiteAutomationsDryRunHttpStepBody = zSiteDryRunHttpStepInput;
 
 export const zSiteAutomationsDryRunHttpStepPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2244,7 +2268,7 @@ export const zSiteAutomationsDryRunHttpStepPath = z.object({
 export const zSiteAutomationsDryRunHttpStepResponse = zSiteDryRunHttpStepResult;
 
 export const zSiteEnrollmentsListPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   automationId: zEntityId
 });
 
@@ -2266,7 +2290,7 @@ export const zSiteEnrollmentsListResponse = z.object({
 });
 
 export const zSiteEnrollmentsGetPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   automationId: zEntityId,
   enrollmentId: zEntityId
 });
@@ -2277,7 +2301,7 @@ export const zSiteEnrollmentsGetPath = z.object({
 export const zSiteEnrollmentsGetResponse = zSiteEnrollmentResource;
 
 export const zSiteAutomationsDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2287,7 +2311,7 @@ export const zSiteAutomationsDeletePath = z.object({
 export const zSiteAutomationsDeleteResponse = z.void();
 
 export const zSiteAutomationsGetPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2299,7 +2323,7 @@ export const zSiteAutomationsGetResponse = zSiteAutomationResource;
 export const zSiteAutomationsUpdateBody = zSiteUpdateAutomationInput;
 
 export const zSiteAutomationsUpdatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2309,7 +2333,7 @@ export const zSiteAutomationsUpdatePath = z.object({
 export const zSiteAutomationsUpdateResponse = zSiteAutomationResource;
 
 export const zSiteAutomationsActivatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2319,7 +2343,7 @@ export const zSiteAutomationsActivatePath = z.object({
 export const zSiteAutomationsActivateResponse = zSiteAutomationResource;
 
 export const zSiteAutomationsDeactivatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2329,7 +2353,7 @@ export const zSiteAutomationsDeactivatePath = z.object({
 export const zSiteAutomationsDeactivateResponse = zSiteAutomationResource;
 
 export const zSiteBrandKitGetPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2340,7 +2364,7 @@ export const zSiteBrandKitGetResponse = zSiteBrandKitResource;
 export const zSiteBrandKitSaveBody = zSiteSaveBrandKitInput;
 
 export const zSiteBrandKitSavePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2349,7 +2373,7 @@ export const zSiteBrandKitSavePath = z.object({
 export const zSiteBrandKitSaveResponse = zSiteBrandKitResource;
 
 export const zSiteBrandKitRecreateStarterTemplatesPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2358,7 +2382,7 @@ export const zSiteBrandKitRecreateStarterTemplatesPath = z.object({
 export const zSiteBrandKitRecreateStarterTemplatesResponse = z.array(zSiteEmailTemplateResource);
 
 export const zSiteBroadcastsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteBroadcastsListQuery = z.object({
@@ -2380,7 +2404,7 @@ export const zSiteBroadcastsListResponse = z.object({
 export const zSiteBroadcastsCreateBody = zSiteCreateBroadcastInput;
 
 export const zSiteBroadcastsCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2389,7 +2413,7 @@ export const zSiteBroadcastsCreatePath = z.object({
 export const zSiteBroadcastsCreateResponse = zSiteBroadcastResource;
 
 export const zSiteBroadcastsDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2399,7 +2423,7 @@ export const zSiteBroadcastsDeletePath = z.object({
 export const zSiteBroadcastsDeleteResponse = z.void();
 
 export const zSiteBroadcastsGetPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2411,7 +2435,7 @@ export const zSiteBroadcastsGetResponse = zSiteBroadcastResource;
 export const zSiteBroadcastsUpdateBody = zSiteUpdateBroadcastInput;
 
 export const zSiteBroadcastsUpdatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2423,7 +2447,7 @@ export const zSiteBroadcastsUpdateResponse = zSiteBroadcastResource;
 export const zSiteBroadcastsScheduleBody = zSiteScheduleBroadcastInput;
 
 export const zSiteBroadcastsSchedulePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2433,7 +2457,7 @@ export const zSiteBroadcastsSchedulePath = z.object({
 export const zSiteBroadcastsScheduleResponse = zSiteBroadcastResource;
 
 export const zSiteBroadcastsSendPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2445,7 +2469,7 @@ export const zSiteBroadcastsSendResponse = zSiteBroadcastResource;
 export const zSiteBroadcastsTestSendBody = zSiteTestSendBroadcastInput;
 
 export const zSiteBroadcastsTestSendPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2455,7 +2479,7 @@ export const zSiteBroadcastsTestSendPath = z.object({
 export const zSiteBroadcastsTestSendResponse = zSiteTestSendBroadcastResult;
 
 export const zSiteContactsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteContactsListQuery = z.object({
@@ -2477,7 +2501,7 @@ export const zSiteContactsListResponse = z.object({
 export const zSiteContactsCreateBody = zSiteCreateContactInput;
 
 export const zSiteContactsCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2486,7 +2510,7 @@ export const zSiteContactsCreatePath = z.object({
 export const zSiteContactsCreateResponse = zSiteContactResource;
 
 export const zSiteContactsExportPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteContactsExportQuery = z.object({
@@ -2500,7 +2524,7 @@ export const zSiteContactsExportQuery = z.object({
 export const zSiteContactsExportResponse = zContactExportDocument;
 
 export const zSiteTagsListForContactPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   contactId: zEntityId
 });
 
@@ -2523,7 +2547,7 @@ export const zSiteTagsListForContactResponse = z.object({
 export const zSiteTagsApplyBody = zSiteApplyTagInput;
 
 export const zSiteTagsApplyPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   contactId: zEntityId
 });
 
@@ -2533,7 +2557,7 @@ export const zSiteTagsApplyPath = z.object({
 export const zSiteTagsApplyResponse = zSiteTagResource;
 
 export const zSiteTagsRemovePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   contactId: zEntityId,
   name: z.string()
 });
@@ -2544,7 +2568,7 @@ export const zSiteTagsRemovePath = z.object({
 export const zSiteTagsRemoveResponse = z.void();
 
 export const zSiteContactsDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2554,7 +2578,7 @@ export const zSiteContactsDeletePath = z.object({
 export const zSiteContactsDeleteResponse = z.void();
 
 export const zSiteContactsGetPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2566,7 +2590,7 @@ export const zSiteContactsGetResponse = zSiteContactResource;
 export const zSiteContactsUpdateBody = zSiteUpdateContactInput;
 
 export const zSiteContactsUpdatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2576,7 +2600,7 @@ export const zSiteContactsUpdatePath = z.object({
 export const zSiteContactsUpdateResponse = zSiteContactResource;
 
 export const zSiteCustomFieldsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2591,7 +2615,7 @@ export const zSiteCustomFieldsListResponse = z.object({
 });
 
 export const zSiteEventsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteEventsListQuery = z.object({
@@ -2614,7 +2638,7 @@ export const zSiteEventsListResponse = z.object({
 });
 
 export const zSiteEventsActionsPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2623,7 +2647,7 @@ export const zSiteEventsActionsPath = z.object({
 export const zSiteEventsActionsResponse = zSiteEventActionsResult;
 
 export const zSiteIntegrationsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2634,7 +2658,7 @@ export const zSiteIntegrationsListResponse = z.array(zSiteIntegrationResource);
 export const zSiteIntegrationsCreateBody = zSiteCreateIntegrationInput;
 
 export const zSiteIntegrationsCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2643,7 +2667,7 @@ export const zSiteIntegrationsCreatePath = z.object({
 export const zSiteIntegrationsCreateResponse = zSiteIntegrationResource;
 
 export const zSiteIntegrationsDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2653,7 +2677,7 @@ export const zSiteIntegrationsDeletePath = z.object({
 export const zSiteIntegrationsDeleteResponse = z.void();
 
 export const zSiteIntegrationsGetPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2665,7 +2689,7 @@ export const zSiteIntegrationsGetResponse = zSiteIntegrationResource;
 export const zSiteIntegrationsUpdateBody = zSiteUpdateIntegrationInput;
 
 export const zSiteIntegrationsUpdatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2675,7 +2699,7 @@ export const zSiteIntegrationsUpdatePath = z.object({
 export const zSiteIntegrationsUpdateResponse = zSiteIntegrationResource;
 
 export const zSiteIntegrationsRegenerateKeyPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2685,7 +2709,7 @@ export const zSiteIntegrationsRegenerateKeyPath = z.object({
 export const zSiteIntegrationsRegenerateKeyResponse = zSiteIntegrationResource;
 
 export const zSiteInvitationsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2696,7 +2720,7 @@ export const zSiteInvitationsListResponse = z.array(zSiteInvitationResource);
 export const zSiteInvitationsCreateBody = zSiteCreateInvitationInput;
 
 export const zSiteInvitationsCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2705,7 +2729,7 @@ export const zSiteInvitationsCreatePath = z.object({
 export const zSiteInvitationsCreateResponse = zSiteCreateInvitationResponse;
 
 export const zSiteInvitationsDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2715,7 +2739,7 @@ export const zSiteInvitationsDeletePath = z.object({
 export const zSiteInvitationsDeleteResponse = z.void();
 
 export const zSiteMembershipsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2724,7 +2748,7 @@ export const zSiteMembershipsListPath = z.object({
 export const zSiteMembershipsListResponse = z.array(zSiteMembershipResource);
 
 export const zSiteMembershipsDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2736,7 +2760,7 @@ export const zSiteMembershipsDeleteResponse = z.void();
 export const zSiteMembershipsUpdateBody = zSiteUpdateMembershipInput;
 
 export const zSiteMembershipsUpdatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2746,7 +2770,7 @@ export const zSiteMembershipsUpdatePath = z.object({
 export const zSiteMembershipsUpdateResponse = zSiteMembershipResource;
 
 export const zSiteMembershipsResetSecondFactorPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2758,7 +2782,7 @@ export const zSiteMembershipsResetSecondFactorResponse = z.void();
 export const zSiteWorkspacesSetSecondFactorRequirementBody = zSiteSecondFactorRequirementInput;
 
 export const zSiteWorkspacesSetSecondFactorRequirementPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2767,7 +2791,7 @@ export const zSiteWorkspacesSetSecondFactorRequirementPath = z.object({
 export const zSiteWorkspacesSetSecondFactorRequirementResponse = zSiteWorkspaceResource;
 
 export const zSiteSegmentsDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2777,7 +2801,7 @@ export const zSiteSegmentsDeletePath = z.object({
 export const zSiteSegmentsDeleteResponse = z.void();
 
 export const zSiteSendingDomainsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteSendingDomainsListQuery = z.object({
@@ -2799,7 +2823,7 @@ export const zSiteSendingDomainsListResponse = z.object({
 export const zSiteSendingDomainsCreateBody = zSiteCreateSendingDomainInput;
 
 export const zSiteSendingDomainsCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2808,7 +2832,7 @@ export const zSiteSendingDomainsCreatePath = z.object({
 export const zSiteSendingDomainsCreateResponse = zSiteSendingDomainResource;
 
 export const zSiteSendingDomainsDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2818,7 +2842,7 @@ export const zSiteSendingDomainsDeletePath = z.object({
 export const zSiteSendingDomainsDeleteResponse = z.void();
 
 export const zSiteSendingDomainsGetPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2828,7 +2852,7 @@ export const zSiteSendingDomainsGetPath = z.object({
 export const zSiteSendingDomainsGetResponse = zSiteSendingDomainResource;
 
 export const zSiteSendingDomainsVerifyPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2838,7 +2862,7 @@ export const zSiteSendingDomainsVerifyPath = z.object({
 export const zSiteSendingDomainsVerifyResponse = z.void();
 
 export const zSiteSetupChecklistGetPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2847,7 +2871,7 @@ export const zSiteSetupChecklistGetPath = z.object({
 export const zSiteSetupChecklistGetResponse = zSiteSetupProgress;
 
 export const zSiteSuppressionsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteSuppressionsListQuery = z.object({
@@ -2869,7 +2893,7 @@ export const zSiteSuppressionsListResponse = z.object({
 export const zSiteSuppressionsCreateBody = zSiteCreateSuppressionInput;
 
 export const zSiteSuppressionsCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2878,7 +2902,7 @@ export const zSiteSuppressionsCreatePath = z.object({
 export const zSiteSuppressionsCreateResponse = zSiteSuppressionResource;
 
 export const zSiteSuppressionsDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2888,7 +2912,7 @@ export const zSiteSuppressionsDeletePath = z.object({
 export const zSiteSuppressionsDeleteResponse = z.void();
 
 export const zSiteTagsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteTagsListQuery = z.object({
@@ -2908,7 +2932,7 @@ export const zSiteTagsListResponse = z.object({
 });
 
 export const zSiteTemplatesListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteTemplatesListQuery = z.object({
@@ -2930,7 +2954,7 @@ export const zSiteTemplatesListResponse = z.object({
 export const zSiteTemplatesCreateBody = zSiteCreateEmailTemplateInput;
 
 export const zSiteTemplatesCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2939,7 +2963,7 @@ export const zSiteTemplatesCreatePath = z.object({
 export const zSiteTemplatesCreateResponse = zSiteEmailTemplateResource;
 
 export const zSiteTemplatesDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2949,7 +2973,7 @@ export const zSiteTemplatesDeletePath = z.object({
 export const zSiteTemplatesDeleteResponse = z.void();
 
 export const zSiteTemplatesGetPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2961,7 +2985,7 @@ export const zSiteTemplatesGetResponse = zSiteEmailTemplateResource;
 export const zSiteTemplatesUpdateBody = zSiteUpdateEmailTemplateInput;
 
 export const zSiteTemplatesUpdatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -2971,7 +2995,7 @@ export const zSiteTemplatesUpdatePath = z.object({
 export const zSiteTemplatesUpdateResponse = zSiteEmailTemplateResource;
 
 export const zSiteTokensListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2982,7 +3006,7 @@ export const zSiteTokensListResponse = z.array(zSiteApiTokenResource);
 export const zSiteTokensCreateBody = zSiteCreateTokenInput;
 
 export const zSiteTokensCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -2991,7 +3015,7 @@ export const zSiteTokensCreatePath = z.object({
 export const zSiteTokensCreateResponse = zSiteCreateTokenResponse;
 
 export const zSiteTokensDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -3001,7 +3025,7 @@ export const zSiteTokensDeletePath = z.object({
 export const zSiteTokensDeleteResponse = z.void();
 
 export const zSiteTransactionalEmailsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteTransactionalEmailsListQuery = z.object({
@@ -3021,7 +3045,7 @@ export const zSiteTransactionalEmailsListResponse = z.object({
 });
 
 export const zSiteWebhooksListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteWebhooksListQuery = z.object({
@@ -3043,7 +3067,7 @@ export const zSiteWebhooksListResponse = z.object({
 export const zSiteWebhooksCreateBody = zSiteCreateWebhookEndpointInput;
 
 export const zSiteWebhooksCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -3052,7 +3076,7 @@ export const zSiteWebhooksCreatePath = z.object({
 export const zSiteWebhooksCreateResponse = zSiteWebhookEndpointResource;
 
 export const zSiteWebhooksDeletePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -3062,7 +3086,7 @@ export const zSiteWebhooksDeletePath = z.object({
 export const zSiteWebhooksDeleteResponse = z.void();
 
 export const zSiteWebhooksGetPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -3074,7 +3098,7 @@ export const zSiteWebhooksGetResponse = zSiteWebhookEndpointResource;
 export const zSiteWebhooksUpdateBody = zSiteUpdateWebhookEndpointInput;
 
 export const zSiteWebhooksUpdatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -3084,7 +3108,7 @@ export const zSiteWebhooksUpdatePath = z.object({
 export const zSiteWebhooksUpdateResponse = zSiteWebhookEndpointResource;
 
 export const zSiteWebhooksRegenerateSecretPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -3096,7 +3120,7 @@ export const zSiteWebhooksRegenerateSecretResponse = zSiteWebhookEndpointResourc
 export const zSiteWebhooksTestBody = zSiteTestWebhookInput;
 
 export const zSiteWebhooksTestPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -3106,7 +3130,7 @@ export const zSiteWebhooksTestPath = z.object({
 export const zSiteWebhooksTestResponse = zSiteWebhookTestResult;
 
 export const zSiteSegmentsListPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 export const zSiteSegmentsListQuery = z.object({
@@ -3128,7 +3152,7 @@ export const zSiteSegmentsListResponse = z.object({
 export const zSiteSegmentsCreateBody = zSiteCreateSegmentInput;
 
 export const zSiteSegmentsCreatePath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -3139,7 +3163,7 @@ export const zSiteSegmentsCreateResponse = zSiteSegmentResource;
 export const zSiteSegmentsPreviewBody = zSitePreviewSegmentInput;
 
 export const zSiteSegmentsPreviewPath = z.object({
-  slug: z.string()
+  workspaceId: zWorkspaceId
 });
 
 /**
@@ -3148,7 +3172,7 @@ export const zSiteSegmentsPreviewPath = z.object({
 export const zSiteSegmentsPreviewResponse = zSitePreviewSegmentResult;
 
 export const zSiteSegmentsGetPath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 
@@ -3160,7 +3184,7 @@ export const zSiteSegmentsGetResponse = zSiteSegmentResource;
 export const zSiteSegmentsUpdateBody = zSiteUpdateSegmentInput;
 
 export const zSiteSegmentsUpdatePath = z.object({
-  slug: z.string(),
+  workspaceId: zWorkspaceId,
   id: zEntityId
 });
 

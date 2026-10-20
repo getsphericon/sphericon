@@ -25,11 +25,11 @@ import (
 
 // entriesNamed delivers the outbox to the EE subscriber and returns the entries of
 // one action as the Workspace's owner sees them, newest first.
-func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail, slug, action string) []siteapi.SiteAuditEntryResource {
+func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail string, workspaceID siteapi.WorkspaceId, action string) []siteapi.SiteAuditEntryResource {
 	t.Helper()
 	env.DeliverToEE(t)
 	var out []siteapi.SiteAuditEntryResource
-	for _, e := range auditPage(t, env.SiteActor(t, ownerEmail), slug).Items {
+	for _, e := range auditPage(t, env.SiteActor(t, ownerEmail), workspaceID).Items {
 		if e.Action == action {
 			out = append(out, e)
 		}
@@ -44,12 +44,12 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 
 	res, err := owner.SiteInvitationsCreate(ctx,
 		&siteapi.SiteCreateInvitationInput{Email: "newbie@acme.test", Role: siteapi.SiteInvitableRoleAdmin},
-		siteapi.SiteInvitationsCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	created, ok := res.(*siteapi.SiteCreateInvitationResponse)
 	require.Truef(t, ok, "got %T", res)
 
-	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionInvitationCreate)
+	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationCreate)
 	require.Len(t, got, 1)
 	e := got[0]
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, e.Actor.Kind)
@@ -62,11 +62,11 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 	assert.JSONEq(t, `{"role":{"to":"admin"}}`, string(diff))
 	assert.NotContains(t, string(diff), created.InviteUrl, "the link is a credential and never logged")
 
-	del, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{Slug: fixtures.AcmeSlug, ID: created.Resource.ID})
+	del, err := owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: created.Resource.ID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteInvitationsDeleteNoContent{}, del)
 
-	revoked := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionInvitationRevoke)
+	revoked := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationRevoke)
 	require.Len(t, revoked, 1)
 	assert.Equal(t, "newbie@acme.test", revoked[0].Target.Name.Value)
 	assert.Equal(t, strconv.FormatInt(int64(created.Resource.ID), 10), revoked[0].Target.ID.Value)
@@ -80,12 +80,12 @@ func TestAuditInvitationAcceptIsAttributedToTheNewMember(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 
-	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionInvitationAccept)
+	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationAccept)
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, "Ivy", got[0].Actor.Name.Value)
 	assert.Equal(t, "invited@acme.test", got[0].Target.Name.Value)
-	assert.Empty(t, entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexSlug, events.ActionInvitationAccept), "only the inviting Workspace")
+	assert.Empty(t, entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionInvitationAccept), "only the inviting Workspace")
 }
 
 func TestAuditLoginDuplicatesIntoEachOfTheUsersWorkspacesOnly(t *testing.T) {
@@ -95,8 +95,8 @@ func TestAuditLoginDuplicatesIntoEachOfTheUsersWorkspacesOnly(t *testing.T) {
 	require.Equal(t, 200, loginStatus(t, env, fixtures.MemberMaryEmail, fixtures.MemberMaryPassword))
 	require.Equal(t, 401, loginStatus(t, env, fixtures.OwnerJohnEmail, "wrong"), "a failed login is not recorded")
 
-	acme := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserLogin)
-	globex := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexSlug, events.ActionUserLogin)
+	acme := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserLogin)
+	globex := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserLogin)
 	require.Len(t, acme, 1)
 	require.Len(t, globex, 1)
 	for _, e := range []siteapi.SiteAuditEntryResource{acme[0], globex[0]} {
@@ -107,8 +107,8 @@ func TestAuditLoginDuplicatesIntoEachOfTheUsersWorkspacesOnly(t *testing.T) {
 	// John's login lands in Acme, never in Globex.
 	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1") // user.email_verify
 	require.Equal(t, 200, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
-	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserLogin), 2)
-	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexSlug, events.ActionUserLogin), 1)
+	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserLogin), 2)
+	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserLogin), 1)
 }
 
 func TestAuditPasswordChangeDuplicatesIntoEachOfTheUsersWorkspaces(t *testing.T) {
@@ -123,8 +123,8 @@ func TestAuditPasswordChangeDuplicatesIntoEachOfTheUsersWorkspaces(t *testing.T)
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteUserResourceHeaders{}, res)
 
-	acme := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserPasswordChange)
-	globex := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexSlug, events.ActionUserPasswordChange)
+	acme := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserPasswordChange)
+	globex := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserPasswordChange)
 	require.Len(t, acme, 1)
 	require.Len(t, globex, 1)
 	diff, err := json.Marshal(acme[0].Diff.Value)
@@ -135,7 +135,7 @@ func TestAuditPasswordChangeDuplicatesIntoEachOfTheUsersWorkspaces(t *testing.T)
 	// A name-only edit is not a password change.
 	_, err = mary.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptString("Maria")})
 	require.NoError(t, err)
-	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserPasswordChange), 1)
+	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserPasswordChange), 1)
 }
 
 func TestAuditPasswordResetIsRecorded(t *testing.T) {
@@ -149,7 +149,7 @@ func TestAuditPasswordResetIsRecorded(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteAuthResetPasswordOK{}, res)
 
-	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserPasswordChange)
+	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserPasswordChange)
 	require.Len(t, got, 1)
 	assert.Equal(t, "Mary", got[0].Actor.Name.Value)
 }
@@ -164,7 +164,7 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, action := range []string{events.ActionWorkspaceSuspend, events.ActionWorkspaceUnsuspend} {
-		got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, action)
+		got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, action)
 		require.Lenf(t, got, 1, action)
 		assert.Equal(t, siteapi.SiteAuditActorKindStaff, got[0].Actor.Kind)
 		assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)
@@ -183,7 +183,7 @@ func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.System, "complaint rate")
 	require.NoError(t, err)
 
-	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionWorkspaceSuspend)
+	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindSystem, got[0].Actor.Kind)
 }
@@ -193,7 +193,7 @@ func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.CLI, "abuse")
 	require.NoError(t, err)
 
-	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionWorkspaceSuspend)
+	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindStaff, got[0].Actor.Kind)
 	assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)
@@ -209,7 +209,7 @@ func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, changed)
 
-	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionWorkspaceSuspend), 1)
+	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend), 1)
 }
 
 // Every explicit path is driven here and the actions that reached the log are compared
@@ -224,10 +224,10 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	promoteMary(t, env)                              // membership.update
 	created, err := owner.SiteInvitationsCreate(ctx, // invitation.create
 		&siteapi.SiteCreateInvitationInput{Email: "x@acme.test", Role: siteapi.SiteInvitableRoleMember},
-		siteapi.SiteInvitationsCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	_, err = owner.SiteInvitationsDelete(ctx, siteapi.SiteInvitationsDeleteParams{ // invitation.revoke
-		Slug: fixtures.AcmeSlug, ID: created.(*siteapi.SiteCreateInvitationResponse).Resource.ID})
+		WorkspaceId: fixtures.AcmePublicID, ID: created.(*siteapi.SiteCreateInvitationResponse).Resource.ID})
 	require.NoError(t, err)
 	_, err = env.SiteAnonymous(t).SitePublicInvitationsAccept(ctx, // invitation.accept
 		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Ivy"), Password: siteapi.NewOptString("ivy-password-1")},
@@ -252,10 +252,10 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteSecondFactorDisableNoContent{}, disabled)
 	_, err = env.SiteActor(t, fixtures.OwnerJaneEmail).SiteMembershipsResetSecondFactor(ctx, // user.second_factor_reset
-		siteapi.SiteMembershipsResetSecondFactorParams{Slug: fixtures.GlobexSlug, ID: idStr(fixtures.GlobexSamMembershipID)})
+		siteapi.SiteMembershipsResetSecondFactorParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.GlobexSamMembershipID)})
 	require.NoError(t, err)
 	_, err = owner.SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{Name: "Acme Two"}, // workspace.update
-		siteapi.SiteWorkspacesUpdateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse") // workspace.suspend
 	require.NoError(t, err)
@@ -270,11 +270,11 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 		Contacts: []externalapi.UpsertContactInput{{Email: externalapi.NewOptNilEmailAddress("explicit.import@example.org")}}})
 	require.NoError(t, err)
 
-	_, err = owner.SiteAuditExport(ctx, siteapi.SiteAuditExportParams{Slug: fixtures.AcmeSlug}) // audit_log.export
+	_, err = owner.SiteAuditExport(ctx, siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID}) // audit_log.export
 	require.NoError(t, err)
 
 	_, err = owner.SiteWebhooksTest(ctx, &siteapi.SiteTestWebhookInput{EventType: "contact.created"}, // webhook_endpoint.test
-		siteapi.SiteWebhooksTestParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.WebhookCodebasicsID)})
+		siteapi.SiteWebhooksTestParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
 
 	_, err = owner.SiteUserSignOutEverywhere(ctx) // user.sign_out_everywhere
@@ -332,13 +332,13 @@ func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	list := func(p siteapi.SiteAuditListParams) int {
-		p.Slug = fixtures.AcmeSlug
+		p.WorkspaceId = fixtures.AcmePublicID
 		res, err := owner.SiteAuditList(ctx, p)
 		require.NoError(t, err)
 		return len(res.(*siteapi.SiteAuditEntryList).Items)
 	}
 	export := func(p siteapi.SiteAuditExportParams) int {
-		p.Slug = fixtures.AcmeSlug
+		p.WorkspaceId = fixtures.AcmePublicID
 		return len(auditCSV(t, mustExport(ctx, t, owner, p))) - 1
 	}
 	staff := siteapi.NewOptSiteAuditActorKind(siteapi.SiteAuditActorKindStaff)

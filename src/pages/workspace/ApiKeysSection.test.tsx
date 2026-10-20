@@ -53,7 +53,7 @@ test('creates a token and reveals the one-time secret', async () => {
     ),
   )
 
-  const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
+  const { screen } = await renderWithRouter(<ApiKeysSection workspaceId="TestWs01" />)
 
   await screen.getByRole('button', { name: 'Create token' }).click()
   const dialog = screen.getByRole('dialog')
@@ -72,7 +72,7 @@ test('a plain member who is forbidden to create a token sees why', async () => {
     handleSiteTokensList({ body: [] }),
   )
 
-  const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
+  const { screen } = await renderWithRouter(<ApiKeysSection workspaceId="TestWs01" />)
 
   await screen.getByRole('button', { name: 'Create token' }).click()
   const dialog = screen.getByRole('dialog')
@@ -105,7 +105,7 @@ test('revokes a token after confirmation', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
+  const { screen } = await renderWithRouter(<ApiKeysSection workspaceId="TestWs01" />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Revoke' }).click()
@@ -117,7 +117,7 @@ test('revokes a token after confirmation', async () => {
 
 test('a revoked token is marked as revoked and offers no revoke button', async () => {
   worker.use(listTokens([{ ...token, revokedAt: '2026-06-02T00:00:00Z' }]))
-  const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
+  const { screen } = await renderWithRouter(<ApiKeysSection workspaceId="TestWs01" />)
 
   await expect.element(screen.getByText('Revoked')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Revoke' })).not.toBeInTheDocument()
@@ -128,7 +128,7 @@ test('a failed revoke shows the error toast', async () => {
     listTokens([token]),
     handleSiteTokensDelete(() => problem(500, { detail: 'boom' })),
   )
-  const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
+  const { screen } = await renderWithRouter(<ApiKeysSection workspaceId="TestWs01" />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Revoke' }).click()
@@ -139,7 +139,7 @@ test('a failed revoke shows the error toast', async () => {
 
 test('shows an error alert when the tokens fail to load', async () => {
   worker.use(handleSiteTokensList(() => problem(500, { detail: 'boom' })))
-  const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
+  const { screen } = await renderWithRouter(<ApiKeysSection workspaceId="TestWs01" />)
 
   await expect
     .element(screen.getByRole('alert', { name: 'Failed to load tokens' }))
@@ -154,7 +154,7 @@ test('closing the modal drops the one-time secret', async () => {
       status: 201,
     }),
   )
-  const { screen } = await renderWithRouter(<ApiKeysSection slug="test" />)
+  const { screen } = await renderWithRouter(<ApiKeysSection workspaceId="TestWs01" />)
 
   await screen.getByRole('button', { name: 'Create token' }).click()
   const dialog = screen.getByRole('dialog')

@@ -39,8 +39,8 @@ type Workspace struct {
 	env *Env
 	api *externalapi.Client
 	// site is the SPA's API, signed in as the owner.
-	site *siteapi.Client
-	slug string
+	site     *siteapi.Client
+	publicID string
 
 	// Domain is this Workspace's unique Sending domain (the dev DKIM lookup resolves
 	// by name alone, so no two tests may share one).
@@ -84,7 +84,7 @@ func (e *Env) NewWorkspace(t testing.TB) *Workspace {
 	require.NoError(t, err)
 	ws, err := e.accounts.CreateWorkspace(ctx, user.ID, "e2e "+id)
 	require.NoError(t, err)
-	scoped, _, err := e.accounts.Scope(ctx, user.ID, ws.Slug)
+	scoped, _, err := e.accounts.Scope(ctx, user.ID, ws.PublicID)
 	require.NoError(t, err)
 	minted, err := apitokens.Mint(ctx, scoped, apitokens.Input{Name: "e2e", Scopes: tokenScopes})
 	require.NoError(t, err)
@@ -98,7 +98,7 @@ func (e *Env) NewWorkspace(t testing.TB) *Workspace {
 	require.NoError(t, err)
 
 	w := &Workspace{
-		t: t, env: e, api: api, site: site, slug: ws.Slug, OwnerEmail: user.Email,
+		t: t, env: e, api: api, site: site, publicID: ws.PublicID, OwnerEmail: user.Email,
 		Domain:    id + ".e2e.test",
 		FromEmail: "news@" + id + ".e2e.test",
 		FromName:  "E2E News",

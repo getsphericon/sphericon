@@ -25,7 +25,7 @@ func analyticsWindow(r siteapi.OptSiteAnalyticsRange) analytics.Window {
 
 // SiteAnalyticsOverview maps the analytics module's Overview onto the DTO.
 func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.SiteAnalyticsOverviewParams) (siteapi.SiteAnalyticsOverviewRes, error) {
-	s, err := h.scopedFor(ctx, params.Slug)
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := problem(http.StatusNotFound, "workspace not found")
 		return &v, nil

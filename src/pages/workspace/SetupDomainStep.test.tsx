@@ -9,14 +9,14 @@ import {
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
-import { Route as overviewRoute } from '../../routes/workspaces/$slug/index.tsx'
+import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { OverviewPage } from './overview.tsx'
 
-const mount = routeMount(overviewRoute, { slug: 'test' })
+const mount = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
 
 const checklist = (sendingDomain: 'todo' | 'pending' | 'done') =>
   ({

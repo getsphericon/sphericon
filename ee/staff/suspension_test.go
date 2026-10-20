@@ -146,7 +146,7 @@ func TestTheAuditEntryShowsSphericonStaffAndNeverTheStaffMember(t *testing.T) {
 	h.suspend(t, c, fixtures.AcmeID, "abuse report")
 	h.env.DeliverToEE(t)
 
-	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{Slug: fixtures.AcmeSlug})
+	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	page, ok := res.(*siteapi.SiteAuditEntryList)
 	require.Truef(t, ok, "got %T", res)

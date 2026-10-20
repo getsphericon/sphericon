@@ -100,11 +100,11 @@ function TestResultAlert({ result }: { result: SiteWebhookTestResult }) {
 }
 
 function TestEventModal({
-  slug,
+  workspaceId,
   id,
   onClose,
 }: {
-  slug: string
+  workspaceId: string
   id: string | null
   onClose: () => void
 }) {
@@ -143,7 +143,7 @@ function TestEventModal({
           disabled={eventType === null || id === null}
           onClick={() => {
             if (eventType !== null && id !== null) {
-              testMutation.mutate({ path: { slug, id }, body: { eventType } })
+              testMutation.mutate({ path: { workspaceId, id }, body: { eventType } })
             }
           }}
         >
@@ -155,14 +155,14 @@ function TestEventModal({
   )
 }
 
-export function WebhooksSection({ slug }: { slug: string }) {
+export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [testingId, setTestingId] = useState<string | null>(null)
 
-  const queryKey = siteWebhooksListQueryKey({ path: { slug } })
-  const webhooksQuery = useQuery(siteWebhooksListOptions({ path: { slug } }))
+  const queryKey = siteWebhooksListQueryKey({ path: { workspaceId } })
+  const webhooksQuery = useQuery(siteWebhooksListOptions({ path: { workspaceId } }))
 
   const form = useForm<{ url: string; eventTypes: string[] }>({
     initialValues: { url: '', eventTypes: [] },
@@ -206,20 +206,20 @@ export function WebhooksSection({ slug }: { slug: string }) {
         confirm: t(($) => $.settings.webhooks.regenerate),
       },
       confirmProps: { color: 'red' },
-      onConfirm: () => regenerateMutation.mutate({ path: { slug, id } }),
+      onConfirm: () => regenerateMutation.mutate({ path: { workspaceId, id } }),
     })
   }
 
   const onToggle = (record: SiteWebhookEndpointResource) =>
     updateMutation.mutate({
-      path: { slug, id: record.id },
+      path: { workspaceId, id: record.id },
       body: { url: record.url, eventTypes: record.eventTypes, enabled: !record.enabled },
     })
 
   const onDelete = (id: string) =>
     confirmDelete({
       title: t(($) => $.settings.webhooks.deleteConfirmTitle),
-      onConfirm: () => deleteMutation.mutate({ path: { slug, id } }),
+      onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
     })
 
   const records = webhooksQuery.data?.items ?? []
@@ -306,7 +306,7 @@ export function WebhooksSection({ slug }: { slug: string }) {
             render: (record) => (
               <Group gap="xs" wrap="nowrap" justify="flex-end">
                 <ChangeHistoryLink
-                  slug={slug}
+                  workspaceId={workspaceId}
                   targetType={AUDIT_TARGET_WEBHOOK_ENDPOINT}
                   targetId={record.id}
                 />
@@ -341,7 +341,7 @@ export function WebhooksSection({ slug }: { slug: string }) {
         <form
           onSubmit={form.onSubmit((values) =>
             createMutation.mutate({
-              path: { slug },
+              path: { workspaceId },
               body: { url: values.url.trim(), eventTypes: values.eventTypes },
             }),
           )}
@@ -366,7 +366,7 @@ export function WebhooksSection({ slug }: { slug: string }) {
           </Stack>
         </form>
       </Modal>
-      <TestEventModal slug={slug} id={testingId} onClose={() => setTestingId(null)} />
+      <TestEventModal workspaceId={workspaceId} id={testingId} onClose={() => setTestingId(null)} />
     </Box>
   )
 }

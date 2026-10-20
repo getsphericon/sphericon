@@ -22,7 +22,7 @@ import (
 // System sender (ADR 0041).
 func testSendAsJane(_ *testhelper.TestEnv, c *siteapi.Client, to string) (siteapi.SiteBroadcastsTestSendRes, error) {
 	return c.SiteBroadcastsTestSend(context.Background(), &siteapi.SiteTestSendBroadcastInput{Email: siteapi.EmailAddress(to)},
-		siteapi.SiteBroadcastsTestSendParams{Slug: fixtures.GlobexSlug, ID: idStr(fixtures.BroadcastGlobexID)})
+		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID)})
 }
 
 func TestSiteTestSendWithoutVerifiedDomainGoesFromTheSystemSenderToTheAskingUser(t *testing.T) {
@@ -125,12 +125,12 @@ func TestSiteTestSendLeavesTheSentEmailStepTodo(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerSallyEmail)
 
 	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.SiteTestSendBroadcastInput{Email: siteapi.EmailAddress(fixtures.OwnerSallyEmail)},
-		siteapi.SiteBroadcastsTestSendParams{Slug: fixtures.HooliSlug, ID: idStr(fixtures.BroadcastHooliID)})
+		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.HooliPublicID, ID: idStr(fixtures.BroadcastHooliID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)
 	require.Len(t, env.SystemMail.Messages(), 1)
 
-	checklist, err := c.SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{Slug: fixtures.HooliSlug})
+	checklist, err := c.SiteSetupChecklistGet(t.Context(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.HooliPublicID})
 	require.NoError(t, err)
 	progress, ok := checklist.(*siteapi.SiteSetupProgress)
 	require.Truef(t, ok, "got %T", checklist)
@@ -182,7 +182,7 @@ func TestSiteTestSendWithAVerifiedDomainKeepsTheOrdinaryPath(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.SiteTestSendBroadcastInput{Email: "anyone@example.com"},
-		siteapi.SiteBroadcastsTestSendParams{Slug: fixtures.AcmeSlug, ID: idStr(fixtures.BroadcastDraftID)})
+		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 
 	got, ok := res.(*siteapi.SiteTestSendBroadcastResult)

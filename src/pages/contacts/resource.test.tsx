@@ -12,20 +12,20 @@ import {
   handleSiteContactsList,
   handleSiteContactsUpdate,
 } from '../../generated/site/msw.gen.ts'
-import { Route as contactsEditRoute } from '../../routes/workspaces/$slug/contacts/$contactId/edit.tsx'
-import { Route as contactsCreateRoute } from '../../routes/workspaces/$slug/contacts/new.tsx'
+import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
+import { Route as contactsCreateRoute } from '../../routes/workspaces/$workspaceId/contacts/new.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { ContactCreatePage, ContactEditPage } from './resource.tsx'
 
-const CREATE_ROUTE = routeMount(contactsCreateRoute, { slug: 'test' })
+const CREATE_ROUTE = routeMount(contactsCreateRoute, { workspaceId: 'TestWs01' })
 
 // Stands in for the contacts list screen: an active list query, so invalidation after a save
 // is observable as a refetch.
 function ListProbe() {
-  useQuery(siteContactsListOptions({ path: { slug: 'test' } }))
+  useQuery(siteContactsListOptions({ path: { workspaceId: 'TestWs01' } }))
   return null
 }
 
@@ -64,7 +64,7 @@ test('creating a contact sends only the filled keys, refreshes the list and open
   await expect.poll(() => listFetches).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
-    params: { slug: 'test', contactId: '42' },
+    params: { workspaceId: 'TestWs01', contactId: '42' },
   })
 })
 
@@ -86,7 +86,7 @@ test('a malformed email is rejected before anything is sent', async () => {
   expect(bodies).toEqual([])
 })
 
-const EDIT_ROUTE = routeMount(contactsEditRoute, { slug: 'test', contactId: '7' })
+const EDIT_ROUTE = routeMount(contactsEditRoute, { workspaceId: 'TestWs01', contactId: '7' })
 
 const LOADED_CONTACT = {
   id: '7',
@@ -98,7 +98,7 @@ const LOADED_CONTACT = {
 
 // Active detail query next to the edit page, so its invalidation is observable.
 function DetailProbe() {
-  useQuery(siteContactsGetOptions({ path: { slug: 'test', id: '7' } }))
+  useQuery(siteContactsGetOptions({ path: { workspaceId: 'TestWs01', id: '7' } }))
   return null
 }
 

@@ -13,7 +13,7 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { SendingDomainsSection } from './SendingDomainsSection.tsx'
 
-const SLUG = 'test'
+const WORKSPACE_ID = 'TestWs01'
 
 function domain(over: Partial<SiteSendingDomainResource> = {}): SiteSendingDomainResource {
   return {
@@ -37,7 +37,7 @@ const list = (items: SiteSendingDomainResource[]) =>
 
 test('shows pending and verified domains', async () => {
   worker.use(list([domain(), domain({ id: '2', domain: 'ok.acme.com', verified: true })]))
-  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('mail.acme.com')).toBeInTheDocument()
   await expect.element(screen.getByText('Pending', { exact: true })).toBeInTheDocument()
@@ -53,7 +53,7 @@ test('adds a domain', async () => {
       return HttpResponse.json(domain(), { status: 201 })
     }),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Add domain' }).click()
   const dialog = screen.getByRole('dialog')
@@ -72,7 +72,7 @@ test('starts verification', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Verify' }).click()
@@ -90,7 +90,7 @@ test('deletes a domain after confirmation', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Delete' }).click()
@@ -101,7 +101,7 @@ test('deletes a domain after confirmation', async () => {
 
 test('shows an error alert when the list fails to load', async () => {
   worker.use(handleSiteSendingDomainsList(() => problem(500, { detail: 'boom' })))
-  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await expect
     .element(screen.getByText('Failed to load sending domains').first())
@@ -110,7 +110,7 @@ test('shows an error alert when the list fails to load', async () => {
 
 test('expanding a domain row shows its DNS records', async () => {
   worker.use(list([domain()]))
-  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByText('mail.acme.com').click()
 
@@ -131,7 +131,7 @@ test('lists the tracking CNAME with its state when the instance has a target', a
       }),
     ]),
   )
-  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByText('mail.acme.com').click()
 
@@ -142,7 +142,7 @@ test('lists the tracking CNAME with its state when the instance has a target', a
 
 test('lists no tracking record when the instance has no target', async () => {
   worker.use(list([domain()]))
-  const { screen } = await renderWithRouter(<SendingDomainsSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<SendingDomainsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByText('mail.acme.com').click()
 

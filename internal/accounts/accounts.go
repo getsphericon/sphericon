@@ -54,15 +54,15 @@ func New(client *ent.Client, bus *events.Bus, opts ...Option) *Accounts {
 	return a
 }
 
-// Scope resolves the Workspace addressed by a /w/{slug} path segment for a User and
+// Scope resolves the Workspace addressed by a /w/{id} path segment for a User and
 // returns its scoped client with the User's Membership (its User and Workspace
 // loaded, for the Role and the Two-factor requirement). It is the site's construction
 // point of the scoped client: access is "does this User have a Membership on this
-// Workspace?". An ent NotFound error means the slug does not exist or the User is
+// Workspace?". An ent NotFound error means the Workspace id does not exist or the User is
 // not a member.
-func (a *Accounts) Scope(ctx context.Context, userID int64, slug string) (*ent.Scoped, *ent.Membership, error) {
+func (a *Accounts) Scope(ctx context.Context, userID int64, publicID string) (*ent.Scoped, *ent.Membership, error) {
 	m, err := a.ent.Membership.Query().
-		Where(membership.UserID(userID), membership.HasWorkspaceWith(workspace.Slug(slug))).
+		Where(membership.UserID(userID), membership.HasWorkspaceWith(workspace.PublicID(publicID))).
 		WithUser().
 		WithWorkspace().
 		Only(ctx)
@@ -259,7 +259,7 @@ func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name, 
 	}
 	slug := base
 	for i := 2; ; i++ {
-		exists, err := tx.Workspace.Query().Where(workspace.Slug(slug)).Exist(ctx)
+		exists, err := tx.Workspace.Query().Where(workspace.PublicID(publicID)).Exist(ctx)
 		if err != nil {
 			return nil, err
 		}

@@ -88,7 +88,7 @@ func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, params siteapi
 		v := siteapi.SiteWorkspacesAccountLinkNotFound(problem(http.StatusNotFound, "account link is not configured"))
 		return &v, nil
 	}
-	s, m, err := h.membershipFor(ctx, params.Slug)
+	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWorkspacesAccountLinkNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -123,7 +123,7 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 	if !req.Required {
 		load = h.membershipEvenIfWithheld
 	}
-	s, m, err := load(ctx, params.Slug)
+	s, m, err := load(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWorkspacesSetSecondFactorRequirementNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
@@ -155,7 +155,7 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 // SiteWorkspacesUpdate renames a workspace owned by the authenticated user. The
 // slug is immutable, so only the display name changes.
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, params siteapi.SiteWorkspacesUpdateParams) (siteapi.SiteWorkspacesUpdateRes, error) {
-	s, m, err := h.membershipFor(ctx, params.Slug)
+	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteWorkspacesUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil

@@ -6,15 +6,15 @@ import {
   handleSiteBroadcastsTestSend,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
-import { Route as broadcastsEditRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/edit.tsx'
-import { Route as broadcastsReportRoute } from '../../routes/workspaces/$slug/broadcasts/$broadcastId/report.tsx'
+import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
+import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { DeliveryBlock } from './DeliveryBlock.tsx'
 
-const MOUNT = routeMount(broadcastsEditRoute, { slug: 'test', broadcastId: '7' })
+const MOUNT = routeMount(broadcastsEditRoute, { workspaceId: 'TestWs01', broadcastId: '7' })
 const SEND_FAILED = 'Failed to send broadcast'
 
 const draft: SiteBroadcastResource = {
@@ -59,7 +59,9 @@ test('scheduling a draft posts the chosen time as an ISO timestamp and opens the
   expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString() }])
   await expect
     .poll(() => navigate.mock.calls)
-    .toContainEqual([{ to: broadcastsReportRoute.to, params: { slug: 'test', broadcastId: '7' } }])
+    .toContainEqual([
+      { to: broadcastsReportRoute.to, params: { workspaceId: 'TestWs01', broadcastId: '7' } },
+    ])
 })
 
 test('a test send posts the typed address and confirms without navigating', async () => {

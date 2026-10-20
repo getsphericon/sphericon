@@ -104,15 +104,15 @@ function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput 
   }
 }
 
-export function IntegrationsSection({ slug }: { slug: string }) {
+export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
-  const role = useCurrentRole(slug)
+  const role = useCurrentRole(workspaceId)
   const canManageIntegrations = canManage(role)
 
-  const queryKey = siteIntegrationsListQueryKey({ path: { slug } })
-  const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { slug } }))
+  const queryKey = siteIntegrationsListQueryKey({ path: { workspaceId } })
+  const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
 
   const validateLimits = useSendLimitValidators()
   const form = useForm<IntegrationFormValues>({
@@ -143,7 +143,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
     confirmDelete({
       title: t(($) => $.settings.integrations.deleteConfirmTitle),
       description: t(($) => $.settings.integrations.deleteConfirmDescription),
-      onConfirm: () => deleteMutation.mutate({ path: { slug, id } }),
+      onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
     })
   }
 
@@ -224,7 +224,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
             render: (record) => (
               <Group gap="xs" wrap="nowrap" justify="flex-end">
                 <ChangeHistoryLink
-                  slug={slug}
+                  workspaceId={workspaceId}
                   targetType={AUDIT_TARGET_INTEGRATION}
                   targetId={record.id}
                 />
@@ -257,7 +257,7 @@ export function IntegrationsSection({ slug }: { slug: string }) {
           <form
             onSubmit={form.onSubmit((values) =>
               createMutation.mutate({
-                path: { slug },
+                path: { workspaceId },
                 body: {
                   name: values.name.trim(),
                   isDefault: values.isDefault,
@@ -372,8 +372,16 @@ export function IntegrationsSection({ slug }: { slug: string }) {
           </form>
         </Modal>
       ) : null}
-      <SendLimitModal slug={slug} integration={editing} onClose={() => setEditing(null)} />
-      <InboundModal slug={slug} integration={inbound} onClose={() => setInbound(null)} />
+      <SendLimitModal
+        workspaceId={workspaceId}
+        integration={editing}
+        onClose={() => setEditing(null)}
+      />
+      <InboundModal
+        workspaceId={workspaceId}
+        integration={inbound}
+        onClose={() => setInbound(null)}
+      />
     </Box>
   )
 }

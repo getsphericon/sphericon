@@ -31,9 +31,9 @@ import { siteContactsExport } from '../../generated/site/sdk.gen.ts'
 import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { Route as contactsEditRoute } from '../../routes/workspaces/$slug/contacts/$contactId/edit.tsx'
-import { Route as contactsDetailRoute } from '../../routes/workspaces/$slug/contacts/$contactId/index.tsx'
-import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
+import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
+import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
+import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 import { formatDateTime } from '../../utils/datetime.ts'
 
@@ -70,10 +70,10 @@ function formatCustomValue(value: unknown): string {
 
 export function ContactDetailPage() {
   const { t } = useTranslation()
-  const { slug, contactId } = contactsDetailRoute.useParams()
+  const { workspaceId, contactId } = contactsDetailRoute.useParams()
   const navigate = useNavigate()
   const confirm = useDeleteConfirmation()
-  const role = useCurrentRole(slug)
+  const role = useCurrentRole(workspaceId)
   // Erasure is irreversible, so it is offered to owners and admins only (the API
   // refuses everyone else with 403).
   const canErase = canManage(role)
@@ -88,7 +88,7 @@ export function ContactDetailPage() {
     setPage(1)
   }
 
-  const contactQuery = useQuery(siteContactsGetOptions({ path: { slug, id: contactId } }))
+  const contactQuery = useQuery(siteContactsGetOptions({ path: { workspaceId, id: contactId } }))
 
   const contact = contactQuery.data
 
@@ -97,18 +97,18 @@ export function ContactDetailPage() {
   // would miss.
   const eventsQuery = useQuery(
     siteEventsListOptions({
-      path: { slug },
+      path: { workspaceId },
       query: { page, pageSize: EVENTS_PAGE_SIZE, contactId },
     }),
   )
 
   const eraseMutation = useResourceMutation({
     mutation: siteContactsDeleteMutation(),
-    invalidate: [siteContactsListQueryKey({ path: { slug } })],
+    invalidate: [siteContactsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.notifications.contactErased),
     errorTitle: t(($) => $.alerts.eraseErrorTitle),
     forbiddenMessage: t(($) => $.contacts.eraseForbidden),
-    onDone: () => navigate({ to: contactsRoute.to, params: { slug } }),
+    onDone: () => navigate({ to: contactsRoute.to, params: { workspaceId } }),
   })
 
   const exportMutation = useMutation({
@@ -118,7 +118,7 @@ export function ContactDetailPage() {
     // ContactExportDocument and written out as the saved file.
     mutationFn: () =>
       siteContactsExport({
-        path: { slug },
+        path: { workspaceId },
         query: { id: contactId },
         parseAs: 'json',
         throwOnError: true,
@@ -166,7 +166,11 @@ export function ContactDetailPage() {
           {fullName ? <Text c="dimmed">{fullName}</Text> : null}
         </Stack>
         <Group gap="xs">
-          <ButtonLink variant="default" to={contactsEditRoute.to} params={{ slug, contactId }}>
+          <ButtonLink
+            variant="default"
+            to={contactsEditRoute.to}
+            params={{ workspaceId, contactId }}
+          >
             {t(($) => $.actions.edit)}
           </ButtonLink>
           <Button
@@ -185,14 +189,14 @@ export function ContactDetailPage() {
                   title: t(($) => $.contacts.eraseConfirmTitle),
                   description: t(($) => $.contacts.eraseConfirmDescription),
                   confirmLabel: t(($) => $.contacts.erase),
-                  onConfirm: () => eraseMutation.mutate({ path: { slug, id: contactId } }),
+                  onConfirm: () => eraseMutation.mutate({ path: { workspaceId, id: contactId } }),
                 })
               }
             >
               {t(($) => $.contacts.erase)}
             </Button>
           ) : null}
-          <ButtonLink variant="subtle" to={contactsRoute.to} params={{ slug }}>
+          <ButtonLink variant="subtle" to={contactsRoute.to} params={{ workspaceId }}>
             {t(($) => $.actions.back)}
           </ButtonLink>
         </Group>

@@ -16,7 +16,7 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { WebhooksSection } from './WebhooksSection.tsx'
 
-const SLUG = 'test'
+const WORKSPACE_ID = 'TestWs01'
 
 function endpoint(over: Partial<SiteWebhookEndpointResource> = {}): SiteWebhookEndpointResource {
   return {
@@ -53,7 +53,7 @@ test('lists endpoints, showing all events and the enabled state', async () => {
       }),
     ]),
   )
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('https://example.com/hook')).toBeInTheDocument()
   await expect.element(screen.getByText('All events', { exact: true })).toBeInTheDocument()
@@ -77,7 +77,7 @@ test('lists a failing endpoint with its last error', async () => {
       }),
     ]),
   )
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Failing', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText(/HTTP 503: 7 deliveries failed/)).toBeInTheDocument()
@@ -85,7 +85,7 @@ test('lists a failing endpoint with its last error', async () => {
 
 test('says why an endpoint turned itself off', async () => {
   worker.use(list([endpoint({ enabled: false, disabledReason: 'gone' })]))
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Receiver answered 410 Gone')).toBeInTheDocument()
 })
@@ -99,7 +99,7 @@ test('creates an endpoint from the form', async () => {
       return HttpResponse.json(endpoint(), { status: 201 })
     }),
   )
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Add endpoint' }).click()
   const dialog = screen.getByRole('dialog')
@@ -118,7 +118,7 @@ test('toggles an endpoint off', async () => {
       return HttpResponse.json(endpoint({ enabled: false }))
     }),
   )
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Disable' }).click()
@@ -137,7 +137,7 @@ test('regenerates the secret after confirmation', async () => {
       return HttpResponse.json(endpoint({ secret: 'whsec_2' }))
     }),
   )
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Regenerate secret' }).click()
@@ -155,7 +155,7 @@ test('sends a test event and shows what the receiver answered', async () => {
       return HttpResponse.json({ delivered: false, kind: 'http_status', status: 410 })
     }),
   )
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Send test event' }).click()
@@ -174,7 +174,7 @@ test.each([
     list([endpoint()]),
     handleSiteWebhooksTest(() => HttpResponse.json(answer)),
   )
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Send test event' }).click()
@@ -192,7 +192,7 @@ test('deletes an endpoint after confirmation', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Delete' }).click()
@@ -203,7 +203,7 @@ test('deletes an endpoint after confirmation', async () => {
 
 test('shows an error alert when the list fails to load', async () => {
   worker.use(handleSiteWebhooksList(() => problem(500, { detail: 'boom' })))
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await expect.element(screen.getByText('Failed to load webhooks').first()).toBeInTheDocument()
 })
@@ -213,7 +213,7 @@ test('reports a create failure', async () => {
     list([]),
     handleSiteWebhooksCreate(() => problem(422, { detail: 'url must be https' })),
   )
-  const { screen } = await renderWithRouter(<WebhooksSection slug={SLUG} />)
+  const { screen } = await renderWithRouter(<WebhooksSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'Add endpoint' }).click()
   const dialog = screen.getByRole('dialog')

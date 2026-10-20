@@ -19,9 +19,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func auditExport(t *testing.T, c *siteapi.Client, slug string) siteapi.SiteAuditExportRes {
+func auditExport(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) siteapi.SiteAuditExportRes {
 	t.Helper()
-	res, err := c.SiteAuditExport(context.Background(), siteapi.SiteAuditExportParams{Slug: slug})
+	res, err := c.SiteAuditExport(context.Background(), siteapi.SiteAuditExportParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res
 }
@@ -43,7 +43,7 @@ func TestAuditExportIsTheWholeLogAsCSV(t *testing.T) {
 	env := testhelper.Setup(t)
 	promoteMary(t, env)
 
-	rows := auditCSV(t, auditExport(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug))
+	rows := auditCSV(t, auditExport(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID))
 	require.Len(t, rows, 3, "header, the new entry, the fixture entry")
 	header := rows[0]
 	assert.Equal(t, []string{
@@ -78,7 +78,7 @@ func TestAuditExportSpansPagesAndNeverLeaksAnotherTenant(t *testing.T) {
 			Exec(ctx))
 	}
 
-	rows := auditCSV(t, auditExport(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmeSlug))
+	rows := auditCSV(t, auditExport(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID))
 	assert.Len(t, rows, 1+extra+1, "header, every extra entry and the fixture entry; none of Globex's")
 }
 
@@ -87,7 +87,7 @@ func TestAuditExportNeutralisesSpreadsheetFormulas(t *testing.T) {
 	ctx := context.Background()
 
 	rows := auditCSV(t, mustExport(ctx, t, env.SiteActor(t, fixtures.OwnerJaneEmail), siteapi.SiteAuditExportParams{
-		Slug: fixtures.GlobexSlug, Action: siteapi.NewOptString(fixtures.GlobexAuditFormulaEntryAction)}))
+		WorkspaceId: fixtures.GlobexPublicID, Action: siteapi.NewOptString(fixtures.GlobexAuditFormulaEntryAction)}))
 	require.Len(t, rows, 2)
 	for _, cell := range rows[1] {
 		assert.False(t, strings.ContainsAny(cell[:min(1, len(cell))], "=+-@\t\r"), "cell %q starts a formula", cell)
@@ -99,19 +99,19 @@ func TestAuditExportNeutralisesSpreadsheetFormulas(t *testing.T) {
 func TestAuditExportIsOwnerAndAdminOnlyAndLicensed(t *testing.T) {
 	env := testhelper.Setup(t)
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
-	assert.IsType(t, &siteapi.SiteAuditExportForbidden{}, auditExport(t, mary, fixtures.AcmeSlug), "a member is refused")
+	assert.IsType(t, &siteapi.SiteAuditExportForbidden{}, auditExport(t, mary, fixtures.AcmePublicID), "a member is refused")
 
 	oscar := env.SiteActor(t, fixtures.OutsiderOscarEmail)
-	assert.IsType(t, &siteapi.SiteAuditExportNotFound{}, auditExport(t, oscar, fixtures.AcmeSlug), "a stranger finds no workspace")
+	assert.IsType(t, &siteapi.SiteAuditExportNotFound{}, auditExport(t, oscar, fixtures.AcmePublicID), "a stranger finds no workspace")
 
 	promoteMary(t, env)
-	assert.IsType(t, &siteapi.SiteAuditExportOKHeaders{}, auditExport(t, mary, fixtures.AcmeSlug), "an admin exports")
+	assert.IsType(t, &siteapi.SiteAuditExportOKHeaders{}, auditExport(t, mary, fixtures.AcmePublicID), "an admin exports")
 }
 
 func TestAuditExportWithoutLicenseIsPaymentRequired(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	assert.IsType(t, &siteapi.SiteAuditExportPaymentRequired{}, auditExport(t, owner, fixtures.AcmeSlug))
+	assert.IsType(t, &siteapi.SiteAuditExportPaymentRequired{}, auditExport(t, owner, fixtures.AcmePublicID))
 }
 
 // The export is itself an audit_log.export entry that names the filter it ran with
@@ -121,9 +121,9 @@ func TestAuditExportIsItselfAudited(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	auditCSV(t, mustExport(ctx, t, owner, siteapi.SiteAuditExportParams{Slug: fixtures.AcmeSlug, Action: siteapi.NewOptString("membership.update")}))
+	auditCSV(t, mustExport(ctx, t, owner, siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID, Action: siteapi.NewOptString("membership.update")}))
 
-	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionAuditLogExport)
+	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionAuditLogExport)
 	require.Len(t, got, 1)
 	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, "John", got[0].Actor.Name.Value)

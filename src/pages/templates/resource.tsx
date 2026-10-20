@@ -10,7 +10,7 @@ import {
 import { zSiteCreateEmailTemplateInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
-import { Route as templatesEditRoute } from '../../routes/workspaces/$slug/templates/$templateId/edit.tsx'
+import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
 import { docCodec } from '../../utils/messageDoc.ts'
 import { TemplateForm } from './TemplateForm.tsx'
 
@@ -39,9 +39,9 @@ const templateResource = defineResource({
     loadErrorTitle: t(($) => $.alerts.templateLoadErrorTitle),
     saveErrorTitle: t(($) => $.alerts.templateSaveErrorTitle),
   }),
-  editTarget: (created, { slug }) => ({
+  editTarget: (created, { workspaceId }) => ({
     to: templatesEditRoute.to,
-    params: { slug, templateId: created.id },
+    params: { workspaceId, templateId: created.id },
   }),
 })
 

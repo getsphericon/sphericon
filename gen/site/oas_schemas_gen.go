@@ -14394,8 +14394,8 @@ func (s *SiteUpdateWebhookEndpointInput) SetEnabled(val OptBool) {
 	s.Enabled = val
 }
 
-// Update a workspace. The slug is immutable (it is the route key and globally unique); the display
-// name and the CAN-SPAM postal address can change.
+// Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM
+// postal address can change.
 // Ref: #/components/schemas/SiteUpdateWorkspaceInput
 type SiteUpdateWorkspaceInput struct {
 	// New display name.
@@ -15122,14 +15122,11 @@ func (s *SiteWorkspaceHold) SetBilling(val bool) {
 // Workspace the current user belongs to.
 // Ref: #/components/schemas/SiteWorkspaceResource
 type SiteWorkspaceResource struct {
-	// Unique identifier.
-	ID EntityId `json:"id"`
-	// The Workspace id: its short opaque public address (ADR 0043).
-	PublicId WorkspaceId `json:"publicId"`
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	ID WorkspaceId `json:"id"`
 	// Display name.
 	Name string `json:"name"`
-	// URL-safe unique slug; the route key for nested workspace resources.
-	Slug string `json:"slug"`
 	// Per-workspace collect write-key (x-collect-key) for the tracking snippet.
 	CollectKey string `json:"collectKey"`
 	// Physical postal address printed in the marketing email footer (CAN-SPAM 15 U.S.C. §7704(a)(5)).
@@ -15172,23 +15169,13 @@ type SiteWorkspaceResource struct {
 }
 
 // GetID returns the value of ID.
-func (s *SiteWorkspaceResource) GetID() EntityId {
+func (s *SiteWorkspaceResource) GetID() WorkspaceId {
 	return s.ID
-}
-
-// GetPublicId returns the value of PublicId.
-func (s *SiteWorkspaceResource) GetPublicId() WorkspaceId {
-	return s.PublicId
 }
 
 // GetName returns the value of Name.
 func (s *SiteWorkspaceResource) GetName() string {
 	return s.Name
-}
-
-// GetSlug returns the value of Slug.
-func (s *SiteWorkspaceResource) GetSlug() string {
-	return s.Slug
 }
 
 // GetCollectKey returns the value of CollectKey.
@@ -15257,23 +15244,13 @@ func (s *SiteWorkspaceResource) GetCreatedAt() Timestamp {
 }
 
 // SetID sets the value of ID.
-func (s *SiteWorkspaceResource) SetID(val EntityId) {
+func (s *SiteWorkspaceResource) SetID(val WorkspaceId) {
 	s.ID = val
-}
-
-// SetPublicId sets the value of PublicId.
-func (s *SiteWorkspaceResource) SetPublicId(val WorkspaceId) {
-	s.PublicId = val
 }
 
 // SetName sets the value of Name.
 func (s *SiteWorkspaceResource) SetName(val string) {
 	s.Name = val
-}
-
-// SetSlug sets the value of Slug.
-func (s *SiteWorkspaceResource) SetSlug(val string) {
-	s.Slug = val
 }
 
 // SetCollectKey sets the value of CollectKey.

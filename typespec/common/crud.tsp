@@ -11,8 +11,8 @@ namespace Sphericon;
  * Declarative CRUD for a workspace-scoped resource (the Rails `resources`
  * equivalent). Instantiate once per resource; @autoRoute derives the nested
  * path from the resource's @segment and its @parentResource(SiteWorkspaceResource):
- * `/workspaces/{slug}/<segment>` for the collection and
- * `/workspaces/{slug}/<segment>/{id}` for a single item.
+ * `/workspaces/{workspaceId}/<segment>` for the collection and
+ * `/workspaces/{workspaceId}/<segment>/{id}` for a single item.
  *
  * `WriteConflict` is the extra error a write may raise on a uniqueness clash;
  * it defaults to `never` (no 409). Resources with a unique key (contacts,

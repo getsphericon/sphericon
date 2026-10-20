@@ -68,7 +68,7 @@ const SCOPE_OPTIONS = [
   'audit:read',
 ]
 
-export function ApiKeysSection({ slug }: { slug: string }) {
+export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmRevoke = useDeleteConfirmation()
   const [newSecret, setNewSecret] = useState<string | null>(null)
@@ -78,8 +78,8 @@ export function ApiKeysSection({ slug }: { slug: string }) {
     setNewSecret(null)
   }
 
-  const queryKey = siteTokensListQueryKey({ path: { slug } })
-  const tokensQuery = useQuery(siteTokensListOptions({ path: { slug } }))
+  const queryKey = siteTokensListQueryKey({ path: { workspaceId } })
+  const tokensQuery = useQuery(siteTokensListOptions({ path: { workspaceId } }))
 
   const form = useForm<{ name: string; scopes: string[] }>({
     initialValues: { name: '', scopes: [] },
@@ -107,7 +107,7 @@ export function ApiKeysSection({ slug }: { slug: string }) {
     confirmRevoke({
       title: t(($) => $.settings.tokens.revokeConfirmTitle),
       description: t(($) => $.settings.tokens.revokeConfirmDescription),
-      onConfirm: () => deleteMutation.mutate({ path: { slug, id } }),
+      onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
     })
   }
 
@@ -185,7 +185,7 @@ export function ApiKeysSection({ slug }: { slug: string }) {
           <form
             onSubmit={form.onSubmit((values) =>
               createMutation.mutate({
-                path: { slug },
+                path: { workspaceId },
                 body: { name: values.name.trim(), scopes: values.scopes },
               }),
             )}

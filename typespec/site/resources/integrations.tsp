@@ -237,7 +237,7 @@ model SiteUpdateIntegrationInput {
 }
 
 // Bespoke (not WorkspaceCrud): `list` returns a bare array, not a paginated
-// envelope. Nesting under /workspaces/{slug} comes from @parentResource + @autoRoute.
+// envelope. Nesting under /workspaces/{workspaceId} comes from @parentResource + @autoRoute.
 @tag("Site Integrations")
 namespace SiteIntegrations {
   /** List the workspace's sending-provider integrations */

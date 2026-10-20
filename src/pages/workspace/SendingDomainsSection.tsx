@@ -190,13 +190,13 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
   )
 }
 
-export function SendingDomainsSection({ slug }: { slug: string }) {
+export function SendingDomainsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmDelete = useDeleteConfirmation()
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
 
-  const queryKey = siteSendingDomainsListQueryKey({ path: { slug } })
-  const domainsQuery = useQuery(siteSendingDomainsListOptions({ path: { slug } }))
+  const queryKey = siteSendingDomainsListQueryKey({ path: { workspaceId } })
+  const domainsQuery = useQuery(siteSendingDomainsListOptions({ path: { workspaceId } }))
 
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
@@ -228,7 +228,7 @@ export function SendingDomainsSection({ slug }: { slug: string }) {
     confirmDelete({
       title: t(($) => $.settings.sendingDomains.deleteConfirmTitle),
       description: t(($) => $.settings.sendingDomains.deleteConfirmDescription),
-      onConfirm: () => deleteMutation.mutate({ path: { slug, id } }),
+      onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
     })
   }
 
@@ -284,7 +284,7 @@ export function SendingDomainsSection({ slug }: { slug: string }) {
                 <RowActionsMenu>
                   <Menu.Item
                     disabled={verifyMutation.isPending}
-                    onClick={() => verifyMutation.mutate({ path: { slug, id: record.id } })}
+                    onClick={() => verifyMutation.mutate({ path: { workspaceId, id: record.id } })}
                   >
                     {t(($) => $.settings.sendingDomains.verify)}
                   </Menu.Item>
@@ -307,7 +307,7 @@ export function SendingDomainsSection({ slug }: { slug: string }) {
         <form
           onSubmit={form.onSubmit((values) =>
             createMutation.mutate({
-              path: { slug },
+              path: { workspaceId },
               body: { domain: values.domain.trim() },
             }),
           )}

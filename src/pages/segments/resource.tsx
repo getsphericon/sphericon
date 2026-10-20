@@ -10,7 +10,7 @@ import {
 import { zSiteCreateSegmentInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
-import { Route as segmentsEditRoute } from '../../routes/workspaces/$slug/segments/$segmentId/edit.tsx'
+import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { definitionCodec, emptyGroup } from './rules.ts'
 import { SegmentForm } from './SegmentForm.tsx'
 
@@ -42,9 +42,9 @@ const segmentResource = defineResource({
     loadErrorTitle: t(($) => $.alerts.segmentLoadErrorTitle),
     saveErrorTitle: t(($) => $.alerts.segmentSaveErrorTitle),
   }),
-  editTarget: (created, { slug }) => ({
+  editTarget: (created, { workspaceId }) => ({
     to: segmentsEditRoute.to,
-    params: { slug, segmentId: created.id },
+    params: { workspaceId, segmentId: created.id },
   }),
 })
 

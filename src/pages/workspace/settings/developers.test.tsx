@@ -7,17 +7,16 @@ import {
   handleSiteWebhooksList,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
-import { Route as developersRoute } from '../../../routes/workspaces/$slug/settings/developers.tsx'
+import { Route as developersRoute } from '../../../routes/workspaces/$workspaceId/settings/developers.tsx'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
 import { DevelopersPage } from './developers.tsx'
 
 const workspace = {
-  id: '1',
+  id: 'TestWs01',
   name: 'Acme',
-  slug: 'test',
-  publicId: 'AcmeWs01',
+
   collectKey: 'omck_test_key',
   postalAddress: '',
   accountLinkAvailable: false,
@@ -59,7 +58,7 @@ test('shows the API keys and the webhooks of the workspace', async () => {
 
   const { screen } = await renderWithRouter(
     <DevelopersPage />,
-    routeMount(developersRoute, { slug: 'test' }),
+    routeMount(developersRoute, { workspaceId: 'TestWs01' }),
   )
 
   await expect.element(screen.getByRole('heading', { name: 'API keys' })).toBeInTheDocument()

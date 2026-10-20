@@ -19,7 +19,7 @@ func inviteToAcme(t *testing.T, env *testhelper.TestEnv, email string) string {
 	t.Helper()
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteInvitationsCreate(t.Context(),
 		&siteapi.SiteCreateInvitationInput{Email: siteapi.EmailAddress(email), Role: siteapi.SiteInvitableRoleMember},
-		siteapi.SiteInvitationsCreateParams{Slug: fixtures.AcmeSlug})
+		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	created, ok := res.(*siteapi.SiteCreateInvitationResponse)
 	require.Truef(t, ok, "got %T", res)
@@ -75,11 +75,11 @@ func TestPreHijackingAnAttackerWhoRegisteredTheInviteesAddressGainsNothing(t *te
 	require.NotNil(t, cookie)
 	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
 	require.NoError(t, err)
-	slugs := make([]string, len(spaces))
+	ids := make([]string, len(spaces))
 	for i, s := range spaces {
-		slugs[i] = s.Slug
+		ids[i] = string(s.ID)
 	}
-	assert.Contains(t, slugs, fixtures.AcmeSlug)
+	assert.Contains(t, ids, fixtures.AcmePublicID)
 }
 
 // An Invitation that proves an address is a Verified email like a registration link
@@ -100,7 +100,7 @@ func TestAcceptingAnInvitationThatVerifiesTheAddressIsAuditedAsEmailVerified(t *
 			require.NoError(t, err)
 			require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
 
-			got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmeSlug, events.ActionUserEmailVerify)
+			got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserEmailVerify)
 			require.Len(t, got, 1)
 			assert.Equal(t, "Invitee", got[0].Actor.Name.Value)
 		})

@@ -64,13 +64,13 @@ model SiteEnrollmentResource {
   updatedAt: Timestamp;
 }
 
-@route("/workspaces/{slug}/automations/{automationId}/enrollments")
+@route("/workspaces/{workspaceId}/automations/{automationId}/enrollments")
 @tag("Site Automations")
 namespace SiteEnrollments {
   /** List an Automation's Enrollments, newest first */
   @get
   op list(
-    @path slug: string,
+    @path workspaceId: WorkspaceId,
     @path automationId: EntityId,
     ...PageQuery,
 
@@ -82,7 +82,7 @@ namespace SiteEnrollments {
   @get
   @route("/{enrollmentId}")
   op get(
-    @path slug: string,
+    @path workspaceId: WorkspaceId,
     @path automationId: EntityId,
     @path enrollmentId: EntityId,
   ): SiteEnrollmentResource | BadRequestProblem | NotFoundProblem;
