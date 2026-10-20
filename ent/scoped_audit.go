@@ -241,62 +241,6 @@ func (b *AutomationCreateBulk) auditRebind(c *Client) {
 	}
 }
 
-// AutomationVersionAuditSensitive lists the AutomationVersion fields whose values never reach the Audit log.
-var AutomationVersionAuditSensitive = map[string]bool{
-	"steps": true,
-}
-
-// auditFields maps every audited field of the AutomationVersion to its value.
-func (e *AutomationVersion) auditFields() map[string]any {
-	return map[string]any{
-		"automation_id": e.AutomationID,
-		"version":       e.Version,
-		"steps":         e.Steps,
-	}
-}
-
-// auditChangeAutomationVersion describes a AutomationVersion create (before is nil), update or delete
-// (after is nil).
-func auditChangeAutomationVersion(verb string, before, after *AutomationVersion) AuditChange {
-	var b, a map[string]any
-	target := before
-	if before != nil {
-		b = before.auditFields()
-	}
-	if after != nil {
-		a = after.auditFields()
-		target = after
-	}
-	change := AuditChange{
-		Action:     "automation_version." + verb,
-		TargetType: "automation_version",
-		TargetID:   auditID(target.ID),
-		Diff:       AuditDiff(b, a, AutomationVersionAuditSensitive),
-	}
-	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *AutomationVersionCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
-}
-func (b *AutomationVersionUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
-}
-func (b *AutomationVersionUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
-}
-func (b *AutomationVersionDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
-}
-func (b *AutomationVersionCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
-}
-
 // BrandKitAuditSensitive lists the BrandKit fields whose values never reach the Audit log.
 var BrandKitAuditSensitive = map[string]bool{}
 

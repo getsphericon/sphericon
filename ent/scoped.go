@@ -3968,19 +3968,6 @@ func (x *AutomationVersionScopedDeleteOne) Where(ps ...predicate.AutomationVersi
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AutomationVersionScopedDeleteOne) Exec(ctx context.Context) error {
-	if x.s.auditing() {
-		return x.s.audited(ctx, func(ts *Scoped) error {
-			before, err := ts.c.AutomationVersion.Query().Where(x.b._d.mutation.predicates...).Only(ctx)
-			if err != nil {
-				return err
-			}
-			x.b._d.auditRebind(ts.c)
-			if err := x.b.Exec(ctx); err != nil {
-				return err
-			}
-			return ts.record(ctx, auditChangeAutomationVersion("delete", before, nil))
-		})
-	}
 	return x.b.Exec(ctx)
 }
 
@@ -4003,26 +3990,6 @@ func (x *AutomationVersionScopedDelete) Where(ps ...predicate.AutomationVersion)
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *AutomationVersionScopedDelete) Exec(ctx context.Context) (int, error) {
-	if x.s.auditing() {
-		var n int
-		err := x.s.audited(ctx, func(ts *Scoped) error {
-			rows, err := ts.c.AutomationVersion.Query().Where(x.b.mutation.predicates...).All(ctx)
-			if err != nil {
-				return err
-			}
-			x.b.auditRebind(ts.c)
-			if n, err = x.b.Exec(ctx); err != nil {
-				return err
-			}
-			for _, row := range rows {
-				if err := ts.record(ctx, auditChangeAutomationVersion("delete", row, nil)); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		return n, err
-	}
 	return x.b.Exec(ctx)
 }
 
@@ -4122,18 +4089,6 @@ func (x *AutomationVersionScopedCreate) Save(ctx context.Context) (*AutomationVe
 	if err := x.check(ctx); err != nil {
 		return nil, err
 	}
-	if x.s.auditing() {
-		var created *AutomationVersion
-		err := x.s.audited(ctx, func(ts *Scoped) error {
-			x.b.auditRebind(ts.c)
-			var err error
-			if created, err = x.b.Save(ctx); err != nil {
-				return err
-			}
-			return ts.record(ctx, auditChangeAutomationVersion("create", nil, created))
-		})
-		return created, err
-	}
 	return x.b.Save(ctx)
 }
 
@@ -4175,23 +4130,6 @@ func (b *AutomationVersionScopedCreateBulk) Save(ctx context.Context) ([]*Automa
 	raw, err := b.raw(ctx)
 	if err != nil {
 		return nil, err
-	}
-	if b.s.auditing() {
-		var created []*AutomationVersion
-		err := b.s.audited(ctx, func(ts *Scoped) error {
-			raw.auditRebind(ts.c)
-			var err error
-			if created, err = raw.Save(ctx); err != nil {
-				return err
-			}
-			for _, row := range created {
-				if err := ts.record(ctx, auditChangeAutomationVersion("create", nil, row)); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		return created, err
 	}
 	return raw.Save(ctx)
 }
@@ -4290,10 +4228,6 @@ func (u *AutomationVersionScopedUpsertOne) Exec(ctx context.Context) error {
 	if err := u.x.check(ctx); err != nil {
 		return err
 	}
-	if u.x.s.auditing() {
-		_, err := u.audited(ctx)
-		return err
-	}
 	return u.u.Exec(ctx)
 }
 
@@ -4302,32 +4236,7 @@ func (u *AutomationVersionScopedUpsertOne) ID(ctx context.Context) (int64, error
 	if err := u.x.check(ctx); err != nil {
 		return 0, err
 	}
-	if u.x.s.auditing() {
-		return u.audited(ctx)
-	}
 	return u.u.ID(ctx)
-}
-
-// audited runs a DO NOTHING upsert with its entry: an insert is a create, a conflict
-// (sql.ErrNoRows) writes nothing and records nothing.
-func (u *AutomationVersionScopedUpsertOne) audited(ctx context.Context) (int64, error) {
-	if !u.doNothing {
-		return 0, ErrAuditUpsert
-	}
-	var id int64
-	err := u.x.s.audited(ctx, func(ts *Scoped) error {
-		u.x.b.auditRebind(ts.c)
-		var err error
-		if id, err = u.u.ID(ctx); err != nil {
-			return err
-		}
-		row, err := ts.c.AutomationVersion.Get(ctx, id)
-		if err != nil {
-			return err
-		}
-		return ts.record(ctx, auditChangeAutomationVersion("create", nil, row))
-	})
-	return id, err
 }
 
 // AutomationVersionScopedUpsertBulk is the "upsert" of several AutomationVersion entities.
@@ -4372,9 +4281,6 @@ func (u *AutomationVersionScopedUpsertBulk) Update(set func(*AutomationVersionSc
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *AutomationVersionScopedUpsertBulk) Exec(ctx context.Context) error {
-	if u.b.s.auditing() {
-		return ErrAuditUpsert
-	}
 	raw, err := u.b.raw(ctx)
 	if err != nil {
 		return err
@@ -4493,22 +4399,6 @@ func (x *AutomationVersionScopedUpdateOne) check(ctx context.Context) error {
 func (x *AutomationVersionScopedUpdateOne) Save(ctx context.Context) (*AutomationVersion, error) {
 	if err := x.check(ctx); err != nil {
 		return nil, err
-	}
-	if x.s.auditing() {
-		var updated *AutomationVersion
-		err := x.s.audited(ctx, func(ts *Scoped) error {
-			id, _ := x.b.Mutation().ID()
-			before, err := ts.c.AutomationVersion.Query().Where(x.b.mutation.predicates...).Where(automationversion.ID(id)).Only(ctx)
-			if err != nil {
-				return err
-			}
-			x.b.auditRebind(ts.c)
-			if updated, err = x.b.Save(ctx); err != nil {
-				return err
-			}
-			return ts.record(ctx, auditChangeAutomationVersion("update", before, updated))
-		})
-		return updated, err
 	}
 	return x.b.Save(ctx)
 }
@@ -4647,40 +4537,6 @@ func (x *AutomationVersionScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	if err := x.check(ctx); err != nil {
 		return 0, err
-	}
-	if x.s.auditing() {
-		var n int
-		err := x.s.audited(ctx, func(ts *Scoped) error {
-			before, err := ts.c.AutomationVersion.Query().Where(x.b.mutation.predicates...).All(ctx)
-			if err != nil {
-				return err
-			}
-			x.b.auditRebind(ts.c)
-			if n, err = x.b.Save(ctx); err != nil {
-				return err
-			}
-			ids := make([]int64, len(before))
-			for i, row := range before {
-				ids[i] = row.ID
-			}
-			after, err := ts.c.AutomationVersion.Query().Where(automationversion.IDIn(ids...)).All(ctx)
-			if err != nil {
-				return err
-			}
-			byID := make(map[int64]*AutomationVersion, len(after))
-			for _, row := range after {
-				byID[row.ID] = row
-			}
-			for _, row := range before {
-				if now, ok := byID[row.ID]; ok {
-					if err := ts.record(ctx, auditChangeAutomationVersion("update", row, now)); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		})
-		return n, err
 	}
 	return x.b.Save(ctx)
 }

@@ -215,6 +215,7 @@ func TestBackfillGivesEveryAutomationVersionOneAndMovesItsEnrollments(t *testing
 	made, pointed, err = jobs.BackfillAutomationVersions(t.Context(), client, 1)
 	require.NoError(t, err)
 	assert.Zero(t, made+pointed)
+	assert.False(t, testhelper.ColumnIsNullable(t, sqlDB, "automation_runs", "version_id"), "the finished backfill makes the column NOT NULL")
 
 	_, err = db.MigrateFS(t.Context(), sqlDB, all)
 	require.NoError(t, err, "the guard lets the drop through once the data has moved")

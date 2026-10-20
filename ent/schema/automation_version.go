@@ -20,9 +20,6 @@ type AutomationVersion struct {
 func (AutomationVersion) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "automation_versions"},
-		// The Audit entry says the steps changed and never what they say: an HTTP step
-		// carries sealed secrets (ADR 0039).
-		Audited{Action: "automation_version"},
 	}
 }
 
@@ -42,7 +39,8 @@ func (AutomationVersion) Fields() []ent.Field {
 			Immutable(),
 		// JSON array of steps: [{"type":"email","subject":..,"body":<html>},
 		// {"type":"wait","seconds":N}]. Sensitive: HTTP steps carry sealed URL, header
-		// values and secret (ADR 0039), so the Audit entry only says the steps changed.
+		// values and secret (ADR 0039). The version is not audited itself: the Automation's own
+		// entries say it was archived or restored.
 		field.String("steps").
 			Default("[]").
 			Annotations(Sensitive{}),

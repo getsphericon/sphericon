@@ -60,6 +60,15 @@ func ColumnsOf(t *testing.T, sqlDB *sql.DB, table string, columns ...string) int
 	return n
 }
 
+// ColumnIsNullable reports whether the table's column allows NULL.
+func ColumnIsNullable(t *testing.T, sqlDB *sql.DB, table, column string) bool {
+	t.Helper()
+	var nullable string
+	require.NoError(t, sqlDB.QueryRowContext(t.Context(),
+		`SELECT is_nullable FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`, table, column).Scan(&nullable))
+	return nullable == "YES"
+}
+
 // InsertLegacyAutomations adds a Workspace, two Contacts, and two Automations that keep their steps
 // in the definition column: 1, with one Enrollment, and 2, with two. It is the state a database
 // from before Automation versions is in, in a database migrated up to the migration that adds the

@@ -10,10 +10,10 @@ BEGIN
     SELECT 1 FROM "automations" a
     WHERE NOT EXISTS (SELECT 1 FROM "automation_versions" v WHERE v."automation_id" = a."id")
   ) THEN
-    RAISE EXCEPTION 'automations.definition cannot be dropped: some Automations have no version, so their steps would be lost; run the release that adds automation_versions until the job backfill_automation_versions has finished, then upgrade again';
+    RAISE EXCEPTION 'automations.definition cannot be dropped: some Automations have no version, so their steps would be lost; the river job backfill_automation_versions has not moved the data yet; let it finish, then migrate again (on a development database, `mise run db:reset` rebuilds it)';
   END IF;
   IF EXISTS (SELECT 1 FROM "automation_runs" WHERE "version_id" IS NULL) THEN
-    RAISE EXCEPTION 'automations.definition cannot be dropped: some Enrollments stand on no version, so they would lose their steps; run the release that adds automation_versions until the job backfill_automation_versions has finished, then upgrade again';
+    RAISE EXCEPTION 'automations.definition cannot be dropped: some Enrollments stand on no version, so they would lose their steps; the river job backfill_automation_versions has not moved the data yet; let it finish, then migrate again (on a development database, `mise run db:reset` rebuilds it)';
   END IF;
 END
 $$;

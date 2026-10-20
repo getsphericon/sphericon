@@ -324,7 +324,7 @@ func ScopedEntities() []ScopedEntity {
 		},
 		{
 			Name:    "AutomationVersion",
-			Audited: true,
+			Audited: false,
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AutomationVersion.Query().Where(automationversion.WorkspaceID(ws)).Order(Asc(automationversion.FieldID)).IDs(ctx)
 			},

@@ -23,7 +23,7 @@ const (
 // before versions existed into its version 1 and points its Enrollments at it (ADR 0049). The
 // migration that adds the Enrollment's version reference only adds (ADR 0033); this job is the
 // heavy data work, and the migration that drops automations.definition refuses to run until it
-// has finished.
+// has finished. When nothing is left it finishes the constraints the migration added NOT VALID.
 type BackfillAutomationVersionsArgs struct{}
 
 func (BackfillAutomationVersionsArgs) Kind() string { return "backfill_automation_versions" }
@@ -83,7 +83,50 @@ WHERE v.automation_id = r.automation_id AND v.version = 1
 			break
 		}
 	}
+	if err := finishRunVersions(ctx, client); err != nil {
+		return made, pointed, err
+	}
 	return made, pointed, nil
+}
+
+// finishRunVersions completes the NOT VALID constraints the migration put on
+// automation_runs.version_id (ADR 0033), once no Enrollment is left without a version: it
+// validates the foreign key and the check, then makes the column NOT NULL (which Postgres does
+// without a scan, the validated check proving it) and drops the check, ending in the shape the
+// ent schema has. Once the column is NOT NULL there is nothing left, so every tick may call it.
+func finishRunVersions(ctx context.Context, client *ent.Client) error {
+	rows, err := client.QueryContext(ctx, `
+SELECT NOT EXISTS (SELECT 1 FROM automation_runs WHERE version_id IS NULL),
+       EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_schema = current_schema() AND table_name = 'automation_runs'
+                 AND column_name = 'version_id' AND is_nullable = 'YES')`)
+	if err != nil {
+		return fmt.Errorf("look for Enrollments with no version: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var allVersioned, unfinished bool
+	if rows.Next() {
+		if err := rows.Scan(&allVersioned, &unfinished); err != nil {
+			return err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if !allVersioned || !unfinished {
+		return nil
+	}
+	for _, stmt := range []string{
+		`ALTER TABLE automation_runs VALIDATE CONSTRAINT automation_runs_automation_versions_runs`,
+		`ALTER TABLE automation_runs VALIDATE CONSTRAINT automation_runs_version_id_required`,
+		`ALTER TABLE automation_runs ALTER COLUMN version_id SET NOT NULL`,
+		`ALTER TABLE automation_runs DROP CONSTRAINT automation_runs_version_id_required`,
+	} {
+		if _, err := client.ExecContext(ctx, stmt); err != nil {
+			return fmt.Errorf("%s: %w", stmt, err)
+		}
+	}
+	return nil
 }
 
 // affected is the row count of an executed statement.
