@@ -653,13 +653,23 @@ One of a fixed set of single-use codes issued when a User enrolls a Second facto
 place of it when the authenticator is lost. Regenerating the set invalidates the old codes.
 _Avoid_: Backup code
 
+**Passkey**:
+A credential a User registers on a device or security key to log in without typing an email or a
+password. A login with a Passkey always proves the device and the person (biometric or PIN), so it
+replaces both the password and the Second factor. A User may hold several, each named. It is a
+way to prove who the User is, not a Sign-in provider's proof of an address and not an
+organization's identity system.
+_Avoid_: Security key (a device that can hold one), WebAuthn credential, biometric login
+
 **Two-factor requirement**:
-A Workspace-level policy, set by an Owner or Admin, that every User with a Membership in it must have a
-Second factor; Users without one get a 7-day grace period before access is withheld.
+A Workspace-level policy, set by an Owner or Admin, that every User with a Membership in it must sign in
+with a Second factor or a Passkey. A session started with the password or a Sign-in provider alone does
+not meet it for a User who has no Second factor; that session gets a 7-day grace period before access
+is withheld.
 _Avoid_: Enforced 2FA, mandatory MFA
 
 **Second factor reset**:
-An Owner or Admin removing another User's Second factor so they can re-enroll after losing both
+An Owner or Admin removing another User's Second factor and Passkeys so they can re-enroll after losing both
 authenticator and Recovery codes. Recorded as an Audit entry.
 _Avoid_: Unlock, disable 2FA
 
