@@ -1,113 +1,163 @@
 # Self-hosting Sphericon
 
-Sphericon ships as a **single self-contained artifact** — one Go binary (or one Docker image)
-with the React SPA, the tracker snippet (`/t.js`), and the database migrations all
-embedded. The only external dependency at runtime is **PostgreSQL** (the background queue
-and pub/sub both ride on Postgres — no Redis, no object storage, no separate worker).
-
-- **PostgreSQL:** 14 to 18 (the test suite runs on 18). `sphericon doctor` checks it.
+Sphericon is **one program and one database**: a Go binary (or Docker image) with the web app, the
+tracker snippet and the migrations built in, and PostgreSQL. There is no Redis, no object storage
+and no separate worker.
 
 > Would rather not run it? [Sphericon Cloud](/guide/cloud) is the hosted edition.
 
-- Outbound email via SMTP or any SES-compatible service (Amazon SES, Yandex Cloud Postbox and others).
+You need:
 
-## Configuration
+- A server or cluster that runs Docker, a plain binary or Kubernetes.
+- **PostgreSQL 14 to 18** (the test suite runs on 18). `sphericon doctor` checks it.
+- A domain with HTTPS for the public address, such as `https://mail.example.com`.
+- A mail provider: any SMTP server, or an SES-compatible service (Amazon SES, Yandex Cloud Postbox and others).
 
-Configuration is read from environment variables (and, if present, `.env` files next to
-the binary). `SPHERICON_ENV` selects the environment (`development` by default; set it to
-`production` when self-hosting — the published Docker images already default to `production`).
+## Quick start
 
-| Variable                                                                                                              | Required                         | Default                                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------------- | -------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                                                                                        | **yes**                          | —                                       | PostgreSQL connection string (or `DATABASE_URL_FILE`; `postgres://user:pass@host:5432/db?sslmode=require`). Use `sslmode=verify-full` (with `sslrootcert`) to also verify the server certificate.                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `SPHERICON_JWT_SECRET`                                                                                                | **yes in prod**                  | —                                       | Signing secret for auth tokens (or `SPHERICON_JWT_SECRET_FILE`). Outside `development`/`test` the server refuses to boot if it is empty, shorter than 32 characters, or a known placeholder. Generate one with `openssl rand -hex 32`.                                                                                                                                                                                                                                                                                                                                                                                  |
-| `SPHERICON_JWT_SECRET_SECONDARY`                                                                                      | no                               | —                                       | The second secret of a JWT secret rotation (or `SPHERICON_JWT_SECRET_SECONDARY_FILE`): accepted when verifying sessions and mailed links, never used to sign. Unset outside a rotation. Same rules as `SPHERICON_JWT_SECRET`, and different from it. See [Rotating the JWT secret](./operations/security#rotating-the-jwt-secret).                                                                                                                                                                                                                                                                                      |
-| `SPHERICON_SESSION_TTL`                                                                                               | no                               | `24h`                                   | Lifetime of a dashboard session (a Go duration, e.g. `12h`): the session token expires and the cookie is dropped after it, with no refresh. Must be positive.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `SPHERICON_ENCRYPTION_KEY`                                                                                            | **yes**                          | —                                       | Base64 Tink keyset (or `SPHERICON_ENCRYPTION_KEY_FILE`) used to encrypt stored provider credentials. Generate one with `sphericon genkey` (see [Generate the keys](#generate-the-keys)). Boot fails if missing.                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `SPHERICON_APP_URL`                                                                                                   | no                               | `http://localhost:3000`                 | Public base URL — used when issuing auth tokens and building tracking/unsubscribe links. Set to your real origin.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `SPHERICON_MCP_URL`                                                                                                   | no                               | _(empty: `SPHERICON_APP_URL`)_          | Public origin of a dedicated MCP host, e.g. `https://mcp.example.com`. The MCP resource is then `${SPHERICON_MCP_URL}/mcp` while the OAuth issuer and consent screen stay on `SPHERICON_APP_URL`. Leave empty on a single host.                                                                                                                                                                                                                                                                                                                                                                                         |
-| `PORT`                                                                                                                | no                               | `3000`                                  | HTTP listen port.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `SPHERICON_METRICS_ADDR`                                                                                              | no                               | — (off)                                 | `host:port` for the opt-in Prometheus listener. Must differ from `PORT`; see [Prometheus metrics](#prometheus-metrics).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `SPHERICON_INTERNAL_ADDR`                                                                                             | no                               | — (off)                                 | `host:port` for the opt-in internal listener that serves the edge's on-demand TLS `ask` (`GET /tls/ask?domain=`, always, [ADR 0038](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0038-tracking-domains-are-core-and-the-edge-is-not.md)) and the Service credential endpoints of the Staff surface (these need the `staff` license). Must differ from `PORT` and `SPHERICON_METRICS_ADDR`; see [Service credentials](#service-credentials).                                                                                                                                                             |
-| `SPHERICON_TRACKING_CNAME_TARGET`                                                                                     | no                               | — (off)                                 | The edge host a Sending domain's Tracking domain CNAME (`track.<domain>`) must point at (ADR 0038), for example `edge.example.com`. Unset turns the feature off: no tracking record is shown on a Sending domain.                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `SPHERICON_TRACKING_HOST_HEADER`                                                                                      | no                               | — (off)                                 | Name of the request header your edge sets to the customer's host (for example `X-Forwarded-Host`), so a request for a verified Tracking domain is served only link paths (ADR 0038). Believed only from a peer inside `SPHERICON_TRACKING_EDGE_CIDRS`; from anyone else it is ignored. Unset: the connection's `Host` is used. Have the proxy for the Instance's own host drop this header.                                                                                                                                                                                                                             |
-| `SPHERICON_TRACKING_EDGE_CIDRS`                                                                                       | no                               | loopback only (`127.0.0.0/8,::1/128`)   | Comma-separated CIDRs the edge connects from: the only peers whose `SPHERICON_TRACKING_HOST_HEADER` is trusted. A proxy that is not on the same machine must be listed explicitly (for example its Docker network or VPC CIDR); a peer outside the list can not set the host.                                                                                                                                                                                                                                                                                                                                           |
-| `SPHERICON_PRESETS_DIR`                                                                                               | no                               | — (built-in only)                       | Directory of custom Presets: every `*.yaml` / `*.yml` file at its root loads beside the built-in ones at start, and a file that does not load or reuses a built-in name stops the start. A Workspace never supplies one. Test a file first with `sphericon preset test`; see [Presets](/guide/presets).                                                                                                                                                                                                                                                                                                                 |
-| `SPHERICON_DB_AUTO_MIGRATE`                                                                                           | no                               | `false`                                 | Apply embedded migrations on startup. Convenient for single-replica; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `SPHERICON_DB_MIGRATE_TIMEOUT`                                                                                        | no                               | `10m`                                   | With auto-migrate on, the longest a start waits for the migration lock and the run before it fails. `0` is no limit. `sphericon migrate` itself has no limit.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `SPHERICON_CORS_ORIGINS`                                                                                              | no                               | —                                       | Comma/space-separated origins allowed credentialed CORS on the cookie-authenticated API (`/site`, `/auth`). Empty means same-origin only, which is what the bundled SPA needs; the bearer-token APIs are unaffected.                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `SPHERICON_MAX_BODY_BYTES`                                                                                            | no                               | `1048576`                               | Largest accepted request body (bytes) on every surface except `/collect`; larger bodies get `413`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `SPHERICON_COLLECT_MAX_BODY_BYTES`                                                                                    | no                               | `512000`                                | Largest accepted `/collect` batch (`POST /collect/events`, bytes); larger gets `413`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `SPHERICON_COLLECT_MAX_EVENT_BYTES`                                                                                   | no                               | `32768`                                 | Largest single `/collect` event (bytes): an identify body, or each event inside a batch; larger gets `413`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE`                                                                               | no                               | `60`                                    | Requests per minute per IP and endpoint on signup, invitation accept and consent confirm; over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND`                                                                           | no                               | `20`                                    | Requests per second per Workspace on `/api` and `/mcp` (one shared budget); over it `429` with `Retry-After`; `0` disables                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `SPHERICON_RATE_LIMIT_API_PER_MINUTE`                                                                                 | no                               | `600`                                   | Requests per minute per Workspace on `/api` and `/mcp`, stacked on the burst limit; `0` disables                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE`                                                                         | no                               | `30`                                    | Failed bearer-token authentications per minute per IP; over it `429`; successful ones are not counted; `0` disables                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE`                                                                            | no                               | `600`                                   | Open and click events recorded per minute per IP; over it the redirect or pixel is still served and only the recording is skipped (never a `429`); `0` disables.                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `SPHERICON_RATE_LIMIT_LOGIN_FAILURES`                                                                                 | no                               | `5`                                     | Failed logins per account within 15 minutes before login answers `429` with `Retry-After` and a doubling delay (1 s up to 15 min, no lockout), even for a correct password; `0` disables.                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE`                                                                            | no                               | `20`                                    | Login requests per minute per client IP; over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE`                                                                             | no                               | `6000`                                  | Requests per minute per Workspace on `/collect` (its own budget, apart from `/api`); over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE`                                                                             | no                               | `600`                                   | Requests per minute per Service credential on the internal listener; over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE`                                                                          | no                               | `300`                                   | Requests per minute per client IP on `/collect`; over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR`                                                           | no                               | `3`                                     | Mails sent per address per hour by forgot-password, by registration and by an email-change request (one budget for each, ADR 0031); over it they still answer `202` and send nothing (the answer never reveals whether the address has an account); `0` disables.                                                                                                                                                                                                                                                                                                                                                       |
-| `SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR`                                                                    | no                               | `10`                                    | Forgot-password requests per client IP per hour; over it `429` with `Retry-After`; `0` disables.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `SPHERICON_DB_MAX_OPEN_CONNS`                                                                                         | no                               | `15`                                    | Maximum open connections in the `database/sql` pool (API, ent, event bus).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `SPHERICON_DB_MAX_IDLE_CONNS`                                                                                         | no                               | `SPHERICON_DB_MAX_OPEN_CONNS`           | Maximum idle connections kept in that pool. Must not exceed `SPHERICON_DB_MAX_OPEN_CONNS`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `SPHERICON_DB_CONN_MAX_LIFETIME`                                                                                      | no                               | `30m`                                   | Maximum lifetime of a pooled connection (Go duration).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `SPHERICON_PGX_MAX_CONNS`                                                                                             | no                               | `25`                                    | Maximum connections in the river (job queue) pool. river's own queries (fetch, completion, LISTEN, leader election) run on it; job workers do their database work through the `database/sql` pool, so it need not match river's 20 workers (a small pool only queues completions).                                                                                                                                                                                                                                                                                                                                      |
-| `SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS`                                                                               | no                               | `7`                                     | Minimum age (days) before a domain-event outbox row that every consumer has processed is pruned. The prune job runs every 10 minutes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `SPHERICON_UNVERIFIED_USER_RETENTION_DAYS`                                                                            | no                               | `7`                                     | Age (days) after which a registration whose email was never verified, and that holds no Membership, is deleted by a daily job at 04:00 UTC, freeing its address; `0` disables. A pending Invitation to that address is kept.                                                                                                                                                                                                                                                                                                                                                                                            |
-| `SPHERICON_EVENTS_RETENTION_DAYS`                                                                                     | no                               | `400`                                   | Age (days) after which analytical Events are deleted by a daily job at 03:00 UTC; `0` disables. Evidentiary Events (`marketing.confirmed`, `email.complained`, `email.unsubscribed`, permanent `email.bounced`) are never deleted by age. Segment conditions that look back past this window are capped by it.                                                                                                                                                                                                                                                                                                          |
-| `SPHERICON_EVENT_LIVE_WINDOW_HOURS`                                                                                   | no                               | `72`                                    | Age (hours) past which the external API refuses a live Event as history: send it with `backfill` instead. At least `1`; a Backfill is never subject to it. `/collect` is not limited.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `SPHERICON_TELEMETRY`                                                                                                 | no                               | unset                                   | Decides the anonymous Telemetry report (ADR 0032): `true` sends it and locks the in-app switch on, `false` never sends it and locks it off; unset leaves the choice to the Owner (default on).                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `DO_NOT_TRACK`                                                                                                        | no                               | unset                                   | `1` switches the Telemetry report off and locks the in-app switch; it can never switch the report on.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `SPHERICON_RELEASE_CHECK`                                                                                             | no                               | `true`                                  | `false` switches the daily Release check off (ADR 0032): it asks GitHub for the newest stable release and shows Owners an update banner. It sends nothing about the Instance and is independent of the Telemetry report and `DO_NOT_TRACK`.                                                                                                                                                                                                                                                                                                                                                                             |
-| `SPHERICON_APP_LOCALE`                                                                                                | no                               | `en`                                    | Instance-wide UI and email language: `en` is the only one; anything else becomes `en`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `SPHERICON_REQUIRE_EMAIL_VERIFICATION`                                                                                | no                               | `true`                                  | Whether an account must prove its email address before it can sign in (ADR 0030). Only an explicit `false` turns it off, for an install without outbound mail: registration then takes a password and yields a verified user with its workspace at once. Any other value keeps it on. Never inferred from the SMTP settings.                                                                                                                                                                                                                                                                                            |
-| `SPHERICON_SIGNUP_OPEN`                                                                                               | no                               | `true`                                  | Whether anyone who reaches the instance can register (ADR 0042). Only an explicit `false` closes it: `signup` then answers `403` with code `signup_closed`, and a new user comes only through an invitation or `sphericon user create-owner`. Any other value keeps it open.                                                                                                                                                                                                                                                                                                                                            |
-| `SPHERICON_LICENSE_KEY`                                                                                               | no                               | —                                       | Enterprise Edition license key (or `SPHERICON_LICENSE_KEY_FILE`), a JWT signed with Ed25519 (`features` claim, standard `exp`); without it the single binary runs the open-source core only. A key that has expired (valid signature, past `exp`) does the same instead of failing boot (ADR 0035): the start logs a warning naming the expiry date, the owner's admin banner shows it and the `sphericon_license_expired` metric is `1`; no Enterprise data is deleted, and setting a valid key and restarting restores the features with it. A malformed key or one whose signature does not verify still fails boot. |
-| `SPHERICON_LOG_LEVEL`                                                                                                 | no                               | `info`                                  | Log level.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `SPHERICON_LOG_FORMAT`                                                                                                | no                               | `json` (`text` in development)          | Log format: `json` or `text`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `OTEL_SERVICE_NAME`                                                                                                   | no                               | `sphericon`                             | Service name reported to OpenTelemetry.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `OTEL_CONFIG_FILE`                                                                                                    | no                               | unset (no OTLP export)                  | Path to an OpenTelemetry [declarative configuration](https://opentelemetry.io/docs/specs/otel/configuration/) YAML file: you choose which traces, metrics and logs go to which destination.                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `SPHERICON_SMTP_HOST` / `SPHERICON_SMTP_PORT` / `SPHERICON_SMTP_USER` / `SPHERICON_SMTP_PASS` / `SPHERICON_SMTP_FROM` | no                               | `SPHERICON_SMTP_PORT=1025`              | Outbound email over SMTP (`SPHERICON_SMTP_PASS_FILE` for the password).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS`                                                                                  | no                               | `false` in production, `true` otherwise | Let a Workspace's SMTP integration use a loopback or private host and any port. Off in production: tenants may only reach public hosts on ports 25, 465, 587 and 2525. The platform's own `SPHERICON_SMTP_HOST` is exempt.                                                                                                                                                                                                                                                                                                                                                                                              |
-| `SPHERICON_OUTBOUND_ALLOW`                                                                                            | no                               | — (nothing allowed)                     | Comma-separated `host:port` pairs (a name or an IP address, a port each; no wildcards or ranges) that outbound calls (Webhook endpoint deliveries, test events, Automation HTTP steps and the fetch of an MCP client's metadata document, which any visitor can trigger at `/oauth/authorize`) may reach although the address is private or loopback, e.g. `n8n:5678,node-red:1880`, so events can go to a service on your own network. Off by default; redirects are still never followed. A malformed value stops the server at boot. Leave it unset on a multi-tenant host.                                          |
-| `SPHERICON_SYSTEM_EMAIL_PROVIDER`                                                                                     | no                               | `smtp`                                  | Platform (system) email provider: `smtp` or `ses`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `SPHERICON_SYSTEM_EMAIL_FROM`                                                                                         | no                               | `noreply@sphericon.localhost`           | From address for platform mail (e.g. welcome emails).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `SPHERICON_SES_REGION` / `SPHERICON_SES_ACCESS_KEY_ID` / `SPHERICON_SES_SECRET_ACCESS_KEY`                            | no                               | —                                       | Credentials of an SES-compatible service when using the `ses` provider.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `SPHERICON_COLLECT_SITE_KEY`                                                                                          | no                               | —                                       | Tracker ingestion key.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `SPHERICON_BOOTSTRAP_TOKEN`                                                                                           | no                               | —                                       | External-API bootstrap token.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `SPHERICON_STAFF_JWT_SECRET`                                                                                          | **yes with the `staff` license** | —                                       | Signs the platform Staff member session and login challenge (ADR 0026). Required only when the license has the `staff` feature, then at least 32 characters and different from `SPHERICON_JWT_SECRET`, or the server refuses to boot. Generate one with `openssl rand -hex 32`.                                                                                                                                                                                                                                                                                                                                         |
-| `SPHERICON_ACCOUNT_LINK_URL`                                                                                          | no                               | — (off)                                 | Address of an external account page. With `SPHERICON_ACCOUNT_LINK_SIGNING_KEY`, a Workspace Owner sees an Account link that opens it with a signed token; set both or neither. The app never calls this address.                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `SPHERICON_ACCOUNT_LINK_SIGNING_KEY`                                                                                  | no                               | — (off)                                 | Base64 Ed25519 seed that signs the Account link token (generate with `openssl rand -base64 32`). The app publishes the matching public key at `/.well-known/jwks.json`, so the receiver needs no secret.                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `SPHERICON_STAFF_SESSION_TTL`                                                                                         | no                               | `4h`                                    | Lifetime of a Staff member session (a Go duration): shorter than `SPHERICON_SESSION_TTL`, with no refresh and no "remember me". Must be positive.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `SPHERICON_STAFF_HOLD_MAX_EXPIRY`                                                                                     | no                               | `720h`                                  | How far ahead a service may set an Staff hold's expiry (a Go duration); a later expiry is refused. A hold that is not renewed lapses by itself. Must be positive.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `SPHERICON_ABUSE_VOLUME_FLOOR`                                                                                        | no                               | `1000`                                  | Abuse detector (`staff` license, ADR 0026): the fewest sends in the trailing 24 hours, per Sending domain, for its rates to be judged; below it nothing is warned or frozen. Must be positive.                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT`                                                                              | no                               | `0.1`                                   | Complaint rate (percent) at which the abuse detector warns the Workspace owners by email, freezing nothing. Above 0 and below the freeze limit.                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `SPHERICON_ABUSE_WARN_BOUNCE_PERCENT`                                                                                 | no                               | `5`                                     | Bounce rate (percent) at which the abuse detector warns the owners. Above 0 and below the freeze limit.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT`                                                                            | no                               | `0.3`                                   | Complaint rate (percent) at which the abuse detector suspends the whole Workspace (actor `system`) and tells its owners. At most 100.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT`                                                                               | no                               | `10`                                    | Bounce rate (percent) at which the abuse detector suspends the whole Workspace. At most 100.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `SPHERICON_SUPPORT_EMAIL`                                                                                             | no                               | — (none)                                | Support contact shown to a Workspace owner with a suspension (banner and notice email) so they can appeal by email. Empty shows none.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+Pick one way. Each takes about five minutes and ends with the same running Instance. Three settings
+are needed everywhere (the whole list is in the [Configuration reference](/configuration), but you will
+not need most of it):
 
-### Secrets from files
+| Setting                    | What to put there                                                            |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| `DATABASE_URL`             | The PostgreSQL connection string.                                            |
+| `SPHERICON_JWT_SECRET`     | A random value: `openssl rand -hex 32`.                                      |
+| `SPHERICON_ENCRYPTION_KEY` | A key you create once: `sphericon genkey` (see [below](#generate-the-keys)). |
 
-Docker and Kubernetes mount secrets as files. `DATABASE_URL`, `SPHERICON_JWT_SECRET`, `SPHERICON_JWT_SECRET_SECONDARY`,
-`SPHERICON_ENCRYPTION_KEY`, `SPHERICON_SMTP_PASS` and `SPHERICON_LICENSE_KEY` each accept a `_FILE`
-sibling (`SPHERICON_JWT_SECRET_FILE=/run/secrets/jwt`) whose value is a path read at start. The
-trailing newline is trimmed. A value set directly wins over the file, which is then never read; an
-unreadable or empty file fails boot with an error naming the `_FILE` variable.
+and `SPHERICON_APP_URL`, the public `https://` origin, so links in your mail point at the right place.
 
-## Bounces, complaints and Suppression
+### Docker Compose (recommended)
 
-Bounces and complaints are ingested only through an Integration's hook, read by a built-in
-**Preset** (`ses`, `postmark`, `mailgun`, `generic`) or one of your own from `SPHERICON_PRESETS_DIR`
-([ADR 0037](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0037-inbound-provider-callbacks-are-presets-on-an-integration.md)).
-**Plain SMTP with no provider callback gets no Suppression**, so SMTP alone is for tests and small
-volumes. The hook URL must be reachable from the provider, so serve the Instance over public HTTPS
-(see below). Setup steps for each Preset are in
-[Deliverability](/guide/deliverability#bounces-and-complaints); the file format is in
-[Presets](/guide/presets).
+Runs PostgreSQL, the migrations and the app together.
+
+1. Download the Compose file and the example environment:
+
+   ```sh
+   curl -fsSLO https://raw.githubusercontent.com/getsphericon/sphericon/main/compose.yaml
+   curl -fsSL https://raw.githubusercontent.com/getsphericon/sphericon/main/compose.env.example -o .env
+   ```
+
+2. Fill in `.env`: `POSTGRES_PASSWORD`, `SPHERICON_JWT_SECRET` (`openssl rand -hex 32`) and
+   `SPHERICON_ENCRYPTION_KEY` (`docker run --rm ghcr.io/getsphericon/sphericon:latest genkey`). Back the
+   encryption key up with your database.
+3. Start it:
+
+   ```sh
+   docker compose up -d
+   ```
+
+4. Put a [reverse proxy with HTTPS](#https-and-reverse-proxy) in front of port 3000.
+5. Go to [First run](#first-run) to create your account.
+
+### Docker
+
+You already have PostgreSQL somewhere.
+
+1. Generate the secrets:
+
+   ```sh
+   openssl rand -hex 32                                              # SPHERICON_JWT_SECRET
+   docker run --rm ghcr.io/getsphericon/sphericon:latest genkey      # SPHERICON_ENCRYPTION_KEY
+   ```
+
+2. Run the image, which migrates the database on start:
+
+   ```sh
+   docker run -d --name sphericon -p 3000:3000 \
+     -e SPHERICON_ENV=production \
+     -e DATABASE_URL="postgres://user:pass@db:5432/sphericon?sslmode=require" \
+     -e SPHERICON_JWT_SECRET="<from step 1>" \
+     -e SPHERICON_ENCRYPTION_KEY="<from step 1>" \
+     -e SPHERICON_APP_URL="https://mail.example.com" \
+     -e SPHERICON_DB_AUTO_MIGRATE=true \
+     ghcr.io/getsphericon/sphericon:latest
+   ```
+
+3. Put a [reverse proxy with HTTPS](#https-and-reverse-proxy) in front of port 3000.
+4. Go to [First run](#first-run).
+
+### Binary with systemd
+
+1. Download the release for your platform from the
+   [releases page](https://github.com/getsphericon/sphericon/releases) and install it as
+   `/usr/local/bin/sphericon`.
+2. Put the settings in a file only root can read, `/etc/sphericon/env`:
+
+   ```sh
+   sudo install -m 600 -o root /dev/null /etc/sphericon/env
+   ```
+
+   ```ini
+   SPHERICON_ENV=production
+   DATABASE_URL=postgres://user:pass@host:5432/sphericon?sslmode=require
+   SPHERICON_JWT_SECRET=<openssl rand -hex 32>
+   SPHERICON_ENCRYPTION_KEY=<sphericon genkey>
+   SPHERICON_APP_URL=https://mail.example.com
+   ```
+
+3. Install the [systemd unit](#systemd) and start it:
+
+   ```sh
+   sudo systemctl enable --now sphericon
+   ```
+
+4. Put a [reverse proxy with HTTPS](#https-and-reverse-proxy) in front of port 3000.
+5. Go to [First run](#first-run).
+
+To try it without systemd, export the same variables and run `./sphericon migrate`, then `./sphericon`.
+
+### Kubernetes
+
+1. Create a Secret with `DATABASE_URL`, `SPHERICON_JWT_SECRET` and `SPHERICON_ENCRYPTION_KEY`:
+
+   ```sh
+   kubectl create secret generic sphericon-secrets \
+     --from-literal=DATABASE_URL="postgres://user:pass@host:5432/sphericon?sslmode=require" \
+     --from-literal=SPHERICON_JWT_SECRET="$(openssl rand -hex 32)" \
+     --from-literal=SPHERICON_ENCRYPTION_KEY="<sphericon genkey>"
+   ```
+
+2. Install the chart:
+
+   ```sh
+   helm install sphericon oci://ghcr.io/getsphericon/charts/sphericon \
+     --version 0.5.0 --set existingSecret=sphericon-secrets --set appUrl=https://mail.example.com
+   ```
+
+3. Expose the Service through your ingress with TLS, then go to [First run](#first-run). The
+   [Kubernetes](#kubernetes-details) section below has the rest.
+
+## First run
+
+A fresh Instance lets anyone who reaches it register, and the first registration owns the first
+workspace. Do not expose it before one of these:
+
+1. **Close sign-up and create the first owner yourself** (recommended for a public host). Set
+   `SPHERICON_SIGNUP_OPEN=false`, then on the server run
+
+   ```sh
+   sphericon user create-owner ada@example.com Ada Lovelace
+   ```
+
+   It creates a verified user and its first workspace and prints a one-time password; sign in with
+   it and change it in your profile. The name becomes the workspace name. With sign-up closed, every
+   later user comes from an owner's invitation, and accepting an invitation keeps working.
+
+2. **Leave sign-up open** and register the first owner yourself before the host is reachable by
+   anyone else (a private network or a firewall rule). Close sign-up afterwards if the instance is
+   not meant to take other registrations.
+
+Then run `sphericon doctor` (in Docker: `docker exec sphericon sphericon doctor`). It checks the
+database, `SPHERICON_APP_URL` and your mail setup and says what to fix
+([Diagnosing with doctor](./operations/doctor)). Finish in the app with the
+[Quickstart](/guide/quickstart): connect a mail provider, verify a sending domain, send your first email.
+
+---
+
+## In detail
+
+Everything below is reference for the steps above. Read what you need.
 
 ## Generate the keys
 
@@ -150,59 +200,23 @@ full procedure and [Backup and restore](./operations/backup) for what to protect
 > it at a database previously managed by the Atlas dev-CLI flow (which uses
 > `atlas_schema_revisions`).
 
-## Run it
-
-### Docker
-
-```sh
-docker run -p 3000:3000 \
-  -e SPHERICON_ENV=production \
-  -e DATABASE_URL="postgres://user:pass@db:5432/sphericon?sslmode=require" \
-  -e SPHERICON_JWT_SECRET="$(openssl rand -hex 32)" \
-  -e SPHERICON_ENCRYPTION_KEY="<base64 tink keyset>" \
-  -e SPHERICON_APP_URL="https://mail.example.com" \
-  -e SPHERICON_DB_AUTO_MIGRATE=true \
-  ghcr.io/getsphericon/sphericon:latest
-```
+## Docker and Compose
 
 The image declares a `HEALTHCHECK` against `/healthz`, so `docker ps` reports `healthy`
 once the process is serving.
 
-### Docker Compose
-
-`compose.yaml` at the repo root runs Postgres (18, in a named volume), a one-shot `migrate` service
+The `compose.yaml` from the quick start runs Postgres (18, in a named volume), a one-shot `migrate` service
 (`sphericon migrate`, exits 0) and the app, which starts only after Postgres is healthy and `migrate`
 has succeeded. The app keeps the image's `HEALTHCHECK`. Mailpit is not included: configure an SMTP or
 SES provider in the app.
 
-```sh
-curl -fsSLO https://raw.githubusercontent.com/getsphericon/sphericon/main/compose.yaml
-curl -fsSL https://raw.githubusercontent.com/getsphericon/sphericon/main/compose.env.example -o .env
-# fill in .env: POSTGRES_PASSWORD and SPHERICON_JWT_SECRET (`openssl rand -hex 32`),
-# SPHERICON_ENCRYPTION_KEY (`docker run --rm ghcr.io/getsphericon/sphericon:latest genkey`)
-docker compose up -d
-```
-
-`.env` lists the required variables only; any other variable from the table above goes into the
+`.env` lists the required variables only; any other variable from the [Configuration reference](/configuration) goes into the
 `environment` block of the `x-sphericon` anchor in `compose.yaml`. `SPHERICON_VERSION` in `.env` picks the
 image tag (pin a release). To upgrade, back up, set the new tag, then `docker compose pull` and
 `docker compose up -d`: `up` re-runs `migrate` first, and the app is recreated once it succeeds. See
 [Upgrading](./operations/upgrading#docker) for the Majors and refusals.
 
-### Binary
-
-```sh
-export SPHERICON_ENV=production
-export DATABASE_URL="postgres://user:pass@host:5432/sphericon?sslmode=require"
-export SPHERICON_JWT_SECRET="$(openssl rand -hex 32)"
-export SPHERICON_ENCRYPTION_KEY="<base64 tink keyset>"
-export SPHERICON_APP_URL="https://mail.example.com"
-
-./sphericon migrate   # apply migrations (or set SPHERICON_DB_AUTO_MIGRATE=true)
-./sphericon           # start the server
-```
-
-### systemd
+## systemd
 
 For the bare binary, a unit keeps it running and restarts it on failure. Put the environment in a
 file only root can read:
@@ -248,25 +262,16 @@ with another name is passed as `--service <name>`. Without `--restart` it prints
 `systemctl restart sphericon` and leaves that step to you. See [Upgrading](./operations/upgrading)
 for `--check`, `--version`, `--from` (offline) and what to do when a step refuses.
 
-## First run
+## Bounces, complaints and Suppression
 
-A fresh instance lets anyone who reaches it register, and the first registration owns the first
-workspace. Do not expose it before one of these:
-
-1. **Close sign-up and create the first owner yourself** (recommended for a public host). Set
-   `SPHERICON_SIGNUP_OPEN=false`, then on the server run
-
-   ```sh
-   sphericon user create-owner ada@example.com Ada Lovelace
-   ```
-
-   It creates a verified user and its first workspace and prints a one-time password; sign in with
-   it and change it in your profile. The name becomes the workspace name. With sign-up closed, every
-   later user comes from an owner's invitation, and accepting an invitation keeps working.
-
-2. **Leave sign-up open** and register the first owner yourself before the host is reachable by
-   anyone else (a private network or a firewall rule). Close sign-up afterwards if the instance is
-   not meant to take other registrations.
+Bounces and complaints are ingested only through an Integration's hook, read by a built-in
+**Preset** (`ses`, `postmark`, `mailgun`, `generic`) or one of your own from `SPHERICON_PRESETS_DIR`
+([ADR 0037](https://github.com/getsphericon/sphericon/blob/main/docs/adr/0037-inbound-provider-callbacks-are-presets-on-an-integration.md)).
+**Plain SMTP with no provider callback gets no Suppression**, so SMTP alone is for tests and small
+volumes. The hook URL must be reachable from the provider, so serve the Instance over public HTTPS
+(see below). Setup steps for each Preset are in
+[Deliverability](/guide/deliverability#bounces-and-complaints); the file format is in
+[Presets](/guide/presets).
 
 ## HTTPS and reverse proxy
 
@@ -378,13 +383,13 @@ recreate for the image. None of them stops a running Instance; see
 rather than `latest` in production. Migrations only move forward, so to roll back restore the
 backup taken before the upgrade.
 
-## Kubernetes
+## Kubernetes details
 
 The chart lives in `charts/sphericon` and is published at every release as an OCI artifact,
 `oci://ghcr.io/getsphericon/charts/sphericon`, with the chart version equal to the app version.
 Create a Secret with `DATABASE_URL`, `SPHERICON_JWT_SECRET` and `SPHERICON_ENCRYPTION_KEY` first and
 pass its name as `existingSecret` (the chart refuses to render without it). To hand the secrets over as
-files instead (see [Secrets from files](#secrets-from-files)), set `secretFiles.secretName` to the Secret
+files instead (see [Secrets from files](/configuration#secrets-from-files)), set `secretFiles.secretName` to the Secret
 and `secretFiles.keys` to the variables it holds: the chart mounts it at `/run/secrets/sphericon` and sets
 each `<KEY>_FILE`; `existingSecret` is then optional.
 
@@ -399,7 +404,7 @@ The chart runs `sphericon migrate` as a pre-install and pre-upgrade hook Job and
 pod is replaced. It sets `/healthz` as the liveness probe and `/readyz` as the readiness probe, runs
 two replicas behind a disruption budget, and leaves metrics off unless you set `metrics.enabled`
 (`metrics.serviceMonitor.enabled` adds a Prometheus Operator ServiceMonitor that scrapes the
-internal listener only). To deploy without the chart, a Deployment needs only the environment above
+internal listener only). To deploy without the chart, a Deployment needs only the required settings (see the [Configuration reference](/configuration))
 and those two probes, with `sphericon migrate` as a pre-deploy Job.
 
 ## Health checks
