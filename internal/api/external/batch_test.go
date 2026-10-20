@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
@@ -116,4 +117,25 @@ func TestExternalEventsBatchSubmitScope(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.EventsBatchSubmitUnauthorized{}, res)
+}
+
+// A backfilled batch is accepted per item and published as history; a client event id rides along as
+// the dedup key.
+func TestExternalEventsBatchBackfill(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "events:write")
+
+	res, err := c.EventsBatchSubmit(context.Background(), &externalapi.RecordEventsBatchInput{
+		Backfill: externalapi.NewOptBool(true),
+		Events: []externalapi.EventInput{
+			{SubjectId: "s-1", Action: "order_paid", ClientEventId: externalapi.NewOptNilString("order-1")},
+		},
+	})
+	require.NoError(t, err)
+	ok, isOK := res.(*externalapi.RecordEventsBatchResult)
+	require.Truef(t, isOK, "got %T", res)
+	require.Len(t, ok.Results, 1)
+	assert.Equal(t, externalapi.EventBatchStatusAccepted, ok.Results[0].Status)
+
+	assert.Equal(t, 1, env.OutboxCount(t, "event.collected", map[string]any{"backfill": true, "dedupId": eventlog.DedupKey(fixtures.AcmeID, "order-1")}))
 }

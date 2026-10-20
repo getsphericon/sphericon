@@ -21,7 +21,7 @@ func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEven
 		return &res, nil
 	}
 
-	inputs, err := eventInputs(req.Events)
+	inputs, err := eventInputs(req.Events, false)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEven
 	return &externalapi.EventsCreateNoContent{}, nil
 }
 
-func eventInputs(events []externalapi.EventInput) ([]eventlog.Input, error) {
+func eventInputs(events []externalapi.EventInput, backfill bool) ([]eventlog.Input, error) {
 	inputs := make([]eventlog.Input, len(events))
 	for i, e := range events {
 		in := eventlog.Input{
@@ -41,6 +41,10 @@ func eventInputs(events []externalapi.EventInput) ([]eventlog.Input, error) {
 			Email:     convert.StringPtr(e.Email),
 			Phone:     convert.StringPtr(e.Phone),
 			Action:    e.Action,
+			Backfill:  backfill,
+		}
+		if v, ok := e.ClientEventId.Get(); ok {
+			in.ClientEventID = v
 		}
 		if v, ok := e.OccurredAt.Get(); ok {
 			in.OccurredAt = time.Time(v)
@@ -67,7 +71,7 @@ func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.Recor
 		return &res, nil
 	}
 
-	inputs, err := eventInputs(req.Events)
+	inputs, err := eventInputs(req.Events, req.Backfill.Or(false))
 	if err != nil {
 		return nil, err
 	}

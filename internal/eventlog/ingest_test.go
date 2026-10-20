@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/eventlog"
+	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -67,4 +68,37 @@ func TestIngestEachIsolatesItems(t *testing.T) {
 func TestIngestEachWithNoInputs(t *testing.T) {
 	env := testhelper.Setup(t)
 	assert.Empty(t, eventlog.New(env.Bus).IngestEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), nil))
+}
+
+func TestIngestMarksBackfilledEvents(t *testing.T) {
+	env := testhelper.Setup(t)
+	require.NoError(t, eventlog.New(env.Bus).Ingest(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventlog.Input{
+		{SubjectID: "s-1", Action: "purchase", Backfill: true},
+		{SubjectID: "s-2", Action: "purchase"},
+	}))
+
+	got := outboxCollected(t, env)
+	require.Len(t, got, 2)
+	assert.True(t, got[0].Backfill)
+	assert.False(t, got[1].Backfill)
+}
+
+// A resent Event with the same client id changes nothing once the first one is stored, and
+// the id is scoped to the Workspace.
+func TestIngestSkipsAnEventItAlreadyStored(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	m := eventlog.New(env.Bus)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	in := eventlog.Input{SubjectID: "s-1", Action: "purchase", ClientEventID: "order-1"}
+
+	require.NoError(t, m.Ingest(ctx, acme, []eventlog.Input{in}))
+	for _, envelope := range env.OutboxEnvelopes(t, events.NameCollected) {
+		require.NoError(t, events.Persist(ctx, env.DB, envelope))
+	}
+	require.NoError(t, m.Ingest(ctx, acme, []eventlog.Input{in}))
+
+	got := outboxCollected(t, env)
+	require.Len(t, got, 1, "the resend is not published again")
+	assert.Equal(t, eventlog.DedupKey(fixtures.AcmeID, "order-1"), got[0].DedupID)
 }

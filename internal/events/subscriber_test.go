@@ -97,3 +97,21 @@ func TestWebhooksConsumerCarriesTheErasedSubject(t *testing.T) {
 	assert.Equal(t, NameContactErased, p.Type)
 	assert.Equal(t, "user-9", p.Data["subjectId"])
 }
+
+// A backfilled event is recorded but neither enrolls its contact nor reaches a webhook
+// endpoint; the same event without the flag does both.
+func TestBackfilledEventsTriggerNeitherAutomationsNorWebhooks(t *testing.T) {
+	enroller, d := newEnroller(), newDispatcher()
+	history := &CollectedEvent{WorkspaceID: 1, ContactID: 7, SubjectID: "s-7", Action: "purchase", Backfill: true}
+
+	require.NoError(t, automationsConsumer(enroller)(msgFor(t, history)))
+	require.NoError(t, webhooksConsumer(nil, d)(msgFor(t, history)))
+	assert.Empty(t, enroller.OnEventCalls())
+	assert.Empty(t, d.DispatchCalls())
+
+	live := &CollectedEvent{WorkspaceID: 1, ContactID: 7, SubjectID: "s-7", Action: "purchase"}
+	require.NoError(t, automationsConsumer(enroller)(msgFor(t, live)))
+	require.NoError(t, webhooksConsumer(nil, d)(msgFor(t, live)))
+	assert.Len(t, enroller.OnEventCalls(), 1)
+	assert.Len(t, d.DispatchCalls(), 1)
+}

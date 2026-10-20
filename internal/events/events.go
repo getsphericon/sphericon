@@ -98,6 +98,18 @@ type identifiable interface {
 	EventID() string
 }
 
+// quiet is an optional DomainEvent capability: an event that is recorded but never
+// reacted to, so the webhooks and automations consumers skip it (a backfill of history).
+type quiet interface {
+	Quiet() bool
+}
+
+// IsQuiet reports whether ev is recorded without triggering automations or webhooks.
+func IsQuiet(ev DomainEvent) bool {
+	q, ok := ev.(quiet)
+	return ok && q.Quiet()
+}
+
 // registry maps a bus event name to a constructor for its concrete type, so a
 // serialized envelope can be decoded back into the right Go type. All variants
 // are ours and finite — there is no catch-all.
@@ -312,12 +324,16 @@ type CollectedEvent struct {
 	// DedupID is the persist idempotency key of an event the client gave a clientEventId
 	// (visitors.CollectDedupKey: the Workspace and that id). Empty for an event without one.
 	DedupID string `json:"dedupId,omitempty"`
+	// Backfill marks an event loaded from history: it is recorded, but no Automation enrolls
+	// on it and no webhook endpoint receives it.
+	Backfill bool `json:"backfill,omitempty"`
 }
 
 func (*CollectedEvent) EventName() string  { return NameCollected }
 func (*CollectedEvent) EventVersion() int  { return 1 }
 func (e *CollectedEvent) Workspace() int64 { return e.WorkspaceID }
 func (e *CollectedEvent) EventID() string  { return e.DedupID }
+func (e *CollectedEvent) Quiet() bool      { return e.Backfill }
 func (e *CollectedEvent) Project() Projection {
 	return Projection{
 		Subject:    e.SubjectID,

@@ -11,6 +11,7 @@ package eventlog
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -42,6 +43,18 @@ type Input struct {
 	Action     string
 	OccurredAt time.Time // zero => publish time
 	Properties map[string]any
+	// ClientEventID is the client's own id for the Event ("" = none). A repeat of an id in
+	// a Workspace is a no-op, so a client can resend a load it never saw answered.
+	ClientEventID string
+	// Backfill records the Event as history: no Automation enrolls on it and no webhook
+	// endpoint receives it.
+	Backfill bool
+}
+
+// DedupKey is the Event's source_id for a client event id: source_id is unique across
+// Workspaces, the client's id only within one.
+func DedupKey(workspaceID int64, clientEventID string) string {
+	return fmt.Sprintf("api:%d:%s", workspaceID, clientEventID)
 }
 
 // Ingest attaches each Event to an existing Contact by stable identity (an unknown
@@ -50,6 +63,20 @@ type Input struct {
 func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		for _, in := range inputs {
+			dedupID := ""
+			if in.ClientEventID != "" {
+				dedupID = DedupKey(ts.WorkspaceID(), in.ClientEventID)
+				// Already stored: a resend of an Event that arrived. One still on the outbox
+				// is published again and the persist subscriber's unique source_id keeps
+				// one row.
+				seen, err := ts.Event().Query().Where(event.SourceID(dedupID)).Exist(ctx)
+				if err != nil {
+					return err
+				}
+				if seen {
+					continue
+				}
+			}
 			contactID, err := contacts.ResolveID(ctx, ts, in.SubjectID, in.Email, in.Phone)
 			if err != nil {
 				return err
@@ -61,6 +88,8 @@ func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 				Action:      in.Action,
 				OccurredAt:  in.OccurredAt,
 				Properties:  in.Properties,
+				DedupID:     dedupID,
+				Backfill:    in.Backfill,
 			}
 			if in.Email != nil {
 				collected.Email = *in.Email

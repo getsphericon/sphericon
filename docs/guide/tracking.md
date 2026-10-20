@@ -104,4 +104,26 @@ curl https://sphericon.example.com/api/events/batch \
   -d '{"events":[{"action":"subscription_started","subjectId":"user_42"}]}'
 ```
 
+### Loading history into a new setup
+
+To bring the events of an earlier system into a new Workspace, send them to `POST /events/batch`
+in chunks of up to 1000 with `"backfill": true`, each with its original `occurredAt` and a
+`clientEventId` of your own (a UUID, or your system's event id):
+
+```sh
+curl https://sphericon.example.com/api/events/batch \
+  -H "Authorization: Bearer $SPHERICON_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"backfill":true,"events":[{"action":"order_paid","subjectId":"user_42","occurredAt":"2024-03-01T10:00:00Z","clientEventId":"order-1001"}]}'
+```
+
+- A backfilled event is recorded and segments see it, but no Automation enrolls on it and no
+  webhook endpoint receives it, so loading history never sends mail.
+- An event with a `clientEventId` that is already stored changes nothing, so a load that broke off
+  halfway is resent from the start. The id is unique within the Workspace.
+- Retention counts from the day an event is stored, not from `occurredAt`, so history older than
+  the window is kept until it has been stored for that long.
+- Load the Contacts first: an event whose subject matches no Contact is stored anonymously and is
+  not linked afterwards.
+
 See [API](/guide/api) for tokens and the other endpoints.
