@@ -37,7 +37,7 @@ export function VerifyEmailPage() {
     ...siteAuthVerifyEmailMutation(),
     // The session cookie is set by the answer: the root route sends the User into
     // their first Workspace.
-    onSuccess: () => navigate({ to: indexRoute.to }),
+    onSuccess: () => navigate({ to: indexRoute.to, replace: true }),
     onError: (error) => {
       form.setValues({ password: '', confirm: '' })
       if (hasErrorStatus(error, [428])) {
@@ -100,6 +100,9 @@ export function VerifyEmailPage() {
                 <Text c="dimmed" ta="center">
                   {t(($) => $.verifyEmail.errorMessage)}
                 </Text>
+                <Button onClick={() => mutate({ body: { token } })}>
+                  {t(($) => $.verifyEmail.retry)}
+                </Button>
                 <AnchorLink to={loginRoute.to} size="sm" mt="md">
                   {t(($) => $.verifyEmail.signIn)}
                 </AnchorLink>

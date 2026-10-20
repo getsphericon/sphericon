@@ -19,6 +19,26 @@ const RegistrationCookie = "REG"
 // is httpOnly and SameSite=Strict, so the browser still sends it to nothing else.
 const registrationCookiePath = "/site/auth"
 
+// The claims a verification token carries beyond its User: the address it was sent to
+// and the hash of the Registration browser it was minted for.
+const (
+	claimEmail   = "email"
+	claimBrowser = "registration_browser"
+)
+
+// VerifyClaims builds the claims of a verification token: the address it is sent to and
+// the hash of the registration cookie it trusts (empty for none).
+func VerifyClaims(email, browserHash string) map[string]string {
+	return map[string]string{claimEmail: email, claimBrowser: browserHash}
+}
+
+// VerifyClaimsEmail is the address a verification token was sent to.
+func VerifyClaimsEmail(claims map[string]string) string { return claims[claimEmail] }
+
+// VerifyClaimsBrowser is the hash of the Registration browser a verification token was
+// minted for, empty when none.
+func VerifyClaimsBrowser(claims map[string]string) string { return claims[claimBrowser] }
+
 // NewRegistrationBrowser draws the random value that marks one browser, returning the
 // cookie that carries it (httpOnly, SameSite=Strict, scoped to the auth prefix,
 // living for ttl) and the hash that goes into the verification token. The value itself

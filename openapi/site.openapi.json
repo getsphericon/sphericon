@@ -453,7 +453,7 @@
             "name": "REG",
             "in": "cookie",
             "required": false,
-            "description": "The registration cookie of the browser asking, if any: the new link then signs\nthat browser in without a password",
+            "description": "The registration cookie of the browser asking, if any: the new link binds to\nwhatever cookie the caller holds and then signs that browser in without a\npassword",
             "schema": {
               "type": "string"
             },
@@ -660,7 +660,7 @@
             "name": "REG",
             "in": "cookie",
             "required": false,
-            "description": "The registration cookie of the browser that registered, if any",
+            "description": "The registration cookie of the browser that registered, if any. Its path is the\nauth prefix shared with resend, and it is SameSite=Strict: not sent on the\ncross-site click from the mail, but sent on the page's own later request.",
             "schema": {
               "type": "string"
             },

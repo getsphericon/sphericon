@@ -1580,8 +1580,8 @@ func decodeSiteAuthConfirmEmailChangeParams(args [0]string, argsEscaped bool, r 
 
 // SiteAuthResendVerificationParams is parameters of SiteAuth_resendVerification operation.
 type SiteAuthResendVerificationParams struct {
-	// The registration cookie of the browser asking, if any: the new link then signs that browser in
-	// without a password.
+	// The registration cookie of the browser asking, if any: the new link binds to whatever cookie the
+	// caller holds and then signs that browser in without a password.
 	REG OptString `json:",omitempty,omitzero"`
 }
 
@@ -1644,7 +1644,9 @@ func decodeSiteAuthResendVerificationParams(args [0]string, argsEscaped bool, r 
 
 // SiteAuthVerifyEmailParams is parameters of SiteAuth_verifyEmail operation.
 type SiteAuthVerifyEmailParams struct {
-	// The registration cookie of the browser that registered, if any.
+	// The registration cookie of the browser that registered, if any. Its path is the auth prefix shared
+	// with resend, and it is SameSite=Strict: not sent on the cross-site click from the mail, but sent on
+	// the page's own later request.
 	REG OptString `json:",omitempty,omitzero"`
 }
 

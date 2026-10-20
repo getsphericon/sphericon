@@ -1152,6 +1152,7 @@ export default interface Resources {
       "mismatch": "Passwords do not match",
       "otherBrowserBody": "This link was not opened in the browser you registered in, so choose a password to finish. It replaces the one you entered on the registration form.",
       "passwordLabel": "Password",
+      "retry": "Try again",
       "signIn": "Sign in",
       "submitButton": "Set password",
       "title": "Set your password",

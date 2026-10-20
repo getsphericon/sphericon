@@ -80,24 +80,30 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	if err != nil {
 		return nil, err
 	}
+	// replace is whether the address already holds a User whose password this registration
+	// replaces: every path but the one that creates it.
+	replace := true
 	u, err := h.accounts.UserByEmail(ctx, email)
 	if ent.IsNotFound(err) {
 		u, err = h.accounts.Register(ctx, name, email, hash)
+		replace = false
 		if db.IsUniqueViolation(err) {
 			// Two registrations of one new address raced: the loser finds the winner's row
-			// and follows the same path, so a race is not an answer of its own.
+			// and follows the existing-address path below, so a race is not an answer of its
+			// own. It replaces the winner's password too (ADR 0030 notes the consequence).
 			u, err = h.accounts.UserByEmail(ctx, email)
-			if err == nil {
-				u, err = h.accounts.ReplaceUnverifiedPassword(ctx, u.ID, hash)
-			}
+			replace = true
 		}
-	} else if err == nil {
-		// A repeated registration of an Unverified address replaces its password, which
-		// ends the earlier mails; a Verified User's row is left as it is.
-		u, err = h.accounts.ReplaceUnverifiedPassword(ctx, u.ID, hash)
 	}
 	if err != nil {
 		return nil, err
+	}
+	if replace {
+		// A repeated registration of an Unverified address replaces its password, which
+		// ends the earlier mails; a Verified User's row is left as it is.
+		if u, err = h.accounts.ReplaceUnverifiedPassword(ctx, u.ID, hash); err != nil {
+			return nil, err
+		}
 	}
 
 	// The token is bound to the stored password hash, so it works until a registration
@@ -106,7 +112,7 @@ func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegist
 	// its notice carries no token at all. Best-effort send; a lost mail is asked for again.
 	cookie, browser := h.sessions.NewRegistrationBrowser(verifyTokenTTL)
 	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, u.ID, u.PasswordHash, verifyTokenTTL,
-		map[string]string{"email": u.Email, "rb": browser})
+		auth.VerifyClaims(u.Email, browser))
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +179,11 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 	if u != nil {
 		uid, binding, to = u.ID, u.PasswordHash, u.Email
 	}
-	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, uid, binding, verifyTokenTTL, map[string]string{"email": to, "rb": auth.RegistrationHash(params.REG.Or(""))})
+	// The cookie is SameSite=Strict: the browser withholds it on the cross-site click from
+	// the mail, but sends it on the page's own request that follows (same site), which is
+	// the one that carries the token.
+	claims := auth.VerifyClaims(to, auth.RegistrationHash(params.REG.Or("")))
+	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, uid, binding, verifyTokenTTL, claims)
 	if err != nil {
 		return nil, err
 	}

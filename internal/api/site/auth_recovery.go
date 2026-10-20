@@ -109,22 +109,24 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil)))
 		return &v, nil
 	}
-	if extra["email"] != u.Email {
+	if auth.VerifyClaimsEmail(extra) != u.Email {
 		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_stale", nil)))
 		return &v, nil
 	}
-	// An empty hash keeps the password stored at registration.
-	var hash string
-	if !auth.SameRegistrationBrowser(extra["rb"], params.REG.Or("")) {
+	// The Registration browser keeps the password stored at registration (nil); any other
+	// browser replaces it with the one from the form.
+	var hash *string
+	if !auth.SameRegistrationBrowser(auth.VerifyClaimsBrowser(extra), params.REG.Or("")) {
 		password := req.Password.Or("")
 		if password == "" {
 			v := siteapi.SiteAuthVerifyEmailPreconditionRequired(problem(http.StatusPreconditionRequired, i18n.T("errors.verify_password_needed", nil)))
 			return &v, nil
 		}
-		hash, err = credentials.HashPassword(password)
-		if err != nil {
-			return nil, err
+		replacement, herr := credentials.HashPassword(password)
+		if herr != nil {
+			return nil, herr
 		}
+		hash = &replacement
 	}
 	verified, err := h.accounts.VerifyEmail(ctx, uid, hash, u.Name)
 	if errors.Is(err, accounts.ErrAlreadyVerified) {

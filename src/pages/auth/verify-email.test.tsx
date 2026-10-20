@@ -39,7 +39,9 @@ test('sends the token alone first and enters the first workspace when it is acce
   )
   const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
 
-  await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to }))
+  await vi.waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to, replace: true }),
+  )
   expect(bodies).toEqual([{ token: 'tok-v' }])
   await expect.element(screen.getByRole('button', { name: 'Set password' })).not.toBeInTheDocument()
 })
@@ -60,7 +62,9 @@ test('asks for a password when the link is not in the registration browser and r
 
   await fillAndSubmit(screen, 's3cret-pass')
 
-  await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to }))
+  await vi.waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to, replace: true }),
+  )
   expect(bodies).toEqual([{ token: 'tok-v' }, { token: 'tok-v', password: 's3cret-pass' }])
 })
 
@@ -110,4 +114,22 @@ test('offers no form when the address carries no token', async () => {
   await expect
     .element(screen.getByRole('link', { name: 'Sign in' }))
     .toHaveAttribute('href', loginRoute.to)
+})
+
+test('offers a retry that sends the token again after a server failure', async () => {
+  let calls = 0
+  worker.use(
+    handleSiteAuthVerifyEmail(() => {
+      calls += 1
+      return calls === 1 ? problem(500, { detail: 'boom' }) : HttpResponse.json({})
+    }),
+  )
+  const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
+
+  await screen.getByRole('button', { name: 'Try again' }).click()
+
+  await vi.waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to, replace: true }),
+  )
+  expect(calls).toBe(2)
 })

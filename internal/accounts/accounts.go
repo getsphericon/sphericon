@@ -289,8 +289,9 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(email)).Exist(ctx)
 }
 
-// Register creates an Unverified User (ADR 0030): a name and an email, no password,
-// no Membership. The unique index on the email refuses a taken address (see
+// Register creates an Unverified User (ADR 0030): a name, an email and the password hash
+// from the registration form, no Membership. The password goes live only when the address
+// is verified from the Registration browser, or replaced on the link. The unique index on the email refuses a taken address (see
 // db.IsUniqueViolation).
 func (a *Accounts) Register(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
 	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).Save(ctx)
@@ -317,18 +318,18 @@ func (a *Accounts) CreateUser(ctx context.Context, name, email, passwordHash str
 	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(time.Now()).Save(ctx)
 }
 
-// markVerified completes an Unverified User's row: it sets the password hash when one
-// is given (empty keeps the stored one) and the name when not empty, stamps the Verified email and bumps the session epoch, ending
-// every earlier session. The write lands only on a still-Unverified User, so of two
+// markVerified completes an Unverified User's row: it stamps the Verified email, bumps the
+// session epoch (ending every earlier session), sets the password hash when passwordHash is
+// not nil (nil keeps the stored one) and the name when not empty. The write lands only on a still-Unverified User, so of two
 // racing completions exactly one wins; the other gets ErrAlreadyVerified and changes
 // nothing.
-func markVerified(ctx context.Context, tx *ent.Client, id int64, name, passwordHash string) (*ent.User, error) {
+func markVerified(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string) (*ent.User, error) {
 	upd := tx.User.Update().
 		Where(user.ID(id), user.EmailVerifiedAtIsNil()).
 		SetEmailVerifiedAt(time.Now()).
 		AddSessionEpoch(1)
-	if passwordHash != "" {
-		upd = upd.SetPasswordHash(passwordHash)
+	if passwordHash != nil {
+		upd = upd.SetPasswordHash(*passwordHash)
 	}
 	if name != "" {
 		upd = upd.SetName(name)
@@ -344,13 +345,13 @@ func markVerified(ctx context.Context, tx *ent.Client, id int64, name, passwordH
 }
 
 // VerifyEmail completes a registration from its link (ADR 0030), in one transaction:
-// it stamps the Verified email, sets the password hash (empty keeps the one stored at
-// registration), bumps the session epoch
-// (ending every session issued before, as a password change does) and creates the
+// it stamps the Verified email, sets the password hash to *passwordHash (nil keeps the one
+// stored at registration), bumps the session epoch (ending every session issued before, as
+// a password change does) and creates the
 // User's first Workspace named workspaceName with the User as owner. It records
 // `user.email_verify` in that Workspace's Audit log and returns the User.
 // ErrAlreadyVerified when the User is no longer Unverified (a used link).
-func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash, workspaceName string) (*ent.User, error) {
+func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *string, workspaceName string) (*ent.User, error) {
 	return a.verified(ctx, workspaceName, func(tx *ent.Client) (*ent.User, error) {
 		return markVerified(ctx, tx, id, "", passwordHash)
 	})
@@ -455,7 +456,7 @@ func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash str
 		return nil, false, err
 	}
 	if u.EmailVerifiedAt == nil {
-		u, err = a.VerifyEmail(ctx, id, passwordHash, u.Name)
+		u, err = a.VerifyEmail(ctx, id, &passwordHash, u.Name)
 		if err == nil {
 			return u, true, nil
 		}
@@ -602,7 +603,7 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 					SetEmailVerifiedAt(time.Now()).
 					Save(ctx)
 			} else {
-				u, uerr = markVerified(ctx, tx, u.ID, name, hash)
+				u, uerr = markVerified(ctx, tx, u.ID, name, &hash)
 			}
 			if uerr != nil {
 				return uerr
