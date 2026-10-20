@@ -107,13 +107,13 @@ Never hand-name a scratch database. `mise run worktrees:gc` (also run by `setup`
 `worktrees:prune`; `--apply` to act, a dry run otherwise) drops the shared server's databases that
 no live worktree's `DB_NAMES` covers and runs `mise daemons prune --yes` for dead state; it
 refuses to drop anything when it cannot enumerate or read a live worktree, including one on a
-commit from before `DB_NAMES` (merge main into it), and never touches the primary's daemon.
+commit from before `DB_NAMES` (rebase it onto main), and never touches the primary's daemon.
 It skips the `testdb_tpl_*` databases: those are pgtestdb's template and per-test databases (the
 `testhelper.RealDB` family, below), owned by a test that may be running in any checkout, and
 pgtestdb drops each when its test ends.
 `mise run worktrees:prune -- --apply` first removes the worktrees whose branch is already in
 `origin/main`. A worktree from before this setup still runs its own `db` daemon: it retires with
-its next merge of main plus `mise daemons stop`. Several tasks in one command need `:::` between
+its next rebase onto main plus `mise daemons stop`. Several tasks in one command need `:::` between
 them (`mise run check:fe ::: check:deps`); otherwise the extra names become arguments.
 
 Run Go tests only through `mise run test`: it sets `SPHERICON_ENV=test` and the test DB, and a bare
@@ -424,22 +424,22 @@ outside `schema/`, `src/generated/`) unless that is the point of the search.
 
 - Commit messages follow **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`,
   `refactor:`, `ci:` …) — release-please uses them for versioning/changelog.
-  commitlint runs on every commit, merge commits included: write `chore: merge <what>`, never
-  `Merge branch …`; the header fits 120 characters and each body line 100.
+  commitlint runs on every commit; the header fits 120 characters and each body line 100.
+  **Never create a merge commit** (`chore: merge origin/main` and the like): history stays linear.
+  Bring `main` in with `git fetch origin && git rebase origin/main`, never `git merge`.
 - A new environment variable gets one row in the env table of `docs/configuration.md`, the only
   table (`mise run check:env`); the README links to it.
 - **Agent guidance lives in this file, not in personal agent memory.** The repo has several
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory.
 - **Land non-trivial work from its worktree, then clean up.** A change made in a worktree reaches
-  `main` with `git push origin HEAD:main` once the checks pass and `origin/main` is merged in (a
+  `main` with `git push origin HEAD:main` once the checks pass and the work is rebased onto a freshly fetched `origin/main` (a
   detached `HEAD`, never a branch). Then remove that worktree (`git worktree remove <path>`) right
   away, without asking. Only the worktree made for that change.
   **Landing also closes the ticket.** When the user says to land or finish ("заливай", "завершай",
   "land it"), that covers the issue the work was for: put `Closes #<n>` in the footer of the
   commit that reaches `main` (one per ticket), then confirm with `gh issue view <n> --json state`
-  that it is closed after the push. If GitHub did not close it (the push was a merge commit
-  without the keyword, or the work came through a PR), run `gh issue close <n> --comment
+  that it is closed after the push. If GitHub did not close it (the push lacked the keyword, or the work came through a PR), run `gh issue close <n> --comment
   "Implemented on main in <sha>."`. A ticket that stays open after its work is on `main` is
   taken as unfinished by the next agent, who then redoes it. The push prints
   `Required status check "license/cla" is expected` and still succeeds: that is how the
@@ -476,8 +476,8 @@ A trivial change is committed straight to `main` in the primary checkout. Anythi
 
 Before running the `to-spec` skill, call the `advisor` tool first and take its advice into account. The skill is vendored, so this rule lives here rather than in the skill.
 
-### Merge main before marking ready
+### Rebase onto main before marking ready
 
-In `implement-spec`, before marking the draft PR ready, merge a freshly fetched `origin/main` into
-the integration branch, push, and merge the PR at once: `main` moves while the integration runs, and a
+In `implement-spec`, before marking the draft PR ready, rebase the integration branch onto a freshly
+fetched `origin/main`, push it with `--force-with-lease`, and merge the PR at once: `main` moves while the integration runs, and a
 conflicting PR runs no CI. The skill is vendored, so this rule lives here rather than in the skill.
