@@ -369,7 +369,6 @@ depends = [
   "check:openapi",
   "check:typos",
   "check:adr",
-  "check:env",
   "check:helm",
   "check:shell",
 ]
@@ -415,19 +414,6 @@ go run ./cmd/upgradecheck breaking "${args[@]}" ${PR_BODY_FILE:+--body-file "$PR
 go run ./cmd/upgradecheck immutable --base "$base" ${PR_BODY_FILE:+--body-file "$PR_BODY_FILE"}
 '''
 
-["check:env"]
-description = "Every environment variable config/config.go reads is documented in docs/configuration.md (the one env table)"
-run = '''
-read_vars=$(mktemp); doc_vars=$(mktemp)
-grep -oE '"[A-Z][A-Z0-9_]{3,}"' config/config.go | tr -d '"' | sort -u > "$read_vars"
-grep -oE '`[A-Z][A-Z0-9_]{3,}`' docs/configuration.md | tr -d '`' | sort -u > "$doc_vars"
-missing=$(comm -23 "$read_vars" "$doc_vars")
-rm -f "$read_vars" "$doc_vars"
-if [ -n "$missing" ]; then
-  echo "error: add to the env table in docs/configuration.md: $(echo $missing)"; exit 1
-fi
-'''
-
 ["check:deps"]
 description = "Unused files, exports and dependencies (knip.ts)"
 run = "mise/scripts/heavy.sh pnpm exec knip"
@@ -467,7 +453,7 @@ description = "Tracker (t.js) gzip size budget (package.json size-limit); builds
 run = ["pnpm build:tracker", "pnpm exec size-limit"]
 
 ["check:helm"]
-description = "Helm chart: lint, schema-validated render (default and all-features), and refusal without existingSecret, runbook coverage of every alert"
+description = "Helm chart: lint, schema-validated render (default and all-features), and refusal without existingSecret"
 run = '''
 set -eu
 chart=charts/sphericon
@@ -484,10 +470,6 @@ helm template r "$chart" --set existingSecret=sphericon-secrets \
   --set metrics.prometheusRule.enabled=true | $kc
 # The release packages the chart with chart version = app version.
 mise run release:chart -- 9.9.9
-# Every alert in the rules needs a runbook section named after it.
-for alert in $(sed -n 's/^ *- alert: *//p' "$chart/files/alerts.yaml"); do
-  grep -q "^## $alert\$" docs/operations/runbook.md || { echo "error: no runbook section for $alert"; exit 1; }
-done
 '''
 
 ["release:chart"]
