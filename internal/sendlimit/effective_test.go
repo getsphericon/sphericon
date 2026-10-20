@@ -72,3 +72,24 @@ func TestUsageCountsSentMessagesPerIntegrationOverTheLastDay(t *testing.T) {
 		fixtures.IntegrationAcmeSesID:     1,
 	}, got, "the pending, unstamped and Globex rows do not count")
 }
+
+func TestWarningsListsWhatIsWorthFlaggedInAStableOrder(t *testing.T) {
+	limited := sendlimit.Value{Limit: new(5), Source: sendlimit.SourceManual}
+	tests := []struct {
+		name string
+		eff  sendlimit.Effective
+		want []sendlimit.Warning
+	}{
+		{"nothing to flag", sendlimit.Effective{PerSecond: limited}, []sendlimit.Warning{}},
+		{"no ceiling at all", sendlimit.Effective{}, []sendlimit.Warning{sendlimit.WarningUnlimited}},
+		{"provider quota unreadable", sendlimit.Effective{PerDay: limited, ProviderQuotaUnavailable: true}, []sendlimit.Warning{sendlimit.WarningProviderQuotaUnavailable}},
+		{"both", sendlimit.Effective{ProviderQuotaUnavailable: true}, []sendlimit.Warning{sendlimit.WarningUnlimited, sendlimit.WarningProviderQuotaUnavailable}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.eff.Warnings()
+
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
