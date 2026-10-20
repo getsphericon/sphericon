@@ -6,6 +6,7 @@ import {
   IconMailFast,
   IconRobot,
   IconSettings,
+  IconTag,
   IconTemplate,
   IconUsers,
   IconUsersGroup,
@@ -19,6 +20,7 @@ import { Route as contactsRoute } from '../routes/workspaces/$workspaceId/contac
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as segmentsRoute } from '../routes/workspaces/$workspaceId/segments/index.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
 import { Route as templatesRoute } from '../routes/workspaces/$workspaceId/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { NavLinkLink } from './RouterLink.tsx'
@@ -46,6 +48,12 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
       route: segmentsRoute,
       label: t(($) => $.nav.segments),
       icon: <IconUsersGroup size={18} />,
+      exact: false,
+    },
+    {
+      route: tagsRoute,
+      label: t(($) => $.nav.tags),
+      icon: <IconTag size={18} />,
       exact: false,
     },
     {

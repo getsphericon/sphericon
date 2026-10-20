@@ -7,6 +7,7 @@ import { Route as contactsRoute } from '../routes/workspaces/$workspaceId/contac
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as segmentsRoute } from '../routes/workspaces/$workspaceId/segments/index.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
 import { Route as templatesRoute } from '../routes/workspaces/$workspaceId/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
@@ -17,6 +18,7 @@ const SECTIONS = [
   ['Overview', overviewRoute],
   ['Contacts', contactsRoute],
   ['Segments', segmentsRoute],
+  ['Tags', tagsRoute],
   ['Broadcasts', broadcastsRoute],
   ['Templates', templatesRoute],
   ['Automations', automationsRoute],
