@@ -40,6 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
@@ -292,7 +293,7 @@ func (r Request) validate() error {
 	switch {
 	case r.Key == "":
 		return errors.New("outbound: idempotency key required")
-	case eligibility.NormalizeDestination(r.Destination) == "":
+	case suppression.NormalizeDestination(r.Destination) == "":
 		return errors.New("outbound: destination required")
 	}
 	return nil
@@ -308,7 +309,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	if req.Source != "" && m.tracker == nil {
 		return Result{}, ErrNoTracker
 	}
-	dest := eligibility.NormalizeDestination(req.Destination)
+	dest := suppression.NormalizeDestination(req.Destination)
 
 	// A recorded send replays its Outcome — even while the Workspace is frozen: the
 	// message already left (or was already decided), nothing new is being sent.
@@ -829,7 +830,7 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 	if g.hold != "" {
 		return Result{Outcome: Held, Reason: g.hold}, nil
 	}
-	to := eligibility.NormalizeDestination(req.To)
+	to := suppression.NormalizeDestination(req.To)
 	msg, err := m.composeTest(ctx, s, ws, g.domain, req, to)
 	if err != nil {
 		return Result{Outcome: Failed, Reason: err.Error()}, nil
@@ -865,8 +866,8 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 	if hold != "" {
 		return Result{Outcome: Held, Reason: hold}, nil
 	}
-	to := eligibility.NormalizeDestination(req.To)
-	if to != eligibility.NormalizeDestination(req.Asker.Email) {
+	to := suppression.NormalizeDestination(req.To)
+	if to != suppression.NormalizeDestination(req.Asker.Email) {
 		return Result{Outcome: Refused, Reason: RefuseOtherRecipient}, nil
 	}
 	if m.system == nil {

@@ -15,9 +15,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/internal/eligibility"
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // Enroller enrolls a contact into automations matching an event action. The
@@ -139,14 +139,14 @@ func (c Consumer) Handler() message.NoPublishHandlerFunc {
 // unsubscribes). It takes the whole projection because a bounce only suppresses
 // when permanent, which lives in the projected properties. Unsubscribe is NOT a
 // suppression: it writes a per-source Unsubscribe row instead (ADR 0001).
-func suppressionReason(p Projection) (suppression.Reason, bool) {
+func suppressionReason(p Projection) (entsuppression.Reason, bool) {
 	switch p.Action {
 	case NameEmailComplained:
-		return suppression.ReasonComplaint, true
+		return entsuppression.ReasonComplaint, true
 	case NameEmailBounced:
 		// Only hard (permanent) bounces suppress; transient bounces are temporary.
 		if kind, _ := p.Properties["bounceKind"].(string); kind == BounceKindPermanent {
-			return suppression.ReasonBounce, true
+			return entsuppression.ReasonBounce, true
 		}
 		return "", false
 	default:
@@ -181,21 +181,21 @@ func Suppress(ctx context.Context, client *ent.Client, env Envelope) error {
 	if !ok {
 		return nil
 	}
-	dest := eligibility.NormalizeDestination(p.Email)
+	dest := suppression.NormalizeDestination(p.Email)
 	if dest == "" {
 		return nil
 	}
 	// The Workspace comes from the event envelope: a consumer has no membership or
 	// api token, so this is a scope source outside the site/external/job list.
 	create := client.Scoped(env.WorkspaceID).Suppression().Create().
-		SetChannel(suppression.ChannelEmail).
+		SetChannel(entsuppression.ChannelEmail).
 		SetDestination(dest).
 		SetReason(reason)
 	if p.ContactID != 0 {
 		create.SetContactID(p.ContactID)
 	}
 	if err := create.
-		OnConflictColumns(suppression.FieldWorkspaceID, suppression.FieldChannel, suppression.FieldDestination).
+		OnConflictColumns(entsuppression.FieldWorkspaceID, entsuppression.FieldChannel, entsuppression.FieldDestination).
 		Ignore().
 		Exec(ctx); err != nil {
 		return fmt.Errorf("suppress %q: %w", dest, err)

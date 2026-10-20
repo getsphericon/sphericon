@@ -7,10 +7,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/suppression"
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -41,8 +42,8 @@ func TestCheckSuppressed(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(suppression.ChannelEmail).SetDestination("blocked@example.com").
-		SetReason(suppression.ReasonComplaint).Save(ctx)
+		SetChannel(entsuppression.ChannelEmail).SetDestination("blocked@example.com").
+		SetReason(entsuppression.ReasonComplaint).Save(ctx)
 	require.NoError(t, err)
 
 	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
@@ -71,8 +72,8 @@ func TestCheckTransactionalSkipsUnsubscribeButNotSuppression(t *testing.T) {
 
 	// But a suppressed destination is never sent to, transactional or not.
 	_, err = env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(suppression.ChannelEmail).SetDestination("txn@example.com").
-		SetReason(suppression.ReasonBounce).Save(ctx)
+		SetChannel(entsuppression.ChannelEmail).SetDestination("txn@example.com").
+		SetReason(entsuppression.ReasonBounce).Save(ctx)
 	require.NoError(t, err)
 	d, err = eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
 		"txn@example.com", "")
@@ -184,8 +185,8 @@ func TestConfirmationDoesNotOverrideNegatives(t *testing.T) {
 		SetProvenance(confirmation.ProvenanceDoubleOptIn).Save(ctx)
 	require.NoError(t, err)
 	_, err = env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(suppression.ChannelEmail).SetDestination("both@example.com").
-		SetReason(suppression.ReasonComplaint).Save(ctx)
+		SetChannel(entsuppression.ChannelEmail).SetDestination("both@example.com").
+		SetReason(entsuppression.ReasonComplaint).Save(ctx)
 	require.NoError(t, err)
 
 	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
@@ -204,8 +205,8 @@ func TestPredicateFoldsCaseAndExcludes(t *testing.T) {
 	c, err := env.DB.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("Caps@Example.com").Save(ctx)
 	require.NoError(t, err)
 	_, err = env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(suppression.ChannelEmail).SetDestination("caps@example.com").
-		SetReason(suppression.ReasonBounce).Save(ctx)
+		SetChannel(entsuppression.ChannelEmail).SetDestination("caps@example.com").
+		SetReason(entsuppression.ReasonBounce).Save(ctx)
 	require.NoError(t, err)
 
 	matched, err := env.DB.Contact.Query().
@@ -222,8 +223,8 @@ func TestCheckFoldsCase(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(suppression.ChannelEmail).SetDestination("mixed@example.com").
-		SetReason(suppression.ReasonBounce).Save(ctx)
+		SetChannel(entsuppression.ChannelEmail).SetDestination("mixed@example.com").
+		SetReason(entsuppression.ReasonBounce).Save(ctx)
 	require.NoError(t, err)
 
 	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail,
@@ -265,19 +266,19 @@ func TestPredicateAndCheckAgree(t *testing.T) {
 	}
 	for _, f := range lo.Filter(cases, func(f fixture, _ int) bool { return f.suppress }) {
 		_, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-			SetChannel(suppression.ChannelEmail).SetDestination(eligibility.NormalizeDestination(f.email)).
-			SetReason(suppression.ReasonBounce).Save(ctx)
+			SetChannel(entsuppression.ChannelEmail).SetDestination(suppression.NormalizeDestination(f.email)).
+			SetReason(entsuppression.ReasonBounce).Save(ctx)
 		require.NoError(t, err)
 	}
 	for _, f := range lo.Filter(cases, func(f fixture, _ int) bool { return f.unsub != "" }) {
 		_, err := env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).
-			SetChannel(unsubscribe.ChannelEmail).SetDestination(eligibility.NormalizeDestination(f.email)).
+			SetChannel(unsubscribe.ChannelEmail).SetDestination(suppression.NormalizeDestination(f.email)).
 			SetSendingSource(f.unsub).Save(ctx)
 		require.NoError(t, err)
 	}
 	for _, f := range lo.Filter(cases, func(f fixture, _ int) bool { return f.confirmed }) {
 		_, err := env.DB.Confirmation.Create().SetWorkspaceID(fixtures.AcmeID).
-			SetChannel(confirmation.ChannelEmail).SetDestination(eligibility.NormalizeDestination(f.email)).
+			SetChannel(confirmation.ChannelEmail).SetDestination(suppression.NormalizeDestination(f.email)).
 			SetProvenance(confirmation.ProvenanceDoubleOptIn).Save(ctx)
 		require.NoError(t, err)
 	}
@@ -306,8 +307,8 @@ func TestCheckWorksWithoutAContact(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := env.DB.Suppression.Create().SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(suppression.ChannelEmail).SetDestination("nocontact@example.com").
-		SetReason(suppression.ReasonComplaint).Save(ctx)
+		SetChannel(entsuppression.ChannelEmail).SetDestination("nocontact@example.com").
+		SetReason(entsuppression.ReasonComplaint).Save(ctx)
 	require.NoError(t, err)
 	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.ChannelEmail, "nocontact@example.com", "")
 	require.NoError(t, err)

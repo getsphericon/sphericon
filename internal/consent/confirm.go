@@ -5,8 +5,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
-	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
@@ -17,7 +17,7 @@ import (
 // click. The existence check makes a repeated POST (mailbox retry, double click)
 // a complete no-op: the confirmation stands and no second Event is logged.
 func RecordConfirmation(ctx context.Context, bus *events.Bus, target tracking.ConfirmTarget, ip string) error {
-	dest := eligibility.NormalizeDestination(target.Destination)
+	dest := suppression.NormalizeDestination(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 {
 		return nil
 	}

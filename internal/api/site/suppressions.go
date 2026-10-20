@@ -6,11 +6,11 @@ import (
 	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/suppression"
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/consent"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.SiteSuppressionsListParams) (siteapi.SiteSuppressionsListRes, error) {
@@ -23,27 +23,11 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 
-	var pagePtr, pageSizePtr *int32
-	if v, ok := params.Page.Get(); ok {
-		pagePtr = &v
-	}
-	if v, ok := params.PageSize.Get(); ok {
-		pageSizePtr = &v
-	}
-	page, pageSize := pagination.Normalize(pagePtr, pageSizePtr)
-
-	q := s.Suppression().Query()
-	total, err := q.Count(ctx)
+	page, err := suppression.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
-	items, err := q.Order(ent.Desc(suppression.FieldID)).
-		Limit(pageSize).
-		Offset(pagination.Offset(page, pageSize)).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
+	items := page.Items
 
 	resources := make([]siteapi.SiteSuppressionResource, len(items))
 	for i, item := range items {
@@ -51,10 +35,10 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 	}
 	return &siteapi.SiteSuppressionsListOK{
 		Items:      resources,
-		Page:       int32(page),
-		PageSize:   int32(pageSize),
-		TotalItems: int32(total),
-		TotalPages: int32(pagination.TotalPages(total, pageSize)),
+		Page:       int32(page.Page),
+		PageSize:   int32(page.PageSize),
+		TotalItems: int32(page.TotalItems),
+		TotalPages: int32(page.TotalPages),
 	}, nil
 }
 
@@ -68,8 +52,8 @@ func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.Site
 		return nil, err
 	}
 
-	created, err := consent.Suppress(ctx, s, req.Destination)
-	if errors.Is(err, consent.ErrDestinationEmpty) {
+	created, err := suppression.Add(ctx, s, suppression.Entry{Destination: req.Destination, Reason: entsuppression.ReasonManual})
+	if errors.Is(err, suppression.ErrDestinationEmpty) {
 		v := siteapi.SiteSuppressionsCreateUnprocessableEntity(problemWithErrors(http.StatusUnprocessableEntity, i18n.T("errors.destination_invalid", nil), map[string][]string{
 			"destination": {i18n.T("errors.must_not_be_empty", nil)},
 		}))
@@ -93,8 +77,8 @@ func (h *Handlers) SiteSuppressionsDelete(ctx context.Context, params siteapi.Si
 	}
 
 	id := int64(params.ID)
-	err = s.Suppression().DeleteOneID(id).Exec(ctx)
-	if ent.IsNotFound(err) {
+	err = suppression.Remove(ctx, s, id)
+	if errors.Is(err, suppression.ErrNotFound) {
 		v := siteapi.SiteSuppressionsDeleteNotFound(problem(http.StatusNotFound, "suppression not found"))
 		return &v, nil
 	}

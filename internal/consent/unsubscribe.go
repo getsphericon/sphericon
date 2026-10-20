@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
@@ -25,7 +26,7 @@ import (
 // transaction gated on the existence check, so a repeated POST (mailbox retry or a
 // double click) is a complete no-op and concurrent POSTs are counted exactly once.
 func RecordUnsubscribe(ctx context.Context, bus *events.Bus, target tracking.UnsubTarget) error {
-	dest := eligibility.NormalizeDestination(target.Destination)
+	dest := suppression.NormalizeDestination(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 || target.Source == "" {
 		return nil
 	}

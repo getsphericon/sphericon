@@ -7,10 +7,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/suppression"
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
 
@@ -30,22 +31,11 @@ var (
 // Suppress adds a manual Suppression for an email destination. It is idempotent per
 // (channel, destination): an existing entry, with its reason, is returned unchanged.
 func Suppress(ctx context.Context, s *ent.Scoped, destination string) (*ent.Suppression, error) {
-	dest := eligibility.NormalizeDestination(destination)
-	if dest == "" {
+	got, err := suppression.Add(ctx, s, suppression.Entry{Destination: destination, Reason: entsuppression.ReasonManual})
+	if errors.Is(err, suppression.ErrDestinationEmpty) {
 		return nil, ErrDestinationEmpty
 	}
-	if err := s.Suppression().Create().
-		SetChannel(suppression.ChannelEmail).
-		SetDestination(dest).
-		SetReason(suppression.ReasonManual).
-		OnConflictColumns(suppression.FieldWorkspaceID, suppression.FieldChannel, suppression.FieldDestination).
-		Ignore().
-		Exec(ctx); err != nil {
-		return nil, err
-	}
-	return s.Suppression().Query().
-		Where(suppression.ChannelEQ(suppression.ChannelEmail), suppression.DestinationEQ(dest)).
-		Only(ctx)
+	return got, err
 }
 
 // Unsubscribe records an opt-out of destination from a sending source, with the
@@ -54,7 +44,7 @@ func Suppress(ctx context.Context, s *ent.Scoped, destination string) (*ent.Supp
 // atomically and idempotently. When the destination is a Contact of the Workspace
 // the event is attributed to it. The source is validated first.
 func Unsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
-	dest := eligibility.NormalizeDestination(destination)
+	dest := suppression.NormalizeDestination(destination)
 	if dest == "" {
 		return nil, ErrDestinationEmpty
 	}

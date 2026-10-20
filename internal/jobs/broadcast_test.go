@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/suppression"
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 	"github.com/stretchr/testify/assert"
@@ -168,7 +169,7 @@ func TestUnsubscribeBetweenPlanAndSendSkipsTheRecipient(t *testing.T) {
 	rec := env.DB.BroadcastRecipient.GetX(ctx, ids[0])
 	c := env.DB.Contact.GetX(ctx, rec.ContactID)
 	env.DB.Unsubscribe.Create().SetWorkspaceID(fixtures.AcmeID).SetChannel("email").
-		SetDestination(eligibility.NormalizeDestination(*c.Email)).
+		SetDestination(suppression.NormalizeDestination(*c.Email)).
 		SetSendingSource(eligibility.SourceBroadcasts).ExecX(ctx)
 
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
@@ -197,9 +198,9 @@ func TestSendBroadcastSkipsSuppressed(t *testing.T) {
 	alice := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	_, err = env.DB.Suppression.Create().
 		SetWorkspaceID(fixtures.AcmeID).
-		SetChannel(suppression.ChannelEmail).
+		SetChannel(entsuppression.ChannelEmail).
 		SetDestination(*alice.Email).
-		SetReason(suppression.ReasonManual).
+		SetReason(entsuppression.ReasonManual).
 		Save(ctx)
 	require.NoError(t, err)
 

@@ -21,7 +21,7 @@
 //
 // Stored destinations are normalized (lower-cased + trimmed) on write, but
 // contact.email is not, so the Contact-side comparison folds case in SQL while
-// Check normalizes its input with NormalizeDestination.
+// Check normalizes its input with suppression.NormalizeDestination.
 package eligibility
 
 import (
@@ -34,9 +34,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/suppression"
+	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
 // Reasons a destination is ineligible.
@@ -66,7 +67,7 @@ type Decision struct {
 // client; HAVING TRUE turns the select into a single-group one, so exactly one row
 // comes back whether or not the Workspace has any Suppression.
 func Check(ctx context.Context, s *ent.Scoped, channel, dest, source string) (Decision, error) {
-	d := NormalizeDestination(dest)
+	d := suppression.NormalizeDestination(dest)
 	if d == "" {
 		return Decision{Eligible: true}, nil
 	}
@@ -172,7 +173,7 @@ type layer struct {
 type store struct{ table, id, workspace, destination, channel string }
 
 var (
-	suppressions  = store{suppression.Table, suppression.FieldID, suppression.FieldWorkspaceID, suppression.FieldDestination, suppression.FieldChannel}
+	suppressions  = store{entsuppression.Table, entsuppression.FieldID, entsuppression.FieldWorkspaceID, entsuppression.FieldDestination, entsuppression.FieldChannel}
 	unsubscribes  = store{unsubscribe.Table, unsubscribe.FieldID, unsubscribe.FieldWorkspaceID, unsubscribe.FieldDestination, unsubscribe.FieldChannel}
 	confirmations = store{confirmation.Table, confirmation.FieldID, confirmation.FieldWorkspaceID, confirmation.FieldDestination, confirmation.FieldChannel}
 )

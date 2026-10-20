@@ -6,15 +6,6 @@ import (
 	"strings"
 )
 
-// NormalizeDestination is the single definition of "normalized destination":
-// lower-cased and trimmed. Suppression and Unsubscribe rows store destinations
-// this way, and every lookup must apply it so the point-lookup path (Check) and
-// the batch SQL path (Predicate, which folds case via lower()) agree. Keep all
-// write and lookup sites routed through here so they cannot drift.
-func NormalizeDestination(dest string) string {
-	return strings.ToLower(strings.TrimSpace(dest))
-}
-
 // Channel identifiers. Email is the only built channel; sms is reserved.
 const ChannelEmail = "email"
 

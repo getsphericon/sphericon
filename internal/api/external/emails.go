@@ -10,8 +10,8 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/templates"
 )
 
@@ -34,7 +34,7 @@ func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransact
 		return &res, nil
 	}
 
-	dest := eligibility.NormalizeDestination(string(req.Destination))
+	dest := suppression.NormalizeDestination(string(req.Destination))
 	if dest == "" {
 		res := externalapi.EmailsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, "destination must not be empty"))
 		return &res, nil
