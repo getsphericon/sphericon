@@ -15,7 +15,7 @@ Integration and the Workspace's domain. Nothing else changes: Broadcast, Automat
 still need a verified domain, and the gate stays one place in Outbound send.
 
 The System sender is not DKIM-signed by sphericon (platform mail has no workspace Sending domain to
-sign with); it authenticates through its provider, as the SES identity of ADR 0028 does on the SaaS.
+sign with); it authenticates through its provider, as the SaaS's SES identity does.
 So this Test send is not the mail the Workspace will send, and the editor says so: it shows the From it
 used.
 
