@@ -101,9 +101,6 @@ type Renderer struct {
 // Option configures New.
 type Option func(*Renderer, *int)
 
-// WithLimits replaces DefaultLimits.
-func WithLimits(l Limits) Option { return func(r *Renderer, _ *int) { r.limits = l } }
-
 // WithRuntimes sets how many runtimes the Renderer may run at once (default 1). Each costs about 16
 // MB and seconds to start, the first about 68 MB.
 func WithRuntimes(n int) Option { return func(_ *Renderer, runtimes *int) { *runtimes = max(n, 1) } }
@@ -136,51 +133,34 @@ func Default() *Renderer {
 // Started reports whether a runtime has been started yet.
 func (r *Renderer) Started() bool { return r.started.Load() }
 
-// CallOption configures one Render or Validate call.
-type CallOption func(*callConfig)
-
 type callConfig struct {
 	timeout      time.Duration
 	memoryGrowth uint64
 }
 
-// WithTimeout shortens this call's time limit (it never lengthens the Renderer's).
-func WithTimeout(d time.Duration) CallOption {
-	return func(c *callConfig) { c.timeout = min(c.timeout, d) }
-}
-
-// WithMemoryGrowth shortens this call's memory limit (it never lengthens the Renderer's).
-func WithMemoryGrowth(bytes uint64) CallOption {
-	return func(c *callConfig) { c.memoryGrowth = min(c.memoryGrowth, bytes) }
-}
-
-func (r *Renderer) config(opts []CallOption) callConfig {
-	c := callConfig{timeout: r.limits.Timeout, memoryGrowth: r.limits.MemoryGrowth}
-	for _, opt := range opts {
-		opt(&c)
-	}
-	return c
+func (r *Renderer) config() callConfig {
+	return callConfig{timeout: r.limits.Timeout, memoryGrowth: r.limits.MemoryGrowth}
 }
 
 // Validate answers nil when doc is a document the editor can hold and Render can export, else an
 // error that says why: an *InvalidError, or a limit error.
-func (r *Renderer) Validate(ctx context.Context, doc []byte, opts ...CallOption) error {
+func (r *Renderer) Validate(ctx context.Context, doc []byte) error {
 	if err := r.prepare(doc); err != nil {
 		return err
 	}
-	return r.withRuntime(ctx, r.config(opts), func(rt *vm) error {
+	return r.withRuntime(ctx, r.config(), func(rt *vm) error {
 		return rt.checkDoc(doc)
 	})
 }
 
 // Render validates doc and exports it as an email: HTML and a plain-text part. It never repairs a
 // document; an invalid one is refused with the reason.
-func (r *Renderer) Render(ctx context.Context, doc []byte, opts ...CallOption) (Rendered, error) {
+func (r *Renderer) Render(ctx context.Context, doc []byte) (Rendered, error) {
 	if err := r.prepare(doc); err != nil {
 		return Rendered{}, err
 	}
 	var out Rendered
-	err := r.withRuntime(ctx, r.config(opts), func(rt *vm) error {
+	err := r.withRuntime(ctx, r.config(), func(rt *vm) error {
 		if err := rt.checkDoc(doc); err != nil {
 			return err
 		}

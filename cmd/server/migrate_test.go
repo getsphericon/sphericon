@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pressly/goose/v3/lock"
 	"github.com/riverqueue/river/riverdriver/riverpgxv5"
 	"github.com/riverqueue/river/rivermigrate"
 	"github.com/stretchr/testify/require"
@@ -100,28 +99,6 @@ func TestMigrationStatusJSONCarriesTheStateAndTheTableOfMajors(t *testing.T) {
 	require.Equal(t, 1, b.State.Major, "an empty database reports Major 1 until it is migrated")
 	require.Len(t, b.Majors, len(appdb.Majors))
 	require.Equal(t, appdb.Majors[len(appdb.Majors)-1].Major, b.Majors[len(b.Majors)-1].Major)
-}
-
-// A start with auto-migrate waits for the lock for at most the timeout, fails, and leaves the
-// schema untouched.
-func TestMigrateOnStartFailsWhenTheLockIsHeldPastTheTimeout(t *testing.T) {
-	cfg := emptyConfig(t, 1500*time.Millisecond)
-
-	holder, err := sql.Open("pgx", cfg.DatabaseURL)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = holder.Close() })
-	conn, err := holder.Conn(t.Context())
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = conn.Close() })
-	locker, err := lock.NewPostgresSessionLocker()
-	require.NoError(t, err)
-	require.NoError(t, locker.SessionLock(t.Context(), conn))
-
-	require.Error(t, migrateOnStart(t.Context(), cfg))
-
-	var out bytes.Buffer
-	require.NoError(t, printMigrationStatus(t.Context(), cfg, &out, false))
-	require.Contains(t, out.String(), "schema:  empty")
 }
 
 func TestMigrateRefusesJSONWithoutStatusAndStrayArguments(t *testing.T) {

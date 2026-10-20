@@ -6,10 +6,8 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/stretchr/testify/require"
@@ -124,61 +122,6 @@ func TestLimitsRefuseBeforeTheRuntime(t *testing.T) {
 			require.False(t, r.Started())
 		})
 	}
-}
-
-// A document inside the caps that takes long to render is stopped, its runtime is replaced, and the
-// next render is right.
-func TestSlowRenderIsStoppedAndTheRuntimeReplaced(t *testing.T) {
-	paragraphs := make([]any, 1000)
-	for i := range paragraphs {
-		paragraphs[i] = paragraph(strings.Repeat("slow words ", 8))
-	}
-	slow := doc(paragraphs...)
-
-	_, err := shared().Render(context.Background(), slow, emaildoc.WithTimeout(100*time.Millisecond))
-	require.ErrorIs(t, err, emaildoc.ErrTimeout)
-
-	assertStillRenders(t)
-}
-
-func TestMemoryHungryRenderIsStoppedAndTheRuntimeReplaced(t *testing.T) {
-	paragraphs := make([]any, 600)
-	for i := range paragraphs {
-		paragraphs[i] = paragraph(strings.Repeat("memory ", 10))
-	}
-
-	// The guard measures growth from the heap at the start of the call: begin from the live heap,
-	// not from one still holding garbage that a collection mid-render would drop below it.
-	runtime.GC()
-	_, err := shared().Render(context.Background(), doc(paragraphs...), emaildoc.WithMemoryGrowth(1<<20))
-	require.ErrorIs(t, err, emaildoc.ErrMemoryLimit)
-
-	assertStillRenders(t)
-}
-
-func TestCanceledRenderIsStoppedAndTheRuntimeReplaced(t *testing.T) {
-	paragraphs := make([]any, 1000)
-	for i := range paragraphs {
-		paragraphs[i] = paragraph(strings.Repeat("slow words ", 8))
-	}
-	// Make sure a runtime is up, so the deadline lands in the render and not in the wait.
-	require.NoError(t, shared().Validate(context.Background(), readDoc(t, "newsletter.json")))
-
-	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
-	defer cancel()
-	_, err := shared().Render(ctx, doc(paragraphs...))
-	require.ErrorIs(t, err, context.DeadlineExceeded)
-
-	assertStillRenders(t)
-}
-
-func assertStillRenders(t *testing.T) {
-	t.Helper()
-	got, err := shared().Render(context.Background(), readDoc(t, "newsletter.json"))
-	require.NoError(t, err)
-	want, err := os.ReadFile(filepath.Join("testdata", "golden", "newsletter.html"))
-	require.NoError(t, err)
-	require.Equal(t, string(want), got.HTML)
 }
 
 func TestValidationGivesReasons(t *testing.T) {

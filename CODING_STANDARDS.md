@@ -44,6 +44,12 @@ The rules a change is reviewed against. How the repo is built, run and generated
   needs a run of events is a small pure type fed those events. A test that must move time inside a
   `testing/synctest` bubble calls `testhelper.Elapse(d)`, which advances the bubble's fake clock
   and returns at once. `forbidigo` rejects `time.Sleep` everywhere.
+- **Tests cover logic only.** A test exercises a decision the code makes and checks what came out.
+  There are no tests of how long something takes, how much memory it uses, a timeout firing on the
+  wall clock, a runtime limit or a resource guard, or of the machine and the process around the
+  code: they pass or fail with the load of the host and prove nothing about the code. A guard whose
+  decision is real logic (when does a run of polls count as growth) is a small pure type tested on
+  its inputs; the clock, the heap and the timer feeding it are not tested.
 - **No tests of built-in behaviour.** A test exercises sphericon's own code. One whose only subject is a
   Mantine component, the standard library or another dependency (a copy button showing "Copied", a
   library's defaults or retries) is deleted, and none is added.

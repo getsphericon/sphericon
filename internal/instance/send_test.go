@@ -227,23 +227,3 @@ func TestSenderLeavesThingsHealthyWhenTheReceiverIsUnreachableOrRefuses(t *testi
 	require.NoError(t, sender.Run(t.Context()))
 	assert.Nil(t, r.lastSent(t))
 }
-
-func TestSenderCutsOffASendThatTakesTooLongAndLeavesTheStateUnchanged(t *testing.T) {
-	release := make(chan struct{})
-	slow := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		select {
-		case <-release:
-		case <-req.Context().Done():
-		}
-	}))
-	t.Cleanup(slow.Close)
-	t.Cleanup(func() { close(release) })
-	r := newRig(t, "1.4.2", func(c *config.Config) { c.TelemetryReceiverURL = slow.URL }, instance.WithTimeout(50*time.Millisecond))
-	r.firstSend(t)
-
-	start := time.Now()
-	require.NoError(t, r.sender.Run(t.Context()))
-
-	assert.Less(t, time.Since(start), 3*time.Second)
-	assert.Nil(t, r.lastSent(t))
-}

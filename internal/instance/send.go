@@ -59,9 +59,6 @@ type Sender struct {
 // SenderOption tunes a Sender.
 type SenderOption func(*Sender)
 
-// WithTimeout replaces the bound on one send (a test does not wait the real five seconds).
-func WithTimeout(d time.Duration) SenderOption { return func(s *Sender) { s.timeout = d } }
-
 // NewSender builds the sender over the receiver address in cfg. A development environment
 // (the module's Environment.Dev) never sends, so a test opts in by building its config as
 // production.
