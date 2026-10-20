@@ -14,7 +14,9 @@ export function createAppRouter(queryClient: QueryClient) {
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     // Cross-fade between pages (the browser View Transitions API, wrapped around each navigation).
-    defaultViewTransition: true,
+    // Off under test: a guard's redirect starts a second transition that skips the first, whose
+    // rejected promise nobody awaits, and vitest fails the run on that unhandled AbortError.
+    defaultViewTransition: import.meta.env.MODE !== 'test',
   })
 }
 

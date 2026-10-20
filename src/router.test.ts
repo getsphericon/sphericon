@@ -14,14 +14,9 @@ import { Route as newWorkspaceRoute } from './routes/workspaces/new.tsx'
 import { problem } from './test/problem.ts'
 import { worker } from './test/worker.ts'
 
-// A router with a cache of its own: the guards read the workspaces through it. A guard's redirect
-// starts a second View Transition that skips the first, whose rejected promise nobody awaits and
-// vitest reports as an unhandled error, so the cross-fade is switched off here.
-function newRouter() {
-  const router = createAppRouter(new QueryClient({ defaultOptions: { queries: { retry: false } } }))
-  router.update({ defaultViewTransition: false })
-  return router
-}
+// A router with a cache of its own: the guards read the workspaces through it.
+const newRouter = () =>
+  createAppRouter(new QueryClient({ defaultOptions: { queries: { retry: false } } }))
 
 const workspace = (workspaceId: string) => ({
   id: workspaceId,
