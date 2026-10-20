@@ -1,4 +1,5 @@
 import { ProblemCode } from '../generated/site/types.gen.ts'
+import type { ProblemDebug } from '../generated/site/types.gen.ts'
 
 export interface ApiErrorLike {
   detail?: string | null
@@ -8,6 +9,7 @@ export interface ApiErrorLike {
   status?: number | null
   retryAfter?: number | null
   code?: string | null
+  debug?: ProblemDebug | null
 }
 
 function isApiErrorLike(error: unknown): error is ApiErrorLike {
@@ -81,4 +83,10 @@ export function getApiErrorMessage(error: unknown, fallback: string) {
     return fallback
   }
   return error.detail ?? error.form ?? error.error ?? error.title ?? fallback
+}
+
+// What a development server adds to a 500 (the `debug` member of the problem): the error, the
+// stack of a panic and the request. A production Instance never sends it.
+export function getProblemDebug(error: unknown) {
+  return isApiErrorLike(error) ? (error.debug ?? undefined) : undefined
 }

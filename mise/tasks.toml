@@ -420,15 +420,15 @@ go run ./cmd/upgradecheck breaking "${args[@]}" ${PR_BODY_FILE:+--body-file "$PR
 '''
 
 ["check:env"]
-description = "Every environment variable config/config.go reads is documented in docs/self-hosting.md (the one env table)"
+description = "Every environment variable config/config.go reads is documented in docs/configuration.md (the one env table)"
 run = '''
 read_vars=$(mktemp); doc_vars=$(mktemp)
 grep -oE '"[A-Z][A-Z0-9_]{3,}"' config/config.go | tr -d '"' | sort -u > "$read_vars"
-grep -oE '`[A-Z][A-Z0-9_]{3,}`' docs/self-hosting.md | tr -d '`' | sort -u > "$doc_vars"
+grep -oE '`[A-Z][A-Z0-9_]{3,}`' docs/configuration.md | tr -d '`' | sort -u > "$doc_vars"
 missing=$(comm -23 "$read_vars" "$doc_vars")
 rm -f "$read_vars" "$doc_vars"
 if [ -n "$missing" ]; then
-  echo "error: add to the env table in docs/self-hosting.md: $(echo $missing)"; exit 1
+  echo "error: add to the env table in docs/configuration.md: $(echo $missing)"; exit 1
 fi
 '''
 

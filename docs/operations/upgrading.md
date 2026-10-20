@@ -212,7 +212,7 @@ docker run --rm \
 # then recreate the container
 ```
 
-With the [Compose file](../self-hosting#docker-compose), set the new `SPHERICON_VERSION` in `.env`, then
+With the [Compose file](../self-hosting#docker-compose-recommended), set the new `SPHERICON_VERSION` in `.env`, then
 `docker compose pull` and `docker compose up -d`: its `migrate` service runs before the app is replaced.
 
 Use an explicit version tag in production, never `latest`, so a restart does not upgrade you by

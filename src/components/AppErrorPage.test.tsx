@@ -22,3 +22,22 @@ test('falls back to a plain sentence for an error with no problem body', async (
 
   await expect.element(screen.getByText('The page could not be loaded.')).toBeInTheDocument()
 })
+
+test('shows the fault a development server attaches to a 500', async () => {
+  const error = {
+    status: 500,
+    title: 'Internal Server Error',
+    debug: {
+      error: 'nil pointer dereference',
+      stack: 'goroutine 7 [running]:\nmain.handler()',
+      requestId: '01ABC',
+      method: 'GET',
+      path: '/site/contacts',
+    },
+  }
+  const { screen } = await renderWithRouter(<AppErrorPage error={error} />)
+
+  await expect.element(screen.getByText('nil pointer dereference')).toBeInTheDocument()
+  await expect.element(screen.getByText(/goroutine 7/)).toBeInTheDocument()
+  await expect.element(screen.getByText(/GET \/site\/contacts/)).toBeInTheDocument()
+})

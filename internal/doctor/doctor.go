@@ -107,7 +107,7 @@ func Run(ctx context.Context, in Input) Report {
 	var r Report
 	if in.ConfigErr != nil || in.Config == nil {
 		r.add("configuration", Fail, fmt.Sprintf("the configuration did not load: %v", in.ConfigErr),
-			"Set the variable named in the message (see the table in docs/self-hosting.md), then run `sphericon doctor` again.")
+			"Set the variable named in the message (see the table in docs/configuration.md), then run `sphericon doctor` again.")
 		return r
 	}
 	r.add("configuration", Pass, "the configuration loads", "")

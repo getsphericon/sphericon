@@ -114,3 +114,10 @@
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Alice holds the admin role in Acme, so one Workspace has all three roles.
+- id: 18 # fixture: AcmeAdminMembership
+  user_id: 19
+  workspace_id: 1
+  role: admin
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
