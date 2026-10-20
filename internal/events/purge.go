@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 )
 
@@ -32,11 +33,11 @@ type QueuePurger interface {
 	// args integer field key is one of ids. A running job is left to finish: its
 	// worker re-checks that what it refers to still exists.
 	PurgeJobs(ctx context.Context, key jobkind.Key, ids []int64) error
-	// PurgeWebhookJobs deletes the queued deliveries to the given webhook endpoints
-	// (the Workspace's own) whose body names the Contact (contactId) or one of its
+	// PurgeWebhookJobs deletes the queued deliveries to the Workspace's own webhook
+	// endpoints whose body names the Contact (contactId) or one of its
 	// destinations (data.email, case-insensitively). The body is the event payload
 	// the endpoint would receive. A running delivery is left to finish.
-	PurgeWebhookJobs(ctx context.Context, endpointIDs []int64, contactID int64, destinations []string) error
+	PurgeWebhookJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error
 }
 
 func (p *txPublisher) PurgeOutbox(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
@@ -76,7 +77,11 @@ WHERE kind = $1 AND state <> 'running' AND (args->>$2)::bigint = ANY($3)`,
 	return err
 }
 
-func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, endpointIDs []int64, contactID int64, destinations []string) error {
+func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
+	endpointIDs, err := p.client.WebhookEndpoint.Query().Where(webhookendpoint.WorkspaceID(workspaceID)).IDs(ctx)
+	if err != nil {
+		return err
+	}
 	if len(endpointIDs) == 0 {
 		return nil
 	}
@@ -87,7 +92,7 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, endpointIDs []int64,
 	// DeliverWebhookArgs.Body is []byte, so river stores it as a base64 JSON string; it
 	// is the JSON event payload, naming the Contact at contactId / data.contactId and
 	// the address at data.email.
-	_, err := p.tx.ExecContext(ctx, `DELETE FROM river_job
+	_, err = p.tx.ExecContext(ctx, `DELETE FROM river_job
 WHERE kind = $1 AND state <> 'running'
   AND (args->>$5)::bigint = ANY($2)
   AND EXISTS (
