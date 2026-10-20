@@ -4052,6 +4052,138 @@ func decodeSiteContactsDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 	return params, nil
 }
 
+// SiteContactsEraseParams is parameters of SiteContacts_erase operation.
+type SiteContactsEraseParams struct {
+	// URL-safe unique slug; the route key for nested workspace resources.
+	Slug string
+	// The email address to erase, as typed: trimmed and validated by the handler.
+	Email string
+}
+
+func unpackSiteContactsEraseParams(packed middleware.Parameters) (params SiteContactsEraseParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "slug",
+			In:   "path",
+		}
+		params.Slug = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "email",
+			In:   "query",
+		}
+		params.Email = packed[key].(string)
+	}
+	return params
+}
+
+func decodeSiteContactsEraseParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteContactsEraseParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: slug.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "slug",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Slug = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "slug",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: email.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "email",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Email = c
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     320,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(params.Email)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "email",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteContactsExportParams is parameters of SiteContacts_export operation.
 type SiteContactsExportParams struct {
 	// URL-safe unique slug; the route key for nested workspace resources.
@@ -4564,8 +4696,8 @@ func decodeSiteContactsListParams(args [1]string, argsEscaped bool, r *http.Requ
 type SiteContactsLookupParams struct {
 	// URL-safe unique slug; the route key for nested workspace resources.
 	Slug string
-	// The email address.
-	Email EmailAddress
+	// The email address, as typed: trimmed and validated by the handler, not by the format check.
+	Email string
 }
 
 func unpackSiteContactsLookupParams(packed middleware.Parameters) (params SiteContactsLookupParams) {
@@ -4581,7 +4713,7 @@ func unpackSiteContactsLookupParams(packed middleware.Parameters) (params SiteCo
 			Name: "email",
 			In:   "query",
 		}
-		params.Email = packed[key].(EmailAddress)
+		params.Email = packed[key].(string)
 	}
 	return params
 }
@@ -4643,31 +4775,36 @@ func decodeSiteContactsLookupParams(args [1]string, argsEscaped bool, r *http.Re
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotEmailVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotEmailVal = c
-					return nil
-				}(); err != nil {
+				val, err := d.DecodeValue()
+				if err != nil {
 					return err
 				}
-				params.Email = EmailAddress(paramsDotEmailVal)
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Email = c
 				return nil
 			}); err != nil {
 				return err
 			}
 			if err := func() error {
-				if err := params.Email.Validate(); err != nil {
-					return err
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     320,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(params.Email)); err != nil {
+					return errors.Wrap(err, "string")
 				}
 				return nil
 			}(); err != nil {

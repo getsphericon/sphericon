@@ -5857,6 +5857,49 @@ export type SiteContactsCreateResponses = {
 
 export type SiteContactsCreateResponse = SiteContactsCreateResponses[keyof SiteContactsCreateResponses];
 
+export type SiteContactsEraseData = {
+  body?: never;
+  path: {
+    /**
+     * URL-safe unique slug; the route key for nested workspace resources
+     */
+    slug: string;
+  };
+  query: {
+    /**
+     * The email address to erase, as typed: trimmed and validated by the handler
+     */
+    email: string;
+  };
+  url: '/workspaces/{slug}/contacts/erase';
+};
+
+export type SiteContactsEraseErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteContactsEraseError = SiteContactsEraseErrors[keyof SiteContactsEraseErrors];
+
+export type SiteContactsEraseResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteContactsEraseResponse = SiteContactsEraseResponses[keyof SiteContactsEraseResponses];
+
 export type SiteContactsExportData = {
   body?: never;
   path: {
@@ -5910,9 +5953,9 @@ export type SiteContactsLookupData = {
   };
   query: {
     /**
-     * The email address
+     * The email address, as typed: trimmed and validated by the handler, not by the format check
      */
-    email: EmailAddress;
+    email: string;
   };
   url: '/workspaces/{slug}/contacts/lookup';
 };

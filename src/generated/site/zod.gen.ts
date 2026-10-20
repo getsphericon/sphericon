@@ -2487,6 +2487,19 @@ export const zSiteContactsCreatePath = z.object({
  */
 export const zSiteContactsCreateResponse = zSiteContactResource;
 
+export const zSiteContactsErasePath = z.object({
+  slug: z.string()
+});
+
+export const zSiteContactsEraseQuery = z.object({
+  email: z.string().max(320)
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteContactsEraseResponse = z.void();
+
 export const zSiteContactsExportPath = z.object({
   slug: z.string()
 });
@@ -2506,7 +2519,7 @@ export const zSiteContactsLookupPath = z.object({
 });
 
 export const zSiteContactsLookupQuery = z.object({
-  email: zEmailAddress
+  email: z.string().max(320)
 });
 
 /**

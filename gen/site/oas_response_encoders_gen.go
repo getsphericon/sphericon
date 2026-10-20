@@ -2138,6 +2138,54 @@ func encodeSiteContactsDeleteResponse(response SiteContactsDeleteRes, w http.Res
 	}
 }
 
+func encodeSiteContactsEraseResponse(response SiteContactsEraseRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteContactsEraseNoContent:
+		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteContactsEraseBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteContactsEraseForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteContactsEraseNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteContactsExportResponse(response SiteContactsExportRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *ContactExportDocumentHeaders:

@@ -7066,6 +7066,23 @@ type SiteContactsDeleteNotFound ProblemDetails
 
 func (*SiteContactsDeleteNotFound) siteContactsDeleteRes() {}
 
+type SiteContactsEraseBadRequest ProblemDetails
+
+func (*SiteContactsEraseBadRequest) siteContactsEraseRes() {}
+
+type SiteContactsEraseForbidden ProblemDetails
+
+func (*SiteContactsEraseForbidden) siteContactsEraseRes() {}
+
+// SiteContactsEraseNoContent is response for SiteContactsErase operation.
+type SiteContactsEraseNoContent struct{}
+
+func (*SiteContactsEraseNoContent) siteContactsEraseRes() {}
+
+type SiteContactsEraseNotFound ProblemDetails
+
+func (*SiteContactsEraseNotFound) siteContactsEraseRes() {}
+
 type SiteContactsExportBadRequest ProblemDetails
 
 func (*SiteContactsExportBadRequest) siteContactsExportRes() {}

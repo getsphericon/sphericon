@@ -137,6 +137,10 @@ type SiteContactsDeleteRes interface {
 	siteContactsDeleteRes()
 }
 
+type SiteContactsEraseRes interface {
+	siteContactsEraseRes()
+}
+
 type SiteContactsExportRes interface {
 	siteContactsExportRes()
 }
