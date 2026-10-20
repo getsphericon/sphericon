@@ -91,7 +91,7 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 // SiteAuthVerifyEmail completes a registration from its link (ADR 0030): the token
 // proves the address, so it stamps the Verified email, sets the password, ends every
 // earlier session, creates the User's first Workspace and sends the welcome email.
-// It starts no session; the User signs in afterwards. The token is single use (bound
+// It starts the session through the login issuer. The token is single use (bound
 // to the password hash it was minted over) and scoped to the address it was sent to:
 // an old link never verifies a changed address.
 func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVerifyEmailInput) (siteapi.SiteAuthVerifyEmailRes, error) {
@@ -117,16 +117,23 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	if err != nil {
 		return nil, err
 	}
-	if _, err := h.accounts.VerifyEmail(ctx, uid, hash, u.Name); errors.Is(err, accounts.ErrAlreadyVerified) {
+	verified, err := h.accounts.VerifyEmail(ctx, uid, hash, u.Name)
+	if errors.Is(err, accounts.ErrAlreadyVerified) {
 		v := problem(http.StatusBadRequest, i18n.T("errors.verify_link_bad", nil))
 		return &v, nil
-	} else if err != nil {
+	}
+	if err != nil {
 		return nil, err
 	}
 	// Welcome email is a platform (transactional) send via the system sender, to an
 	// address that is now proven. Best-effort: never fail the verification.
 	_ = h.welcome.EnqueueWelcome(ctx, u.Email, u.Name)
-	return &siteapi.SiteAuthVerifyEmailOK{}, nil
+	// The session starts after the epoch bump VerifyEmail made, so it is the only one.
+	cookie, err := h.sessions.Issue(verified)
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteAuthVerifyEmailOK{SetCookie: cookie.String()}, nil
 }
 
 // SiteAuthConfirmEmailChange applies a requested email change once the new

@@ -912,6 +912,23 @@ func encodeSiteAuthSecondFactorResponse(response SiteAuthSecondFactorRes, w http
 func encodeSiteAuthVerifyEmailResponse(response SiteAuthVerifyEmailRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *SiteAuthVerifyEmailOK:
+		w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+		// Encoding response headers.
+		{
+			h := uri.NewHeaderEncoder(w.Header())
+			// Encode "Set-Cookie" header.
+			{
+				cfg := uri.HeaderParameterEncodingConfig{
+					Name:    "Set-Cookie",
+					Explode: false,
+				}
+				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+					return e.EncodeValue(conv.StringToString(response.SetCookie))
+				}); err != nil {
+					return errors.Wrap(err, "encode Set-Cookie header")
+				}
+			}
+		}
 		w.WriteHeader(200)
 
 		return nil

@@ -1,8 +1,9 @@
 import { notifications } from '@mantine/notifications'
 import { HttpResponse } from 'msw'
-import { afterEach, expect, test } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 
 import { handleSiteAuthVerifyEmail } from '../../generated/site/msw.gen.ts'
+import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as verifyEmailRoute } from '../../routes/verify-email.tsx'
 import { problem } from '../../test/problem.ts'
@@ -28,7 +29,7 @@ async function fillAndSubmit(
   await screen.getByRole('button', { name: 'Set password' }).click()
 }
 
-test('sends the token with the chosen password and offers to sign in', async () => {
+test('sends the token with the chosen password and enters the first workspace', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthVerifyEmail(async ({ request }) => {
@@ -36,15 +37,13 @@ test('sends the token with the chosen password and offers to sign in', async () 
       return HttpResponse.json({})
     }),
   )
-  const { screen } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
+  const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
 
   await fillAndSubmit(screen, 's3cret-pass')
 
-  await expect.element(screen.getByText('Email verified')).toBeInTheDocument()
+  await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: indexRoute.to }))
   expect(bodies).toEqual([{ token: 'tok-v', password: 's3cret-pass' }])
-  await expect
-    .element(screen.getByRole('link', { name: 'Sign in' }))
-    .toHaveAttribute('href', loginRoute.to)
+  await expect.element(screen.getByText('Email verified')).not.toBeInTheDocument()
 })
 
 test('does not send anything when the confirmation differs', async () => {
@@ -63,7 +62,7 @@ test('does not send anything when the confirmation differs', async () => {
   expect(bodies).toEqual([])
 })
 
-test('shows the failure and keeps the form when the link is rejected', async () => {
+test('shows the invalid-link message with a sign-in link when the link is rejected', async () => {
   worker.use(
     handleSiteAuthVerifyEmail(() =>
       problem(400, { detail: 'invalid or expired verification link' }),
@@ -73,23 +72,13 @@ test('shows the failure and keeps the form when the link is rejected', async () 
 
   await fillAndSubmit(screen, 's3cret-pass')
 
-  await expect.element(screen.getByText('Verification failed')).toBeInTheDocument()
-  await expect.element(screen.getByText('invalid or expired verification link')).toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Set password' })).toBeInTheDocument()
-})
-
-test('drops the used token from the address after verifying', async () => {
-  worker.use(handleSiteAuthVerifyEmail(() => HttpResponse.json({})))
-  const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
-
-  await fillAndSubmit(screen, 's3cret-pass')
-
-  await expect.element(screen.getByText('Email verified')).toBeInTheDocument()
-  expect(navigate).toHaveBeenCalledWith({
-    to: verifyEmailRoute.to,
-    search: { token: '' },
-    replace: true,
-  })
+  await expect
+    .element(screen.getByText('This verification link is invalid or has expired.'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Set password' })).not.toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Sign in' }))
+    .toHaveAttribute('href', loginRoute.to)
 })
 
 test('offers no form when the address carries no token', async () => {
@@ -102,4 +91,7 @@ test('offers no form when the address carries no token', async () => {
     .element(screen.getByText('This verification link is invalid or has expired.'))
     .toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Set password' })).not.toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Sign in' }))
+    .toHaveAttribute('href', loginRoute.to)
 })

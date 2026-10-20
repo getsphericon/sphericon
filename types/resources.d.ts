@@ -1151,8 +1151,6 @@ export default interface Resources {
       "passwordLabel": "Password",
       "signIn": "Sign in",
       "submitButton": "Set password",
-      "successBody": "Your email is confirmed and your password is set. You can sign in now.",
-      "successTitle": "Email verified",
       "title": "Set your password"
     },
     "workspaceBillingHold": {

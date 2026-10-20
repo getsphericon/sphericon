@@ -634,11 +634,20 @@
     "/auth/verify-email": {
       "post": {
         "operationId": "SiteAuth_verifyEmail",
-        "description": "Complete a registration from the verification link (the token is the\ncredential): stamps the Verified email, sets the password, ends every earlier\nsession, creates the User's first Workspace and sends the welcome email. The\nUser then signs in; the link alone starts no session. A link is single use and\nscoped to the address it was sent to. Rate limited like registration.",
+        "description": "Complete a registration from the verification link (the token is the\ncredential): stamps the Verified email, sets the password, ends every earlier\nsession, creates the User's first Workspace, sends the welcome email and starts\nthe session (the cookie is issued after the epoch bump, as login does, ADR 0020).\nA link is single use and scoped to the address it was sent to. Rate limited like\nregistration.",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "The request has succeeded."
+            "description": "The request has succeeded.",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The session cookie of the verified User",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "400": {
             "description": "RFC 7807 bad request response",

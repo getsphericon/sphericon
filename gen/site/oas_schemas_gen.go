@@ -5337,7 +5337,19 @@ type SiteAuthResetPasswordOK struct{}
 func (*SiteAuthResetPasswordOK) siteAuthResetPasswordRes() {}
 
 // SiteAuthVerifyEmailOK is response for SiteAuthVerifyEmail operation.
-type SiteAuthVerifyEmailOK struct{}
+type SiteAuthVerifyEmailOK struct {
+	SetCookie string
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteAuthVerifyEmailOK) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteAuthVerifyEmailOK) SetSetCookie(val string) {
+	s.SetCookie = val
+}
 
 func (*SiteAuthVerifyEmailOK) siteAuthVerifyEmailRes() {}
 

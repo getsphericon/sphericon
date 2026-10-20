@@ -173,14 +173,20 @@ namespace SiteAuth {
 
   /** Complete a registration from the verification link (the token is the
    * credential): stamps the Verified email, sets the password, ends every earlier
-   * session, creates the User's first Workspace and sends the welcome email. The
-   * User then signs in; the link alone starts no session. A link is single use and
-   * scoped to the address it was sent to. Rate limited like registration. */
+   * session, creates the User's first Workspace, sends the welcome email and starts
+   * the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
+   * A link is single use and scoped to the address it was sent to. Rate limited like
+   * registration. */
   @useAuth(NoAuth)
   @post
   @route("/verify-email")
   op verifyEmail(@body body: SiteVerifyEmailInput):
-    | OkResponse
+    | {
+        @statusCode statusCode: 200;
+
+        /** The session cookie of the verified User */
+        @header("Set-Cookie") setCookie: string;
+      }
     | BadRequestProblem
     | TooManyRequestsProblem;
 

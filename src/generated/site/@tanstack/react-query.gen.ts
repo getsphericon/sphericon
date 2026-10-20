@@ -176,9 +176,10 @@ export const siteAuthSecondFactorMutation = (options?: Partial<Options<SiteAuthS
 /**
  * Complete a registration from the verification link (the token is the
  * credential): stamps the Verified email, sets the password, ends every earlier
- * session, creates the User's first Workspace and sends the welcome email. The
- * User then signs in; the link alone starts no session. A link is single use and
- * scoped to the address it was sent to. Rate limited like registration.
+ * session, creates the User's first Workspace, sends the welcome email and starts
+ * the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
+ * A link is single use and scoped to the address it was sent to. Rate limited like
+ * registration.
  */
 export const siteAuthVerifyEmailMutation = (options?: Partial<Options<SiteAuthVerifyEmailData>>): UseMutationOptions<unknown, SiteAuthVerifyEmailError, Options<SiteAuthVerifyEmailData>> => {
   const mutationOptions: UseMutationOptions<unknown, SiteAuthVerifyEmailError, Options<SiteAuthVerifyEmailData>> = {

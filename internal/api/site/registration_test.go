@@ -130,6 +130,26 @@ func TestTheVerifyLinkSetsThePasswordCreatesTheWorkspaceAndAllowsLogin(t *testin
 	assert.Equal(t, "Grace Hopper", spaces[0].Name)
 }
 
+// The link starts the session: the cookie it sets works on an authenticated /site call
+// and the session epoch bump ended every session issued before it.
+func TestTheVerifyLinkStartsASessionIntoTheFirstWorkspace(t *testing.T) {
+	env := testhelper.Setup(t)
+	token := register(t, env, "Grace Hopper", "grace@example.com")
+
+	res := verify(t, env, token, "grace-password-1")
+	ok, isOK := res.(*siteapi.SiteAuthVerifyEmailOK)
+	require.True(t, isOK, "got %T", res)
+	cookie, err := http.ParseSetCookie(ok.SetCookie)
+	require.NoError(t, err)
+	assert.Equal(t, "JWT", cookie.Name)
+	assert.True(t, cookie.HttpOnly)
+
+	spaces, err := env.SiteWithToken(t, cookie.Value).SiteWorkspacesList(t.Context())
+	require.NoError(t, err)
+	require.Len(t, spaces, 1)
+	assert.Equal(t, "grace-hopper", spaces[0].Slug)
+}
+
 func TestTheVerifyLinkWorksOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := register(t, env, "Grace Hopper", "grace@example.com")
