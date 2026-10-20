@@ -11,7 +11,9 @@ owner is told by mail instead.
   with this address", links to sign in and to reset the password). Every request does the same
   work, as `forgot-password` does: it takes a slot of the address's budget (its own `Kind`), mints a
   token and queues a mail job that delivers only when a slot was granted and the mail is due, so
-  neither the answer nor its timing says which case it was.
+  neither the answer nor its timing says which case it was. The timing is the same class, not
+  identical: every path hashes the password and mints a token, and the new and Unverified paths
+  make one write that a Verified address skips.
 - **Email change** answers 202 on request. A taken target gets the same tokenless notice instead of
   a confirm link; the confirm step never says "in use" (the unique index remains only as a race
   guard and fails as an invalid link).

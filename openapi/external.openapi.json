@@ -2,7 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Sphericon External API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "The Sphericon external API: manage a workspace's contacts, events, segments, automations and broadcasts with a workspace API token."
   },
   "tags": [
     {
@@ -4881,7 +4882,7 @@
         ],
         "responses": {
           "200": {
-            "description": "One page of an Export stream (Enterprise, ADR 0044): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
+            "description": "One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row\nper line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row\nschema is named by each operation. The next cursor is the `X-Next-Cursor` header;\npass it as `cursor` for the next page. The cursor is the position after the last row of\nthe page and the next page includes everything at or after it, so rows that share an\n`updated_at` across a page edge are not lost. A page with no rows returns the cursor it\nwas given. A row that changes is delivered again with a newer `updated_at`: keep the\nnewest version per `id`.",
             "headers": {
               "X-Next-Cursor": {
                 "required": true,
@@ -11035,6 +11036,13 @@
             ],
             "nullable": true,
             "description": "Event occurrence timestamp"
+          },
+          "clientEventId": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "A client-chosen id that makes a retry safe. It is unique within the Workspace: sending an\nevent again with the same id changes nothing, so a load that broke off halfway is resent\nwhole. Generate it once per event (a UUID) and reuse it on every retry. An event without\none is not deduplicated."
           }
         },
         "description": "Event payload"
@@ -11412,6 +11420,16 @@
         "maximum": 10000,
         "description": "A per-second Send rate limit the caller may set"
       },
+      "PreconditionRequiredProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)"
+      },
       "PresetResource": {
         "type": "object",
         "required": ["name", "description", "paramsSchema"],
@@ -11551,6 +11569,10 @@
         "type": "object",
         "required": ["events"],
         "properties": {
+          "backfill": {
+            "type": "boolean",
+            "description": "Load history: the events are only recorded, so segments see them but no Automation\nenrolls on them and no webhook endpoint receives them. Use it to bring the events of\nan earlier system into a new setup. Defaults to false."
+          },
           "events": {
             "type": "array",
             "items": {

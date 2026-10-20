@@ -119,7 +119,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := outbound.New(env.Bus, senders{err: errors.New("vault down")}, nil)
 		_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:nosender", "a@example.com"))
-		assert.ErrorContains(t, err, "resolve sender")
+		require.ErrorContains(t, err, "resolve sender")
 		assert.ErrorContains(t, err, "vault down")
 	})
 
@@ -136,7 +136,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newModule(env, outbound.WithFreezers(&freezer{err: errors.New("hold source down")}))
 		_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:freezeerr", "a@example.com"))
-		assert.ErrorContains(t, err, "freeze check")
+		require.ErrorContains(t, err, "freeze check")
 		assert.Empty(t, env.CustomerMail.Messages())
 	})
 }
@@ -351,7 +351,7 @@ func TestClaimErrors(t *testing.T) {
 			return next.Mutate(ctx, m)
 		})
 		_, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:insert", "a@example.com"))
-		assert.ErrorContains(t, err, "disk full")
+		require.ErrorContains(t, err, "disk full")
 		assert.Empty(t, env.CustomerMail.Messages())
 	})
 
@@ -393,7 +393,7 @@ func TestClaimErrors(t *testing.T) {
 			return next.Mutate(ctx, m)
 		})
 		_, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:race", "a@example.com"))
-		assert.ErrorIs(t, err, outbound.ErrInProgress)
+		require.ErrorIs(t, err, outbound.ErrInProgress)
 		assert.Empty(t, env.CustomerMail.Messages())
 	})
 
@@ -461,7 +461,7 @@ func TestClaimErrors(t *testing.T) {
 			return next.Mutate(ctx, m)
 		})
 		_, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional(staleClaimKey, "lease.demo@codebasics.dev"))
-		assert.ErrorContains(t, err, "write refused")
+		require.ErrorContains(t, err, "write refused")
 		assert.Empty(t, env.CustomerMail.Messages())
 	})
 
@@ -478,7 +478,7 @@ func TestClaimErrors(t *testing.T) {
 			return next.Mutate(ctx, m)
 		})
 		_, err := newModule(env).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional(staleClaimKey, "lease.demo@codebasics.dev"))
-		assert.ErrorIs(t, err, outbound.ErrInProgress)
+		require.ErrorIs(t, err, outbound.ErrInProgress)
 		assert.Empty(t, env.CustomerMail.Messages())
 	})
 }
@@ -543,7 +543,7 @@ func TestPreflightErrors(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := newModule(env).Preflight(ctx, env.DB.Scoped(987654), "")
-	assert.ErrorContains(t, err, "load workspace 987654")
+	require.ErrorContains(t, err, "load workspace 987654")
 
 	_, err = newModule(env, outbound.WithFreezers(&freezer{err: errors.New("down")})).Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "")
 	assert.ErrorContains(t, err, "freeze check")
@@ -598,7 +598,7 @@ func TestSendTestOutcomes(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.CustomerMail.SetErr(errors.New("smtp unavailable"))
 		_, err := newModule(env).SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), req)
-		assert.ErrorContains(t, err, "test send to preview@example.com")
+		require.ErrorContains(t, err, "test send to preview@example.com")
 		assert.ErrorContains(t, err, "smtp unavailable")
 	})
 }

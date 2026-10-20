@@ -32,7 +32,7 @@ const (
 	// FeatureStaff unlocks the Staff member, its /staff surface and console, and the
 	// abuse detector (ADR 0026): one feature, meaningful only together.
 	FeatureStaff Feature = "staff"
-	// FeatureExport unlocks the Export streams (ADR 0044): the pull API a Workspace reads its
+	// FeatureExport unlocks the Export streams (ADR 0045): the pull API a Workspace reads its
 	// rows through into its own warehouse.
 	FeatureExport Feature = "export"
 )

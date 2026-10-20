@@ -103,6 +103,24 @@ model SiteContactExportTypedDownload {
   @body body: ContactExportDocument;
 }
 
+/** What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`. */
+model SiteContactLookup {
+  /** Whether a Contact holds the address */
+  contactHeld: boolean;
+
+  /** Events of the Contact holding the address, or carrying the address */
+  events: int32;
+
+  /** Delivery records (outbound messages) to the address */
+  deliveryRecords: int32;
+
+  /** Unsubscribes on the address */
+  unsubscribes: int32;
+
+  /** Suppressions on the address */
+  suppressions: int32;
+}
+
 @tag("Site Contacts")
 interface SiteContacts
   extends WorkspaceCrudUnique<
@@ -131,6 +149,38 @@ interface SiteContacts
     | SiteContactExportTypedDownload
     | BadRequestProblem
     | NotFoundProblem;
+
+  /**
+   * Look up what the Workspace holds for one email address (a Privacy request):
+   * counts only. The address is trimmed and lowercased; an invalid one is rejected.
+   * An address nothing holds answers with zeros, not 404. Owner or admin only.
+   */
+  @get
+  @collectionAction(SiteContactResource, "lookup")
+  @autoRoute
+  lookup(
+    ...ResourceCollectionParameters<SiteContactResource>,
+
+    /** The email address, as typed: trimmed and validated by the handler, not by the format check */
+    @maxLength(320) @query email: string,
+  ): SiteContactLookup | BadRequestProblem | ForbiddenProblem | NotFoundProblem;
+
+  /**
+   * Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as
+   * deleting a contact: personal data is removed, delivery records to the address
+   * are anonymized (also when no contact holds it) and opt-outs survive. Answers
+   * 404 when neither a contact nor delivery records hold the address. Owner or
+   * admin only.
+   */
+  @delete
+  @collectionAction(SiteContactResource, "erase")
+  @autoRoute
+  erase(
+    ...ResourceCollectionParameters<SiteContactResource>,
+
+    /** The email address to erase, as typed: trimmed and validated by the handler */
+    @maxLength(320) @query email: string,
+  ): NoContentResponse | BadRequestProblem | ForbiddenProblem | NotFoundProblem;
 }
 
 @@doc(

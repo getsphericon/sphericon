@@ -139,7 +139,7 @@ func TestPurgeRemovesStaleRowsOnly(t *testing.T) {
 	assert.Equal(t, 1, removed)
 
 	_, err = env.DB.AuthAttempt.Get(t.Context(), fixtures.StaleLoginAttemptID)
-	assert.Error(t, err, "the stale row is gone")
+	require.Error(t, err, "the stale row is gone")
 	_, err = env.DB.AuthAttempt.Get(t.Context(), fixtures.FreshLoginAttemptID)
 	assert.NoError(t, err, "the current row stays")
 }
@@ -195,7 +195,7 @@ func TestResetBudgetGrantsExactlyThresholdSlotsUnderConcurrency(t *testing.T) {
 	for range workers {
 		wg.Go(func() {
 			ok, err := a.Take(context.Background(), accounts.KindPasswordReset, email)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			if ok {
 				granted.Add(1)
 			}

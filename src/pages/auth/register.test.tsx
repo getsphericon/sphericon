@@ -10,10 +10,12 @@ import { RegisterPage } from './register.tsx'
 async function fillAndSubmit(screen: Awaited<ReturnType<typeof renderWithRouter>>['screen']) {
   await screen.getByLabelText(/^Name/).fill('  Ada Lovelace ')
   await screen.getByLabelText(/^Email/).fill(' ada@example.com ')
+  await screen.getByLabelText(/^Password/).fill('correct horse battery')
+  await screen.getByLabelText(/^Confirm password/).fill('correct horse battery')
   await screen.getByRole('button', { name: 'Register' }).click()
 }
 
-test('registers with trimmed name and email only, then asks to check the email', async () => {
+test('registers with trimmed name and email and the password, then asks to check the email', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthRegister(async ({ request }) => {
@@ -27,7 +29,9 @@ test('registers with trimmed name and email only, then asks to check the email',
 
   await expect.element(screen.getByText('Check your email')).toBeInTheDocument()
   await expect.element(screen.getByText(/ada@example\.com/)).toBeInTheDocument()
-  expect(bodies).toEqual([{ name: 'Ada Lovelace', email: 'ada@example.com' }])
+  expect(bodies).toEqual([
+    { name: 'Ada Lovelace', email: 'ada@example.com', password: 'correct horse battery' },
+  ])
 })
 
 test('shows the API error and stays on the form when registration fails', async () => {
@@ -79,6 +83,7 @@ test('with the gate off it asks for a password, sends it and points to sign in',
   await screen.getByLabelText(/^Name/).fill('Ada Lovelace')
   await screen.getByLabelText(/^Email/).fill('ada@example.com')
   await screen.getByLabelText(/^Password/).fill('correct horse battery')
+  await screen.getByLabelText(/^Confirm password/).fill('correct horse battery')
   await screen.getByRole('button', { name: 'Register' }).click()
 
   await expect.element(screen.getByText('Account created')).toBeInTheDocument()
@@ -87,9 +92,22 @@ test('with the gate off it asks for a password, sends it and points to sign in',
   ])
 })
 
-test('with the gate on there is no password field', async () => {
+test('sends nothing when the confirmation differs', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAuthRegister(async ({ request }) => {
+      bodies.push(await request.json())
+      return new HttpResponse(null, { status: 202 })
+    }),
+  )
   const { screen } = await renderWithRouter(<RegisterPage />)
 
-  await expect.element(screen.getByLabelText(/^Name/)).toBeInTheDocument()
-  expect(screen.getByLabelText(/^Password/).elements()).toHaveLength(0)
+  await screen.getByLabelText(/^Name/).fill('Ada Lovelace')
+  await screen.getByLabelText(/^Email/).fill('ada@example.com')
+  await screen.getByLabelText(/^Password/).fill('correct horse battery')
+  await screen.getByLabelText(/^Confirm password/).fill('something else')
+  await screen.getByRole('button', { name: 'Register' }).click()
+
+  await expect.element(screen.getByText('Passwords do not match')).toBeInTheDocument()
+  expect(bodies).toEqual([])
 })

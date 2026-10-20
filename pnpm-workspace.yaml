@@ -51,3 +51,9 @@ minimumReleaseAgeExclude:
   - '@mantine/notifications@9.7.3'
   - '@mantine/store@9.7.3'
   - react-i18next@17.1.0
+# Transitive dependencies of the build tooling that an advisory has fixed; pnpm picks the fixed
+# release whichever package asks for them.
+overrides:
+  undici: '>=7.29.1'
+  js-yaml: '>=5.4.1'
+  esbuild: '>=0.28.1'

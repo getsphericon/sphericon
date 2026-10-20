@@ -1,4 +1,4 @@
-// Package exportstream is what every Export stream shares (ADR 0044, GLOSSARY: Export
+// Package exportstream is what every Export stream shares (ADR 0045, GLOSSARY: Export
 // stream): the opaque (updated_at, id) cursor, the keyset query predicates, the page
 // size, the NDJSON page encoder and the check of an encoded row against the TypeSpec
 // row schema. A stream adds only its row type (with Position), its fetch query and its

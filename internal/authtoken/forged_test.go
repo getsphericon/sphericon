@@ -34,7 +34,7 @@ func TestParseRejectsTokensWithoutAUsableUserID(t *testing.T) {
 	for name, claims := range cases {
 		t.Run(name, func(t *testing.T) {
 			_, _, err := s.Parse(forge(t, claims), authtoken.PurposeEmailVerify, binding)
-			assert.Error(t, err)
+			require.Error(t, err)
 		})
 	}
 	assert.Zero(t, lookups)
@@ -43,7 +43,7 @@ func TestParseRejectsTokensWithoutAUsableUserID(t *testing.T) {
 func TestParseRejectsGarbageAndUnsignedTokens(t *testing.T) {
 	s := authtoken.New(secret)
 	_, _, err := s.Parse("not.a.jwt", authtoken.PurposeEmailVerify, constBinding("b"))
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	unsigned, err := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{"uid": "1", "prp": "email_verify", "exp": int64(4102444800)}).
 		SignedString(jwt.UnsafeAllowNoneSignatureType)

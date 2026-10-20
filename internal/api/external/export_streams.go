@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/exportstream"
 )
 
-// exportReadScope gates every Export stream (ADR 0044). It is deliberately absent from the
+// exportReadScope gates every Export stream (ADR 0045). It is deliberately absent from the
 // OAuth grantable scopes, and the operations are hidden from MCP (ADR 0016).
 const exportReadScope = "export:read"
 
@@ -28,7 +28,7 @@ func (h *Handlers) exportDenied(ctx context.Context) (int, string) {
 	return 0, ""
 }
 
-// ExportEvents serves the Events stream (ADR 0044): NDJSON rows, the next cursor in the
+// ExportEvents serves the Events stream (ADR 0045): NDJSON rows, the next cursor in the
 // X-Next-Cursor header. A stream added later is this handler with its own typed responses
 // and its own exportstream page function.
 func (h *Handlers) ExportEvents(ctx context.Context, params externalapi.ExportEventsParams) (externalapi.ExportEventsRes, error) {

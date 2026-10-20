@@ -75,6 +75,18 @@ system-generated actions — so engagement is segmentable through the very same 
 customer-tracked actions, with no parallel event stream.
 _Avoid_: Activity, log entry, signal
 
+**Import**:
+Bringing records from a Workspace's earlier system into the Workspace, repeatably: sending the
+same record again changes nothing. Contacts and Events are imported differently; Events are a
+**Backfill**.
+_Avoid_: Migration, sync
+
+**Backfill**:
+An **Import** of Events that happened before the Workspace came to sphericon, recorded with the
+time they really happened. To segmentation a backfilled Event is an ordinary Event; to Automations
+and webhooks it is history and never a trigger.
+_Avoid_: Historical import, replay, silent event
+
 **Erasure**:
 Removing a Contact's personal data at the Workspace's request (GDPR Art. 17). It is what deleting
 a Contact _is_ — there is no softer delete that keeps personal data. The Contact, its Visitors,
@@ -88,7 +100,9 @@ is not blocked; surviving opt-outs still apply to them. The Workspace is the con
 the processor, so Erasure is a Workspace action, never a data-subject self-service form. A request
 names a person by address, so the Workspace's owners and admins can also start it from an address
 (a **Privacy request**), even when no Contact holds that address any more: then only the delivery
-records of the address are anonymized.
+records of the address are anonymized. A Privacy request starts with a lookup that shows counts
+only, never content; "nothing held" is a valid result (zeros, not a not-found). Erase is offered
+only while a Contact or delivery records hold the address: opt-outs alone are not erasable.
 _Avoid_: Anonymization (that is only what happens to the delivery rows), forget, purge (purge is
 bulk retention policy, a separate concern)
 
@@ -660,7 +674,7 @@ _Avoid_: Current usage, real-time usage
 A reversible Workspace state that **freezes all outbound sending** — all three send surfaces
 (Broadcast, Automation, Transactional), exactly like Workspace suspension — set by a Staff member
 through the Staff surface for a reason other than reputation. Several can coexist: each is
-stored separately under its own key, with a reason shown to the Workspace Owner and an expiry the
+stored separately under its own key, with a reason shown to the Workspace Owner, an optional action URL (where an Owner or Admin can resolve it) and an expiry the
 setter must renew (required, and no further ahead than a configured maximum, 30 days by default), and each is cleared by its own setter or by its expiry. It is a **distinct
 cause on the same core chokepoint**, never a repurposing of suspension: the send path asks one
 question ("may this Workspace send now?") answered by several independent freeze reasons.

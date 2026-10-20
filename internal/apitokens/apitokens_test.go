@@ -43,7 +43,7 @@ func TestMintRefusesABlankNameAndUnknownScopes(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := apitokens.Mint(ctx, s, apitokens.Input{Name: "  ", Scopes: []string{"contacts:read"}})
-	assert.ErrorIs(t, err, apitokens.ErrNameEmpty)
+	require.ErrorIs(t, err, apitokens.ErrNameEmpty)
 
 	_, err = apitokens.Mint(ctx, s, apitokens.Input{Name: "x", Scopes: []string{"contacts:read", "root:all"}})
 	assert.ErrorIs(t, err, apitokens.ErrUnknownScope)
@@ -60,7 +60,7 @@ func TestMintWithinNeverGrantsAScopeTheMinterLacks(t *testing.T) {
 	assert.Equal(t, []string{"contacts:read"}, ok.Token.Scopes)
 
 	_, err = apitokens.MintWithin(ctx, s, minter, apitokens.Input{Name: "child", Scopes: []string{"contacts:read", "emails:send"}})
-	assert.ErrorIs(t, err, apitokens.ErrScopeEscalation)
+	require.ErrorIs(t, err, apitokens.ErrScopeEscalation)
 
 	count, err := s.ApiToken().Query().Count(ctx)
 	require.NoError(t, err)
@@ -80,7 +80,7 @@ func TestRevokeRetiresOnceAndIsWorkspaceScoped(t *testing.T) {
 	require.NoError(t, err)
 	id := minted.Token.ID
 
-	assert.ErrorIs(t, apitokens.Revoke(ctx, env.DB.Scoped(fixtures.GlobexID), id), apitokens.ErrNotFound,
+	require.ErrorIs(t, apitokens.Revoke(ctx, env.DB.Scoped(fixtures.GlobexID), id), apitokens.ErrNotFound,
 		"another Workspace cannot revoke it")
 
 	require.NoError(t, apitokens.Revoke(ctx, s, id))
@@ -88,6 +88,6 @@ func TestRevokeRetiresOnceAndIsWorkspaceScoped(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, got.RevokedAt, "revoked, not removed")
 
-	assert.ErrorIs(t, apitokens.Revoke(ctx, s, id), apitokens.ErrNotFound, "already revoked")
+	require.ErrorIs(t, apitokens.Revoke(ctx, s, id), apitokens.ErrNotFound, "already revoked")
 	assert.ErrorIs(t, apitokens.Revoke(ctx, s, 999999), apitokens.ErrNotFound)
 }

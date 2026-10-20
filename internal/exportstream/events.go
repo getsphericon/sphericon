@@ -53,7 +53,7 @@ func utc(t *time.Time) *time.Time {
 	if t == nil {
 		return nil
 	}
-	return lo.ToPtr(t.UTC())
+	return new(t.UTC())
 }
 
 // Events serves a page of the Workspace's Events stream.

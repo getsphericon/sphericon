@@ -1,6 +1,7 @@
 package tracking_test
 
 import (
+	"maps"
 	"testing"
 	"time"
 
@@ -45,9 +46,7 @@ func TestDecodeUnsubRejectsMalformedClaims(t *testing.T) {
 	ok := jwt.MapClaims{"src": "broadcasts", "dest": "a@b.com", "ws": "1", "cid": "2", "bid": "3"}
 	with := func(k string, v any) jwt.MapClaims {
 		c := jwt.MapClaims{}
-		for key, val := range ok {
-			c[key] = val
-		}
+		maps.Copy(c, ok)
 		if v == nil {
 			delete(c, k)
 		} else {
@@ -107,12 +106,12 @@ func TestDecodeConfirmRejectsMalformedClaims(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := tr.DecodeConfirm(signed(t, claims))
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.False(t, tracking.IsExpired(err), "malformed is not expired")
 		})
 	}
 	_, err = tr.DecodeConfirm("garbage")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.False(t, tracking.IsExpired(err))
 }
 

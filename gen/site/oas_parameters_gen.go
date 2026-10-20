@@ -1578,6 +1578,135 @@ func decodeSiteAuthConfirmEmailChangeParams(args [0]string, argsEscaped bool, r 
 	return params, nil
 }
 
+// SiteAuthResendVerificationParams is parameters of SiteAuth_resendVerification operation.
+type SiteAuthResendVerificationParams struct {
+	// The registration cookie of the browser asking, if any: the new link binds to whatever cookie the
+	// caller holds and then signs that browser in without a password.
+	REG OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSiteAuthResendVerificationParams(packed middleware.Parameters) (params SiteAuthResendVerificationParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "REG",
+			In:   "cookie",
+		}
+		if v, ok := packed[key]; ok {
+			params.REG = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSiteAuthResendVerificationParams(args [0]string, argsEscaped bool, r *http.Request) (params SiteAuthResendVerificationParams, _ error) {
+	c := uri.NewCookieDecoder(r)
+	// Decode cookie: REG.
+	if err := func() error {
+		cfg := uri.CookieParameterDecodingConfig{
+			Name:    "REG",
+			Explode: false,
+		}
+		if err := c.HasParam(cfg); err == nil {
+			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotREGVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotREGVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.REG.SetTo(paramsDotREGVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "REG",
+			In:   "cookie",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteAuthVerifyEmailParams is parameters of SiteAuth_verifyEmail operation.
+type SiteAuthVerifyEmailParams struct {
+	// The registration cookie of the browser that registered, if any. Its path is the auth prefix shared
+	// with resend, and it is SameSite=Strict: not sent on the cross-site click from the mail, but sent on
+	// the page's own later request.
+	REG OptString `json:",omitempty,omitzero"`
+}
+
+func unpackSiteAuthVerifyEmailParams(packed middleware.Parameters) (params SiteAuthVerifyEmailParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "REG",
+			In:   "cookie",
+		}
+		if v, ok := packed[key]; ok {
+			params.REG = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeSiteAuthVerifyEmailParams(args [0]string, argsEscaped bool, r *http.Request) (params SiteAuthVerifyEmailParams, _ error) {
+	c := uri.NewCookieDecoder(r)
+	// Decode cookie: REG.
+	if err := func() error {
+		cfg := uri.CookieParameterDecodingConfig{
+			Name:    "REG",
+			Explode: false,
+		}
+		if err := c.HasParam(cfg); err == nil {
+			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotREGVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotREGVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.REG.SetTo(paramsDotREGVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "REG",
+			In:   "cookie",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteAutomationsActivateParams is parameters of SiteAutomations_activate operation.
 type SiteAutomationsActivateParams struct {
 	// URL-safe unique slug; the route key for nested workspace resources.
@@ -3923,6 +4052,138 @@ func decodeSiteContactsDeleteParams(args [2]string, argsEscaped bool, r *http.Re
 	return params, nil
 }
 
+// SiteContactsEraseParams is parameters of SiteContacts_erase operation.
+type SiteContactsEraseParams struct {
+	// URL-safe unique slug; the route key for nested workspace resources.
+	Slug string
+	// The email address to erase, as typed: trimmed and validated by the handler.
+	Email string
+}
+
+func unpackSiteContactsEraseParams(packed middleware.Parameters) (params SiteContactsEraseParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "slug",
+			In:   "path",
+		}
+		params.Slug = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "email",
+			In:   "query",
+		}
+		params.Email = packed[key].(string)
+	}
+	return params
+}
+
+func decodeSiteContactsEraseParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteContactsEraseParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: slug.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "slug",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Slug = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "slug",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: email.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "email",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Email = c
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     320,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(params.Email)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "email",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteContactsExportParams is parameters of SiteContacts_export operation.
 type SiteContactsExportParams struct {
 	// URL-safe unique slug; the route key for nested workspace resources.
@@ -4424,6 +4685,138 @@ func decodeSiteContactsListParams(args [1]string, argsEscaped bool, r *http.Requ
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "pageSize",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteContactsLookupParams is parameters of SiteContacts_lookup operation.
+type SiteContactsLookupParams struct {
+	// URL-safe unique slug; the route key for nested workspace resources.
+	Slug string
+	// The email address, as typed: trimmed and validated by the handler, not by the format check.
+	Email string
+}
+
+func unpackSiteContactsLookupParams(packed middleware.Parameters) (params SiteContactsLookupParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "slug",
+			In:   "path",
+		}
+		params.Slug = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "email",
+			In:   "query",
+		}
+		params.Email = packed[key].(string)
+	}
+	return params
+}
+
+func decodeSiteContactsLookupParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteContactsLookupParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: slug.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "slug",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Slug = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "slug",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: email.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "email",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Email = c
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     320,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(params.Email)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "email",
 			In:   "query",
 			Err:  err,
 		}

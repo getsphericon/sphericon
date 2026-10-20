@@ -13,13 +13,24 @@ linters:
     - bodyclose
     - contextcheck
     - depguard
+    - errname
     - errorlint
+    - exhaustive
+    - fatcontext
     - forbidigo
+    - modernize
     - noctx
     - rowserrcheck
     - sqlclosecheck
+    - testifylint
+    - thelper
     - usetesting
   settings:
+    exhaustive:
+      # A switch with a default says what happens to every other member; it is checked only for
+      # the enums this repository defines, not for html.TokenType, reflect.Kind or yaml.Kind.
+      default-signifies-exhaustive: true
+      ignore-enum-types: ^(reflect\.Kind|golang\.org/x/net/html\.TokenType|gopkg\.in/yaml\.v3\.Kind)$
     forbidigo:
       analyze-types: true
       forbid:

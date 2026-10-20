@@ -15241,15 +15241,22 @@ func (s *EventInput) encodeFields(e *jx.Encoder) {
 			s.OccurredAt.Encode(e)
 		}
 	}
+	{
+		if s.ClientEventId.Set {
+			e.FieldStart("clientEventId")
+			s.ClientEventId.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfEventInput = [6]string{
+var jsonFieldsNameOfEventInput = [7]string{
 	0: "subjectId",
 	1: "action",
 	2: "email",
 	3: "phone",
 	4: "properties",
 	5: "occurredAt",
+	6: "clientEventId",
 }
 
 // Decode decodes EventInput from json.
@@ -15324,6 +15331,16 @@ func (s *EventInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"occurredAt\"")
+			}
+		case "clientEventId":
+			if err := func() error {
+				s.ClientEventId.Reset()
+				if err := s.ClientEventId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clientEventId\"")
 			}
 		default:
 			return d.Skip()
@@ -21149,6 +21166,12 @@ func (s *RecordEventsBatchInput) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *RecordEventsBatchInput) encodeFields(e *jx.Encoder) {
 	{
+		if s.Backfill.Set {
+			e.FieldStart("backfill")
+			s.Backfill.Encode(e)
+		}
+	}
+	{
 		e.FieldStart("events")
 		e.ArrStart()
 		for _, elem := range s.Events {
@@ -21158,8 +21181,9 @@ func (s *RecordEventsBatchInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRecordEventsBatchInput = [1]string{
-	0: "events",
+var jsonFieldsNameOfRecordEventsBatchInput = [2]string{
+	0: "backfill",
+	1: "events",
 }
 
 // Decode decodes RecordEventsBatchInput from json.
@@ -21171,8 +21195,18 @@ func (s *RecordEventsBatchInput) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
+		case "backfill":
+			if err := func() error {
+				s.Backfill.Reset()
+				if err := s.Backfill.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"backfill\"")
+			}
 		case "events":
-			requiredBitSet[0] |= 1 << 0
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				s.Events = make([]EventInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -21199,7 +21233,7 @@ func (s *RecordEventsBatchInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

@@ -33,7 +33,7 @@ func (w *Workspace) OneClickUnsubscribe(msg Message) {
 	out, err := io.ReadAll(res.Body)
 	require.NoError(w.t, err)
 	require.NoError(w.t, res.Body.Close())
-	require.Truef(w.t, res.StatusCode/100 == 2, "one-click POST to %s answered %d: %s", target, res.StatusCode, out)
+	require.Equalf(w.t, 2, res.StatusCode/100, "one-click POST to %s answered %d: %s", target, res.StatusCode, out)
 }
 
 // RequireUnsubscribed asserts, through the external API, that the Contact with this

@@ -57,11 +57,11 @@ func TestUnsubscribeValidatesTheSourceAndIsIdempotent(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := consent.Unsubscribe(ctx, env.Bus, s, "  ", eligibility.SourceBroadcasts)
-	assert.ErrorIs(t, err, consent.ErrDestinationEmpty)
+	require.ErrorIs(t, err, consent.ErrDestinationEmpty)
 	_, err = consent.Unsubscribe(ctx, env.Bus, s, fixtures.ContactAliceEmail, "newsletter")
-	assert.ErrorIs(t, err, consent.ErrInvalidSource)
+	require.ErrorIs(t, err, consent.ErrInvalidSource)
 	_, err = consent.Unsubscribe(ctx, env.Bus, s, fixtures.ContactAliceEmail, "automation:999999")
-	assert.ErrorIs(t, err, consent.ErrUnknownAutomation)
+	require.ErrorIs(t, err, consent.ErrUnknownAutomation)
 
 	first, err := consent.Unsubscribe(ctx, env.Bus, s, "Alice@Example.com", eligibility.SourceBroadcasts)
 	require.NoError(t, err)

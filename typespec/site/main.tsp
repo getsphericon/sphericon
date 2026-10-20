@@ -41,6 +41,7 @@ using TypeSpec.OpenAPI;
 using TypeSpec.Http;
 
 @service(#{ title: "Sphericon Site API" })
+@doc("The API of the Sphericon web app, authenticated by the session cookie.")
 @info(#{ version: "1.0.0" })
 @server("http://localhost:3000", "Local development site API")
 @useAuth(ApiKeyAuth<ApiKeyLocation.cookie, "JWT">)

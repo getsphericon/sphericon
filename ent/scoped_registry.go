@@ -835,6 +835,9 @@ func ScopedEntities() []ScopedEntity {
 				b.SetKey(src.Key)
 				b.SetReasonCode(src.ReasonCode)
 				b.SetMessage(src.Message)
+				if src.ActionURL != nil {
+					b.SetActionURL(*src.ActionURL)
+				}
 				b.SetExpiresAt(src.ExpiresAt)
 				b.SetSetBy(src.SetBy)
 				created, err := b.Save(ctx)

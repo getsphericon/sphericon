@@ -16,8 +16,6 @@ const (
 	badDefinition = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"weird","value":"x"}]}`
 )
 
-func ptr[T any](v T) *T { return &v }
-
 func TestCreateRejectsInvalidDefinition(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := segments.New()
@@ -27,7 +25,7 @@ func TestCreateRejectsInvalidDefinition(t *testing.T) {
 		before, err := env.DB.Segment.Query().Count(ctx)
 		require.NoError(t, err)
 
-		_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Definition: ptr(badDefinition)})
+		_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Definition: new(badDefinition)})
 		require.ErrorIs(t, err, segments.ErrInvalidDefinition)
 
 		after, err := env.DB.Segment.Query().Count(ctx)
@@ -42,12 +40,12 @@ func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {
 	ctx := context.Background()
 
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"contains","value":"x"}]}`
-	s, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Good", Definition: ptr(def)})
+	s, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Good", Definition: new(def)})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, s.WorkspaceID)
 	assert.Equal(t, def, *s.Definition)
 
-	_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Empty", Definition: ptr("")})
+	_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Empty", Definition: new("")})
 	require.NoError(t, err)
 	_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Nil"})
 	require.NoError(t, err)
@@ -58,17 +56,17 @@ func TestUpdateValidatesLikeCreate(t *testing.T) {
 	m := segments.New()
 	ctx := context.Background()
 
-	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Definition: ptr(badDefinition)})
+	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Definition: new(badDefinition)})
 	require.ErrorIs(t, err, segments.ErrInvalidDefinition)
 
 	// An invalid definition is rejected and leaves the row untouched.
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Definition: ptr(badDefinition)})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Definition: new(badDefinition)})
 	require.ErrorIs(t, err, segments.ErrInvalidDefinition)
 	s, err := env.DB.Segment.Get(ctx, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
 	assert.NotEqual(t, badDefinition, *s.Definition)
 
-	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: ptr("Renamed")})
+	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: new("Renamed")})
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", got.Name)
 }
@@ -77,7 +75,7 @@ func TestUpdateIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := segments.New()
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: ptr("x")})
+	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: new("x")})
 	require.ErrorIs(t, err, segments.ErrNotFound)
 }
 

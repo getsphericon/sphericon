@@ -19,13 +19,13 @@ func TestModuleIsConfinedToTheScopedWorkspace(t *testing.T) {
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
 
 	_, err := m.Get(ctx, acme, fixtures.AutomationGlobexID)
-	assert.ErrorIs(t, err, automations.ErrNotFound)
+	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Get(ctx, globex, fixtures.AutomationWelcomeSeriesID)
-	assert.ErrorIs(t, err, automations.ErrNotFound)
+	require.ErrorIs(t, err, automations.ErrNotFound)
 
 	_, err = m.Activate(ctx, acme, fixtures.AutomationGlobexID)
-	assert.ErrorIs(t, err, automations.ErrNotFound)
-	assert.ErrorIs(t, m.Delete(ctx, acme, fixtures.AutomationGlobexID), automations.ErrNotFound)
+	require.ErrorIs(t, err, automations.ErrNotFound)
+	require.ErrorIs(t, m.Delete(ctx, acme, fixtures.AutomationGlobexID), automations.ErrNotFound)
 
 	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "New", TriggerEvent: "contact.created"})
 	require.NoError(t, err)

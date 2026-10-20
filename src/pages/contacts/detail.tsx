@@ -9,11 +9,8 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { parse } from 'content-disposition-header'
-import { saveAs } from 'file-saver'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -27,21 +24,14 @@ import {
   siteContactsListQueryKey,
   siteEventsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { siteContactsExport } from '../../generated/site/sdk.gen.ts'
+import { useContactExport } from '../../hooks/useContactExport.ts'
 import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$slug/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$slug/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
-import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 import { formatDateTime } from '../../utils/datetime.ts'
-
-// The filename the server suggested in Content-Disposition (RFC 6266, `filename*` included).
-function exportFilename(response: Response): string | undefined {
-  const header = response.headers.get('Content-Disposition')
-  return header ? parse(header).parameters.filename : undefined
-}
 
 const EVENTS_PAGE_SIZE = 10
 
@@ -111,33 +101,7 @@ export function ContactDetailPage() {
     onDone: () => navigate({ to: contactsRoute.to, params: { slug } }),
   })
 
-  const exportMutation = useMutation({
-    // The generated mutation helper drops the response; the filename is the server's
-    // (Content-Disposition), so call the generated SDK function and keep both. The
-    // server streams the document as a download; it is read as the contract's typed
-    // ContactExportDocument and written out as the saved file.
-    mutationFn: () =>
-      siteContactsExport({
-        path: { slug },
-        query: { id: contactId },
-        parseAs: 'json',
-        throwOnError: true,
-      }),
-    onSuccess: ({ data, response }) =>
-      saveAs(
-        new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-        exportFilename(response),
-      ),
-    onError: (error) =>
-      notifications.show({
-        color: 'red',
-        title: t(($) => $.alerts.exportErrorTitle),
-        message: getApiErrorMessage(
-          error,
-          t(($) => $.notifications.errorMessage),
-        ),
-      }),
-  })
+  const exportMutation = useContactExport(slug)
 
   if (contactQuery.isLoading) {
     return <Loader />
@@ -172,7 +136,7 @@ export function ContactDetailPage() {
           <Button
             variant="default"
             loading={exportMutation.isPending}
-            onClick={() => exportMutation.mutate()}
+            onClick={() => exportMutation.mutate({ id: contactId })}
           >
             {t(($) => $.contacts.export)}
           </Button>

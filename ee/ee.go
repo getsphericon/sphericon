@@ -41,7 +41,7 @@ type Edition struct {
 	// Audit is the read side of the Audit log; unlicensed, it reports so and the
 	// /site page answers 402.
 	Audit *audit.Log
-	// Export is the seat of the Export streams (ADR 0044); unlicensed, every stream answers 404.
+	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
 	Export *export.Streams
 	// Consumers are the extra bus subscribers (events.RegisterSubscribers).
 	Consumers []events.Consumer

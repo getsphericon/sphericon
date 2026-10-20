@@ -43,7 +43,7 @@ func ByContactID(id int64) Identifier { return Identifier{contactID: id} }
 // ByEmail identifies a Contact by its email address; with no such Contact it
 // identifies the address itself, so delivery records to it are anonymized.
 func ByEmail(email string) Identifier {
-	return Identifier{email: strings.ToLower(strings.TrimSpace(email))}
+	return Identifier{email: canonicalEmail(email)}
 }
 
 // ByVisitorID identifies the Contact the visitor is bound to, or, for an anonymous

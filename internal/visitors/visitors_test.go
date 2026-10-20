@@ -42,7 +42,7 @@ func TestIdentifyCreatesTheContactBindsTheDeviceAndStitchesEarlierEvents(t *test
 
 	err := visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{
 		VisitorID: "  dev-1 ",
-		Email:     lo.ToPtr("Visitor@Example.com"),
+		Email:     new("Visitor@Example.com"),
 		Traits:    map[string]any{"plan": "pro"},
 	})
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestIdentifyRefusesWhatCannotBeIdentified(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	err := visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{VisitorID: "   ", Email: lo.ToPtr("a@example.com")})
+	err := visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{VisitorID: "   ", Email: new("a@example.com")})
 	require.EqualError(t, err, "visitorId is required")
 
 	err = visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{VisitorID: "dev-x"})
@@ -99,7 +99,7 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 	at := time.Date(2026, 5, 1, 9, 0, 0, 0, time.UTC)
 
 	require.NoError(t, visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{
-		VisitorID: "dev-id", Email: lo.ToPtr(fixtures.ContactAliceEmail), SubjectID: lo.ToPtr("alice-1"),
+		VisitorID: "dev-id", Email: lo.ToPtr(fixtures.ContactAliceEmail), SubjectID: new("alice-1"),
 	}))
 
 	require.NoError(t, visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), []visitors.CollectEventInput{
@@ -131,7 +131,7 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 func TestCollectTreatsAVanishedContactAsAnonymous(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	require.NoError(t, visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{VisitorID: "dev-gone", Email: lo.ToPtr("gone@example.com")}))
+	require.NoError(t, visitors.Identify(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), visitors.IdentifyInput{VisitorID: "dev-gone", Email: new("gone@example.com")}))
 	_, err := env.DB.Contact.Delete().Where(contact.Email("gone@example.com")).Exec(ctx)
 	require.NoError(t, err)
 

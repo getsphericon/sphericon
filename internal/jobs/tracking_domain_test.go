@@ -25,7 +25,8 @@ type probeFunc func(*http.Request) (*http.Response, error)
 
 func (f probeFunc) Do(r *http.Request) (*http.Response, error) { return f(r) }
 
-func trackingVerifier(env *testhelper.TestEnv, t *testing.T, zones map[string]mockdns.Zone, doer trackingdomain.Doer) *trackingdomain.Verifier {
+func trackingVerifier(t *testing.T, env *testhelper.TestEnv, zones map[string]mockdns.Zone, doer trackingdomain.Doer) *trackingdomain.Verifier {
+	t.Helper()
 	return &trackingdomain.Verifier{
 		Lookup: dnstest.Resolver(t, zones).LookupCNAME,
 		Target: testhelper.TrackingCNAMETarget,
@@ -42,7 +43,7 @@ func TestVerifyTrackingDomainByID_servingHostThatStopsAnsweringNotifiesOwner(t *
 	zones := map[string]mockdns.Zone{"track.serving.umbrella.test.": {CNAME: testhelper.TrackingCNAMETarget + "."}}
 	down := probeFunc(func(*http.Request) (*http.Response, error) { return nil, errors.New("connection refused") })
 
-	err := jobs.VerifyTrackingDomainByID(ctx, env.DB, trackingVerifier(env, t, zones, down), env.SystemMail, fixtures.SendingDomainTrackingServingID)
+	err := jobs.VerifyTrackingDomainByID(ctx, env.DB, trackingVerifier(t, env, zones, down), env.SystemMail, fixtures.SendingDomainTrackingServingID)
 	require.NoError(t, err)
 
 	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainTrackingServingID)
@@ -64,7 +65,7 @@ func TestVerifyTrackingDomainByID_promotionNotifiesNobody(t *testing.T) {
 		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(body))}, nil
 	})
 
-	err := jobs.VerifyTrackingDomainByID(ctx, env.DB, trackingVerifier(env, t, zones, up), env.SystemMail, fixtures.SendingDomainTrackingDNSVerifiedID)
+	err := jobs.VerifyTrackingDomainByID(ctx, env.DB, trackingVerifier(t, env, zones, up), env.SystemMail, fixtures.SendingDomainTrackingDNSVerifiedID)
 	require.NoError(t, err)
 
 	row, err := env.DB.SendingDomain.Get(ctx, fixtures.SendingDomainTrackingDNSVerifiedID)
@@ -80,7 +81,7 @@ func TestVerifySendingDomainWorker_dkimFailureStillRunsTheTrackingCheck(t *testi
 	down := probeFunc(func(*http.Request) (*http.Response, error) { return nil, errors.New("connection refused") })
 	servfail := func(context.Context, string) ([]string, error) { return nil, errors.New("servfail") }
 
-	w := jobs.NewVerifySendingDomainWorkerWithTracking(env.DB, servfail, env.SystemMail, trackingVerifier(env, t, zones, down))
+	w := jobs.NewVerifySendingDomainWorkerWithTracking(env.DB, servfail, env.SystemMail, trackingVerifier(t, env, zones, down))
 	err := w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainTrackingServingID}))
 	require.Error(t, err, "the DKIM lookup error is still reported")
 
@@ -102,7 +103,7 @@ func TestRecheckTrackingDomainsWorker_demotesAServingHostThatStopsAnswering(t *t
 
 	zones := map[string]mockdns.Zone{"track.serving.umbrella.test.": {CNAME: testhelper.TrackingCNAMETarget + "."}}
 	down := probeFunc(func(*http.Request) (*http.Response, error) { return nil, errors.New("connection refused") })
-	w := jobs.NewVerifyTrackingDomainWorker(e.DB, e.SystemMail, trackingVerifier(e.TestEnv, t, zones, down))
+	w := jobs.NewVerifyTrackingDomainWorker(e.DB, e.SystemMail, trackingVerifier(t, e.TestEnv, zones, down))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifyTrackingDomainArgs{SendingDomainID: fixtures.SendingDomainTrackingServingID})))
 
 	row, err := e.DB.SendingDomain.Get(ctx, fixtures.SendingDomainTrackingServingID)

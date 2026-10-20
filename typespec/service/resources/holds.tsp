@@ -13,6 +13,9 @@ model HoldResource {
   /** The message shown to the Workspace Owner, as given */
   message: string;
 
+  /** Where the Workspace's Owners and Admins can resolve the hold; absent when none was given */
+  actionUrl?: string | null;
+
   /** When the hold stops freezing sending unless its setter renews it */
   expiresAt: Timestamp;
 
@@ -38,6 +41,12 @@ model HoldInput {
   @minLength(1)
   @maxLength(1000)
   message: string;
+
+  /** Where the Workspace's Owners and Admins can resolve the hold, shown as a link next to the message:
+   * an absolute https URL. Omit it to give none; setting the hold again without it removes a stored one. */
+  @maxLength(2048)
+  @pattern("^https://")
+  actionUrl?: string | null;
 
   /** Required; in the future and no further than the configured maximum from now */
   expiresAt: Timestamp;

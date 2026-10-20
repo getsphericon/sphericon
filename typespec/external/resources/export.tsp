@@ -4,7 +4,7 @@ using TypeSpec.OpenAPI;
 namespace Sphericon;
 
 /**
- * One page of an Export stream (Enterprise, ADR 0044): newline-delimited JSON, one row
+ * One page of an Export stream (Enterprise, ADR 0045): newline-delimited JSON, one row
  * per line with no envelope, so the body loads as ClickHouse `JSONEachRow`. The row
  * schema is named by each operation. The next cursor is the `X-Next-Cursor` header;
  * pass it as `cursor` for the next page. The cursor is the position after the last row of

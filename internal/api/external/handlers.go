@@ -61,7 +61,7 @@ type AuditLog interface {
 	Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) ([]*ent.AuditEntry, int64, error)
 }
 
-// ExportStreams is the license seam of the Enterprise Export streams (ADR 0044),
+// ExportStreams is the license seam of the Enterprise Export streams (ADR 0045),
 // implemented by ee/export. Core serves the streams itself (internal/exportstream) and
 // asks only whether the `export` feature is licensed: without it every stream answers 404.
 type ExportStreams interface {

@@ -19,6 +19,12 @@ adds the per-person path that ADR 0019's "evidentiary Events are never deleted" 
   through `scopedWithRoleFor`) and External API with a new `contacts:erase` scope, separate from
   `contacts:write`; MCP inherits it (ADR 0016). This replaces the existing CRUD contact DELETE
   (and its `contacts:write` scope); there is no second delete path.
+  The Site UI erases from a Contact's page and from the Workspace's **Privacy requests** section
+  (owner/admin), which takes an address: a lookup first shows counts only (never content; "nothing
+  held" is a valid lookup result, so it answers with zeros rather than a 404), then the same erasure
+  module as the External API runs by email. Erase is offered only while a Contact or delivery
+  records hold the address: opt-outs alone are not erasable, so a lookup after an Erasure shows
+  just the kept opt-outs. The Contacts list has no delete action.
 - **Events: the one exception to append-only, and to ADR 0019's "evidentiary Events are kept".**
   Customer-tracked Events of the Contact are deleted. Every reserved system Event is anonymized in
   place (`contact_id`, `visitor_id`, `email`, `phone`, `subject_id` and `properties` cleared, except the two non-personal keys the rates are computed

@@ -98,14 +98,16 @@ type Invoker interface {
 	SiteAuthLogout(ctx context.Context) (*SiteAuthLogoutNoContent, error)
 	// SiteAuthRegister invokes SiteAuth_register operation.
 	//
-	// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
-	// with the link to the set-password screen is on its way (202), and 202 is the answer for every
-	// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
-	// `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
-	// carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
-	// session: the User signs in next), and a taken address answers 409. An Instance that closed sign-up
-	// (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before anything is
-	// read or created; accepting an Invitation still works.
+	// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+	// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+	// a taken address gets a notice by mail instead. The answer always sets the registration cookie
+	// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+	// link to this browser, so the header does not say whether the address is taken either. The password
+	// is required (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to
+	// carry that notice and no link: the request creates a Verified User with its first Workspace at once
+	// (202, no session and no cookie: the User signs in next), and a taken address answers 409. An
+	// Instance that closed sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code
+	// `signup_closed` before anything is read or created; accepting an Invitation still works.
 	//
 	// POST /auth/register
 	SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error)
@@ -116,7 +118,7 @@ type Invoker interface {
 	// a mail. Rate limited per IP like registration.
 	//
 	// POST /auth/resend-verification
-	SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput) (SiteAuthResendVerificationRes, error)
+	SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (SiteAuthResendVerificationRes, error)
 	// SiteAuthResetPassword invokes SiteAuth_resetPassword operation.
 	//
 	// Set a new password from a reset token.
@@ -135,12 +137,15 @@ type Invoker interface {
 	// SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 	//
 	// Complete a registration from the verification link (the token is the credential): stamps the
-	// Verified email, sets the password, ends every earlier session, creates the User's first Workspace
-	// and sends the welcome email. The User then signs in; the link alone starts no session. A link is
-	// single use and scoped to the address it was sent to. Rate limited like registration.
+	// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
+	// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
+	// When the request carries the registration cookie the link was minted for, the password from
+	// registration stays; otherwise the request must carry a password, which replaces it, and without one
+	// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing). A
+	// link is single use and scoped to the address it was sent to. Rate limited like registration.
 	//
 	// POST /auth/verify-email
-	SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput) (SiteAuthVerifyEmailRes, error)
+	SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error)
 	// SiteAutomationsActivate invokes SiteAutomations_activate operation.
 	//
 	// Activate an automation (starts enrolling contacts).
@@ -274,6 +279,15 @@ type Invoker interface {
 	//
 	// DELETE /workspaces/{slug}/contacts/{id}
 	SiteContactsDelete(ctx context.Context, params SiteContactsDeleteParams) (SiteContactsDeleteRes, error)
+	// SiteContactsErase invokes SiteContacts_erase operation.
+	//
+	// Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as deleting a contact:
+	// personal data is removed, delivery records to the address are anonymized (also when no contact holds
+	// it) and opt-outs survive. Answers 404 when neither a contact nor delivery records hold the address.
+	// Owner or admin only.
+	//
+	// DELETE /workspaces/{slug}/contacts/erase
+	SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (SiteContactsEraseRes, error)
 	// SiteContactsExport invokes SiteContacts_export operation.
 	//
 	// Export everything held about one contact as a streamed JSON download. Identify the contact by
@@ -293,6 +307,14 @@ type Invoker interface {
 	//
 	// GET /workspaces/{slug}/contacts
 	SiteContactsList(ctx context.Context, params SiteContactsListParams) (SiteContactsListRes, error)
+	// SiteContactsLookup invokes SiteContacts_lookup operation.
+	//
+	// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
+	// is trimmed and lowercased; an invalid one is rejected. An address nothing holds answers with zeros,
+	// not 404. Owner or admin only.
+	//
+	// GET /workspaces/{slug}/contacts/lookup
+	SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (SiteContactsLookupRes, error)
 	// SiteContactsUpdate invokes SiteContacts_update operation.
 	//
 	// Update a resource from the site UI.
@@ -2239,14 +2261,16 @@ func (c *Client) sendSiteAuthLogout(ctx context.Context) (res *SiteAuthLogoutNoC
 
 // SiteAuthRegister invokes SiteAuth_register operation.
 //
-// Create an Unverified User (ADR 0030): no password, no session, no Workspace. A verification email
-// with the link to the set-password screen is on its way (202), and 202 is the answer for every
-// address, taken or not (ADR 0031): the owner of a taken address gets a notice by mail instead. With
-// `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to carry that notice: the request must
-// carry a password (422 otherwise), creates a Verified User with its first Workspace at once (202, no
-// session: the User signs in next), and a taken address answers 409. An Instance that closed sign-up
-// (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code `signup_closed` before anything is
-// read or created; accepting an Invitation still works.
+// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+// a taken address gets a notice by mail instead. The answer always sets the registration cookie
+// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+// link to this browser, so the header does not say whether the address is taken either. The password
+// is required (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to
+// carry that notice and no link: the request creates a Verified User with its first Workspace at once
+// (202, no session and no cookie: the User signs in next), and a taken address answers 409. An
+// Instance that closed sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code
+// `signup_closed` before anything is read or created; accepting an Invitation still works.
 //
 // POST /auth/register
 func (c *Client) SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error) {
@@ -2334,12 +2358,12 @@ func (c *Client) sendSiteAuthRegister(ctx context.Context, request *SiteRegister
 // a mail. Rate limited per IP like registration.
 //
 // POST /auth/resend-verification
-func (c *Client) SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput) (SiteAuthResendVerificationRes, error) {
-	res, err := c.sendSiteAuthResendVerification(ctx, request)
+func (c *Client) SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (SiteAuthResendVerificationRes, error) {
+	res, err := c.sendSiteAuthResendVerification(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput) (res SiteAuthResendVerificationRes, err error) {
+func (c *Client) sendSiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (res SiteAuthResendVerificationRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_resendVerification"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2387,6 +2411,25 @@ func (c *Client) sendSiteAuthResendVerification(ctx context.Context, request *Si
 	}
 	if err := encodeSiteAuthResendVerificationRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "EncodeCookieParams"
+	cookie := uri.NewCookieEncoder(r)
+	{
+		// Encode "REG" parameter.
+		cfg := uri.CookieParameterEncodingConfig{
+			Name:    "REG",
+			Explode: false,
+		}
+
+		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.REG.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode cookie")
+		}
 	}
 
 	stage = "SendRequest"
@@ -2584,17 +2627,20 @@ func (c *Client) sendSiteAuthSecondFactor(ctx context.Context, request *SiteLogi
 // SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 //
 // Complete a registration from the verification link (the token is the credential): stamps the
-// Verified email, sets the password, ends every earlier session, creates the User's first Workspace
-// and sends the welcome email. The User then signs in; the link alone starts no session. A link is
-// single use and scoped to the address it was sent to. Rate limited like registration.
+// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
+// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
+// When the request carries the registration cookie the link was minted for, the password from
+// registration stays; otherwise the request must carry a password, which replaces it, and without one
+// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing). A
+// link is single use and scoped to the address it was sent to. Rate limited like registration.
 //
 // POST /auth/verify-email
-func (c *Client) SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput) (SiteAuthVerifyEmailRes, error) {
-	res, err := c.sendSiteAuthVerifyEmail(ctx, request)
+func (c *Client) SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error) {
+	res, err := c.sendSiteAuthVerifyEmail(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput) (res SiteAuthVerifyEmailRes, err error) {
+func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (res SiteAuthVerifyEmailRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_verifyEmail"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -2642,6 +2688,25 @@ func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerif
 	}
 	if err := encodeSiteAuthVerifyEmailRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "EncodeCookieParams"
+	cookie := uri.NewCookieEncoder(r)
+	{
+		// Encode "REG" parameter.
+		cfg := uri.CookieParameterEncodingConfig{
+			Name:    "REG",
+			Explode: false,
+		}
+
+		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.REG.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode cookie")
+		}
 	}
 
 	stage = "SendRequest"
@@ -5806,6 +5871,159 @@ func (c *Client) sendSiteContactsDelete(ctx context.Context, params SiteContacts
 	return result, nil
 }
 
+// SiteContactsErase invokes SiteContacts_erase operation.
+//
+// Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as deleting a contact:
+// personal data is removed, delivery records to the address are anonymized (also when no contact holds
+// it) and opt-outs survive. Answers 404 when neither a contact nor delivery records hold the address.
+// Owner or admin only.
+//
+// DELETE /workspaces/{slug}/contacts/erase
+func (c *Client) SiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (SiteContactsEraseRes, error) {
+	res, err := c.sendSiteContactsErase(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactsErase(ctx context.Context, params SiteContactsEraseParams) (res SiteContactsEraseRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContacts_erase"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/workspaces/{slug}/contacts/erase"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactsEraseOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "slug" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "slug",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Slug))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/erase"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "email" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "email",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.Email))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactsEraseOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactsEraseResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SiteContactsExport invokes SiteContacts_export operation.
 //
 // Export everything held about one contact as a streamed JSON download. Identify the contact by
@@ -6299,6 +6517,158 @@ func (c *Client) sendSiteContactsList(ctx context.Context, params SiteContactsLi
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteContactsListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteContactsLookup invokes SiteContacts_lookup operation.
+//
+// Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
+// is trimmed and lowercased; an invalid one is rejected. An address nothing holds answers with zeros,
+// not 404. Owner or admin only.
+//
+// GET /workspaces/{slug}/contacts/lookup
+func (c *Client) SiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (SiteContactsLookupRes, error) {
+	res, err := c.sendSiteContactsLookup(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteContactsLookup(ctx context.Context, params SiteContactsLookupParams) (res SiteContactsLookupRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteContacts_lookup"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{slug}/contacts/lookup"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteContactsLookupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "slug" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "slug",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.Slug))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/lookup"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "email" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "email",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.Email))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteContactsLookupOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteContactsLookupResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

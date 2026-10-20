@@ -25,11 +25,11 @@ func TestRenderRejectsFileTags(t *testing.T) {
 		t.Run(tag, func(t *testing.T) {
 			_, err := emailrender.RenderEmail(tag, sampleHTML, nil)
 			require.ErrorContains(t, err, "render subject")
-			assert.ErrorContains(t, err, "include and render tags are not supported")
+			require.ErrorContains(t, err, "include and render tags are not supported")
 
 			out, err := emailrender.RenderEmail("Hi", htmlWithBody(tag), nil)
 			require.ErrorContains(t, err, "render body")
-			assert.ErrorContains(t, err, "include and render tags are not supported")
+			require.ErrorContains(t, err, "include and render tags are not supported")
 			assert.NotContains(t, out.HTML, "TOP-SECRET")
 
 			require.ErrorContains(t, emailrender.Lint("Hi", htmlWithBody(tag), nil).Error, "include and render tags are not supported")

@@ -1,15 +1,10 @@
-import { ActionIcon, Group, Stack, Title, Tooltip } from '@mantine/core'
-import { IconEye, IconPencil, IconTrash } from '@tabler/icons-react'
+import { Group, Stack, Title, Tooltip } from '@mantine/core'
+import { IconEye, IconPencil } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ActionIconLink, ButtonLink } from '../../components/RouterLink.tsx'
-import {
-  siteContactsDeleteMutation,
-  siteContactsListOptions,
-  siteContactsListQueryKey,
-} from '../../generated/site/@tanstack/react-query.gen.ts'
-import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
+import { siteContactsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$slug/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$slug/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$slug/contacts/index.tsx'
@@ -18,14 +13,6 @@ import { Route as contactsCreateRoute } from '../../routes/workspaces/$slug/cont
 export function ContactsListPage() {
   const { t } = useTranslation()
   const { slug } = contactsRoute.useParams()
-
-  const deleteContact = useDeleteResource({
-    mutation: siteContactsDeleteMutation(),
-    slug,
-    listQueryKey: siteContactsListQueryKey({ path: { slug } }),
-    successMessage: t(($) => $.notifications.contactDeleted),
-    errorTitle: t(($) => $.alerts.deleteErrorTitle),
-  })
 
   return (
     <Stack>
@@ -70,16 +57,6 @@ export function ContactsListPage() {
                   >
                     <IconPencil size={16} />
                   </ActionIconLink>
-                </Tooltip>
-                <Tooltip label={t(($) => $.actions.delete)}>
-                  <ActionIcon
-                    variant="light"
-                    color="red"
-                    onClick={() => deleteContact(record.id)}
-                    aria-label={t(($) => $.actions.delete)}
-                  >
-                    <IconTrash size={16} />
-                  </ActionIcon>
                 </Tooltip>
               </Group>
             ),

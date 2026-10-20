@@ -1,0 +1,6 @@
+# osv-scanner (mise run check:osv, nightly): the dependency vulnerabilities that stand, each with its reason.
+
+[[IgnoredVulns]]
+id = "GHSA-hhx9-57xq-r5rw"
+ignoreUntil = 2026-12-01
+reason = "@hey-api/openapi-ts runs on its next channel (hey-api#4235, it drops the TypeScript dependency so the generator runs under TypeScript 7); the fixed release is on the stable channel. A code generator run by developers, never shipped."

@@ -180,7 +180,6 @@
     "waitNodeDescription": "Pause before the next step.",
     "waitSecondsLabel": "Wait (seconds)"
   },
-  "billingBadge": "Billing",
   "brandKit": {
     "accentColorLabel": "Accent color",
     "backgroundColorLabel": "Background color",
@@ -576,7 +575,6 @@
     "broadcastSent": "Broadcast is sending",
     "broadcastUpdated": "Broadcast updated",
     "contactCreated": "Contact created",
-    "contactDeleted": "Contact deleted",
     "contactErased": "Contact erased",
     "contactUpdated": "Contact updated",
     "errorMessage": "Something went wrong. Please try again.",
@@ -647,14 +645,16 @@
     "verifiedBadge": "Verified"
   },
   "registration": {
-    "checkEmailBody": "If {{email}} can be registered, we sent it a link. Follow it to confirm your address and choose your password. If you already have an account, sign in instead.",
+    "checkEmailBody": "If {{email}} can be registered, we sent it a link. Follow it in this browser to confirm your address and sign in. If you already have an account, sign in instead.",
     "checkEmailTitle": "Check your email",
+    "confirmPasswordLabel": "Confirm password",
     "createdBody": "Your account is ready. Sign in with your email and password.",
     "createdTitle": "Account created",
     "emailLabel": "Email",
     "errorMessage": "We couldn't create your account. Please check your details and try again.",
     "errorTitle": "Registration failed",
     "loginLink": "Already have an account? Sign in",
+    "mismatch": "Passwords do not match",
     "nameLabel": "Name",
     "passwordLabel": "Password",
     "signInLink": "Sign in",
@@ -917,6 +917,7 @@
       "developers": "Developers",
       "general": "General",
       "mcp": "AI agents (MCP)",
+      "privacy": "Privacy requests",
       "sending": "Sending",
       "team": "Team and security",
       "tracking": "Tracking"
@@ -924,6 +925,27 @@
     "postalAddressDescription": "Shown in the footer of every marketing email. US law (CAN-SPAM) requires a valid physical postal address.",
     "postalAddressLabel": "Postal address",
     "postalAddressPlaceholder": "Acme Inc, 123 Main St, Springfield, IL 62704, USA",
+    "privacy": {
+      "contactHeld": "Contact: held",
+      "contactNotHeld": "Contact: none",
+      "deliveryRecords": "Delivery records: {{n}}",
+      "description": "Look up what this Workspace holds for an email address, to answer a GDPR access or erasure request. The lookup shows counts only.",
+      "emailLabel": "Email address",
+      "eraseConfirmDescription": "Erasure is permanent and cannot be undone. It removes the contact for this address with its visitors, events, tags and custom fields, and cancels its automation runs and queued mail. Delivery records to the address are anonymized. Unsubscribes and suppressions are kept so the person is never mailed again.",
+      "eraseConfirmTitle": "Erase {{email}}?",
+      "erased": "Address erased",
+      "events": "Events: {{n}}",
+      "invalidEmail": "This is not a valid email address.",
+      "lookup": "Look up",
+      "lookupError": "Could not look up the address.",
+      "membersOnly": "Only owners and admins can handle privacy requests.",
+      "nothingFound": "Nothing found for this address. It may have been erased already.",
+      "nothingHeld": "Nothing is held for this address.",
+      "resultTitle": "Held for this address",
+      "suppressions": "Suppressions: {{n}}",
+      "title": "Look up an address",
+      "unsubscribes": "Unsubscribes: {{n}}"
+    },
     "saved": "Workspace updated",
     "sendingDomains": {
       "create": "Add domain",
@@ -1159,20 +1181,17 @@
     "errorMessage": "We couldn't verify your email. The link may have expired.",
     "errorTitle": "Verification failed",
     "mismatch": "Passwords do not match",
+    "otherBrowserBody": "This link was not opened in the browser you registered in, so choose a password to finish. It replaces the one you entered on the registration form.",
     "passwordLabel": "Password",
+    "retry": "Try again",
     "signIn": "Sign in",
     "submitButton": "Set password",
-    "successBody": "Your email is confirmed and your password is set. You can sign in now.",
-    "successTitle": "Email verified",
-    "title": "Set your password"
-  },
-  "workspaceBillingHold": {
-    "description": "Outbound email is paused for this workspace because of a billing issue, not because of abuse. Scheduled broadcasts and automations wait and continue on their own once it is resolved. You can still sign in and view your data.",
-    "title": "Sending is paused for billing"
+    "title": "Set your password",
+    "verifying": "Confirming your email…"
   },
   "workspaceHold": {
-    "billingContact": "To resolve it, contact an Owner or Admin of this workspace.",
-    "billingLink": "Go to billing",
+    "actionContact": "To resolve it, contact an Owner or Admin of this workspace.",
+    "actionLink": "Resolve",
     "description": "Outbound email is on hold for this workspace. Scheduled broadcasts and automations wait and continue on their own when the hold lifts. You can still sign in and view your data.",
     "title": "Sending is on hold"
   },
