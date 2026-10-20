@@ -11815,8 +11815,8 @@
           "contact_id",
           "subject_id",
           "visitor_ids",
-          "email_sha256",
-          "phone_sha256",
+          "email_hash",
+          "phone_hash",
           "erased_at",
           "created_at",
           "updated_at"
@@ -11851,12 +11851,12 @@
             },
             "description": "The anonymous devices erased with the Contact"
           },
-          "email_sha256": {
+          "email_hash": {
             "type": "string",
             "nullable": true,
             "description": "SHA-256, as lowercase hex, of the lowercased email address; absent when there was none"
           },
-          "phone_sha256": {
+          "phone_hash": {
             "type": "string",
             "nullable": true,
             "description": "SHA-256, as lowercase hex, of the phone number; absent when there was none"
@@ -11886,7 +11886,7 @@
             "description": "Last change timestamp: the cursor column and the version of the row"
           }
         },
-        "description": "One row of the Erasures stream: the keys one Erasure matched on, so a consumer deletes the\nsame rows from its copy. Match on any of them: `contact_id` on Events and Contacts,\n`subject_id` on Events, `visitor_ids` on Events, `email_sha256` and `phone_sha256` against\nthe SHA-256 (hex) of the lowercased address or of the phone number as stored. The address\nand the phone themselves are never part of the stream. A row is never changed once written."
+        "description": "One row of the Erasures stream: the keys one Erasure matched on, so a consumer deletes the\nsame rows from its copy. Match on any of them: `contact_id` on Events and Contacts,\n`subject_id` on Events, `visitor_ids` on Events, `email_hash` and `phone_hash` against\nthe SHA-256 (hex) of the lowercased address or of the phone number as stored. The address\nand the phone themselves are never part of the stream. A row is never changed once written."
       },
       "ExportEventRow": {
         "type": "object",

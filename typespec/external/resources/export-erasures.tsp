@@ -6,7 +6,7 @@ namespace Sphericon;
 /**
  * One row of the Erasures stream: the keys one Erasure matched on, so a consumer deletes the
  * same rows from its copy. Match on any of them: `contact_id` on Events and Contacts,
- * `subject_id` on Events, `visitor_ids` on Events, `email_sha256` and `phone_sha256` against
+ * `subject_id` on Events, `visitor_ids` on Events, `email_hash` and `phone_hash` against
  * the SHA-256 (hex) of the lowercased address or of the phone number as stored. The address
  * and the phone themselves are never part of the stream. A row is never changed once written.
  */
@@ -24,10 +24,10 @@ model ExportErasureRow {
   visitor_ids: string[];
 
   /** SHA-256, as lowercase hex, of the lowercased email address; absent when there was none */
-  email_sha256: string | null;
+  email_hash: string | null;
 
   /** SHA-256, as lowercase hex, of the phone number; absent when there was none */
-  phone_sha256: string | null;
+  phone_hash: string | null;
 
   /** When the Erasure happened */
   erased_at: Timestamp;

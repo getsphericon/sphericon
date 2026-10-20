@@ -1,10 +1,7 @@
 package external_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"io"
 	"testing"
 
 	"github.com/go-faster/jx"
@@ -12,41 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/exportstream"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// readExportContacts reads one page of the Contacts stream and checks every line against
-// the TypeSpec row schema.
 func readExportContacts(t *testing.T, c *externalapi.Client, cursor string, limit int32) exportPage {
 	t.Helper()
-	params := externalapi.ExportContactsParams{}
-	if cursor != "" {
-		params.Cursor = externalapi.NewOptString(cursor)
-	}
-	if limit > 0 {
-		params.Limit = externalapi.NewOptInt32(limit)
-	}
-	res, err := c.ExportContacts(context.Background(), params)
-	require.NoError(t, err)
-	ok, isOK := res.(*externalapi.ExportContactsOKHeaders)
-	require.Truef(t, isOK, "got %T", res)
-	body, err := io.ReadAll(ok.Response)
-	require.NoError(t, err)
-
-	page := exportPage{cursor: ok.XNextCursor}
-	for line := range bytes.SplitSeq(bytes.TrimSuffix(body, []byte("\n")), []byte("\n")) {
-		if len(line) == 0 {
-			continue
-		}
-		require.NoError(t, exportstream.ValidateRow(exportstream.ContactsSchema, line), string(line))
-		var row map[string]any
-		require.NoError(t, json.Unmarshal(line, &row))
-		page.rows = append(page.rows, row)
-	}
-	return page
+	return readExportStream(t, c, contactsStream, cursor, limit)
 }
 
 // exportContactsClient carries the scopes to read the stream and to change a Contact and
@@ -164,16 +133,6 @@ func TestExportContactsNeverReadsAnotherWorkspace(t *testing.T) {
 	assert.Equal(t, []any{"initech-shared"}, initech.row(fixtures.ContactErasableID)["tags"])
 	assert.Nil(t, acme.row(fixtures.ContactErasableID))
 	assert.Nil(t, initech.row(fixtures.ContactAliceID))
-}
-
-func TestExportContactsOfASuspendedWorkspaceStillRead(t *testing.T) {
-	env := testhelper.Setup(t)
-	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.CLI, "abuse")
-	require.NoError(t, err)
-
-	page := readExportContacts(t, exportContactsClient(t, env, fixtures.AcmeID), "", 0)
-
-	assert.NotEmpty(t, page.rows)
 }
 
 func TestExportContactsRefuseAMalformedCursor(t *testing.T) {

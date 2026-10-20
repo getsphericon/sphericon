@@ -18,15 +18,15 @@ const ErasuresSchema = "ExportErasureRow"
 // strings like everywhere in /api. The hashes are SHA-256 as lowercase hex; the address and the
 // phone themselves are never stored, so they cannot be here.
 type ErasureRow struct {
-	ID          int64     `json:"id,string"`
-	ContactID   *int64    `json:"contact_id,string"`
-	SubjectID   string    `json:"subject_id"`
-	VisitorIDs  []string  `json:"visitor_ids"`
-	EmailSHA256 *string   `json:"email_sha256"`
-	PhoneSHA256 *string   `json:"phone_sha256"`
-	ErasedAt    time.Time `json:"erased_at"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID         int64     `json:"id,string"`
+	ContactID  *int64    `json:"contact_id,string"`
+	SubjectID  string    `json:"subject_id"`
+	VisitorIDs []string  `json:"visitor_ids"`
+	EmailHash  *string   `json:"email_hash"`
+	PhoneHash  *string   `json:"phone_hash"`
+	ErasedAt   time.Time `json:"erased_at"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 // Position is the row's (updated_at, id).
@@ -34,15 +34,15 @@ func (r ErasureRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: r.ID}
 
 func erasureRow(e *ent.Erasure) ErasureRow {
 	return ErasureRow{
-		ID:          e.ID,
-		ContactID:   e.ContactID,
-		SubjectID:   e.SubjectID,
-		VisitorIDs:  lo.Ternary(e.VisitorIds == nil, []string{}, e.VisitorIds),
-		EmailSHA256: e.EmailSha256,
-		PhoneSHA256: e.PhoneSha256,
-		ErasedAt:    e.ErasedAt.UTC(),
-		CreatedAt:   e.CreatedAt.UTC(),
-		UpdatedAt:   e.UpdatedAt.UTC(),
+		ID:         e.ID,
+		ContactID:  e.ContactID,
+		SubjectID:  e.SubjectID,
+		VisitorIDs: e.VisitorIds,
+		EmailHash:  e.EmailSha256,
+		PhoneHash:  e.PhoneSha256,
+		ErasedAt:   e.ErasedAt.UTC(),
+		CreatedAt:  e.CreatedAt.UTC(),
+		UpdatedAt:  e.UpdatedAt.UTC(),
 	}
 }
 

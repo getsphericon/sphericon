@@ -87,7 +87,8 @@ func ParseCursor(token string) (Cursor, error) {
 }
 
 // Limit is the page size of a request: DefaultLimit when none was given, and never more
-// than MaxLimit (the contract already refuses more; this keeps the query bounded on its own).
+// than MaxLimit. The contract refuses a limit outside 1..MaxLimit with a 400 before a handler
+// runs (ogen validates it); this only keeps the query bounded on its own.
 func Limit(requested int32, set bool) int {
 	if !set || requested < 1 {
 		return DefaultLimit
