@@ -907,6 +907,7 @@ export default interface Resources {
         "developers": "Developers",
         "general": "General",
         "mcp": "AI agents (MCP)",
+        "privacy": "Privacy requests",
         "sending": "Sending",
         "team": "Team and security",
         "tracking": "Tracking"
@@ -914,6 +915,22 @@ export default interface Resources {
       "postalAddressDescription": "Shown in the footer of every marketing email. US law (CAN-SPAM) requires a valid physical postal address.",
       "postalAddressLabel": "Postal address",
       "postalAddressPlaceholder": "Acme Inc, 123 Main St, Springfield, IL 62704, USA",
+      "privacy": {
+        "contactHeld": "Contact: held",
+        "contactNotHeld": "Contact: none",
+        "deliveryRecords": "Delivery records: {{n}}",
+        "description": "Look up what this Workspace holds for an email address, to answer a GDPR access or erasure request. The lookup shows counts only.",
+        "emailLabel": "Email address",
+        "events": "Events: {{n}}",
+        "lookup": "Look up",
+        "lookupError": "Could not look up the address.",
+        "membersOnly": "Only owners and admins can handle privacy requests.",
+        "nothingHeld": "Nothing is held for this address.",
+        "resultTitle": "Held for this address",
+        "suppressions": "Suppressions: {{n}}",
+        "title": "Look up an address",
+        "unsubscribes": "Unsubscribes: {{n}}"
+      },
       "saved": "Workspace updated",
       "sendingDomains": {
         "create": "Add domain",

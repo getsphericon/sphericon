@@ -149,6 +149,10 @@ type SiteContactsListRes interface {
 	siteContactsListRes()
 }
 
+type SiteContactsLookupRes interface {
+	siteContactsLookupRes()
+}
+
 type SiteContactsUpdateRes interface {
 	siteContactsUpdateRes()
 }

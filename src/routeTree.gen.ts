@@ -45,6 +45,7 @@ import { Route as WorkspacesSlugSegmentsNewRouteImport } from './routes/workspac
 import { Route as WorkspacesSlugSettingsIndexRouteImport } from './routes/workspaces/$slug/settings/index'
 import { Route as WorkspacesSlugSettingsDevelopersRouteImport } from './routes/workspaces/$slug/settings/developers'
 import { Route as WorkspacesSlugSettingsMcpRouteImport } from './routes/workspaces/$slug/settings/mcp'
+import { Route as WorkspacesSlugSettingsPrivacyRouteImport } from './routes/workspaces/$slug/settings/privacy'
 import { Route as WorkspacesSlugSettingsSendingRouteImport } from './routes/workspaces/$slug/settings/sending'
 import { Route as WorkspacesSlugSettingsTeamRouteImport } from './routes/workspaces/$slug/settings/team'
 import { Route as WorkspacesSlugSettingsTrackingRouteImport } from './routes/workspaces/$slug/settings/tracking'
@@ -251,6 +252,12 @@ const WorkspacesSlugSettingsMcpRoute =
     path: '/mcp',
     getParentRoute: () => WorkspacesSlugSettingsRouteRoute,
   } as any)
+const WorkspacesSlugSettingsPrivacyRoute =
+  WorkspacesSlugSettingsPrivacyRouteImport.update({
+    id: '/privacy',
+    path: '/privacy',
+    getParentRoute: () => WorkspacesSlugSettingsRouteRoute,
+  } as any)
 const WorkspacesSlugSettingsSendingRoute =
   WorkspacesSlugSettingsSendingRouteImport.update({
     id: '/sending',
@@ -361,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$slug/segments/new': typeof WorkspacesSlugSegmentsNewRoute
   '/workspaces/$slug/settings/developers': typeof WorkspacesSlugSettingsDevelopersRoute
   '/workspaces/$slug/settings/mcp': typeof WorkspacesSlugSettingsMcpRoute
+  '/workspaces/$slug/settings/privacy': typeof WorkspacesSlugSettingsPrivacyRoute
   '/workspaces/$slug/settings/sending': typeof WorkspacesSlugSettingsSendingRoute
   '/workspaces/$slug/settings/team': typeof WorkspacesSlugSettingsTeamRoute
   '/workspaces/$slug/settings/tracking': typeof WorkspacesSlugSettingsTrackingRoute
@@ -407,6 +415,7 @@ export interface FileRoutesByTo {
   '/workspaces/$slug/segments/new': typeof WorkspacesSlugSegmentsNewRoute
   '/workspaces/$slug/settings/developers': typeof WorkspacesSlugSettingsDevelopersRoute
   '/workspaces/$slug/settings/mcp': typeof WorkspacesSlugSettingsMcpRoute
+  '/workspaces/$slug/settings/privacy': typeof WorkspacesSlugSettingsPrivacyRoute
   '/workspaces/$slug/settings/sending': typeof WorkspacesSlugSettingsSendingRoute
   '/workspaces/$slug/settings/team': typeof WorkspacesSlugSettingsTeamRoute
   '/workspaces/$slug/settings/tracking': typeof WorkspacesSlugSettingsTrackingRoute
@@ -459,6 +468,7 @@ export interface FileRoutesById {
   '/workspaces/$slug/segments/new': typeof WorkspacesSlugSegmentsNewRoute
   '/workspaces/$slug/settings/developers': typeof WorkspacesSlugSettingsDevelopersRoute
   '/workspaces/$slug/settings/mcp': typeof WorkspacesSlugSettingsMcpRoute
+  '/workspaces/$slug/settings/privacy': typeof WorkspacesSlugSettingsPrivacyRoute
   '/workspaces/$slug/settings/sending': typeof WorkspacesSlugSettingsSendingRoute
   '/workspaces/$slug/settings/team': typeof WorkspacesSlugSettingsTeamRoute
   '/workspaces/$slug/settings/tracking': typeof WorkspacesSlugSettingsTrackingRoute
@@ -511,6 +521,7 @@ export interface FileRouteTypes {
     | '/workspaces/$slug/segments/new'
     | '/workspaces/$slug/settings/developers'
     | '/workspaces/$slug/settings/mcp'
+    | '/workspaces/$slug/settings/privacy'
     | '/workspaces/$slug/settings/sending'
     | '/workspaces/$slug/settings/team'
     | '/workspaces/$slug/settings/tracking'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/workspaces/$slug/segments/new'
     | '/workspaces/$slug/settings/developers'
     | '/workspaces/$slug/settings/mcp'
+    | '/workspaces/$slug/settings/privacy'
     | '/workspaces/$slug/settings/sending'
     | '/workspaces/$slug/settings/team'
     | '/workspaces/$slug/settings/tracking'
@@ -608,6 +620,7 @@ export interface FileRouteTypes {
     | '/workspaces/$slug/segments/new'
     | '/workspaces/$slug/settings/developers'
     | '/workspaces/$slug/settings/mcp'
+    | '/workspaces/$slug/settings/privacy'
     | '/workspaces/$slug/settings/sending'
     | '/workspaces/$slug/settings/team'
     | '/workspaces/$slug/settings/tracking'
@@ -900,6 +913,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesSlugSettingsMcpRouteImport
       parentRoute: typeof WorkspacesSlugSettingsRouteRoute
     }
+    '/workspaces/$slug/settings/privacy': {
+      id: '/workspaces/$slug/settings/privacy'
+      path: '/privacy'
+      fullPath: '/workspaces/$slug/settings/privacy'
+      preLoaderRoute: typeof WorkspacesSlugSettingsPrivacyRouteImport
+      parentRoute: typeof WorkspacesSlugSettingsRouteRoute
+    }
     '/workspaces/$slug/settings/sending': {
       id: '/workspaces/$slug/settings/sending'
       path: '/sending'
@@ -1041,6 +1061,7 @@ const ConsoleRouteRouteWithChildren = ConsoleRouteRoute._addFileChildren(
 interface WorkspacesSlugSettingsRouteRouteChildren {
   WorkspacesSlugSettingsDevelopersRoute: typeof WorkspacesSlugSettingsDevelopersRoute
   WorkspacesSlugSettingsMcpRoute: typeof WorkspacesSlugSettingsMcpRoute
+  WorkspacesSlugSettingsPrivacyRoute: typeof WorkspacesSlugSettingsPrivacyRoute
   WorkspacesSlugSettingsSendingRoute: typeof WorkspacesSlugSettingsSendingRoute
   WorkspacesSlugSettingsTeamRoute: typeof WorkspacesSlugSettingsTeamRoute
   WorkspacesSlugSettingsTrackingRoute: typeof WorkspacesSlugSettingsTrackingRoute
@@ -1052,6 +1073,7 @@ const WorkspacesSlugSettingsRouteRouteChildren: WorkspacesSlugSettingsRouteRoute
     WorkspacesSlugSettingsDevelopersRoute:
       WorkspacesSlugSettingsDevelopersRoute,
     WorkspacesSlugSettingsMcpRoute: WorkspacesSlugSettingsMcpRoute,
+    WorkspacesSlugSettingsPrivacyRoute: WorkspacesSlugSettingsPrivacyRoute,
     WorkspacesSlugSettingsSendingRoute: WorkspacesSlugSettingsSendingRoute,
     WorkspacesSlugSettingsTeamRoute: WorkspacesSlugSettingsTeamRoute,
     WorkspacesSlugSettingsTrackingRoute: WorkspacesSlugSettingsTrackingRoute,

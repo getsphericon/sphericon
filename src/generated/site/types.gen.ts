@@ -1237,6 +1237,32 @@ export type SiteConfirmEmailChangeInput = {
 };
 
 /**
+ * What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`.
+ */
+export type SiteContactLookup = {
+  /**
+   * Whether a Contact holds the address
+   */
+  contactHeld: boolean;
+  /**
+   * Events of the Contact holding the address, or carrying the address
+   */
+  events: number;
+  /**
+   * Delivery records (outbound messages) to the address
+   */
+  deliveryRecords: number;
+  /**
+   * Unsubscribes on the address
+   */
+  unsubscribes: number;
+  /**
+   * Suppressions on the address
+   */
+  suppressions: number;
+};
+
+/**
  * Contact resource used by the site UI
  */
 export type SiteContactResource = {
@@ -5874,6 +5900,49 @@ export type SiteContactsExportResponses = {
 };
 
 export type SiteContactsExportResponse = SiteContactsExportResponses[keyof SiteContactsExportResponses];
+
+export type SiteContactsLookupData = {
+  body?: never;
+  path: {
+    /**
+     * URL-safe unique slug; the route key for nested workspace resources
+     */
+    slug: string;
+  };
+  query: {
+    /**
+     * The email address
+     */
+    email: EmailAddress;
+  };
+  url: '/workspaces/{slug}/contacts/lookup';
+};
+
+export type SiteContactsLookupErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteContactsLookupError = SiteContactsLookupErrors[keyof SiteContactsLookupErrors];
+
+export type SiteContactsLookupResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteContactLookup;
+};
+
+export type SiteContactsLookupResponse = SiteContactsLookupResponses[keyof SiteContactsLookupResponses];
 
 export type SiteTagsListForContactData = {
   body?: never;

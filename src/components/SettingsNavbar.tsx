@@ -2,18 +2,23 @@ import { Stack } from '@mantine/core'
 import {
   IconArrowLeft,
   IconCode,
+  IconLock,
   IconMailForward,
   IconRadar,
   IconRobot,
   IconSettings,
   IconUsers,
 } from '@tabler/icons-react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
+import { canManage } from '../hooks/useCurrentRole.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$slug/index.tsx'
 import { Route as developersRoute } from '../routes/workspaces/$slug/settings/developers.tsx'
 import { Route as generalRoute } from '../routes/workspaces/$slug/settings/index.tsx'
 import { Route as mcpRoute } from '../routes/workspaces/$slug/settings/mcp.tsx'
+import { Route as privacyRoute } from '../routes/workspaces/$slug/settings/privacy.tsx'
 import { Route as sendingRoute } from '../routes/workspaces/$slug/settings/sending.tsx'
 import { Route as teamRoute } from '../routes/workspaces/$slug/settings/team.tsx'
 import { Route as trackingRoute } from '../routes/workspaces/$slug/settings/tracking.tsx'
@@ -24,6 +29,8 @@ import { NavLinkLink } from './RouterLink.tsx'
 // current only on itself.
 export function SettingsNavbar({ slug }: { slug: string }) {
   const { t } = useTranslation()
+  const workspaces = useQuery(siteWorkspacesListOptions())
+  const role = workspaces.data?.find((w) => w.slug === slug)?.role
 
   const pages = [
     {
@@ -62,6 +69,17 @@ export function SettingsNavbar({ slug }: { slug: string }) {
       icon: <IconRobot size={18} />,
       exact: false,
     },
+    // Privacy requests are for owners and admins; the API refuses everyone else.
+    ...(canManage(role)
+      ? [
+          {
+            route: privacyRoute,
+            label: t(($) => $.settings.nav.privacy),
+            icon: <IconLock size={18} />,
+            exact: false,
+          },
+        ]
+      : []),
   ]
 
   return (

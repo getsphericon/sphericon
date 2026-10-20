@@ -103,6 +103,24 @@ model SiteContactExportTypedDownload {
   @body body: ContactExportDocument;
 }
 
+/** What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`. */
+model SiteContactLookup {
+  /** Whether a Contact holds the address */
+  contactHeld: boolean;
+
+  /** Events of the Contact holding the address, or carrying the address */
+  events: int32;
+
+  /** Delivery records (outbound messages) to the address */
+  deliveryRecords: int32;
+
+  /** Unsubscribes on the address */
+  unsubscribes: int32;
+
+  /** Suppressions on the address */
+  suppressions: int32;
+}
+
 @tag("Site Contacts")
 interface SiteContacts
   extends WorkspaceCrudUnique<
@@ -131,6 +149,21 @@ interface SiteContacts
     | SiteContactExportTypedDownload
     | BadRequestProblem
     | NotFoundProblem;
+
+  /**
+   * Look up what the Workspace holds for one email address (a Privacy request):
+   * counts only. The address is trimmed and lowercased; an invalid one is rejected.
+   * An address nothing holds answers with zeros, not 404. Owner or admin only.
+   */
+  @get
+  @collectionAction(SiteContactResource, "lookup")
+  @autoRoute
+  lookup(
+    ...ResourceCollectionParameters<SiteContactResource>,
+
+    /** The email address */
+    @query email: EmailAddress,
+  ): SiteContactLookup | BadRequestProblem | ForbiddenProblem | NotFoundProblem;
 }
 
 @@doc(
