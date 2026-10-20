@@ -246,6 +246,16 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
     Handlers and security handler in `ee/staff` (`service.go`); every operation names its scopes in
     `ServiceOperationScopes` (no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
     `env.IssueServiceCredential`.
+- **Sign-in sequence**: `internal/login` (ADR 0020) is the one core module for the password and
+  second steps and for `Prove` (the password check behind second-factor and profile actions):
+  address normalization, the throttle consulted first (ADR 0025), the decoy hash, the verification
+  gate (ADR 0030), failure counting and the challenge. It holds no database client; an adapter
+  supplies the `Store`, `Throttle`, challenge `Parse`/`Verify` and issues the session. `/site`
+  (`internal/api/site/auth_login.go`) and `ee/staff` (`login.go`, the second adapter, ADR 0026) are
+  the two adapters: add sign-in rules in the module, not in a handler. The throttle is
+  `accounts.Attempts.For(kind)`, a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
+  which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
+  `login.SecondOutcome`).
 - Auth security handlers live in `internal/api/auth/auth.go`. External requests carry a
   `*TokenAuth` (scopes + the Workspace's `*ent.Scoped`) in context — query through
   `auth.TokenScoped(ctx)` (see "Workspace scoping" below).

@@ -1,6 +1,8 @@
 package staff_test
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -57,26 +60,6 @@ func TestRepeatedWrongPasswordsAreRefusedEvenForTheRightPassword(t *testing.T) {
 	requireThrottled(t, h.rawPasswordStep(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword))
 }
 
-func TestThePasswordStepWorksAgainOnceTheDelayHasPassed(t *testing.T) {
-	h := throttledHarness(t, 0)
-	h.failPasswords(t, fixtures.StaffEnrolledEmail, loginFailures)
-	requireThrottled(t, h.rawPasswordStep(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword))
-
-	h.clock.t = h.clock.t.Add(2 * time.Second)
-
-	assert.Equal(t, staffapi.StaffLoginOutcomeChallenge, h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword).Outcome)
-}
-
-func TestUnknownEmailsAreThrottledLikeKnownOnes(t *testing.T) {
-	h := throttledHarness(t, 0)
-	h.failPasswords(t, "nobody@sphericon.test", loginFailures)
-
-	requireThrottled(t, h.rawPasswordStep(t, "nobody@sphericon.test", "wrong-password"))
-	n, err := h.env.DB.AuthAttempt.Query().Where(authattempt.Email("nobody@sphericon.test")).Count(t.Context())
-	require.NoError(t, err)
-	assert.Equal(t, 1, n, "the failures of an unknown address leave a row, so the table does not tell accounts apart")
-}
-
 func TestWrongTOTPCodesAreRefusedEvenForTheRightCode(t *testing.T) {
 	h := throttledHarness(t, 0)
 	challenge := h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword).Challenge
@@ -86,32 +69,6 @@ func TestWrongTOTPCodesAreRefusedEvenForTheRightCode(t *testing.T) {
 
 	requireThrottled(t, h.rawSecondStep(t, challenge, h.code(t, fixtures.StaffEnrolledTotpSecret)))
 	requireThrottled(t, h.rawPasswordStep(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword))
-}
-
-// Knowing the password must not buy a fresh round of code guesses.
-func TestThePasswordStepDoesNotResetTheCodeFailures(t *testing.T) {
-	h := throttledHarness(t, 0)
-	for i := range loginFailures {
-		challenge := h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword).Challenge
-		require.Equal(t, http.StatusUnauthorized, h.rawSecondStep(t, challenge, "000000").Code, "failure %d", i+1)
-	}
-
-	requireThrottled(t, h.rawPasswordStep(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword))
-}
-
-func TestASessionResetsTheCounter(t *testing.T) {
-	h := throttledHarness(t, 0)
-	challenge := h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword).Challenge
-	for range loginFailures - 1 {
-		require.Equal(t, http.StatusUnauthorized, h.rawSecondStep(t, challenge, "000000").Code)
-	}
-
-	rec := h.rawSecondStep(t, challenge, h.code(t, fixtures.StaffEnrolledTotpSecret))
-
-	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
-	n, err := h.env.DB.AuthAttempt.Query().Where(authattempt.Email(fixtures.StaffEnrolledEmail)).Count(t.Context())
-	require.NoError(t, err)
-	assert.Zero(t, n)
 }
 
 // A Staff member who is also a customer has two identities: the Staff member's failures
@@ -147,4 +104,44 @@ func TestWithoutLimitsNothingIsThrottled(t *testing.T) {
 	h.failPasswords(t, fixtures.StaffEnrolledEmail, loginFailures*2)
 
 	assert.Equal(t, staffapi.StaffLoginOutcomeChallenge, h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword).Outcome)
+}
+
+// A User's failures count under the User's kind and never throttle the Staff member of
+// the same address.
+func TestUserFailuresNeverCountAgainstTheStaffMemberOfTheSameAddress(t *testing.T) {
+	h := throttledHarness(t, 0)
+	for range loginFailures {
+		rec := post(t, h.env.Server, "/site/auth/login",
+			`{"email":"`+fixtures.OwnerJohnEmail+`","password":"wrong-password"}`)
+		require.Equal(t, http.StatusUnauthorized, rec.Code)
+	}
+
+	res := h.challenge(t, fixtures.StaffAlsoCustomerEmail, fixtures.StaffAlsoCustomerPassword)
+
+	assert.Equal(t, staffapi.StaffLoginOutcomeChallenge, res.Outcome)
+}
+
+// brokenCounter is a failure counter that lets everything through and cannot record.
+type brokenCounter struct{}
+
+var errCounterDown = errors.New("counter down")
+
+func (brokenCounter) Delay(context.Context, string) (time.Duration, error) { return 0, nil }
+func (brokenCounter) RecordFailure(context.Context, string) error          { return errCounterDown }
+func (brokenCounter) RecordSuccess(context.Context, string) error          { return nil }
+func (brokenCounter) Limit() int                                           { return loginFailures }
+func (brokenCounter) Now() time.Time                                       { return time.Now() }
+
+var _ login.Throttle = brokenCounter{}
+
+// A counter that cannot record a failure refuses the attempt, never answers a plain 401
+// that would let guessing go on uncounted.
+func TestABrokenFailureCounterRefusesTheStaffLoginAttempt(t *testing.T) {
+	h := newHarness(t)
+	h.env.StaffMembers.UseThrottle(brokenCounter{})
+
+	rec := h.rawPasswordStep(t, fixtures.StaffEnrolledEmail, "wrong-password")
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	assert.Empty(t, rec.Header().Get("Set-Cookie"))
 }

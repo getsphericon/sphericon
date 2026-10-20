@@ -4309,6 +4309,8 @@ func (*ProblemDetailsHeaders) siteSecondFactorConfirmEnrollmentRes()       {}
 func (*ProblemDetailsHeaders) siteSecondFactorDisableRes()                 {}
 func (*ProblemDetailsHeaders) siteSecondFactorRegenerateRecoveryCodesRes() {}
 func (*ProblemDetailsHeaders) siteSecondFactorStartEnrollmentRes()         {}
+func (*ProblemDetailsHeaders) siteUserEmailChangeRes()                     {}
+func (*ProblemDetailsHeaders) siteUserUpdateMeRes()                        {}
 
 // The metric of a Sending domain that is over a warning limit of the abuse detector.
 // Ref: #/components/schemas/SiteAbuseMetric

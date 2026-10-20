@@ -1124,7 +1124,8 @@ func (UnimplementedHandler) SiteUserSignOutEverywhere(ctx context.Context) (r *S
 //
 // Update the authenticated user's profile (name and/or password). A password change ends every session
 // of the user (ADR 0020); the acting one continues under the fresh session cookie set in this
-// response.
+// response. A wrong current password feeds the Login throttle, which answers 429 even for a right one
+// while its delay runs.
 //
 // PUT /me
 func (UnimplementedHandler) SiteUserUpdateMe(ctx context.Context, req *SiteUpdateMeInput) (r SiteUserUpdateMeRes, _ error) {

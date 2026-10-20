@@ -298,6 +298,13 @@ func (a *Accounts) UserByEmail(ctx context.Context, email string) (*ent.User, er
 	return a.ent.User.Query().Where(user.Email(email)).Only(ctx)
 }
 
+// UserByLoginAddress loads a User by a normalized login address, ignoring case (an ent
+// NotFound error when none): the sign-in address is lower-cased once by the login module,
+// while a stored email keeps the case it was registered with.
+func (a *Accounts) UserByLoginAddress(ctx context.Context, address string) (*ent.User, error) {
+	return a.ent.User.Query().Where(user.EmailEqualFold(address)).Order(ent.Asc(user.FieldID)).First(ctx)
+}
+
 // EmailTaken reports whether an account already uses the login email.
 func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(email)).Exist(ctx)

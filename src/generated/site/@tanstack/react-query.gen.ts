@@ -468,7 +468,8 @@ export const siteUserGetMeOptions = (options?: Options<SiteUserGetMeData>) => qu
 /**
  * Update the authenticated user's profile (name and/or password). A password
  * change ends every session of the user (ADR 0020); the acting one continues
- * under the fresh session cookie set in this response.
+ * under the fresh session cookie set in this response. A wrong current password feeds the
+ * Login throttle, which answers 429 even for a right one while its delay runs.
  */
 export const siteUserUpdateMeMutation = (options?: Partial<Options<SiteUserUpdateMeData>>): UseMutationOptions<SiteUserUpdateMeResponse, SiteUserUpdateMeError, Options<SiteUserUpdateMeData>> => {
   const mutationOptions: UseMutationOptions<SiteUserUpdateMeResponse, SiteUserUpdateMeError, Options<SiteUserUpdateMeData>> = {

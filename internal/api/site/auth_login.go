@@ -2,17 +2,16 @@ package site
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
@@ -29,24 +28,16 @@ import (
 // the counter is not reset: only the second step resets it, else knowing the
 // password would buy a fresh round of code guesses on every login.
 func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInput) (siteapi.SiteAuthLoginRes, error) {
-	email := strings.TrimSpace(req.Email)
-	wait, err := h.attempts.Delay(ctx, accounts.KindLogin, email)
+	res, err := h.login.Password(ctx, req.Email, req.Password)
 	if err != nil {
 		return nil, err
 	}
-	if wait > 0 {
-		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount,
-			h.attempts.Limit(accounts.KindLogin), wait, h.attempts.Now())
-	}
-
-	u, ok, err := h.checkPassword(ctx, email, req.Password)
-	if err != nil {
-		return nil, err
-	}
-	if h.requireVerification && u != nil && u.EmailVerifiedAt == nil {
-		// The gate (ADR 0030, unless the install turned it off) sits before the password result and any second-factor
-		// challenge is acted on: whatever the password, an Unverified User gets no
-		// session and no challenge, and the throttle does not count it.
+	switch res.Outcome {
+	case login.Throttled:
+		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
+	case login.Gated:
+		// The gate (ADR 0030, unless the install turned it off): an Unverified User gets
+		// no session and no challenge, and the throttle does not count it.
 		v := siteapi.SiteAuthLoginForbidden(siteapi.ProblemDetails{
 			Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeEmailVerificationRequired),
 			Status: siteapi.NewOptInt32(http.StatusForbidden),
@@ -54,41 +45,56 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 			Detail: siteapi.NewOptString(i18n.T("errors.email_verification_required", nil)),
 		})
 		return &v, nil
-	}
-	if !ok {
-		if err := h.attempts.RecordFailure(ctx, accounts.KindLogin, email); err != nil {
-			return nil, err
-		}
+	case login.InvalidCredentials:
 		v := siteapi.SiteAuthLoginUnauthorized(problem(http.StatusUnauthorized, i18n.T("errors.invalid_credentials", nil)))
 		return &v, nil
-	}
-	if secondfactor.Active(u) {
-		challenge, err := h.mintLoginChallenge(ctx, u, accounts.LoginPassword, time.Time{})
+	case login.SecondFactor:
+		return &siteapi.SiteLoginResultHeaders{Response: siteapi.SiteLoginResult{
+			Outcome:   siteapi.SiteLoginOutcomeChallenge,
+			Challenge: siteapi.NewOptString(res.Challenge),
+		}}, nil
+	case login.Authenticated:
+		cookie, err := h.issueSession(ctx, res.Principal, accounts.LoginPassword, time.Time{})
 		if err != nil {
 			return nil, err
 		}
-		return &siteapi.SiteLoginResultHeaders{Response: siteapi.SiteLoginResult{
-			Outcome:   siteapi.SiteLoginOutcomeChallenge,
-			Challenge: siteapi.NewOptString(challenge),
-		}}, nil
+		return &siteapi.SiteLoginResultHeaders{
+			SetCookie: siteapi.NewOptString(cookie.String()),
+			Response:  siteapi.SiteLoginResult{Outcome: siteapi.SiteLoginOutcomeSession},
+		}, nil
 	}
-	return h.startSession(ctx, u, accounts.LoginPassword, time.Time{})
+	return nil, fmt.Errorf("login: unhandled outcome %d", res.Outcome)
 }
 
-// startSession ends a successful login: it resets the address's counter, issues
-// the session cookie and records `user.login`.
-func (h *Handlers) startSession(ctx context.Context, u *ent.User, method string, providerLoginAt time.Time) (*siteapi.SiteLoginResultHeaders, error) {
-	if err := h.attempts.RecordSuccess(ctx, accounts.KindLogin, u.Email); err != nil {
-		return nil, err
+// loginStore is the site's side of the login module's seam: Users by address.
+type loginStore struct{ accounts *accounts.Accounts }
+
+func (s loginStore) Lookup(ctx context.Context, address string) (login.Account[*ent.User], bool, error) {
+	u, err := s.accounts.UserByLoginAddress(ctx, address)
+	if ent.IsNotFound(err) {
+		return login.Account[*ent.User]{}, false, nil
 	}
-	cookie, err := h.issueSession(ctx, u, method, providerLoginAt)
 	if err != nil {
-		return nil, err
+		return login.Account[*ent.User]{}, false, err
 	}
-	return &siteapi.SiteLoginResultHeaders{
-		SetCookie: siteapi.NewOptString(cookie.String()),
-		Response:  siteapi.SiteLoginResult{Outcome: siteapi.SiteLoginOutcomeSession},
-	}, nil
+	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: secondfactor.Active(u)}, true, nil
+}
+
+// newLogin builds the login module over the site's adapter (ADR 0020, 0030).
+func (h *Handlers) newLogin() *login.Module[*ent.User] {
+	cfg := login.Config[*ent.User]{
+		Throttle: h.attempts.For(accounts.KindLogin),
+		Store:    loginStore{h.accounts},
+		Challenge: func(ctx context.Context, u *ent.User) (string, error) {
+			return h.mintLoginChallenge(ctx, u, accounts.LoginPassword, time.Time{})
+		},
+		Parse:  h.parseLoginChallenge,
+		Verify: h.verifyLoginCode,
+	}
+	if h.requireVerification {
+		cfg.Gate = func(u *ent.User) bool { return u.EmailVerifiedAt == nil }
+	}
+	return login.New(cfg)
 }
 
 // issueSession is the one place a successful sign-in, by password or by a Sign-in provider,
@@ -110,28 +116,3 @@ func (h *Handlers) issueSession(ctx context.Context, u *ent.User, method string,
 func (h *Handlers) SiteAuthLogout(context.Context) (*siteapi.SiteAuthLogoutNoContent, error) {
 	return &siteapi.SiteAuthLogoutNoContent{SetCookie: h.sessions.Cleared().String()}, nil
 }
-
-// checkPassword returns the User of the email (nil when there is none); ok is false
-// when the credentials do not match, including a User without a password. A password is always hashed, against a throwaway hash when there is no
-// User or the User has no password, so the answer time does not tell an unknown
-// email apart.
-func (h *Handlers) checkPassword(ctx context.Context, email, password string) (u *ent.User, ok bool, err error) {
-	u, err = h.accounts.UserByEmail(ctx, email)
-	if err != nil && !ent.IsNotFound(err) {
-		return nil, false, err
-	}
-	if u == nil || u.PasswordHash == "" {
-		credentials.VerifyPassword(decoyHash(), password)
-		return u, false, nil
-	}
-	return u, credentials.VerifyPassword(u.PasswordHash, password), nil
-}
-
-// decoyHash is a real password hash nobody knows the password of, hashed once.
-var decoyHash = sync.OnceValue(func() string {
-	h, err := credentials.HashPassword("decoy password: no account matches")
-	if err != nil {
-		return ""
-	}
-	return h
-})

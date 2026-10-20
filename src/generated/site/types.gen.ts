@@ -4495,6 +4495,10 @@ export type SiteUserUpdateMeErrors = {
    * RFC 7807 validation response
    */
   422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
 };
 
 export type SiteUserUpdateMeError = SiteUserUpdateMeErrors[keyof SiteUserUpdateMeErrors];
@@ -4524,6 +4528,10 @@ export type SiteUserEmailChangeErrors = {
    * RFC 7807 validation response
    */
   422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
 };
 
 export type SiteUserEmailChangeError = SiteUserEmailChangeErrors[keyof SiteUserEmailChangeErrors];
