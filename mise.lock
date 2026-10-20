@@ -943,9 +943,44 @@ url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanne
 url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251671"
 
 [[tools."github:mokevnin/schemalens"]]
-version = "0.1.0"
+version = "0.1.1"
 backend = "github:mokevnin/schemalens"
-specifiers = ["0.1.0"]
+specifiers = ["0.1.1"]
+
+[tools."github:mokevnin/schemalens"."platforms.linux-arm64"]
+checksum = "sha256:bb5bcc275bd10d2a19df202128ba7ae0a9ccdade798193a9ade85eccb4e2c585"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.1/schemalens_0.1.1_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660323762"
+
+[tools."github:mokevnin/schemalens"."platforms.linux-arm64-musl"]
+checksum = "sha256:bb5bcc275bd10d2a19df202128ba7ae0a9ccdade798193a9ade85eccb4e2c585"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.1/schemalens_0.1.1_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660323762"
+
+[tools."github:mokevnin/schemalens"."platforms.linux-x64"]
+checksum = "sha256:33fa0540ea18d3eefd66270334d814f3d77f82659fe4745e6639cf57e3bf68c8"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.1/schemalens_0.1.1_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660323840"
+
+[tools."github:mokevnin/schemalens"."platforms.linux-x64-musl"]
+checksum = "sha256:33fa0540ea18d3eefd66270334d814f3d77f82659fe4745e6639cf57e3bf68c8"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.1/schemalens_0.1.1_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660323840"
+
+[tools."github:mokevnin/schemalens"."platforms.macos-arm64"]
+checksum = "sha256:d7e137b0dd292b29adcd96301da63df8c43a803227ec3a0a6f45410b0402b4d1"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.1/schemalens_0.1.1_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660323828"
+
+[tools."github:mokevnin/schemalens"."platforms.macos-x64"]
+checksum = "sha256:f455970918c2d82e7d48ce70de66b927333fc25f5139237682a02608cc20f945"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.1/schemalens_0.1.1_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660323760"
+
+[tools."github:mokevnin/schemalens"."platforms.windows-x64"]
+checksum = "sha256:2cd85dfa62164493afc9a8408154a00c7448dacccee8c58c0e151507223d25a5"
+url = "https://github.com/mokevnin/schemalens/releases/download/v0.1.1/schemalens_0.1.1_windows_amd64.zip"
+url_api = "https://api.github.com/repos/mokevnin/schemalens/releases/assets/660323758"
 
 [[tools."github:sbdchd/squawk"]]
 version = "2.70.0"

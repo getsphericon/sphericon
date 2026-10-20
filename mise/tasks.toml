@@ -447,7 +447,7 @@ run = ["mise/scripts/heavy.sh golangci-lint run --allow-serial-runners ./...", "
 ["check:schema"]
 description = "schemalens: the ent schema and the migrated database agree, and the database passes its rules"
 depends = ["db:migrate"]
-env = { SCHEMALENS_VERSION = "0.1.0" }
+env = { SCHEMALENS_VERSION = "0.1.1" }
 run = "mise/scripts/schemalens.sh"
 
 ["check:vulns"]
