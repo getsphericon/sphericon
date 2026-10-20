@@ -76,7 +76,7 @@ SPHERICON_SMTP_PORT = "{{ env.MAILPIT_PORT | int - 8025 + 1025 }}"
 # by `mise run db:up`. A daemon declared in a linked worktree would export its own offset port
 # and database, so the connection is spelled out here, from the checkout's directory name:
 # sphericon_<dir> (lowercased, [a-z0-9_]; over 40 characters it is cut to 31 plus a hash of the path),
-# with the _test, _e2e and _atlas twins, so each name fits Postgres's 63-byte identifier limit.
+# with the _test, _e2e and _diff twins, so each name fits Postgres's 63-byte identifier limit.
 # SPHERICON_PG_HOST / SPHERICON_PG_PORT point every checkout at another server (an external Postgres,
 # a CI service); a server that already answers there is used as is and never started.
 PGHOST = "{{ get_env(name='SPHERICON_PG_HOST', default='127.0.0.1') }}"
@@ -85,11 +85,11 @@ PGUSER = "postgres"
 PGDATABASE = "{% set n = config_root | basename | lower | slugify | replace(from='-', to='_') %}sphericon_{% if n | length > 40 %}{{ n | truncate(length=31, end='') }}_{{ config_root | hash(len=8) }}{% else %}{{ n }}{% endif %}"
 DATABASE_URL = "postgres://{{ env.PGUSER }}@{{ env.PGHOST }}:{{ env.PGPORT }}/{{ env.PGDATABASE }}?sslmode=disable"
 # Every database of this checkout; db:up creates them, worktrees:gc keeps them.
-DB_NAMES = "{{ env.PGDATABASE }} {{ env.PGDATABASE }}_test {{ env.PGDATABASE }}_e2e {{ env.PGDATABASE }}_atlas"
-# Set TEST_DB_URL / E2E_DB_URL / ATLAS_DEV_URL in the environment to use other databases.
+DB_NAMES = "{{ env.PGDATABASE }} {{ env.PGDATABASE }}_test {{ env.PGDATABASE }}_e2e {{ env.PGDATABASE }}_diff"
+# Set TEST_DB_URL / E2E_DB_URL / DIFF_DB_URL in the environment to use other databases.
 TEST_DB_URL = "{{ get_env(name='TEST_DB_URL', default='postgres://' ~ env.PGUSER ~ '@' ~ env.PGHOST ~ ':' ~ env.PGPORT ~ '/' ~ env.PGDATABASE ~ '_test?sslmode=disable') }}"
 E2E_DB_URL = "{{ get_env(name='E2E_DB_URL', default='postgres://' ~ env.PGUSER ~ '@' ~ env.PGHOST ~ ':' ~ env.PGPORT ~ '/' ~ env.PGDATABASE ~ '_e2e?sslmode=disable') }}"
-ATLAS_DEV_URL = "{{ get_env(name='ATLAS_DEV_URL', default='postgres://' ~ env.PGUSER ~ '@' ~ env.PGHOST ~ ':' ~ env.PGPORT ~ '/' ~ env.PGDATABASE ~ '_atlas?sslmode=disable') }}"
+DIFF_DB_URL = "{{ get_env(name='DIFF_DB_URL', default='postgres://' ~ env.PGUSER ~ '@' ~ env.PGHOST ~ ':' ~ env.PGPORT ~ '/' ~ env.PGDATABASE ~ '_diff?sslmode=disable') }}"
 
 # --- dev stack (replaces docker compose) -----------------------------------------
 # `mise run dev` runs db:up, then `mise daemons start caddy`, which brings up everything below

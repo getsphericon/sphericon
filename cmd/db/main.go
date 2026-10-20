@@ -120,19 +120,38 @@ func dropDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
 	return nil
 }
 
+// requireDiffDatabase fails with the task that creates the diff database when it is not there.
+func requireDiffDatabase(ctx context.Context, url string) error {
+	db, err := sql.Open("pgx", url)
+	if err != nil {
+		return fmt.Errorf("open the diff database: %w", err)
+	}
+	pingErr := db.PingContext(ctx)
+	if err := db.Close(); err != nil {
+		return fmt.Errorf("close the diff database: %w", err)
+	}
+	if pingErr != nil {
+		return fmt.Errorf("the diff database (DIFF_DB_URL) is not reachable, run `mise run db:up` to create it: %w", pingErr)
+	}
+	return nil
+}
+
 // generateMigration writes the next Atlas migration from the ent schema. The community
 // Atlas binary cannot read ent:// itself, so ent's own versioned-migration engine
 // (the Atlas library) diffs the schema against migrations/ using the scratch
-// ATLAS_DEV_URL database and writes the SQL file plus atlas.sum.
+// DIFF_DB_URL database and writes the SQL file plus atlas.sum.
 func generateMigration(ctx context.Context, name string) error {
 	// Atlas opens the dev URL with the "postgres" driver name; pgx registers itself
 	// as "pgx", so alias it (guarded: registering twice panics).
 	if !slices.Contains(sql.Drivers(), "postgres") {
 		sql.Register("postgres", stdlib.GetDefaultDriver())
 	}
-	devURL := os.Getenv("ATLAS_DEV_URL")
+	devURL := os.Getenv("DIFF_DB_URL")
 	if devURL == "" {
-		return errors.New("ATLAS_DEV_URL is not set (the scratch database Atlas diffs against)")
+		return errors.New("DIFF_DB_URL is not set (the diff database migrations are generated against)")
+	}
+	if err := requireDiffDatabase(ctx, devURL); err != nil {
+		return err
 	}
 	dir, err := sqltool.NewGooseDir("migrations")
 	if err != nil {

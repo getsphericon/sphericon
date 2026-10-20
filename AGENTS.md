@@ -96,8 +96,8 @@ commit that has this setup.
 identical in every checkout without a daemon (a `db` daemon exports its own offset port and
 database for a linked worktree, which `[env]` overrides). The database is `sphericon_<dir>`: the
 checkout's directory name lowercased to `[a-z0-9_]`, cut to 31 characters plus a hash of the path
-when it exceeds 40, so with the `_test`, `_e2e` and `_atlas` twins (`TEST_DB_URL`, `E2E_DB_URL`,
-`ATLAS_DEV_URL`; `DB_NAMES` lists all four) every name stays under Postgres's 63-byte identifier
+when it exceeds 40, so with the `_test`, `_e2e` and `_diff` twins (`TEST_DB_URL`, `E2E_DB_URL`,
+`DIFF_DB_URL`; `DB_NAMES` lists all four) every name stays under Postgres's 63-byte identifier
 limit and nothing is truncated or collides. Never set `DATABASE_URL` in `.env`: explicit values
 override it. `SPHERICON_PG_HOST` / `SPHERICON_PG_PORT` point every checkout at another server (an
 external Postgres): one that answers is used as is and never started. CI runs the same path: its
@@ -174,8 +174,8 @@ Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are i
 
 - ORM is **ent**; schemas live in `ent/schema/*.go`, generated code in `ent/`.
 - Migrations are managed by **Atlas** (`atlas.hcl`, dir `migrations/`), run natively, diffed from the ent schema: `mise run db:generate name=<desc>` then `mise run db:migrate`.
-  Atlas reads its target/dev DB URLs from the environment (`DATABASE_URL` / `ATLAS_DEV_URL`),
-  using a scratch `<PGDATABASE>_atlas` database on the same server instead of `docker://`.
+  Atlas reads its target/dev DB URLs from the environment (`DATABASE_URL` / `DIFF_DB_URL`),
+  using a scratch `<PGDATABASE>_diff` database on the same server instead of `docker://`.
 - **`migrations/` is the whole schema**: the app tables (diffed from ent), river's tables and the
   domain-event outbox (watermill-sql's two tables, a hand-written migration: `ent/schema/outbox_*.go`
   model them as skipped entities, ent's diff leaves them alone). Nothing creates schema at boot: the

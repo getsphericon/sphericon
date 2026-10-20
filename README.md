@@ -62,7 +62,7 @@ installs the git hooks.
 
 ```sh
 mise install # install the pinned toolchain (also installs the git hooks)
-mise run setup   # install deps, start Postgres, create dev/test/atlas DBs, migrate, seed
+mise run setup   # install deps, start Postgres, create dev/test/diff DBs, migrate, seed
 mise run dev     # start the whole dev stack (mise daemons)
 mise run test    # creates test DB, then `go test -p 1 ./...`
 mise run check   # tsc, oxlint, oxfmt --check, knip, golangci-lint, govulncheck, gitleaks, jactionlint, zizmor
@@ -109,7 +109,7 @@ update this section. `mise run db:seed` reloads the fixtures.
 The local stack is a set of [mise daemons](https://mise.jdx.dev) (`[daemons]` in
 `.mise.toml`) behind [Caddy](https://caddyserver.com/) with HTTPS.
 
-1. Install the toolchain, install deps, create the dev/test/atlas databases, migrate:
+1. Install the toolchain, install deps, create the dev/test/diff databases, migrate:
 
    ```sh
    mise install
