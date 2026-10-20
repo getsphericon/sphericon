@@ -3,6 +3,7 @@ package db_test
 import (
 	"database/sql"
 	"testing"
+	"testing/fstest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -107,6 +108,26 @@ func TestGuardRefusesOneMajorAheadAndNamesMigrateUnlessAutoMigrateIsOn(t *testin
 
 	require.NoError(t, guard("v0.6.0", true).Check(t.Context(), sqlDB))
 	assert.Equal(t, db.SchemaState{Major: 2, Floor: "v0.4.7"}, heldState(t, sqlDB))
+}
+
+func TestGuardRefusesPendingMigrationsAndNamesMigrateUnlessAutoMigrateIsOn(t *testing.T) {
+	sqlDB := openEmpty(t)
+	// The database has run one migration of its own, so every embedded one is still to run.
+	_, err := db.MigrateFS(t.Context(), sqlDB, fstest.MapFS{
+		"20200101000000_one.sql": {Data: []byte("-- +goose Up\nSELECT 1;\n")},
+	})
+	require.NoError(t, err)
+	g := guard("v0.6.0", false)
+	g.Majors = majors[:1]
+
+	err = g.Check(t.Context(), sqlDB)
+	var refusal *db.RefusalError
+	require.ErrorAs(t, err, &refusal)
+	assert.Contains(t, err.Error(), "migration(s) the database has not run")
+	assert.Contains(t, err.Error(), "mise run db:migrate")
+
+	g.AutoMigrate = true
+	require.NoError(t, g.Check(t.Context(), sqlDB))
 }
 
 // A build with no release (go run, a dev image) is never older than a floor.
