@@ -1,5 +1,5 @@
 -- +goose Up
--- The Go migration 20261020004439 (internal/db, workspacePublicIDs) gave every existing Workspace its
+-- The Go migration 20261020004439 (internal/db, backfillWorkspacePublicIDs) gave every existing Workspace its
 -- id between the two files; the column is only then required and unique (ADR 0043).
 -- modify "workspaces" table
 ALTER TABLE "workspaces" ALTER COLUMN "public_id" SET NOT NULL;
